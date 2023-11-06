@@ -105,6 +105,6 @@ class RecordItemMissingException(PromptflowException):
 
 
 class RecordFileMissingException(PromptflowException):
-    """Exception raised when record file missing."""
+    """Exception raised when record file missing or invalid."""
 
     pass

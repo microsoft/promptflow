@@ -9,6 +9,8 @@ from promptflow.contracts.types import PromptTemplate
 from promptflow._internal import enable_cache, ToolProvider, tool, register_apis
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
     validate_functions, process_function_call, post_process_chat_api_response
+from typing import OrderedDict
+from promptflow._sdk._record_storage import RecordStorage
 
 
 class AzureOpenAI(ToolProvider):
@@ -55,32 +57,56 @@ class AzureOpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
         stream = to_bool(stream)
-        response = openai.Completion.create(
-            prompt=prompt,
-            engine=deployment_name,
-            # empty string suffix should be treated as None.
-            suffix=suffix if suffix else None,
-            max_tokens=int(max_tokens),
-            temperature=float(temperature),
-            top_p=float(top_p),
-            n=int(n),
-            stream=stream,
-            # TODO: remove below type conversion after client pass json rather than string.
-            # empty string will go to else branch, but original api cannot accept empty
-            # string, must be None.
-            logprobs=int(logprobs) if logprobs else None,
-            echo=echo,
-            # fix bug "[] is not valid under any of the given schemas-'stop'"
-            stop=stop if stop else None,
-            presence_penalty=float(presence_penalty),
-            frequency_penalty=float(frequency_penalty),
-            best_of=int(best_of),
-            # Logit bias must be a dict if we passed it to openai api.
-            logit_bias=logit_bias if logit_bias else {},
-            user=user,
-            headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
-            **self._connection_dict,
-        )
+
+        if RecordStorage.is_replaying_mode():
+            input_dict: OrderedDict = OrderedDict(kwargs)
+            input_dict['prompt'] = prompt
+            response = RecordStorage.get_instance().get_record(input_dict)
+            if stream:
+                def generator():
+                    for chunk in response:
+                        if chunk["choices"]:
+                            yield getattr(chunk["choices"][0], "text", "")
+
+                # We must return the generator object, not using yield directly here.
+                # Otherwise, the function itself will become a generator, despite whether stream is True or False.
+                return generator()
+            else:
+                # get first element because prompt is single.
+                return response["choices"][0]["text"]
+        else:
+            response = openai.Completion.create(
+                prompt=prompt,
+                engine=deployment_name,
+                # empty string suffix should be treated as None.
+                suffix=suffix if suffix else None,
+                max_tokens=int(max_tokens),
+                temperature=float(temperature),
+                top_p=float(top_p),
+                n=int(n),
+                stream=stream,
+                # TODO: remove below type conversion after client pass json rather than string.
+                # empty string will go to else branch, but original api cannot accept empty
+                # string, must be None.
+                logprobs=int(logprobs) if logprobs else None,
+                echo=echo,
+                # fix bug "[] is not valid under any of the given schemas-'stop'"
+                stop=stop if stop else None,
+                presence_penalty=float(presence_penalty),
+                frequency_penalty=float(frequency_penalty),
+                best_of=int(best_of),
+                # Logit bias must be a dict if we passed it to openai api.
+                logit_bias=logit_bias if logit_bias else {},
+                user=user,
+                headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
+                **self._connection_dict,
+            )
+
+        if RecordStorage.is_recording_mode():
+            input_dict: OrderedDict = OrderedDict(kwargs)
+            input_dict['prompt'] = prompt
+            RecordStorage.get_instance().set_record(input_dict=input_dict, output=response)
+
         if stream:
             def generator():
                 for chunk in response:
@@ -142,20 +168,39 @@ class AzureOpenAI(ToolProvider):
             params["functions"] = functions
             params["function_call"] = process_function_call(function_call)
 
-        completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
+        if RecordStorage.is_replaying_mode():
+            input_dict: OrderedDict = OrderedDict(kwargs)
+            input_dict['prompt'] = prompt
+            completion = RecordStorage.get_instance().get_record(input_dict)
+        else:
+            completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
+
+        if RecordStorage.is_recording_mode():
+            input_dict: OrderedDict = OrderedDict(kwargs)
+            input_dict['prompt'] = prompt
+            RecordStorage.get_instance().set_record(input_dict=input_dict, output=completion)
+
         return post_process_chat_api_response(completion, stream, functions)
 
     # TODO: embedding is a separate builtin tool, will remove it from llm.
     @tool
     @handle_openai_error()
     def embedding(self, input, deployment_name: str, user: str = ""):
-        response = openai.Embedding.create(
-            input=input,
-            engine=deployment_name,
-            user=user,
-            headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
-            **self._connection_dict,
-        )
+        if RecordStorage.is_replaying_mode():
+            input_dict: OrderedDict = OrderedDict({"input": input, "user": user})
+            response = RecordStorage.get_instance().get_record(input_dict)
+
+        else:
+            response = openai.Embedding.create(
+                input=input,
+                engine=deployment_name,
+                user=user,
+                headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
+                **self._connection_dict,
+            )
+        if RecordStorage.is_recording_mode():
+            input_dict: OrderedDict = OrderedDict({"input": input, "user": user})
+            RecordStorage.get_instance().set_record(input_dict=input_dict, output=completion)
         return response["data"][0]["embedding"]
 
 

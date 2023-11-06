@@ -213,7 +213,7 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
-        RecordStorage.get_instance(run.flow / RecordStorage.standard_record_name)
+        RecordStorage.get_instance(run.flow)
 
     def _dump_meta_file(self) -> None:
         with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:

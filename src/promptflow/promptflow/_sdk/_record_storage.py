@@ -4,11 +4,11 @@
 import collections
 import hashlib
 import json
-import os
 from pathlib import Path
 from typing import Any, Dict, OrderedDict
 
 from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._constants import RecordMode
 from promptflow._sdk._errors import RecordFileMissingException, RecordItemMissingException
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
@@ -32,47 +32,76 @@ class RecordStorage(object):
     }
     """
 
-    _standard_record_name = ".promptflow/node_cache.json"
+    _standard_record_folder = ".promptflow"
+    _standard_record_name = "node_cache.json"
     _instance = None
 
     def __init__(self, record_file: str = None):
         """
         RecordStorage is used to store the record of node run.
         """
-        self.record_file = None
-        self._input_path_str: str = None
+        self._record_file: Path = None
         self.cached_items: Dict[str, Dict[str, Dict[str, object]]] = {}
-
-        self.set_input_path(record_file)
+        self.record_file = record_file
 
     @property
     def record_file(self) -> Path:
         return self._record_file
 
     @record_file.setter
-    def record_file(self, record_file: Path) -> None:
-        if record_file is None:
-            record_file = Path(self.standard_record_name)
-        self._record_file = record_file
+    def record_file(self, record_file) -> None:
+        record_file_override = Configuration.get_instance().get_recording_file()
+        if record_file is None and record_file_override is None:
+            return
+
+        # override record file
+        if record_file_override is not None:
+            record_file = record_file_override
+
+        if record_file == self._record_file:
+            return
+
+        if isinstance(record_file, str):
+            self._record_file = Path(record_file).resolve()
+        elif isinstance(record_file, Path):
+            self._record_file = record_file.resolve()
+        else:
+            return
+
+        if self._record_file.parts[-1] != RecordStorage._standard_record_name:
+            record_folder = self._record_file / RecordStorage._standard_record_folder
+            self._record_file = record_folder / RecordStorage._standard_record_name
+        else:
+            record_folder = self._record_file.parent
+
+        self._record_file_str = str(self._record_file)
+
+        # cache folder we could create if not exist.
+        if not record_folder.exists():
+            record_folder.mkdir(parents=True, exist_ok=True)
+
+        # if file exist, load file
+        if self._record_file.exists():
+            self._load_file()
 
     def _write_file(self) -> None:
-        file_content = self.cached_items.get(self._input_path_str, None)
+        file_content = self.cached_items.get(self._record_file_str, None)
 
         if file_content is not None:
-            with open(self.input_path, "w+") as fp:
-                json.dump(self.cached_items[self._input_path_str], fp, indent=4)
+            with open(self.record_file, "w+", encoding="utf-8") as fp:
+                json.dump(self.cached_items[self._record_file_str], fp, indent=4)
 
     def _load_file(self) -> None:
-        local_content = self.cached_items.get(self._input_path_str, None)
+        local_content = self.cached_items.get(self._record_file_str, None)
         if not local_content:
-            if not self.input_path.exists():
+            if not self.record_file.exists():
                 return
-            with open(self.input_path, "r", encoding="utf-8") as fp:
-                self.cached_items[self._input_path_str] = json.load(fp)
+            with open(self.record_file, "r", encoding="utf-8") as fp:
+                self.cached_items[self._record_file_str] = json.load(fp)
 
     def get_record(self, input_dict: OrderedDict) -> object:
         hash_value: str = hashlib.sha1(str(input_dict).encode("utf-8")).hexdigest()
-        current_saved_records: Dict[str, str] = self.cached_items.get(self._input_path_str, None)
+        current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
         if current_saved_records is None:
             raise RecordFileMissingException(
                 f"This should except earlier, record file not found in folder {self.input_path}."
@@ -85,20 +114,15 @@ class RecordStorage(object):
 
         output = saved_output["output"]
         output_type = saved_output["output_type"]
-        if output_type == "str":
-            return output
-        elif output_type == "int":
-            return int(output)
-        elif output_type == "float":
-            return float(output)
-        elif output_type == "bool":
-            return bool(output)
+        if isinstance(output, str) and output_type != "str":
+            output_convert = json.loads(output)
+            return output_convert
         else:
-            raise Exception(f"Unsupported type {output_type}")
+            return output
 
     def set_record(self, input_dict: OrderedDict, output: object) -> None:
         hash_value: str = hashlib.sha1(str(input_dict).encode("utf-8")).hexdigest()
-        current_saved_records: Dict[str, str] = self.cached_items.get(self._input_path_str, None)
+        current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
 
         if current_saved_records is None:
             current_saved_records = {}
@@ -121,40 +145,26 @@ class RecordStorage(object):
             else:
                 current_saved_records[hash_value] = {
                     "input": input_dict,
-                    "output": output,
+                    "output": str(output),
                     "output_type": type(output).__name__,
                 }
-        self.cached_items[self._input_path_str] = current_saved_records
+        self.cached_items[self._record_file_str] = current_saved_records
         self._write_file()
-
-    def set_input_path(self, input_path):
-        if input_path == self.input_path:
-            return
-        self.input_path = Path(input_path).resolve()
-        self._input_path_str = str(self.input_path)
-        if not os.path.exists(self.input_path.parent.parent):
-            raise Exception(f"{self.input_path.parent.parent} does not exist")
-        # cache folder we could create if not exist.
-        if not self.input_path.parent.exists():
-            os.makedirs(self.input_path.parent, exist_ok=True)
-        # if file exist, load file
-        if os.path.exists(self.input_path):
-            self._load_file()
 
     @classmethod
     def is_recording_mode(cls) -> bool:
-        return Configuration.get_instance().get_recording_mode() == "record"
+        return Configuration.get_instance().get_recording_mode() == RecordMode.RECORD
 
     @classmethod
     def is_replaying_mode(cls) -> bool:
-        return Configuration.get_instance().get_recording_mode() == "replay"
+        return Configuration.get_instance().get_recording_mode() == RecordMode.REPLAY
 
     @classmethod
     def is_live_mode(cls) -> bool:
-        return Configuration.get_instance().get_recording_mode() == "replay"
+        return Configuration.get_instance().get_recording_mode() == RecordMode.LIVE
 
     @classmethod
-    def get_instance(cls, input_path=None) -> "RecordStorage":
+    def get_instance(cls, record_file=None) -> "RecordStorage":
         """
         get_instance Use this to get instance to avoid multiple copies of same record storage.
 
@@ -164,20 +174,14 @@ class RecordStorage(object):
         :rtype: RecordStorage
         """
         # if not in recording mode, return None
-        if not Configuration.get_instance().is_recording_mode():
+        if not (RecordStorage.is_recording_mode() or RecordStorage.is_replaying_mode()):
             return None
         # Create instance if not exist
         if cls._instance is None:
-            if input_path is None:
-                raise Exception("input_path is None")
-            cls._instance = RecordStorage(input_path=input_path)
-        # Override configuration of recording file
-        if Configuration.get_instance().get_recording_file_override() is not None:
-            cls._instance.set_input_path(Configuration.get_instance().get_recording_file_override())
-            return cls._instance
-        if input_path is not None:
-            cls._instance.set_input_path(input_path)
-            return cls._instance
+            if record_file is None:
+                raise RecordFileMissingException("record_file is value None")
+            cls._instance = RecordStorage(record_file)
+        cls._instance.record_file = record_file
         return cls._instance
 
     def _record_node_run(self, run_info, api_call: Dict[str, Any]) -> None:

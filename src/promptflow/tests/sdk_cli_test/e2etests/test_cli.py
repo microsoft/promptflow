@@ -325,6 +325,38 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
+    @pytest.mark.usefixtures("replaying_enabled")
+    def test_pf_flow_test_replaying_enabled(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer=Channel",
+            "evidence=Url",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            previous_log_content = f.read()
+
+        # Test without input
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert previous_log_content not in log_content
+
     @pytest.mark.usefixtures("recording_enabled", "cli_recording_file_override")
     def test_pf_flow_test_recording_enabled_and_override_recording(self):
         run_pf_command(

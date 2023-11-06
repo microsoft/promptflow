@@ -179,7 +179,7 @@ class Configuration(object):
             return self.get_config(key=self.EXTENSION_EU_USER)
         return self.get_config(key=self.EU_USER)
 
-    def get_recording_mode(self) -> Optional[bool]:
+    def get_recording_mode(self) -> Optional[str]:
         """Check if recording mode is enabled."""
         return self.get_config(key=self.RECORDING_MODE)
 

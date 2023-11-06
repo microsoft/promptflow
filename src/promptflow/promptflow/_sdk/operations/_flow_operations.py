@@ -111,7 +111,7 @@ class FlowOperations:
         flow = load_flow(flow)
 
         # Initialize record storage, record_storage is None when record mode is not open.
-        record_storage = RecordStorage.get_instance(flow.code / RecordStorage.standard_record_name)
+        record_storage = RecordStorage.get_instance(flow.code)
 
         flow.context.variant = variant
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:

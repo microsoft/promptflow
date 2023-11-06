@@ -150,7 +150,14 @@ def serving_client_composite_image_flow(mocker: MockerFixture):
 
 @pytest.fixture
 def recording_enabled(mocker: MockerFixture):
-    patch = mocker.patch("promptflow._sdk._configuration.Configuration.is_recording_mode", return_value=True)
+    patch = mocker.patch("promptflow._sdk._configuration.Configuration.get_recording_mode", return_value="record")
+    yield
+    patch.stop()
+
+
+@pytest.fixture
+def replaying_enabled(mocker: MockerFixture):
+    patch = mocker.patch("promptflow._sdk._configuration.Configuration.get_recording_mode", return_value="replay")
     yield
     patch.stop()
 
