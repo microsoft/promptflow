@@ -10,39 +10,60 @@ my_tool_package.tools.mlindex_tool.my_tool:
         - name: index_type
           type: 
           - string
-          enum:
-            - Azure Cognitive Search
-            - MLIndex Asset
+          reference: ${inputs.index_type}
         - name: index
-          enabled_by: index_type
-          enabled_by_value: [MLIndex Asset]
-          dynamic_list:
-            func_path: my_tool_package.tools.mlindex_tool.list_indexes
-            func_kwargs: 
-            - name: index_type
-              type: 
-              - string
-              optional: true
-              reference: ${inputs.index_json.index_type}
-          allow_manual_entry: false
-          is_multi_select: false
-        - query:
-          type: 
-          - string
-        - top_k:
-          default: '3'
           type:
-          - int  
+          - string
+          reference: ${inputs.index_assetId}
         - content_field:
           type:
           - string
-          enabled_by: index_type
-          enabled_by_value: [Azure Cognitive Search]
+          reference: ${inputs.content_field}
         - embedding_deployment:
           type:
           - string
-          enabled_by: index_type
-          enabled_by_value: [Azure Cognitive Search]
+          optional: true
+          reference: ${inputs.embedding_deployment}
+    index_type:
+      type: 
+      - string
+      enum:
+        - Azure Cognitive Search
+        - MLIndex Asset
+      ux_format: NonVisible
+    index_assetId:
+      enabled_by: index_type
+      enabled_by_value: [MLIndex Asset]
+      dynamic_list:
+        func_path: my_tool_package.tools.mlindex_tool.list_indexes
+        func_kwargs: 
+        - name: index_type
+          type: 
+          - string
+          optional: true
+          reference: ${inputs.index_json.index_type}
+      allow_manual_entry: false
+      is_multi_select: false
+      ux_format: NonVisible
+    content_field:
+      type:
+      - string
+      enabled_by: index_type
+      enabled_by_value: [Azure Cognitive Search]
+      ux_format: NonVisible
+    embedding_deployment:
+      type:
+      - string
+      enabled_by: index_type
+      enabled_by_value: [Azure Cognitive Search]
+      ux_format: NonVisible
+    query:
+      type: 
+      - string
+    top_k:
+      default: '3'
+      type:
+      - int  
   module: my_tool_package.tools.mlindex_tool
   name: MLIndex Tool
   description: This is my tool combined dynamic list and enabled by
