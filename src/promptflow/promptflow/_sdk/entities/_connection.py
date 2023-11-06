@@ -348,10 +348,12 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
     def __init__(
         self, api_key: str, api_base: str, api_type: str = "azure", api_version: str = "2023-07-01-preview",
-        token_provider: Union[str, TokenProviderABC] = AzureTokenProvider(), **kwargs
+        token_provider: Union[str, TokenProviderABC] = None, **kwargs
     ):
         configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version}
         secrets = {"api_key": api_key}
+        if not token_provider:
+            token_provider = AzureTokenProvider()
         self._token_provider = token_provider
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
@@ -389,11 +391,10 @@ class AzureOpenAIConnection(_StrongTypeConnection):
         """Set the connection api version."""
         self.configs["api_version"] = value
 
-    @property
-    def token(self):
+    def get_token(self):
         """Return the connection token."""
-        if isinstance(self.token_provider, str):
-            return self.token_provider
+        if isinstance(self._token_provider, str):
+            return self._token_provider
         else:
             return self._token_provider.get_token()
 
