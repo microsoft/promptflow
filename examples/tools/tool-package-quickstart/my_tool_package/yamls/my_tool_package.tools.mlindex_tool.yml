@@ -1,0 +1,49 @@
+my_tool_package.tools.mlindex_tool.my_tool:
+  function: my_tool
+  inputs:
+    index_json:
+      type:
+      - string
+      generated_by_ux:
+        func_path: my_tool_package.tools.mlindex_tool.generate_index_json
+        func_kwargs: 
+        - name: index_type
+          type: 
+          - string
+          enum:
+            - Azure Cognitive Search
+            - MLIndex Asset
+        - name: index
+          enabled_by: index_type
+          enabled_by_value: [MLIndex Asset]
+          dynamic_list:
+            func_path: my_tool_package.tools.mlindex_tool.list_indexes
+            func_kwargs: 
+            - name: index_type
+              type: 
+              - string
+              optional: true
+              reference: ${inputs.index_json.index_type}
+          allow_manual_entry: false
+          is_multi_select: false
+        - query:
+          type: 
+          - string
+        - top_k:
+          default: '3'
+          type:
+          - int  
+        - content_field:
+          type:
+          - string
+          enabled_by: index_type
+          enabled_by_value: [Azure Cognitive Search]
+        - embedding_deployment:
+          type:
+          - string
+          enabled_by: index_type
+          enabled_by_value: [Azure Cognitive Search]
+  module: my_tool_package.tools.mlindex_tool
+  name: MLIndex Tool
+  description: This is my tool combined dynamic list and enabled by
+  type: python
