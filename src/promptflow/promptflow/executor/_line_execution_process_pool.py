@@ -6,7 +6,7 @@ import queue
 from datetime import datetime
 from functools import partial
 from logging import INFO
-from multiprocessing import Manager, Process, Queue
+from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 
 import psutil
@@ -15,7 +15,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
-from promptflow._utils.multimedia_utils import persist_multimedia_data, recursive_process
+from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.multimedia import Image
@@ -44,16 +44,17 @@ class QueueRunStorage(AbstractRunStorage):
 
 
 class HealthyEnsuredProcess:
-    def __init__(self, executor_creation_func):
+    def __init__(self, executor_creation_func, context):
         self.process = None
         self.input_queue = None
         self.output_queue = None
         self.is_ready = False
         self._executor_creation_func = executor_creation_func
+        self.context = context
 
     def start_new(self, task_queue: Queue):
-        input_queue = Queue()
-        output_queue = Queue()
+        input_queue = self.context.Queue()
+        output_queue = self.context.Queue()
         self.input_queue = input_queue
         self.output_queue = output_queue
 
@@ -62,7 +63,7 @@ class HealthyEnsuredProcess:
         input_queue.put("start")
 
         current_log_context = LogContext.get_current()
-        process = Process(
+        process = self.context.Process(
             target=_process_wrapper,
             args=(
                 self._executor_creation_func,
@@ -133,7 +134,17 @@ class LineExecutionProcessPool:
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
         self._worker_count = flow_executor._worker_count
-        use_fork = multiprocessing.get_start_method() == "fork"
+        multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
+        sys_start_methods = multiprocessing.get_all_start_methods()
+        if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
+            logger.warning(
+                f"Failed to set start method to '{multiprocessing_start_method}', "
+                f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
+            )
+            logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
+            multiprocessing_start_method = None
+        self.context = get_multiprocessing_context(multiprocessing_start_method)
+        use_fork = self.context.get_start_method() == "fork"
         # When using fork, we use this method to create the executor to avoid reloading the flow
         # which will introduce a lot more memory.
         if use_fork:
@@ -187,7 +198,7 @@ class LineExecutionProcessPool:
             self._pool.join()
 
     def _timeout_process_wrapper(self, run_start_time: datetime, task_queue: Queue, timeout_time, result_list):
-        healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func)
+        healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func, self.context)
         healthy_ensured_process.start_new(task_queue)
 
         if not healthy_ensured_process.process.is_alive():
@@ -281,7 +292,7 @@ class LineExecutionProcessPool:
 
     def _persist_images(self, value):
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
-        return recursive_process(value, process_funcs=serialization_funcs)
+        return _process_recursively(value, process_funcs=serialization_funcs)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
@@ -514,3 +525,13 @@ def get_available_max_worker_count():
         available memory: {available_memory}, available max worker count: {available_max_worker_count}"""
     )
     return available_max_worker_count
+
+
+def get_multiprocessing_context(multiprocessing_start_method=None):
+    if multiprocessing_start_method is not None:
+        context = multiprocessing.get_context(multiprocessing_start_method)
+        logger.info(f"Set start method to {multiprocessing_start_method}.")
+        return context
+    else:
+        context = multiprocessing.get_context()
+        return context

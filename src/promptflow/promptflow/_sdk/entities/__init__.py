@@ -19,9 +19,10 @@ from ._connection import (
 )
 from ._run import Run
 from ._validation import ValidationResult
+from ._flow import FlowContext
 
 __all__ = [
-    # Connection
+    # region: Connection
     "AzureContentSafetyConnection",
     "AzureOpenAIConnection",
     "OpenAIConnection",
@@ -32,7 +33,12 @@ __all__ = [
     "QdrantConnection",
     "WeaviateConnection",
     "FormRecognizerConnection",
-    # Run
+    # endregion
+    # region Run
     "Run",
     "ValidationResult",
+    # endregion
+    # region Flow
+    "FlowContext",
+    # endregion
 ]

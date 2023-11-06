@@ -184,5 +184,14 @@ node_variants:
         data = f"{FLOWS_DIR}/flow_with_non_english_input/data.jsonl"
         run = pf.run(flow=flow_path, data=data, column_mapping={"text": "${data.text}"})
         local_storage = LocalStorageOperations(run=run)
+        # assert non english in output.jsonl
+        output_jsonl_path = local_storage._outputs_path
+        with open(output_jsonl_path, "r", encoding="utf-8") as f:
+            outputs_text = f.readlines()
+            assert outputs_text == [
+                '{"line_number": 0, "output": "Hello 123 日本語"}\n',
+                '{"line_number": 1, "output": "World 123 日本語"}\n',
+            ]
+        # assert non english in memory
         outputs = local_storage.load_outputs()
         assert outputs == {"output": ["Hello 123 日本語", "World 123 日本語"]}

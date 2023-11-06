@@ -13,6 +13,7 @@ type_mapping = {
     ValueType.STRING: "string",
     ValueType.LIST: "array",
     ValueType.OBJECT: "object",
+    ValueType.IMAGE: "object",  # Dump as object as portal test page can't handle image now
 }
 
 

@@ -47,6 +47,7 @@ DO's:
   if it diverges from the general guidelines.
 - **DO** include tests when adding new features. When fixing bugs, start with
   adding a test that highlights how the current behavior is broken.
+- **DO** add proper docstring for functions and classes following [API Documentation Guidelines](./docs/dev/documentation_guidelines.md).
 - **DO** keep the discussions focused. When a new or related topic comes up
   it's often better to create new issue than to side track the discussion.
 - **DO** clearly state on an issue that you are going to take on implementing it.
