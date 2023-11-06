@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Prompt flow Open Source LLM tool enables you to utilize a variety of Open Source and Foundational Models, such as [Falcon](https://aka.ms/AAlc25c) or [Llama 2](https://aka.ms/AAlc258) for natural language processing, in PromptFlow.
+The Prompt flow Open Source LLM tool enables you to utilize a variety of Open Source and Foundational Models, such as [Falcon](https://ml.azure.com/models/tiiuae-falcon-7b/version/4/catalog/registry/azureml) or [Llama 2](https://ml.azure.com/models/Llama-2-7b-chat/version/14/catalog/registry/azureml-meta) for natural language processing, in PromptFlow.
 
 Here's how it looks in action on the Visual Studio Code Prompt flow extension. In this example, the tool is being used to call a LlaMa-2 chat endpoint and asking "What is CI?".
 

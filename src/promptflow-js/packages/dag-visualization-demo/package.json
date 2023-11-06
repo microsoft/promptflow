@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^13.0.0",
     "@testing-library/user-event": "^13.2.1",
@@ -10,12 +11,14 @@
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "elkjs": "^0.8.1",
     "react": "^18.2.0",
     "react-dag-editor": "^0.4.1",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "typescript": "^4.4.2",
     "web-vitals": "^2.1.0",
+    "web-worker": "^1.2.0",
     "yaml": "^2.3.3"
   },
   "scripts": {

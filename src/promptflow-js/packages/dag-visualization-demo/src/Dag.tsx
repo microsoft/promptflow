@@ -1,8 +1,11 @@
 import React from "react";
-import { ReactDagEditor, Graph, useGraphReducer, GraphModel, IGraphConfig, GraphConfigBuilder, INodeConfig, INodeDrawArgs, getRectHeight, getRectWidth, ICanvasNode } from "react-dag-editor";
+import { ReactDagEditor, Graph, useGraphReducer, GraphModel, IGraphConfig, GraphConfigBuilder, INodeConfig, INodeDrawArgs, getRectHeight, getRectWidth, ICanvasNode, GraphCanvasEvent, CanvasMouseMode } from "react-dag-editor";
 import { ToolType } from "./types";
 import { FlowNode } from "./FlowNode";
-
+import Editor from '@monaco-editor/react';
+import { fromDagToCanvasDataUnlayouted } from "./parseFlow";
+import { parse } from "yaml";
+import { autoLayout } from "./autoLayout";
 
 export interface INodeRunStatus {
   node: string;
@@ -104,7 +107,6 @@ class FlowNodeConfig implements INodeConfig {
 
 export const Dag: React.FC = () => {
   const flowNodeConfig = new FlowNodeConfig();
-
   const graphConfig = GraphConfigBuilder.default()
     .registerNode(node => {
       return flowNodeConfig;
@@ -113,16 +115,43 @@ export const Dag: React.FC = () => {
   const [state, dispatch] = useGraphReducer({
     settings: {
       graphConfig
-    },
-    data: GraphModel.fromJSON()
+    }
   }, undefined);
+
+  const editorRef = React.useRef(null);
+
   return (
-    <ReactDagEditor
-      style={{ width: "900px", height: "600px" }}
-      state={state}
-      dispatch={dispatch}
-    >
-      <Graph />
-    </ReactDagEditor>
+    <>
+      <Editor
+        height="30vh"
+        defaultLanguage="yaml"
+        defaultValue=""
+        onMount={editor => {
+          editorRef.current = editor;
+        }}
+        onChange={async value => {
+          if (!value) {
+            return;
+          }
+          try {
+            const json = parse(value);
+            dispatch({
+              type: GraphCanvasEvent.SetData,
+              data: GraphModel.fromJSON(await autoLayout(fromDagToCanvasDataUnlayouted(json)))
+            });
+          } catch {
+
+          }
+        }}
+      />
+      <ReactDagEditor
+        style={{ width: "900px", height: "600px", backgroundColor: "#ccc" }}
+        state={state}
+        // @ts-ignore
+        dispatch={dispatch}
+      >
+        <Graph canvasMouseMode={CanvasMouseMode.Pan} />
+      </ReactDagEditor>
+    </>
   );
 }

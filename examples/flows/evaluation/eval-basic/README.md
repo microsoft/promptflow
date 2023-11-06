@@ -36,5 +36,8 @@ pf flow test --flow . --node line_process --inputs groundtruth=ABC prediction=AB
 There are two ways to evaluate an classification flow.
 
 ```bash
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping groundtruth='${data.groundtruth}' prediction='${data.prediction}' --stream
 ```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.

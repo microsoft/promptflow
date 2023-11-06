@@ -40,6 +40,7 @@ from promptflow._core.tools_manager import (
     register_apis,
     register_builtins,
     register_connections,
+    gen_dynamic_list,
 )
 from promptflow._core.tracer import Tracer
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
@@ -102,3 +103,5 @@ from promptflow.storage._sqlite_client import (
     NotFoundException,
     SqliteClient,
 )
+from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow._utils.multimedia_utils import is_multimedia_dict, _create_image_from_file

@@ -12,6 +12,7 @@ import flask
 from flask import Flask, jsonify, request, url_for
 from jinja2 import Template
 
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
@@ -47,6 +48,9 @@ class PromptflowServingApp(Flask):
             self.environment_variables = kwargs.get("environment_variables", {})
             os.environ.update(self.environment_variables)
             logger.info(f"Environment variable keys: {self.environment_variables.keys()}")
+            app_config = kwargs.get("config", None) or {}
+            self._promptflow_config = Configuration(overrides=app_config)
+            logger.info(f"Promptflow config: {self._promptflow_config.config}")
             self.sample = get_sample_json(self.project_path, logger)
             self.init_swagger()
             # ensure response has the correct content type
@@ -59,7 +63,9 @@ class PromptflowServingApp(Flask):
             return
         logger.info("Promptflow executor starts initializing...")
         self.flow_invoker = FlowInvoker(
-            self.project_path, connection_provider="local", streaming=streaming_response_required
+            self.project_path,
+            connection_provider=self._promptflow_config.get_connection_provider(),
+            streaming=streaming_response_required,
         )
         self.flow = self.flow_invoker.flow
         # Set the flow name as folder name

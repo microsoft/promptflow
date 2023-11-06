@@ -1,0 +1,35 @@
+my_tool_package.tools.tool_with_dynamic_list_input.my_tool:
+  function: my_tool
+  inputs:
+    input_text:
+      type:
+      - list
+      dynamic_list:
+        # UX send dynamic_list content to backend.
+        # specifies the function to generate dynamic list. format: <module>.<func>
+        func_path: my_tool_package.tools.tool_with_dynamic_list_input.my_list_func
+        func_kwargs: 
+        - name: prefix  # Argument name to be passed to the function
+          type: 
+          - string
+          # if optional is not specified, default to false.
+          # this is for UX pre-validaton. If optional is false, but no input. UX can throw error in advanced.
+          optional: true
+          reference: ${inputs.input_prefix}  # Dynamic reference to another input parameter
+        - name: size  # Another argument name to be passed to the function
+          type: 
+          - int
+          optional: true
+          default: 10
+      # enum and dynamic list may need below setting, default false.
+      # allow user to enter input `index_path` value manually.
+      allow_manual_entry: true
+      is_multi_select: true
+    # used to filter 
+    input_prefix:
+      type:
+      - string
+  module: my_tool_package.tools.tool_with_dynamic_list_input
+  name: My Tool with Dynamic List Input
+  description: This is my tool with dynamic list input
+  type: python
