@@ -1,15 +1,16 @@
 import base64
 import json
 import re
+
 import streamlit as st
 from bs4 import BeautifulSoup, NavigableString, Tag
 
-from promptflow._utils.multimedia_utils import is_multimedia_dict, MIME_PATTERN
+from promptflow._utils.multimedia_utils import MIME_PATTERN, is_multimedia_dict
 
 
 def show_image(image, key=None):
     if not image.startswith("data:image"):
-        st.image(key + ',' + image)
+        st.image(key + "," + image)
     else:
         st.image(image)
 
@@ -41,8 +42,9 @@ def is_dict_contains_rich_text(rich_text):
             result |= is_list_contains_rich_text(rich_text_value)
         elif isinstance(rich_text_value, dict):
             result |= is_dict_contains_rich_text(rich_text_value)
-        elif re.match(MIME_PATTERN, rich_text_key) or (isinstance(rich_text_value, str) and
-                                                       rich_text_value.startswith("data:image")):
+        elif re.match(MIME_PATTERN, rich_text_key) or (
+            isinstance(rich_text_value, str) and rich_text_value.startswith("data:image")
+        ):
             result = True
     return result
 
@@ -98,14 +100,42 @@ def dict_iter_render_message(message_items):
         st.markdown(f"`{json_dumps(message_items)},`")
 
 
+def render_single_list_message(message_items):
+    # This function is added for chat flow with only single input and single output.
+    # So that we can show the message directly without the list and dict wrapper.
+    for item in message_items:
+        if isinstance(item, list):
+            render_single_list_message(item)
+        if isinstance(item, dict):
+            render_single_dict_message(item)
+        if isinstance(item, str):
+            st.text(item)
+
+
+def render_single_dict_message(message_items):
+    # This function is added for chat flow with only single input and single output.
+    # So that we can show the message directly without the list and dict wrapper.
+    for key, value in message_items.items():
+        if re.match(MIME_PATTERN, key):
+            show_image(value, key)
+            continue
+        else:
+            if isinstance(value, list):
+                render_single_list_message(value)
+            elif isinstance(value, dict):
+                render_single_dict_message(value)
+            else:
+                item_render_message(value, key)
+
+
 def extract_content(node):
     if isinstance(node, NavigableString):
         text = node.strip()
         if text:
             return [text]
     elif isinstance(node, Tag):
-        if node.name == 'img':
-            prefix, base64_str = node['src'].split(',', 1)
+        if node.name == "img":
+            prefix, base64_str = node["src"].split(",", 1)
             return [{prefix: base64_str}]
         else:
             result = []
@@ -119,9 +149,9 @@ def parse_list_from_html(html_content):
     """
     Parse the html content to a list of strings and images.
     """
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, "html.parser")
     result = []
-    for p in soup.find_all('p'):
+    for p in soup.find_all("p"):
         result.extend(extract_content(p))
     return result
 
@@ -129,6 +159,6 @@ def parse_list_from_html(html_content):
 def parse_image_content(image_content, image_type):
     if image_content is not None:
         file_contents = image_content.read()
-        image_content = base64.b64encode(file_contents).decode('utf-8')
+        image_content = base64.b64encode(file_contents).decode("utf-8")
         prefix = f"data:{image_type};base64"
         return {prefix: image_content}
