@@ -44,7 +44,7 @@ In one flow, you can consume different kinds of tools. We now support built-in t
 [LLM](../../reference/tools-reference/llm-tool.md), [Python](../../reference/tools-reference/python-tool.md) and 
 [Prompt](../../reference/tools-reference/prompt-tool.md) and 
 third-party tool like [Serp API](../../reference/tools-reference/serp-api-tool.md), 
-[Vector Search](../../reference/tools-reference/vector_db_lookup_tool.md), etc.
+[Vector Search](../../integrations/tools/vector_db_lookup_tool.md), etc.
 
 For more information see [develop the flow using different tools](./develop-standard-flow.md#develop-the-flow-using-different-tools).
 
