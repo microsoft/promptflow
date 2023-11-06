@@ -426,7 +426,7 @@ class TestFlowRun:
                         "groundtruth": "${run.inputs.extra_key}",
                     },
                 )
-            assert "Please make sure it's not deleted." in str(e.value)
+            assert "Please make sure it exists and not deleted." in str(e.value)
 
     def test_eval_run_data_not_exist(self, pf):
 
@@ -462,7 +462,7 @@ class TestFlowRun:
                     "groundtruth": "${run.inputs.extra_key}",
                 },
             )
-        assert "Please make sure it's not deleted." in str(e.value)
+        assert "Please make sure it exists and not deleted" in str(e.value)
 
     def test_create_run_with_tags(self, pf):
         name = str(uuid.uuid4())
