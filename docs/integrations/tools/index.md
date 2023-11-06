@@ -15,7 +15,7 @@ The table below provides an index of custom tool packages. The columns contain:
 |-|-|-|-|
 |[promptflow-vectordb](https://pypi.org/project/promptflow-vectordb/)| [Vector DB Lookup](./vector_db_lookup_tool.md) | Search vector based query from existing Vector Database. | dans-msft, Adarsh-Ramanathan |
 || [Faiss Index Lookup](./faiss_index_lookup_tool.md) | Search vector based query from the FAISS index file. | dans-msft, Adarsh-Ramanathan |
-|[promptflow-contentsafety](https://pypi.org/project/promptflow-contentsafety/)| [Content Safety (Text)](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/tools-reference/content-safety-text-tool?view=azureml-api-2) | Use Azure Content Safety to detect harmful content. | asmeyyh, jr-MS |
+
 
 ```{toctree}
 :maxdepth: 1
