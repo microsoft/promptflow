@@ -40,6 +40,8 @@ jobs:
           pip install promptflow[azure]==0.0.109343510 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}"
+      - name: Create new Aoai Connection
+        run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}" name=new_ai_connection
       - name: Test Notebook
         working-directory: examples/tutorials/get-started
         run: |
