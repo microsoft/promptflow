@@ -16,6 +16,7 @@ from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.openai_injector import inject_openai_api
+from promptflow._sdk._configuration import Configuration
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
 
@@ -68,6 +69,11 @@ def env_with_secrets_config_file():
 
 @pytest.fixture
 def azure_open_ai_connection() -> AzureOpenAIConnection:
+    if Configuration.get_recording_mode() == "replay":
+        return AzureOpenAIConnection(
+            api_key="dummy_key",
+            api_base="dummy_base",
+        )
     return ConnectionManager().get("azure_open_ai_connection")
 
 

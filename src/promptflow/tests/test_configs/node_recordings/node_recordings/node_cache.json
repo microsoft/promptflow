@@ -1,0 +1,147 @@
+{
+    "ab12bbd6cf1790d68e7d7d83d58d90e2900a3d50": {
+        "input": {
+            "text": "[FULL] Cerita Seru Dari Kaki Gunung Lawu | BOCAH PETUALANG (25/09/20) - YouTube\u6982\u8981\u30d7\u30ec\u30b9\u30eb\u30fc\u30e0\u8457\u4f5c\u6a29\u304a\u554f\u3044\u5408\u308f\u305b\u30af\u30ea\u30a8\u30a4\u30bf\u30fc\u5411\u3051\u5e83\u544a\u63b2\u8f09\u958b\u767a\u8005\u5411\u3051\u5229\u7528\u898f\u7d04\u30d7\u30e9\u30a4\u30d0\u30b7\u30fc\u30dd\u30ea\u30b7\u30fc\u3068\u30bb\u30ad\u30e5\u30ea\u30c6\u30a3YouTube \u306e\u4ed5\u7d44\u307f\u65b0\u6a5f\u80fd\u3092\u8a66\u3057\u3066\u307f\u308b\u00a9 2023 Google LLC",
+            "prompt": "Please summarize some keywords of this paragraph and have some details of each keywords.\nDo not add any information that is not in the text.\n\nText: [FULL] Cerita Seru Dari Kaki Gunung Lawu | BOCAH PETUALANG (25/09/20) - YouTube\u6982\u8981\u30d7\u30ec\u30b9\u30eb\u30fc\u30e0\u8457\u4f5c\u6a29\u304a\u554f\u3044\u5408\u308f\u305b\u30af\u30ea\u30a8\u30a4\u30bf\u30fc\u5411\u3051\u5e83\u544a\u63b2\u8f09\u958b\u767a\u8005\u5411\u3051\u5229\u7528\u898f\u7d04\u30d7\u30e9\u30a4\u30d0\u30b7\u30fc\u30dd\u30ea\u30b7\u30fc\u3068\u30bb\u30ad\u30e5\u30ea\u30c6\u30a3YouTube \u306e\u4ed5\u7d44\u307f\u65b0\u6a5f\u80fd\u3092\u8a66\u3057\u3066\u307f\u308b\u00a9 2023 Google LLC\nSummary:\n"
+        },
+        "output": {
+            "id": "cmpl-8Hs8jB0ydkovdV6W1GFBK58ydxXLj",
+            "object": "text_completion",
+            "created": 1699270381,
+            "model": "text-davinci-003",
+            "prompt_filter_results": [
+                {
+                    "prompt_index": 0,
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            ],
+            "choices": [
+                {
+                    "text": "\n- Cerita Seru Dari Kaki Gunung Lawu: Adventure story from the foot of Mount Lawu.\n- BOCAH PETUALANG (25/09/20): YouTube video released on 25th September 2020.\n- Press Room: Information about Google and YouTube.\n- Copyright: Guidelines for copyright protection.\n- Contact: Contact information.\n- Creators: Resources for creators.\n- Advertising: Advertising opportunities.\n- Developers: Resources for developers.\n- Terms of Service: Guidelines for using YouTube.\n- Privacy Policy and Security: Privacy and security measures.\n- YouTube System: Overview of the YouTube system.\n- New Features: Try out new features.\n- \u00a9 2023 Google LLC: Copyright of Google LLC.",
+                    "index": 0,
+                    "finish_reason": "stop",
+                    "logprobs": null,
+                    "content_filter_results": {
+                        "hate": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "self_harm": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "sexual": {
+                            "filtered": false,
+                            "severity": "safe"
+                        },
+                        "violence": {
+                            "filtered": false,
+                            "severity": "safe"
+                        }
+                    }
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 182,
+                "completion_tokens": 157,
+                "total_tokens": 339
+            }
+        },
+        "output_type": "OpenAIObject"
+    },
+    "c9ec54490cece623086b5e93cfaa99cf9ad91b77": {
+        "input": {
+            "examples": [
+                {
+                    "url": "https://play.google.com/store/apps/details?id=com.spotify.music",
+                    "text_content": "Spotify is a free music and podcast streaming app with millions of songs, albums, and original podcasts. It also offers audiobooks, so users can enjoy thousands of stories. It has a variety of features such as creating and sharing music playlists, discovering new music, and listening to popular and exclusive podcasts. It also has a Premium subscription option which allows users to download and listen offline, and access ad-free music. It is available on all devices and has a variety of genres and artists to choose from.",
+                    "category": "App",
+                    "evidence": "Both"
+                },
+                {
+                    "url": "https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw",
+                    "text_content": "NFL Sunday Ticket is a service offered by Google LLC that allows users to watch NFL games on YouTube. It is available in 2023 and is subject to the terms and privacy policy of Google LLC. It is also subject to YouTube's terms of use and any applicable laws.",
+                    "category": "Channel",
+                    "evidence": "URL"
+                },
+                {
+                    "url": "https://arxiv.org/abs/2303.04671",
+                    "text_content": "Visual ChatGPT is a system that enables users to interact with ChatGPT by sending and receiving not only languages but also images, providing complex visual questions or visual editing instructions, and providing feedback and asking for corrected results. It incorporates different Visual Foundation Models and is publicly available. Experiments show that Visual ChatGPT opens the door to investigating the visual roles of ChatGPT with the help of Visual Foundation Models.",
+                    "category": "Academic",
+                    "evidence": "Text content"
+                },
+                {
+                    "url": "https://ab.politiaromana.ro/",
+                    "text_content": "There is no content available for this text.",
+                    "category": "None",
+                    "evidence": "None"
+                }
+            ],
+            "text_content": "\n- Cerita Seru Dari Kaki Gunung Lawu: Adventure story from the foot of Mount Lawu.\n- BOCAH PETUALANG (25/09/20): YouTube video released on 25th September 2020.\n- Press Room: Information about Google and YouTube.\n- Copyright: Guidelines for copyright protection.\n- Contact: Contact information.\n- Creators: Resources for creators.\n- Advertising: Advertising opportunities.\n- Developers: Resources for developers.\n- Terms of Service: Guidelines for using YouTube.\n- Privacy Policy and Security: Privacy and security measures.\n- YouTube System: Overview of the YouTube system.\n- New Features: Try out new features.\n- \u00a9 2023 Google LLC: Copyright of Google LLC.",
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "prompt": "Your task is to classify a given url into one of the following types:\nMovie, App, Academic, Channel, Profile, PDF or None based on the text content information.\nThe classification will be based on the url, the webpage text content summary, or both.\n\nHere are a few examples:\nURL: https://play.google.com/store/apps/details?id=com.spotify.music\nText content: Spotify is a free music and podcast streaming app with millions of songs, albums, and original podcasts. It also offers audiobooks, so users can enjoy thousands of stories. It has a variety of features such as creating and sharing music playlists, discovering new music, and listening to popular and exclusive podcasts. It also has a Premium subscription option which allows users to download and listen offline, and access ad-free music. It is available on all devices and has a variety of genres and artists to choose from.\nOUTPUT:\n{\"category\": \"App\", \"evidence\": \"Both\"}\n\nURL: https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw\nText content: NFL Sunday Ticket is a service offered by Google LLC that allows users to watch NFL games on YouTube. It is available in 2023 and is subject to the terms and privacy policy of Google LLC. It is also subject to YouTube's terms of use and any applicable laws.\nOUTPUT:\n{\"category\": \"Channel\", \"evidence\": \"URL\"}\n\nURL: https://arxiv.org/abs/2303.04671\nText content: Visual ChatGPT is a system that enables users to interact with ChatGPT by sending and receiving not only languages but also images, providing complex visual questions or visual editing instructions, and providing feedback and asking for corrected results. It incorporates different Visual Foundation Models and is publicly available. Experiments show that Visual ChatGPT opens the door to investigating the visual roles of ChatGPT with the help of Visual Foundation Models.\nOUTPUT:\n{\"category\": \"Academic\", \"evidence\": \"Text content\"}\n\nURL: https://ab.politiaromana.ro/\nText content: There is no content available for this text.\nOUTPUT:\n{\"category\": \"None\", \"evidence\": \"None\"}\n\n\nFor a given URL : https://www.youtube.com/watch?v=o5ZQyXaAv1g, and text content: \n- Cerita Seru Dari Kaki Gunung Lawu: Adventure story from the foot of Mount Lawu.\n- BOCAH PETUALANG (25/09/20): YouTube video released on 25th September 2020.\n- Press Room: Information about Google and YouTube.\n- Copyright: Guidelines for copyright protection.\n- Contact: Contact information.\n- Creators: Resources for creators.\n- Advertising: Advertising opportunities.\n- Developers: Resources for developers.\n- Terms of Service: Guidelines for using YouTube.\n- Privacy Policy and Security: Privacy and security measures.\n- YouTube System: Overview of the YouTube system.\n- New Features: Try out new features.\n- \u00a9 2023 Google LLC: Copyright of Google LLC..\nClassify above url to complete the category and indicate evidence.\nOUTPUT:\n"
+        },
+        "output": "{\n  \"id\": \"cmpl-8Hs8mycMyQLl9NihxPjJ1IkiENBu5\",\n  \"object\": \"text_completion\",\n  \"created\": 1699270384,\n  \"model\": \"text-davinci-003\",\n  \"prompt_filter_results\": [\n    {\n      \"prompt_index\": 0,\n      \"content_filter_results\": {\n        \"hate\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"self_harm\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"sexual\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"violence\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        }\n      }\n    }\n  ],\n  \"choices\": [\n    {\n      \"text\": \"{\\\"category\\\": \\\"Channel\\\", \\\"evidence\\\": \\\"URL\\\"}\",\n      \"index\": 0,\n      \"finish_reason\": \"stop\",\n      \"logprobs\": null,\n      \"content_filter_results\": {\n        \"hate\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"self_harm\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"sexual\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"violence\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        }\n      }\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 706,\n    \"completion_tokens\": 12,\n    \"total_tokens\": 718\n  }\n}",
+        "output_type": "OpenAIObject"
+    },
+    "ed42982f091ba4e629a5f6be838009ee2c0390c2": {
+        "input": {
+            "text": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nXbox Wireless Controller \u2013 Stellar Shift Special Edition\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n                            Translate to English\n                        \n\n\n\n\n\n\n\n                            You are shopping Microsoft Store in: {0}\n                        \n\n\n\n\n\n\n\n                            Are you looking for Microsoft Store in: {0}?\n                        \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n                                    Stay in {0}\n                                \n\n\n\n                                    Go to {0}\n                                \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n        \n            Sign me up\n        \n        \n    \n\n\n\n        \n            Thank you!\n        \n        \n    \n\n\n\n\n\n\n\nStay informed about special deals, the latest products, events and more from Microsoft Store.\n\nEmail address (required)\n\n\n\n\nLocation (required)\n\n\nArgentina\nAustralia\nAustria\nBelgium\nBrazil\nCanada\nChile\nColombia\nCzech Republic\nDenmark\nFinland\nFrance\nGermany\nHungary\nIndia\nIreland\nIsrael\nItaly\nJapan\nLuxembourg\nMexico\nNetherlands\nNew Zealand\nNorway\nPoland\nPortugal\nSingapore\nSouth Africa\nSouth Korea\nSpain\nSweden\nTurkey\nSwitzerland\nUnited Kingdom\nUnited States\n\n\n\n\n\n\n                                    I would like information, tips, and offers about Microsoft Store and other Microsoft products and services.\n                                    \n\n                                        Privacy statement\n                                    \n.\n\n\nBy clicking sign up, I agree that I would like to hear from Microsoft and its family of companies about Microsoft Store and other Microsoft products and services.\nTo withdraw consent or manage your contact preferences, visit the\u00a0Promotional Communications Manager.\n\n\n                                        Privacy statement\n                                    \n.\n\n\n\n        Sign Up\n    \n\n\n\nYou\u2019re now signed up to receive Microsoft Store emails. Thank you!\n\n\n\n\n\n\n\n\n\n\n\n\n                 ",
+            "prompt": "Please summarize some keywords of this paragraph and have some details of each keywords.\nDo not add any information that is not in the text.\n\nText: \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nXbox Wireless Controller \u2013 Stellar Shift Special Edition\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n                            Translate to English\n                        \n\n\n\n\n\n\n\n                            You are shopping Microsoft Store in: {0}\n                        \n\n\n\n\n\n\n\n                            Are you looking for Microsoft Store in: {0}?\n                        \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n                                    Stay in {0}\n                                \n\n\n\n                                    Go to {0}\n                                \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n        \n            Sign me up\n        \n        \n    \n\n\n\n        \n            Thank you!\n        \n        \n    \n\n\n\n\n\n\n\nStay informed about special deals, the latest products, events and more from Microsoft Store.\n\nEmail address (required)\n\n\n\n\nLocation (required)\n\n\nArgentina\nAustralia\nAustria\nBelgium\nBrazil\nCanada\nChile\nColombia\nCzech Republic\nDenmark\nFinland\nFrance\nGermany\nHungary\nIndia\nIreland\nIsrael\nItaly\nJapan\nLuxembourg\nMexico\nNetherlands\nNew Zealand\nNorway\nPoland\nPortugal\nSingapore\nSouth Africa\nSouth Korea\nSpain\nSweden\nTurkey\nSwitzerland\nUnited Kingdom\nUnited States\n\n\n\n\n\n\n                                    I would like information, tips, and offers about Microsoft Store and other Microsoft products and services.\n                                    \n\n                                        Privacy statement\n                                    \n.\n\n\nBy clicking sign up, I agree that I would like to hear from Microsoft and its family of companies about Microsoft Store and other Microsoft products and services.\nTo withdraw consent or manage your contact preferences, visit the\u00a0Promotional Communications Manager.\n\n\n                                        Privacy statement\n                                    \n.\n\n\n\n        Sign Up\n    \n\n\n\nYou\u2019re now signed up to receive Microsoft Store emails. Thank you!\n\n\n\n\n\n\n\n\n\n\n\n\n                 \nSummary:\n"
+        },
+        "output": "{\n  \"id\": \"cmpl-8Hs8z17em6rkDdYx45p8jJomSiIj1\",\n  \"object\": \"text_completion\",\n  \"created\": 1699270397,\n  \"model\": \"text-davinci-003\",\n  \"prompt_filter_results\": [\n    {\n      \"prompt_index\": 0,\n      \"content_filter_results\": {\n        \"hate\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"self_harm\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"sexual\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"violence\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        }\n      }\n    }\n  ],\n  \"choices\": [\n    {\n      \"text\": \"\\nKeywords: Xbox Wireless Controller - Stellar Shift Special Edition, Microsoft Store, Location, Email address, Privacy Statement, Sign Up. \\n\\nXbox Wireless Controller - Stellar Shift Special Edition: A special edition of the Xbox Wireless Controller. \\nMicrosoft Store: An online store for Microsoft products and services. \\nLocation: The country in which the Microsoft Store is located. \\nEmail address: Required to sign up for Microsoft Store emails. \\nPrivacy Statement: A statement outlining how Microsoft will use the user's data. \\nSign Up: The action of signing up to receive Microsoft Store emails.\",\n      \"index\": 0,\n      \"finish_reason\": \"stop\",\n      \"logprobs\": null,\n      \"content_filter_results\": {\n        \"hate\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"self_harm\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"sexual\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"violence\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        }\n      }\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 484,\n    \"completion_tokens\": 123,\n    \"total_tokens\": 607\n  }\n}",
+        "output_type": "OpenAIObject"
+    },
+    "6644ef9817d463964b28796b8703841098f5c018": {
+        "input": {
+            "examples": [
+                {
+                    "url": "https://play.google.com/store/apps/details?id=com.spotify.music",
+                    "text_content": "Spotify is a free music and podcast streaming app with millions of songs, albums, and original podcasts. It also offers audiobooks, so users can enjoy thousands of stories. It has a variety of features such as creating and sharing music playlists, discovering new music, and listening to popular and exclusive podcasts. It also has a Premium subscription option which allows users to download and listen offline, and access ad-free music. It is available on all devices and has a variety of genres and artists to choose from.",
+                    "category": "App",
+                    "evidence": "Both"
+                },
+                {
+                    "url": "https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw",
+                    "text_content": "NFL Sunday Ticket is a service offered by Google LLC that allows users to watch NFL games on YouTube. It is available in 2023 and is subject to the terms and privacy policy of Google LLC. It is also subject to YouTube's terms of use and any applicable laws.",
+                    "category": "Channel",
+                    "evidence": "URL"
+                },
+                {
+                    "url": "https://arxiv.org/abs/2303.04671",
+                    "text_content": "Visual ChatGPT is a system that enables users to interact with ChatGPT by sending and receiving not only languages but also images, providing complex visual questions or visual editing instructions, and providing feedback and asking for corrected results. It incorporates different Visual Foundation Models and is publicly available. Experiments show that Visual ChatGPT opens the door to investigating the visual roles of ChatGPT with the help of Visual Foundation Models.",
+                    "category": "Academic",
+                    "evidence": "Text content"
+                },
+                {
+                    "url": "https://ab.politiaromana.ro/",
+                    "text_content": "There is no content available for this text.",
+                    "category": "None",
+                    "evidence": "None"
+                }
+            ],
+            "text_content": "\nKeywords: Xbox Wireless Controller - Stellar Shift Special Edition, Microsoft Store, Location, Email address, Privacy Statement, Sign Up. \n\nXbox Wireless Controller - Stellar Shift Special Edition: A special edition of the Xbox Wireless Controller. \nMicrosoft Store: An online store for Microsoft products and services. \nLocation: The country in which the Microsoft Store is located. \nEmail address: Required to sign up for Microsoft Store emails. \nPrivacy Statement: A statement outlining how Microsoft will use the user's data. \nSign Up: The action of signing up to receive Microsoft Store emails.",
+            "url": "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
+            "prompt": "Your task is to classify a given url into one of the following types:\nMovie, App, Academic, Channel, Profile, PDF or None based on the text content information.\nThe classification will be based on the url, the webpage text content summary, or both.\n\nHere are a few examples:\nURL: https://play.google.com/store/apps/details?id=com.spotify.music\nText content: Spotify is a free music and podcast streaming app with millions of songs, albums, and original podcasts. It also offers audiobooks, so users can enjoy thousands of stories. It has a variety of features such as creating and sharing music playlists, discovering new music, and listening to popular and exclusive podcasts. It also has a Premium subscription option which allows users to download and listen offline, and access ad-free music. It is available on all devices and has a variety of genres and artists to choose from.\nOUTPUT:\n{\"category\": \"App\", \"evidence\": \"Both\"}\n\nURL: https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw\nText content: NFL Sunday Ticket is a service offered by Google LLC that allows users to watch NFL games on YouTube. It is available in 2023 and is subject to the terms and privacy policy of Google LLC. It is also subject to YouTube's terms of use and any applicable laws.\nOUTPUT:\n{\"category\": \"Channel\", \"evidence\": \"URL\"}\n\nURL: https://arxiv.org/abs/2303.04671\nText content: Visual ChatGPT is a system that enables users to interact with ChatGPT by sending and receiving not only languages but also images, providing complex visual questions or visual editing instructions, and providing feedback and asking for corrected results. It incorporates different Visual Foundation Models and is publicly available. Experiments show that Visual ChatGPT opens the door to investigating the visual roles of ChatGPT with the help of Visual Foundation Models.\nOUTPUT:\n{\"category\": \"Academic\", \"evidence\": \"Text content\"}\n\nURL: https://ab.politiaromana.ro/\nText content: There is no content available for this text.\nOUTPUT:\n{\"category\": \"None\", \"evidence\": \"None\"}\n\n\nFor a given URL : https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h, and text content: \nKeywords: Xbox Wireless Controller - Stellar Shift Special Edition, Microsoft Store, Location, Email address, Privacy Statement, Sign Up. \n\nXbox Wireless Controller - Stellar Shift Special Edition: A special edition of the Xbox Wireless Controller. \nMicrosoft Store: An online store for Microsoft products and services. \nLocation: The country in which the Microsoft Store is located. \nEmail address: Required to sign up for Microsoft Store emails. \nPrivacy Statement: A statement outlining how Microsoft will use the user's data. \nSign Up: The action of signing up to receive Microsoft Store emails..\nClassify above url to complete the category and indicate evidence.\nOUTPUT:\n"
+        },
+        "output": "{\n  \"id\": \"cmpl-8Hs92R9mNKfvRT0qR2ekVVRcs3mnM\",\n  \"object\": \"text_completion\",\n  \"created\": 1699270400,\n  \"model\": \"text-davinci-003\",\n  \"prompt_filter_results\": [\n    {\n      \"prompt_index\": 0,\n      \"content_filter_results\": {\n        \"hate\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"self_harm\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"sexual\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"violence\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        }\n      }\n    }\n  ],\n  \"choices\": [\n    {\n      \"text\": \"{\\\"category\\\": \\\"App\\\", \\\"evidence\\\": \\\"URL\\\"}\",\n      \"index\": 0,\n      \"finish_reason\": \"stop\",\n      \"logprobs\": null,\n      \"content_filter_results\": {\n        \"hate\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"self_harm\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"sexual\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        },\n        \"violence\": {\n          \"filtered\": false,\n          \"severity\": \"safe\"\n        }\n      }\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 689,\n    \"completion_tokens\": 12,\n    \"total_tokens\": 701\n  }\n}",
+        "output_type": "OpenAIObject"
+    }
+}

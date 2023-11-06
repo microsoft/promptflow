@@ -391,7 +391,6 @@ class LocalStorageOperations(AbstractRunStorage):
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
-        RecordStorage.get_instance().record_node_run(node_run_record.run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""

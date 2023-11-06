@@ -100,6 +100,16 @@ class RecordStorage(object):
                 self.cached_items[self._record_file_str] = json.load(fp)
 
     def get_record(self, input_dict: OrderedDict) -> object:
+        """
+        get_record Get record from local storage.
+
+        :param input_dict: input dict of critical AOAI inputs
+        :type input_dict: OrderedDict
+        :raises RecordFileMissingException: Record file not exist
+        :raises RecordItemMissingException: Record item not exist in record file
+        :return: original output of node run
+        :rtype: object
+        """
         hash_value: str = hashlib.sha1(str(input_dict).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
         if current_saved_records is None:
@@ -112,6 +122,7 @@ class RecordStorage(object):
                 f"Record item not found in folder {self.input_path}.\n" f"values: {json.dumps(input_dict)}\n"
             )
 
+        # not all items are reserved in the output dict.
         output = saved_output["output"]
         output_type = saved_output["output_type"]
         if isinstance(output, str) and output_type != "str":
@@ -121,6 +132,14 @@ class RecordStorage(object):
             return output
 
     def set_record(self, input_dict: OrderedDict, output: object) -> None:
+        """
+        set_record Set record to local storage, always override the old record.
+
+        :param input_dict: input dict of critical AOAI inputs
+        :type input_dict: OrderedDict
+        :param output: original output of node run
+        :type output: object
+        """
         hash_value: str = hashlib.sha1(str(input_dict).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
 

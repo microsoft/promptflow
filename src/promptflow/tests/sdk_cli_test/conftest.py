@@ -8,6 +8,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from promptflow import PFClient
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
@@ -71,11 +72,23 @@ _connection_setup = False
 
 
 @pytest.fixture
-def setup_local_connection(local_client):
+def setup_local_connection(local_client, azure_open_ai_connection):
     global _connection_setup
     if _connection_setup:
         return
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
+    if Configuration.get_recording_mode() == "replay":
+        connection_dict["azure_open_ai_connection"] = {
+            "type": "AzureOpenAIConnection",
+            "value": {
+                "api_type": azure_open_ai_connection.api_type,
+                "api_key": azure_open_ai_connection.api_key,
+                "api_base": azure_open_ai_connection.api_base,
+                "api_version": azure_open_ai_connection.api_version,
+            },
+        }
+        connection_dict["azure_open_ai_connection"]["api_key"] = azure_open_ai_connection.api_key
+        connection_dict["azure_open_ai_connection"]["api_base"] = azure_open_ai_connection.api_base
     for name, _dct in connection_dict.items():
         if _dct["type"] == "BingConnection":
             continue
@@ -163,11 +176,13 @@ def replaying_enabled(mocker: MockerFixture):
 
 
 @pytest.fixture
-def cli_recording_file_override(mocker: MockerFixture):
+def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
+    if request.cls.__name__ == "TestCli":
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_recordings/node_cache.json"
     patch = mocker.patch(
-        "promptflow._sdk._configuration.Configuration.get_recording_file_override",
-        return_value=Path(RECORDINGS_TEST_CONFIGS_ROOT / "node_recordings/testcli_storage_record.json"),
+        "promptflow._sdk._configuration.Configuration.get_recording_file",
+        return_value=file_path,
     )
     yield
     patch.stop()
-    shutil.rmtree(RECORDINGS_TEST_CONFIGS_ROOT / "node_recordings/testcli_storage_record.json", ignore_errors=True)
+    shutil.rmtree(file_path, ignore_errors=True)

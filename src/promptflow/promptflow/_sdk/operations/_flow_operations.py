@@ -111,7 +111,7 @@ class FlowOperations:
         flow = load_flow(flow)
 
         # Initialize record storage, record_storage is None when record mode is not open.
-        record_storage = RecordStorage.get_instance(flow.code)
+        RecordStorage.get_instance(flow.code)
 
         flow.context.variant = variant
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
@@ -128,8 +128,6 @@ class FlowOperations:
                     environment_variables=environment_variables,
                     stream=True,
                 )
-                if record_storage:
-                    record_storage.record_node_run(output.run_info)
                 return output
             else:
                 output = submitter.flow_test(
@@ -139,8 +137,6 @@ class FlowOperations:
                     stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                 )
-                if record_storage:
-                    record_storage.record_node_run(output.run_info)
                 return output
 
     @staticmethod
