@@ -20,7 +20,7 @@ from .processors import (
     StorageProcessor,
     TenantProcessor,
 )
-from .utils import is_live, is_live_and_not_recording, sanitize_upload_hash
+from .utils import is_live, is_record, is_replay, sanitize_upload_hash
 from .variable_recorder import VariableRecorder
 
 
@@ -29,7 +29,6 @@ class PFAzureIntegrationTestRecording:
         self.test_class = test_class
         self.test_func_name = test_func_name
         self.tenant_id = tenant_id
-        self.is_live = is_live()
         self.recording_file = self._get_recording_file()
         self.recording_processors = self._get_recording_processors()
         self.replay_processors = self._get_replay_processors()
@@ -70,7 +69,7 @@ class PFAzureIntegrationTestRecording:
             # recording filename pattern: {test_file_name}_{test_class_name}_{test_func_name}.yaml
             recording_filename = f"{test_file_name}_{test_class_name}_{self.test_func_name}.yaml"
             recording_file = (recording_dir / recording_filename).resolve()
-        if self.is_live and not is_live_and_not_recording() and recording_file.is_file():
+        if is_record() and recording_file.is_file():
             recording_file.unlink()
         return recording_file
 
@@ -80,7 +79,7 @@ class PFAzureIntegrationTestRecording:
             before_record_request=self._process_request_recording,
             before_record_response=self._process_response_recording,
             decode_compressed_response=True,
-            record_mode="none" if not self.is_live else "all",
+            record_mode="none" if is_replay() else "all",
             filter_headers=FILTER_HEADERS,
         )
 
@@ -89,15 +88,15 @@ class PFAzureIntegrationTestRecording:
         self.cassette = self._cm.__enter__()
 
     def exit_vcr(self):
-        if self.is_live and not is_live_and_not_recording():
+        if is_record():
             self._postprocess_recording()
         self._cm.__exit__()
 
     def _process_request_recording(self, request: Request) -> Request:
-        if is_live_and_not_recording():
+        if is_live():
             return request
 
-        if self.is_live:
+        if is_record():
             for processor in self.recording_processors:
                 request = processor.process_request(request)
         else:
@@ -106,11 +105,11 @@ class PFAzureIntegrationTestRecording:
         return request
 
     def _process_response_recording(self, response: Dict) -> Dict:
-        if is_live_and_not_recording():
+        if is_live():
             return response
 
         response["body"]["string"] = response["body"]["string"].decode("utf-8")
-        if self.is_live:
+        if is_record():
             # lower and filter some headers
             headers = {}
             for k in response["headers"]:
@@ -139,7 +138,7 @@ class PFAzureIntegrationTestRecording:
         return []
 
     def get_or_record_variable(self, variable: str, default: str) -> str:
-        if is_live():
+        if not is_replay():
             return self.variable_recorder.get_or_record_variable(variable, default)
         else:
             # return variable when playback, which is expected to be sanitized
