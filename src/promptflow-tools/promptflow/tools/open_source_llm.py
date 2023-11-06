@@ -73,9 +73,6 @@ class Deployment:
 
 class ServerlessEndpointsContainer:
     API_VERSION = "2023-08-01-preview"
-    SUBSCRIPTION_ID="2d385bf4-0756-4a76-aa95-28bf9ed3b625"
-    RESOURCE_GROUP = "rg-pritamdaimaster2"
-    WORKSPACE_NAME = "pritamdtestmaster"
 
     def _get_headers(self):
         from azure.identity import DefaultAzureCredential
@@ -89,9 +86,9 @@ class ServerlessEndpointsContainer:
 
     def get_serverless_arm_url(self, subscription_id, resource_group, workspace_name, suffix=None):
         suffix = "" if suffix is None else f"/{suffix}"
-        return f"https://management.azure.com/subscriptions/{self.SUBSCRIPTION_ID}" \
-            + f"/resourceGroups/{self.RESOURCE_GROUP}/providers/Microsoft.MachineLearningServices" \
-            + f"/workspaces/{self.WORKSPACE_NAME}/serverlessEndpoints{suffix}?api-version={self.API_VERSION}"
+        return f"https://management.azure.com/subscriptions/{subscription_id}" \
+            + f"/resourceGroups/{resource_group}/providers/Microsoft.MachineLearningServices" \
+            + f"/workspaces/{workspace_name}/serverlessEndpoints{suffix}?api-version={self.API_VERSION}"
 
     def _list(self, subscription_id, resource_group, workspace_name):
         
