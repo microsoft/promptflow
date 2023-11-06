@@ -701,8 +701,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = load_multimedia_data(self._flow.inputs, inputs_with_default_value)
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -882,8 +881,9 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-                # Make sure the run_info with converted inputs results rather than original inputs
-                run_info.inputs = inputs
+            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            # Make sure the run_info with converted inputs results rather than original inputs
+            run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output

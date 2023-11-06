@@ -7,7 +7,6 @@ import importlib
 import json
 import logging
 import os
-import sys
 import tempfile
 import webbrowser
 from pathlib import Path
@@ -39,8 +38,6 @@ from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._utils import dump_flow_result
-from promptflow.exceptions import UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
@@ -218,6 +215,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
         "--multi-modal", action="store_true", help=argparse.SUPPRESS
     )
+    add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
 
     add_params = [
@@ -229,6 +227,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_inputs,
         add_param_environment_variables,
         add_param_multi_modal,
+        add_param_ui,
         add_param_config,
     ] + logging_params
     activate_action(
@@ -362,8 +361,6 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
 @exception_handler("Flow test")
 def test_flow(args):
     from promptflow._sdk._load_functions import load_flow
-    from promptflow._sdk._utils import parse_variant
-    from promptflow._sdk.operations._test_submitter import TestSubmitter
 
     config = list_of_dict_to_dict(args.config)
     pf_client = PFClient(config=config)
@@ -382,21 +379,23 @@ def test_flow(args):
     if args.inputs:
         inputs.update(list_of_dict_to_dict(args.inputs))
 
-    if args.multi_modal:
+    if args.multi_modal or args.ui:
         with tempfile.TemporaryDirectory() as temp_dir:
-            try:
-                from streamlit.web import cli as st_cli
-                import streamlit_quill  # noqa: F401
-                import bs4  # noqa: F401
-            except ImportError as ex:
-                raise UserErrorException(
-                    f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
-                )
             flow = load_flow(args.flow)
-            script_path = os.path.join(temp_dir, "main.py")
-            StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script_path)
-            sys.argv = ["streamlit", "run", script_path, "--global.developmentMode=false"]
-            st_cli.main()
+
+            script_path = [
+                os.path.join(temp_dir, "main.py"),
+                os.path.join(temp_dir, "utils.py"),
+                os.path.join(temp_dir, "logo.png"),
+            ]
+            for script in script_path:
+                StreamlitFileGenerator(
+                    flow_name=flow.name,
+                    flow_dag_path=flow.flow_dag_path,
+                    connection_provider=pf_client._ensure_connection_provider(),
+                ).generate_to_file(script)
+            main_script_path = os.path.join(temp_dir, "main.py")
+            pf_client.flows._chat_with_ui(script=main_script_path)
     else:
         if args.interactive:
             pf_client.flows._chat(
@@ -405,37 +404,23 @@ def test_flow(args):
                 environment_variables=environment_variables,
                 variant=args.variant,
                 show_step_output=args.verbose,
-                config=config,
             )
         else:
-            result = pf_client.flows._test(
+            result = pf_client.flows.test(
                 flow=args.flow,
                 inputs=inputs,
                 environment_variables=environment_variables,
                 variant=args.variant,
                 node=args.node,
                 allow_generator_output=False,
-                config=config,
                 stream_output=False,
+                dump_test_result=True,
             )
-            # Dump flow/node test info
-            flow = load_flow(args.flow)
-            if args.node:
-                dump_flow_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{args.node}.node")
-            else:
-                if args.variant:
-                    tuning_node, node_variant = parse_variant(args.variant)
-                    prefix = f"flow-{tuning_node}-{node_variant}"
-                else:
-                    prefix = "flow"
-                dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
-
-            TestSubmitter._raise_error_when_test_failed(result, show_trace=args.node is not None)
             # Print flow/node test result
-            if isinstance(result.output, dict):
-                print(json.dumps(result.output, indent=4))
+            if isinstance(result, dict):
+                print(json.dumps(result, indent=4, ensure_ascii=False))
             else:
-                print(result.output)
+                print(result)
 
 
 def serve_flow(args):

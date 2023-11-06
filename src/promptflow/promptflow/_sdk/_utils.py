@@ -53,7 +53,6 @@ from promptflow._sdk._constants import (
     CommonYamlFields,
 )
 from promptflow._sdk._errors import (
-    ConnectionNotFoundError,
     DecryptConnectionError,
     GenerateFlowToolsJsonError,
     StoreConnectionEncryptionKeyError,
@@ -639,7 +638,6 @@ def _gen_dynamic_list(function_config: Dict) -> List:
     from promptflow._cli._utils import get_workspace_triad_from_local
 
     workspace_triad = get_workspace_triad_from_local()
-
     if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
         return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
     # if no workspace triple available, just skip.
@@ -802,21 +800,21 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(executable, client):
+def get_local_connections_from_executable(executable, client, connections_to_ignore: List[str] = None):
     """Get local connections from executable.
 
-    Please avoid using this function anymore, and we should remove this function once all references are removed.
+    executable: The executable flow object.
+    client: Local client to get connections.
+    connections_to_ignore: The connection names to ignore when getting connections.
     """
 
     connection_names = executable.get_connection_names()
+    connections_to_ignore = connections_to_ignore or []
     result = {}
     for n in connection_names:
-        try:
+        if n not in connections_to_ignore:
             conn = client.connections.get(name=n, with_secrets=True)
             result[n] = conn._to_execution_connection_dict()
-        except ConnectionNotFoundError:
-            # ignore when connection not found since it can be configured with env var.
-            raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
     return result
 
 
@@ -883,8 +881,8 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
     dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
     dump_folder.mkdir(parents=True, exist_ok=True)
 
-    with open(dump_folder / f"{prefix}.detail.json", "w") as f:
-        json.dump(flow_serialize_result, f, indent=2)
+    with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
+        json.dump(flow_serialize_result, f, indent=2, ensure_ascii=False)
     if node_result:
         metrics = flow_serialize_result["node_runs"][0]["metrics"]
         output = flow_serialize_result["node_runs"][0]["output"]
@@ -892,8 +890,8 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
         metrics = flow_serialize_result["flow_runs"][0]["metrics"]
         output = flow_serialize_result["flow_runs"][0]["output"]
     if metrics:
-        with open(dump_folder / f"{prefix}.metrics.json", "w") as f:
-            json.dump(metrics, f, indent=2)
+        with open(dump_folder / f"{prefix}.metrics.json", "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(metrics, f, indent=2, ensure_ascii=False)
     if output:
-        with open(dump_folder / f"{prefix}.output.json", "w") as f:
-            json.dump(output, f, indent=2)
+        with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(output, f, indent=2, ensure_ascii=False)
