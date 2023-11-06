@@ -74,6 +74,13 @@ class Deployment:
 class ServerlessEndpointsContainer:
     API_VERSION = "2023-08-01-preview"
 
+    def __init__(self) -> None:
+        self.__serverless_connections = None
+        self.__subscription_id = None
+        self.__resource_group_name = None
+        self.__workspace_name = None
+        self.__cached_serverless_endpoint = None
+
     def _get_headers(self):
         from azure.identity import DefaultAzureCredential
         credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
@@ -118,6 +125,12 @@ class ServerlessEndpointsContainer:
             return None
 
     def list_serverless_endpoints(self, subscription_id, resource_group, workspace_name):
+        if (self.__serverless_connections is not None
+             and self.__subscription_id == subscription_id
+             and self.__resource_group_name == resource_group
+             and self.__workspace_name == workspace_name):
+            return self.__serverless_connections
+
         serverlessEndpoints = self._list(subscription_id, resource_group, workspace_name)
 
         result = []
@@ -129,6 +142,11 @@ class ServerlessEndpointsContainer:
                     # "hyperlink": self.get_endpoint_url(e.endpoint_name)
                     "description": f"Serverless Endpoint:  {e['name']}",
                 })
+
+        self.__subscription_id = subscription_id
+        self.__resource_group_name = resource_group
+        self.__workspace_name = workspace_name
+        self.__serverless_connections = result
 
         return result
 
@@ -172,6 +190,11 @@ class ServerlessEndpointsContainer:
                                     resource_group,
                                     workspace_name,
                                     serverless_endpoint_name) -> Tuple[str, str, str]:
+        
+        if(self.__cached_serverless_endpoint is not None
+           and self.__cached_serverless_endpoint[0] == serverless_endpoint_name):
+            return self.__cached_serverless_endpoint
+        
         endpoint = self.get_serverless_endpoint(subscription_id,
                                                 resource_group,
                                                 workspace_name,
@@ -182,9 +205,10 @@ class ServerlessEndpointsContainer:
                                                resource_group,
                                                workspace_name,
                                                serverless_endpoint_name)['primaryKey']
-        return (endpoint_url,
-                endpoint_key,
-                model_family)
+        
+        self.__cached_serverless_endpoint = (endpoint_url, endpoint_key, model_family)
+
+        return self.__cached_serverless_endpoint
 
 
 class CustomConnectionsContainer:
