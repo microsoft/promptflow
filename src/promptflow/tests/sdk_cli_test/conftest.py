@@ -77,7 +77,7 @@ def setup_local_connection(local_client, azure_open_ai_connection):
     if _connection_setup:
         return
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
-    if Configuration.get_recording_mode() == "replay":
+    if Configuration.get_instance().get_recording_mode() == "replay":
         connection_dict["azure_open_ai_connection"] = {
             "type": "AzureOpenAIConnection",
             "value": {
