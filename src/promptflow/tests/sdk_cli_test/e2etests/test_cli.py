@@ -19,7 +19,9 @@ import mock
 import pytest
 import yaml
 
+from promptflow import PFClient
 from promptflow._cli._pf.entry import main
+from promptflow._cli._utils import convert_image_path_to_absolute_path
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -295,14 +297,7 @@ class TestCli:
 
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
         question = "什么是 chat gpt"
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/chat_flow",
-            "--inputs",
-            f"question=\"{question}\""
-        )
+        run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
         stdout, _ = capsys.readouterr()
         output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
@@ -1604,3 +1599,25 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert "**data_scrubbed**" in log_content
+
+    def test_cli_show_details_for_image(self, pf: PFClient) -> None:
+        # it's hard to assert from stdout, so we imitate the CLI behavior by manually calling
+        # `convert_image_path_to_absolute_path` and assert suffix
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image"
+        data_path = f"{image_flow_path}/image_inputs/inputs.jsonl"
+        run = pf.run(
+            flow=image_flow_path,
+            data=data_path,
+            column_mapping={"image": "${data.image}"},
+        )
+        details_for_sdk = pf.get_details(run.name)
+        local_storage = LocalStorageOperations(run)
+        output_json_path = local_storage._outputs_path.parent
+        details_for_cli = convert_image_path_to_absolute_path(
+            df=details_for_sdk,
+            prefix=output_json_path,
+        )
+        for i in range(len(details_for_sdk["outputs.output"])):
+            sdk_value = str(details_for_sdk["outputs.output"][i]["data:image/png;path"])
+            cli_value = str(details_for_cli["outputs.output"][i]["data:image/png;path"])
+            assert cli_value.endswith(sdk_value)

@@ -19,6 +19,7 @@ from promptflow._cli._params import AppendToDictAction
 from promptflow._cli._utils import (
     _build_sorted_column_widths_tuple_list,
     _calculate_column_widths,
+    convert_image_path_to_absolute_path,
     list_of_dict_to_nested_dict,
 )
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
@@ -288,3 +289,33 @@ class TestCLIUtils:
         terminal_width = 120
         res = _calculate_column_widths(df, terminal_width)
         assert res == [4, 23, 13, 15, 15, 15]
+
+    def test_convert_image_path_to_absolute_path(self, tmpdir) -> None:
+        data = [
+            {
+                "inputs.ni": "not important",
+                "outputs.ni": "not important",
+                "outputs.image": {"data:image/png;path": "1.png"},
+            },
+            {
+                "inputs.ni": "not important",
+                "outputs.ni": "not important",
+                "outputs.image": {"data:image/png;path": "2.png"},
+            },
+        ]
+        df = pd.DataFrame(data)
+        prefix = Path(tmpdir)
+        df = convert_image_path_to_absolute_path(df, prefix=prefix)
+        converted_data = df.to_dict("records")
+        assert converted_data == [
+            {
+                "inputs.ni": "not important",
+                "outputs.ni": "not important",
+                "outputs.image": {"data:image/png;path": (prefix / "1.png").resolve().as_posix()},
+            },
+            {
+                "inputs.ni": "not important",
+                "outputs.ni": "not important",
+                "outputs.image": {"data:image/png;path": (prefix / "2.png").resolve().as_posix()},
+            },
+        ]

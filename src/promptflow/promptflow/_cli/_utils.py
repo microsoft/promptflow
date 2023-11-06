@@ -21,9 +21,7 @@ import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
-from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
@@ -337,14 +335,7 @@ def pretty_print_dataframe_as_table(df: pd.DataFrame) -> None:
     print(tabulate(df, headers="keys", tablefmt="grid", maxcolwidths=column_widths, maxheadercolwidths=column_widths))
 
 
-def convert_image_path_to_absolute_path(
-    df: pd.DataFrame,
-    client: PFClient,
-    name: str,
-) -> pd.DataFrame:
-    run = client.runs.get(name=name)
-    local_storage = LocalStorageOperations(run)
-    output_json_path = local_storage._outputs_path.parent
+def convert_image_path_to_absolute_path(df: pd.DataFrame, prefix: Path) -> pd.DataFrame:
     for column in df.columns:
         # skip input columns as we don't need to convert them
         if column.startswith("inputs."):
@@ -354,7 +345,7 @@ def convert_image_path_to_absolute_path(
             # find image outputs via below pattern check
             if isinstance(value, dict) and "data:image/png;path" in value:
                 relative_path = str(value["data:image/png;path"])
-                absolute_path = (output_json_path / relative_path).resolve().as_posix()
+                absolute_path = (prefix / relative_path).resolve().as_posix()
                 df[column][i]["data:image/png;path"] = absolute_path
     return df
 

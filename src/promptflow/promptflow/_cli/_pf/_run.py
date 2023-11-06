@@ -33,6 +33,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
 from promptflow._sdk.entities import Run
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
 
 def add_run_parser(subparsers):
@@ -508,7 +509,11 @@ def show_run(name: str) -> None:
 def show_run_details(name: str, max_results: int, all_results: bool) -> None:
     pf_client = PFClient()
     details = pf_client.runs.get_details(name=name, max_results=max_results, all_results=all_results)
-    details = convert_image_path_to_absolute_path(df=details, client=pf_client, name=name)
+    # get output.json path for potential usage for image
+    run = pf_client.runs.get(name=name)
+    local_storage = LocalStorageOperations(run)
+    output_json_path = local_storage._outputs_path.parent
+    details = convert_image_path_to_absolute_path(df=details, prefix=output_json_path)
     pretty_print_dataframe_as_table(details)
 
 
