@@ -62,6 +62,61 @@ To make a LLM powered copilot VSCode extension with chat inputs and VSCode works
   - Debug the flow and debug the app at the same time.
   - Integrate evaluation into the app CI/CD pipelines.
 
+## Stories to demo
+
+### Start creating a new flow from scratch on the web ui.
+
+1. Sign in to the workspace portal/AI Studio with flight opened and go to the prompt flow page.
+2. Click the "+Create button"
+3. In the flow selection panel, there is an new option: "JavaScript Flow" in the "Create by type" section. (Not good for the prod design. Just for demo.)
+4. For demo, only hard-coded typescript version available. For prod there will be some extra UI to config the JavaScript presets.
+5. For demo, only standard flow available. Not evaluation flow or chat flows.
+6. Prompt flow authoring page opened.
+
+### Web UI Authoring experience
+
+1. For demo, actions on the tool bars will not be available.
+2. Runtime selector should be removed.
+3. Monaco editor should be applied with TypeScript highlighting.
+4. Todo: standard flow template
+5. Remove default nodes from the template.
+6. Todo: demo flow.
+
+### Test & debug flow on Web UI
+
+1. Click the "run" button on the toolbar, the flow can complete the run.
+2. Open the Chrome debug console tool (Chrome only), go to the "source" pivot, there should be a "prompt-flow-executor.worker" directory. Open it you can view and set debugging breakpoints to the tool source code there. For demo, we do not support debug external imported libs there.
+3. Set breakpoints in the tool code and rerun the flow. Breakpoints, step in/out/over should work.
+
+### Consume flow from Web UI
+
+1. TODO: code experience to use flow in the app codebase.
+2. Add a "code" button on the toolbar, provide 2 options: copy code, export to package.
+3. Click "copy code", a right panel opened with generated code which user can use directly in the app codebase.
+4. Click "export to package", for demo,  to download a zip contains a npm package for the flow.
+
+### From Web UI to VS Code
+
+Add a button "clone with VS Code"
+
+1. Similar with the "clone in VS Code button", it will launch VS Code on your machine, ask user to select a directory, and download the flow as a local folder.
+
+
+
+### Local test, edit
+
+1. The downloaded flow can be tested on local with vscode directly without any changes.
+2. Can use VS Code debug tool to debug the flow (breakpoints, step in/out/over, etc.)
+3. User can turn on the "hot-reload" mode. With this mode, the outputs will be refreshed automatically without triggering the inputs again.
+
+
+
+### Local integration with app
+
+1. The API to integrate flow to APP will be consistent in both browser and Node.js
+2. User are developing a chat app, uses the flow directly in the codebase.
+3. User are using CRA with HMR support, the flow should work with it.
+
 ## Design directions
 
 ### Connections
