@@ -24,12 +24,7 @@ from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
 
 from ._azure_utils import get_cred
-from .recording_utilities import (
-    PFAzureIntegrationTestRecording,
-    get_pf_client_for_playback,
-    is_live,
-    is_live_and_not_recording,
-)
+from .recording_utilities import PFAzureIntegrationTestRecording, get_pf_client_for_replay, is_live, is_replay
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -39,7 +34,7 @@ load_dotenv()
 
 @pytest.fixture
 def tenant_id() -> str:
-    if not is_live():
+    if is_replay():
         return ""
     credential = get_cred()
     access_token = credential.get_token("https://management.azure.com/.default")
@@ -66,8 +61,8 @@ def ml_client(
 
 @pytest.fixture
 def remote_client() -> PFClient:
-    if not is_live():
-        yield get_pf_client_for_playback()
+    if is_replay():
+        yield get_pf_client_for_replay()
     else:
         # enable telemetry for CI
         with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
@@ -88,8 +83,8 @@ def remote_workspace_resource_id() -> str:
 
 @pytest.fixture
 def remote_client_int() -> PFClient:
-    if not is_live():
-        yield get_pf_client_for_playback()
+    if is_replay():
+        yield get_pf_client_for_replay()
     else:
         # enable telemetry for non-playback CI
         with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
@@ -212,7 +207,7 @@ def vcr_recording(request: pytest.FixtureRequest, tenant_id: str) -> PFAzureInte
         test_func_name=request.node.name,
         tenant_id=tenant_id,
     )
-    if not is_live_and_not_recording():
+    if not is_live():
         recording.enter_vcr()
         request.addfinalizer(recording.exit_vcr)
     yield recording
@@ -232,7 +227,7 @@ def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], s
 # we expect this fixture only work when running live test without recording
 # when recording, we don't want to record any application insights secrets
 # when replaying, we also don't need this
-@pytest.fixture(autouse=not is_live_and_not_recording())
+@pytest.fixture(autouse=not is_live())
 def mock_appinsights_log_handler(mocker: MockerFixture) -> None:
     dummy_logger = logging.getLogger("dummy")
     mocker.patch("promptflow._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)

@@ -8,7 +8,7 @@ import pytest
 from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames, RunStatus
-from promptflow._sdk._errors import InvalidFlowError, RunExistsError, RunNotFoundError
+from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError, RunExistsError, RunNotFoundError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import _get_additional_includes
@@ -308,13 +308,12 @@ class TestFlowRun:
 
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
-        with pytest.raises(Exception) as e:
+        with pytest.raises(ConnectionNotFoundError):
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=f"{DATAS_DIR}/webClassification1.jsonl",
                 connections={"classify_with_llm": {"connection": "Not_exist"}},
             )
-        assert "Connection 'Not_exist' required for flow" in str(e)
 
     def test_run_reference_failed_run(self, pf):
         failed_run = pf.run(
