@@ -22,6 +22,7 @@ from promptflow._cli._params import (
 )
 from promptflow._cli._utils import (
     activate_action,
+    convert_image_path_to_absolute_path,
     exception_handler,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
@@ -507,6 +508,7 @@ def show_run(name: str) -> None:
 def show_run_details(name: str, max_results: int, all_results: bool) -> None:
     pf_client = PFClient()
     details = pf_client.runs.get_details(name=name, max_results=max_results, all_results=all_results)
+    details = convert_image_path_to_absolute_path(df=details, client=pf_client, name=name)
     pretty_print_dataframe_as_table(details)
 
 
