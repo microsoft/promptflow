@@ -960,10 +960,10 @@ Please ensure endpoint name and deployment names are correct, and the deployment
 
         if endpoint_connection_type.lower() == "serverlessendpoint":
             (endpoint_url, endpoint_key, model_family) = SERVERLESS_ENDPOINT_CONTAINER.get_serverless_endpoint_key(
-                                                                                                                subscription_id,
-                                                                                                                resource_group_name,
-                                                                                                                workspace_name,
-                                                                                                                endpoint_connection_name)
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                endpoint_connection_name)
         elif endpoint_connection_type.lower() == "onlineendpoint":
             (endpoint_url, endpoint_key, model_family) = self.get_deployment_from_endpoint(subscription_id,
                                                                                            resource_group_name,
@@ -972,13 +972,13 @@ Please ensure endpoint name and deployment names are correct, and the deployment
                                                                                            deployment_name)
         elif endpoint_connection_type.lower() == "connection":
             (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(
-                                                                                                                    subscription_id,
-                                                                                                                    resource_group_name,
-                                                                                                                    workspace_name,
-                                                                                                                    endpoint_connection_name)
+                subscription_id,
+                resource_group_name,
+                workspace_name,
+                endpoint_connection_name)
         elif endpoint_connection_type.lower() == "localconnection":
             (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(
-                                                                                                                    endpoint_connection_name)
+                endpoint_connection_name)
         else:
             raise OpenSourceLLMUserError(message=f"Invalid endpoint connection type: {endpoint_connection_type}")
         return (self.sanitize_endpoint_url(endpoint_url, api_type), endpoint_key, model_family)
