@@ -67,6 +67,11 @@ def generate_swagger(flow: Flow, samples, outputs_to_remove: list) -> dict:
         input_schema["required"] = []
         request_body_required = True
         for name, input in flow.inputs.items():
+            if input.is_chat_input:
+                swagger["info"]["x-chat-input"] = name
+                swagger["info"]["x-flow-type"] = "chat"
+            if input.is_chat_history:
+                swagger["info"]["x-chat-history"] = name
             input_schema["properties"][name] = generate_input_field_schema(input)
             input_schema["required"].append(name)
 
@@ -78,6 +83,8 @@ def generate_swagger(flow: Flow, samples, outputs_to_remove: list) -> dict:
             # TODO remove this if sdk removed this evaluation_only field
             if output.evaluation_only:
                 continue
+            if output.is_chat_output:
+                swagger["info"]["x-chat-output"] = name
             if outputs_to_remove and name in outputs_to_remove:
                 continue
             output_schema["properties"][name] = generate_output_field_schema(output)
