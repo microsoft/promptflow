@@ -6,6 +6,7 @@ import logging
 import sys
 import timeit
 
+from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands
 from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._logger_factory import LoggerFactory
@@ -31,11 +32,9 @@ def entry(argv):
         "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
     )
 
-    # flow command is in holding status, may expose in future
-    # add_parser_flow(subparsers)
-
     subparsers = parser.add_subparsers()
     add_parser_run(subparsers)
+    add_parser_flow(subparsers)
 
     args = parser.parse_args(argv)
     # Log the init finish time
@@ -53,6 +52,8 @@ def entry(argv):
             print(get_promptflow_sdk_version())
         elif args.action == "run":
             dispatch_run_commands(args)
+        elif args.action == "flow":
+            dispatch_flow_commands(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
         raise ex

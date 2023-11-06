@@ -639,8 +639,8 @@ def _gen_dynamic_list(function_config: Dict) -> List:
     from promptflow._cli._utils import get_workspace_triad_from_local
 
     workspace_triad = get_workspace_triad_from_local()
-    if (workspace_triad.subscription_id and workspace_triad.resource_group_name
-            and workspace_triad.workspace_name):
+
+    if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
         return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
     # if no workspace triple available, just skip.
     else:
