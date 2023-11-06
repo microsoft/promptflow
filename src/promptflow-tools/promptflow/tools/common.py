@@ -84,7 +84,7 @@ def validate_functions(functions):
 def parse_function_role_prompt(function_str):
     # customer can add ## in front of name/content for markdown highlight.
     # and we still support name/content without ## prefix for backward compatibility.
-    pattern = r"\n*#{0,2}\s*name:\n\s*(\S+)\s*\n*#{0,2}\s*content:\n(.*)"
+    pattern = r"\n*#{0,2}\s*name:\n+\s*(\S*)\s*\n*#{0,2}\s*content:\n?(.*)"
     match = re.search(pattern, function_str, re.DOTALL)
     if match:
         return match.group(1), match.group(2)
@@ -96,6 +96,17 @@ def parse_function_role_prompt(function_str):
                     "contain a-z, A-Z, 0-9, and underscores, with a maximum length of 64 characters. See more details"
                     " in https://platform.openai.com/docs/api-reference/chat/create#chat/create-name or view sample"
                     " 'How to use functions with chat models' in our gallery.")
+
+
+def parse_common_role_prompt(role_prompt):
+    # customer can add ## in front of name/content for markdown highlight.
+    # and we still support name/content without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*name:\n+\s*(\S*)\s*\n*#{0,2}\s*content:\n?(.*)"
+    match = re.search(pattern, role_prompt, re.DOTALL)
+    if match:
+        return match.group(1), match.group(2)
+    
+    return None
 
 
 def parse_chat(chat_str):
@@ -113,7 +124,11 @@ def parse_chat(chat_str):
             if last_message["role"] == "function":
                 last_message["name"], last_message["content"] = parse_function_role_prompt(chunk)
             else:
-                last_message["content"] = chunk
+                parsed_result = parse_common_role_prompt(chunk)
+                if parsed_result is None:
+                    last_message["content"] = chunk
+                else:
+                    last_message["name"], last_message["content"] = parsed_result
         else:
             if chunk.strip() == "":
                 continue
