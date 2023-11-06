@@ -71,12 +71,14 @@ def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
 def gpt2_custom_connection():
     return ConnectionManager().get("gpt2_connection")
 
+
 @pytest.fixture
 def llama_serverless_custom_connection():
     # temporary workaround since
     # ConnectionManager.get() always returns 'default_connection' as connection name
     connection_name = "llama_serverless_connection"
     return (connection_name, ConnectionManager().get("llama_serverless_connection"))
+
 
 @pytest.fixture
 def open_source_llm_ws_service_connection() -> bool:

@@ -70,6 +70,7 @@ class Deployment:
         self.model_family = model_family
         self.deployment_name = deployment_name
 
+
 class ServerlessEndpointsContainer:
     API_VERSION = "2023-08-01-preview"
 
@@ -90,33 +91,32 @@ class ServerlessEndpointsContainer:
             + f"/workspaces/{workspace_name}/serverlessEndpoints{suffix}?api-version={self.API_VERSION}"
 
     def _list(self, subscription_id, resource_group, workspace_name):
-        
         try:
-            headers =self._get_headers()
+            headers = self._get_headers()
         except Exception as e:
             print(f"Unable to get token for ARM. Skipping serverless endpoints. Exception: {e}", file=sys.stderr)
             return []
         url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name)
-       
+
         try:
             req = urllib.request.Request(url=url, headers=headers)
             response = urllib.request.urlopen(req, timeout=50)
-            result = response.read() 
+            result = response.read()
             return json.loads(result)['value']
         except Exception as e:
             print(f"Error encountered when listing serverless endpoints. Exception: {e}", file=sys.stderr)
             return []
-        
+
     def _validate_model_family(self, serverless_endpoint):
         try:
-            if (serverless_endpoint.get('properties', {}).get('offer', {}).get('publisher') == 'Meta' 
+            if (serverless_endpoint.get('properties', {}).get('offer', {}).get('publisher') == 'Meta'
                 and "llama" in serverless_endpoint.get('properties', {}).get('offer', {}).get('offerName')
                 and serverless_endpoint.get('properties', {}).get('provisioningState') == "Succeeded"):
                 return ModelFamily.LLAMA
         except Exception as ex:
             print(f"Ignoring endpoint {serverless_endpoint['id']} due to error: {ex}")
             return None
-    
+
     def list_serverless_endpoints(self, subscription_id, resource_group, workspace_name):
         serverlessEndpoints = self._list(subscription_id, resource_group, workspace_name)
 
@@ -126,52 +126,66 @@ class ServerlessEndpointsContainer:
                 result.append({
                     "value": f"serverlessEndpoint/{e['name']}",
                     "display_value": f"[Serverless] {e['name']}",
-                    #"hyperlink": self.get_endpoint_url(e.endpoint_name)                                                   
+                    # "hyperlink": self.get_endpoint_url(e.endpoint_name)
                     "description": f"Serverless Endpoint:  {e['name']}",
                 })
 
         return result
-    
+
     def _list_endpoint_key(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name):
         try:
-            headers =self._get_headers()
+            headers = self._get_headers()
         except Exception as e:
             print(f"Unable to get token for ARM. Exception: {e}", file=sys.stderr)
-            raise 
+            raise
 
-        url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name, f"{serverless_endpoint_name}/listKeys")
+        url = self.get_serverless_arm_url(subscription_id,
+                                          resource_group,
+                                          workspace_name,
+                                          f"{serverless_endpoint_name}/listKeys")
         try:
-            req = urllib.request.Request(url=url, data = str.encode(""), headers=headers)
+            req = urllib.request.Request(url=url, data=str.encode(""), headers=headers)
             response = urllib.request.urlopen(req, timeout=50)
-            result = response.read() 
+            result = response.read()
             return json.loads(result)
         except Exception as e:
             print(f"Unable to get key from selected serverless endpoint. Exception: {e}", file=sys.stderr)
 
     def get_serverless_endpoint(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name):
         try:
-            headers =self._get_headers()
+            headers = self._get_headers()
         except Exception as e:
             print(f"Unable to get token for ARM. Exception: {e}", file=sys.stderr)
-            raise 
+            raise
         url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name, serverless_endpoint_name)
 
         try:
             req = urllib.request.Request(url=url, headers=headers)
             response = urllib.request.urlopen(req, timeout=50)
-            result = response.read() 
+            result = response.read()
             return json.loads(result)
         except Exception as e:
             print(f"Unable to get selected serverless endpoint. Exception: {e}", file=sys.stderr)
 
-    def get_serverless_endpoint_key(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name) -> Tuple[str, str, str]:
-        endpoint = self.get_serverless_endpoint(subscription_id, resource_group, workspace_name, serverless_endpoint_name)
+    def get_serverless_endpoint_key(self,
+                                    subscription_id,
+                                    resource_group,
+                                    workspace_name,
+                                    serverless_endpoint_name) -> Tuple[str, str, str]:
+        endpoint = self.get_serverless_endpoint(subscription_id,
+                                                resource_group,
+                                                workspace_name,
+                                                serverless_endpoint_name)
         endpoint_url = endpoint.get('properties', {}).get('inferenceEndpoint', {}).get('uri')
         model_family = self._validate_model_family(endpoint)
-        endpoint_key = self._list_endpoint_key(subscription_id, resource_group, workspace_name, serverless_endpoint_name)['primaryKey']
+        endpoint_key = self._list_endpoint_key(subscription_id,
+                                               resource_group,
+                                               workspace_name,
+                                               serverless_endpoint_name)['primaryKey']
         return (endpoint_url,
-            endpoint_key,
-            model_family)
+                endpoint_key,
+                model_family)
+
 
 class CustomConnectionsContainer:
     def __init__(self) -> None:
@@ -473,7 +487,9 @@ def parse_endpoint_connection_type(endpoint_connection_name: str) -> Tuple[str, 
 def list_endpoint_names(subscription_id: str,
                         resource_group_name: str,
                         workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-    serverless_endpoints = SERVERLESS_ENDPOINT_CONTAINER.list_serverless_endpoints(subscription_id, resource_group_name, workspace_name)
+    serverless_endpoints = SERVERLESS_ENDPOINT_CONTAINER.list_serverless_endpoints(subscription_id,
+                                                                                   resource_group_name,
+                                                                                   workspace_name)
     online_endpoints = ENDPOINT_CONTAINER.list_endpoint_names(subscription_id, resource_group_name, workspace_name)
     custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(subscription_id,
                                                                                   resource_group_name,
@@ -732,6 +748,7 @@ class LlamaContentFormatter(ContentFormatterBase):
             print(error_message, file=sys.stderr)
             raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
+
 class ServerlessLlamaContentFormatter(ContentFormatterBase):
     """Content formatter for LLaMa"""
 
@@ -747,7 +764,7 @@ class ServerlessLlamaContentFormatter(ContentFormatterBase):
         model_kwargs["max_tokens"] = model_kwargs["max_new_tokens"]
         if self.api == API.CHAT:
             messages = ContentFormatterBase.parse_chat(self.chat_history)
-            base_body =  {
+            base_body = {
                 "model": self.model_id,
                 "messages": messages,
                 "n": 1,
@@ -756,13 +773,13 @@ class ServerlessLlamaContentFormatter(ContentFormatterBase):
 
         else:
             prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
-            base_body =  {
+            base_body = {
                 "model": self.model_id,
                 "prompt": prompt_value,
                 "n": 1,
             }
             base_body.update(model_kwargs)
-        
+
         return json.dumps(base_body)
 
     def format_response_payload(self, output: bytes) -> str:
@@ -934,7 +951,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
                              resource_group_name: str,
                              workspace_name: str,
                              endpoint: str,
-                               api_type: API,
+                             api_type: API,
                              deployment_name: str = None) -> Tuple[str, str, str]:
 
         (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_connection_type(endpoint)
@@ -942,23 +959,26 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         print(f"endpoint_connection_type: {endpoint_connection_type} name: {endpoint_connection_name}")
 
         if endpoint_connection_type.lower() == "serverlessendpoint":
-            (endpoint_url, endpoint_key, model_family) = SERVERLESS_ENDPOINT_CONTAINER.get_serverless_endpoint_key(subscription_id,
-                                                                             resource_group_name,
-                                                                             workspace_name,
-                                                                             endpoint_connection_name)
+            (endpoint_url, endpoint_key, model_family) = SERVERLESS_ENDPOINT_CONTAINER.get_serverless_endpoint_key(
+                                                                                                                subscription_id,
+                                                                                                                resource_group_name,
+                                                                                                                workspace_name,
+                                                                                                                endpoint_connection_name)
         elif endpoint_connection_type.lower() == "onlineendpoint":
             (endpoint_url, endpoint_key, model_family) = self.get_deployment_from_endpoint(subscription_id,
-                                                     resource_group_name,
-                                                     workspace_name,
-                                                     endpoint_connection_name,
-                                                     deployment_name)
+                                                                                           resource_group_name,
+                                                                                           workspace_name,
+                                                                                           endpoint_connection_name,
+                                                                                           deployment_name)
         elif endpoint_connection_type.lower() == "connection":
-            (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(subscription_id,
-                                                                                         resource_group_name,
-                                                                                         workspace_name,
-                                                                                         endpoint_connection_name)
+            (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(
+                                                                                                                    subscription_id,
+                                                                                                                    resource_group_name,
+                                                                                                                    workspace_name,
+                                                                                                                    endpoint_connection_name)
         elif endpoint_connection_type.lower() == "localconnection":
-            (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(endpoint_connection_name)
+            (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(
+                                                                                                                    endpoint_connection_name)
         else:
             raise OpenSourceLLMUserError(message=f"Invalid endpoint connection type: {endpoint_connection_type}")
         return (self.sanitize_endpoint_url(endpoint_url, api_type), endpoint_key, model_family)

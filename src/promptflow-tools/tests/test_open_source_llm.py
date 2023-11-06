@@ -29,9 +29,11 @@ def gpt2_provider(gpt2_custom_connection) -> OpenSourceLLM:
 def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
     return f"localConnection/{llama_chat_custom_connection[0]}"
 
+
 @pytest.fixture
 def llama_serverless_provider(llama_serverless_custom_connection) -> OpenSourceLLM:
     return f"localConnection/{llama_serverless_custom_connection[0]}"
+
 
 @pytest.fixture
 def endpoints_provider(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
@@ -277,7 +279,10 @@ user:
 
     @pytest.mark.skip_if_no_api_key("llama_serverless_custom_connection")
     def test_open_source_llm_llama_serverless(self, llama_serverless_provider):
-        response = self.stateless_os_llm.call(self.completion_prompt, API.COMPLETION, connection=llama_serverless_provider)
+        response = self.stateless_os_llm.call(
+            self.completion_prompt,
+            API.COMPLETION,
+            connection=llama_serverless_provider)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
