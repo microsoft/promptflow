@@ -105,7 +105,6 @@ def parse_common_role_prompt(role_prompt):
     match = re.search(pattern, role_prompt, re.DOTALL)
     if match:
         return match.group(1), match.group(2)
-    
     return None
 
 
