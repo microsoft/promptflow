@@ -105,3 +105,5 @@ from promptflow.storage._sqlite_client import (
 )
 from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow._utils.multimedia_utils import is_multimedia_dict, _create_image_from_file, persist_multimedia_data
+
+from promptflow._core.token_provider import TokenProviderABC, AzureTokenProvider

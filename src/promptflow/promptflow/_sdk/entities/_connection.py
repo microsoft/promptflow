@@ -46,6 +46,7 @@ from promptflow._sdk.schemas._connection import (
     WeaviateConnectionSchema,
 )
 from promptflow.contracts.types import Secret
+from promptflow._internal import TokenProviderABC, AzureTokenProvider
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -346,10 +347,12 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     TYPE = ConnectionType.AZURE_OPEN_AI
 
     def __init__(
-        self, api_key: str, api_base: str, api_type: str = "azure", api_version: str = "2023-07-01-preview", **kwargs
+        self, api_key: str, api_base: str, api_type: str = "azure", api_version: str = "2023-07-01-preview",
+        token_provider: Union[str, TokenProviderABC] = AzureTokenProvider(), **kwargs
     ):
         configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version}
         secrets = {"api_key": api_key}
+        self._token_provider = token_provider
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
     @classmethod
@@ -385,6 +388,14 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     def api_version(self, value):
         """Set the connection api version."""
         self.configs["api_version"] = value
+
+    @property
+    def token(self):
+        """Return the connection token."""
+        if isinstance(self.token_provider, str):
+            return self.token_provider
+        else:
+            return self._token_provider.get_token()
 
 
 class OpenAIConnection(_StrongTypeConnection):
