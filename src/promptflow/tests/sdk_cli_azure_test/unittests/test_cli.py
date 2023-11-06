@@ -37,6 +37,7 @@ def operation_scope_args(default_subscription_id, default_resource_group, defaul
     ]
 
 
+@pytest.mark.usefixtures("mock_get_azure_pf_client")
 @pytest.mark.unittest
 class TestAzureCli:
     def test_pf_azure_version(self, capfd):
