@@ -137,14 +137,7 @@ class TestAzureCli:
         )
         assert mocked.call_count == 3
 
-    def test_run_visualize(
-        self,
-        default_subscription_id: str,
-        default_resource_group: str,
-        default_workspace: str,
-        operation_scope_args: List[str],
-        capfd: pytest.CaptureFixture,
-    ) -> None:
+    def test_run_visualize(self, operation_scope_args: List[str], capfd: pytest.CaptureFixture) -> None:
         # cloud version visualize is actually a string concatenation
         names = "name1,name2,name3"
         run_pf_command(
@@ -156,9 +149,9 @@ class TestAzureCli:
         )
         captured = capfd.readouterr()
         expected_portal_url = VIS_PORTAL_URL_TMPL.format(
-            subscription_id=default_subscription_id,
-            resource_group_name=default_resource_group,
-            workspace_name=default_workspace,
+            subscription_id="00000000-0000-0000-0000-000000000000",
+            resource_group_name="00000",
+            workspace_name="00000",
             names=names,
         )
         assert expected_portal_url in captured.out
