@@ -9,10 +9,12 @@ from promptflow._utils.multimedia_utils import MIME_PATTERN, is_multimedia_dict
 
 
 def show_image(image, key=None):
-    if not image.startswith("data:image"):
-        st.image(key + "," + image)
-    else:
-        st.image(image)
+    col1, _ = st.columns(2)
+    with col1:
+        if not image.startswith("data:image"):
+            st.image(key + "," + image, use_column_width="auto")
+        else:
+            st.image(image, use_column_width="auto")
 
 
 def json_dumps(value):
