@@ -21,21 +21,6 @@ from promptflow.tools.open_source_llm import (
 
 
 @pytest.fixture
-def gpt2_provider(gpt2_custom_connection) -> OpenSourceLLM:
-    return f"localConnection/{gpt2_custom_connection[0]}"
-
-
-@pytest.fixture
-def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
-    return f"localConnection/{llama_chat_custom_connection[0]}"
-
-
-@pytest.fixture
-def llama_serverless_provider(llama_serverless_custom_connection) -> OpenSourceLLM:
-    return f"localConnection/{llama_serverless_custom_connection[0]}"
-
-
-@pytest.fixture
 def endpoints_provider(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
     if not open_source_llm_ws_service_connection:
         pytest.skip("Service Credential not available")
@@ -93,6 +78,7 @@ class TestOpenSourceLLM:
     stateless_os_llm = OpenSourceLLM()
     gpt2_connection = "connection/gpt2_connection"
     llama_connection = "connection/llama_chat_connection"
+    llama_serverless_connection = "connection/llama_serverless_connection"
     completion_prompt = "In the context of Azure ML, what does the ML stand for?"
     chat_prompt = """system:
 You are a AI which helps Customers answer questions.
@@ -277,12 +263,12 @@ user:
         response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint=self.llama_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("llama_serverless_custom_connection")
-    def test_open_source_llm_llama_serverless(self, llama_serverless_provider):
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_llama_serverless(self, chat_endpoints_provider):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
-            connection=llama_serverless_provider)
+            endpoint=self.llama_serverless_connection)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
