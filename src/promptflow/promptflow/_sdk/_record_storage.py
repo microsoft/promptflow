@@ -15,30 +15,45 @@ from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 
 
 class RecordStorage(object):
-    standard_record_name = ".cache/storage_record.json"
+    """
+    RecordStorage is used to store the record of node run.
+    File often stored in .promptflow/node_cache.json
+    Example of cached items:
+    {
+        "/record/file/resolved": {
+            "hash_value": { # hash_value is sha1 of dict, accelerate the search
+                "input": {
+                    "key1": "value1", # Converted to string, type info dropped
+                },
+                "output": "output_convert_to_string",
+                "output_type": "output_type" # Currently support only simple types.
+            }
+        }
+    }
+    """
+
+    _standard_record_name = ".promptflow/node_cache.json"
     _instance = None
 
-    def __init__(self, input_path: str = None):
+    def __init__(self, record_file: str = None):
         """
-        Status: binding with files inside .promptflow/
+        RecordStorage is used to store the record of node run.
         """
-        #
-        self.input_path: Path = None
+        self.record_file = None
         self._input_path_str: str = None
         self.cached_items: Dict[str, Dict[str, Dict[str, object]]] = {}
-        # cached items
-        # {
-        #    "/input/path/resolved": {
-        #       "hash_value": { # hash_value is sha1 of dict
-        #           "input": {
-        #             "key1": "value1" Converted to string, type info dropped
-        #           }
-        #           "output": "output" Convert to string
-        #           "output_type": "output_type" Currently support simple types.
-        #       }
-        #    }
-        # }
-        self.set_input_path(input_path)
+
+        self.set_input_path(record_file)
+
+    @property
+    def record_file(self) -> Path:
+        return self._record_file
+
+    @record_file.setter
+    def record_file(self, record_file: Path) -> None:
+        if record_file is None:
+            record_file = Path(self.standard_record_name)
+        self._record_file = record_file
 
     def _write_file(self) -> None:
         file_content = self.cached_items.get(self._input_path_str, None)
@@ -125,6 +140,18 @@ class RecordStorage(object):
         # if file exist, load file
         if os.path.exists(self.input_path):
             self._load_file()
+
+    @classmethod
+    def is_recording_mode(cls) -> bool:
+        return Configuration.get_instance().get_recording_mode() == "record"
+
+    @classmethod
+    def is_replaying_mode(cls) -> bool:
+        return Configuration.get_instance().get_recording_mode() == "replay"
+
+    @classmethod
+    def is_live_mode(cls) -> bool:
+        return Configuration.get_instance().get_recording_mode() == "replay"
 
     @classmethod
     def get_instance(cls, input_path=None) -> "RecordStorage":
