@@ -10,5 +10,3 @@ For example, in powershell:
 ```powershell
 curl -X POST http://127.0.0.1:5000/score --header "Content-Type: application/json" --data '{\"url\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\"}' | ConvertFrom-Json | ConvertTo-Json
 ```
-
-Reference [here](./sample.ipynb) fro sample usages of flow-as-a-function.
