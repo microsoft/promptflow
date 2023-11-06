@@ -7,18 +7,26 @@ promptflow.tools.open_source_llm.OpenSourceLLM.call:
   class_name: OpenSourceLLM
   function: call
   inputs:
-    endpoint_name:
-      default: "-- please enter an endpoint name --"
+    endpoint:
       type:
       - string
-    connection:
-      default: null
-      type:
-      - CustomConnection
+      dynamic_list:
+        func_path: promptflow.tools.open_source_llm.list_endpoint_names
+      allow_manual_entry: false
+      is_multi_select: false
     deployment_name:
-      default: null
       type:
       - string
+      dynamic_list:
+        func_path: promptflow.tools.open_source_llm.list_deployment_names
+        func_kwargs:
+        - name: endpoint
+          type: 
+          - string
+          optional: true # need to understand if this is blocking or not on the manual entry.
+          reference: ${inputs.endpoint} 
+      allow_manual_entry: true
+      is_multi_select: false
     api:
       enum:
       - chat
