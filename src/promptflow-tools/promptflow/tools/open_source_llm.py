@@ -110,8 +110,8 @@ class ServerlessEndpointsContainer:
     def _validate_model_family(self, serverless_endpoint):
         try:
             if (serverless_endpoint.get('properties', {}).get('offer', {}).get('publisher') == 'Meta'
-                and "llama" in serverless_endpoint.get('properties', {}).get('offer', {}).get('offerName')
-                and serverless_endpoint.get('properties', {}).get('provisioningState') == "Succeeded"):
+                    and "llama" in serverless_endpoint.get('properties', {}).get('offer', {}).get('offerName')
+                    and serverless_endpoint.get('properties', {}).get('provisioningState') == "Succeeded"):
                 return ModelFamily.LLAMA
         except Exception as ex:
             print(f"Ignoring endpoint {serverless_endpoint['id']} due to error: {ex}")
@@ -971,13 +971,17 @@ Please ensure endpoint name and deployment names are correct, and the deployment
                                                                                            endpoint_connection_name,
                                                                                            deployment_name)
         elif endpoint_connection_type.lower() == "connection":
-            (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(
+            (endpoint_url,
+             endpoint_key,
+             model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(
                 subscription_id,
                 resource_group_name,
                 workspace_name,
                 endpoint_connection_name)
         elif endpoint_connection_type.lower() == "localconnection":
-            (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(
+            (endpoint_url,
+             endpoint_key,
+             model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(
                 endpoint_connection_name)
         else:
             raise OpenSourceLLMUserError(message=f"Invalid endpoint connection type: {endpoint_connection_type}")
