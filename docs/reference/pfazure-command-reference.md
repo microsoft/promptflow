@@ -23,6 +23,9 @@ Manage prompt flow runs.
 | [pfazure run show-details](#pfazure-run-show-details) | Show a run details. |
 | [pfazure run show-metrics](#pfazure-run-show-metrics) | Show run metrics. |
 | [pfazure run visualize](#pfazure-run-visualize) | Visualize a run. |
+| [pfazure run archive](#pfazure-run-archive) | Archive a run. |
+| [pfazure run restore](#pfazure-run-restore) | Restore a run. |
+| [pfazure run update](#pfazure-run-update) | Update a run. |
 
 ### pfazure run create
 

@@ -7,6 +7,10 @@
 - [SDK/CLI] Support `pfazure flow create`. Create a flow on Azure AI from local flow folder.
 - [SDK/CLI] Changed column mapping `${run.inputs.xx}`'s behavior, it will refer to run's data columns instead of run's inputs columns.
 
+### Bugs Fixed
+
+- [SDK/CLI] Keep original format in run output.jsonl.
+
 ## 0.1.0b8 (2023.10.26)
 
 ### Features Added
