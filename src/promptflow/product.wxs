@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Name="Promptflow CLI" Language="1033" Version="1.0.0.0" Manufacturer="Microsoft Corporation" UpgradeCode="fee51d13-d4d7-4a0a-9b65-2bc7906cb20b">
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of Promptflow CLI is already installed." />
+        <MediaTemplate />
+
+        <Feature Id="MainProgram" Title="Promptflow CLI" Level="1">
+            <ComponentGroupRef Id="ProductComponents" />
+        </Feature>
+
+    </Product>
+
+    <Fragment>
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFilesFolder">
+                <Directory Id="INSTALLFOLDER" Name="Promptflow" />
+            </Directory>
+        </Directory>
+    </Fragment>
+
+    <Fragment>
+        <ComponentGroup Id="PromptflowCliComponentGroup" Directory="INSTALLFOLDER">
+            <Component Id="pf.exe" Guid="5512c7f2-3727-4b3b-80e3-7d7ba528a73b">
+                <File Source="./dist/pf.exe" />
+            </Component>
+            <Component Id="pfazure.exe" Guid="992c140a-d104-4a12-ab44-dbb45b4d1bac">
+                <File Source="./dist/pfazure.exe" />
+            </Component>
+        </ComponentGroup>
+
+        <ComponentGroup Id="PromptflowCliSettingsGroup">
+            <Component Id="PromptflowSystemPath" Directory="INSTALLFOLDER" Guid="437342da-fa65-4509-9521-76a627d56ef9">
+                <Environment Id="AzureCliAddedToPATH"
+                     Name="PATH"
+                     Value="[INSTALLFOLDER]"
+                     Permanent="no"
+                     Part="first"
+                     Action="set"
+                     System="yes" />
+                <CreateFolder />
+            </Component>
+        </ComponentGroup>
+
+        <ComponentGroup Id="ProductComponents">
+          <ComponentGroupRef Id="PromptflowCliComponentGroup"/>
+          <ComponentGroupRef Id="PromptflowCliSettingsGroup"/>
+        </ComponentGroup>
+    </Fragment>
+</Wix>
