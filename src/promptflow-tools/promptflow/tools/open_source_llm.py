@@ -9,11 +9,8 @@ import urllib.request
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Tuple, Mapping, Optional, Union
-from typing import Any, Dict, List, Tuple, Mapping, Optional, Union
 from urllib.request import HTTPError
 
-from promptflow._core.tool import ToolProvider, tool
-from promptflow._sdk._constants import ConnectionType
 from promptflow._core.tool import ToolProvider, tool
 from promptflow._sdk._constants import ConnectionType
 from promptflow.connections import CustomConnection
@@ -35,9 +32,6 @@ ENDPOINT_REQUIRED_ENV_VARS = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEG
 def handle_online_endpoint_error(max_retries: int = 3,
                                  initial_delay: float = 1,
                                  exponential_base: float = 2):
-def handle_online_endpoint_error(max_retries: int = 3,
-                                 initial_delay: float = 1,
-                                 exponential_base: float = 2):
     def deco_retry(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -47,7 +41,6 @@ def handle_online_endpoint_error(max_retries: int = 3,
                     return func(*args, **kwargs)
                 except HTTPError as e:
                     if i == max_retries - 1:
-                        error_message = f"Exception hit calling Online Endpoint: {type(e).__name__}: {str(e)}"
                         error_message = f"Exception hit calling Online Endpoint: {type(e).__name__}: {str(e)}"
                         print(error_message, file=sys.stderr)
                         raise OpenSourceLLMOnlineEndpointError(message=error_message)
@@ -80,13 +73,6 @@ class Deployment:
 
 class ServerlessEndpointsContainer:
     API_VERSION = "2023-08-01-preview"
-
-    def __init__(self) -> None:
-        self.__serverless_connections = None
-        self.__subscription_id = None
-        self.__resource_group_name = None
-        self.__workspace_name = None
-        self.__cached_serverless_endpoint = None
 
     def _get_headers(self):
         from azure.identity import DefaultAzureCredential
@@ -132,12 +118,6 @@ class ServerlessEndpointsContainer:
             return None
 
     def list_serverless_endpoints(self, subscription_id, resource_group, workspace_name):
-        if (self.__serverless_connections is not None
-             and self.__subscription_id == subscription_id
-             and self.__resource_group_name == resource_group
-             and self.__workspace_name == workspace_name):
-            return self.__serverless_connections
-
         serverlessEndpoints = self._list(subscription_id, resource_group, workspace_name)
 
         result = []
@@ -149,11 +129,6 @@ class ServerlessEndpointsContainer:
                     # "hyperlink": self.get_endpoint_url(e.endpoint_name)
                     "description": f"Serverless Endpoint:  {e['name']}",
                 })
-
-        self.__subscription_id = subscription_id
-        self.__resource_group_name = resource_group
-        self.__workspace_name = workspace_name
-        self.__serverless_connections = result
 
         return result
 
@@ -197,11 +172,6 @@ class ServerlessEndpointsContainer:
                                     resource_group,
                                     workspace_name,
                                     serverless_endpoint_name) -> Tuple[str, str, str]:
-        
-        if(self.__cached_serverless_endpoint is not None
-           and self.__cached_serverless_endpoint[0] == serverless_endpoint_name):
-            return self.__cached_serverless_endpoint
-        
         endpoint = self.get_serverless_endpoint(subscription_id,
                                                 resource_group,
                                                 workspace_name,
@@ -212,10 +182,9 @@ class ServerlessEndpointsContainer:
                                                resource_group,
                                                workspace_name,
                                                serverless_endpoint_name)['primaryKey']
-        
-        self.__cached_serverless_endpoint = (endpoint_url, endpoint_key, model_family)
-
-        return self.__cached_serverless_endpoint
+        return (endpoint_url,
+                endpoint_key,
+                model_family)
 
 
 class CustomConnectionsContainer:
@@ -583,12 +552,9 @@ def get_model_type(deployment_model: str) -> str:
         raise ValueError(f"Unexpected model format: {deployment_model}")
     model = m[1].lower()
     if model.startswith("llama-2"):
-    if model.startswith("llama-2"):
         return ModelFamily.LLAMA
     elif model.startswith("tiiuae-falcon"):
-    elif model.startswith("tiiuae-falcon"):
         return ModelFamily.FALCON
-    elif model.startswith("databricks-dolly-v2"):
     elif model.startswith("databricks-dolly-v2"):
         return ModelFamily.DOLLY
     elif model.startswith("gpt2"):
@@ -601,17 +567,9 @@ def get_model_type(deployment_model: str) -> str:
 def validate_model_family(model_family: str):
     try:
         return ModelFamily[model_family]
-        # Not found and\or handled. Ignore this endpoint\deployment
-        return None
-
-
-def validate_model_family(model_family: str):
-    try:
-        return ModelFamily[model_family]
     except KeyError:
         accepted_models = ",".join([model.name for model in ModelFamily])
         raise OpenSourceLLMKeyValidationError(
-            message=f"""Given model_family '{model_family}' not recognized.
             message=f"""Given model_family '{model_family}' not recognized.
 Supported models are: {accepted_models}."""
         )
@@ -622,14 +580,6 @@ class ModelFamily(str, Enum):
     DOLLY = "Dolly"
     GPT2 = "GPT-2"
     FALCON = "Falcon"
-
-    @classmethod
-    def _missing_(cls, value):
-        value = value.lower()
-        for member in cls:
-            if member.lower() == value:
-                return member
-        return None
 
     @classmethod
     def _missing_(cls, value):
@@ -955,7 +905,6 @@ class AzureMLOnlineEndpoint:
 class OpenSourceLLM(ToolProvider):
 
     def __init__(self):
-    def __init__(self):
         super().__init__()
 
     def get_deployment_from_endpoint(self,
@@ -1040,12 +989,10 @@ Please ensure endpoint name and deployment names are correct, and the deployment
 
     @tool
     @handle_online_endpoint_error()
-    @handle_online_endpoint_error()
     def call(
         self,
         prompt: PromptTemplate,
         api: API,
-        endpoint: str = None,
         endpoint: str = None,
         deployment_name: str = None,
         temperature: float = 1.0,
@@ -1054,10 +1001,6 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         model_kwargs: Optional[Dict] = {},
         **kwargs
     ) -> str:
-
-        # Sanitize deployment name. Empty deployment name is the same as None.
-        if deployment_name is not None:
-            deployment_name = None if not deployment_name.strip() else deployment_name
 
         # Sanitize deployment name. Empty deployment name is the same as None.
         if deployment_name is not None:
@@ -1093,7 +1036,6 @@ Please ensure endpoint name and deployment names are correct, and the deployment
             endpoint_api_key=self.endpoint_key,
             model_family=self.model_family,
             content_formatter=content_formatter,
-            deployment_name=deployment_name,
             deployment_name=deployment_name,
             model_kwargs=model_kwargs
         )
