@@ -234,10 +234,21 @@ class StreamlitFileGenerator(BaseGenerator):
         self.is_chat_flow, self.chat_history_input_name, error_msg = FlowOperations._is_chat_flow(self.executable)
         if not self.is_chat_flow:
             raise UserErrorException(f"Only support chat flow in ui mode, {error_msg}.")
+        self._chat_input_name = next(
+            (flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None)
+        self._chat_input = self.executable.inputs[self._chat_input_name]
+
+    @property
+    def chat_input_default_value(self):
+        return self._chat_input.default
+
+    @property
+    def chat_input_value_type(self):
+        return self._chat_input.type
 
     @property
     def chat_input_name(self):
-        return next((flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None)
+        return self._chat_input_name
 
     @property
     def flow_inputs_params(self):
@@ -261,6 +272,9 @@ class StreamlitFileGenerator(BaseGenerator):
             "is_chat_flow",
             "chat_history_input_name",
             "connection_provider",
+            "chat_input_default_value",
+            "chat_input_value_type",
+            "chat_input_name",
         ]
 
     def generate_to_file(self, target):

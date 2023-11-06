@@ -395,6 +395,7 @@ def test_flow(args):
                     f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
                 )
             flow = load_flow(args.flow)
+
             script_path = [
                 os.path.join(temp_dir, "main.py"),
                 os.path.join(temp_dir, "utils.py"),
@@ -424,7 +425,6 @@ def test_flow(args):
                 environment_variables=environment_variables,
                 variant=args.variant,
                 show_step_output=args.verbose,
-                config=config,
             )
         else:
             result = pf_client.flows._test(
@@ -434,7 +434,6 @@ def test_flow(args):
                 variant=args.variant,
                 node=args.node,
                 allow_generator_output=False,
-                config=config,
                 stream_output=False,
             )
             # Dump flow/node test info
