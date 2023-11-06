@@ -104,4 +104,4 @@ from promptflow.storage._sqlite_client import (
     SqliteClient,
 )
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow._utils.multimedia_utils import is_multimedia_dict, _create_image_from_file
+from promptflow._utils.multimedia_utils import is_multimedia_dict, _create_image_from_file, persist_multimedia_data

@@ -3,16 +3,18 @@ inputs:
     type: list
     default:
     - inputs:
-        outputs:
-          answer: answer to the first question
         question:
         - the first question
         - data:image/jpg;path: logo.jpg
+      outputs:
+        answer:
+        - data:image/jpg;path: logo.jpg
     - inputs:
-        outputs:
-          answer: answer to the second question
         question:
         - the second question
+        - data:image/png;path: logo_2.png
+      outputs:
+        answer:
         - data:image/png;path: logo_2.png
     is_chat_history: true
   question:

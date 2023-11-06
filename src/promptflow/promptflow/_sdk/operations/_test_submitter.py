@@ -13,7 +13,7 @@ from typing import Any, Mapping
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flow import Flow, FlowContext
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
 from promptflow._utils.context_utils import _change_working_dir
@@ -28,14 +28,16 @@ logger = logging.getLogger(LOGGER_NAME)
 
 
 class TestSubmitter:
-    def __init__(self, flow: Flow, variant=None, config=None):
+    def __init__(self, flow: Flow, flow_context: FlowContext, client=None):
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
-        self._variant = variant
+        self.flow_context = flow_context
+        # TODO: remove this
+        self._variant = flow_context.variant
         from .._pf_client import PFClient
 
-        self._client = PFClient(config=config)
+        self._client = client if client else PFClient()
 
     @property
     def dataplane_flow(self):
@@ -45,11 +47,18 @@ class TestSubmitter:
 
     @contextlib.contextmanager
     def init(self):
-        if self._variant:
-            tuning_node, node_variant = parse_variant(self._variant)
+        if self.flow_context.variant:
+            tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
-        with variant_overwrite_context(self._origin_flow.code, tuning_node, node_variant) as temp_flow:
+        self.flow_context.resolve_connections()
+        with variant_overwrite_context(
+            flow_path=self._origin_flow.code,
+            tuning_node=tuning_node,
+            variant=node_variant,
+            connections=self.flow_context.connections,
+            overrides=self.flow_context.overrides,
+        ) as temp_flow:
             # TODO execute flow test in a separate process.
             with _change_working_dir(temp_flow.code):
                 self.flow = temp_flow
@@ -61,7 +70,7 @@ class TestSubmitter:
                 self._tuning_node = None
                 self._node_variant = None
 
-    def _resolve_data(self, node_name: str = None, inputs: dict = None, chat_history_name: str = None):
+    def resolve_data(self, node_name: str = None, inputs: dict = None, chat_history_name: str = None):
         """
         Resolve input to flow/node test inputs.
         Raise user error when missing required inputs. And log warning when unknown inputs appeared.
@@ -158,8 +167,11 @@ class TestSubmitter:
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
-                              stream=stream_log, credential_list=credential_list):
+        with LoggerOperations(
+            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+            stream=stream_log,
+            credential_list=credential_list,
+        ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             flow_executor = FlowExecutor.create(
                 self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
@@ -201,8 +213,11 @@ class TestSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
-                              stream=stream, credential_list=credential_list):
+        with LoggerOperations(
+            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
+            stream=stream,
+            credential_list=credential_list,
+        ):
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
@@ -213,6 +228,28 @@ class TestSubmitter:
                 output_sub_dir=".promptflow/intermediate",
             )
             return result
+
+    def exec_with_inputs(self, inputs):
+        # TODO: unify all exec_line calls here
+
+        from promptflow.executor.flow_executor import FlowExecutor
+
+        connections = SubmitterHelper.resolve_connections(
+            flow=self.flow, client=self._client, connections_to_ignore=self.flow_context.connection_objs.keys()
+        )
+        # update connections with connection objs
+        connections.update(self.flow_context.connection_objs)
+        # resolve environment variables
+        SubmitterHelper.resolve_environment_variables(
+            environment_variables=self.flow_context.environment_variables, client=self._client
+        )
+        SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
+        flow_executor = FlowExecutor.create(
+            flow_file=self.flow.path, connections=connections, working_dir=self.flow.code, raise_ex=True
+        )
+        flow_executor.enable_streaming_for_llm_flow(lambda: self.flow_context.streaming)
+        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
+        return line_result
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
         """
@@ -322,7 +359,7 @@ class TestSubmitter:
             inputs[input_name] = input_value
             inputs[chat_history_name] = chat_history
             with change_logger_level(level=logging.WARNING):
-                chat_inputs, _ = self._resolve_data(inputs=inputs)
+                chat_inputs, _ = self.resolve_data(inputs=inputs)
 
             flow_result = self.flow_test(
                 inputs=chat_inputs,

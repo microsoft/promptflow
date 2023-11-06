@@ -9,6 +9,7 @@ from pytest_mock import MockFixture
 
 from promptflow._cli._pf_azure.entry import main
 from promptflow._sdk._constants import VIS_PORTAL_URL_TMPL
+from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.azure.operations._run_operations import RunOperations
 
 
@@ -207,6 +208,27 @@ class TestAzureCli:
             "test_run",
             "--set",
             "display_name=test_run",
+            "description='test_description'",
+            "tags.key1=value1",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_flow_create(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+    ):
+        mocked = mocker.patch.object(FlowOperations, "create_or_update")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        run_pf_command(
+            "flow",
+            "create",
+            "--flow",
+            ".",
+            "--set",
+            "name=test_flow",
+            "type=standard",
             "description='test_description'",
             "tags.key1=value1",
             *operation_scope_args,

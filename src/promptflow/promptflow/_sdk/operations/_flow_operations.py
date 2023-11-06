@@ -35,8 +35,8 @@ from promptflow.exceptions import UserErrorException
 class FlowOperations:
     """FlowOperations."""
 
-    def __init__(self):
-        pass
+    def __init__(self, client):
+        self._client = client
 
     @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
@@ -108,10 +108,10 @@ class FlowOperations:
 
         inputs = inputs or {}
         flow = load_flow(flow)
-        config = kwargs.get("config", None)
-        with TestSubmitter(flow=flow, variant=variant, config=config).init() as submitter:
+        flow.context.variant = variant
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
-            flow_inputs, dependency_nodes_outputs = submitter._resolve_data(
+            flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
                 node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
             )
 
@@ -183,8 +183,8 @@ class FlowOperations:
         from promptflow._sdk._load_functions import load_flow
 
         flow = load_flow(flow)
-        config = kwargs.get("config", None)
-        with TestSubmitter(flow=flow, variant=variant, config=config).init() as submitter:
+        flow.context.variant = variant
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
             is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
@@ -377,10 +377,10 @@ class FlowOperations:
         env_var_names: List[str],
     ):
         try:
+            import bs4  # noqa: F401
             import PyInstaller  # noqa: F401
             import streamlit
             import streamlit_quill  # noqa: F401
-            import bs4  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
                 f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
@@ -406,12 +406,16 @@ class FlowOperations:
         runtime_interpreter_path = (Path(streamlit.__file__).parent / "runtime").as_posix()
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
-        flow_inputs = {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()
-                       if not value.is_chat_history}
+        flow_inputs = {
+            flow_input: (value.default, value.type.value)
+            for flow_input, value in executable.inputs.items()
+            if not value.is_chat_history
+        }
         flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
         flow_inputs_params = ",".join(flow_inputs_params)
 
         is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
+        label = "Chat" if is_chat_flow else "Run"
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
@@ -423,7 +427,8 @@ class FlowOperations:
                 "flow_inputs_params": flow_inputs_params,
                 "flow_path": None,
                 "is_chat_flow": is_chat_flow,
-                "chat_history_input_name": chat_history_input_name
+                "chat_history_input_name": chat_history_input_name,
+                "label": label,
             },
         )
         self._run_pyinstaller(output_dir)
