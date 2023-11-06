@@ -32,12 +32,10 @@ jobs:
         with:
           python-version: "3.9"
       - name: Prepare requirements
-        # Remove the private version when latest version released.
         run: |
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}/examples/requirements.txt
           pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
-          pip install promptflow[azure]==0.0.109343510 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}"
       - name: Create new Aoai Connection
