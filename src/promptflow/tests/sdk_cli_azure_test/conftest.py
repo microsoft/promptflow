@@ -16,6 +16,7 @@ from azure.ai.ml import MLClient
 from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
+from dotenv import load_dotenv
 from pytest_mock import MockerFixture
 
 from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
@@ -32,6 +33,8 @@ from .recording_utilities import (
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
+
+load_dotenv()
 
 
 @pytest.fixture
@@ -199,6 +202,11 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
 
 @pytest.fixture(scope="function")
 def vcr_recording(request: pytest.FixtureRequest, tenant_id: str) -> PFAzureIntegrationTestRecording:
+    """Fixture to record or replay network traffic.
+
+    If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
+    based on the test file, class and function name, write to (record) or read from (replay) the file.
+    """
     recording = PFAzureIntegrationTestRecording.from_test_case(
         test_class=request.cls,
         test_func_name=request.node.name,
@@ -233,6 +241,12 @@ def mock_appinsights_log_handler(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def single_worker_thread_pool() -> None:
+    """Mock to use one thread for thread pool executor.
+
+    VCR.py cannot record network traffic in other threads, and we have multi-thread operations
+    during resolving the flow. Mock it using one thread to make VCR.py work.
+    """
+
     def single_worker_thread_pool_executor(*args, **kwargs):
         return ThreadPoolExecutor(max_workers=1)
 
@@ -245,12 +259,18 @@ def single_worker_thread_pool() -> None:
 
 @pytest.fixture
 def mock_set_headers_with_user_aml_token(mocker: MockerFixture) -> None:
+    """Mock set aml-user-token operation.
+
+    There will be requests fetching cloud metadata during retrieving AML token, which will break during replay.
+    As the logic comes from azure-ai-ml, changes in Prompt Flow can hardly affect it, mock it here.
+    """
     mocker.patch("promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._set_headers_with_user_aml_token")
     return
 
 
 @pytest.fixture
 def mock_get_azure_pf_client(mocker: MockerFixture, remote_client: PFClient) -> None:
+    """Mock PF Azure client to avoid network traffic during replay test."""
     mocker.patch(
         "promptflow._cli._pf_azure._run._get_azure_pf_client",
         return_value=remote_client,

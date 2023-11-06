@@ -159,6 +159,18 @@ class PFAzureIntegrationTestRecording:
 
 
 class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
+    """Test class for run operations in Prompt Flow Azure.
+
+    Different from other operations, run operations have:
+
+    - duplicate network requests for stream run
+    - blob storage requests contain upload hash
+    - Submit and get run data API requests are indistinguishable without run name in body
+
+    Use a separate class with more pre/post recording processing method or
+    request matchers to handle above cases.
+    """
+
     def _init_vcr(self) -> vcr.VCR:
         _vcr = super(PFAzureRunIntegrationTestRecording, self)._init_vcr()
         _vcr.register_matcher("path", self._custom_request_path_matcher)
@@ -183,6 +195,11 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         super(PFAzureRunIntegrationTestRecording, self)._postprocess_recording()
 
     def _drop_duplicate_recordings(self) -> None:
+        # stream run operation contains two requests:
+        # 1. get status; 2. get logs
+        # before the run is terminated, there will be many duplicate requests
+        # getting status/logs, which leads to infinite loop during replay
+        # therefore apply such post process to drop those duplicate recordings
         dropped_recordings = []
         run_data_requests = dict()
         log_content_requests = dict()
