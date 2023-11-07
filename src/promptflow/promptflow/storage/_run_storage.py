@@ -5,7 +5,7 @@
 from functools import partial
 from pathlib import Path
 
-from promptflow._utils.multimedia_utils import get_file_reference_encoder, recursive_process
+from promptflow._utils.multimedia_utils import _process_recursively, get_file_reference_encoder
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
@@ -103,4 +103,4 @@ class DefaultRunStorage(AbstractRunStorage):
         else:
             pfbytes_file_reference_encoder = None
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
-        return recursive_process(value, process_funcs=serialization_funcs)
+        return _process_recursively(value, process_funcs=serialization_funcs)

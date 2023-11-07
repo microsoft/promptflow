@@ -23,7 +23,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.logger_utils import logger
+from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
@@ -34,7 +34,6 @@ from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
     InputMappingError,
     NodeOutputNotFound,
-    OutputReferenceBypassed,
     OutputReferenceNotExist,
     SingleNodeValidationError,
 )
@@ -701,8 +700,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = load_multimedia_data(self._flow.inputs, inputs_with_default_value)
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -882,8 +880,9 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-                # Make sure the run_info with converted inputs results rather than original inputs
-                run_info.inputs = inputs
+            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            # Make sure the run_info with converted inputs results rather than original inputs
+            run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
@@ -938,16 +937,6 @@ class FlowExecutor:
                 # Note that the reduce node referenced in the output is not supported.
                 continue
             if node.name not in nodes_outputs:
-                if node.name in bypassed_nodes:
-                    raise OutputReferenceBypassed(
-                        message_format=(
-                            "The output '{output_name}' for flow is incorrect. "
-                            "The node '{node_name}' referenced by the output has been bypassed. "
-                            "Please refrain from using bypassed nodes as output sources."
-                        ),
-                        output_name=name,
-                        node_name=node.name,
-                    )
                 raise NodeOutputNotFound(
                     message_format=(
                         "The output '{output_name}' for flow is incorrect. "
@@ -956,6 +945,10 @@ class FlowExecutor:
                     ),
                     output_name=name,
                     node_name=node.name,
+                )
+            if output.reference.value in bypassed_nodes:
+                flow_logger.warning(
+                    f"The node referenced by output:'{output.reference.value}' is bypassed, which is not recommended."
                 )
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
@@ -968,8 +961,6 @@ class FlowExecutor:
         outputs = {}
         nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
-        for node in bypassed_nodes.keys():
-            nodes_outputs[node] = None
         return outputs, nodes_outputs
 
     def _stringify_generator_output(self, outputs: dict):
