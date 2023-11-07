@@ -895,3 +895,7 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
     if output:
         with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
+
+
+def is_github_codespaces():
+    return os.environ.get("CODESPACES", None) == "true"
