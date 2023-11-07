@@ -16,6 +16,15 @@ class TokenProviderABC(ABC):
         pass
 
 
+class StaticTokenProvider(TokenProviderABC):
+    def __init__(self, token: str) -> None:
+        super().__init__()
+        self.token = token
+
+    def get_token(self) -> str:
+        return self.token
+
+
 class AzureTokenProvider(TokenProviderABC):
     _instance_lock = threading.Lock()
     _instance = None
@@ -38,5 +47,6 @@ class AzureTokenProvider(TokenProviderABC):
                 f"Please try 'pip install azure.identity' to install dependency, {ex.msg}."
             )
 
-    def get_token(self, audience=COGNITIVE_AUDIENCE):
+    def get_token(self):
+        audience=COGNITIVE_AUDIENCE
         return self.credential.get_token(audience).token
