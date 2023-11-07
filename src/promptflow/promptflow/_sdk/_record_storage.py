@@ -182,15 +182,15 @@ class RecordStorage(object):
 
     @classmethod
     def is_recording_mode(cls) -> bool:
-        return Configuration.get_instance().get_recording_mode() == RecordMode.RECORD
+        return Configuration.get_instance().get_recording_mode() == RecordMode.RECORD.value
 
     @classmethod
     def is_replaying_mode(cls) -> bool:
-        return Configuration.get_instance().get_recording_mode() == RecordMode.REPLAY
+        return Configuration.get_instance().get_recording_mode() == RecordMode.REPLAY.value
 
     @classmethod
     def is_live_mode(cls) -> bool:
-        return Configuration.get_instance().get_recording_mode() == RecordMode.LIVE
+        return Configuration.get_instance().get_recording_mode() == RecordMode.LIVE.value
 
     @classmethod
     def get_instance(cls, record_file=None) -> "RecordStorage":

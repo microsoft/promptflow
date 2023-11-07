@@ -183,7 +183,7 @@ class Configuration(object):
         """Check if recording mode is enabled."""
         recording_mode = self.get_config(key=self.RECORDING_MODE)
         if recording_mode != RecordMode.RECORD.value or recording_mode != RecordMode.REPLAY.value:
-            return RecordMode.REPLAY.value
+            return RecordMode.LIVE.value
 
     def get_recording_file(self) -> Optional[str]:
         """Check if recording file is provided in the config."""
