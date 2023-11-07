@@ -23,7 +23,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.logger_utils import logger, flow_logger
+from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
@@ -947,8 +947,9 @@ class FlowExecutor:
                     node_name=node.name,
                 )
             if output.reference.value in bypassed_nodes:
-                flow_logger.warning("The node referenced by output:'{}' is bypassed, which is not recommended."
-                                    .format(output.reference.value))
+                flow_logger.warning(
+                    f"The node referenced by output:'{output.reference.value}' is bypassed, which is not recommended."
+                )
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
                 output.reference.value, node_result, output.reference.property
