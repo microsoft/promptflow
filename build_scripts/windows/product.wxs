@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+    <?define ProductVersion="0.0.1" ?>
+
+    <?define ProductName = "Promptflow" ?>
+    <?define ProductDescription = "Command-line tools for Promptflow." ?>
+    <?define ProductAuthor = "Microsoft Corporation" ?>
+    <?define UpgradeCode32 = "8b748161-e07a-48f2-8cdf-401480df4694" ?>
+
+    <?if $(var.Platform) = "x64" ?>
+    <?define PromptflowSystemPathGuid = "4c321045-d4e0-4446-bda4-8c19eaa42af1" ?>
+    <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
+    <?define UpgradeCode = "772aa21f-f8d4-4771-b910-1dbce3f1920c" ?>
+    <?define Architecture = "64-bit" ?>
+
+    <?elseif $(var.Platform) = "x86" ?>
+    <?define PromptflowSystemPathGuid = "9661fe6a-ff48-4e7c-a60d-fc34c2d06ef3" ?>
+    <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
+    <?define UpgradeCode = $(var.UpgradeCode32) ?>
+    <?define Architecture = "32-bit" ?>
+
+    <?else ?>
+    <?error Unsupported platform "$(var.Platform)" ?>
+    <?endif ?>
+
+    <Product Id="*" Name="$(var.ProductName) ($(var.Architecture))" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductAuthor)" UpgradeCode="$(var.UpgradeCode)">
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+        <Upgrade Id="$(var.UpgradeCode)">
+          <UpgradeVersion Property="WIX_UPGRADE_DETECTED" Maximum="$(var.ProductVersion)" IncludeMaximum="no" MigrateFeatures="yes" />
+          <UpgradeVersion Property="WIX_DOWNGRADE_DETECTED" Minimum="$(var.ProductVersion)" IncludeMinimum="no" OnlyDetect="yes" />
+        </Upgrade>
+        <InstallExecuteSequence>
+          <RemoveExistingProducts After="InstallExecute" />
+        </InstallExecuteSequence>
+
+
+        <!-- New product architectures should upgrade the original x86 product - even of the same version. -->
+        <?if $(var.UpgradeCode) != $(var.UpgradeCode32) ?>
+        <Upgrade Id="$(var.UpgradeCode32)">
+          <UpgradeVersion Property="WIX_X86_UPGRADE_DETECTED" Maximum="$(var.ProductVersion)" IncludeMaximum="yes" MigrateFeatures="yes" />
+          <UpgradeVersion Property="WIX_X86_DOWNGRADE_DETECTED" Minimum="$(var.ProductVersion)" IncludeMinimum="no" OnlyDetect="yes" />
+        </Upgrade>
+        <Condition Message="A newer version of $(var.ProductName) is already installed.">NOT (WIX_DOWNGRADE_DETECTED OR WIX_X86_DOWNGRADE_DETECTED)</Condition>
+        <?else ?>
+        <Condition Message="A newer version of $(var.ProductName) is already installed.">NOT WIX_DOWNGRADE_DETECTED</Condition>
+        <?endif ?>
+
+        <Media Id="1" Cabinet="promptflow.cab" EmbedCab="yes" CompressionLevel="high" />
+
+        <Property Id="ARPPRODUCTICON" Value="PromptflowIcon" />
+        <Property Id="ARPHELPLINK" Value="https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2" />
+        <Property Id="ARPURLINFOABOUT" Value="https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2" />
+        <Property Id="ARPURLUPDATEINFO" Value="https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2" />
+        <Property Id="MSIFASTINSTALL" Value="7" />
+        <Property Id="ApplicationFolderName" Value="Promptflow" />
+        <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+
+<!--         <MajorUpgrade DowngradeErrorMessage="A newer version of Promptflow is already installed." /> -->
+<!--         <MediaTemplate /> -->
+
+        <Feature Id="ProductFeature" Title="Promptflow" Level="1" AllowAdvertise="no">
+            <ComponentGroupRef Id="ProductComponents" />
+        </Feature>
+
+        <!--Custom action to propagate path env variable change-->
+        <CustomActionRef Id="WixBroadcastEnvironmentChange" />
+        <UIRef Id="WixUI_Minimal"/>
+        <UIRef Id="WixUI_ErrorProgressText"/>
+
+        <!-- Show message to restart any terminals only if the PATH is changed -->
+        <CustomAction Id="Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Please close and reopen any active terminal window to use Promptflow." />
+        <InstallUISequence>
+          <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
+        </InstallUISequence>
+
+    </Product>
+
+    <Fragment>
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="$(var.ProgramFilesFolder)">
+                <Directory Id="DynamicCliDir" Name="Promptflow" />
+            </Directory>
+        </Directory>
+    </Fragment>
+
+    <Fragment>
+        <ComponentGroup Id="PromptflowCliSettingsGroup">
+            <Component Id="PromptflowSystemPath" Directory="DynamicCliDir" Guid="$(var.PromptflowSystemPathGuid)">
+                <Environment Id="PromptflowAddedToPATH"
+                     Name="PATH"
+                     Value="[DynamicCliDir]"
+                     Permanent="no"
+                     Part="first"
+                     Action="set"
+                     System="yes" />
+                <CreateFolder />
+            </Component>
+        </ComponentGroup>
+
+        <ComponentGroup Id="ProductComponents">
+          <ComponentGroupRef Id="PromptflowCliComponentGroup"/>
+          <ComponentGroupRef Id="PromptflowCliSettingsGroup"/>
+        </ComponentGroup>
+    </Fragment>
+</Wix>
