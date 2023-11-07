@@ -1,6 +1,6 @@
 import pytest
 
-from promptflow.tools.common import parse_name_and_content, ChatAPIInvalidFunctions, validate_functions, \
+from promptflow.tools.common import try_parse_name_and_content, ChatAPIInvalidFunctions, validate_functions, \
     process_function_call, parse_chat
 
 
@@ -43,12 +43,6 @@ class TestCommon:
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
-    def test_parse_function_role_prompt(self):
-        function_str = "name:\n get_location  \n\ncontent:\nBoston\nabc"
-        result = parse_name_and_content("function", function_str)
-        assert result[0] == "get_location"
-        assert result[1] == 'Boston\nabc'
-
     @pytest.mark.parametrize(
         "chat_str, expected_result",
         [
@@ -83,8 +77,10 @@ class TestCommon:
         [
             ("\nsystem:\nname:\nAI \n content:\nfirst\n\nuser:\nsecond", [
                 {'role': 'system', 'name': 'AI', 'content': 'first'}, {'role': 'user', 'content': 'second'}]),
-            ("\nsystem:\nname:\n\n content:\nfirst\n\nuser:\nname:\n\nperson\n content:\n", [
-                {'role': 'system', 'name': '', 'content': 'first'}, {'role': 'user', 'name': 'person', 'content': ''}])
+            ("\nuser:\nname:\n\nperson\n content:\n", [
+                {'role': 'user', 'name': 'person', 'content': ''}]),
+            ("\nsystem:\nname:\n\n content:\nfirst", [
+                {'role': 'system', 'content': 'name:\n\n content:\nfirst'}])
         ]
     )
     def test_success_parse_name_in_role_prompt(self, chat_str, expected_result):
