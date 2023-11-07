@@ -336,7 +336,7 @@ def copy_extra_files(flow_path, extra_files, overwrite=False):
         )
         target_path = Path(flow_path) / file_name
         if target_path.exists() and not overwrite:
-            return
+            continue
         action = "Overwriting" if target_path.exists() else "Creating"
         print(f"{action} {target_path.resolve()}...")
         shutil.copy2(extra_file_path, target_path)
