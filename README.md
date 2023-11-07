@@ -81,7 +81,7 @@ Next Step! Continue with the **Tutorial**  👇 section to delve deeper into pro
 
 ## Tutorial 🏃‍♂️
 
-Prompt Flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
+Prompt flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
 
 ### Develop your own LLM apps
 
