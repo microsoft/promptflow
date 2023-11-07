@@ -27,14 +27,8 @@ Below is a table of important doc pages.
 
 
 **Local build**: We suggest using local build at the beginning, as it's fast and efficiency. 
-```powershell
-cd .\scripts\docs
 
-.\doc_generation.ps1 # Install requirements and build doc
-# .\doc_generation.ps1 -SkipInstall # Skip install dependencies and build doc
-
-start .\_build\index.html # See the homepage in your browser
-```
+Please refer to [How to build doc site locally](./dev/documentation_guidelines.md#how-to-build-doc-site-locally).
 
 
 ## FAQ

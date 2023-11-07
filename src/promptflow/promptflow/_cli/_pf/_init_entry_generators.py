@@ -13,8 +13,9 @@ from pathlib import Path
 from jinja2 import Environment, Template, meta
 
 from promptflow._sdk._constants import LOGGER_NAME
-from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow.contracts.flow import Flow as ExecutableFlow
+from promptflow.exceptions import UserErrorException
 
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
@@ -223,43 +224,61 @@ class FlowMetaYamlGenerator(BaseGenerator):
 
 
 class StreamlitFileGenerator(BaseGenerator):
-    def __init__(self, flow_name, flow_dag_path):
+    def __init__(self, flow_name, flow_dag_path, connection_provider):
         self.flow_name = flow_name
         self.flow_dag_path = Path(flow_dag_path)
+        self.connection_provider = connection_provider
         self.executable = ExecutableFlow.from_yaml(
             flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
         )
-        self.is_chat_flow, self.chat_history_input_name, _ = FlowOperations._is_chat_flow(self.executable)
+        self.is_chat_flow, self.chat_history_input_name, error_msg = FlowOperations._is_chat_flow(self.executable)
+        if not self.is_chat_flow:
+            raise UserErrorException(f"Only support chat flow in ui mode, {error_msg}.")
+        self._chat_input_name = next(
+            (flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None)
+        self._chat_input = self.executable.inputs[self._chat_input_name]
 
     @property
-    def flow_inputs(self):
-        return {flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
-                if not value.is_chat_history}
+    def chat_input_default_value(self):
+        return self._chat_input.default
+
+    @property
+    def chat_input_value_type(self):
+        return self._chat_input.type
+
+    @property
+    def chat_input_name(self):
+        return self._chat_input_name
 
     @property
     def flow_inputs_params(self):
-        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in self.flow_inputs.items()]
-        return ",".join(flow_inputs_params)
+        return f"{self.chat_input_name}={self.chat_input_name}"
 
     @property
     def tpl_file(self):
-        return SERVE_TEMPLATE_PATH / "main.py.jinja2"
+        return SERVE_TEMPLATE_PATH / "flow_test_main.py.jinja2"
 
     @property
     def flow_path(self):
         return self.flow_dag_path.as_posix()
 
     @property
-    def label(self):
-        return "Chat" if self.is_chat_flow else "Run"
-
-    @property
     def entry_template_keys(self):
-        return ["flow_name", "flow_inputs", "flow_inputs_params", "flow_path", "is_chat_flow",
-                "chat_history_input_name", "label"]
+        return [
+            "flow_name",
+            "chat_input_name",
+            "flow_inputs_params",
+            "flow_path",
+            "is_chat_flow",
+            "chat_history_input_name",
+            "connection_provider",
+            "chat_input_default_value",
+            "chat_input_value_type",
+            "chat_input_name",
+        ]
 
     def generate_to_file(self, target):
-        if Path(target).name == self.tpl_file.stem:
+        if Path(target).name == "main.py":
             super().generate_to_file(target=target)
         else:
             shutil.copy(SERVE_TEMPLATE_PATH / Path(target).name, target)

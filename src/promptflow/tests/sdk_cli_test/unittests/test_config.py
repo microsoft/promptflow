@@ -55,3 +55,9 @@ class TestConfig:
         # Test config not found
         with pytest.raises(ConfigFileNotFound):
             Configuration._get_workspace_from_config(path=CONFIG_DATA_ROOT.parent)
+        # Test empty config
+        target_folder = CONFIG_DATA_ROOT / "mock_flow_empty_config"
+        with pytest.raises(ValueError) as e:
+            with _change_working_dir(target_folder):
+                conf.get_connection_provider()
+        assert "can not be empty" in str(e)

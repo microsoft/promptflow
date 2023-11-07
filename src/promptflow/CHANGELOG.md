@@ -6,6 +6,9 @@
 
 - [SDK/CLI] Support `pfazure flow create`. Create a flow on Azure AI from local flow folder.
 
+### Bugs Fixed
+
+- [SDK/CLI] Keep original format in run output.jsonl.
 
 ## 0.1.0b8 (2023.10.26)
 
