@@ -10,7 +10,8 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat
-from typing import Set
+from typing import Set, OrderedDict
+from promptflow._sdk._record_storage import RecordStorage
 
 
 def validate_role(role: str, valid_roles: Set[str] = None):
@@ -253,3 +254,90 @@ def post_process_chat_api_response(completion, stream, functions):
         else:
             # chat api may return message with no content.
             return getattr(completion.choices[0].message, "content", "")
+
+def replay_decorator_completion(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if RecordStorage.is_replaying_mode():
+            if ('stream' in kwargs):
+                stream = to_bool(kwargs['stream'])
+            else:
+                stream = False
+            input_dict: OrderedDict = OrderedDict()
+            for key in kwargs:
+                if key not in ['deployment_name', 'suffix', 'max_tokens', 'temperature', 'top_p', 'n', 'stream', 'logprobs', 'echo', 'stop', 'presence_penalty', 'frequency_penalty', 'best_of', 'logit_bias', 'user']:
+                    input_dict[key] = kwargs[key]
+            response = RecordStorage.get_instance().get_record(input_dict)
+            if stream:
+                def generator():
+                    for chunk in response:
+                        if chunk["choices"]:
+                            yield getattr(chunk["choices"][0], "text", "")
+
+                # We must return the generator object, not using yield directly here.
+                # Otherwise, the function itself will become a generator, despite whether stream is True or False.
+                return generator()
+            else:
+                # get first element because prompt is single.
+                return response["choices"][0]["text"]
+        else:
+            return func(*args, **kwargs)
+
+    return wrapper
+
+def replay_decorator_chat(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if RecordStorage.is_replaying_mode():
+            if ('stream' in kwargs):
+                stream = to_bool(kwargs['stream'])
+            else:
+                stream = False
+            input_dict: OrderedDict = OrderedDict()
+            functions = None
+            for key in kwargs:
+                if key == 'functions' and kwargs[key] is not None:
+                    functions = kwargs[key]
+                if key not in ['deployment_name', 'suffix', 'max_tokens', 'temperature', 'top_p', 'n', 'stream', 'logprobs', 'echo', 'stop', 'presence_penalty', 'frequency_penalty', 'best_of', 'logit_bias', 'user', 'function_call', 'functions']:
+                    input_dict[key] = kwargs[key]
+            completion = RecordStorage.get_instance().get_record(input_dict)
+            # almost same with post_process_chat_api_response
+            if stream:
+                if functions is not None:
+                    error_message = "Function calling has not been supported by stream mode yet."
+                    raise FunctionCallNotSupportedInStreamMode(message=error_message)
+
+                def generator():
+                    for chunk in completion:
+                        if chunk["choices"]:
+                            yield getattr(chunk["choices"][0]["delta"], "content", "")
+
+                # We must return the generator object, not using yield directly here.
+                # Otherwise, the function itself will become a generator, despite whether stream is True or False.
+                return generator()
+            else:
+                # When calling function, function_call response will be returned as a field in message, so we need return
+                # message directly. Otherwise, we only return content.
+                if functions is not None:
+                    return completion["choices"][0]["message"]
+                else:
+                    # chat api may return message with no content.
+                    return getattr(completion["choices"][0]["message"], "content", "")
+        else:
+            return func(*args, **kwargs)
+
+    return wrapper
+
+def replay_decorator_embedding(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if RecordStorage.is_replaying_mode():
+            input_dict: OrderedDict = OrderedDict()
+            for key in kwargs:
+                    if key in ['input', 'user']:
+                        input_dict[key] = kwargs[key]
+            response = RecordStorage.get_instance().get_record(input_dict)
+            return response["data"][0]["embedding"]
+        else:
+            return func(*args, **kwargs)
+    return wrapper

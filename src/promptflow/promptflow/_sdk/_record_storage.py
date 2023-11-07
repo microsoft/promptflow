@@ -1,23 +1,21 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import collections
 import hashlib
 import json
 from pathlib import Path
-from typing import Any, Dict, OrderedDict
+from typing import Dict
 
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import RecordMode
 from promptflow._sdk._errors import RecordFileMissingException, RecordItemMissingException
-from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 
 
 class RecordStorage(object):
     """
     RecordStorage is used to store the record of node run.
-    File often stored in .promptflow/node_cache.json
+    File often stored in .promptflow/node_cache.jsonl
+    Currently only text input/output could be recorded.
     Example of cached items:
     {
         "/record/file/resolved": {
@@ -26,14 +24,14 @@ class RecordStorage(object):
                     "key1": "value1", # Converted to string, type info dropped
                 },
                 "output": "output_convert_to_string",
-                "output_type": "output_type" # Currently support only simple types.
+                "output_type": "output_type" # Currently support only simple strings.
             }
         }
     }
     """
 
     _standard_record_folder = ".promptflow"
-    _standard_record_name = "node_cache.json"
+    _standard_record_name = "node_cache.jsonl"
     _instance = None
 
     def __init__(self, record_file: str = None):
@@ -50,6 +48,9 @@ class RecordStorage(object):
 
     @record_file.setter
     def record_file(self, record_file) -> None:
+        """
+        Will load record_file if exist.
+        """
         record_file_override = Configuration.get_instance().get_recording_file()
         if record_file is None and record_file_override is None:
             return
@@ -68,7 +69,7 @@ class RecordStorage(object):
         else:
             return
 
-        if self._record_file.parts[-1] != RecordStorage._standard_record_name:
+        if not self._record_file.parts[-1].endswith(RecordStorage._standard_record_name):
             record_folder = self._record_file / RecordStorage._standard_record_folder
             self._record_file = record_folder / RecordStorage._standard_record_name
         else:
@@ -89,37 +90,46 @@ class RecordStorage(object):
 
         if file_content is not None:
             with open(self.record_file, "w+", encoding="utf-8") as fp:
-                json.dump(self.cached_items[self._record_file_str], fp, indent=4)
+                for key, value in self.cached_items[self._record_file_str].items():
+                    json.dump(value, fp, separators=(",", ":"), ensure_ascii=False)
+                    fp.write("\n")
 
     def _load_file(self) -> None:
         local_content = self.cached_items.get(self._record_file_str, None)
         if not local_content:
             if not self.record_file.exists():
                 return
+            self.cached_items[self._record_file_str] = {}
             with open(self.record_file, "r", encoding="utf-8") as fp:
-                self.cached_items[self._record_file_str] = json.load(fp)
+                json_list = list(fp)
 
-    def get_record(self, input_dict: OrderedDict) -> object:
+            for json_str in json_list:
+                json_dict = json.loads(json_str)
+                input_dict = {}
+                for key, value in json_dict["input"].items():
+                    input_dict[key] = value
+                hash_value = hashlib.sha1(str(sorted(input_dict)).encode("utf-8")).hexdigest()
+                self.cached_items[self._record_file_str][hash_value] = json_dict
+
+    def get_record(self, input_dict: Dict) -> object:
         """
-        get_record Get record from local storage.
+        Get record from local storage.
 
         :param input_dict: input dict of critical AOAI inputs
-        :type input_dict: OrderedDict
+        :type input_dict: Dict
         :raises RecordFileMissingException: Record file not exist
         :raises RecordItemMissingException: Record item not exist in record file
         :return: original output of node run
         :rtype: object
         """
-        hash_value: str = hashlib.sha1(str(input_dict).encode("utf-8")).hexdigest()
+        hash_value: str = hashlib.sha1(str(sorted(input_dict)).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
         if current_saved_records is None:
-            raise RecordFileMissingException(
-                f"This should except earlier, record file not found in folder {self.input_path}."
-            )
+            raise RecordFileMissingException(f"This should except earlier, record file not found {self.record_file}.")
         saved_output = current_saved_records.get(hash_value, None)
         if saved_output is None:
             raise RecordItemMissingException(
-                f"Record item not found in folder {self.input_path}.\n" f"values: {json.dumps(input_dict)}\n"
+                f"Record item not found in file {self.record_file}.\n" f"values: {json.dumps(input_dict)}\n"
             )
 
         # not all items are reserved in the output dict.
@@ -131,16 +141,16 @@ class RecordStorage(object):
         else:
             return output
 
-    def set_record(self, input_dict: OrderedDict, output: object) -> None:
+    def set_record(self, input_dict: Dict, output) -> None:
         """
-        set_record Set record to local storage, always override the old record.
+        Set record to local storage, always override the old record.
 
         :param input_dict: input dict of critical AOAI inputs
         :type input_dict: OrderedDict
         :param output: original output of node run
         :type output: object
         """
-        hash_value: str = hashlib.sha1(str(input_dict).encode("utf-8")).hexdigest()
+        hash_value: str = hashlib.sha1(str(sorted(input_dict)).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
 
         if current_saved_records is None:
@@ -185,10 +195,10 @@ class RecordStorage(object):
     @classmethod
     def get_instance(cls, record_file=None) -> "RecordStorage":
         """
-        get_instance Use this to get instance to avoid multiple copies of same record storage.
+        Use this to get instance to avoid multiple copies of same record storage.
 
-        :param input_path: initiate at first entrance, defaults to None in the first call will raise exception.
-        :type input_path: str or Path, optional
+        :param record_file: initiate at first entrance, defaults to None in the first call will raise exception.
+        :type record_file: str or Path, optional
         :return: instance of RecordStorage
         :rtype: RecordStorage
         """
@@ -200,29 +210,6 @@ class RecordStorage(object):
             if record_file is None:
                 raise RecordFileMissingException("record_file is value None")
             cls._instance = RecordStorage(record_file)
-        cls._instance.record_file = record_file
+        if record_file is not None:
+            cls._instance.record_file = record_file
         return cls._instance
-
-    def _record_node_run(self, run_info, api_call: Dict[str, Any]) -> None:
-        hashDict = {}
-        # current
-        if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
-            prompt_tpl = api_call["inputs"]["prompt"]
-            prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
-
-            for keyword in prompt_tpl_inputs:
-                if keyword in api_call["inputs"]:
-                    hashDict[keyword] = api_call["inputs"][keyword]
-            hashDict["prompt"] = prompt_tpl
-            hashDict = collections.OrderedDict(sorted(hashDict.items()))
-            item = serialize(run_info)
-            self.set_record(hashDict, str(item["output"]))
-
-    def record_node_run(self, run_info: Any) -> None:
-        """Recording: Persist llm node run record to local storage."""
-        if isinstance(run_info, dict):
-            for api_call in run_info["api_calls"]:
-                self._record_node_run(run_info, api_call)
-        else:
-            for api_call in run_info.api_calls:
-                self._record_node_run(run_info, api_call)

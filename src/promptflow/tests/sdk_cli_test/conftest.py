@@ -8,7 +8,8 @@ import pytest
 from pytest_mock import MockerFixture
 
 from promptflow import PFClient
-from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._constants import RecordMode
+from promptflow._sdk._record_storage import RecordStorage
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
@@ -77,7 +78,7 @@ def setup_local_connection(local_client, azure_open_ai_connection):
     if _connection_setup:
         return
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
-    if Configuration.get_instance().get_recording_mode() == "replay":
+    if RecordStorage.is_replaying_mode():
         connection_dict["azure_open_ai_connection"] = {
             "type": "AzureOpenAIConnection",
             "value": {
@@ -163,14 +164,18 @@ def serving_client_composite_image_flow(mocker: MockerFixture):
 
 @pytest.fixture
 def recording_enabled(mocker: MockerFixture):
-    patch = mocker.patch("promptflow._sdk._configuration.Configuration.get_recording_mode", return_value="record")
+    patch = mocker.patch(
+        "promptflow._sdk._configuration.Configuration.get_recording_mode", return_value=RecordMode.RECORD.value
+    )
     yield
     patch.stop()
 
 
 @pytest.fixture
 def replaying_enabled(mocker: MockerFixture):
-    patch = mocker.patch("promptflow._sdk._configuration.Configuration.get_recording_mode", return_value="replay")
+    patch = mocker.patch(
+        "promptflow._sdk._configuration.Configuration.get_recording_mode", return_value=RecordMode.REPLAY.value
+    )
     yield
     patch.stop()
 
@@ -178,7 +183,7 @@ def replaying_enabled(mocker: MockerFixture):
 @pytest.fixture
 def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
     if request.cls.__name__ == "TestCli":
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_recordings/node_cache.json"
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "testcli_node_cache.jsonl"
     patch = mocker.patch(
         "promptflow._sdk._configuration.Configuration.get_recording_file",
         return_value=file_path,

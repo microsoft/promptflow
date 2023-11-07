@@ -11,7 +11,7 @@ from typing import Optional, Union
 
 import pydash
 
-from promptflow._sdk._constants import LOGGER_NAME, ConnectionProvider
+from promptflow._sdk._constants import LOGGER_NAME, ConnectionProvider, RecordMode
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException
@@ -32,8 +32,8 @@ class Configuration(object):
     EXTENSION_EU_USER = "extension.eu_user"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
-    RECORDING_MODE = "cli.recording.mode"
-    RECORDING_FILE_OVERRIDE = "cli.recording.file"
+    RECORDING_MODE = "recording.mode"
+    RECORDING_FILE_OVERRIDE = "recording.file"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -179,9 +179,11 @@ class Configuration(object):
             return self.get_config(key=self.EXTENSION_EU_USER)
         return self.get_config(key=self.EU_USER)
 
-    def get_recording_mode(self) -> Optional[str]:
+    def get_recording_mode(self) -> str:
         """Check if recording mode is enabled."""
-        return self.get_config(key=self.RECORDING_MODE)
+        recording_mode = self.get_config(key=self.RECORDING_MODE)
+        if recording_mode != RecordMode.RECORD.value or recording_mode != RecordMode.REPLAY.value:
+            return RecordMode.REPLAY.value
 
     def get_recording_file(self) -> Optional[str]:
         """Check if recording file is provided in the config."""

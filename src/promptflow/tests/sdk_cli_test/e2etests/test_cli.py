@@ -24,12 +24,12 @@ from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
-from promptflow._utils.context_utils import _change_working_dir
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
+RECORDINGS_TEST_CONFIGS_ROOT = "./tests/test_configs/node_recordings"
 
 
 # TODO: move this to a shared utility module
@@ -295,131 +295,71 @@ class TestCli:
 
     @pytest.mark.usefixtures("recording_enabled")
     def test_pf_flow_test_recording_enabled(self):
+        flow_name = "basic_with_builtin_llm_node"
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/web_classification",
-            "--inputs",
-            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
-            "answer=Channel",
-            "evidence=Url",
+            f"{FLOWS_DIR}/{flow_name}",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
         assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
-        with open(log_path, "r") as f:
-            previous_log_content = f.read()
-
-        # Test without input
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification",
-        )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
-        with open(log_path, "r") as f:
-            log_content = f.read()
-        assert previous_log_content not in log_content
+        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
+        assert log_path.exists()
+        record_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "node_cache.jsonl"
+        assert record_path.exists()
 
     @pytest.mark.usefixtures("replaying_enabled")
     def test_pf_flow_test_replaying_enabled(self):
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification",
-            "--inputs",
-            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
-            "answer=Channel",
-            "evidence=Url",
-        )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
-        with open(log_path, "r") as f:
-            previous_log_content = f.read()
+        flow_name = "basic_with_builtin_llm_node"
+        record_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "node_cache.jsonl"
+        if not record_path.exists():
+            assert False
 
-        # Test without input
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/web_classification",
+            f"{FLOWS_DIR}/basic_with_builtin_llm_node",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
         assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
-        with open(log_path, "r") as f:
-            log_content = f.read()
-        assert previous_log_content not in log_content
+        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
+        assert log_path.exists()
 
     @pytest.mark.usefixtures("recording_enabled", "recording_file_override")
     def test_pf_flow_test_recording_enabled_and_override_recording(self):
+        flow_name = "basic_with_builtin_llm_node"
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/web_classification",
-            "--inputs",
-            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
-            "answer=Channel",
-            "evidence=Url",
+            f"{FLOWS_DIR}/{flow_name}",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
         assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
-        with open(log_path, "r") as f:
-            previous_log_content = f.read()
-
-        # Test without input
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification",
-        )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
-        with open(log_path, "r") as f:
-            log_content = f.read()
-        assert previous_log_content not in log_content
+        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
+        assert log_path.exists()
+        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.jsonl"
+        assert record_path.exists()
 
     @pytest.mark.usefixtures("replaying_enabled", "recording_file_override")
     def test_pf_flow_test_replay_enabled_and_override_recording(self):
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification",
-            "--inputs",
-            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
-            "answer=Channel",
-            "evidence=Url",
-        )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
-        with open(log_path, "r") as f:
-            previous_log_content = f.read()
+        flow_name = "basic_with_builtin_llm_node"
+        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.jsonl"
+        if not record_path.exists():
+            assert False
 
-        # Test without input
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/web_classification",
+            f"{FLOWS_DIR}/basic_with_builtin_llm_node",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
         assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
-        with open(log_path, "r") as f:
-            log_content = f.read()
-        assert previous_log_content not in log_content
+        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
+        assert log_path.exists()
 
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
         question = "什么是 chat gpt"
