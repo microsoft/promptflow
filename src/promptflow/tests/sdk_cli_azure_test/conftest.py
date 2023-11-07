@@ -115,7 +115,7 @@ def remote_web_classification_data(remote_client: PFClient) -> Data:
 
 @pytest.fixture
 def runtime() -> str:
-    return "demo-mir"
+    return "test-runtime-ci"
 
 
 @pytest.fixture
