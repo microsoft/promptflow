@@ -1,6 +1,6 @@
 import pytest
 
-from promptflow.tools.common import try_parse_name_and_content, ChatAPIInvalidFunctions, validate_functions, \
+from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, \
     process_function_call, parse_chat
 
 
@@ -75,7 +75,7 @@ class TestCommon:
     @pytest.mark.parametrize(
         "chat_str, expected_result",
         [
-            ("\nsystem:\nname:\nAI \n content:\nfirst\n\nuser:\nsecond", [
+            ("\n#system:\n##name:\nAI \n content:\nfirst\n\n#user:\nsecond", [
                 {'role': 'system', 'name': 'AI', 'content': 'first'}, {'role': 'user', 'content': 'second'}]),
             ("\nuser:\nname:\n\nperson\n content:\n", [
                 {'role': 'user', 'name': 'person', 'content': ''}]),

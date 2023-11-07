@@ -109,11 +109,12 @@ def parse_chat(chat_str):
                 if last_message["role"] == "function":
                     raise ChatAPIFunctionRoleInvalidFormat(
                         message="Failed to parse function role prompt. Please make sure the prompt follows the "
-                                "format: 'name:\\nfunction_name\\ncontent:\\nfunction_content'. 'name' is required if role is "
-                                "function, and it should be the name of the function whose response is in the content. May "
-                                "contain a-z, A-Z, 0-9, and underscores, with a maximum length of 64 characters. See more details"
-                                " in https://platform.openai.com/docs/api-reference/chat/create#chat/create-name or view sample"
-                                " 'How to use functions with chat models' in our gallery.")
+                                "format: 'name:\\nfunction_name\\ncontent:\\nfunction_content'. "
+                                "'name' is required if role is function, and it should be the name of the function "
+                                "whose response is in the content. May contain a-z, A-Z, 0-9, and underscores, "
+                                "with a maximum length of 64 characters. See more details in "
+                                "https://platform.openai.com/docs/api-reference/chat/create#chat/create-name "
+                                "or view sample 'How to use functions with chat models' in our gallery.")
                 # "name" is optional for other role types.
                 else:
                     last_message["content"] = chunk
