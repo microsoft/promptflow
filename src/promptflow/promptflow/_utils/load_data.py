@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
+from promptflow._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -89,6 +90,9 @@ def _handle_dir(
     # BFS traverse directory to collect files to load
     target_dir = [str(dir_path)]
     while len(target_dir) > 0:
+        # Ignore the json file under .promptflow folder
+        if Path(target_dir).name == PROMPT_FLOW_DIR_NAME:
+            continue
         files, dirs = _bfs_dir(target_dir)
         for file in files:
             current_df = _pd_read_file(file, logger=logger, enable_parse_image_path=enable_parse_image_path)
