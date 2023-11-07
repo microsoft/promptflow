@@ -83,6 +83,6 @@ class TestCommon:
                 {'role': 'system', 'content': 'name:\n\n content:\nfirst'}])
         ]
     )
-    def test_success_parse_name_in_role_prompt(self, chat_str, expected_result):
+    def test_try_parse_name_in_role_prompt(self, chat_str, expected_result):
         actual_result = parse_chat(chat_str)
         assert actual_result == expected_result
