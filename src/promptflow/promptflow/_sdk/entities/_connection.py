@@ -352,8 +352,6 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     ):
         configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version}
         secrets = {"api_key": api_key}
-        if not token_provider:
-            token_provider = AzureTokenProvider()
         self._token_provider = token_provider
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
@@ -393,6 +391,9 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
     def get_token(self):
         """Return the connection token."""
+        if not self._token_provider:
+            self._token_provider = AzureTokenProvider()
+
         if isinstance(self._token_provider, str):
             return self._token_provider
         else:

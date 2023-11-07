@@ -1,7 +1,7 @@
 import threading
-
 from abc import ABC, abstractmethod
-from azure.identity import DefaultAzureCredential
+from promptflow.exceptions import UserErrorException
+
 
 # to access azure ai services, we need to get the token with this audience
 COGNITIVE_AUDIENCE = "https://cognitiveservices.azure.com/"
@@ -28,8 +28,15 @@ class AzureTokenProvider(TokenProviderABC):
             return cls._instance
 
     def _init_instance(self):
-        # Initialize a credential instance
-        self.credential = DefaultAzureCredential()
+        try:
+            # Initialize a credential instance
+            from azure.identity import DefaultAzureCredential
+            self.credential = DefaultAzureCredential()
+        except ImportError as ex:
+            raise UserErrorException(
+                "Failed to initialize AzureTokenProvider. " +
+                f"Please try 'pip install azure.identity' to install dependency, {ex.msg}."
+            )
 
     def get_token(self, audience=COGNITIVE_AUDIENCE):
         return self.credential.get_token(audience).token
