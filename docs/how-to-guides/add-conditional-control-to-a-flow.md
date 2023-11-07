@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
-In Prompt flow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
+In prompt flow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
 
 This guide will help you learn how to use activate config to add conditional control to your flow.
 
