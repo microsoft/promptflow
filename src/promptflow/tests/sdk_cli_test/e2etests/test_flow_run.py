@@ -863,3 +863,18 @@ class TestFlowRun:
         result = pf.run(flow=image_flow_path, data=data_path, column_mapping={"image": "${data.image}"})
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
+
+    def test_get_details_for_image_in_flow(self, pf: PFClient) -> None:
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image"
+        data_path = f"{image_flow_path}/image_inputs/inputs.jsonl"
+        run = pf.run(
+            flow=image_flow_path,
+            data=data_path,
+            column_mapping={"image": "${data.image}"},
+        )
+        details = pf.get_details(run.name)
+        for i in range(len(details)):
+            input_image_path = details["inputs.image"][i]["data:image/png;path"]
+            assert Path(input_image_path).is_absolute()
+            output_image_path = details["outputs.output"][i]["data:image/png;path"]
+            assert Path(output_image_path).is_absolute()

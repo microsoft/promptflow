@@ -353,7 +353,7 @@ class RunSubmitter:
             # won't raise the exception since it's already included in run object.
         finally:
             # persist snapshot and result
-            # snapshot: flow directory and (mapped) inputs
+            # snapshot: flow directory
             local_storage.dump_snapshot(flow)
             # persist inputs, outputs and metrics
             local_storage.persist_result(bulk_result)
