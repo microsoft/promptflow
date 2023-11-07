@@ -451,7 +451,7 @@ class LocalStorageOperations(AbstractRunStorage):
                 outputs = pd.read_json(f, orient="records", lines=True)
                 # if all line runs are failed, no need to fill
                 if len(outputs) > 0:
-                    outputs = self._outputs_padding(outputs, len(list(inputs.values())[0]))
+                    outputs = self._outputs_padding(outputs, len(inputs))
                     outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                     outputs = outputs.set_index(LINE_NUMBER)
         return inputs, outputs
@@ -462,10 +462,13 @@ class LocalStorageOperations(AbstractRunStorage):
             if line_run_record_file.suffix.lower() != ".jsonl":
                 continue
             with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                line_run_info: dict = json.load(f)["run_info"]
+                data = json.load(f)
+                line_number: int = data[LINE_NUMBER]
+                line_run_info: dict = data["run_info"]
                 current_inputs = line_run_info.get("inputs")
                 current_outputs = line_run_info.get("output")
                 inputs.append(copy.deepcopy(current_inputs))
                 if current_outputs is not None:
+                    current_outputs[LINE_NUMBER] = line_number
                     outputs.append(copy.deepcopy(current_outputs))
         return pd.DataFrame(inputs), pd.DataFrame(outputs)
