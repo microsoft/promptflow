@@ -14,6 +14,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file
 
 SIMPLE_IMAGE_FLOW = "python_tool_with_simple_image"
+SAMPLE_IMAGE_FLOW_WITH_DEFAULT = "python_tool_with_simple_image_with_default"
 COMPOSITE_IMAGE_FLOW = "python_tool_with_composite_image"
 CHAT_FLOW_WITH_IMAGE = "chat_flow_with_image"
 SIMPLE_IMAGE_FLOW_PATH = FLOW_ROOT / SIMPLE_IMAGE_FLOW
@@ -172,9 +173,9 @@ class TestExecutorWithImage:
                 {"image": "${data.image}"},
             ),
             (
-                COMPOSITE_IMAGE_FLOW,
+                SAMPLE_IMAGE_FLOW_WITH_DEFAULT,
                 {"data": "."},
-                {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
+                {"image_2": "${data.image_2}"},
             ),
             (
                 COMPOSITE_IMAGE_FLOW,
