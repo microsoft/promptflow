@@ -39,7 +39,7 @@ class TestCommon:
     def test_chat_api_invalid_function_call(self, function_call, error_message):
         error_codes = "UserError/ToolValidationError/ChatAPIInvalidFunctions"
         with pytest.raises(ChatAPIInvalidFunctions) as exc_info:
-            parse_name_and_content("function", function_call)
+            process_function_call(function_call)
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
