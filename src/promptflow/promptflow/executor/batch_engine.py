@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Union
 
 from promptflow._utils.load_data import load_data
-from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
@@ -61,7 +60,6 @@ class BatchEngine:
         for input_key, input_dir in input_dirs.items():
             input_dir = self._resolve_dir(input_dir)
             file_data = load_data(input_dir)
-            resolve_multimedia_data_recursively(input_dir, file_data)
             result[input_key] = file_data
         return result
 

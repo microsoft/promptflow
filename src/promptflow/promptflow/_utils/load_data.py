@@ -9,12 +9,13 @@ from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
+from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 module_logger = logging.getLogger(__name__)
 
 
-def _pd_read_file(local_path: str, logger: logging.Logger = None) -> pd.DataFrame:
+def _pd_read_file(local_path: str, logger: logging.Logger = None, *, enable_parse_image_path=False) -> pd.DataFrame:
     local_path = str(local_path)
     # if file is empty, return empty DataFrame directly
     if (
@@ -28,13 +29,17 @@ def _pd_read_file(local_path: str, logger: logging.Logger = None) -> pd.DataFram
     # note that for csv and tsv format, this will make integer and float columns to be string;
     # for rest, integer will be int and float will be float
     dtype = object
+    # Only json data can determine whether it contains multimedia dict
+    is_json_data = False
 
     if local_path.endswith(".csv"):
         df = pd.read_csv(local_path, dtype=dtype, keep_default_na=False)
     elif local_path.endswith(".json"):
         df = pd.read_json(local_path, dtype=dtype)
+        is_json_data = True
     elif local_path.endswith(".jsonl"):
         df = pd.read_json(local_path, dtype=dtype, lines=True)
+        is_json_data = True
     elif local_path.endswith(".tsv"):
         df = pd.read_table(local_path, dtype=dtype, keep_default_na=False)
     elif local_path.endswith(".parquet"):
@@ -52,6 +57,13 @@ def _pd_read_file(local_path: str, logger: logging.Logger = None) -> pd.DataFram
                 f"csv, tsv, json, jsonl, parquet. Ignoring it."
             )
             return pd.DataFrame()
+
+    # Parse the image path into absolute path for flow consumption
+    if is_json_data and enable_parse_image_path:
+        for index, row in df.iterrows():
+            for column_name, value in row.iteritems():
+                local_path = Path(local_path).resolve()
+                df.at[index, column_name] = resolve_multimedia_data_recursively(local_path, value)
     return df
 
 
@@ -68,7 +80,9 @@ def _bfs_dir(dir_path: List[str]) -> Tuple[List[str], List[str]]:
     return files, dirs
 
 
-def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = None) -> pd.DataFrame:
+def _handle_dir(
+    dir_path: str, max_rows_count: int, logger: logging.Logger = None, *, enable_parse_image_path=False
+) -> pd.DataFrame:
     """load data from directory"""
     df = pd.DataFrame()
 
@@ -77,7 +91,7 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
     while len(target_dir) > 0:
         files, dirs = _bfs_dir(target_dir)
         for file in files:
-            current_df = _pd_read_file(file, logger=logger)
+            current_df = _pd_read_file(file, logger=logger, enable_parse_image_path=enable_parse_image_path)
             df = pd.concat([df, current_df])
         length = len(df)
         if max_rows_count and length > 0:
@@ -90,10 +104,14 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
 
 
 def load_data(
-    local_path: Union[str, Path], *, logger: logging.Logger = None, max_rows_count: int = None
+    local_path: Union[str, Path],
+    *,
+    logger: logging.Logger = None,
+    max_rows_count: int = None,
+    enable_parse_image_path=False,
 ) -> List[Dict[str, Any]]:
     """load data from local file"""
-    df = load_df(local_path, logger, max_rows_count=max_rows_count)
+    df = load_df(local_path, logger, max_rows_count=max_rows_count, enable_parse_image_path=enable_parse_image_path)
 
     # convert dataframe to list of dict
     result = []
@@ -102,17 +120,28 @@ def load_data(
     return result
 
 
-def load_df(local_path: Union[str, Path], logger: logging.Logger = None, max_rows_count: int = None) -> pd.DataFrame:
+def load_df(
+    local_path: Union[str, Path],
+    logger: logging.Logger = None,
+    max_rows_count: int = None,
+    *,
+    enable_parse_image_path=False,
+) -> pd.DataFrame:
     """load data from local file to df. For the usage of PRS."""
     lp = local_path if isinstance(local_path, Path) else Path(local_path)
     try:
         if lp.is_file():
-            df = _pd_read_file(local_path, logger=logger)
+            df = _pd_read_file(local_path, logger=logger, enable_parse_image_path=enable_parse_image_path)
             # honor max_rows_count if it is specified
             if max_rows_count and len(df) > max_rows_count:
                 df = df.head(max_rows_count)
         else:
-            df = _handle_dir(local_path, max_rows_count=max_rows_count, logger=logger)
+            df = _handle_dir(
+                local_path,
+                max_rows_count=max_rows_count,
+                logger=logger,
+                enable_parse_image_path=enable_parse_image_path,
+            )
     except ValueError as e:
         raise InvalidUserData(
             message_format="Fail to load invalid data. We support file formats: csv, tsv, json, jsonl, parquet. "
