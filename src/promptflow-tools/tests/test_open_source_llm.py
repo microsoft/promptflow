@@ -78,6 +78,7 @@ class TestOpenSourceLLM:
     stateless_os_llm = OpenSourceLLM()
     gpt2_connection = "connection/gpt2_connection"
     llama_connection = "connection/llama_chat_connection"
+    llama_serverless_connection = "connection/llama_serverless_connection"
     completion_prompt = "In the context of Azure ML, what does the ML stand for?"
     chat_prompt = """system:
 You are a AI which helps Customers answer questions.
@@ -260,6 +261,14 @@ user:
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_llama_chat(self, chat_endpoints_provider):
         response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint=self.llama_connection)
+        assert len(response) > 25
+
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_llama_serverless(self, chat_endpoints_provider):
+        response = self.stateless_os_llm.call(
+            self.completion_prompt,
+            API.COMPLETION,
+            endpoint=self.llama_serverless_connection)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
