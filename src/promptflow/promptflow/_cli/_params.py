@@ -112,9 +112,10 @@ def add_param_columns_mapping(parser):
     parser.add_argument(
         "--column-mapping",
         action=AppendToDictAction,
-        help="Inputs column mapping, use ${data.xx} to refer to data file columns, "
-        "use ${run.inputs.xx} and ${run.outputs.xx} to refer to run inputs/outputs columns. Example: "
-        "--column-mapping data1='${data.data1}' data2='${run.inputs.data2}' data3='${run.outputs.data3}'",
+        help="Inputs column mapping, use ${data.xx} to refer to data columns, "
+        "use ${run.inputs.xx} to refer to referenced run's data columns. "
+        "and use ${run.outputs.xx} to refer to referenced run's output columns."
+        "Example: --column-mapping data1='${data.data1}' data2='${run.inputs.data2}' data3='${run.outputs.data3}'",
         nargs="+",
     )
 

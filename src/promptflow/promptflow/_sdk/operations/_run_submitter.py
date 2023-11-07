@@ -353,7 +353,7 @@ class RunSubmitter:
             # won't raise the exception since it's already included in run object.
         finally:
             # persist snapshot and result
-            # snapshot: flow directory and (mapped) inputs
+            # snapshot: flow directory
             local_storage.dump_snapshot(flow)
             # persist inputs, outputs and metrics
             local_storage.persist_result(bulk_result)
@@ -375,7 +375,8 @@ class RunSubmitter:
             result.update(
                 {
                     "run.outputs": self.run_operations._get_outputs_path(run.run),
-                    "run.inputs": self.run_operations._get_inputs_path(run.run),
+                    # to align with cloud behavior, run.inputs should refer to original data
+                    "run.inputs": self.run_operations._get_data_path(run.run),
                 }
             )
         return {k: str(Path(v).resolve()) for k, v in result.items() if v is not None}

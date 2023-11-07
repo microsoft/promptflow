@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Union
 
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.load_data import load_data
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.executor._result import BulkResult
@@ -49,7 +50,8 @@ class BatchEngine:
         mapped_inputs = self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
         # run flow in batch mode
         output_dir = self._resolve_dir(output_dir)
-        batch_result = self.flow_executor.exec_bulk(mapped_inputs, run_id, output_dir=output_dir)
+        with _change_working_dir(self.flow_executor._working_dir):
+            batch_result = self.flow_executor.exec_bulk(mapped_inputs, run_id, output_dir=output_dir)
         # persist outputs to output dir
         self._persist_outputs(batch_result.outputs, output_dir)
         return batch_result
