@@ -193,8 +193,9 @@ class LocalStorageOperations(AbstractRunStorage):
         self._flow_tools_json_path = (
             self._snapshot_folder_path / PROMPT_FLOW_DIR_NAME / LocalStorageFilenames.FLOW_TOOLS_JSON
         )
+        self._inputs_path = self.path / LocalStorageFilenames.INPUTS  # keep this for other usages
         # below inputs and outputs are dumped by SDK
-        self._sdk_inputs_path = self.path / LocalStorageFilenames.INPUTS
+        self._sdk_inputs_path = self._inputs_path
         self._sdk_output_path = self.path / LocalStorageFilenames.OUTPUTS
         # metrics
         self._metrics_path = self.path / LocalStorageFilenames.METRICS
