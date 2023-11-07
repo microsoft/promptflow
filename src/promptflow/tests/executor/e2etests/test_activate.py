@@ -1,10 +1,10 @@
 import pytest
-
+from tempfile import mkdtemp
+from pathlib import Path
 from promptflow.contracts.run_info import Status
 from promptflow.executor.flow_executor import BulkResult, FlowExecutor, LineResult
-
+from promptflow._utils.logger_utils import LogContext
 from ..utils import (
-    WRONG_FLOW_ROOT,
     get_bulk_inputs,
     get_flow_expected_result,
     get_flow_expected_status_summary,
@@ -40,11 +40,16 @@ class TestExecutorActivate:
         expected_status_summary = get_flow_expected_status_summary(flow_folder)
         self.assert_activate_bulk_run_result(results, expected_result, expected_status_summary)
 
-    def test_wrong_flow_activate(self, dev_connections):
+    def test_all_nodes_bypassed(self, dev_connections):
         flow_folder = "all_nodes_bypassed"
-        executor = FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
-        result = executor.exec_line(get_flow_inputs(flow_folder, WRONG_FLOW_ROOT))
+        file_path = Path(mkdtemp()) / "flow.log"
+        with LogContext(file_path):
+            executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+            result = executor.exec_line(get_flow_inputs(flow_folder))
         assert result.output["result"] is None
+        with open(file_path) as fin:
+            content = fin.read()
+            assert "The node referenced by output:'third_node' is bypassed, which is not recommended." in content
 
     def assert_activate_bulk_run_result(self, result: BulkResult, expected_result, expected_status_summary):
         # Validate the flow outputs
