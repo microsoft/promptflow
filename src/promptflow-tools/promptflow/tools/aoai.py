@@ -8,10 +8,7 @@ from promptflow.contracts.types import PromptTemplate
 # since the code here is in promptflow namespace as well
 from promptflow._internal import enable_cache, ToolProvider, tool, register_apis
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
-    validate_functions, process_function_call, post_process_chat_api_response, replay_decorator_completion, \
-    replay_decorator_chat, replay_decorator_embedding
-from typing import OrderedDict
-from promptflow._sdk._record_storage import RecordStorage
+    validate_functions, process_function_call, post_process_chat_api_response, record_decorator
 
 
 class AzureOpenAI(ToolProvider):
@@ -33,7 +30,7 @@ class AzureOpenAI(ToolProvider):
     @tool
     @handle_openai_error()
     @enable_cache(calculate_cache_string_for_completion)
-    @replay_decorator_completion
+    @record_decorator
     def completion(
         self,
         prompt: PromptTemplate,
@@ -88,11 +85,6 @@ class AzureOpenAI(ToolProvider):
             **self._connection_dict,
         )
 
-        if RecordStorage.is_recording_mode():
-            input_dict: OrderedDict = OrderedDict(kwargs)
-            input_dict['prompt'] = prompt
-            RecordStorage.get_instance().set_record(input_dict=input_dict, output=response)
-
         if stream:
             def generator():
                 for chunk in response:
@@ -108,7 +100,7 @@ class AzureOpenAI(ToolProvider):
 
     @tool
     @handle_openai_error()
-    @replay_decorator_chat
+    @record_decorator
     def chat(
         self,
         prompt: PromptTemplate,
@@ -157,17 +149,12 @@ class AzureOpenAI(ToolProvider):
 
         completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
 
-        if RecordStorage.is_recording_mode():
-            input_dict: OrderedDict = OrderedDict(kwargs)
-            input_dict['prompt'] = prompt
-            RecordStorage.get_instance().set_record(input_dict=input_dict, output=completion)
-
         return post_process_chat_api_response(completion, stream, functions)
 
     # TODO: embedding is a separate builtin tool, will remove it from llm.
     @tool
     @handle_openai_error()
-    @replay_decorator_embedding
+    @record_decorator
     def embedding(self, input, deployment_name: str, user: str = ""):
         response = openai.Embedding.create(
             input=input,
@@ -176,9 +163,6 @@ class AzureOpenAI(ToolProvider):
             headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
             **self._connection_dict,
         )
-        if RecordStorage.is_recording_mode():
-            input_dict: OrderedDict = OrderedDict({"input": input, "user": user})
-            RecordStorage.get_instance().set_record(input_dict=input_dict, output=completion)
         return response["data"][0]["embedding"]
 
 

@@ -306,13 +306,13 @@ class TestCli:
         assert output_path.exists()
         log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
         assert log_path.exists()
-        record_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "node_cache.jsonl"
+        record_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "node_cache.shelve.dat"
         assert record_path.exists()
 
     @pytest.mark.usefixtures("replaying_enabled")
     def test_pf_flow_test_replaying_enabled(self):
         flow_name = "basic_with_builtin_llm_node"
-        record_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "node_cache.jsonl"
+        record_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "node_cache.shelve.dat"
         if not record_path.exists():
             assert False
 
@@ -340,13 +340,13 @@ class TestCli:
         assert output_path.exists()
         log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
         assert log_path.exists()
-        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.jsonl"
+        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.shelve.dat"
         assert record_path.exists()
 
     @pytest.mark.usefixtures("replaying_enabled", "recording_file_override")
     def test_pf_flow_test_replay_enabled_and_override_recording(self):
         flow_name = "basic_with_builtin_llm_node"
-        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.jsonl"
+        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.shelve.dat"
         if not record_path.exists():
             assert False
 

@@ -183,7 +183,7 @@ def replaying_enabled(mocker: MockerFixture):
 @pytest.fixture
 def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
     if request.cls.__name__ == "TestCli":
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "testcli_node_cache.jsonl"
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "testcli_node_cache.shelve"
     patch = mocker.patch(
         "promptflow._sdk._configuration.Configuration.get_recording_file",
         return_value=file_path,

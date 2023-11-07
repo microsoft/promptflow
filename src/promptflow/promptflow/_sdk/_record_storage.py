@@ -3,6 +3,8 @@
 # ---------------------------------------------------------
 import hashlib
 import json
+import os
+import shelve
 from pathlib import Path
 from typing import Dict
 
@@ -14,7 +16,7 @@ from promptflow._sdk._errors import RecordFileMissingException, RecordItemMissin
 class RecordStorage(object):
     """
     RecordStorage is used to store the record of node run.
-    File often stored in .promptflow/node_cache.jsonl
+    File often stored in .promptflow/node_cache.shelve
     Currently only text input/output could be recorded.
     Example of cached items:
     {
@@ -31,7 +33,7 @@ class RecordStorage(object):
     """
 
     _standard_record_folder = ".promptflow"
-    _standard_record_name = "node_cache.jsonl"
+    _standard_record_name = "node_cache.shelve"
     _instance = None
 
     def __init__(self, record_file: str = None):
@@ -82,34 +84,35 @@ class RecordStorage(object):
             record_folder.mkdir(parents=True, exist_ok=True)
 
         # if file exist, load file
-        if self._record_file.exists():
+        if self.exists_record_file(record_folder, self._record_file.parts[-1]):
             self._load_file()
+
+    def exists_record_file(self, record_folder, file_name) -> bool:
+        files = os.listdir(record_folder)
+        for file in files:
+            if file.startswith(file_name):
+                return True
+        return False
 
     def _write_file(self) -> None:
         file_content = self.cached_items.get(self._record_file_str, None)
 
         if file_content is not None:
-            with open(self.record_file, "w+", encoding="utf-8") as fp:
-                for key, value in self.cached_items[self._record_file_str].items():
-                    json.dump(value, fp, separators=(",", ":"), ensure_ascii=False)
-                    fp.write("\n")
+            saved_dict = shelve.open(str(self.record_file.resolve()))
+            for key, value in file_content.items():
+                saved_dict[key] = value
+            saved_dict.close()
 
     def _load_file(self) -> None:
         local_content = self.cached_items.get(self._record_file_str, None)
         if not local_content:
-            if not self.record_file.exists():
+            if not self.exists_record_file(self.record_file.parent, self.record_file.parts[-1]):
                 return
             self.cached_items[self._record_file_str] = {}
-            with open(self.record_file, "r", encoding="utf-8") as fp:
-                json_list = list(fp)
-
-            for json_str in json_list:
-                json_dict = json.loads(json_str)
-                input_dict = {}
-                for key, value in json_dict["input"].items():
-                    input_dict[key] = value
-                hash_value = hashlib.sha1(str(sorted(input_dict)).encode("utf-8")).hexdigest()
-                self.cached_items[self._record_file_str][hash_value] = json_dict
+            saved_dict = shelve.open(str(self.record_file.resolve()))
+            for key, value in saved_dict.items():
+                self.cached_items[self._record_file_str][key] = value
+            saved_dict.close()
 
     def get_record(self, input_dict: Dict) -> object:
         """
