@@ -262,8 +262,8 @@ def record_decorator(func):
         input_dict: OrderedDict = OrderedDict()
         for key in kwargs:
             if key not in ['deployment_name', 'suffix', 'max_tokens', 'temperature', 'top_p',
-                            'n', 'stream', 'logprobs', 'echo', 'stop', 'presence_penalty',
-                            'frequency_penalty', 'best_of', 'logit_bias', 'user']:
+                           'n', 'stream', 'logprobs', 'echo', 'stop', 'presence_penalty',
+                           'frequency_penalty', 'best_of', 'logit_bias', 'user']:
                 input_dict[key] = kwargs[key]
         if RecordStorage.is_replaying_mode():
             response = RecordStorage.get_instance().get_record(input_dict)
