@@ -20,6 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--subscription-id", type=str)
     parser.add_argument("--resource-group-name", type=str)
     parser.add_argument("--workspace-name", type=str)
+    parser.add_argument("--compute-instance-name", type=str)
     return parser.parse_args()
 
 
@@ -76,13 +77,17 @@ def main(args: argparse.Namespace):
     pfs_runtime_helper.delete_runtime(name=RUNTIME_NAME)
     print("runtime deleted!")
 
-    print("deleting compute instance...")
-    delete_compute_instance(ml_client=ml_client)
-    print("compute instance deleted!")
+    # below operations are very heavy:
+    # 1. compute instance creation can be very time consuming
+    # 2. we might run into quota issue
 
-    print("creating compute instance...")
-    ci_name = create_compute_instance(ml_client=ml_client)
-    print("compute instance created, name:", ci_name)
+    # print("deleting compute instance...")
+    # delete_compute_instance(ml_client=ml_client)
+    # print("compute instance deleted!")
+
+    # print("creating compute instance...")
+    # ci_name = create_compute_instance(ml_client=ml_client)
+    # print("compute instance created, name:", ci_name)
 
     print("creating environment...")
     env_asset_id = create_environment(ml_client=ml_client)
@@ -92,7 +97,7 @@ def main(args: argparse.Namespace):
     pfs_runtime_helper.create_runtime(
         name=RUNTIME_NAME,
         env_asset_id=env_asset_id,
-        ci_name=ci_name,
+        ci_name=args.compute_instance_name,
     )
     print("runtime created!")
 
