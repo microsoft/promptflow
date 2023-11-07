@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import datetime
 import json
 import logging
@@ -39,7 +40,6 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import BulkResult
 from promptflow.storage import AbstractRunStorage
 
@@ -193,7 +193,9 @@ class LocalStorageOperations(AbstractRunStorage):
         self._flow_tools_json_path = (
             self._snapshot_folder_path / PROMPT_FLOW_DIR_NAME / LocalStorageFilenames.FLOW_TOOLS_JSON
         )
-        self._inputs_path = self._snapshot_folder_path / LocalStorageFilenames.INPUTS
+        # below inputs and outputs are dumped by SDK
+        self._sdk_inputs_path = self.path / LocalStorageFilenames.INPUTS
+        self._sdk_output_path = self.path / LocalStorageFilenames.OUTPUTS
         # metrics
         self._metrics_path = self.path / LocalStorageFilenames.METRICS
         # legacy files: detail.json and outputs.jsonl(not the one in flow_outputs folder)
@@ -203,7 +205,7 @@ class LocalStorageOperations(AbstractRunStorage):
         # for normal node run records, store per node per line;
         # for reduce node run records, store centralized in 000000000.jsonl per node
         self.outputs_folder = self._prepare_folder(self.path / "flow_outputs")
-        self._outputs_path = self.outputs_folder / "output.jsonl"
+        self._outputs_path = self.outputs_folder / "output.jsonl"  # dumped by executor
         self._node_infos_folder = self._prepare_folder(self.path / "node_artifacts")
         self._run_infos_folder = self._prepare_folder(self.path / "flow_artifacts")
         self._data_path = Path(run.data) if run.data is not None else None
@@ -246,21 +248,8 @@ class LocalStorageOperations(AbstractRunStorage):
             flow_dag = yaml.safe_load(f)
         return flow_dag["inputs"], flow_dag["outputs"]
 
-    def dump_inputs(self, line_results: List[LineResult]) -> None:
-        inputs = []
-        for line_result in line_results:
-            try:
-                inputs.append(line_result.run_info.inputs)
-            except Exception:
-                # ignore when single line doesn't have inputs
-                pass
-        df = pd.DataFrame(inputs)
-        with open(self._inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            # policy: http://policheck.azurewebsites.net/Pages/TermInfo.aspx?LCID=9&TermID=203588
-            df.to_json(f, "records", lines=True, force_ascii=False)
-
     def load_inputs(self) -> RunInputs:
-        with open(self._inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+        with open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             df = pd.read_json(f, orient="records", lines=True)
             return df.to_dict("list")
 
@@ -281,6 +270,13 @@ class LocalStorageOperations(AbstractRunStorage):
                 df.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                 df = df.set_index(LINE_NUMBER)
             return df.to_dict("list")
+
+    def dump_inputs_and_outputs(self) -> None:
+        inputs, outputs = self._collect_io_from_debug_info()
+        with open(self._sdk_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            inputs.to_json(f, orient="records", lines=True, force_ascii=False)
+        with open(self._sdk_output_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            outputs.to_json(f, orient="records", lines=True, force_ascii=False)
 
     def dump_metrics(self, metrics: Optional[RunMetrics]) -> None:
         metrics = metrics or dict()
@@ -408,9 +404,8 @@ class LocalStorageOperations(AbstractRunStorage):
         """Persist metrics from return of executor."""
         if result is None:
             return
-        # The executor will persist outputs to output directory, so only dump metrics here for the time being.
+        self.dump_inputs_and_outputs()
         self.dump_metrics(result.metrics)
-        self.dump_inputs(result.line_results)
 
     def _persist_run_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path: Path):
         if run_info.inputs:
@@ -445,3 +440,32 @@ class LocalStorageOperations(AbstractRunStorage):
         res = pd.concat([df, df_to_append], ignore_index=True)
         res = res.sort_values(by=LINE_NUMBER, ascending=True)
         return res
+
+    def load_inputs_and_outputs(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        if not self._sdk_inputs_path.is_file() or not self._sdk_output_path.is_file():
+            inputs, outputs = self._collect_io_from_debug_info()
+        else:
+            with open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+                inputs = pd.read_json(f, orient="records", lines=True)
+            with open(self._sdk_output_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+                outputs = pd.read_json(f, orient="records", lines=True)
+                # if all line runs are failed, no need to fill
+                if len(outputs) > 0:
+                    outputs = self._outputs_padding(outputs, len(list(inputs.values())[0]))
+                    outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
+                    outputs = outputs.set_index(LINE_NUMBER)
+        return inputs, outputs
+
+    def _collect_io_from_debug_info(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        inputs, outputs = [], []
+        for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
+            if line_run_record_file.suffix.lower() != ".jsonl":
+                continue
+            with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
+                line_run_info: dict = json.load(f)["run_info"]
+                current_inputs = line_run_info.get("inputs")
+                current_outputs = line_run_info.get("output")
+                inputs.append(copy.deepcopy(current_inputs))
+                if current_outputs is not None:
+                    outputs.append(copy.deepcopy(current_outputs))
+        return pd.DataFrame(inputs), pd.DataFrame(outputs)
