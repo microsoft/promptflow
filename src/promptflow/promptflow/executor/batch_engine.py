@@ -61,8 +61,7 @@ class BatchEngine:
         result = {}
         for input_key, input_dir in input_dirs.items():
             input_dir = self._resolve_dir(input_dir)
-            file_data = load_data(input_dir)
-            result[input_key] = file_data
+            result[input_key] = load_data(input_dir)
         return result
 
     def _resolve_dir(self, dir: Union[str, Path]) -> Path:
