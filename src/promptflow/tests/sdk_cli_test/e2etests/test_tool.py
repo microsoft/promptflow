@@ -179,21 +179,41 @@ class TestCli:
         tool_path = TOOL_ROOT / "tool_with_enabled_by_value.py"
         tool_meta = self.get_tool_meta(tool_path)
         expect_tool_meta = {
-            'test_tool.tool_with_enabled_by_value.my_tool': {
-                'name': 'My Tool with Enabled By Value',
-                'type': 'python',
-                'inputs': {
-                    'user_type': {'type': ['string']},
-                    'student_id': {'type': ['string']},
-                    'teacher_id': {
-                        'type': ['string'],
-                        'enabled_by': 'user_type',
-                        'enabled_by_value': ['teacher']
+            "test_tool.tool_with_enabled_by_value.my_tool": {
+                "name": "My Tool with Enabled By Value",
+                "type": "python",
+                "inputs": {
+                    "user_type": {
+                        "type": [
+                            "string"
+                        ],
+                        "enum": [
+                            "student",
+                            "teacher"
+                        ]
+                    },
+                    "student_id": {
+                        "type": [
+                            "string"
+                        ],
+                        "enabled_by": "user_type",
+                        "enabled_by_value": [
+                            "student"
+                        ]
+                    },
+                    "teacher_id": {
+                        "type": [
+                            "string"
+                        ],
+                        "enabled_by": "user_type",
+                        "enabled_by_value": [
+                            "teacher"
+                        ]
                     }
                 },
-                'description': 'This is my tool with enabled by value',
-                'module': 'test_tool.tool_with_enabled_by_value',
-                'function': 'my_tool'
+                "description": "This is my tool with enabled by value",
+                "module": "test_tool.tool_with_enabled_by_value",
+                "function": "my_tool"
             }
         }
         assert tool_meta == expect_tool_meta
