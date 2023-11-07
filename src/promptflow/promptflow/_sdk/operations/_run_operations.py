@@ -223,7 +223,6 @@ class RunOperations(TelemetryMixin):
 
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name)
-        run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
         inputs, outputs = local_storage.load_inputs_and_outputs()
         inputs = inputs.to_dict("list")
