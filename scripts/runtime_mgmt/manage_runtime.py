@@ -10,7 +10,6 @@ from azure.identity import AzureCliCredential
 from constants import (
     COMPUTE_INSTANCE_YAML,
     ENVIRONMENT_YAML,
-    RUNTIME_NAME,
 )
 from pfs_runtime_helper import PFSRuntimeHelper
 
@@ -21,6 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--resource-group-name", type=str)
     parser.add_argument("--workspace-name", type=str)
     parser.add_argument("--compute-instance-name", type=str)
+    parser.add_argument("--runtime-name", type=str)
     return parser.parse_args()
 
 
@@ -73,9 +73,9 @@ def main(args: argparse.Namespace):
     )
     pfs_runtime_helper = PFSRuntimeHelper(ml_client=ml_client)
 
-    print("deleting runtime...")
-    pfs_runtime_helper.delete_runtime(name=RUNTIME_NAME)
-    print("runtime deleted!")
+    # print("deleting runtime...")
+    # pfs_runtime_helper.delete_runtime(name=RUNTIME_NAME)
+    # print("runtime deleted!")
 
     # below operations are very heavy:
     # 1. compute instance creation can be very time consuming
@@ -95,7 +95,7 @@ def main(args: argparse.Namespace):
 
     print("creating runtime...")
     pfs_runtime_helper.create_runtime(
-        name=RUNTIME_NAME,
+        name=args.runtime_name,
         env_asset_id=env_asset_id,
         ci_name=args.compute_instance_name,
     )
