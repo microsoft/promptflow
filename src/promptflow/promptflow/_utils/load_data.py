@@ -61,9 +61,9 @@ def _pd_read_file(local_path: str, logger: logging.Logger = None, *, enable_pars
 
     # Parse the image path into absolute path for flow consumption
     if is_json_data and enable_parse_image_path:
+        local_path = Path(local_path).resolve()
         for index, row in df.iterrows():
-            for column_name, value in row.iteritems():
-                local_path = Path(local_path).resolve()
+            for column_name, value in row.items():
                 df.at[index, column_name] = resolve_multimedia_data_recursively(local_path, value)
     return df
 
