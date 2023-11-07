@@ -324,12 +324,14 @@ class OpenAIConnectionGenerator(BaseGenerator):
         return ["connection"]
 
 
-def copy_extra_files(flow_path, extra_files):
+def copy_extra_files(flow_path, extra_files, overwrite=False):
     for file_name in extra_files:
         extra_file_path = (
             Path(__file__).parent.parent / "data" / "entry_flow" / EXTRA_FILES_MAPPING.get(file_name, file_name)
         )
         target_path = Path(flow_path) / file_name
+        if target_path.exists() and not overwrite:
+            return
         action = "Overwriting" if target_path.exists() else "Creating"
         print(f"{action} {target_path.resolve()}...")
         shutil.copy2(extra_file_path, target_path)
