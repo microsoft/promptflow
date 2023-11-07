@@ -80,9 +80,11 @@ class TestCommon:
             ("\nuser:\nname:\n\nperson\n content:\n", [
                 {'role': 'user', 'name': 'person', 'content': ''}]),
             ("\nsystem:\nname:\n\n content:\nfirst", [
-                {'role': 'system', 'content': 'name:\n\n content:\nfirst'}])
+                {'role': 'system', 'content': 'name:\n\n content:\nfirst'}]),
+            ("\nsystem:\nname:\n\n", [
+                {'role': 'system', 'content': 'name:\n\n'}])
         ]
     )
-    def test_try_parse_name_in_role_prompt(self, chat_str, expected_result):
+    def test_parse_chat_with_name_in_role_prompt(self, chat_str, expected_result):
         actual_result = parse_chat(chat_str)
         assert actual_result == expected_result
