@@ -4,34 +4,46 @@ my_tool_package.tools.mlindex_tool.my_tool:
     index_json:
       type:
       - string
-      generated_by_ux:
+      generated_by_ui:
         func_path: my_tool_package.tools.mlindex_tool.generate_index_json
         func_kwargs: 
         - name: index_type
           type: 
           - string
-          reference: ${inputs.index_type}
+          reference: ${ui_inputs.index_type}
         - name: index
           type:
           - string
-          reference: ${inputs.index_assetId}
+          reference: ${ui_inputs.index_assetId}
         - content_field:
           type:
           - string
-          reference: ${inputs.content_field}
+          reference: ${ui_inputs.content_field}
         - embedding_deployment:
           type:
           - string
           optional: true
-          reference: ${inputs.embedding_deployment}
+          reference: ${ui_inputs.embedding_deployment}
+        reverse_func_path: my_tool_package.tools.mlindex_tool.reverse_generate_index_json
+      show_hint: NonVisible
+    query:
+      type: 
+      - string
+    top_k:
+      default: '3'
+      type:
+      - int 
+
+  ui_inputs:
     index_type:
       type: 
       - string
       enum:
         - Azure Cognitive Search
-        - MLIndex Asset
-      ux_format: NonVisible
+        - MLIndex 
     index_assetId:
+      type: 
+      - string
       enabled_by: index_type
       enabled_by_value: [MLIndex Asset]
       dynamic_list:
@@ -44,26 +56,17 @@ my_tool_package.tools.mlindex_tool.my_tool:
           reference: ${inputs.index_json.index_type}
       allow_manual_entry: false
       is_multi_select: false
-      ux_format: NonVisible
     content_field:
       type:
       - string
       enabled_by: index_type
       enabled_by_value: [Azure Cognitive Search]
-      ux_format: NonVisible
     embedding_deployment:
       type:
       - string
       enabled_by: index_type
       enabled_by_value: [Azure Cognitive Search]
-      ux_format: NonVisible
-    query:
-      type: 
-      - string
-    top_k:
-      default: '3'
-      type:
-      - int  
+
   module: my_tool_package.tools.mlindex_tool
   name: MLIndex Tool
   description: This is my tool combined dynamic list and enabled by
