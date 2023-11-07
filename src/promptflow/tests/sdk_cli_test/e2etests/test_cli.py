@@ -705,7 +705,9 @@ class TestCli:
             )
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
             ignore_file_path = Path(temp_dir) / flow_name / ".gitignore"
+            requirements_file_path = Path(temp_dir) / flow_name / "requirements.txt"
             assert ignore_file_path.exists()
+            assert requirements_file_path.exists()
             ignore_file_path.unlink()
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "text=value")
 
@@ -724,6 +726,7 @@ class TestCli:
             )
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
             assert ignore_file_path.exists()
+            assert requirements_file_path.exists()
             with open(Path(temp_dir) / flow_name / ".promptflow" / "flow.tools.json", "r") as f:
                 tools_dict = json.load(f)["code"]
                 assert jinja_name in tools_dict
