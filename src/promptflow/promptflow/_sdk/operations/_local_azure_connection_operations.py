@@ -34,7 +34,7 @@ class LocalAzureConnectionOperations(TelemetryMixin):
     def get_credential(cls):
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
 
-        if is_github_codespaces() or True:
+        if is_github_codespaces():
             # For code spaces, append device code credential as the fallback option.
             credential = DefaultAzureCredential()
             credential.credentials = (*credential.credentials, DeviceCodeCredential())
