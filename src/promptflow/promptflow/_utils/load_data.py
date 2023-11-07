@@ -72,6 +72,9 @@ def _bfs_dir(dir_path: List[str]) -> Tuple[List[str], List[str]]:
     """BFS traverse directory with depth 1, returns files and directories"""
     files, dirs = [], []
     for path in dir_path:
+        # Ignore the json file under .promptflow folder
+        if Path(path).name == PROMPT_FLOW_DIR_NAME:
+            continue
         for filename in os.listdir(path):
             file = Path(path, filename).resolve()
             if file.is_file():
@@ -90,9 +93,6 @@ def _handle_dir(
     # BFS traverse directory to collect files to load
     target_dir = [str(dir_path)]
     while len(target_dir) > 0:
-        # Ignore the json file under .promptflow folder
-        if Path(target_dir).name == PROMPT_FLOW_DIR_NAME:
-            continue
         files, dirs = _bfs_dir(target_dir)
         for file in files:
             current_df = _pd_read_file(file, logger=logger, enable_parse_image_path=enable_parse_image_path)
