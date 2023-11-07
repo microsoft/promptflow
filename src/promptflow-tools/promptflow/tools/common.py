@@ -10,8 +10,7 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat
-from typing import Set, OrderedDict
-from promptflow._sdk._record_storage import RecordStorage
+from typing import Set
 
 
 def validate_role(role: str, valid_roles: Set[str] = None):
@@ -254,24 +253,3 @@ def post_process_chat_api_response(completion, stream, functions):
         else:
             # chat api may return message with no content.
             return getattr(completion.choices[0].message, "content", "")
-
-
-def record_decorator(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        input_dict: OrderedDict = OrderedDict()
-        for key in kwargs:
-            if key not in ['deployment_name', 'suffix', 'max_tokens', 'temperature', 'top_p',
-                           'n', 'stream', 'logprobs', 'echo', 'stop', 'presence_penalty',
-                           'frequency_penalty', 'best_of', 'logit_bias', 'user']:
-                input_dict[key] = kwargs[key]
-        if RecordStorage.is_replaying_mode():
-            response = RecordStorage.get_instance().get_record(input_dict)
-            return response
-
-        if RecordStorage.is_recording_mode():
-            obj = func(*args, **kwargs)
-            RecordStorage.get_instance().set_record(input_dict, obj)
-            return obj
-
-    return wrapper

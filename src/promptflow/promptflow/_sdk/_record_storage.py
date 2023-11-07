@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import functools
 import hashlib
 import json
 import os
@@ -216,3 +217,22 @@ class RecordStorage(object):
         if record_file is not None:
             cls._instance.record_file = record_file
         return cls._instance
+
+
+def record_decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        input_dict = {}
+        for key in kwargs:
+            input_dict[key] = kwargs[key]
+        if RecordStorage.is_replaying_mode():
+            response = RecordStorage.get_instance().get_record(input_dict)
+            return response
+
+        obj = func(*args, **kwargs)
+        if RecordStorage.is_recording_mode():
+            RecordStorage.get_instance().set_record(input_dict, obj)
+            return obj
+        return obj
+
+    return wrapper
