@@ -1,10 +1,6 @@
 import pytest
-import yaml
-from pathlib import Path
 
 from promptflow.contracts.multimedia import PFBytes, Image
-
-PACKAGE_TOOL_BASE = Path(__file__).parent.parent.parent / "package_tools"
 
 
 @pytest.mark.e2etest
