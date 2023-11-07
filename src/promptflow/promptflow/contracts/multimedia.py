@@ -16,6 +16,8 @@ class PFBytes(bytes):
         return super().__new__(cls, value)
 
     def __init__(self, value: bytes, mime_type: str):
+        # Here the first argument should also be "value", the same as __new__.
+        # Otherwise we will get error when initialize the object.
         super().__init__()
         # Use this hash to identify this bytes.
         self._hash = hashlib.sha1(value).hexdigest()[:8]
