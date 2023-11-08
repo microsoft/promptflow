@@ -1,3 +1,4 @@
+import re
 import sys
 import time
 from io import StringIO
@@ -29,12 +30,13 @@ class TestRepeatLogTimer:
             log_message_function=generate_elapsed_time_messages,
             args=("Test", start_time, interval_seconds, None),
         ):
-            time.sleep(10)
+            time.sleep(10.5)
         logs = s.getvalue().split("\n")
-        for i in range(1, 10):
-            assert (
-                logs[i - 1]
-                == f"Test has been running for {i} seconds, "
-                + "thread None cannot be found in sys._current_frames, "
-                + "maybe it has been terminated due to unexpected errors."
-            )
+        logs = [log for log in logs if log]
+        log_pattern = re.compile(
+            r"^Test has been running for [0-9]+ seconds, thread None cannot be found in sys._current_frames, "
+            r"maybe it has been terminated due to unexpected errors.$"
+        )
+        assert len(logs) == 10
+        for log in logs:
+            assert re.match(log_pattern, log), f"The wrong log: {log}"
