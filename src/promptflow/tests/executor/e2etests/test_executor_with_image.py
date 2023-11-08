@@ -176,6 +176,11 @@ class TestExecutorWithImage:
                 {"data": "inputs.jsonl"},
                 {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
             ),
+            (
+                COMPOSITE_IMAGE_FLOW,
+                {"data": "incomplete_inputs.jsonl"},
+                {"image_dict": "${data.image_dict}"},
+            ),
         ],
     )
     def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping):

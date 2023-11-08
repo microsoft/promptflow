@@ -4,6 +4,7 @@
 
 import copy
 import logging
+import os.path
 import sys
 import time
 from dataclasses import asdict
@@ -28,6 +29,7 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow.contracts._run_management import RunMetadata, RunVisualization
+from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
@@ -223,10 +225,10 @@ class RunOperations(TelemetryMixin):
 
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name)
-        run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
-        inputs = local_storage.load_inputs()
-        outputs = local_storage.load_outputs()
+        inputs, outputs = local_storage.load_inputs_and_outputs()
+        inputs = inputs.to_dict("list")
+        outputs = outputs.to_dict("list")
         data = {}
         columns = []
         for k in inputs:
@@ -321,10 +323,16 @@ class RunOperations(TelemetryMixin):
         local_storage = self._get_local_storage(run)
         return local_storage._outputs_path if local_storage.load_outputs() else None
 
-    def _get_inputs_path(self, run: Union[str, Run]) -> str:
+    def _get_data_path(self, run: Union[str, Run]) -> str:
         """Get the outputs file path of the run."""
         local_storage = self._get_local_storage(run)
-        return local_storage._inputs_path if local_storage.load_inputs() else None
+        # TODO: what if the data is deleted?
+        if not local_storage._data_path or not os.path.exists(local_storage._data_path):
+            raise UserErrorException(
+                f"Data path {local_storage._data_path} for run {run.name} does not exist. "
+                "Please make sure it exists and not deleted."
+            )
+        return local_storage._data_path
 
     def _get_local_storage(self, run: Union[str, Run]) -> LocalStorageOperations:
         """Get the local storage of the run."""
