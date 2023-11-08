@@ -27,12 +27,12 @@ class AzureContentSafety(ToolProvider):
 
     @tool
     def analyze_text(
-        self,
-        text: str,
-        hate_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
-        sexual_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
-        self_harm_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
-        violence_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
+            self,
+            text: str,
+            hate_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
+            sexual_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
+            self_harm_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
+            violence_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
     ):
         content_safety = ContentSafety(self.connection.endpoint, self.connection.api_key, self.connection.api_version)
         media_type = MediaType.Text
@@ -58,12 +58,12 @@ class AzureContentSafety(ToolProvider):
 
 @tool
 def analyze_text(
-    connection: AzureContentSafetyConnection,
-    text: str,
-    hate_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
-    sexual_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
-    self_harm_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
-    violence_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
+        connection: AzureContentSafetyConnection,
+        text: str,
+        hate_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
+        sexual_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
+        self_harm_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
+        violence_category: TextCategorySensitivity = TextCategorySensitivity.MEDIUM_SENSITIVITY,
 ):
     return AzureContentSafety(connection).analyze_text(
         text=text,
@@ -185,10 +185,10 @@ class ContentSafety(object):
         }
 
     def build_request_body(
-        self,
-        media_type: MediaType,
-        content: str,
-        blocklists: List[str],
+            self,
+            media_type: MediaType,
+            content: str,
+            blocklists: List[str],
     ) -> dict:
         """
         Builds the request body for the Content Safety API request.
@@ -212,10 +212,10 @@ class ContentSafety(object):
             raise ValueError(f"Invalid Media Type {media_type}")
 
     def detect(
-        self,
-        media_type: MediaType,
-        content: str,
-        blocklists: List[str] = [],
+            self,
+            media_type: MediaType,
+            content: str,
+            blocklists: List[str] = [],
     ) -> dict:
         url = self.build_url(media_type)
         headers = self.build_headers()
@@ -249,9 +249,9 @@ class ContentSafety(object):
         raise ValueError(f"Invalid Category {category}")
 
     def make_decision(
-        self,
-        detection_result: dict,
-        reject_thresholds: Dict[Category, int],
+            self,
+            detection_result: dict,
+            reject_thresholds: Dict[Category, int],
     ) -> Decision:
         action_result = {}
         final_action = Action.Accept
@@ -270,9 +270,9 @@ class ContentSafety(object):
                 final_action = action
 
         if (
-            "blocklistsMatchResults" in detection_result
-            and detection_result["blocklistsMatchResults"]
-            and len(detection_result["blocklistsMatchResults"]) > 0
+                "blocklistsMatchResults" in detection_result
+                and detection_result["blocklistsMatchResults"]
+                and len(detection_result["blocklistsMatchResults"]) > 0
         ):
             final_action = Action.Reject
 
@@ -281,9 +281,9 @@ class ContentSafety(object):
         return Decision(final_action, action_result)
 
     def make_decision_1001(
-        self,
-        detection_result: dict,
-        reject_thresholds: Dict[Category, int],
+            self,
+            detection_result: dict,
+            reject_thresholds: Dict[Category, int],
     ) -> Decision:
         action_result = {}
         final_action = Action.Accept
