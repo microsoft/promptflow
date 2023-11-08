@@ -32,8 +32,6 @@ class Configuration(object):
     EXTENSION_EU_USER = "extension.eu_user"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
-    RECORDING_MODE = "recording.mode"
-    RECORDING_FILE_OVERRIDE = "recording.file"
     _instance = None
 
     def __init__(self, overrides=None):

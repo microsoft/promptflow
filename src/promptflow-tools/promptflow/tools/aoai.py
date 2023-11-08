@@ -12,7 +12,6 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
 
 
 class AzureOpenAI(ToolProvider):
-
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
         self.connection = connection
@@ -56,7 +55,6 @@ class AzureOpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
         stream = to_bool(stream)
-
         response = openai.Completion.create(
             prompt=prompt,
             engine=deployment_name,
@@ -83,7 +81,6 @@ class AzureOpenAI(ToolProvider):
             headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
             **self._connection_dict,
         )
-
         if stream:
             def generator():
                 for chunk in response:
@@ -146,7 +143,6 @@ class AzureOpenAI(ToolProvider):
             params["function_call"] = process_function_call(function_call)
 
         completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
-
         return post_process_chat_api_response(completion, stream, functions)
 
     # TODO: embedding is a separate builtin tool, will remove it from llm.

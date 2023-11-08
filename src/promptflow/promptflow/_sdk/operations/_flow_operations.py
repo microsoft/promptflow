@@ -20,11 +20,11 @@ from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
+    dump_flow_result,
     dump_yaml,
     generate_flow_tools_json,
     generate_random_string,
     parse_variant,
-    dump_flow_result,
 )
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
@@ -125,7 +125,6 @@ class FlowOperations:
 
         inputs = inputs or {}
         flow = load_flow(flow)
-
         flow.context.variant = variant
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
@@ -134,23 +133,21 @@ class FlowOperations:
             )
 
             if node:
-                output = submitter.node_test(
+                return submitter.node_test(
                     node_name=node,
                     flow_inputs=flow_inputs,
                     dependency_nodes_outputs=dependency_nodes_outputs,
                     environment_variables=environment_variables,
                     stream=True,
                 )
-                return output
             else:
-                output = submitter.flow_test(
+                return submitter.flow_test(
                     inputs=flow_inputs,
                     environment_variables=environment_variables,
                     stream_log=stream_log,
                     stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                 )
-                return output
 
     @staticmethod
     def _is_chat_flow(flow):
