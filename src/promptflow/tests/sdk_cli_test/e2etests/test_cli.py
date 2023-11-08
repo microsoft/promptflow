@@ -308,7 +308,7 @@ class TestCli:
         assert output_path.exists()
         with open(output_path, "r") as f:
             outputs = json.load(f)
-            assert outputs["answer"] in stdout
+            assert outputs["answer"] in json.loads(stdout)["answer"]
 
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
         assert detail_path.exists()
