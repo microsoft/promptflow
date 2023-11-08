@@ -20,7 +20,6 @@
 
     <?elseif $(var.Platform) = "x86" ?>
     <?define PromptflowCliRegistryGuid = "7c2c792d-c395-44a1-8222-8e4ea006abb9" ?>
-    <?define PromptflowCliVersionGuid = "f706b208-a15d-4ae7-9185-cfcc43656570" ?>
     <?define PromptflowSystemPathGuid = "9661fe6a-ff48-4e7c-a60d-fc34c2d06ef3" ?>
     <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
     <?define UpgradeCode = $(var.UpgradeCode32) ?>
@@ -112,22 +111,22 @@
             <Component Id="PromptflowCliRegistry"
                        Directory="DynamicCliDir"
                        Guid="$(var.PromptflowCliRegistryGuid)">
-            <RegistryValue Root="HKCU"
-                           Key="Software\Microsoft\$(var.ProductName)"
-                           Name="installed"
-                           Type="integer"
-                           Value="1"
-                           KeyPath="yes"/>
+                <RegistryValue Root="HKCU"
+                               Key="Software\Microsoft\$(var.ProductName)"
+                               Name="installed"
+                               Type="integer"
+                               Value="1"
+                               KeyPath="yes"/>
             </Component>
             <Component Id="PromptflowCliVersion"
                        Directory="DynamicCliDir"
                        Guid="$(var.PromptflowCliVersionGuid)">
-            <RegistryValue Root="HKLM"
-                           Key="Software\Microsoft\$(var.ProductName)"
-                           Name="version"
-                           Type="string"
-                           Value="$(var.ProductVersion)"
-                           KeyPath="yes"/>
+                <RegistryValue Root="HKLM"
+                               Key="Software\Microsoft\$(var.ProductName)"
+                               Name="version"
+                               Type="string"
+                               Value="$(var.ProductVersion)"
+                               KeyPath="yes"/>
             </Component>
             <Component Id="PromptflowService" Directory="DynamicCliDir" Guid="$(var.PromptflowServiceGuid)">
                 <File Id="PromptflowServiceEXE" Source="scripts\dist\promptflow\promptflow_service.exe" KeyPath="yes" />

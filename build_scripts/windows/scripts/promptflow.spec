@@ -9,7 +9,9 @@ datas += collect_data_files('keyrings.alt', include_py_files=True)
 datas += copy_metadata('keyrings.alt')
 datas += collect_data_files('streamlit_quill')
 
-hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs', 'win32timezone']
+hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs']
+
+service_hidden_imports = ['win32timezone']
 
 block_cipher = None
 
@@ -87,7 +89,7 @@ promptflow_service_a = Analysis(
     pathex=[],
     binaries=[],
     datas=datas,
-    hiddenimports=hidden_imports,
+    hiddenimports=service_hidden_imports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
