@@ -48,5 +48,5 @@ class AzureTokenProvider(TokenProviderABC):
             )
 
     def get_token(self):
-        audience=COGNITIVE_AUDIENCE
+        audience = COGNITIVE_AUDIENCE
         return self.credential.get_token(audience).token
