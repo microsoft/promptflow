@@ -340,6 +340,8 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     :type api_type: str
     :param api_version: The api version, default "2023-07-01-preview".
     :type api_version: str
+    :param token_provider: The token provider.
+    :type token_provider: promptflow._core.token_provider.TokenProviderABC
     :param name: Connection name.
     :type name: str
     """
