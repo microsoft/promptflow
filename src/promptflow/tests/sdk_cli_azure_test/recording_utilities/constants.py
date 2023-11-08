@@ -2,8 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-TEST_RUN_LIVE = "PROMPT_FLOW_TEST_RUN_LIVE"
-SKIP_LIVE_RECORDING = "PROMPT_FLOW_SKIP_LIVE_RECORDING"
+ENVIRON_TEST_MODE = "PROMPT_FLOW_TEST_MODE"
+
+
+class TestMode:
+    LIVE = "live"
+    RECORD = "record"
+    REPLAY = "replay"
+
 
 FILTER_HEADERS = [
     "aml-user-token",

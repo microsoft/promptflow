@@ -164,10 +164,6 @@ class InvalidReferenceProperty(NodeReferenceError):
     pass
 
 
-class OutputReferenceBypassed(NodeReferenceError):
-    pass
-
-
 class OutputReferenceNotExist(NodeReferenceError):
     pass
 

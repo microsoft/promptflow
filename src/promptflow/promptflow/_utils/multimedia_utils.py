@@ -152,9 +152,9 @@ def _save_image_to_file(
 ):
     ext = _get_extension_from_mime_type(image._mime_type)
     file_name = f"{file_name}.{ext}" if ext else file_name
-    image_path = str(relative_path / file_name) if relative_path else file_name
+    image_path = (relative_path / file_name).as_posix() if relative_path else file_name
     if use_absolute_path:
-        image_path = str(Path(folder_path / image_path).resolve())
+        image_path = Path(folder_path / image_path).resolve().as_posix()
     image_reference = {f"data:{image._mime_type};path": image_path}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)

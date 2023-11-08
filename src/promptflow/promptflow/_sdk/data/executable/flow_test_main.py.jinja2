@@ -8,7 +8,7 @@ from streamlit_quill import st_quill
 
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
-from utils import dict_iter_render_message, parse_list_from_html, parse_image_content
+from utils import render_single_dict_message, parse_list_from_html, parse_image_content
 
 invoker = None
 {% set indent_level = 4 %}
@@ -19,7 +19,7 @@ def start():
 
     def render_message(role, message_items):
         with st.chat_message(role):
-            dict_iter_render_message(message_items)
+            render_single_dict_message(message_items)
 
     def show_conversation() -> None:
         if "messages" not in st.session_state:
@@ -44,11 +44,14 @@ def start():
             render_message("user", kwargs)
         # Append chat history to kwargs
         response = run_flow({'{{chat_history_input_name}}': get_chat_history_from_session(), **kwargs})
-        st.session_state.messages.append(("assistant", response))
-        session_state_history.update({"outputs": response})
+        # Get base64 for multi modal object
+        resolved_outputs = invoker._convert_multimedia_data_to_base64(response)
+        st.session_state.messages.append(("assistant", resolved_outputs))
+        session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
+        invoker._dump_invoke_result(response)
         with container:
-            render_message("assistant", response)
+            render_message("assistant", resolved_outputs)
 
 
     def run_flow(data: dict) -> dict:
@@ -61,7 +64,7 @@ def start():
             else:
                 os.chdir(flow.parent)
             invoker = FlowInvoker(flow, connection_provider="""{{ connection_provider }}""", dump_to=dump_path)
-        result = invoker.invoke(data)
+        result = invoker._invoke(data)
         return result
 
     image = Image.open(Path(__file__).parent / "logo.png")
@@ -88,7 +91,11 @@ def start():
 
     with st.form(key='input_form', clear_on_submit=True):
         st.text('{{chat_input_name}}')
+        {% if chat_input_value_type == "list" %}
         {{chat_input_name}} = st_quill(html=True, toolbar=["image"], key='{{chat_input_name}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
+        {% elif chat_input_value_type == "string" %}
+        {{chat_input_name}} = st.text_input(label='{{chat_input_name}}', placeholder="""{{chat_input_default_value}}""")
+        {% endif %}
 
         cols = st.columns(7)
         submit_bt = cols[0].form_submit_button(label='Chat', type='primary')
@@ -96,7 +103,9 @@ def start():
 
         if submit_bt:
             with st.spinner("Loading..."):
+                {% if chat_input_value_type == "list" %}
                 {{chat_input_name}} = parse_list_from_html({{chat_input_name}})
+                {% endif %}
                 submit({{flow_inputs_params}})
 
         if clear_bt:

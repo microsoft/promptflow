@@ -41,11 +41,11 @@ class Flow(AdditionalIncludesMixin):
         if self._flow_source == AzureFlowSource.LOCAL:
             absolute_path = self._validate_flow_from_source(path)
             # flow snapshot folder
-            self.code = absolute_path.parent
+            self.code = absolute_path.parent.as_posix()
             self._code_uploaded = False
             self.path = absolute_path.name
             self._flow_dict = self._load_flow_yaml(absolute_path)
-            self.name = name or self.code.name
+            self.name = name or absolute_path.parent.name
             self.description = description or self._flow_dict.get("description", None)
             self.tags = tags or self._flow_dict.get("tags", None)
         elif self._flow_source == AzureFlowSource.AZURE:

@@ -15,7 +15,12 @@ class ResponseCreator:
     """Generates http response from flow run result."""
 
     def __init__(
-        self, flow_run_result, accept_mimetypes, stream_start_callback_func=None, stream_end_callback_func=None
+        self,
+        flow_run_result,
+        accept_mimetypes,
+        stream_start_callback_func=None,
+        stream_end_callback_func=None,
+        stream_event_callback_func=None
     ):
         # Fields that are with GeneratorType are streaming outputs.
         stream_fields = [k for k, v in flow_run_result.items() if isinstance(v, GeneratorType)]
@@ -35,6 +40,7 @@ class ResponseCreator:
         self.accept_mimetypes = accept_mimetypes
         self._on_stream_start = stream_start_callback_func
         self._on_stream_end = stream_end_callback_func
+        self._on_stream_event = stream_event_callback_func
 
     @property
     def has_stream_field(self):
@@ -71,6 +77,8 @@ class ResponseCreator:
             # If there is stream field, read and yield data until the end.
             if self.stream_iterator is not None:
                 for chunk in self.stream_iterator:
+                    if self._on_stream_event:
+                        self._on_stream_event(chunk)
                     yield format_event({self.stream_field_name: chunk})
             if self._on_stream_end:
                 duration = (time.time() - start_time) * 1000

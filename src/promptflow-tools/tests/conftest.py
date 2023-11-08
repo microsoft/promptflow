@@ -73,11 +73,6 @@ def gpt2_custom_connection():
 
 
 @pytest.fixture
-def llama_chat_custom_connection():
-    return ConnectionManager().get("llama_chat_connection")
-
-
-@pytest.fixture
 def open_source_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
@@ -113,6 +108,13 @@ def skip_if_no_api_key(request, mocker):
 @pytest.fixture
 def example_prompt_template() -> str:
     with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/marketing_writer/prompt.jinja2") as f:
+        prompt_template = f.read()
+    return prompt_template
+
+
+@pytest.fixture
+def example_prompt_template_with_name_in_roles() -> str:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_name_in_roles.jinja2") as f:
         prompt_template = f.read()
     return prompt_template
 
