@@ -44,7 +44,6 @@ from promptflow._core.tools_manager import (
 )
 from promptflow._core.tracer import Tracer
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
-from promptflow._sdk._record_storage import record_decorator
 from promptflow._sdk._serving.response_creator import ResponseCreator
 from promptflow._sdk._serving.swagger import generate_swagger
 from promptflow._sdk._serving.utils import (

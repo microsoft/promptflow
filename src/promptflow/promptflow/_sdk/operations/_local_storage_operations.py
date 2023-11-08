@@ -26,7 +26,6 @@ from promptflow._sdk._constants import (
     get_run_output_path,
 )
 from promptflow._sdk._errors import BulkRunException
-from promptflow._sdk._record_storage import RecordStorage
 from promptflow._sdk._utils import generate_flow_tools_json
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
@@ -213,7 +212,6 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
-        RecordStorage.get_instance(run.flow)
 
     def _dump_meta_file(self) -> None:
         with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:

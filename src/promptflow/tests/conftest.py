@@ -11,12 +11,12 @@ from _constants import CONNECTION_FILE, ENV_FILE
 from _pytest.monkeypatch import MonkeyPatch
 from filelock import FileLock
 from pytest_mock import MockerFixture
+from sdk_cli_test.recording_utilities import RecordStorage
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.openai_injector import inject_openai_api
-from promptflow._sdk._record_storage import RecordStorage
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
 

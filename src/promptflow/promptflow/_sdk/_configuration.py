@@ -11,7 +11,7 @@ from typing import Optional, Union
 
 import pydash
 
-from promptflow._sdk._constants import LOGGER_NAME, ConnectionProvider, RecordMode
+from promptflow._sdk._constants import LOGGER_NAME, ConnectionProvider
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException
@@ -178,16 +178,6 @@ class Configuration(object):
         if call_from_extension():
             return self.get_config(key=self.EXTENSION_EU_USER)
         return self.get_config(key=self.EU_USER)
-
-    def get_recording_mode(self) -> str:
-        """Check if recording mode is enabled."""
-        recording_mode = self.get_config(key=self.RECORDING_MODE)
-        if recording_mode != RecordMode.RECORD.value or recording_mode != RecordMode.REPLAY.value:
-            return RecordMode.LIVE.value
-
-    def get_recording_file(self) -> Optional[str]:
-        """Check if recording file is provided in the config."""
-        return self.get_config(key=self.RECORDING_FILE_OVERRIDE)
 
     def get_or_set_installation_id(self):
         """Get user id if exists, otherwise set installation id and return it."""

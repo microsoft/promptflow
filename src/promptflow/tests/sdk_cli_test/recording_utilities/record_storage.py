@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import functools
 import hashlib
 import json
 import os
@@ -9,9 +8,21 @@ import shelve
 from pathlib import Path
 from typing import Dict
 
-from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import RecordMode
-from promptflow._sdk._errors import RecordFileMissingException, RecordItemMissingException
+from promptflow._sdk._errors import PromptflowException
+
+from .constants import ENVIRON_TEST_MODE, RecordMode
+
+
+class RecordItemMissingException(PromptflowException):
+    """Exception raised when record item missing."""
+
+    pass
+
+
+class RecordFileMissingException(PromptflowException):
+    """Exception raised when record file missing or invalid."""
+
+    pass
 
 
 class RecordStorage(object):
@@ -54,14 +65,6 @@ class RecordStorage(object):
         """
         Will load record_file if exist.
         """
-        record_file_override = Configuration.get_instance().get_recording_file()
-        if record_file is None and record_file_override is None:
-            return
-
-        # override record file
-        if record_file_override is not None:
-            record_file = record_file_override
-
         if record_file == self._record_file:
             return
 
@@ -185,16 +188,20 @@ class RecordStorage(object):
         self._write_file()
 
     @classmethod
+    def get_test_mode_from_environ(cls) -> str:
+        return os.getenv(ENVIRON_TEST_MODE, RecordMode.LIVE)
+
+    @classmethod
     def is_recording_mode(cls) -> bool:
-        return Configuration.get_instance().get_recording_mode() == RecordMode.RECORD.value
+        return RecordStorage.get_test_mode_from_environ() == RecordMode.RECORD
 
     @classmethod
     def is_replaying_mode(cls) -> bool:
-        return Configuration.get_instance().get_recording_mode() == RecordMode.REPLAY.value
+        return RecordStorage.get_test_mode_from_environ() == RecordMode.REPLAY
 
     @classmethod
     def is_live_mode(cls) -> bool:
-        return Configuration.get_instance().get_recording_mode() == RecordMode.LIVE.value
+        return RecordStorage.get_test_mode_from_environ() == RecordMode.LIVE
 
     @classmethod
     def get_instance(cls, record_file=None) -> "RecordStorage":
@@ -217,22 +224,3 @@ class RecordStorage(object):
         if record_file is not None:
             cls._instance.record_file = record_file
         return cls._instance
-
-
-def record_decorator(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        input_dict = {}
-        for key in kwargs:
-            input_dict[key] = kwargs[key]
-        if RecordStorage.is_replaying_mode():
-            response = RecordStorage.get_instance().get_record(input_dict)
-            return response
-
-        obj = func(*args, **kwargs)
-        if RecordStorage.is_recording_mode():
-            RecordStorage.get_instance().set_record(input_dict, obj)
-            return obj
-        return obj
-
-    return wrapper

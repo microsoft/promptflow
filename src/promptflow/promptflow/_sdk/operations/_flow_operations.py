@@ -15,7 +15,6 @@ import yaml
 
 from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._record_storage import RecordStorage
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
@@ -109,9 +108,6 @@ class FlowOperations:
 
         inputs = inputs or {}
         flow = load_flow(flow)
-
-        # Initialize record storage, record_storage is None when record mode is not open.
-        RecordStorage.get_instance(flow.code)
 
         flow.context.variant = variant
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:

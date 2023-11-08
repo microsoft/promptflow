@@ -1,20 +1,20 @@
 import base64
 import json
 import os
-import shutil
 from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture
 
 from promptflow import PFClient
-from promptflow._sdk._constants import RecordMode
-from promptflow._sdk._record_storage import RecordStorage
+from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
 from promptflow._utils.utils import environment_variable_overwrite
+
+from .recording_utilities import ENVIRON_TEST_MODE, RecordMode, RecordStorage
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -162,21 +162,43 @@ def serving_client_composite_image_flow(mocker: MockerFixture):
     return create_client_by_model("python_tool_with_composite_image", mocker)
 
 
+def mock_origin(original):
+    def mock_invoke_tool(self, func, *args, **kwargs):
+        if func.__qualname__.startswith("AzureOpenAI"):
+            input_dict = {}
+            for key in kwargs:
+                input_dict[key] = kwargs[key]
+            if RecordStorage.is_replaying_mode():
+                response = RecordStorage.get_instance().get_record(input_dict)
+                return response
+
+            obj = original(self, func, *args, **kwargs)
+            if RecordStorage.is_recording_mode():
+                RecordStorage.get_instance().set_record(input_dict, obj)
+            return obj
+        return original(self, func, *args, **kwargs)
+
+    return mock_invoke_tool
+
+
 @pytest.fixture
 def recording_enabled(mocker: MockerFixture):
-    patch = mocker.patch(
-        "promptflow._sdk._configuration.Configuration.get_recording_mode", return_value=RecordMode.RECORD.value
-    )
+    original_fun = FlowExecutionContext.invoke_tool
+    mocker.patch("promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun))
+    os.environ[ENVIRON_TEST_MODE] = RecordMode.RECORD
     yield
-    patch.stop()
+    os.environ.pop(ENVIRON_TEST_MODE)
 
 
 @pytest.fixture
 def replaying_enabled(mocker: MockerFixture):
+    original_fun = FlowExecutionContext.invoke_tool
     patch = mocker.patch(
-        "promptflow._sdk._configuration.Configuration.get_recording_mode", return_value=RecordMode.REPLAY.value
+        "promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun)
     )
+    os.environ[ENVIRON_TEST_MODE] = RecordMode.REPLAY
     yield
+    os.environ.pop(ENVIRON_TEST_MODE)
     patch.stop()
 
 
@@ -184,10 +206,4 @@ def replaying_enabled(mocker: MockerFixture):
 def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
     if request.cls.__name__ == "TestCli":
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "testcli_node_cache.shelve"
-    patch = mocker.patch(
-        "promptflow._sdk._configuration.Configuration.get_recording_file",
-        return_value=file_path,
-    )
-    yield
-    patch.stop()
-    shutil.rmtree(file_path, ignore_errors=True)
+    RecordStorage.get_instance(file_path)

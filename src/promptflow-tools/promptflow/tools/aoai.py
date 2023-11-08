@@ -6,7 +6,7 @@ from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
-from promptflow._internal import enable_cache, ToolProvider, tool, register_apis, record_decorator
+from promptflow._internal import enable_cache, ToolProvider, tool, register_apis
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
     validate_functions, process_function_call, post_process_chat_api_response
 
@@ -30,7 +30,6 @@ class AzureOpenAI(ToolProvider):
     @tool
     @handle_openai_error()
     @enable_cache(calculate_cache_string_for_completion)
-    @record_decorator
     def completion(
         self,
         prompt: PromptTemplate,
@@ -100,7 +99,6 @@ class AzureOpenAI(ToolProvider):
 
     @tool
     @handle_openai_error()
-    @record_decorator
     def chat(
         self,
         prompt: PromptTemplate,
@@ -154,7 +152,6 @@ class AzureOpenAI(ToolProvider):
     # TODO: embedding is a separate builtin tool, will remove it from llm.
     @tool
     @handle_openai_error()
-    @record_decorator
     def embedding(self, input, deployment_name: str, user: str = ""):
         response = openai.Embedding.create(
             input=input,

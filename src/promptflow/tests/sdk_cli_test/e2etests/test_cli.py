@@ -293,40 +293,6 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
-    @pytest.mark.usefixtures("recording_enabled")
-    def test_pf_flow_test_recording_enabled(self):
-        flow_name = "basic_with_builtin_llm_node"
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/{flow_name}",
-        )
-        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
-        assert log_path.exists()
-        record_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "node_cache.shelve.dat"
-        assert record_path.exists()
-
-    @pytest.mark.usefixtures("replaying_enabled")
-    def test_pf_flow_test_replaying_enabled(self):
-        flow_name = "basic_with_builtin_llm_node"
-        record_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "node_cache.shelve.dat"
-        if not record_path.exists():
-            assert False
-
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/basic_with_builtin_llm_node",
-        )
-        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
-        assert log_path.exists()
-
     @pytest.mark.usefixtures("recording_enabled", "recording_file_override")
     def test_pf_flow_test_recording_enabled_and_override_recording(self):
         flow_name = "basic_with_builtin_llm_node"

@@ -214,12 +214,6 @@ def get_run_output_path(run) -> Path:
     return (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / str(run.name)).resolve()
 
 
-class RecordMode(str, Enum):
-    LIVE = "live"
-    RECORD = "record"
-    REPLAY = "replay"
-
-
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
     DAG = DAG_FILE_NAME
