@@ -11,6 +11,11 @@
 ### Bugs Fixed
 
 - [SDK/CLI] Keep original format in run output.jsonl.
+- [Executor] Fix the bug that raise an error when an aggregation node references a bypassed node
+
+### Improvements
+
+- [Executor] Set the outputs of the bypassed nodes as None
 
 ## 0.1.0b8 (2023.10.26)
 
