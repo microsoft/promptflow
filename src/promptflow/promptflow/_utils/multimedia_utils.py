@@ -5,7 +5,7 @@ import re
 import uuid
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -206,13 +206,17 @@ def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None)
     return value
 
 
-def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: dict):
+def load_multimedia_data(
+        inputs: Dict[str, FlowInputDefinition],
+        line_inputs: dict,
+        node_reference_flow_inputs_keys: Optional[list] = None):
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
-        if value.type == ValueType.IMAGE:
-            updated_inputs[key] = create_image(updated_inputs[key])
-        elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
-            updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+        if node_reference_flow_inputs_keys is None or key in node_reference_flow_inputs_keys:
+            if value.type == ValueType.IMAGE:
+                updated_inputs[key] = create_image(updated_inputs[key])
+            elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
+                updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
     return updated_inputs
 
 

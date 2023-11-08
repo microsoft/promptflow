@@ -344,8 +344,7 @@ class TestExecutor:
         default_input_value = "input value from default"
         yaml_file = get_yaml_file("default_input")
         executor = FlowExecutor.create(yaml_file, {})
-        flow_inputs = {"inputs.question": default_input_value}
-        node_result = executor.load_and_exec_node(yaml_file, "test_print_input", flow_inputs=flow_inputs)
+        node_result = executor.load_and_exec_node(yaml_file, "test_print_input")
         assert node_result.status == Status.Completed
         assert node_result.output == default_input_value
 

@@ -293,10 +293,13 @@ class FlowExecutor:
                 node_name=node_name,
                 flow_file=flow_file,
             )
-        inputs = {}
-        if flow_inputs:
-            inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
-            inputs = load_multimedia_data(flow.inputs, inputs_with_default_value)
+        node_reference_flow_inputs_keys = []
+        for _, value in node.inputs.items():
+            if value.value_type == InputValueType.FLOW_INPUT:
+                node_reference_flow_inputs_keys.append(value.value)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(
+            flow.inputs, flow_inputs, node_reference_flow_inputs_keys)
+        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value, node_reference_flow_inputs_keys)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
@@ -785,10 +788,15 @@ class FlowExecutor:
         )
 
     @staticmethod
-    def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+    def _apply_default_value_for_input(
+            inputs: Dict[str, FlowInputDefinition],
+            line_inputs: Mapping,
+            node_reference_flow_inputs_keys: Optional[list] = None) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
-            if key not in updated_inputs and (value and value.default):
+            if (key not in updated_inputs and
+                (node_reference_flow_inputs_keys is None or key in node_reference_flow_inputs_keys) and
+                    (value and value.default)):
                 updated_inputs[key] = value.default
         return updated_inputs
 
