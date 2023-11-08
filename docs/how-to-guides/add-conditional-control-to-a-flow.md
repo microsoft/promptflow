@@ -47,11 +47,11 @@ activate:
 ::::
 
 ### Further details and important notes
-1. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input. This helps prevent errors in the current node due to missing parameters.
+1. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input. If there is no default value for input, the output of the bypassed node will be set to None.
 
     ![provide_default_value](../media/how-to-guides/conditional-flow-with-activate/provide_default_value.png)
 
-2. Please avoid directly connecting nodes that might be bypassed to the flow's outputs. This can lead to flow failures due to a lack of valid values on the flow output.
+2. Please avoid directly connecting nodes that might be bypassed to the flow's outputs. This is not recommended because it will lead to meaningless flow output. If it is connected, the output will be None and a warning will be raised.
 
     ![output_bypassed](../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
 
