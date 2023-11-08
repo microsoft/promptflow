@@ -20,6 +20,7 @@
 
     <?elseif $(var.Platform) = "x86" ?>
     <?define PromptflowCliRegistryGuid = "7c2c792d-c395-44a1-8222-8e4ea006abb9" ?>
+    <?define PromptflowCliVersionGuid = "f706b208-a15d-4ae7-9185-cfcc43656570" ?>
     <?define PromptflowSystemPathGuid = "9661fe6a-ff48-4e7c-a60d-fc34c2d06ef3" ?>
     <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
     <?define UpgradeCode = $(var.UpgradeCode32) ?>
