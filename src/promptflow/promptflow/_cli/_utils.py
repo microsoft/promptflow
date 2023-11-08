@@ -21,6 +21,7 @@ import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
+from promptflow._sdk._constants import LOGGER_NAME, CLIListOutputFormat
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.utils import is_in_ci_pipeline
@@ -437,3 +438,20 @@ def _copy_to_flow(flow_path, source_file):
     else:
         print(f"{action} {source_file.name} folder...")
         shutil.copytree(source_file, target, dirs_exist_ok=True)
+
+
+def _output_result_list_with_format(result_list: List[Dict], output_format: CLIListOutputFormat) -> None:
+    if output_format == CLIListOutputFormat.TABLE:
+        df = pd.DataFrame(result_list)
+        df.fillna("", inplace=True)
+        pretty_print_dataframe_as_table(df)
+    elif output_format == CLIListOutputFormat.JSON:
+        print(json.dumps(result_list, indent=4))
+    else:
+        logger = logging.getLogger(LOGGER_NAME)
+        warning_message = (
+            f"Unknown output format {output_format!r}, accepted values are 'json' and 'table';"
+            "will print using 'json'."
+        )
+        logger.warning(warning_message)
+        print(json.dumps(result_list, indent=4))

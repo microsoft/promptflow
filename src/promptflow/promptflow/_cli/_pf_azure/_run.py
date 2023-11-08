@@ -5,14 +5,15 @@
 import argparse
 import functools
 import json
-import logging
 from typing import Dict, List, Optional
-
-import pandas as pd
 
 from promptflow._cli._params import (
     add_param_all_results,
+    add_param_archived_only,
     add_param_debug,
+    add_param_include_archived,
+    add_param_max_results,
+    add_param_output_format,
     add_param_run_name,
     add_param_set,
     add_param_verbose,
@@ -21,18 +22,13 @@ from promptflow._cli._params import (
 from promptflow._cli._pf._run import _parse_metadata_args, add_run_create_common, create_run
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
+    _output_result_list_with_format,
     _set_workspace_argument_for_subparsers,
     activate_action,
     exception_handler,
     pretty_print_dataframe_as_table,
 )
-from promptflow._sdk._constants import (
-    LOGGER_NAME,
-    MAX_LIST_CLI_RESULTS,
-    MAX_SHOW_DETAILS_RESULTS,
-    CLIListOutputFormat,
-    ListViewType,
-)
+from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, ListViewType
 from promptflow._sdk._errors import InvalidRunStatusError
 from promptflow._sdk._utils import print_red_error
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
@@ -102,41 +98,12 @@ pfazure run list --archived-only
 # List all runs status as table:
 pfazure run list --output table
 """
-    add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
-        "-r",
-        "--max-results",
-        dest="max_results",
-        type=int,
-        default=MAX_LIST_CLI_RESULTS,
-        help=f"Max number of results to return. Default is {MAX_LIST_CLI_RESULTS}, 100 at most.",
-    )
-
-    add_param_archived_only = lambda parser: parser.add_argument(  # noqa: E731
-        "--archived-only",
-        action="store_true",
-        help="List archived runs only.",
-    )
-
-    add_param_include_archived = lambda parser: parser.add_argument(  # noqa: E731
-        "--include-archived",
-        action="store_true",
-        help="List archived runs and active runs.",
-    )
-
-    add_param_output = lambda parser: parser.add_argument(  # noqa: E731
-        "-o",
-        "--output",
-        dest="output",
-        type=str,
-        default=CLIListOutputFormat.JSON,
-        help="Output format, accepted values are 'json' and 'table'. Default is 'json'.",
-    )
 
     add_params = [
         add_param_max_results,
         add_param_archived_only,
         add_param_include_archived,
-        add_param_output,
+        add_param_output_format,
         _set_workspace_argument_for_subparsers,
     ] + logging_params
 
@@ -460,20 +427,7 @@ def list_runs(
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
     runs = pf.runs.list(max_results=max_results, list_view_type=list_view_type)
     run_list = [run._to_dict() for run in runs]
-    if output == CLIListOutputFormat.TABLE:
-        df = pd.DataFrame(run_list)
-        df.fillna("", inplace=True)
-        pretty_print_dataframe_as_table(df)
-    elif output == CLIListOutputFormat.JSON:
-        print(json.dumps(run_list, indent=4))
-    else:
-        logger = logging.getLogger(LOGGER_NAME)
-        warning_message = (
-            f"Unknown output format {output!r}, accepted values are 'json' and 'table';" "will print using 'json'."
-        )
-        logger.warning(warning_message)
-        print(json.dumps(run_list, indent=4))
-    return runs
+    _output_result_list_with_format(result_list=run_list, output_format=output)
 
 
 @exception_handler("Show run")

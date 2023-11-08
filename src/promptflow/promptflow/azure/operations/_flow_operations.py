@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from azure.ai.ml._artifacts._artifact_utilities import _check_and_upload_path
 from azure.ai.ml._scope_dependent_operations import (
@@ -253,26 +253,42 @@ class FlowOperations(_ScopeDependentOperations):
         # TODO: support load remote flow with meta
         raise NotImplementedError("Not implemented yet")
 
+    @monitor_operation(activity_name="pfazure.flows.list", activity_type=ActivityType.PUBLICAPI)
     def list(
-        self, max_results: int = MAX_LIST_CLI_RESULTS, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs
+        self,
+        max_results: int = MAX_LIST_CLI_RESULTS,
+        owned_only: bool = True,
+        flow_type: Optional[FlowType] = None,
+        list_view_type: ListViewType = ListViewType.ACTIVE_ONLY,
+        **kwargs,
     ) -> List[Flow]:
         """List flows from azure.
 
         :param max_results: The max number of runs to return, defaults to 100
         :type max_results: int
+        :param owned_only: Whether to list owned flows only, defaults to True
+        :type owned_only: bool
+        :param flow_type: The flow type, defaults to None, which means all flow types. Other supported flow types are
+            ["standard", "evaluation", "chat"].
+        :type flow_type: Optional[FlowType]
         :param list_view_type: The list view type, defaults to ListViewType.ACTIVE_ONLY
         :type list_view_type: ListViewType
         :return: The list of runs.
         :rtype: List[~promptflow.azure. entities.Run]
         """
+        # TODO: support pagination
         rest_flow_result = self._service_caller.list_flows(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
             workspace_name=self._operation_scope.workspace_name,
+            owned_only=owned_only,
+            flow_type=flow_type,
+            list_view_type=list_view_type,
         )
         # note that the service may return flow rest obj with no flow name
         flows = [Flow._from_rest_object(rest_flow) for rest_flow in rest_flow_result if rest_flow.flow_name]
-        flows = sorted(flows, key=lambda x: x.name)
+        flows = flows[0:max_results]
+        flows = sorted(flows, key=lambda x: x.created_date, reverse=True)
         return flows
 
     def _download(self, source, dest):

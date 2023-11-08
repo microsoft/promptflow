@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
 import uuid
 from pathlib import Path
 
@@ -18,12 +19,12 @@ data_dir = tests_root_dir / "test_configs/datas"
 # TODO: enable the following tests after test CI can access test workspace
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
-@pytest.mark.usefixtures(
-    "mock_set_headers_with_user_aml_token",
-    "single_worker_thread_pool",
-    "vcr_recording",
-)
-@pytest.mark.skip(reason="Enable this after recording is ready for flow operations.")
+# @pytest.mark.usefixtures(
+#     "mock_set_headers_with_user_aml_token",
+#     "single_worker_thread_pool",
+#     "vcr_recording",
+# )
+# @pytest.mark.skip(reason="Enable this after recording is ready for flow operations.")
 class TestFlow:
     def test_create_flow(self, remote_client):
         flow_source = flow_test_dir / "simple_fetch_url/"
@@ -42,11 +43,12 @@ class TestFlow:
         assert result.tags == tags
         assert result.path.endswith(f"/promptflow/{flow_name}/flow.dag.yaml")
 
-    @pytest.mark.skip(reason="This test is not ready yet.")
+    # @pytest.mark.skip(reason="This test is not ready yet.")
     def test_list_flows(self, remote_client):
-        # res = remote_client.flows.list(max_results=10)
-        # a=5
-        pass
+        flows = remote_client.flows.list(max_results=3)
+        for flow in flows:
+            print(json.dumps(flow._to_dict(), indent=4))
+        assert len(flows) == 3
 
     def test_flow_test_with_config(self, remote_workspace_resource_id):
         from promptflow import PFClient
