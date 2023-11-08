@@ -107,7 +107,8 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
     )
 
 
-def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_conn=False) -> tuple:
+def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_conn=False,
+                          skip_prompt_template=False) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
     input_defs = {}
@@ -126,6 +127,11 @@ def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_c
     )
     # Resolve inputs to definitions.
     for k, v in all_inputs.items():
+        # Get value type from annotation
+        value_type = resolve_annotation(v.annotation)
+        if skip_prompt_template and value_type is PromptTemplate:
+            # custom llm tool has prompt template as input, skip it
+            continue
         input_def, is_connection = param_to_definition(v, gen_custom_type_conn=gen_custom_type_conn)
         input_defs[k] = input_def
         if is_connection:

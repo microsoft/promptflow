@@ -235,8 +235,13 @@ class StreamlitFileGenerator(BaseGenerator):
         if not self.is_chat_flow:
             raise UserErrorException(f"Only support chat flow in ui mode, {error_msg}.")
         self._chat_input_name = next(
-            (flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None)
+            (flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None
+        )
         self._chat_input = self.executable.inputs[self._chat_input_name]
+        if self._chat_input.type not in [ValueType.STRING.value, ValueType.LIST.value]:
+            raise UserErrorException(
+                f"Only support string or list type for chat input, but got {self._chat_input.type}."
+            )
 
     @property
     def chat_input_default_value(self):
@@ -324,12 +329,14 @@ class OpenAIConnectionGenerator(BaseGenerator):
         return ["connection"]
 
 
-def copy_extra_files(flow_path, extra_files):
+def copy_extra_files(flow_path, extra_files, overwrite=False):
     for file_name in extra_files:
         extra_file_path = (
             Path(__file__).parent.parent / "data" / "entry_flow" / EXTRA_FILES_MAPPING.get(file_name, file_name)
         )
         target_path = Path(flow_path) / file_name
+        if target_path.exists() and not overwrite:
+            continue
         action = "Overwriting" if target_path.exists() else "Creating"
         print(f"{action} {target_path.resolve()}...")
         shutil.copy2(extra_file_path, target_path)
