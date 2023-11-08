@@ -4,7 +4,10 @@ inputs:
   topic:
     type: string
     is_chat_input: false
-outputs: {}
+outputs:
+  disk:
+    type: string
+    reference: ${clean.output}
 nodes:
 - name: clean
   type: python

@@ -17,6 +17,8 @@ done
 
 @tool
 def echo(input: str) -> str:
-    print(input)  # not important at all
+    print("NOT IMPORTANT:", input)  # not important at all
     result = subprocess.run(["bash", "-c", bash_script], capture_output=True, text=True, check=True)
     print(result.stdout)
+    result = subprocess.run(["df", "-kh"], capture_output=True, text=True, check=True)
+    return str(result.stdout)
