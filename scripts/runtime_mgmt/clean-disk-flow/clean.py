@@ -7,7 +7,7 @@ bash_script = """
 app_dir="/service/app"
 
 for process_dir in $(find "$app_dir" -mindepth 1 -maxdepth 1 -type d); do
-    if [ "$process_dir" != "/service/app/flow_pids" ]; then
+    if [ "$process_dir" != "$app_dir/flow_pids" ]; then
         echo "process directory: $process_dir"
         rm -rf "$process_dir/requests"
     fi
