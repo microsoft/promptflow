@@ -1,12 +1,13 @@
 import copy
 import os
 import pytest
+from promptflow.tools.common import parse_chat
 from promptflow.tools.exception import (
     OpenSourceLLMOnlineEndpointError,
-    OpenSourceLLMUserError,
-    OpenSourceLLMKeyValidationError
+    OpenSourceLLMKeyValidationError,
+    ChatAPIInvalidRole
 )
-from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatterBase, LlamaContentFormatter
+from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatterBase
 from typing import List, Dict
 
 
@@ -162,7 +163,8 @@ Required keys are: endpoint_url,model_family."""
         assert out_of_danger == "The quick \\brown fox\\tjumped\\\\over \\the \\\\boy\\r\\n"
 
     def test_open_source_llm_llama_parse_chat_with_chat(self):
-        LlamaContentFormatter.parse_chat(self.chat_prompt)
+        parsed_chat = parse_chat(self.chat_prompt, valid_roles = ["system", "user", "assistant"])
+        assert len(parsed_chat) == 2
 
     def test_open_source_llm_llama_parse_multi_turn(self):
         multi_turn_chat = """user:
@@ -174,21 +176,21 @@ assistant:
 Mobius, which starred Jared Leto
 
 user:
-Why was that the greatest movie of all time?
-"""
-        LlamaContentFormatter.parse_chat(multi_turn_chat)
+Why was that the greatest movie of all time?"""
+        parsed_chat = parse_chat(multi_turn_chat, valid_roles = ["system", "user", "assistant"])
+        assert len(parsed_chat) == 3
 
     def test_open_source_llm_llama_parse_chat_with_comp(self):
-        with pytest.raises(OpenSourceLLMUserError) as exc_info:
-            LlamaContentFormatter.parse_chat(self.completion_prompt)
-        assert exc_info.value.message == (
-            "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-            + "lines as role delimiters: 'assistant:\\n','system:\\n','user:\\n'. Current parsed role 'in the context "
-            + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
-            + "Completion API, please select the appropriate API type and deployment name. If you do intend to use the "
-            + "Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
-            + "gallery that contain 'Chat' in the name.")
-        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
+        with pytest.raises(ChatAPIInvalidRole) as exc_info:
+            parse_chat(self.completion_prompt, valid_roles = ["system", "user", "assistant"])
+        assert exc_info.value.message == ("The Chat API requires a specific format for prompt definition, and the "
+            + "prompt should include separate lines as role delimiters: 'system:\\n','user:\\n','assistant:\\n'. "
+            + "Current parsed role 'in the context of azure ml, what does the ml stand for?' does not "
+            + "meet the requirement. If you intend to use the Completion API, please select the appropriate API type "
+            + "and deployment name. If you do intend to use the Chat API, please refer to the guideline at "
+            + "https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' in the name.")
+
+        assert exc_info.value.error_codes == "UserError/ToolValidationError/ChatAPIInvalidRole".split("/")
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_llama_endpoint_miss(self, gpt2_custom_connection):
