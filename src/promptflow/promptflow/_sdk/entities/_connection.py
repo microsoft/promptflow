@@ -46,7 +46,7 @@ from promptflow._sdk.schemas._connection import (
     WeaviateConnectionSchema,
 )
 from promptflow.contracts.types import Secret
-from promptflow._internal import TokenProviderABC, AzureTokenProvider
+from promptflow._core.token_provider import TokenProviderABC, AzureTokenProvider
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
