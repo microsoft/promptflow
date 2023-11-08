@@ -12,7 +12,6 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
-import pkg_resources
 import yaml
 
 from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError, ToolLoadError
@@ -55,6 +54,9 @@ def collect_tools_from_directory(base_dir) -> dict:
 
 def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools from all installed packages."""
+    # lazy load to improve performance for scenarios that don't need to load package tools
+    import pkg_resources
+
     all_package_tools = {}
     if keys is not None:
         keys = set(keys)
@@ -82,6 +84,9 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
 def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools and custom strong type connections from all installed packages."""
+    # lazy load to improve performance for scenarios that don't need to load package tools
+    import pkg_resources
+
     all_package_tools = {}
     all_package_connection_specs = {}
     all_package_connection_templates = {}
