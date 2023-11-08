@@ -184,10 +184,13 @@ def mock_origin(original):
 @pytest.fixture
 def recording_enabled(mocker: MockerFixture):
     original_fun = FlowExecutionContext.invoke_tool
-    mocker.patch("promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun))
+    patch = mocker.patch(
+        "promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun)
+    )
     os.environ[ENVIRON_TEST_MODE] = RecordMode.RECORD
     yield
     os.environ.pop(ENVIRON_TEST_MODE)
+    patch.stop()
 
 
 @pytest.fixture
