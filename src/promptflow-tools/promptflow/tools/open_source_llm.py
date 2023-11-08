@@ -200,7 +200,6 @@ class ContentFormatterBase:
             r'\\\1',
             prompt)
 
-
     @abstractmethod
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         """Formats the request body according to the input schema of

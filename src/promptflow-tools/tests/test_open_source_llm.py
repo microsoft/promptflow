@@ -178,7 +178,6 @@ Why was that the greatest movie of all time?
 """
         LlamaContentFormatter.parse_chat(multi_turn_chat)
 
-
     def test_open_source_llm_llama_parse_chat_with_comp(self):
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(self.completion_prompt)
