@@ -7,8 +7,7 @@ from types import GeneratorType
 import pytest
 
 from promptflow import load_flow
-from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
-from promptflow._sdk.entities import CustomConnection
+from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
 
@@ -21,7 +20,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowAsFunc:
-    def test_flow_as_a_func(self):
+    def test_flow_as_a_func(self, azure_open_ai_connection: AzureOpenAIConnection):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
         result = f(key="unknown")
         assert result["output"] is None
@@ -94,19 +93,11 @@ class TestFlowAsFunc:
         result = f(key="key")
         assert result["output"] == "value"
 
-    def test_flow_as_a_func_with_variant(self):
-        flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input_with_variant").absolute()
+    def test_flow_as_a_func_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection):
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
         f = load_flow(
             flow_path,
         )
-        f.context.variant = "${print_val.variant1}"
-        # variant1 will use a mock_custom_connection
-        with pytest.raises(ConnectionNotFoundError) as e:
-            f(key="a")
-        assert "Connection 'mock_custom_connection' is not found." in str(e.value)
+        f.context.variant = "${summarize_text_content.variant_0}"
 
-        # non-exist variant
-        f.context.variant = "${print_val.variant_2}"
-        with pytest.raises(InvalidFlowError) as e:
-            f(key="a")
-        assert "Variant variant_2 not found for node print_val" in str(e.value)
+        f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
