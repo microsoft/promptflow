@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from promptflow._cli._pf_azure._flow import list_flows
 from promptflow._sdk._constants import FlowType
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -44,13 +43,10 @@ class TestFlow:
         assert result.path.endswith(f"/promptflow/{flow_name}/flow.dag.yaml")
 
     @pytest.mark.skip(reason="This test is not ready yet.")
-    def test_list_flows(self, client):
-        flows = list_flows(
-            subscription_id=client.subscription_id,
-            resource_group=client.resource_group_name,
-            workspace_name=client.workspace_name,
-        )
-        print(flows)
+    def test_list_flows(self, remote_client):
+        # res = remote_client.flows.list(max_results=10)
+        # a=5
+        pass
 
     def test_flow_test_with_config(self, remote_workspace_resource_id):
         from promptflow import PFClient

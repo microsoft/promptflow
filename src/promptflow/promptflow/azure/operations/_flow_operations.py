@@ -9,7 +9,7 @@ import re
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 from azure.ai.ml._artifacts._artifact_utilities import _check_and_upload_path
 from azure.ai.ml._scope_dependent_operations import (
@@ -27,9 +27,11 @@ from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     FLOW_TOOLS_JSON,
     LOGGER_NAME,
+    MAX_LIST_CLI_RESULTS,
     PROMPT_FLOW_DIR_NAME,
     WORKSPACE_LINKED_DATASTORE_NAME,
     FlowType,
+    ListViewType,
 )
 from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._logger_factory import LoggerFactory
@@ -247,27 +249,22 @@ class FlowOperations(_ScopeDependentOperations):
         )
         return rest_flow_result
 
-    def _create_or_update(self, flow, **kwargs):
-        # upload to file share
-        self._resolve_arm_id_or_upload_dependencies(flow)
-
-        rest_flow = flow._to_rest_object()
-
-        # create flow draft
-        rest_flow_result = self._service_caller.create_flow(
-            subscription_id=self._operation_scope.subscription_id,
-            resource_group_name=self._operation_scope.resource_group_name,
-            workspace_name=self._operation_scope.workspace_name,
-            body=rest_flow,
-        )
-
-        return rest_flow_result
-
     def _get(self, flow_id):
         # TODO: support load remote flow with meta
         raise NotImplementedError("Not implemented yet")
 
-    def _list(self, **kwargs):
+    def list(
+        self, max_results: int = MAX_LIST_CLI_RESULTS, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs
+    ) -> List[Flow]:
+        """List flows from azure.
+
+        :param max_results: The max number of runs to return, defaults to 100
+        :type max_results: int
+        :param list_view_type: The list view type, defaults to ListViewType.ACTIVE_ONLY
+        :type list_view_type: ListViewType
+        :return: The list of runs.
+        :rtype: List[~promptflow.azure. entities.Run]
+        """
         rest_flow_result = self._service_caller.list_flows(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
