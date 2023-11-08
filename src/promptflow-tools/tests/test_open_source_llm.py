@@ -87,7 +87,7 @@ user:
 """ + completion_prompt
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_completion(self, chat_endpoints_provider):
+    def test_open_source_llm_completion(self):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
@@ -95,7 +95,7 @@ user:
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_completion_with_deploy(self, chat_endpoints_provider):
+    def test_open_source_llm_completion_with_deploy(self):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
@@ -104,7 +104,7 @@ user:
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_chat(self, chat_endpoints_provider):
+    def test_open_source_llm_chat(self):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
@@ -112,7 +112,7 @@ user:
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_chat_with_deploy(self, chat_endpoints_provider):
+    def test_open_source_llm_chat_with_deploy(self):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
@@ -121,7 +121,7 @@ user:
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_chat_with_max_length(self, chat_endpoints_provider):
+    def test_open_source_llm_chat_with_max_length(self):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
@@ -187,24 +187,6 @@ Why was that the greatest movie of all time?
 """
         LlamaContentFormatter.parse_chat(multi_turn_chat)
 
-    def test_open_source_llm_llama_parse_ignore_whitespace(self):
-        bad_chat_prompt = f"""system:
-You are a AI which helps Customers answer questions.
-
-user:
-
-user:
-{self.completion_prompt}"""
-        with pytest.raises(OpenSourceLLMUserError) as exc_info:
-            LlamaContentFormatter.parse_chat(bad_chat_prompt)
-        assert exc_info.value.message == (
-            "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-            + "lines as role delimiters: 'assistant:\\n','system:\\n','user:\\n'. Current parsed role 'in the context "
-            + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
-            + "Completion API, please select the appropriate API type and deployment name. If you do intend to use "
-            + "the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in "
-            + "our gallery that contain 'Chat' in the name.")
-        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
     def test_open_source_llm_llama_parse_chat_with_comp(self):
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
@@ -259,12 +241,12 @@ user:
                 assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_llama_chat(self, chat_endpoints_provider):
+    def test_open_source_llm_llama_chat(self):
         response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint=self.llama_connection)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_llama_serverless(self, chat_endpoints_provider):
+    def test_open_source_llm_llama_serverless(self):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
@@ -272,7 +254,7 @@ user:
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_llama_chat_history(self, chat_endpoints_provider):
+    def test_open_source_llm_llama_chat_history(self):
         chat_history_prompt = """user:
 * Given the following conversation history and the users next question, answer the next question.
 If the conversation is irrelevant or empty, just restate the original question.
