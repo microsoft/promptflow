@@ -13,8 +13,8 @@ from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 def api_wrapper(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
+        validate_request_user()
         try:
-            validate_request_user()
             result = func(*args, **kwargs)
             return result
         except (ConnectionNotFoundError, RunNotFoundError):
