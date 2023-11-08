@@ -3,4 +3,4 @@ name: my_open_ai_connection
 type: open_ai
 api_key: "<to-be-replaced>"
 organization: "org"
-api_base: ""
+api_base: custom_api_base
