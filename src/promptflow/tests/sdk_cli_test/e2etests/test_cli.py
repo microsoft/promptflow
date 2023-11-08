@@ -30,6 +30,7 @@ FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
+RECORDINGS_TEST_CONFIGS_ROOT = "./tests/test_configs/node_recordings"
 
 
 # TODO: move this to a shared utility module
@@ -293,16 +294,43 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
-    def test_pf_flow_test_with_non_english_input_output(self, capsys):
-        question = "什么是 chat gpt"
+    @pytest.mark.usefixtures("recording_enabled", "recording_file_override")
+    def test_pf_flow_test_recording_enabled_and_override_recording(self):
+        flow_name = "basic_with_builtin_llm_node"
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/chat_flow",
-            "--inputs",
-            f"question=\"{question}\""
+            f"{FLOWS_DIR}/{flow_name}",
         )
+        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
+        assert log_path.exists()
+        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.shelve.dat"
+        assert record_path.exists()
+
+    @pytest.mark.usefixtures("replaying_enabled", "recording_file_override")
+    def test_pf_flow_test_replay_enabled_and_override_recording(self):
+        flow_name = "basic_with_builtin_llm_node"
+        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.shelve.dat"
+        if not record_path.exists():
+            assert False
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/basic_with_builtin_llm_node",
+        )
+        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
+        assert log_path.exists()
+
+    def test_pf_flow_test_with_non_english_input_output(self, capsys):
+        question = "什么是 chat gpt"
+        run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
         stdout, _ = capsys.readouterr()
         output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
         assert output_path.exists()

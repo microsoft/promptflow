@@ -141,8 +141,7 @@
     "pgrep",
     "Hwfoxydrg",
     "llms",
-    "vcrpy",
-    "tiiuae"
+    "vcrpy"
   ],
   "allowCompoundWords": true
 }
