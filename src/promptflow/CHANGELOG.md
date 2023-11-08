@@ -10,11 +10,6 @@
 ### Bugs Fixed
 
 - [SDK/CLI] Keep original format in run output.jsonl.
-- [Executor] Fix failure when node refers bypassed node.
-
-### Improvements
-
-- [Executor] Set output of bypassed node as None.
 
 ## 0.1.0b8 (2023.10.26)
 
