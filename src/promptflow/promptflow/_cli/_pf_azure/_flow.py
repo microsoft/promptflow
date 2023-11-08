@@ -111,7 +111,7 @@ pfazure flow list --type standard
         epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="pf flow list",
+        help_message="pfazure flow list",
         action_param_name="sub_action",
     )
 

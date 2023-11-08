@@ -336,6 +336,6 @@ def add_param_flow_type(parser):
         type=str,
         help=(
             f"The type of the flow. Available values are {FlowType.get_all_values()}. "
-            f"Default to be None, which means all types included.",
+            f"Default to be None, which means all types included."
         ),
     )

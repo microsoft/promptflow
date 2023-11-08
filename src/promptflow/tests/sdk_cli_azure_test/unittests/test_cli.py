@@ -234,3 +234,20 @@ class TestAzureCli:
             *operation_scope_args,
         )
         mocked.assert_called_once()
+
+    def test_flow_list(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+    ):
+        mocked = mocker.patch.object(FlowOperations, "list")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        run_pf_command(
+            "flow",
+            "list",
+            "--max-results",
+            "10",
+            "--include-archived",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
