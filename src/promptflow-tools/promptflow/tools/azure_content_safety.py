@@ -317,21 +317,3 @@ class ContentSafety(object):
         print(final_action.name)
         print(action_result)
         return Decision(final_action, action_result)
-
-# if __name__ == "__main__":
-#     connection = AzureContentSafetyConnection(
-#         endpoint="https://yuhang-eastus-acs.cognitiveservices.azure.com/",
-#         api_key="",
-#         api_version="2023-10-01"
-#     )
-#     content_safety_tool = AzureContentSafety(connection)
-#     text_to_analyze = "I want to kill myself"
-#     result = content_safety_tool.analyze_text(
-#         text=text_to_analyze,
-#         hate_category=TextCategorySensitivity.MEDIUM_SENSITIVITY,
-#         sexual_category=TextCategorySensitivity.MEDIUM_SENSITIVITY,
-#         self_harm_category=TextCategorySensitivity.MEDIUM_SENSITIVITY,
-#         violence_category=TextCategorySensitivity.MEDIUM_SENSITIVITY,
-#     )
-#
-#     print(result)
