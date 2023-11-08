@@ -537,7 +537,8 @@ class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     COGNITIVE_SEARCH = "CognitiveSearch"
     COGNITIVE_SERVICE = "CognitiveService"
     CUSTOM_KEYS = "CustomKeys"
-    AZURE_AI_CONTENT_SAFETY = "AzureAIContentSafety"
+    AZURE_BLOB = "AzureBlob"
+    AZURE_ONE_LAKE = "AzureOneLake"
     COSMOS_DB = "CosmosDb"
     COSMOS_DB_MONGO_DB_API = "CosmosDbMongoDbApi"
     AZURE_DATA_EXPLORER = "AzureDataExplorer"
@@ -616,6 +617,7 @@ class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     WEB_TABLE = "WebTable"
     XERO = "Xero"
     ZOHO = "Zoho"
+    GENERIC_CONTAINER_REGISTRY = "GenericContainerRegistry"
 
 class ConnectionScope(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1423,6 +1425,7 @@ class RuntimeStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     UNAVAILABLE = "Unavailable"
     FAILED = "Failed"
+    NOT_EXIST = "NotExist"
 
 class RuntimeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1489,6 +1492,7 @@ class SetupFlowSessionAction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum))
 
     INSTALL = "Install"
     RESET = "Reset"
+    UPDATE = "Update"
 
 class ShortSeriesHandlingConfiguration(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1708,6 +1712,7 @@ class ValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FUNCTION_STR = "function_str"
     FORM_RECOGNIZER_CONNECTION = "FormRecognizerConnection"
     FILE_PATH = "file_path"
+    IMAGE = "image"
 
 class VmPriority(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
