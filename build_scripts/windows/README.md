@@ -17,7 +17,7 @@ Prerequisites
 5. We recommend creating a clean virtual Python environment and installing all dependencies using src/promptflow/setup.py.
    - `python -m venv venv`
    - `venv\Scripts\activate`
-   - `pip install promtflow[azure,executable]`
+   - `pip install promptflow[azure,executable] promptflow-tools`
 
 
 Building
