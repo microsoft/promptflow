@@ -16,11 +16,11 @@ from functools import wraps
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-import pandas as pd
 import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
+from promptflow._sdk._constants import LOGGER_NAME, CLIListOutputFormat
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.utils import is_in_ci_pipeline
@@ -264,7 +264,7 @@ def _assign_available_width(
     return available_width, column_assigned_widths
 
 
-def _calculate_column_widths(df: pd.DataFrame, terminal_width: int) -> List[int]:
+def _calculate_column_widths(df: "DataFrame", terminal_width: int) -> List[int]:
     num_rows, num_columns = len(df), len(df.columns)
     index_column_width = max(len(str(num_rows)) + 2, 4)  # tabulate index column min width is 4
     terminal_width_buffer = 10
@@ -325,7 +325,7 @@ def _calculate_column_widths(df: pd.DataFrame, terminal_width: int) -> List[int]
     return max_col_widths
 
 
-def pretty_print_dataframe_as_table(df: pd.DataFrame) -> None:
+def pretty_print_dataframe_as_table(df: "DataFrame") -> None:
     # try to get terminal window width
     try:
         terminal_width = shutil.get_terminal_size().columns
@@ -437,3 +437,21 @@ def _copy_to_flow(flow_path, source_file):
     else:
         print(f"{action} {source_file.name} folder...")
         shutil.copytree(source_file, target, dirs_exist_ok=True)
+
+
+def pretty_print_run_list(run_list: list, output):
+    from pandas import pd
+
+    if output == CLIListOutputFormat.TABLE:
+        df = pd.DataFrame(run_list)
+        df.fillna("", inplace=True)
+        pretty_print_dataframe_as_table(df)
+    elif output == CLIListOutputFormat.JSON:
+        print(json.dumps(run_list, indent=4))
+    else:
+        logger = logging.getLogger(LOGGER_NAME)
+        warning_message = (
+            f"Unknown output format {output!r}, accepted values are 'json' and 'table';" "will print using 'json'."
+        )
+        logger.warning(warning_message)
+        print(json.dumps(run_list, indent=4))
