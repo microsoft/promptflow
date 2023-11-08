@@ -293,9 +293,10 @@ class FlowExecutor:
                 node_name=node_name,
                 flow_file=flow_file,
             )
-
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
-        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value)
+        inputs = {}
+        if flow_inputs:
+            inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
+            inputs = load_multimedia_data(flow.inputs, inputs_with_default_value)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
