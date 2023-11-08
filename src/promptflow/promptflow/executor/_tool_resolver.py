@@ -92,7 +92,7 @@ class ToolResolver:
             if v.value_type != InputValueType.LITERAL:
                 continue
             tool_input = tool.inputs.get(k)
-            if tool_input is None:
+            if tool_input is None:  # For kwargs input, tool_input is None.
                 continue
             value_type = tool_input.type[0]
             updated_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)

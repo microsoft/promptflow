@@ -142,7 +142,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
     if hasattr(f, "__original_function"):
         f = f.__original_function
     try:
-        inputs, _, _ = function_to_interface(
+        inputs, _, _, enable_kwargs = function_to_interface(
             f, initialize_inputs=initialize_inputs, gen_custom_type_conn=gen_custom_type_conn,
             skip_prompt_template=skip_prompt_template)
     except Exception as e:
@@ -164,6 +164,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
         class_name=class_name,
         function=f.__name__,
         module=f.__module__,
+        enable_kwargs=enable_kwargs,
     )
 
 
