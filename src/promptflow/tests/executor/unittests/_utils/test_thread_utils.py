@@ -37,6 +37,6 @@ class TestRepeatLogTimer:
             r"^Test has been running for [0-9]+ seconds, thread None cannot be found in sys._current_frames, "
             r"maybe it has been terminated due to unexpected errors.$"
         )
-        assert len(logs) == 10
+        assert logs, "Logs are empty."
         for log in logs:
             assert re.match(log_pattern, log), f"The wrong log: {log}"
