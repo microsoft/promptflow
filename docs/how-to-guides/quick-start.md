@@ -36,7 +36,7 @@ pf -v
 
 ## Understand what's a flow
 
-A flow, represented as a YAML file, is a DAG of functions, which is connected via input/output dependencies, and executed based on the topology by Prompt flow executor. See [Flows](../../concepts/concept-flows.md) for more details.
+A flow, represented as a YAML file, is a DAG of functions, which is connected via input/output dependencies, and executed based on the topology by prompt flow executor. See [Flows](../../concepts/concept-flows.md) for more details.
 
 ### Get the flow sample
 
@@ -297,5 +297,5 @@ Learn more on how to:
 - [Prompt flow in Azure AI](../cloud/azureai/quick-start.md): run and evaluate flow in Azure AI where you can collaborate with team better.
 
 And you can also check our [examples](https://github.com/microsoft/promptflow/tree/main/examples), especially:
-- [Getting Started with Prompt Flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb): the notebook covering the python sdk experience for sample introduced in this doc.
+- [Getting started with prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb): the notebook covering the python sdk experience for sample introduced in this doc.
 - [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
