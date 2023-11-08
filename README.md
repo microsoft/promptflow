@@ -35,6 +35,12 @@ With prompt flow, you will be able to:
 
 ## Installation
 
+To get started quickly, you can use a pre-built development environment. **Click the button below** to open the repo in GitHub Codespaces, and then continue the readme!
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/promptflow?quickstart=1)
+
+If you want to get started in your local environment, first install the packages:
+
 Ensure you have a python environment, `python=3.9` is recommended.
 
 ```sh
