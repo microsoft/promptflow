@@ -448,6 +448,8 @@ class LocalStorageOperations(AbstractRunStorage):
         return res
 
     def load_inputs_and_outputs(self) -> Tuple["DataFrame", "DataFrame"]:
+        import pandas as pd
+
         if not self._sdk_inputs_path.is_file() or not self._sdk_output_path.is_file():
             inputs, outputs = self._collect_io_from_debug_info()
         else:
