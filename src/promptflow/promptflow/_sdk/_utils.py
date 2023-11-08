@@ -899,3 +899,10 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
 
 def is_github_codespaces():
     return os.environ.get("CODESPACES", None) == "true"
+
+
+def is_from_cli():
+    from promptflow._cli._user_agent import USER_AGENT as CLI_UA
+    from promptflow._core.operation_context import OperationContext
+
+    return CLI_UA in OperationContext.get_instance().get_user_agent()

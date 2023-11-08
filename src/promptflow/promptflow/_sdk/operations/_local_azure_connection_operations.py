@@ -7,7 +7,7 @@ from typing import List
 
 from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, LOGGER_NAME, MAX_LIST_CLI_RESULTS
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import is_github_codespaces
+from promptflow._sdk._utils import is_from_cli, is_github_codespaces, print_red_error
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import TelemetryMixin
@@ -34,6 +34,14 @@ class LocalAzureConnectionOperations(TelemetryMixin):
     def get_credential(cls):
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
 
+        if is_from_cli():
+            try:
+                # Try getting token for cli without interactive login
+                credential = DefaultAzureCredential()
+                credential.get_token("https://management.azure.com/.default")
+            except Exception:
+                print_red_error("Please run 'az login' to set up account.")
+                exit(1)
         if is_github_codespaces():
             # For code spaces, append device code credential as the fallback option.
             credential = DefaultAzureCredential()
