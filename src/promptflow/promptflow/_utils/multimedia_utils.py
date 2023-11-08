@@ -216,6 +216,16 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
     return updated_inputs
 
 
+def load_multimedia_data_for_aggregation(inputs: Dict[str, FlowInputDefinition], line_inputs: dict):
+    updated_inputs = dict(line_inputs or {})
+    for key, value in inputs.items():
+        if value.type == ValueType.IMAGE:
+            updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
+        elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
+            updated_inputs[key] = [load_multimedia_data_recursively(item) for item in updated_inputs[key]]
+    return updated_inputs
+
+
 def load_multimedia_data_recursively(value: Any):
     return _process_multimedia_dict_recursively(value, _create_image_from_dict)
 
