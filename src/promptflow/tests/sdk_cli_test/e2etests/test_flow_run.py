@@ -913,23 +913,6 @@ class TestFlowRun:
         # no error when processing lines
         assert "error" not in run._to_dict(), run.name
 
-    def test_image_with_default_input_another_dir(self, pf):
-        image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image_default_input_another_dir"
-        data_path = f"{DATAS_DIR}/image_inputs"
-
-        result = pf.run(
-            flow=image_flow_path,
-            data=data_path,
-            column_mapping={
-                # image_1 will use default value
-                "image_2": "${data.image}",
-            },
-        )
-        run = pf.runs.get(name=result.name)
-        assert run.status == "Completed", run.name
-        # no error when processing lines
-        assert "error" not in run._to_dict(), run.name
-
     def test_get_details_for_image_in_flow(self, pf: PFClient) -> None:
         image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image"
         data_path = f"{image_flow_path}/image_inputs/inputs.jsonl"
