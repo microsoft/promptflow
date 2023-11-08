@@ -47,6 +47,9 @@
     </Compile>
     <Compile Include="product.wxs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include=".\resources\logo_pf.png" />
+  </ItemGroup>
   <!-- UI -->
   <ItemGroup>
     <WixExtension Include="WixUIExtension">

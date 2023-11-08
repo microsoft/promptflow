@@ -1,5 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import copy_metadata
 
+datas = [('../resources/CLI_LICENSE.rtf', '.'), ('../resources/NOTICE.txt', '.')]
+datas += collect_data_files('streamlit')
+datas += copy_metadata('streamlit')
+datas += collect_data_files('keyrings.alt', include_py_files=True)
+datas += copy_metadata('keyrings.alt')
+datas += collect_data_files('streamlit_quill')
+
+hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs']
 
 block_cipher = None
 
@@ -7,8 +17,8 @@ pf_a = Analysis(
     ['pf.py'],
     pathex=[],
     binaries=[],
-    datas=[],
-    hiddenimports=[],
+    datas=datas,
+    hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -42,8 +52,8 @@ pfazure_a = Analysis(
     ['pfazure.py'],
     pathex=[],
     binaries=[],
-    datas=[],
-    hiddenimports=[],
+    datas=datas,
+    hiddenimports=hidden_imports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

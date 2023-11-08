@@ -6,6 +6,7 @@
     <?define ProductName = "Promptflow" ?>
     <?define ProductDescription = "Command-line tools for Promptflow." ?>
     <?define ProductAuthor = "Microsoft Corporation" ?>
+    <?define ProductResources = ".\resources\" ?>
     <?define UpgradeCode32 = "8b748161-e07a-48f2-8cdf-401480df4694" ?>
 
     <?if $(var.Platform) = "x64" ?>
@@ -49,6 +50,8 @@
 
         <Media Id="1" Cabinet="promptflow.cab" EmbedCab="yes" CompressionLevel="high" />
 
+        <Icon Id="PromptflowIcon" SourceFile="$(var.ProductResources)logo32.ico" />
+
         <Property Id="ARPPRODUCTICON" Value="PromptflowIcon" />
         <Property Id="ARPHELPLINK" Value="https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2" />
         <Property Id="ARPURLINFOABOUT" Value="https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2" />
@@ -66,6 +69,10 @@
 
         <!--Custom action to propagate path env variable change-->
         <CustomActionRef Id="WixBroadcastEnvironmentChange" />
+
+            <!-- User Interface -->
+        <WixVariable Id="WixUILicenseRtf" Value="$(var.ProductResources)CLI_LICENSE.rtf"/>
+
         <UIRef Id="WixUI_Minimal"/>
         <UIRef Id="WixUI_ErrorProgressText"/>
 
