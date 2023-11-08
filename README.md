@@ -12,7 +12,7 @@
 [![CONTRIBUTING](https://img.shields.io/badge/Contributing-8A2BE2)](https://github.com/microsoft/promptflow/blob/main/CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
-> Welcome to join us to make Prompt flow better by
+> Welcome to join us to make prompt flow better by
 > participating [discussions](https://github.com/microsoft/promptflow/discussions),
 > opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
 > submitting [PRs](https://github.com/microsoft/promptflow/pulls).
@@ -34,6 +34,12 @@ With prompt flow, you will be able to:
 ------
 
 ## Installation
+
+To get started quickly, you can use a pre-built development environment. **Click the button below** to open the repo in GitHub Codespaces, and then continue the readme!
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/promptflow?quickstart=1)
+
+If you want to get started in your local environment, first install the packages:
 
 Ensure you have a python environment, `python=3.9` is recommended.
 
@@ -77,7 +83,7 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
+Next Step! Continue with the **Tutorial**  👇 section to delve deeper into prompt flow.
 
 ## Tutorial 🏃‍♂️
 
@@ -95,7 +101,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 #### Deep delve into flow development
 
-[Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
+[Getting started with prompt flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
 
 ### Learn from use cases
 
@@ -106,7 +112,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 If you're interested in contributing, please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
-Next Step! Continue with the **Contributing**  👇 section to to contribute to Prompt flow.
+Next Step! Continue with the **Contributing**  👇 section to to contribute to prompt flow.
 
 ## Contributing
 

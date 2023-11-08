@@ -113,6 +113,13 @@ def example_prompt_template() -> str:
 
 
 @pytest.fixture
+def example_prompt_template_with_name_in_roles() -> str:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_name_in_roles.jinja2") as f:
+        prompt_template = f.read()
+    return prompt_template
+
+
+@pytest.fixture
 def chat_history() -> list:
     with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/marketing_writer/history.json") as f:
         history = json.load(f)

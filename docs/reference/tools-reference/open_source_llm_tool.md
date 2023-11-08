@@ -2,13 +2,13 @@
 
 ## Introduction
 
-The Prompt flow Open Source LLM tool enables you to utilize a variety of Open Source and Foundational Models, such as [Falcon](https://ml.azure.com/models/tiiuae-falcon-7b/version/4/catalog/registry/azureml) or [Llama 2](https://ml.azure.com/models/Llama-2-7b-chat/version/14/catalog/registry/azureml-meta) for natural language processing, in PromptFlow.
+The prompt flow Open Source LLM tool enables you to utilize a variety of Open Source and Foundational Models, such as [Falcon](https://ml.azure.com/models/tiiuae-falcon-7b/version/4/catalog/registry/azureml) or [Llama 2](https://ml.azure.com/models/Llama-2-7b-chat/version/14/catalog/registry/azureml-meta) for natural language processing, in PromptFlow.
 
-Here's how it looks in action on the Visual Studio Code Prompt flow extension. In this example, the tool is being used to call a LlaMa-2 chat endpoint and asking "What is CI?".
+Here's how it looks in action on the Visual Studio Code prompt flow extension. In this example, the tool is being used to call a LlaMa-2 chat endpoint and asking "What is CI?".
 
 ![Screenshot of the Open Source Llm On vsCode PromptFlow extension](../../media/reference/tools-reference/open_source_llm_on_vscode_promptflow.png)
 
-This Prompt flow supports two different LLM API types:
+This prompt flow supports two different LLM API types:
 
 - **Chat**: Shown in the example above. The chat API type facilitates interactive conversations with text-based inputs and responses.
 - **Completion**: The Completion API type is used to generate single response text completions based on provided prompt input.
@@ -30,7 +30,7 @@ More detailed instructions can be found here [Deploying foundation models to end
 
 ## Prerequisites: Prompt flow Connections
 
-In order for Prompt flow to use your deployed model, you will need to setup a Connection. Explicitly, the Open Source LLM tool uses the CustomConnection.
+In order for prompt flow to use your deployed model, you will need to setup a Connection. Explicitly, the Open Source LLM tool uses the CustomConnection.
 
 1. Instructions to create a Custom Connection [can be found here.](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#create-a-connection)
 

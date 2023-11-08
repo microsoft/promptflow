@@ -1,4 +1,6 @@
 import os
+import shutil
+import tempfile
 import uuid
 from pathlib import Path
 
@@ -169,25 +171,22 @@ class TestFlowRun:
         assert "Invalid variant format: v, variant should be in format of ${TUNING_NODE.VARIANT}" in str(e.value)
 
     def test_basic_evaluation(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
-        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-
         result = pf.run(
-            flow=f"{FLOWS_DIR}/web_classification",
-            data=data_path,
-            column_mapping={"url": "${data.url}"},
+            flow=f"{FLOWS_DIR}/print_env_var",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
         )
         assert local_client.runs.get(result.name).status == "Completed"
 
         eval_result = pf.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
-            data=data_path,
             run=result.name,
             column_mapping={
-                "groundtruth": "${data.answer}",
-                "prediction": "${run.outputs.category}",
+                "prediction": "${run.outputs.output}",
                 # evaluation reference run.inputs
                 # NOTE: we need this value to guard behavior when a run reference another run's inputs
-                "variant_id": "${run.inputs.url}",
+                "variant_id": "${run.inputs.key}",
+                # can reference other columns in data which doesn't exist in base run's inputs
+                "groundtruth": "${run.inputs.extra_key}",
             },
         )
         assert local_client.runs.get(eval_result.name).status == "Completed"
@@ -419,6 +418,70 @@ class TestFlowRun:
         # run should not be created
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=name)
+
+    def test_eval_run_data_deleted(self, pf):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shutil.copy(f"{DATAS_DIR}/env_var_names.jsonl", temp_dir)
+
+            result = pf.run(
+                flow=f"{FLOWS_DIR}/print_env_var",
+                data=f"{temp_dir}/env_var_names.jsonl",
+            )
+            assert pf.runs.get(result.name).status == "Completed"
+
+            # delete original run's input data
+            os.remove(f"{temp_dir}/env_var_names.jsonl")
+
+            with pytest.raises(UserErrorException) as e:
+                pf.run(
+                    flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+                    run=result.name,
+                    column_mapping={
+                        "prediction": "${run.outputs.output}",
+                        # evaluation reference run.inputs
+                        # NOTE: we need this value to guard behavior when a run reference another run's inputs
+                        "variant_id": "${run.inputs.key}",
+                        # can reference other columns in data which doesn't exist in base run's inputs
+                        "groundtruth": "${run.inputs.extra_key}",
+                    },
+                )
+            assert "Please make sure it exists and not deleted." in str(e.value)
+
+    def test_eval_run_data_not_exist(self, pf):
+
+        base_run = pf.run(
+            flow=f"{FLOWS_DIR}/print_env_var",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        assert pf.runs.get(base_run.name).status == "Completed"
+
+        eval_run = pf.run(
+            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            run=base_run.name,
+            column_mapping={
+                "prediction": "${run.outputs.output}",
+                # evaluation reference run.inputs
+                # NOTE: we need this value to guard behavior when a run reference another run's inputs
+                "variant_id": "${run.inputs.key}",
+                # can reference other columns in data which doesn't exist in base run's inputs
+                "groundtruth": "${run.inputs.extra_key}",
+            },
+        )
+
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+                run=eval_run.name,
+                column_mapping={
+                    "prediction": "${run.outputs.output}",
+                    # evaluation reference run.inputs
+                    # NOTE: we need this value to guard behavior when a run reference another run's inputs
+                    "variant_id": "${run.inputs.key}",
+                    # can reference other columns in data which doesn't exist in base run's inputs
+                    "groundtruth": "${run.inputs.extra_key}",
+                },
+            )
+        assert "Please make sure it exists and not deleted" in str(e.value)
 
     def test_create_run_with_tags(self, pf):
         name = str(uuid.uuid4())
@@ -819,3 +882,18 @@ class TestFlowRun:
         result = pf.run(flow=image_flow_path, data=data_path, column_mapping={"image": "${data.image}"})
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
+
+    def test_get_details_for_image_in_flow(self, pf: PFClient) -> None:
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image"
+        data_path = f"{image_flow_path}/image_inputs/inputs.jsonl"
+        run = pf.run(
+            flow=image_flow_path,
+            data=data_path,
+            column_mapping={"image": "${data.image}"},
+        )
+        details = pf.get_details(run.name)
+        for i in range(len(details)):
+            input_image_path = details["inputs.image"][i]["data:image/png;path"]
+            assert Path(input_image_path).is_absolute()
+            output_image_path = details["outputs.output"][i]["data:image/png;path"]
+            assert Path(output_image_path).is_absolute()
