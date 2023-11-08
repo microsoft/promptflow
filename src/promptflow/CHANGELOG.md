@@ -1,6 +1,6 @@
 # Release History
 
-## 0.1.0b9 (Upcoming)
+## 1.0.0 (2023.11.09)
 
 ### Features Added
 
