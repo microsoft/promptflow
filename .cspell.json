@@ -72,7 +72,8 @@
     "msrest",
     "cref",
     "msal",
-    "pfbytes"
+    "pfbytes",
+    "Apim"
   ],
   "ignoreWords": [
     "openmpi",
