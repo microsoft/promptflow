@@ -16,24 +16,25 @@ from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is
 SIMPLE_IMAGE_FLOW = "python_tool_with_simple_image"
 COMPOSITE_IMAGE_FLOW = "python_tool_with_composite_image"
 CHAT_FLOW_WITH_IMAGE = "chat_flow_with_image"
-EVAL_FLOW_WITH_IMAGE = "eval_flow_with_image"
+EVAL_FLOW_WITH_SIMPLE_IMAGE = "eval_flow_with_simple_image"
+EVAL_FLOW_WITH_COMPOSITE_IMAGE = "eval_flow_with_composite_image"
 IMAGE_URL = (
     "https://github.com/microsoft/promptflow/blob/93776a0631abf991896ab07d294f62082d5df3f3/src"
     "/promptflow/tests/test_configs/datas/test_image.jpg?raw=true"
 )
 
 
-def get_test_cases_for_simple_input():
-    image = _create_image_from_file(FLOW_ROOT / SIMPLE_IMAGE_FLOW / "logo.jpg")
+def get_test_cases_for_simple_input(flow_folder):
+    image = _create_image_from_file(FLOW_ROOT / flow_folder / "logo.jpg")
     inputs = [
-        {"data:image/jpg;path": str(FLOW_ROOT / SIMPLE_IMAGE_FLOW / "logo.jpg")},
+        {"data:image/jpg;path": str(FLOW_ROOT / flow_folder / "logo.jpg")},
         {"data:image/jpg;base64": image.to_base64()},
         {"data:image/jpg;url": IMAGE_URL},
-        str(FLOW_ROOT / SIMPLE_IMAGE_FLOW / "logo.jpg"),
+        str(FLOW_ROOT / flow_folder / "logo.jpg"),
         image.to_base64(),
         IMAGE_URL,
     ]
-    return [(SIMPLE_IMAGE_FLOW, {"image": input}) for input in inputs]
+    return [(flow_folder, {"image": input}) for input in inputs]
 
 
 def get_test_cases_for_composite_input(flow_folder):
@@ -115,7 +116,9 @@ def assert_contain_image_object(value):
 class TestExecutorWithImage:
     @pytest.mark.parametrize(
         "flow_folder, inputs",
-        get_test_cases_for_simple_input() + get_test_cases_for_composite_input(COMPOSITE_IMAGE_FLOW) + get_test_cases_for_chat_flow()
+        get_test_cases_for_simple_input(SIMPLE_IMAGE_FLOW)
+        + get_test_cases_for_composite_input(COMPOSITE_IMAGE_FLOW)
+        + get_test_cases_for_chat_flow()
     )
     def test_executor_exec_line_with_image(self, flow_folder, inputs, dev_connections):
         working_dir = get_flow_folder(flow_folder)
@@ -191,7 +194,11 @@ class TestExecutorWithImage:
         assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
         shutil.rmtree(output_dir)
 
-    @pytest.mark.parametrize("flow_folder, inputs", get_test_cases_for_composite_input(EVAL_FLOW_WITH_IMAGE))
+    @pytest.mark.parametrize(
+            "flow_folder, inputs",
+            get_test_cases_for_simple_input(EVAL_FLOW_WITH_SIMPLE_IMAGE)
+            + get_test_cases_for_composite_input(EVAL_FLOW_WITH_COMPOSITE_IMAGE)
+        )
     def test_executor_exec_aggregation_with_image(self, flow_folder, inputs, dev_connections):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)

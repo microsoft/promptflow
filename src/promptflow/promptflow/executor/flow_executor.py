@@ -611,7 +611,7 @@ class FlowExecutor:
             node.inputs = {
                 k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
             }
-        # Load multimedia data for aggregation flow inputs.
+        # Load multimedia data for the flow inputs of aggregation nodes.
         inputs = load_multimedia_data_for_aggregation(self._flow.inputs, inputs)
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.

@@ -24,22 +24,12 @@ nodes:
   inputs:
     image_list: ${inputs.image_list}
     image_dict: ${inputs.image_dict}
-- name: python_node_2
-  type: python
-  source:
-    type: code
-    path: passthrough_dict.py
-  inputs:
-    image_list: ${inputs.image_list}
-    image_dict: ${inputs.image_dict}
 - name: aggregate_1
   type: python
   source:
     type: code
     path: merge_images.py
   inputs:
-    image:
-    - data:image/jpg;path: logo.jpg
     image_list: ${python_node.output}
     image_dict:
     - image_1:
@@ -53,8 +43,6 @@ nodes:
     type: code
     path: merge_images.py
   inputs:
-    image:
-    - data:image/jpg;path: logo.jpg
-    image_list: ${inputs.image_list}
-    image_dict: ${python_node_2.output}
+    image_list: ${python_node.output}
+    image_dict: ${inputs.image_dict}
   aggregation: true
