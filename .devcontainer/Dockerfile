@@ -12,11 +12,11 @@ RUN apt-get update \
 # specific pip version to workaround: https://github.com/conda/conda/issues/10178
 RUN pip install --upgrade pip==20.1.1
 RUN pip install ipython ipykernel
-RUN ipython kernel install --user --name aml
+RUN ipython kernel install --user --name promptflow
 
 # FROM base AS promptflow
-COPY default_requirements.txt .
-RUN pip install -r default_requirements.txt
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
 RUN set +x
 
