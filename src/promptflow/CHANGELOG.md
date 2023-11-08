@@ -4,7 +4,9 @@
 
 ### Features Added
 
+- [Executor] Add `enable_kwargs` tag in tools.json for customer python tool.
 - [SDK/CLI] Support `pfazure flow create`. Create a flow on Azure AI from local flow folder.
+- [SDK/CLI] Changed column mapping `${run.inputs.xx}`'s behavior, it will refer to run's data columns instead of run's inputs columns.
 
 ### Bugs Fixed
 

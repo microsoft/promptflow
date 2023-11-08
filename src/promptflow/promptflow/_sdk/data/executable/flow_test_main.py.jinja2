@@ -8,7 +8,7 @@ from streamlit_quill import st_quill
 
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
-from utils import dict_iter_render_message, parse_list_from_html, parse_image_content
+from utils import render_single_dict_message, parse_list_from_html, parse_image_content
 
 invoker = None
 {% set indent_level = 4 %}
@@ -19,7 +19,7 @@ def start():
 
     def render_message(role, message_items):
         with st.chat_message(role):
-            dict_iter_render_message(message_items)
+            render_single_dict_message(message_items)
 
     def show_conversation() -> None:
         if "messages" not in st.session_state:
@@ -94,9 +94,7 @@ def start():
         {% if chat_input_value_type == "list" %}
         {{chat_input_name}} = st_quill(html=True, toolbar=["image"], key='{{chat_input_name}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
         {% elif chat_input_value_type == "string" %}
-        {{chat_input_name}} = st.text_input(label='{{chat_input_name}}', placeholder='{{chat_input_default_value}}')
-        {% else %}
-        {{chat_input_name}} = st.text_input(label='{{chat_input_name}}', placeholder={{chat_input_default_value}})
+        {{chat_input_name}} = st.text_input(label='{{chat_input_name}}', placeholder="""{{chat_input_default_value}}""")
         {% endif %}
 
         cols = st.columns(7)
