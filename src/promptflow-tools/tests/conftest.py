@@ -47,7 +47,7 @@ def serp_connection():
 
 @pytest.fixture
 def azure_content_safety_connection():
-    return ConnectionManager().get("aacs_connection")
+    return ConnectionManager().get("azure_content_safety_connection")
 
 
 def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
