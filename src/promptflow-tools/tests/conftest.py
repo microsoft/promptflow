@@ -45,6 +45,11 @@ def serp_connection():
     return ConnectionManager().get("serp_connection")
 
 
+@pytest.fixture
+def azure_content_safety_connection():
+    return ConnectionManager().get("aacs_connection")
+
+
 def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
     '''Verify that there is a MIR endpoint up and available for the Custom Connection.
     We explicitly do not pass the endpoint key to avoid the delay in generating a response.
