@@ -97,7 +97,8 @@ def skip_if_no_api_key(request, mocker):
         conn_name = request.node.get_closest_marker('skip_if_no_api_key').args[0]
         connection = request.getfixturevalue(conn_name)
         # if dummy placeholder key, skip.
-        if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection) or isinstance(connection, AzureContentSafetyConnection):
+        if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection) \
+                or isinstance(connection, AzureContentSafetyConnection):
             if "-api-key" in connection.api_key:
                 pytest.skip('skipped because no key')
         elif isinstance(connection, CustomConnection):
