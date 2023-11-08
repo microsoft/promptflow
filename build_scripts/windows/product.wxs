@@ -8,14 +8,19 @@
     <?define ProductAuthor = "Microsoft Corporation" ?>
     <?define ProductResources = ".\resources\" ?>
     <?define UpgradeCode32 = "8b748161-e07a-48f2-8cdf-401480df4694" ?>
+    <?define PromptflowServiceGuid = "d9363a28-693c-4b12-bf0a-30e4b37e9951" ?>
 
     <?if $(var.Platform) = "x64" ?>
+    <?define PromptflowCliRegistryGuid = "0efd984f-9eec-425b-b230-a3994b69649a" ?>
+    <?define PromptflowCliVersionGuid = "d4e99207-77be-4bdf-a430-b08632c5aa2b" ?>
     <?define PromptflowSystemPathGuid = "4c321045-d4e0-4446-bda4-8c19eaa42af1" ?>
     <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
     <?define UpgradeCode = "772aa21f-f8d4-4771-b910-1dbce3f1920c" ?>
     <?define Architecture = "64-bit" ?>
 
     <?elseif $(var.Platform) = "x86" ?>
+    <?define PromptflowCliRegistryGuid = "7c2c792d-c395-44a1-8222-8e4ea006abb9" ?>
+    <?define PromptflowCliVersionGuid = "f706b208-a15d-4ae7-9185-cfcc43656570" ?>
     <?define PromptflowSystemPathGuid = "9661fe6a-ff48-4e7c-a60d-fc34c2d06ef3" ?>
     <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
     <?define UpgradeCode = $(var.UpgradeCode32) ?>
@@ -104,6 +109,32 @@
                      System="yes" />
                 <CreateFolder />
             </Component>
+            <Component Id="PromptflowCliRegistry"
+                       Directory="DynamicCliDir"
+                       Guid="$(var.PromptflowCliRegistryGuid)">
+            <RegistryValue Root="HKCU"
+                           Key="Software\Microsoft\$(var.ProductName)"
+                           Name="installed"
+                           Type="integer"
+                           Value="1"
+                           KeyPath="yes"/>
+            </Component>
+            <Component Id="PromptflowCliVersion"
+                       Directory="DynamicCliDir"
+                       Guid="$(var.PromptflowCliVersionGuid)">
+            <RegistryValue Root="HKLM"
+                           Key="Software\Microsoft\$(var.ProductName)"
+                           Name="version"
+                           Type="string"
+                           Value="$(var.ProductVersion)"
+                           KeyPath="yes"/>
+            </Component>
+            <Component Id="PromptflowService" Directory="DynamicCliDir" Guid="$(var.PromptflowServiceGuid)">
+                <File Id="PromptflowServiceEXE" Source="scripts\dist\promptflow\promptflow_service.exe" KeyPath="yes" />
+                <ServiceInstall Id="ServiceInstaller" Name="PromptflowService" DisplayName="Promptflow Service" Description="This is a promptflow service" Start="auto" Type="ownProcess" ErrorControl="normal" />
+                <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="PromptflowService" Wait="no" />
+            </Component>
+
         </ComponentGroup>
 
         <ComponentGroup Id="ProductComponents">

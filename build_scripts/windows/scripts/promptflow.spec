@@ -9,7 +9,7 @@ datas += collect_data_files('keyrings.alt', include_py_files=True)
 datas += copy_metadata('keyrings.alt')
 datas += collect_data_files('streamlit_quill')
 
-hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs']
+hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs', 'win32timezone']
 
 block_cipher = None
 
@@ -82,6 +82,40 @@ pfazure_exe = EXE(
     entitlements_file=None,
 )
 
+promptflow_service_a = Analysis(
+    ['promptflow_service.py'],
+    pathex=[],
+    binaries=[],
+    datas=datas,
+    hiddenimports=hidden_imports,
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+promptflow_service_pyz = PYZ(promptflow_service_a.pure, promptflow_service_a.zipped_data, cipher=block_cipher)
+promptflow_service_exe = EXE(
+    promptflow_service_pyz,
+    promptflow_service_a.scripts,
+    [],
+    exclude_binaries=True,
+    name='promptflow_service',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+
 coll = COLLECT(
     pf_exe,
     pf_a.binaries,
@@ -91,6 +125,10 @@ coll = COLLECT(
     pfazure_a.binaries,
     pfazure_a.zipfiles,
     pfazure_a.datas,
+    promptflow_service_exe,
+    promptflow_service_a.binaries,
+    promptflow_service_a.zipfiles,
+    promptflow_service_a.datas,
     strip=False,
     upx=True,
     upx_exclude=[],
