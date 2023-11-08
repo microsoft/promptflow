@@ -6,6 +6,7 @@ import requests
 
 from promptflow import tool, ToolProvider
 from promptflow.connections import AzureContentSafetyConnection
+from promptflow.tools.exception import AzureContentSafetyInputValueError, AzureContentSafetySystemError
 
 
 class TextCategorySensitivity(str, Enum):
@@ -169,7 +170,8 @@ class ContentSafety(object):
         elif media_type == MediaType.Image:
             return f"{self.endpoint}/contentsafety/image:analyze?api-version={self.api_version}"
         else:
-            raise ValueError(f"Invalid Media Type {media_type}")
+            error_message = f"Invalid Media Type {media_type}"
+            raise AzureContentSafetyInputValueError(message=error_message)
 
     def build_headers(self) -> Dict[str, str]:
         """
@@ -209,7 +211,8 @@ class ContentSafety(object):
         elif media_type == MediaType.Image:
             return {"image": {"content": content}}
         else:
-            raise ValueError(f"Invalid Media Type {media_type}")
+            error_message = f"Invalid Media Type {media_type}"
+            raise AzureContentSafetyInputValueError(message=error_message)
 
     def detect(
             self,
@@ -226,7 +229,8 @@ class ContentSafety(object):
         print("response txt: " + response.text)
         res_content = response.json()
         if response.status_code != 200:
-            raise DetectionError(res_content["error"]["code"], res_content["error"]["message"])
+            error_message = f"Error in detecting content: {res_content['error']['message']}"
+            raise AzureContentSafetySystemError(message=error_message)
         return res_content
 
     def get_detect_result_by_category(self, category: Category, detect_result: dict) -> Union[int, None]:
@@ -239,14 +243,16 @@ class ContentSafety(object):
         elif category == Category.Violence:
             return detect_result.get("violenceResult", None)
         else:
-            raise ValueError(f"Invalid Category {category}")
+            error_message = f"Invalid Category {category}"
+            raise AzureContentSafetyInputValueError(message=error_message)
 
     def get_detect_result_by_category_1001(self, category: Category, detect_result: dict) -> Union[int, None]:
         category_res = detect_result.get("categoriesAnalysis", None)
         for res in category_res:
             if category.name == res.get("category", None):
                 return res
-        raise ValueError(f"Invalid Category {category}")
+        error_message = f"Invalid Category {category}"
+        raise AzureContentSafetyInputValueError(message=error_message)
 
     def make_decision(
             self,
@@ -257,11 +263,13 @@ class ContentSafety(object):
         final_action = Action.Accept
         for category, threshold in reject_thresholds.items():
             if threshold not in (-1, 0, 2, 4, 6):
-                raise ValueError("RejectThreshold can only be in (-1, 0, 2, 4, 6)")
+                error_message = "RejectThreshold can only be in (-1, 0, 2, 4, 6)"
+                raise AzureContentSafetyInputValueError(message=error_message)
 
             cate_detect_res = self.get_detect_result_by_category(category, detection_result)
             if cate_detect_res is None or "severity" not in cate_detect_res:
-                raise ValueError(f"Can not find detection result for {category}")
+                error_message = f"Can not find detection result for {category}"
+                raise AzureContentSafetySystemError(message=error_message)
 
             severity = cate_detect_res["severity"]
             action = Action.Reject if threshold != -1 and severity >= threshold else Action.Accept
@@ -289,13 +297,15 @@ class ContentSafety(object):
         final_action = Action.Accept
         for category, threshold in reject_thresholds.items():
             if threshold not in (-1, 0, 2, 4, 6):
-                raise ValueError("RejectThreshold can only be in (-1, 0, 2, 4, 6)")
+                error_message = "RejectThreshold can only be in (-1, 0, 2, 4, 6)"
+                raise AzureContentSafetyInputValueError(message=error_message)
 
             cate_detect_res = self.get_detect_result_by_category_1001(
                 category, detection_result
             )
             if cate_detect_res is None or "severity" not in cate_detect_res:
-                raise ValueError(f"Can not find detection result for {category}")
+                error_message = f"Can not find detection result for {category}"
+                raise AzureContentSafetySystemError(message=error_message)
 
             severity = cate_detect_res["severity"]
             action = (

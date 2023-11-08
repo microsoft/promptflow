@@ -155,3 +155,16 @@ class OpenSourceLLMKeyValidationError(ToolValidationError):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+class AzureContentSafetyInputValueError(UserErrorException):
+    """Base exception raised when the input type of Azure Content Safety is invalid."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, target=ErrorTarget.TOOL)
+
+class AzureContentSafetySystemError(SystemErrorException):
+    """Base exception raised when the input type of Azure Content Safety is invalid."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, target=ErrorTarget.TOOL)
