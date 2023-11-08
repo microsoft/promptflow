@@ -245,7 +245,7 @@ client.runs.visualize(name="<run-name>")
 :::{tab-item} VS Code Extension
 :sync: VSC
 
-On the VS Code primary sidebar > the Prompt flow pane, there is a run list. It will list all the runs on your machine. Select one or more items and click the "visualize" button on the top-right to visualize the local runs.
+On the VS Code primary sidebar > the prompt flow pane, there is a run list. It will list all the runs on your machine. Select one or more items and click the "visualize" button on the top-right to visualize the local runs.
 
 ![img](../media/how-to-guides/vscode_run_actions.png)
 :::
@@ -286,7 +286,7 @@ print(runs)
 :::{tab-item} VS Code Extension
 :sync: VSC
 
-On the VS Code primary sidebar > the Prompt flow pane, there is a run list. It will list all the runs on your machine. Hover on it to view more details.
+On the VS Code primary sidebar > the prompt flow pane, there is a run list. It will list all the runs on your machine. Hover on it to view more details.
 ![img](../media/how-to-guides/vscode_list_runs.png)
 :::
 ::::
