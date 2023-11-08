@@ -334,13 +334,13 @@ class TestCli:
         stdout, _ = capsys.readouterr()
         output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
-        with open(output_path, "r") as f:
+        with open(output_path, "r", encoding="utf-8") as f:
             outputs = json.load(f)
             assert outputs["answer"] in json.loads(stdout)["answer"]
 
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
         assert detail_path.exists()
-        with open(detail_path, "r") as f:
+        with open(detail_path, "r", encoding="utf-8") as f:
             detail = json.load(f)
             assert detail["flow_runs"][0]["inputs"]["question"] == question
             assert detail["flow_runs"][0]["output"]["answer"] == outputs["answer"]
