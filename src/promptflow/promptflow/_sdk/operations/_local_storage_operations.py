@@ -463,6 +463,8 @@ class LocalStorageOperations(AbstractRunStorage):
         return inputs, outputs
 
     def _collect_io_from_debug_info(self) -> Tuple["DataFrame", "DataFrame"]:
+        import pandas as pd
+
         inputs, outputs = [], []
         for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
             if line_run_record_file.suffix.lower() != ".jsonl":
