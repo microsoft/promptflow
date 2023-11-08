@@ -11,7 +11,6 @@ from _constants import CONNECTION_FILE, ENV_FILE
 from _pytest.monkeypatch import MonkeyPatch
 from filelock import FileLock
 from pytest_mock import MockerFixture
-from sdk_cli_test.recording_utilities import RecordStorage
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -69,11 +68,6 @@ def env_with_secrets_config_file():
 
 @pytest.fixture
 def azure_open_ai_connection() -> AzureOpenAIConnection:
-    if RecordStorage.is_replaying_mode():
-        return AzureOpenAIConnection(
-            api_key="dummy_key",
-            api_base="dummy_base",
-        )
     return ConnectionManager().get("azure_open_ai_connection")
 
 

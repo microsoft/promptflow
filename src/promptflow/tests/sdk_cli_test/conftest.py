@@ -185,18 +185,18 @@ def mock_origin(original):
 def recording_enabled(mocker: MockerFixture):
     original_fun = FlowExecutionContext.invoke_tool
     mocker.patch("promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun))
-    os.environ[ENVIRON_TEST_MODE] = RecordMode.RECORD
+    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.RECORD})
     yield
-    os.environ.pop(ENVIRON_TEST_MODE)
+    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.LIVE})
 
 
 @pytest.fixture
 def replaying_enabled(mocker: MockerFixture):
     original_fun = FlowExecutionContext.invoke_tool
     mocker.patch("promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun))
-    os.environ[ENVIRON_TEST_MODE] = RecordMode.REPLAY
+    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.REPLAY})
     yield
-    os.environ.pop(ENVIRON_TEST_MODE)
+    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.LIVE})
 
 
 @pytest.fixture
