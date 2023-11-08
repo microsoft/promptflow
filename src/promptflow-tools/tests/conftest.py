@@ -8,7 +8,7 @@ from pytest_mock import MockerFixture  # noqa: E402
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
-from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection, AzureContentSafetyConnection
+from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection
 from promptflow.tools.aoai import AzureOpenAI
 
 PROMOTFLOW_ROOT = Path(__file__).absolute().parents[1]
@@ -45,11 +45,6 @@ def serp_connection():
     return ConnectionManager().get("serp_connection")
 
 
-@pytest.fixture
-def azure_content_safety_connection():
-    return ConnectionManager().get("azure_content_safety_connection")
-
-
 def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
     '''Verify that there is a MIR endpoint up and available for the Custom Connection.
     We explicitly do not pass the endpoint key to avoid the delay in generating a response.
@@ -78,6 +73,11 @@ def gpt2_custom_connection():
 
 
 @pytest.fixture
+def llama_chat_custom_connection():
+    return ConnectionManager().get("llama_chat_connection")
+
+
+@pytest.fixture
 def open_source_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
@@ -97,8 +97,7 @@ def skip_if_no_api_key(request, mocker):
         conn_name = request.node.get_closest_marker('skip_if_no_api_key').args[0]
         connection = request.getfixturevalue(conn_name)
         # if dummy placeholder key, skip.
-        if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection) \
-                or isinstance(connection, AzureContentSafetyConnection):
+        if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection):
             if "-api-key" in connection.api_key:
                 pytest.skip('skipped because no key')
         elif isinstance(connection, CustomConnection):
