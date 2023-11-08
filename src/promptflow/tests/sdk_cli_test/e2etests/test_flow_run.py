@@ -863,6 +863,55 @@ class TestFlowRun:
         result = pf.run(flow=image_flow_path, data=data_path, column_mapping={"image": "${data.image}"})
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
+        assert "error" not in run._to_dict()
+
+    def test_python_tool_with_composite_image(self, pf) -> None:
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_composite_image"
+        data_path = f"{image_flow_path}/inputs.jsonl"
+
+        result = pf.run(
+            flow=image_flow_path,
+            data=data_path,
+            column_mapping={
+                "image_list": "${data.image_list}",
+                "image_dict": "${data.image_dict}",
+            },
+        )
+        run = pf.runs.get(name=result.name)
+        assert run.status == "Completed"
+        # no error when processing lines
+        assert "error" not in run._to_dict()
+
+        # test input from output
+        result = pf.run(
+            run=result,
+            flow=image_flow_path,
+            column_mapping={
+                "image_list": "${run.outputs.output}"
+                # image dict will use default value, which is relative to flow's folder
+            },
+        )
+        run = pf.runs.get(name=result.name)
+        assert run.status == "Completed"
+        # no error when processing lines
+        assert "error" not in run._to_dict()
+
+    def test_image_without_default(self, pf):
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image_without_default"
+        data_path = f"{DATAS_DIR}/image_inputs"
+
+        result = pf.run(
+            flow=image_flow_path,
+            data=data_path,
+            column_mapping={
+                "image_1": "${data.image}",
+                "image_2": "${data.image}",
+            },
+        )
+        run = pf.runs.get(name=result.name)
+        assert run.status == "Completed", run.name
+        # no error when processing lines
+        assert "error" not in run._to_dict(), run.name
 
     def test_get_details_for_image_in_flow(self, pf: PFClient) -> None:
         image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image"
