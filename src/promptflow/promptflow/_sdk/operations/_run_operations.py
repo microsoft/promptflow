@@ -140,7 +140,10 @@ class RunOperations(TelemetryMixin):
             available_logs = local_storage.logger.get_logs()
             incremental_print(available_logs, printed, file_handler)
             self._print_run_summary(run)
-            # won't print error here, put it in run dict
+            # print error message when run is failed
+            if run.status == RunStatus.FAILED:
+                error_message = local_storage.load_exception()["message"]
+                file_handler.write(f"{error_message}\n")
         except KeyboardInterrupt:
             error_message = "The output streaming for the run was interrupted, but the run is still executing."
             print(error_message)
