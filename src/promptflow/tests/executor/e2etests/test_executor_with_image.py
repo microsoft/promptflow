@@ -224,7 +224,7 @@ class TestExecutorWithImage:
     def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping, expected_outputs_number):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), {})
         output_dir = Path("outputs")
-        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
+        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir, max_lines_count=4)
 
         assert isinstance(bulk_result, BulkResult)
         assert len(bulk_result.outputs) == expected_outputs_number
