@@ -257,7 +257,7 @@ class _Connection(YAMLTranslatableMixin):
         return {
             "type": self.class_name,  # Required class name for connection in executor
             "module": self.module,
-            "value": value,
+            "value": {k: v for k, v in value.items() if v is not None},  # Filter None value out
             "secret_keys": secret_keys,
         }
 
