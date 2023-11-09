@@ -181,7 +181,7 @@ class TestExecutorWithImage:
             ),
             (
                 COMPOSITE_IMAGE_FLOW,
-                {"data": "."},
+                {"data": "inputs.jsonl"},
                 {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
                 2,
             ),
