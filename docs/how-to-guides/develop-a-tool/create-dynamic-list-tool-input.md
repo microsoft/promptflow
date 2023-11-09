@@ -109,7 +109,7 @@ my_tool_package.tools.tool_with_dynamic_list_input.my_tool:
 
 ## Use the tool in VS Code
 
-Once you package and share your tool, you can use it in VS Code per the [tool package guide](create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
+Once you package and share your tool, you can use it in VS Code per the [tool package guide](create-and-use-tool-package.md#use-your-tool-from-vscode-extension). You could try `my-tools-package` for a quick test.
 
 ```sh
 pip install my-tools-package>=0.0.8
