@@ -169,7 +169,7 @@ class TestExecutorWithImage:
         [
             (
                 SIMPLE_IMAGE_FLOW,
-                {"data": "image_inputs/inputs.jsonl"},
+                {"data": "."},
                 {"image": "${data.image}"},
             ),
             (
