@@ -13,6 +13,7 @@ from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
+from pydash import objects
 
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
@@ -152,6 +153,22 @@ def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathL
         yaml.safe_dump(flow_dag, f)
 
 
+def overwrite_flow(flow_path: Path, params_overrides: dict):
+    if not params_overrides:
+        return
+    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
+    # update flow dag & change nodes list to name: obj dict
+    flow_dag[NODES] = {node["name"]: node for node in flow_dag[NODES]}
+    # apply overrides on flow dag
+    for param, val in params_overrides.items():
+        objects.set_(flow_dag, param, val)
+    # revert nodes to list
+    flow_dag[NODES] = list(flow_dag[NODES].values())
+
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
+        yaml.safe_dump(flow_dag, f)
+
+
 def remove_additional_includes(flow_path: Path):
     flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
     flow_dag.pop("additional_includes", None)
@@ -166,6 +183,7 @@ def variant_overwrite_context(
     variant: str = None,
     connections: dict = None,
     *,
+    overrides: dict = None,
     drop_node_variants: bool = False,
 ):
     """Override variant and connections in the flow."""
@@ -178,6 +196,7 @@ def variant_overwrite_context(
             # always overwrite variant since we need to overwrite default variant if not specified.
             overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections)
+            overwrite_flow(Path(temp_dir), overrides)
             remove_additional_includes(Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
@@ -189,6 +208,7 @@ def variant_overwrite_context(
             shutil.copy2(flow_dag_path.resolve().as_posix(), temp_dag_file)
             overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections, working_dir=flow_dir_path)
+            overwrite_flow(Path(temp_dir), overrides)
             flow = Flow(code=flow_dir_path, path=temp_dag_file)
             yield flow
 
@@ -203,7 +223,7 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow, client=None):
+    def resolve_connections(flow: Flow, client=None, connections_to_ignore=None):
         from .._pf_client import PFClient
 
         client = client or PFClient()
@@ -211,7 +231,9 @@ class SubmitterHelper:
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
-        return get_local_connections_from_executable(executable=executable, client=client)
+        return get_local_connections_from_executable(
+            executable=executable, client=client, connections_to_ignore=connections_to_ignore
+        )
 
     @classmethod
     def resolve_environment_variables(cls, environment_variables: dict, client=None):
@@ -331,7 +353,7 @@ class RunSubmitter:
             # won't raise the exception since it's already included in run object.
         finally:
             # persist snapshot and result
-            # snapshot: flow directory and (mapped) inputs
+            # snapshot: flow directory
             local_storage.dump_snapshot(flow)
             # persist inputs, outputs and metrics
             local_storage.persist_result(bulk_result)
@@ -353,7 +375,8 @@ class RunSubmitter:
             result.update(
                 {
                     "run.outputs": self.run_operations._get_outputs_path(run.run),
-                    "run.inputs": self.run_operations._get_inputs_path(run.run),
+                    # to align with cloud behavior, run.inputs should refer to original data
+                    "run.inputs": self.run_operations._get_data_path(run.run),
                 }
             )
         return {k: str(Path(v).resolve()) for k, v in result.items() if v is not None}

@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
-In Prompt flow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
+In prompt flow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
 
 This guide will help you learn how to use activate config to add conditional control to your flow.
 
@@ -47,11 +47,11 @@ activate:
 ::::
 
 ### Further details and important notes
-1. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input. This helps prevent errors in the current node due to missing parameters.
+1. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input whenever possible. If there is no default value for input, the output of the bypassed node will be set to None.
 
     ![provide_default_value](../media/how-to-guides/conditional-flow-with-activate/provide_default_value.png)
 
-2. Please avoid directly connecting nodes that might be bypassed to the flow's outputs. This can lead to flow failures due to a lack of valid values on the flow output.
+2. It is not recommended to directly connect nodes that might be bypassed to the flow's outputs. If it is connected, the output will be None and a warning will be raised.
 
     ![output_bypassed](../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
 
