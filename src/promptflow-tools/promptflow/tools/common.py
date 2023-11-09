@@ -176,8 +176,10 @@ def to_content_str_or_list(
                 image_message["image"] = hash2images[chunk.strip()].to_base64()
             else:
                 image_message["type"] = "image_url"
+                image_bs64 = hash2images[chunk.strip()].to_base64()
+                image_mine_type = hash2images[chunk.strip()]._mime_type
                 image_message["image_url"] = {
-                    "url": f"data:image/jpeg;base64,{hash2images[chunk.strip()].to_base64()}"
+                    "url": f"data:{image_mine_type};base64,{image_bs64}"
                 }
             result.append(image_message)
             include_image = True
