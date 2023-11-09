@@ -141,8 +141,10 @@
     "pgrep",
     "Hwfoxydrg",
     "llms",
-    "vcrpy",
-    "tiiuae"
+    "vcrpy"
+  ],
+  "flagWords": [
+    "Prompt Flow"
   ],
   "allowCompoundWords": true
 }

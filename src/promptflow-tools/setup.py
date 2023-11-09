@@ -47,11 +47,6 @@ setup(
         "package_tools": ["builtins = promptflow.tools.list:list_package_tools"],
     },
     include_package_data=True,
-    extras_require={
-        "azure": [
-            "azure-ai-ml>=1.11.0,<2.0.0"
-        ]
-    },
     project_urls={
         "Bug Reports": "https://github.com/microsoft/promptflow/issues",
         "Source": "https://github.com/microsoft/promptflow",
