@@ -12,7 +12,6 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
-import pandas as pd
 import yaml
 from filelock import FileLock
 
@@ -250,25 +249,24 @@ class LocalStorageOperations(AbstractRunStorage):
         return flow_dag["inputs"], flow_dag["outputs"]
 
     def load_inputs(self) -> RunInputs:
+        import pandas as pd
+
         with open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             df = pd.read_json(f, orient="records", lines=True)
             return df.to_dict("list")
 
     def load_outputs(self) -> RunOutputs:
+        import pandas as pd
+
         # for legacy run, simply read the output file and return as list of dict
         if not self._outputs_path.is_file():
             with open(self._legacy_outputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 df = pd.read_json(f, orient="records", lines=True)
                 return df.to_dict("list")
 
-        # get total number of line runs from inputs
-        num_line_runs = len(list(self.load_inputs().values())[0])
         with open(self._outputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             df = pd.read_json(f, orient="records", lines=True)
-            # if all line runs are failed, no need to fill
             if len(df) > 0:
-                df = self._outputs_padding(df, num_line_runs)
-                df.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                 df = df.set_index(LINE_NUMBER)
             return df.to_dict("list")
 
@@ -429,20 +427,24 @@ class LocalStorageOperations(AbstractRunStorage):
         return path
 
     @staticmethod
-    def _outputs_padding(df: pd.DataFrame, expected_rows: int) -> pd.DataFrame:
+    def _outputs_padding(df: "DataFrame", inputs_line_numbers: List[int]) -> "DataFrame":
+        import pandas as pd
+
+        if len(df) == len(inputs_line_numbers):
+            return df
         missing_lines = []
         lines_set = set(df[LINE_NUMBER].values)
-        for i in range(expected_rows):
+        for i in inputs_line_numbers:
             if i not in lines_set:
                 missing_lines.append({LINE_NUMBER: i})
-        if len(missing_lines) == 0:
-            return df
         df_to_append = pd.DataFrame(missing_lines)
         res = pd.concat([df, df_to_append], ignore_index=True)
         res = res.sort_values(by=LINE_NUMBER, ascending=True)
         return res
 
-    def load_inputs_and_outputs(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def load_inputs_and_outputs(self) -> Tuple["DataFrame", "DataFrame"]:
+        import pandas as pd
+
         if not self._sdk_inputs_path.is_file() or not self._sdk_output_path.is_file():
             inputs, outputs = self._collect_io_from_debug_info()
         else:
@@ -452,12 +454,14 @@ class LocalStorageOperations(AbstractRunStorage):
                 outputs = pd.read_json(f, orient="records", lines=True)
                 # if all line runs are failed, no need to fill
                 if len(outputs) > 0:
-                    outputs = self._outputs_padding(outputs, len(inputs))
+                    outputs = self._outputs_padding(outputs, inputs["line_number"].tolist())
                     outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                     outputs = outputs.set_index(LINE_NUMBER)
         return inputs, outputs
 
-    def _collect_io_from_debug_info(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def _collect_io_from_debug_info(self) -> Tuple["DataFrame", "DataFrame"]:
+        import pandas as pd
+
         inputs, outputs = [], []
         for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
             if line_run_record_file.suffix.lower() != ".jsonl":

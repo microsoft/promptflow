@@ -9,6 +9,8 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities import CustomStrongTypeConnection
 from promptflow.contracts.types import Secret
 
+from ..recording_utilities import RecordStorage
+
 
 class MyCustomConnection(CustomStrongTypeConnection):
     api_key: Secret
@@ -23,6 +25,7 @@ CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
 
 @pytest.mark.cli_test
 @pytest.mark.e2etest
+@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support strong type in replay")
 class TestCustomStrongTypeConnection:
     def test_connection_operations(self):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
