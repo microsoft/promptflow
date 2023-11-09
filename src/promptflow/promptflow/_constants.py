@@ -14,5 +14,4 @@ CONTENT_SAFETY_API_KEY = "content-safety-api-key"
 ERROR_RESPONSE_COMPONENT_NAME = "promptflow"
 EXTENSION_UA = "prompt-flow-extension"
 
-PROMPT_FLOW_DIR_NAME = ".promptflow"
 DEFAULT_ENCODING = "utf-8"
