@@ -7,7 +7,7 @@ from promptflow.tools.exception import (
     OpenSourceLLMKeyValidationError,
     ChatAPIInvalidRole
 )
-from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatterBase
+from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatterBase, get_model_type
 from typing import List, Dict
 
 
