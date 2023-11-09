@@ -38,7 +38,8 @@ class Configuration(object):
         if not os.path.exists(self.CONFIG_PATH.parent):
             os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
         if not os.path.exists(self.CONFIG_PATH):
-            with open(self.CONFIG_PATH, "w", mode=read_write_by_user()) as f:
+            self.CONFIG_PATH.touch(mode=read_write_by_user(), exist_ok=True)
+            with open(self.CONFIG_PATH, "w") as f:
                 f.write(dump_yaml({}))
         self._config = load_yaml(self.CONFIG_PATH)
         if not self._config:
