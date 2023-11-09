@@ -197,7 +197,7 @@ def retrieve_tool_func_result(func_call_scenario: str, func_path: str, func_inpu
     except Exception as e:
         raise RetrieveToolFuncResultError(f"Error when calling function {func_path}: {e}")
 
-    validate_tool_func_result(unc_call_scenario, result)
+    validate_tool_func_result(func_call_scenario, result)
     return result
 
 
