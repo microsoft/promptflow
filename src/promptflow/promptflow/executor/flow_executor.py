@@ -799,6 +799,8 @@ class FlowExecutor:
             node, flow_inputs: Dict[str, FlowInputDefinition]) -> Dict[str, FlowInputDefinition]:
         node_referenced_flow_inputs = {}
         for _, value in node.inputs.items():
+            # Only add flow input to node_referenced_flow_inputs when it is exist and referenced by node.
+            # If flow input is not exist, we will raise exception in FlowValidator.convert_flow_inputs_for_node.
             if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
