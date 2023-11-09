@@ -901,6 +901,10 @@ def is_github_codespaces():
     return os.environ.get("CODESPACES", None) == "true"
 
 
+def disable_interactive_credential():
+    return os.environ.get("PF_NO_INTERACTIVE_LOGIN", "false").lower() == "true"
+
+
 def is_from_cli():
     from promptflow._cli._user_agent import USER_AGENT as CLI_UA
     from promptflow._core.operation_context import OperationContext

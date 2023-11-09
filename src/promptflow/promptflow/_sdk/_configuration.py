@@ -141,7 +141,7 @@ class Configuration(object):
             raise ValueError(
                 "The subscription_id, resource_group and workspace_name can not be empty. Got: "
                 f"subscription_id: {subscription_id}, resource_group: {resource_group}, "
-                f"workspace_name: {workspace_name}."
+                f"workspace_name: {workspace_name} from file {found_path}."
             )
         return RESOURCE_ID_FORMAT.format(subscription_id, resource_group, AZUREML_RESOURCE_PROVIDER, workspace_name)
 
