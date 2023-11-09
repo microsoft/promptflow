@@ -84,15 +84,16 @@ def get_model_type(deployment_model: str) -> str:
         return None
 
     model = m[1].lower()
-    if model.startswith(ModelFamily.LLAMA.lower()):
+    if model.startswith("llama-2"):
         return ModelFamily.LLAMA
-    elif model.startswith(ModelFamily.FALCON.lower()):
+    elif model.startswith("tiiuae-falcon"):
         return ModelFamily.FALCON
-    elif model.startswith(ModelFamily.DOLLY.lower()):
+    elif model.startswith("databricks-dolly-v2"):
         return ModelFamily.DOLLY
     elif model.startswith("gpt2"):
         return ModelFamily.GPT2
     else:
+        # Not found and\or handled. Ignore this endpoint\deployment
         print(f"Unexpected model type: {model} derived from deployed model: {deployment_model}")
         return None
 
