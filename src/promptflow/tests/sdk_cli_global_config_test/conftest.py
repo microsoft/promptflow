@@ -15,14 +15,12 @@ def pf() -> PFClient:
 
 
 @pytest.fixture(scope="session")
-def global_config():
+def global_config(subscription_id: str, resource_group_name: str, workspace_name: str) -> None:
     config = Configuration.get_instance()
     if Configuration.CONNECTION_PROVIDER in config._config:
         return
     config.set_config(
         Configuration.CONNECTION_PROVIDER,
         "azureml:"
-        + RESOURCE_ID_FORMAT.format(
-            "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
-        ),
+        + RESOURCE_ID_FORMAT.format(subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name),
     )

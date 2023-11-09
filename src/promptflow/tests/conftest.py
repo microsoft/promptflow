@@ -7,7 +7,14 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE
+from _constants import (
+    CONNECTION_FILE,
+    DEFAULT_RESOURCE_GROUP_NAME,
+    DEFAULT_RUNTIME_NAME,
+    DEFAULT_SUBSCRIPTION_ID,
+    DEFAULT_WORKSPACE_NAME,
+    ENV_FILE,
+)
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
@@ -78,26 +85,6 @@ def azure_open_ai_connection() -> AzureOpenAIConnection:
 def temp_output_dir() -> str:
     with tempfile.TemporaryDirectory() as temp_dir:
         yield temp_dir
-
-
-@pytest.fixture
-def default_subscription_id() -> str:
-    return "96aede12-2f73-41cb-b983-6d11a904839b"
-
-
-@pytest.fixture
-def default_resource_group() -> str:
-    return "promptflow"
-
-
-@pytest.fixture
-def default_workspace() -> str:
-    return "promptflow-eastus"
-
-
-@pytest.fixture
-def workspace_with_acr_access() -> str:
-    return "promptflow-eastus-dev"
 
 
 @pytest.fixture
@@ -175,3 +162,24 @@ def mock_module_with_list_func(mock_list_func):
 
         mock_import.side_effect = side_effect
         yield
+
+
+# below fixtures are used for pfazure and global config tests
+@pytest.fixture
+def subscription_id() -> str:
+    return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
+
+
+@pytest.fixture
+def resource_group_name() -> str:
+    return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
+
+
+@pytest.fixture
+def workspace_name() -> str:
+    return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
+
+
+@pytest.fixture
+def runtime_name() -> str:
+    return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)
