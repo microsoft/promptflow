@@ -9,6 +9,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Union
 
+from promptflow._core.token_provider import AzureTokenProvider, TokenProviderABC
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
@@ -46,7 +47,6 @@ from promptflow._sdk.schemas._connection import (
     WeaviateConnectionSchema,
 )
 from promptflow.contracts.types import Secret
-from promptflow._core.token_provider import TokenProviderABC, AzureTokenProvider
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -257,7 +257,7 @@ class _Connection(YAMLTranslatableMixin):
         return {
             "type": self.class_name,  # Required class name for connection in executor
             "module": self.module,
-            "value": value,
+            "value": {k: v for k, v in value.items() if v is not None},  # Filter None value out
             "secret_keys": secret_keys,
         }
 
@@ -349,8 +349,13 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     TYPE = ConnectionType.AZURE_OPEN_AI
 
     def __init__(
-        self, api_key: str, api_base: str, api_type: str = "azure", api_version: str = "2023-07-01-preview",
-        token_provider: TokenProviderABC = None, **kwargs
+        self,
+        api_key: str,
+        api_base: str,
+        api_type: str = "azure",
+        api_version: str = "2023-07-01-preview",
+        token_provider: TokenProviderABC = None,
+        **kwargs,
     ):
         configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version}
         secrets = {"api_key": api_key}
@@ -406,14 +411,19 @@ class OpenAIConnection(_StrongTypeConnection):
     :type api_key: str
     :param organization: Optional. The unique identifier for your organization which can be used in API requests.
     :type organization: str
+    :param api_base: Optional. Specify when use customized api base, leave None to use open ai default api base.
+    :type api_base: str
     :param name: Connection name.
     :type name: str
     """
 
     TYPE = ConnectionType.OPEN_AI
 
-    def __init__(self, api_key: str, organization: str = None, **kwargs):
-        configs = {"organization": organization}
+    def __init__(self, api_key: str, organization: str = None, api_base=None, **kwargs):
+        if api_base == "":
+            # Keep empty as None to avoid disturbing openai pick the default api base.
+            api_base = None
+        configs = {"organization": organization, "api_base": api_base}
         secrets = {"api_key": api_key}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
@@ -430,6 +440,16 @@ class OpenAIConnection(_StrongTypeConnection):
     def organization(self, value):
         """Set the connection organization."""
         self.configs["organization"] = value
+
+    @property
+    def api_base(self):
+        """Return the connection api base."""
+        return self.configs.get("api_base")
+
+    @api_base.setter
+    def api_base(self, value):
+        """Set the connection api base."""
+        self.configs["api_base"] = value
 
 
 class SerpConnection(_StrongTypeConnection):
@@ -571,7 +591,7 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
         self,
         api_key: str,
         endpoint: str,
-        api_version: str = "2023-04-30-preview",
+        api_version: str = "2023-10-01",
         api_type: str = "Content Safety",
         **kwargs,
     ):
