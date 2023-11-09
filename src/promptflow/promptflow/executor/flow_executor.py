@@ -799,9 +799,8 @@ class FlowExecutor:
             node, flow_inputs: Dict[str, FlowInputDefinition]) -> Dict[str, FlowInputDefinition]:
         node_referenced_flow_inputs = {}
         for _, value in node.inputs.items():
-            if value.value_type == InputValueType.FLOW_INPUT:
-                if value.value in flow_inputs:
-                    node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
+            if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
+                node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
