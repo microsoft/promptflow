@@ -432,16 +432,16 @@ class LocalStorageOperations(AbstractRunStorage):
         return path
 
     @staticmethod
-    def _outputs_padding(df: "pd.DataFrame", expected_rows: int) -> "pd.DataFrame":
+    def _outputs_padding(df: "DataFrame", expected_rows: int) -> "DataFrame":
         import pandas as pd
 
+        if len(df) == expected_rows:
+            return df
         missing_lines = []
         lines_set = set(df[LINE_NUMBER].values)
         for i in range(expected_rows):
             if i not in lines_set:
                 missing_lines.append({LINE_NUMBER: i})
-        if len(missing_lines) == 0:
-            return df
         df_to_append = pd.DataFrame(missing_lines)
         res = pd.concat([df, df_to_append], ignore_index=True)
         res = res.sort_values(by=LINE_NUMBER, ascending=True)
