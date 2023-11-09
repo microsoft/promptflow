@@ -58,9 +58,9 @@
         <Icon Id="PromptflowIcon" SourceFile="$(var.ProductResources)logo32.ico" />
 
         <Property Id="ARPPRODUCTICON" Value="PromptflowIcon" />
-        <Property Id="ARPHELPLINK" Value="https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2" />
-        <Property Id="ARPURLINFOABOUT" Value="https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2" />
-        <Property Id="ARPURLUPDATEINFO" Value="https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2" />
+        <Property Id="ARPHELPLINK" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
+        <Property Id="ARPURLINFOABOUT" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
+        <Property Id="ARPURLUPDATEINFO" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
         <Property Id="MSIFASTINSTALL" Value="7" />
         <Property Id="ApplicationFolderName" Value="Promptflow" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
@@ -82,7 +82,7 @@
         <UIRef Id="WixUI_ErrorProgressText"/>
 
         <!-- Show message to restart any terminals only if the PATH is changed -->
-        <CustomAction Id="Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Please close and reopen any active terminal window to use Promptflow." />
+        <CustomAction Id="Set_WIXUI_EXITDIALOGOPTIONALTEXT" Property="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Please close and reopen any active terminal window to use prompt flow." />
         <InstallUISequence>
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
@@ -130,8 +130,8 @@
                                KeyPath="yes"/>
             </Component>
             <Component Id="PromptflowService" Directory="DynamicCliDir" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="PromptflowServiceEXE" Source="scripts\dist\promptflow\promptflow_service.exe" KeyPath="yes" />
-                <ServiceInstall Id="ServiceInstaller" Name="PromptflowService" DisplayName="Promptflow Service" Description="This is a promptflow service" Start="auto" Type="ownProcess" ErrorControl="normal" />
+                <File Id="PromptflowServiceEXE" Source="scripts\dist\promptflow\pfs.exe" KeyPath="yes" />
+                <ServiceInstall Id="ServiceInstaller" Name="PromptflowService" DisplayName="Prompt Flow Service" Description="Provides run and connection management for prompt flow" Start="auto" Type="ownProcess" ErrorControl="normal" />
                 <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="PromptflowService" Wait="no" />
             </Component>
 

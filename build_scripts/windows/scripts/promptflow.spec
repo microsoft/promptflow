@@ -82,8 +82,8 @@ pfazure_exe = EXE(
     entitlements_file=None,
 )
 
-promptflow_service_a = Analysis(
-    ['promptflow_service.py'],
+pfs_a = Analysis(
+    ['pfs.py'],
     pathex=[],
     binaries=[],
     datas=datas,
@@ -97,13 +97,13 @@ promptflow_service_a = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
-promptflow_service_pyz = PYZ(promptflow_service_a.pure, promptflow_service_a.zipped_data, cipher=block_cipher)
-promptflow_service_exe = EXE(
-    promptflow_service_pyz,
-    promptflow_service_a.scripts,
+pfs_pyz = PYZ(pfs_a.pure, pfs_a.zipped_data, cipher=block_cipher)
+pfs_exe = EXE(
+    pfs_pyz,
+    pfs_a.scripts,
     [],
     exclude_binaries=True,
-    name='promptflow_service',
+    name='pfs',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -125,10 +125,10 @@ coll = COLLECT(
     pfazure_a.binaries,
     pfazure_a.zipfiles,
     pfazure_a.datas,
-    promptflow_service_exe,
-    promptflow_service_a.binaries,
-    promptflow_service_a.zipfiles,
-    promptflow_service_a.datas,
+    pfs_exe,
+    pfs_a.binaries,
+    pfs_a.zipfiles,
+    pfs_a.datas,
     strip=False,
     upx=True,
     upx_exclude=[],
