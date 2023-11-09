@@ -14,12 +14,11 @@ from urllib.request import HTTPError
 from promptflow import ToolProvider, tool
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
-from promptflow.tools.common import render_jinja_template, validate_role
+from promptflow.tools.common import render_jinja_template, parse_chat
 from promptflow.tools.exception import (
     OpenSourceLLMOnlineEndpointError,
     OpenSourceLLMUserError,
-    OpenSourceLLMKeyValidationError,
-    ChatAPIInvalidRole
+    OpenSourceLLMKeyValidationError
 )
 
 VALID_LLAMA_ROLES = {"system", "user", "assistant"}
@@ -271,43 +270,13 @@ class LlamaContentFormatter(ContentFormatterBase):
         self.api = api
         self.chat_history = chat_history
 
-    @staticmethod
-    def parse_chat(chat_str: str) -> List[Dict[str, str]]:
-        # LLaMa only supports below roles.
-        separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
-        chunks = re.split(separator, chat_str)
-
-        # remove any empty chunks
-        chunks = [c.strip() for c in chunks if c.strip()]
-
-        chat_list = []
-        for index in range(0, len(chunks), 2):
-            role = chunks[index].lower()
-
-            # Check if prompt follows chat api message format and has valid role.
-            try:
-                validate_role(role, VALID_LLAMA_ROLES)
-            except ChatAPIInvalidRole as e:
-                raise OpenSourceLLMUserError(message=e.message)
-
-            if len(chunks) <= index + 1:
-                message = "Unexpected chat format. Please ensure the query matches the chat format of the model used."
-                raise OpenSourceLLMUserError(message=message)
-
-            chat_list.append({
-                "role": role,
-                "content": chunks[index+1]
-            })
-
-        return chat_list
-
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         """Formats the request according the the chosen api"""
         if "do_sample" not in model_kwargs:
             model_kwargs["do_sample"] = True
 
         if self.api == API.CHAT:
-            prompt_value = LlamaContentFormatter.parse_chat(self.chat_history)
+            prompt_value = parse_chat(self.chat_history, valid_roles=["assistant", "user", "system"])
         else:
             prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
 

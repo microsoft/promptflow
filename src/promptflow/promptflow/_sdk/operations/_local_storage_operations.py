@@ -264,14 +264,9 @@ class LocalStorageOperations(AbstractRunStorage):
                 df = pd.read_json(f, orient="records", lines=True)
                 return df.to_dict("list")
 
-        # get total number of line runs from inputs
-        num_line_runs = len(list(self.load_inputs().values())[0])
         with open(self._outputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             df = pd.read_json(f, orient="records", lines=True)
-            # if all line runs are failed, no need to fill
             if len(df) > 0:
-                df = self._outputs_padding(df, num_line_runs)
-                df.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                 df = df.set_index(LINE_NUMBER)
             return df.to_dict("list")
 
@@ -432,14 +427,14 @@ class LocalStorageOperations(AbstractRunStorage):
         return path
 
     @staticmethod
-    def _outputs_padding(df: "DataFrame", expected_rows: int) -> "DataFrame":
+    def _outputs_padding(df: "DataFrame", inputs_line_numbers: List[int]) -> "DataFrame":
         import pandas as pd
 
-        if len(df) == expected_rows:
+        if len(df) == len(inputs_line_numbers):
             return df
         missing_lines = []
         lines_set = set(df[LINE_NUMBER].values)
-        for i in range(expected_rows):
+        for i in inputs_line_numbers:
             if i not in lines_set:
                 missing_lines.append({LINE_NUMBER: i})
         df_to_append = pd.DataFrame(missing_lines)
@@ -459,7 +454,7 @@ class LocalStorageOperations(AbstractRunStorage):
                 outputs = pd.read_json(f, orient="records", lines=True)
                 # if all line runs are failed, no need to fill
                 if len(outputs) > 0:
-                    outputs = self._outputs_padding(outputs, len(inputs))
+                    outputs = self._outputs_padding(outputs, inputs["line_number"].tolist())
                     outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                     outputs = outputs.set_index(LINE_NUMBER)
         return inputs, outputs
