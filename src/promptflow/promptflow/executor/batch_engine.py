@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Mapping, Union
 
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.load_data import load_data
+from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
@@ -61,7 +62,18 @@ class BatchEngine:
         result = {}
         for input_key, input_dir in input_dirs.items():
             input_dir = self._resolve_dir(input_dir)
-            result[input_key] = load_data(input_dir, enable_parse_image_path=True)
+            result[input_key] = self._resolve_data_from_input_dir(input_dir)
+        return result
+
+    def _resolve_data_from_input_dir(self, input_dir: Path):
+        """Resolve input data from directory"""
+        result = []
+        if input_dir.is_file():
+            result.extend(resolve_multimedia_data_recursively(input_dir.parent, load_data(input_dir)))
+        else:
+            for input_file in input_dir.rglob("*"):
+                if input_file.is_file():
+                    result.extend(resolve_multimedia_data_recursively(input_file.parent, load_data(input_file)))
         return result
 
     def _resolve_dir(self, dir: Union[str, Path]) -> Path:
