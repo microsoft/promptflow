@@ -6,7 +6,7 @@ import pytest
 
 from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, is_multimedia_dict
 from promptflow.contracts.multimedia import Image
-from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.executor import BatchEngine, FlowExecutor
 from promptflow.executor.flow_executor import BulkResult, LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -82,15 +82,18 @@ def get_test_cases_for_node_run():
 
 
 def assert_contain_image_reference(value):
+    if isinstance(value, FlowRunInfo) or isinstance(value, RunInfo):
+        assert_contain_image_reference(value.api_calls)
+        assert_contain_image_reference(value.inputs)
+        assert_contain_image_reference(value.output)
     assert not isinstance(value, Image)
     if isinstance(value, list):
         for item in value:
             assert_contain_image_reference(item)
     elif isinstance(value, dict):
         if is_multimedia_dict(value):
-            path = list(value.values())[0]
-            assert isinstance(path, str)
-            assert path.endswith(".jpg") or path.endswith(".jpeg") or path.endswith(".png")
+            v = list(value.values())[0]
+            assert isinstance(v, str)
         else:
             for _, v in value.items():
                 assert_contain_image_reference(v)

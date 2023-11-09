@@ -84,7 +84,7 @@ def _create_image_from_url(url: str, mime_type: str = None):
         if not mime_type:
             format = imghdr.what(None, response.content)
             mime_type = f"image/{format}" if format else "image/*"
-        return Image(response.content, mime_type=mime_type)
+        return Image(response.content, mime_type=mime_type, sourceUrl=url)
     else:
         raise InvalidImageInput(
             message_format=f"Error while fetching image from URL: {url}. "
@@ -167,6 +167,8 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *,
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
         if isinstance(obj, PFBytes):
+            if obj._sourceUrl:
+                return {f"data:{obj._mime_type};url": obj._sourceUrl}
             file_name = str(uuid.uuid4())
             # If use_absolute_path is True, the image file path in image dictionary will be absolute path.
             return _save_image_to_file(obj, file_name, folder_path, relative_path, use_absolute_path)
