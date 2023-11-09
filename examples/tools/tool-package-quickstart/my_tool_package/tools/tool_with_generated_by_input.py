@@ -16,7 +16,6 @@ def generate_index_json(index_type: str = "", index: str = "", content_field: st
     inputs.update(kwargs)
 
     result = json.dumps(inputs)
-
     return result
 
 
