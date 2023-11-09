@@ -3,8 +3,8 @@
 
     <?define ProductVersion="0.0.1" ?>
 
-    <?define ProductName = "Promptflow" ?>
-    <?define ProductDescription = "Command-line tools for Promptflow." ?>
+    <?define ProductName = "promptflow" ?>
+    <?define ProductDescription = "Command-line tools for promptflow." ?>
     <?define ProductAuthor = "Microsoft Corporation" ?>
     <?define ProductResources = ".\resources\" ?>
     <?define UpgradeCode32 = "8b748161-e07a-48f2-8cdf-401480df4694" ?>
@@ -62,13 +62,10 @@
         <Property Id="ARPURLINFOABOUT" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
         <Property Id="ARPURLUPDATEINFO" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
         <Property Id="MSIFASTINSTALL" Value="7" />
-        <Property Id="ApplicationFolderName" Value="Promptflow" />
+        <Property Id="ApplicationFolderName" Value="promptflow" />
         <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
 
-<!--         <MajorUpgrade DowngradeErrorMessage="A newer version of Promptflow is already installed." /> -->
-<!--         <MediaTemplate /> -->
-
-        <Feature Id="ProductFeature" Title="Promptflow" Level="1" AllowAdvertise="no">
+        <Feature Id="ProductFeature" Title="promptflow" Level="1" AllowAdvertise="no">
             <ComponentGroupRef Id="ProductComponents" />
         </Feature>
 
@@ -92,7 +89,7 @@
     <Fragment>
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="$(var.ProgramFilesFolder)">
-                <Directory Id="DynamicCliDir" Name="Promptflow" />
+                <Directory Id="DynamicCliDir" Name="promptflow" />
             </Directory>
         </Directory>
     </Fragment>
