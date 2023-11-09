@@ -440,7 +440,7 @@ def _copy_to_flow(flow_path, source_file):
 
 
 def pretty_print_run_list(run_list: list, output):
-    from pandas import pd
+    import pandas as pd
 
     if output == CLIListOutputFormat.TABLE:
         df = pd.DataFrame(run_list)
