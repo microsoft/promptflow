@@ -2,7 +2,7 @@
 
 This tutorial is designed to enhance your understanding of improving flow quality through prompt tuning and evaluation.
 
-Embark on a journey to overcome the inherent randomness of Language Models (LLMs) and enhance output reliability through **prompt fine-tuning** with this comprehensive tutorial. Explore how Prompt Flow can simplify this process, enabling you to swiftly build high-quality, LLM-native apps.
+Embark on a journey to overcome the inherent randomness of Language Models (LLMs) and enhance output reliability through **prompt fine-tuning** with this comprehensive tutorial. Explore how prompt flow can simplify this process, enabling you to swiftly build high-quality, LLM-native apps.
 
 Prompt fine-tuning involves optimizing the input prompts given to an LLM. This strategic adjustment helps the model to focus on specific information needed for a task, thereby improving the accuracy and reliability of the LLM's responses.
 
