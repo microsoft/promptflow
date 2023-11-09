@@ -32,7 +32,7 @@ class BatchEngine:
         inputs_mapping: Dict[str, str],
         output_dir: Path,
         run_id: str = None,
-        max_inputs_count: int = None,
+        max_lines_count: int = None,
     ) -> BulkResult:
         """Run flow in batch mode
 
@@ -44,13 +44,13 @@ class BatchEngine:
         :type output_dir: The directory path of output files
         :param run_id: The run id of this run
         :type run_id: str
-        :param max_inputs_count: The max count of inputs
-        :type max_inputs_count: int
+        :param max_lines_count: The max count of inputs
+        :type max_lines_count: int
         :return: The result of this batch run
         :rtype: ~promptflow.executor._result.BulkResult
         """
         # resolve input data from input dirs and apply inputs mapping
-        input_dicts = self._resolve_data(input_dirs, max_inputs_count)
+        input_dicts = self._resolve_data(input_dirs, max_lines_count)
         mapped_inputs = self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
         # run flow in batch mode
         output_dir = self._resolve_dir(output_dir)
@@ -60,15 +60,15 @@ class BatchEngine:
         self._persist_outputs(batch_result.outputs, output_dir)
         return batch_result
 
-    def _resolve_data(self, input_dirs: Dict[str, str], max_inputs_count: int = None):
+    def _resolve_data(self, input_dirs: Dict[str, str], max_lines_count: int = None):
         """Resolve input data from input dirs"""
         result = {}
         for input_key, input_dir in input_dirs.items():
             input_dir = self._resolve_dir(input_dir)
-            result[input_key] = self._resolve_data_from_input_path(input_dir, max_inputs_count)
+            result[input_key] = self._resolve_data_from_input_path(input_dir, max_lines_count)
         return result
 
-    def _resolve_data_from_input_path(self, input_path: Path, max_inputs_count: int = None):
+    def _resolve_data_from_input_path(self, input_path: Path, max_lines_count: int = None):
         """Resolve input data from directory"""
         result = []
         if input_path.is_file():
@@ -77,9 +77,9 @@ class BatchEngine:
             for input_file in input_path.rglob("*"):
                 if input_file.is_file():
                     result.extend(resolve_multimedia_data_recursively(input_file.parent, load_data(input_file)))
-                    if max_inputs_count and len(result) >= max_inputs_count:
+                    if max_lines_count and len(result) >= max_lines_count:
                         break
-        return result[:max_inputs_count] if max_inputs_count and len(result) > max_inputs_count else result
+        return result[:max_lines_count] if max_lines_count and len(result) > max_lines_count else result
 
     def _resolve_dir(self, dir: Union[str, Path]) -> Path:
         """Resolve input dir to absolute path"""
