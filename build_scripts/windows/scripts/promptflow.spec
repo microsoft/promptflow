@@ -2,11 +2,10 @@
 from PyInstaller.utils.hooks import collect_data_files
 from PyInstaller.utils.hooks import copy_metadata
 
-datas = [('../resources/CLI_LICENSE.rtf', '.'), ('../resources/NOTICE.txt', '.')]
+datas = [('../resources/CLI_LICENSE.rtf', '.'), ('../../../src/promptflow/NOTICE.txt', '.')]
 datas += collect_data_files('streamlit')
 datas += copy_metadata('streamlit')
 datas += collect_data_files('streamlit_quill')
-
 hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs']
 
 service_hidden_imports = ['win32timezone']
