@@ -10,7 +10,7 @@ import traceback
 import types
 from functools import partial
 from pathlib import Path
-from typing import Callable, List, Mapping, Optional, Tuple, Union, Dict
+from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import pkg_resources
 import yaml
@@ -27,7 +27,14 @@ from promptflow._utils.connection_utils import (
     generate_custom_strong_type_connection_spec,
     generate_custom_strong_type_connection_template,
 )
-from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
+from promptflow._utils.tool_utils import (
+    DynamicListError,
+    append_workspace_triple_to_func_input_params,
+    function_to_tool_definition,
+    get_prompt_param_name_from_func,
+    load_function_from_function_path,
+    validate_dynamic_list_func_response_type,
+)
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
@@ -170,47 +177,24 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
             )
 
 
-def append_workspace_triple_to_func_input_params(func_sig_params, func_input_params_dict, ws_triple_dict):
-    '''Append workspace triple to func input params.
-
-    :param func_sig_params: function signature parameters, full params.
-    :param func_input_params_dict: user input param key-values for dynamic list function.
-    :param ws_triple_dict: workspace triple dict, including subscription_id, resource_group_name, workspace_name.
-    :return: combined func input params.
-    '''
-    # append workspace triple to func input params if any below condition are met:
-    # 1. func signature has kwargs param.
-    # 2. func signature has param named 'subscription_id','resource_group_name','workspace_name'.
-    has_kwargs_param = any([param.kind == inspect.Parameter.VAR_KEYWORD for _, param in func_sig_params.items()])
-    if has_kwargs_param is False:
-        # keep only params that are in func signature. Or run into error when calling func.
-        avail_ws_info_dict = {k: v for k, v in ws_triple_dict.items() if k in set(func_sig_params.keys())}
-    else:
-        avail_ws_info_dict = ws_triple_dict
-
-    # if ws triple key is in func input params, it means user has provided value for it,
-    # do not expect implicit override.
-    combined_func_input_params = dict(avail_ws_info_dict, **func_input_params_dict)
-    return combined_func_input_params
-
-
-def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = None):
-    import importlib
-    import inspect
-
-    # TODO: validate func path.
-    module_name, func_name = func_path.rsplit('.', 1)
-    module = importlib.import_module(module_name)
-    func = getattr(module, func_name)
+def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
+    func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
-    # TODO: validate if func input params are all in func signature params.
-    # TODO: add more tests to verify following appending logic.
+    # Validate if func input params are all in func signature params.
+    for input_param in func_input_params_dict:
+        if input_param not in func_sig_params:
+            raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
     combined_func_input_params = append_workspace_triple_to_func_input_params(
-        func_sig_params, func_input_params_dict, ws_triple_dict)
-    # TODO: error handling of func call.
-    result = func(**combined_func_input_params)
-    # TODO: validate response is of required format. Throw correct message if response is empty.
+        func_sig_params, func_input_params_dict, ws_triple_dict
+    )
+    try:
+        result = func(**combined_func_input_params)
+    except Exception as e:
+        raise DynamicListError(f"Error when calling function {func_path}: {e}")
+    # validate response is of required format. Throw correct message if response is empty.
+    validate_dynamic_list_func_response_type(result, func.__name__)
+
     return result
 
 
@@ -236,12 +220,20 @@ class BuiltinsManager:
         return BuiltinsManager._load_package_tool(tool.name, tool.module, tool.class_name, tool.function, node_inputs)
 
     @staticmethod
-    def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]):
-        """Load package in tool with given import path and node inputs."""
-        m = importlib.import_module(module_name)
+    def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs):
+        module = importlib.import_module(module_name)
+        return BuiltinsManager._load_tool_from_module(
+            module, tool_name, module_name, class_name, method_name, node_inputs
+        )
+
+    @staticmethod
+    def _load_tool_from_module(
+        module, tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]
+    ):
+        """Load tool from given module with node inputs."""
         if class_name is None:
-            return getattr(m, method_name), {}
-        provider_class = getattr(m, class_name)
+            return getattr(module, method_name), {}
+        provider_class = getattr(module, class_name)
         # Note: v -- type is InputAssignment
         init_inputs = provider_class.get_initialize_inputs()
         init_inputs_values = {}
@@ -392,7 +384,7 @@ class ToolLoader:
             if node.source.type == ToolSourceType.Package:
                 return self.load_tool_for_package_node(node)
             elif node.source.type == ToolSourceType.Code:
-                _, _, tool = self.load_tool_for_script_node(node)
+                _, tool = self.load_tool_for_script_node(node)
                 return tool
             raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
         elif node.type == ToolType.CUSTOM_LLM:
@@ -418,8 +410,8 @@ class ToolLoader:
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-        f = collect_tool_function_in_module(m)
-        return m, f, _parse_tool_from_function(f, gen_custom_type_conn=True)
+        f, init_inputs = collect_tool_function_in_module(m)
+        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"

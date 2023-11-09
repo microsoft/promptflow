@@ -23,7 +23,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.logger_utils import logger
+from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
@@ -34,7 +34,6 @@ from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
     InputMappingError,
     NodeOutputNotFound,
-    OutputReferenceBypassed,
     OutputReferenceNotExist,
     SingleNodeValidationError,
 )
@@ -442,8 +441,8 @@ class FlowExecutor:
             )
             logger.error(failed_msg)
 
-    def _exec_batch_with_threads(
-        self, batch_inputs: List[dict], run_id, validate_inputs: bool = True, variant_id: str = ""
+    def _exec_batch_with_process_pool(
+        self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
     ) -> List[LineResult]:
         nlines = len(batch_inputs)
         line_number = [
@@ -468,6 +467,7 @@ class FlowExecutor:
             run_id,
             variant_id,
             validate_inputs,
+            output_dir,
         ) as pool:
             result_list = pool.run(zip(line_number, batch_inputs))
 
@@ -700,8 +700,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = load_multimedia_data(self._flow.inputs, inputs_with_default_value)
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -738,6 +737,7 @@ class FlowExecutor:
         validate_inputs: bool = True,
         raise_on_line_failure: bool = False,
         node_concurrency=DEFAULT_CONCURRENCY_BULK,
+        output_dir: Path = None,
     ) -> BulkResult:
         """The entry points for bulk run execution
 
@@ -765,7 +765,9 @@ class FlowExecutor:
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
-            line_results = self._exec_batch_with_threads(inputs, run_id, validate_inputs=validate_inputs)
+            line_results = self._exec_batch_with_process_pool(
+                inputs, run_id, output_dir, validate_inputs=validate_inputs
+            )
             self._add_line_results(line_results)  # For bulk run, currently we need to add line results to run_tracker
             self._handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
             aggr_results = self._exec_aggregation_with_bulk_results(inputs, line_results, run_id)
@@ -878,8 +880,9 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-                # Make sure the run_info with converted inputs results rather than original inputs
-                run_info.inputs = inputs
+            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            # Make sure the run_info with converted inputs results rather than original inputs
+            run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
@@ -934,16 +937,6 @@ class FlowExecutor:
                 # Note that the reduce node referenced in the output is not supported.
                 continue
             if node.name not in nodes_outputs:
-                if node.name in bypassed_nodes:
-                    raise OutputReferenceBypassed(
-                        message_format=(
-                            "The output '{output_name}' for flow is incorrect. "
-                            "The node '{node_name}' referenced by the output has been bypassed. "
-                            "Please refrain from using bypassed nodes as output sources."
-                        ),
-                        output_name=name,
-                        node_name=node.name,
-                    )
                 raise NodeOutputNotFound(
                     message_format=(
                         "The output '{output_name}' for flow is incorrect. "
@@ -952,6 +945,10 @@ class FlowExecutor:
                     ),
                     output_name=name,
                     node_name=node.name,
+                )
+            if output.reference.value in bypassed_nodes:
+                flow_logger.warning(
+                    f"The node referenced by output:'{output.reference.value}' is bypassed, which is not recommended."
                 )
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(

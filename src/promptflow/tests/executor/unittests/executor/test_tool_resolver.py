@@ -1,6 +1,7 @@
 import re
 import sys
 from pathlib import Path
+from typing import List
 
 import pytest
 
@@ -152,6 +153,10 @@ class TestToolResolver:
         assert isinstance(exec_info.value.inner_exception, NodeInputValidationError)
         assert "These inputs are duplicated" in exec_info.value.message
 
+    @pytest.mark.skipif(
+        condition=(sys.version_info.major == 3 and sys.version_info.minor == 11),
+        reason="BUG 2709800: known issue on enum in Python 3.11",
+    )
     def test_ensure_node_inputs_type(self):
         # Case 1: conn_name not in connections, should raise conn_name not found error
         tool = Tool(name="mock", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})
@@ -198,6 +203,21 @@ class TestToolResolver:
         with pytest.raises(ValueTypeUnresolved):
             tool_resolver = ToolResolver(working_dir=None, connections=connections)
             tool_resolver._convert_node_literal_input_types(node, tool)
+
+        # Case 5: Literal value, invalid image in list
+        tool = Tool(name="mock", type="python", inputs={"list_input": InputDefinition(type=[ValueType.LIST])})
+        invalid_image = {"data:image/jpg;base64": "invalid_image"}
+        node = Node(
+            name="mock",
+            tool=tool,
+            inputs={"list_input": InputAssignment(value=[invalid_image], value_type=InputValueType.LITERAL)},
+        )
+        connections = {}
+        with pytest.raises(NodeInputValidationError) as e:
+            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver._convert_node_literal_input_types(node, tool)
+        message = "Invalid base64 image"
+        assert message in str(e.value), "Expected: {}, Actual: {}".format(message, str(e.value))
 
     def test_resolve_llm_connection_to_inputs(self):
         # Case 1: node.connection is not specified
@@ -311,15 +331,19 @@ class TestToolResolver:
         assert re.match(pattern, prompt)
 
     def test_resolve_script_node(self, mocker):
-        def mock_python_func(conn: AzureOpenAIConnection, prompt: PromptTemplate, **kwargs):
+        def mock_python_func(prompt: PromptTemplate, **kwargs):
             from promptflow.tools.template_rendering import render_template_jinja2
 
-            assert isinstance(conn, AzureOpenAIConnection)
             return render_template_jinja2(prompt, **kwargs)
 
         tool_loader = ToolLoader(working_dir=None)
         tool = Tool(name="mock", type=ToolType.PYTHON, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
-        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(None, mock_python_func, tool))
+        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(None, tool))
+
+        mocker.patch(
+            "promptflow._core.tools_manager.BuiltinsManager._load_tool_from_module",
+            return_value=(mock_python_func, {"conn": AzureOpenAIConnection}),
+        )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=None, connections=connections)
@@ -337,6 +361,7 @@ class TestToolResolver:
             provider="mock",
         )
         resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
+        assert len(resolved_tool.node.inputs) == 2
         kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 
@@ -410,7 +435,7 @@ class TestToolResolver:
             (["MyFirstCSTConnection", "MySecondCSTConnection"], MyFirstCSTConnection),
         ],
     )
-    def test_convert_to_custom_strong_type_connection_value(self, conn_types: list[str], expected_type, mocker):
+    def test_convert_to_custom_strong_type_connection_value(self, conn_types: List[str], expected_type, mocker):
         connections = {"conn_name": {"type": "CustomConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=None, connections=connections)
 

@@ -14,6 +14,7 @@ from promptflow._sdk._utils import (
     dump_flow_result,
     get_local_connections_from_executable,
     override_connection_config_with_environment_variable,
+    print_yellow_warning,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
 )
@@ -22,6 +23,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.executor import FlowExecutor
+from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -102,26 +104,54 @@ class FlowInvoker:
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         logger.info("Promptflow executor initiated successfully.")
 
-    def invoke(self, data: dict):
+    def _invoke(self, data: dict):
         """
         Process a flow request in the runtime.
 
         :param data: The request data dict with flow input as keys, for example: {"question": "What is ChatGPT?"}.
         :type data: dict
-        :return: The flow output dict, for example: {"answer": "ChatGPT is a chatbot."}.
-        :rtype: dict
+        :return: The result of executor.
+        :rtype: ~promptflow.executor._result.LineResult
         """
         logger.info(f"PromptFlow invoker received data: {data}")
 
         logger.info(f"Validating flow input with data {data!r}")
         validate_request_data(self.flow, data)
         logger.info(f"Execute flow with data {data!r}")
-        result = self.executor.exec_line(data, allow_generator_output=self.streaming())
+        # Pass index 0 as extension require for dumped result.
+        # TODO: Remove this index after extension remove this requirement.
+        result = self.executor.exec_line(data, index=0, allow_generator_output=self.streaming())
+        if LINE_NUMBER_KEY in result.output:
+            # Remove line number from output
+            del result.output[LINE_NUMBER_KEY]
+        return result
+
+    def invoke(self, data: dict):
+        """
+        Process a flow request in the runtime and return the output of the executor.
+
+        :param data: The request data dict with flow input as keys, for example: {"question": "What is ChatGPT?"}.
+        :type data: dict
+        :return: The flow output dict, for example: {"answer": "ChatGPT is a chatbot."}.
+        :rtype: dict
+        """
+        result = self._invoke(data)
         # Get base64 for multi modal object
-        resolved_outputs = {k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in result.output.items()}
-        if self._dump_to:
-            result.output = persist_multimedia_data(
-                result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
-            )
-            dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
+        resolved_outputs = self._convert_multimedia_data_to_base64(result)
+        self._dump_invoke_result(result)
+        print_yellow_warning(f"Result: {result.output}")
         return resolved_outputs
+
+    def _convert_multimedia_data_to_base64(self, invoke_result):
+        resolved_outputs = {
+            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True)
+            for k, v in invoke_result.output.items()
+        }
+        return resolved_outputs
+
+    def _dump_invoke_result(self, invoke_result):
+        if self._dump_to:
+            invoke_result.output = persist_multimedia_data(
+                invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
+            )
+            dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)

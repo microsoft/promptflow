@@ -1,8 +1,8 @@
 # Design principles
 
-When we started this project, [LangChain](https://www.langchain.com/) already became popular esp. after the ChatGPT launch. One of the questions we’ve been asked is what’s the difference between prompt flow and LangChain. This article is to elucidate the reasons for building Prompt Flow and the deliberate design choices we have made. To put it succinctly, prompt flow is a suite of development tools for you to build LLM apps with a strong emphasis of quality through experimentations, not a framework - which LangChain is.
+When we started this project, [LangChain](https://www.langchain.com/) already became popular esp. after the ChatGPT launch. One of the questions we’ve been asked is what’s the difference between prompt flow and LangChain. This article is to elucidate the reasons for building prompt flow and the deliberate design choices we have made. To put it succinctly, prompt flow is a suite of development tools for you to build LLM apps with a strong emphasis of quality through experimentations, not a framework - which LangChain is.
 
-While LLM apps are mostly in exploration stage, Microsoft started in this area a bit earlier and we’ve had the opportunity to observe how developers are integrating LLMs into existing systems or build new applications. These invaluable insights have shaped the fundamental design principles of Prompt Flow. 
+While LLM apps are mostly in exploration stage, Microsoft started in this area a bit earlier and we’ve had the opportunity to observe how developers are integrating LLMs into existing systems or build new applications. These invaluable insights have shaped the fundamental design principles of prompt flow. 
 
 ## 1. Expose the prompts vs. hiding them
 
@@ -25,7 +25,7 @@ Prompt flow offers a range of tools to streamline the new way of work:
 * Integrate the evaluation into your CI/CD pipeline, aligning the assertions in your gated tests with the selected metrics.
 
 
-Prompt Flow introduces two conceptual components to facilitate this workflow:
+Prompt flow introduces two conceptual components to facilitate this workflow:
 
 * Evaluation flow: a flow type that indicates this flow is not for deploy or integrate into your app, it’s for evaluating an app/flow performance.
 * Run: every time you run your flow with data, or run an evaluation on the output of a flow, a Run object is created to manage the history and allow for comparison and additional analysis.
@@ -46,6 +46,6 @@ This approach offers several key benefits, primarily centered around **enhanced 
 
 ![promptflow-dag](../media/promptflow-dag.png)
 
-The emphasis on visibility in Prompt flow's design helps developers to gain a comprehensive understanding of the intricate details of their applications. This, in turn, empowers developers to engage in effective troubleshooting and optimization.
+The emphasis on visibility in prompt flow's design helps developers to gain a comprehensive understanding of the intricate details of their applications. This, in turn, empowers developers to engage in effective troubleshooting and optimization.
 
-Despite there're some control flow features like "activate-when" to serve the needs of branches/switch-case, we do not intend to make Flow itself Turning complete. If you want to develop an agent which is fully dynamic and guided by LLM, leveraging [Semantic Kernel](https://github.com/microsoft/semantic-kernel) together with Prompt Flow would be a favorable option.
+Despite there're some control flow features like "activate-when" to serve the needs of branches/switch-case, we do not intend to make Flow itself Turning complete. If you want to develop an agent which is fully dynamic and guided by LLM, leveraging [Semantic Kernel](https://github.com/microsoft/semantic-kernel) together with prompt flow would be a favorable option.

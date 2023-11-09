@@ -489,7 +489,7 @@ Local path to the data file.
 
 `--column-mapping`
 
-Inputs column mapping, use `${data.xx}` to refer to data file columns, use `${run.inputs.xx}` and `${run.outputs.xx}` to refer to run inputs/outputs columns.
+Inputs column mapping, use `${data.xx}` to refer to data columns, use `${run.inputs.xx}` to refer to referenced run's data columns, and `${run.outputs.xx}` to refer to run outputs columns.
 
 `--run`
 
@@ -697,9 +697,22 @@ Initialize a tool directory.
 ```bash
 pf tool init [--package]
              [--tool]
+             [--set]
 ```
 
 #### Examples
+
+Creating a package tool from scratch.
+
+```bash
+pf tool init --package <package-name> --tool <tool-name>
+```
+
+Creating a package tool with extra info.
+
+```bash
+pf tool init --package <package-name> --tool <tool-name> --set icon=<icon-path> category=<tool-category> tags="{'<key>': '<value>'}"
+```
 
 Creating a package tool from scratch.
 
@@ -722,6 +735,10 @@ The package name to create.
 `--tool`
 
 The tool name to create.
+
+`--set`
+
+Set extra information about the tool, like category, icon and tags. Example: --set <key>=<value>.
 
 ### pf tool list
 

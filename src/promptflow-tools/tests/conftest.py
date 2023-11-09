@@ -91,10 +91,10 @@ def open_source_llm_ws_service_connection() -> bool:
 
 
 @pytest.fixture(autouse=True)
-def skip_if_no_key(request, mocker):
+def skip_if_no_api_key(request, mocker):
     mocker.patch.dict(os.environ, {"PROMPTFLOW_CONNECTIONS": CONNECTION_FILE})
-    if request.node.get_closest_marker('skip_if_no_key'):
-        conn_name = request.node.get_closest_marker('skip_if_no_key').args[0]
+    if request.node.get_closest_marker('skip_if_no_api_key'):
+        conn_name = request.node.get_closest_marker('skip_if_no_api_key').args[0]
         connection = request.getfixturevalue(conn_name)
         # if dummy placeholder key, skip.
         if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection):
@@ -113,6 +113,13 @@ def skip_if_no_key(request, mocker):
 @pytest.fixture
 def example_prompt_template() -> str:
     with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/marketing_writer/prompt.jinja2") as f:
+        prompt_template = f.read()
+    return prompt_template
+
+
+@pytest.fixture
+def example_prompt_template_with_name_in_roles() -> str:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_name_in_roles.jinja2") as f:
         prompt_template = f.read()
     return prompt_template
 

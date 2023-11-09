@@ -364,6 +364,8 @@ class Tool:
     :type is_builtin: Optional[bool]
     :param stage: The stage of the tool
     :type stage: Optional[str]
+    :param enable_kwargs: Whether to enable kwargs, only available for customer python tool
+    :type enable_kwargs: Optional[bool]
     """
 
     name: str
@@ -379,6 +381,7 @@ class Tool:
     connection_type: Optional[List[str]] = None
     is_builtin: Optional[bool] = None
     stage: Optional[str] = None
+    enable_kwargs: Optional[bool] = False
 
     def serialize(self) -> dict:
         """Serialize tool to dict and skip None fields.
@@ -418,6 +421,7 @@ class Tool:
             connection_type=data.get("connection_type"),
             is_builtin=data.get("is_builtin"),
             stage=data.get("stage"),
+            enable_kwargs=data.get("enable_kwargs", False),
         )
 
     def _require_connection(self) -> bool:

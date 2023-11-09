@@ -118,7 +118,7 @@ hello-world-proj/
 ![auto-list-tool-in-extension](../../media/how-to-guides/develop-a-tool/auto-list-tool-in-extension.png)
 
 
-## FAQ
+## FAQs
 ### Why is my custom tool not showing up in the UI?
 Confirm that the tool YAML files are included in your custom tool package. You can add the YAML files to [MANIFEST.in](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/MANIFEST.in) and include the package data in [setup.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/setup.py).
 Alternatively, you can test your tool package using the script below to ensure that you've packaged your tool YAML files and configured the package tool entry point correctly.
@@ -164,3 +164,7 @@ Alternatively, you can test your tool package using the script below to ensure t
 ## Advanced features
 [Customize your tool icon](add-a-tool-icon.md)  
 [Add category and tags for tool](add-category-and-tags-for-tool.md)  
+[Use file path as tool input](use-file-path-as-tool-input.md)  
+[Customize an LLM Tool](customize_an_llm_tool.md)  
+[Creating Cascading Tool Inputs](create-cascading-tool-inputs.md)   
+[Create and Use Your Own Custom Strong Type Connection](create-your-own-custom-strong-type-connection.md) 

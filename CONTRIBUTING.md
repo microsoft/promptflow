@@ -1,5 +1,5 @@
 # Contributing to Prompt Flow
-You can contribute to Prompt Flow with issues and pull requests (PRs). Simply
+You can contribute to prompt flow with issues and pull requests (PRs). Simply
 filing issues for problems you encounter is a great way to contribute. Contributing
 code is greatly appreciated.
 
@@ -47,6 +47,7 @@ DO's:
   if it diverges from the general guidelines.
 - **DO** include tests when adding new features. When fixing bugs, start with
   adding a test that highlights how the current behavior is broken.
+- **DO** add proper docstring for functions and classes following [API Documentation Guidelines](./docs/dev/documentation_guidelines.md).
 - **DO** keep the discussions focused. When a new or related topic comes up
   it's often better to create new issue than to side track the discussion.
 - **DO** clearly state on an issue that you are going to take on implementing it.
@@ -57,7 +58,7 @@ DON'Ts:
 - **DON'T** surprise us with big pull requests. Instead, file an issue and start
   a discussion so we can agree on a direction before you invest a large amount of time.
 - **DON'T** commit code that you didn't write. If you find code that you think is a good
-  fit to add to Prompt flow, file an issue and start a discussion before proceeding.
+  fit to add to prompt flow, file an issue and start a discussion before proceeding.
 - **DON'T** submit PRs that alter licensing related files or headers. If you believe
   there's a problem with them, file an issue and we'll be happy to discuss it.
 - **DON'T** make new APIs without filing an issue and discussing with us first.

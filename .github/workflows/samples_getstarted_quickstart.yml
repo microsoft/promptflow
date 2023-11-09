@@ -12,6 +12,9 @@ on:
     paths: [ examples/**, .github/workflows/samples_getstarted_quickstart.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_notebook_ci:
     runs-on: ubuntu-latest

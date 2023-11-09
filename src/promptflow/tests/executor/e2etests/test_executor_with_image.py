@@ -1,20 +1,24 @@
 import os
+import shutil
 from pathlib import Path
 
 import pytest
 
-from promptflow._utils.multimedia_utils import _create_image_from_file, _is_multimedia_dict
+from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, is_multimedia_dict
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import Status
-from promptflow.executor import FlowExecutor
+from promptflow.executor import BatchEngine, FlowExecutor
+from promptflow.executor.flow_executor import BulkResult, LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
-from ..utils import FLOW_ROOT, get_yaml_file, get_yaml_working_dir
+from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file
 
 SIMPLE_IMAGE_FLOW = "python_tool_with_simple_image"
-SIMPLE_IMAGE_FLOW_PATH = FLOW_ROOT / "python_tool_with_simple_image"
 COMPOSITE_IMAGE_FLOW = "python_tool_with_composite_image"
-COMPOSITE_IMAGE_FLOW_PATH = FLOW_ROOT / "python_tool_with_composite_image"
+CHAT_FLOW_WITH_IMAGE = "chat_flow_with_image"
+SIMPLE_IMAGE_FLOW_PATH = FLOW_ROOT / SIMPLE_IMAGE_FLOW
+COMPOSITE_IMAGE_FLOW_PATH = FLOW_ROOT / COMPOSITE_IMAGE_FLOW
+CHAT_FLOW_WITH_IMAGE_PATH = FLOW_ROOT / CHAT_FLOW_WITH_IMAGE
 IMAGE_URL = (
     "https://github.com/microsoft/promptflow/blob/93776a0631abf991896ab07d294f62082d5df3f3/src"
     "/promptflow/tests/test_configs/datas/test_image.jpg?raw=true"
@@ -40,7 +44,7 @@ def get_test_cases_for_composite_input():
     inputs = [
         [
             {"data:image/jpg;path": str(COMPOSITE_IMAGE_FLOW_PATH / "logo.jpg")},
-            {"data:image/png;path": str(COMPOSITE_IMAGE_FLOW_PATH / "logo_2.png")}
+            {"data:image/png;path": str(COMPOSITE_IMAGE_FLOW_PATH / "logo_2.png")},
         ],
         [{"data:image/jpg;base64": image_1.to_base64()}, {"data:image/png;base64": image_2.to_base64()}],
         [{"data:image/jpg;url": IMAGE_URL}, {"data:image/png;url": IMAGE_URL}],
@@ -69,8 +73,10 @@ def get_test_cases_for_node_run():
         (COMPOSITE_IMAGE_FLOW, "python_node", composite_image_input, None),
         (COMPOSITE_IMAGE_FLOW, "python_node_2", composite_image_input, None),
         (
-            COMPOSITE_IMAGE_FLOW, "python_node_3", composite_image_input,
-            {"python_node": image_list, "python_node_2": image_dict}
+            COMPOSITE_IMAGE_FLOW,
+            "python_node_3",
+            composite_image_input,
+            {"python_node": image_list, "python_node_2": image_dict},
         ),
     ]
 
@@ -81,7 +87,7 @@ def assert_contain_image_reference(value):
         for item in value:
             assert_contain_image_reference(item)
     elif isinstance(value, dict):
-        if _is_multimedia_dict(value):
+        if is_multimedia_dict(value):
             path = list(value.values())[0]
             assert isinstance(path, str)
             assert path.endswith(".jpg") or path.endswith(".jpeg") or path.endswith(".png")
@@ -95,7 +101,7 @@ def assert_contain_image_object(value):
         for item in value:
             assert_contain_image_object(item)
     elif isinstance(value, dict):
-        assert not _is_multimedia_dict(value)
+        assert not is_multimedia_dict(value)
         for _, v in value.items():
             assert_contain_image_object(v)
     else:
@@ -109,7 +115,7 @@ class TestExecutorWithImage:
         "flow_folder, inputs", get_test_cases_for_simple_input() + get_test_cases_for_composite_input()
     )
     def test_executor_exec_line_with_image(self, flow_folder, inputs, dev_connections):
-        working_dir = get_yaml_working_dir(flow_folder)
+        working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
         storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
@@ -122,12 +128,28 @@ class TestExecutorWithImage:
             assert node_run_info.status == Status.Completed
             assert_contain_image_reference(node_run_info)
 
+    def test_executor_exec_line_with_chat_flow(self, dev_connections):
+        flow_folder = CHAT_FLOW_WITH_IMAGE
+        working_dir = get_flow_folder(flow_folder)
+        os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
+        flow_result = executor.exec_line({})
+        assert isinstance(flow_result.output, dict)
+        assert_contain_image_object(flow_result.output)
+        assert flow_result.run_info.status == Status.Completed
+        assert_contain_image_reference(flow_result.run_info)
+        for _, node_run_info in flow_result.node_run_infos.items():
+            assert node_run_info.status == Status.Completed
+            assert_contain_image_reference(node_run_info)
+
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs", get_test_cases_for_node_run()
     )
-    def test_executor_exec_node_with_image(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs,
-                                           dev_connections):
-        working_dir = get_yaml_working_dir(flow_folder)
+    def test_executor_exec_node_with_image(
+        self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections
+    ):
+        working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
         run_info = FlowExecutor.load_and_exec_node(
             get_yaml_file(flow_folder),
@@ -140,3 +162,43 @@ class TestExecutorWithImage:
         )
         assert run_info.status == Status.Completed
         assert_contain_image_reference(run_info)
+
+    @pytest.mark.parametrize(
+        "flow_folder, input_dirs, inputs_mapping",
+        [
+            (
+                SIMPLE_IMAGE_FLOW,
+                {"data": "image_inputs/inputs.jsonl"},
+                {"image": "${data.image}"},
+            ),
+            (
+                COMPOSITE_IMAGE_FLOW,
+                {"data": "inputs.jsonl"},
+                {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
+            ),
+            (
+                COMPOSITE_IMAGE_FLOW,
+                {"data": "incomplete_inputs.jsonl"},
+                {"image_dict": "${data.image_dict}"},
+            ),
+        ],
+    )
+    def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), {})
+        output_dir = Path("outputs")
+        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
+
+        assert isinstance(bulk_result, BulkResult)
+        for i, output in enumerate(bulk_result.outputs):
+            assert isinstance(output, dict)
+            assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+            result = output["output"][0] if isinstance(output["output"], list) else output["output"]
+            assert all(MIME_PATTERN.search(key) for key in result), f"image is not in {i}th output {output}"
+        for i, line_result in enumerate(bulk_result.line_results):
+            assert isinstance(line_result, LineResult)
+            assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
+
+        output_dir = get_flow_folder(flow_folder) / output_dir
+        assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
+        shutil.rmtree(output_dir)
