@@ -163,7 +163,7 @@ Required keys are: endpoint_url,model_family."""
         assert out_of_danger == "The quick \\brown fox\\tjumped\\\\over \\the \\\\boy\\r\\n"
 
     def test_open_source_llm_llama_parse_chat_with_chat(self):
-        parsed_chat = parse_chat(self.chat_prompt, valid_roles = ["system", "user", "assistant"])
+        parsed_chat = parse_chat(self.chat_prompt, valid_roles=["system", "user", "assistant"])
         assert len(parsed_chat) == 2
 
     def test_open_source_llm_llama_parse_multi_turn(self):
@@ -177,13 +177,14 @@ Mobius, which starred Jared Leto
 
 user:
 Why was that the greatest movie of all time?"""
-        parsed_chat = parse_chat(multi_turn_chat, valid_roles = ["system", "user", "assistant"])
+        parsed_chat = parse_chat(multi_turn_chat, valid_roles=["system", "user", "assistant"])
         assert len(parsed_chat) == 3
 
     def test_open_source_llm_llama_parse_chat_with_comp(self):
         with pytest.raises(ChatAPIInvalidRole) as exc_info:
-            parse_chat(self.completion_prompt, valid_roles = ["system", "user", "assistant"])
-        assert exc_info.value.message == ("The Chat API requires a specific format for prompt definition, and the "
+            parse_chat(self.completion_prompt, valid_roles=["system", "user", "assistant"])
+        assert exc_info.value.message == (
+            "The Chat API requires a specific format for prompt definition, and the "
             + "prompt should include separate lines as role delimiters: 'system:\\n','user:\\n','assistant:\\n'. "
             + "Current parsed role 'in the context of azure ml, what does the ml stand for?' does not "
             + "meet the requirement. If you intend to use the Completion API, please select the appropriate API type "

@@ -276,7 +276,7 @@ class LlamaContentFormatter(ContentFormatterBase):
             model_kwargs["do_sample"] = True
 
         if self.api == API.CHAT:
-            prompt_value = parse_chat(self.chat_history, valid_roles = ["assistant", "user", "system"])
+            prompt_value = parse_chat(self.chat_history, valid_roles=["assistant", "user", "system"])
         else:
             prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
 
