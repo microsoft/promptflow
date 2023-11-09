@@ -112,9 +112,10 @@ def add_param_columns_mapping(parser):
     parser.add_argument(
         "--column-mapping",
         action=AppendToDictAction,
-        help="Inputs column mapping, use ${data.xx} to refer to data file columns, "
-        "use ${run.inputs.xx} and ${run.outputs.xx} to refer to run inputs/outputs columns. Example: "
-        "--column-mapping data1='${data.data1}' data2='${run.inputs.data2}' data3='${run.outputs.data3}'",
+        help="Inputs column mapping, use ${data.xx} to refer to data columns, "
+        "use ${run.inputs.xx} to refer to referenced run's data columns. "
+        "and use ${run.outputs.xx} to refer to referenced run's output columns."
+        "Example: --column-mapping data1='${data.data1}' data2='${run.inputs.data2}' data3='${run.outputs.data3}'",
         nargs="+",
     )
 
@@ -228,42 +229,6 @@ def add_param_all_results(parser):
         dest="all_results",
         default=False,
         help="Returns all results. Default to False.",
-    )
-
-
-def add_param_subscription(parser):
-    parser.add_argument(
-        "-s",
-        "--subscription",
-        dest="subscription_id",
-        type=str,
-        help=("ID of subscription. You can configure the default subscription \n" "using `az account set -s ID`."),
-    )
-
-
-def add_param_resource_group(parser):
-    parser.add_argument(
-        "-g",
-        "--resource-group",
-        dest="resource_group_name",
-        type=str,
-        help=(
-            "Name of resource group. You can configure the default group using `az \n"
-            "configure --defaults group=<name>`."
-        ),
-    )
-
-
-def add_param_workspace(parser):
-    parser.add_argument(
-        "-w",
-        "--workspace-name",
-        dest="workspace_name",
-        type=str,
-        help=(
-            "Name of the Azure ML workspace. You can configure the default group using \n"
-            "`az configure --defaults workspace=<name>`."
-        ),
     )
 
 

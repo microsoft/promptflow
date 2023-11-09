@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import subprocess
+import sys
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
@@ -19,6 +20,7 @@ from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
+    dump_flow_result,
     dump_yaml,
     generate_flow_tools_json,
     generate_random_string,
@@ -35,8 +37,8 @@ from promptflow.exceptions import UserErrorException
 class FlowOperations:
     """FlowOperations."""
 
-    def __init__(self):
-        pass
+    def __init__(self, client):
+        self._client = client
 
     @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
@@ -71,6 +73,21 @@ class FlowOperations:
         result = self._test(
             flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables, **kwargs
         )
+
+        dump_test_result = kwargs.get("dump_test_result", False)
+        if dump_test_result:
+            # Dump flow/node test info
+            flow = load_flow(flow)
+            if node:
+                dump_flow_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{node}.node")
+            else:
+                if variant:
+                    tuning_node, node_variant = parse_variant(variant)
+                    prefix = f"flow-{tuning_node}-{node_variant}"
+                else:
+                    prefix = "flow"
+                dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
+
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
 
@@ -83,6 +100,7 @@ class FlowOperations:
         node: str = None,
         environment_variables: dict = None,
         stream_log: bool = True,
+        stream_output: bool = True,
         allow_generator_output: bool = True,
         **kwargs,
     ):
@@ -97,17 +115,20 @@ class FlowOperations:
            Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
-        : param allow_generator_output: Whether return streaming output when flow has streaming output.
+        :param stream_log: Whether streaming the log.
+        :param stream_output: Whether streaming the outputs.
+        :param allow_generator_output: Whether return streaming output when flow has streaming output.
+
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow
 
         inputs = inputs or {}
         flow = load_flow(flow)
-        config = kwargs.get("config", None)
-        with TestSubmitter(flow=flow, variant=variant, config=config).init() as submitter:
+        flow.context.variant = variant
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
-            flow_inputs, dependency_nodes_outputs = submitter._resolve_data(
+            flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
                 node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
             )
 
@@ -124,6 +145,7 @@ class FlowOperations:
                     inputs=flow_inputs,
                     environment_variables=environment_variables,
                     stream_log=stream_log,
+                    stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                 )
 
@@ -157,6 +179,7 @@ class FlowOperations:
             error_msg = "chat_history is required in the inputs of chat flow"
         return is_chat_flow, chat_history_input_name, error_msg
 
+    @monitor_operation(activity_name="pf.flows._chat", activity_type=ActivityType.INTERNALCALL)
     def _chat(
         self,
         flow,
@@ -178,8 +201,8 @@ class FlowOperations:
         from promptflow._sdk._load_functions import load_flow
 
         flow = load_flow(flow)
-        config = kwargs.get("config", None)
-        with TestSubmitter(flow=flow, variant=variant, config=config).init() as submitter:
+        flow.context.variant = variant
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
             is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
@@ -196,6 +219,26 @@ class FlowOperations:
                 environment_variables=environment_variables,
                 show_step_output=kwargs.get("show_step_output", False),
             )
+
+    @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
+    def _chat_with_ui(self, script):
+        try:
+            import bs4  # noqa: F401
+            import streamlit_quill  # noqa: F401
+            from streamlit.web import cli as st_cli
+        except ImportError as ex:
+            raise UserErrorException(
+                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
+            )
+        sys.argv = [
+            "streamlit",
+            "run",
+            script,
+            "--global.developmentMode=false",
+            "--client.toolbarMode=viewer",
+            "--browser.gatherUsageStats=false",
+        ]
+        st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
         flow_info = yaml.safe_load(flow_dag_path.read_text())
@@ -372,12 +415,13 @@ class FlowOperations:
         env_var_names: List[str],
     ):
         try:
+            import bs4  # noqa: F401
             import PyInstaller  # noqa: F401
             import streamlit
             import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
-                f"Please install PyInstaller, streamlit and streamlit_quill for building " f"executable, {ex.msg}."
+                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
             )
 
         from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -400,10 +444,16 @@ class FlowOperations:
         runtime_interpreter_path = (Path(streamlit.__file__).parent / "runtime").as_posix()
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
-        flow_inputs = {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()}
+        flow_inputs = {
+            flow_input: (value.default, value.type.value)
+            for flow_input, value in executable.inputs.items()
+            if not value.is_chat_history
+        }
         flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
         flow_inputs_params = ",".join(flow_inputs_params)
 
+        is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
+        label = "Chat" if is_chat_flow else "Run"
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
@@ -414,17 +464,17 @@ class FlowOperations:
                 "flow_inputs": flow_inputs,
                 "flow_inputs_params": flow_inputs_params,
                 "flow_path": None,
+                "is_chat_flow": is_chat_flow,
+                "chat_history_input_name": chat_history_input_name,
+                "label": label,
             },
         )
-        try:
-            current_directory = os.getcwd()
-            os.chdir(output_dir.as_posix())
+        self._run_pyinstaller(output_dir)
+
+    def _run_pyinstaller(self, output_dir):
+        with _change_working_dir(output_dir, mkdir=False):
             subprocess.run(["pyinstaller", "app.spec"], check=True)
             print("PyInstaller command executed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error running PyInstaller: {e}")
-        finally:
-            os.chdir(current_directory)
 
     @monitor_operation(activity_name="pf.flows.build", activity_type=ActivityType.PUBLICAPI)
     def build(

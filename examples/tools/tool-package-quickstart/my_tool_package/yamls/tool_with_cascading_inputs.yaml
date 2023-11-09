@@ -1,0 +1,23 @@
+my_tool_package.tools.tool_with_cascading_inputs.my_tool:
+  function: my_tool
+  inputs:
+    user_type:
+      type:
+      - string
+      enum:
+        - student
+        - teacher
+    student_id:
+      type:
+      - string
+      enabled_by: user_type
+      enabled_by_value: [student]
+    teacher_id:
+      type:
+        - string
+      enabled_by: user_type
+      enabled_by_value: [teacher]
+  module: my_tool_package.tools.tool_with_cascading_inputs
+  name: My Tool with Cascading Inputs
+  description: This is my tool with cascading inputs
+  type: python

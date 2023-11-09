@@ -1,0 +1,3 @@
+azure-cli
+promptflow[azure]
+promptflow-tools

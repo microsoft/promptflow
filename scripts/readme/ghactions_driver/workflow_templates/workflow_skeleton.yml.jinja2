@@ -12,6 +12,9 @@ on:
     paths: {{ path_filter }}
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   {{ ci_name }}:
 {%- filter indent(width=4) -%}

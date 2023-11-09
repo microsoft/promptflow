@@ -1,5 +1,0 @@
-azure-cli
-azure-identity
-opencensus-ext-azure
-promptflow[azure]
-promptflow-tools
