@@ -293,13 +293,11 @@ class FlowExecutor:
                 node_name=node_name,
                 flow_file=flow_file,
             )
-        node_reference_flow_inputs_keys = []
-        for _, value in node.inputs.items():
-            if value.value_type == InputValueType.FLOW_INPUT:
-                node_reference_flow_inputs_keys.append(value.value)
+        # Only load the node's referenced flow inputs
+        node_referenced_flow_inputs = FlowExecutor._get_node_referenced_flow_inputs(node, flow.inputs)
         inputs_with_default_value = FlowExecutor._apply_default_value_for_input(
-            flow.inputs, flow_inputs, node_reference_flow_inputs_keys)
-        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value, node_reference_flow_inputs_keys)
+            node_referenced_flow_inputs, flow_inputs)
+        inputs = load_multimedia_data(node_referenced_flow_inputs, inputs_with_default_value)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
@@ -788,17 +786,21 @@ class FlowExecutor:
         )
 
     @staticmethod
-    def _apply_default_value_for_input(
-            inputs: Dict[str, FlowInputDefinition],
-            line_inputs: Mapping,
-            node_reference_flow_inputs_keys: Optional[list] = None) -> Dict[str, Any]:
+    def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
-            if (key not in updated_inputs and
-                (node_reference_flow_inputs_keys is None or key in node_reference_flow_inputs_keys) and
-                    (value and value.default)):
+            if key not in updated_inputs and (value and value.default):
                 updated_inputs[key] = value.default
         return updated_inputs
+
+    @staticmethod
+    def _get_node_referenced_flow_inputs(
+            node, flow_inputs: Dict[str, FlowInputDefinition]) -> Dict[str, FlowInputDefinition]:
+        node_referenced_flow_inputs = {}
+        for _, value in node.inputs.items():
+            if value.value_type == InputValueType.FLOW_INPUT:
+                node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
+        return node_referenced_flow_inputs
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
