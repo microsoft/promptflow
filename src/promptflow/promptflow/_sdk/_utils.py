@@ -61,7 +61,7 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow.contracts.tool import FuncCallScenario, ToolType
+from promptflow.contracts.tool import ToolFuncCallScenario, ToolType
 
 
 def snake_to_camel(name):
@@ -630,9 +630,9 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
     :return: func call result according to func_call_scenario.
     """
-    if func_call_scenario == FuncCallScenario.GENERATE_INDEX_JSON:
+    if func_call_scenario == ToolFuncCallScenario.GENERATED_BY:
         _retrieve_tool_func_result_str(function_config)
-    elif func_call_scenario == FuncCallScenario.REVERSE_GENERATE_INDEX_JSON:
+    elif func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         _retrieve_tool_func_result_dict(function_config)
 
 
