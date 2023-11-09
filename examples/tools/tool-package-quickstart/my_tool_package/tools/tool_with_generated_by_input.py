@@ -2,7 +2,7 @@ from promptflow import tool
 from typing import Dict, List
 
 
-def generate_index_json(index_type: str = "", index: str = "", content_field: str = "", embedding_deployment="", **kwargs) -> str:
+def generate_index_json(index_type: str = "", index: str = "", content_field: str = "", embedding_deployment="") -> str:
     """This is a dummy function to generate a index json from inputs.
     """
 
@@ -13,7 +13,6 @@ def generate_index_json(index_type: str = "", index: str = "", content_field: st
         "content_field": content_field,
         "embedding_deployment": embedding_deployment,
     }
-    inputs.update(kwargs)
 
     result = json.dumps(inputs)
     return result

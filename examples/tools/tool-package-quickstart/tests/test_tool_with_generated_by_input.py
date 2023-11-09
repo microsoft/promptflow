@@ -23,18 +23,15 @@ def test_generate_index_json():
     index = list_indexes(index_type)[0]
     content_field = list_content_fields(index_type)[0]
     embedding_deployment = list_embedding_deployment(index_type)[1]
-    kwargs = {"a": "b", "c": "d"}
     
     index_json = generate_index_json(index_type=index_type, index=index,
-                                     content_field=content_field, embedding_deployment=embedding_deployment, **kwargs)
+                                     content_field=content_field, embedding_deployment=embedding_deployment)
     indexs = json.loads(index_json)
 
     assert indexs["index_type"] == index_type
     assert indexs["index"] == index
     assert indexs["content_field"] == content_field
     assert indexs["embedding_deployment"] == embedding_deployment
-    for k, v in kwargs.items():
-        assert indexs[k] == v
 
 
 def test_list_indexes():
