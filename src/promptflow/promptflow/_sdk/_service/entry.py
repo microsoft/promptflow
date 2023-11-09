@@ -31,10 +31,11 @@ def main():
         raise UserErrorException(f"Service port {port} is used.")
     if not port:
         (HOME_PROMPT_FLOW_DIR / SERVICE_CONFIG_FILE).touch(mode=read_write_by_user(), exist_ok=True)
-        with open(HOME_PROMPT_FLOW_DIR / SERVICE_CONFIG_FILE, "w+") as f:
-            service_config = yaml.safe_load(f)
+        with open(HOME_PROMPT_FLOW_DIR / SERVICE_CONFIG_FILE, "r") as f:
+            service_config = yaml.safe_load(f) or {}
             port = service_config.get("service", {}).get("port", None)
-            if not port:
+        if not port:
+            with open(HOME_PROMPT_FLOW_DIR / SERVICE_CONFIG_FILE, "w") as f:
                 # Set random port to ~/.promptflow/pf.yaml
                 port = get_random_port()
                 service_config["service"] = service_config.get("service", {})
