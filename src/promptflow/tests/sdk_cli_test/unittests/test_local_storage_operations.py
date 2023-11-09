@@ -17,12 +17,20 @@ class TestLocalStorageOperations:
             {LINE_NUMBER: 2, "col": "b"},
         ]
         df = pd.DataFrame(data)
-        expected_rows = 5
-        df_with_padding = LocalStorageOperations._outputs_padding(df, expected_rows)
+
+        df_with_padding = LocalStorageOperations._outputs_padding(df, inputs_line_numbers=[0, 1, 2, 3, 4])
         df_with_padding.fillna("", inplace=True)
-        assert len(df_with_padding) == expected_rows
+        assert len(df_with_padding) == 5
         assert df_with_padding.iloc[0].to_dict() == {LINE_NUMBER: 0, "col": ""}
         assert df_with_padding.iloc[1].to_dict() == {LINE_NUMBER: 1, "col": "a"}
         assert df_with_padding.iloc[2].to_dict() == {LINE_NUMBER: 2, "col": "b"}
         assert df_with_padding.iloc[3].to_dict() == {LINE_NUMBER: 3, "col": ""}
         assert df_with_padding.iloc[4].to_dict() == {LINE_NUMBER: 4, "col": ""}
+
+        # in evaluation run, inputs may not have all line number
+        df_with_padding = LocalStorageOperations._outputs_padding(df, inputs_line_numbers=[1, 2, 4])
+        df_with_padding.fillna("", inplace=True)
+        assert len(df_with_padding) == 3
+        assert df_with_padding.iloc[0].to_dict() == {LINE_NUMBER: 1, "col": "a"}
+        assert df_with_padding.iloc[1].to_dict() == {LINE_NUMBER: 2, "col": "b"}
+        assert df_with_padding.iloc[2].to_dict() == {LINE_NUMBER: 4, "col": ""}
