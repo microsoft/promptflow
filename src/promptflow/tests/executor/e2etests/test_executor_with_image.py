@@ -199,7 +199,7 @@ class TestExecutorWithImage:
         assert_contain_image_reference(run_info)
 
     @pytest.mark.parametrize(
-        "flow_folder, input_dirs, inputs_mapping",
+        "flow_folder, input_dirs, inputs_mapping, expected_outputs_number",
         [
             (
                 SIMPLE_IMAGE_FLOW,
