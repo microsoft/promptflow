@@ -51,3 +51,10 @@ class TestFlow:
             workspace_name=client.workspace_name,
         )
         print(flows)
+
+    def test_flow_test_with_config(self, remote_workspace_resource_id):
+        from promptflow import PFClient
+
+        client = PFClient(config={"connection.provider": remote_workspace_resource_id})
+        output = client.test(flow=flow_test_dir / "web_classification")
+        assert output.keys() == {"category", "evidence"}

@@ -23,7 +23,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.logger_utils import logger
+from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
@@ -34,7 +34,6 @@ from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
     InputMappingError,
     NodeOutputNotFound,
-    OutputReferenceBypassed,
     OutputReferenceNotExist,
     SingleNodeValidationError,
 )
@@ -294,11 +293,14 @@ class FlowExecutor:
                 node_name=node_name,
                 flow_file=flow_file,
             )
-
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
-        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value)
+        # Only load the node's referenced flow inputs
+        node_referenced_flow_inputs = FlowExecutor._get_node_referenced_flow_inputs(node, flow.inputs)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(
+            node_referenced_flow_inputs, flow_inputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
+            flow, node, inputs_with_default_value)
+        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -307,7 +309,7 @@ class FlowExecutor:
 
         resolved_inputs = {}
         for k, v in resolved_node.node.inputs.items():
-            value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, converted_flow_inputs_for_node)
+            value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, inputs)
             resolved_inputs[k] = value
             if resolved_node.node.aggregation:
                 # For aggregation node, we need to convert value to list.
@@ -701,8 +703,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = load_multimedia_data(self._flow.inputs, inputs_with_default_value)
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -793,6 +794,17 @@ class FlowExecutor:
                 updated_inputs[key] = value.default
         return updated_inputs
 
+    @staticmethod
+    def _get_node_referenced_flow_inputs(
+            node, flow_inputs: Dict[str, FlowInputDefinition]) -> Dict[str, FlowInputDefinition]:
+        node_referenced_flow_inputs = {}
+        for _, value in node.inputs.items():
+            # Only add flow input to node_referenced_flow_inputs when it is exist and referenced by node.
+            # If flow input is not exist, we will raise exception in FlowValidator.convert_flow_inputs_for_node.
+            if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
+                node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
+        return node_referenced_flow_inputs
+
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
 
@@ -882,8 +894,9 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-                # Make sure the run_info with converted inputs results rather than original inputs
-                run_info.inputs = inputs
+            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            # Make sure the run_info with converted inputs results rather than original inputs
+            run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
@@ -938,16 +951,6 @@ class FlowExecutor:
                 # Note that the reduce node referenced in the output is not supported.
                 continue
             if node.name not in nodes_outputs:
-                if node.name in bypassed_nodes:
-                    raise OutputReferenceBypassed(
-                        message_format=(
-                            "The output '{output_name}' for flow is incorrect. "
-                            "The node '{node_name}' referenced by the output has been bypassed. "
-                            "Please refrain from using bypassed nodes as output sources."
-                        ),
-                        output_name=name,
-                        node_name=node.name,
-                    )
                 raise NodeOutputNotFound(
                     message_format=(
                         "The output '{output_name}' for flow is incorrect. "
@@ -956,6 +959,10 @@ class FlowExecutor:
                     ),
                     output_name=name,
                     node_name=node.name,
+                )
+            if output.reference.value in bypassed_nodes:
+                flow_logger.warning(
+                    f"The node referenced by output:'{output.reference.value}' is bypassed, which is not recommended."
                 )
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
@@ -968,8 +975,6 @@ class FlowExecutor:
         outputs = {}
         nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
-        for node in bypassed_nodes.keys():
-            nodes_outputs[node] = None
         return outputs, nodes_outputs
 
     def _stringify_generator_output(self, outputs: dict):

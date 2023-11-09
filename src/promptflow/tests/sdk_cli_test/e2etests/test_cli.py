@@ -30,6 +30,7 @@ FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
+RECORDINGS_TEST_CONFIGS_ROOT = "./tests/test_configs/node_recordings"
 
 
 # TODO: move this to a shared utility module
@@ -178,7 +179,8 @@ class TestCli:
         assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_connection_overwrite(self, local_alt_aoai_connection):
-        with pytest.raises(Exception) as e:
+        # CLi command will fail with SystemExit
+        with pytest.raises(SystemExit):
             run_pf_command(
                 "run",
                 "create",
@@ -189,7 +191,6 @@ class TestCli:
                 "--connection",
                 "classify_with_llm.connection=not_exist",
             )
-        assert "Connection 'not_exist' required" in str(e.value)
 
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
@@ -292,6 +293,57 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert previous_log_content not in log_content
+
+    @pytest.mark.usefixtures("recording_enabled", "recording_file_override")
+    def test_pf_flow_test_recording_enabled_and_override_recording(self):
+        flow_name = "basic_with_builtin_llm_node"
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/{flow_name}",
+        )
+        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
+        assert log_path.exists()
+        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.shelve.dat"
+        assert record_path.exists()
+
+    @pytest.mark.usefixtures("replaying_enabled", "recording_file_override")
+    def test_pf_flow_test_replay_enabled_and_override_recording(self):
+        flow_name = "basic_with_builtin_llm_node"
+        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.shelve.dat"
+        if not record_path.exists():
+            assert False
+
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/basic_with_builtin_llm_node",
+        )
+        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
+        assert log_path.exists()
+
+    def test_pf_flow_test_with_non_english_input_output(self, capsys):
+        question = "什么是 chat gpt"
+        run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
+        stdout, _ = capsys.readouterr()
+        output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        with open(output_path, "r", encoding="utf-8") as f:
+            outputs = json.load(f)
+            assert outputs["answer"] in json.loads(stdout)["answer"]
+
+        detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
+        assert detail_path.exists()
+        with open(detail_path, "r", encoding="utf-8") as f:
+            detail = json.load(f)
+            assert detail["flow_runs"][0]["inputs"]["question"] == question
+            assert detail["flow_runs"][0]["output"]["answer"] == outputs["answer"]
 
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -681,7 +733,9 @@ class TestCli:
             )
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
             ignore_file_path = Path(temp_dir) / flow_name / ".gitignore"
+            requirements_file_path = Path(temp_dir) / flow_name / "requirements.txt"
             assert ignore_file_path.exists()
+            assert requirements_file_path.exists()
             ignore_file_path.unlink()
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "text=value")
 
@@ -700,6 +754,7 @@ class TestCli:
             )
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
             assert ignore_file_path.exists()
+            assert requirements_file_path.exists()
             with open(Path(temp_dir) / flow_name / ".promptflow" / "flow.tools.json", "r") as f:
                 tools_dict = json.load(f)["code"]
                 assert jinja_name in tools_dict
@@ -934,7 +989,7 @@ class TestCli:
                 "flow",
                 "test",
                 "--flow",
-                f"{FLOWS_DIR}/chat_flow_with_multi_output",
+                f"{FLOWS_DIR}/chat_flow_with_multi_output_invalid",
                 "--interactive",
             )
         outerr = capsys.readouterr()

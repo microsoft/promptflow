@@ -153,6 +153,10 @@ class TestToolResolver:
         assert isinstance(exec_info.value.inner_exception, NodeInputValidationError)
         assert "These inputs are duplicated" in exec_info.value.message
 
+    @pytest.mark.skipif(
+        condition=(sys.version_info.major == 3 and sys.version_info.minor == 11),
+        reason="BUG 2709800: known issue on enum in Python 3.11",
+    )
     def test_ensure_node_inputs_type(self):
         # Case 1: conn_name not in connections, should raise conn_name not found error
         tool = Tool(name="mock", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})
@@ -199,6 +203,21 @@ class TestToolResolver:
         with pytest.raises(ValueTypeUnresolved):
             tool_resolver = ToolResolver(working_dir=None, connections=connections)
             tool_resolver._convert_node_literal_input_types(node, tool)
+
+        # Case 5: Literal value, invalid image in list
+        tool = Tool(name="mock", type="python", inputs={"list_input": InputDefinition(type=[ValueType.LIST])})
+        invalid_image = {"data:image/jpg;base64": "invalid_image"}
+        node = Node(
+            name="mock",
+            tool=tool,
+            inputs={"list_input": InputAssignment(value=[invalid_image], value_type=InputValueType.LITERAL)},
+        )
+        connections = {}
+        with pytest.raises(NodeInputValidationError) as e:
+            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver._convert_node_literal_input_types(node, tool)
+        message = "Invalid base64 image"
+        assert message in str(e.value), "Expected: {}, Actual: {}".format(message, str(e.value))
 
     def test_resolve_llm_connection_to_inputs(self):
         # Case 1: node.connection is not specified
@@ -403,7 +422,7 @@ class TestToolResolver:
             provider="mock",
         )
         resolved_tool = ResolvedTool(node=node, callable=mock_package_func, definition=tool, init_args=None)
-        resolved_tool = tool_resolver._integrate_prompt_in_package_node(node, resolved_tool)
+        resolved_tool = tool_resolver._integrate_prompt_in_package_node(resolved_tool)
         kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 
