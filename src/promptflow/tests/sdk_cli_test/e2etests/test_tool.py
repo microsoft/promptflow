@@ -16,7 +16,7 @@ _client = PFClient()
 
 
 @pytest.mark.e2etest
-class TestCli:
+class TestTool:
     def get_tool_meta(self, tool_path):
         module_name = f"test_tool.{Path(tool_path).stem}"
 

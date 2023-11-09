@@ -2,7 +2,7 @@ name: step_create_conda_environment
 inputs:
   pipFilePath:
     required: false
-    default: "src/promptflow/dev_requirements.txt"
+    default: "scripts/building/dev_requirements.txt"
     type: string
   pythonVersion:
     required: false

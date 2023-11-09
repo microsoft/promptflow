@@ -20,6 +20,8 @@ from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 
+from ..recording_utilities import RecordStorage
+
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -58,9 +60,12 @@ def create_run_against_run(client, run: Run) -> Run:
     )
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
+@pytest.mark.record_replay
 class TestFlowRun:
     def test_basic_flow_bulk_run(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -811,6 +816,7 @@ class TestFlowRun:
         assert "error" in run_dict
         assert run_dict["error"] == exception
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Skip in replaying mode")
     def test_system_metrics_in_properties(self, pf) -> None:
         run = create_run_against_multi_line_data(pf)
         assert FlowRunProperties.SYSTEM_METRICS in run.properties

@@ -11,14 +11,19 @@ from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
 
+from ..recording_utilities import RecordStorage
+
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
+@pytest.mark.record_replay
 class TestFlowAsFunc:
     def test_flow_as_a_func(self, azure_open_ai_connection: AzureOpenAIConnection):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
@@ -76,6 +81,7 @@ class TestFlowAsFunc:
             f()
         assert "Required input(s) ['text'] are missing" in str(e.value)
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Stream not supported in replaying mode.")
     def test_stream_output(self):
         f = load_flow(f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output")
         f.context.streaming = True

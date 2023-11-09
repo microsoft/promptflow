@@ -8,6 +8,8 @@ from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow.exceptions import UserErrorException
 
+from ..recording_utilities import RecordStorage
+
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -19,9 +21,12 @@ FLOW_RESULT_KEYS = ["category", "evidence"]
 _client = PFClient()
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
+@pytest.mark.record_replay
 class TestFlowTest:
     def test_pf_test_flow(self):
         inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
@@ -91,6 +96,7 @@ class TestFlowTest:
         result = _client.test(flow=flow_path, inputs={"input_param": "Hello World!"}, node="my_script_tool")
         assert result == "connection_value is MyCustomConnection: True"
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Stream not supported in replay mode")
     def test_pf_test_with_streaming_output(self):
         flow_path = Path(f"{FLOWS_DIR}/chat_flow_with_stream_output")
         result = _client.test(flow=flow_path)
