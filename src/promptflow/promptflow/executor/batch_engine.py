@@ -101,6 +101,19 @@ class AbstractExecutor:
         raise NotImplementedError()
 
 
+class APIBasedExecutor(AbstractExecutor):
+    @property
+    def api_endpoint(self) -> str:
+        raise NotImplementedError()
+
+    def exec_line(self, inputs, index, run_id) -> LineResult:
+        import requests
+        timeout = 600
+        payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
+        resp = requests.post(self.api_endpoint, json=payload, timeout=timeout)
+        return LineResult.from_dict(resp.json())
+
+
 class PythonExecutor(AbstractExecutor):
 
     @classmethod
