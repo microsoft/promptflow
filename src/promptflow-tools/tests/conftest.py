@@ -91,6 +91,7 @@ Something failed setting environment variables for service credentials. Error: {
         print(message)
         pytest.skip(message)
 
+
 @pytest.fixture(autouse=True)
 def skip_if_no_api_key(request, mocker):
     mocker.patch.dict(os.environ, {"PROMPTFLOW_CONNECTIONS": CONNECTION_FILE})
