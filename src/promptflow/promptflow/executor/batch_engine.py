@@ -77,9 +77,9 @@ class BatchEngine:
             for input_file in input_path.rglob("*"):
                 if input_file.is_file():
                     result.extend(resolve_multimedia_data_recursively(input_file.parent, load_data(input_file)))
-        if max_inputs_count:
-            return result[:max_inputs_count] if len(result) > max_inputs_count else result
-        return result
+                    if max_inputs_count and len(result) >= max_inputs_count:
+                        break
+        return result[:max_inputs_count] if max_inputs_count and len(result) > max_inputs_count else result
 
     def _resolve_dir(self, dir: Union[str, Path]) -> Path:
         """Resolve input dir to absolute path"""
