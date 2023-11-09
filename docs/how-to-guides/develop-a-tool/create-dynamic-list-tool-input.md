@@ -4,13 +4,11 @@ Tool input options can be generated on the fly using a dynamic list. Instead of 
 
 ## Prerequisites
 
-- Download private [Prompt flow for VS Code](https://aka.ms/pfvsctest) version "1.2.1-test1030", and install from VSIX file.
-![Install private extension](../../media/how-to-guides/develop-a-tool/install-private-extension.png)
-
-- Install dependencies.
-```sh
-pip install promptflow==0.0.108766665 --extra-index-url https://azuremlsdktestpypi.azureedge.net/test-promptflow/
-```
+- Please make sure you have the latest version of [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) installed (v1.3.1+).
+- Please install promptflow package and ensure that its version is 1.0.0 or later.
+  ```
+  pip install promptflow>=1.0.0
+  ```
 
 ## Create a tool input with dynamic listing
 
@@ -28,7 +26,7 @@ To enable dynamic listing, the tool author defines a request function with the f
     - `hyperlink`: URL to open when option clicked
     - `description`: Tooltip text on hover
 
-This function can make backend calls to retrieve the latest options, returning them in a standardized dictionary structure for the dynamic list. The required and optional keys enable configuring how each option appears and behaves in the tool input dropdown. See [my_list_func]() as an example.
+This function can make backend calls to retrieve the latest options, returning them in a standardized dictionary structure for the dynamic list. The required and optional keys enable configuring how each option appears and behaves in the tool input dropdown. See [my_list_func](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_dynamic_list_input.py) as an example.
 
 ```python
 def my_list_func(prefix: str = "", **kwargs) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
@@ -125,7 +123,7 @@ pip install my-tools-package>=0.0.8
 ## FAQs
 
 ### I'm a tool author, and want to dynamically list Azure resources in my tool input. What should I pay attention to?
-1. Clarify azure workspace triple "subscription_id", "resource_group_name", "workspace_name" in the list function signature. System helps append workspace triple to function input parameters if they are in function signature. See [list_endpoint_names]() as an example.
+1. Clarify azure workspace triple "subscription_id", "resource_group_name", "workspace_name" in the list function signature. System helps append workspace triple to function input parameters if they are in function signature. See [list_endpoint_names](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_dynamic_list_input.py#L34) as an example.
 ```python
 def list_endpoint_names(subscription_id, resource_group_name, workspace_name, prefix: str = "") -> List[Dict[str, str]]:
     """This is an example to show how to get Azure ML resource in tool input list function.
