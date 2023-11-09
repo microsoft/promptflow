@@ -116,7 +116,6 @@ user:
             self.chat_prompt,
             API.CHAT,
             max_new_tokens=2)
-        # GPT-2 doesn't take this parameter
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
