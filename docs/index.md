@@ -19,7 +19,7 @@ With prompt flow, you will be able to:
 - **Deploy your flows** to the serving platform you choose or integrate into your app's code base easily.
 - (Optional but highly recommended) **Collaborate with your team** by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
 
-> Welcome to join us to make Prompt flow better by
+> Welcome to join us to make prompt flow better by
 > participating [discussions](https://github.com/microsoft/promptflow/discussions),
 > opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
 > submitting [PRs](https://github.com/microsoft/promptflow/pulls).
@@ -31,7 +31,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
 - header: "🚀 Quick Start"
   content: "
     Quick start and end-to-end tutorials.<br/><br/>
-    - [Getting started with Prompt flow](how-to-guides/quick-start.md)<br/>
+    - [Getting started with prompt flow](how-to-guides/quick-start.md)<br/>
     - [E2E development tutorial: chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)<br/>
     - Find more: [tutorials & samples](tutorials/index.md)<br/>
   "

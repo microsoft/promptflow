@@ -289,7 +289,7 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     tools.generate_to_file(meta_dir / "flow.tools.json")
     # Create flow.dag.yaml
     FlowDAGGenerator(tool_py, function, function_obj, prompt_params).generate_to_file("flow.dag.yaml")
-    copy_extra_files(flow_path=flow_path, extra_files=[".gitignore"])
+    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
     print(f"Done. Generated flow in folder: {flow_path.resolve()}.")
 
 

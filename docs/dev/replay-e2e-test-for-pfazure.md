@@ -4,7 +4,7 @@ This document introduces replay test for those tests located in [end-to-end test
 
 ## Why we need replay test
 
-End-to-end tests for pfazure targets to test the behavior that Prompt Flow SDK/CLI interacts with service, this process can be time consuming, error prone, and require credentials (which is unavailable to pull request from forked repository); all of these go against our intention for a smooth develop experience.
+End-to-end tests for pfazure targets to test the behavior that prompt flow SDK/CLI interacts with service, this process can be time consuming, error prone, and require credentials (which is unavailable to pull request from forked repository); all of these go against our intention for a smooth develop experience.
 
 Therefore, we introduce replay test, which leverage [VCR.py](https://pypi.org/project/vcrpy/) to record all required network traffic to local files and replay during tests. In this way, we avoid the need of credentials, speed up and stabilize the test process.
 
