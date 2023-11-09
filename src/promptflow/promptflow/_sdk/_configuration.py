@@ -8,7 +8,6 @@ from itertools import product
 from os import PathLike
 from pathlib import Path
 from typing import Optional, Union
-import stat
 
 import pydash
 
