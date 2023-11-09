@@ -95,7 +95,7 @@ Prompt flow is a tool designed to **build high quality LLM apps**, the developme
 
 ### Develop your own LLM apps
 
-#### VS Code Extension<img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="25"/>
+#### VS Code Extension
 
 We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI.
 
