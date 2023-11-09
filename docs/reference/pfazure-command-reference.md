@@ -23,6 +23,9 @@ Manage prompt flow runs.
 | [pfazure run show-details](#pfazure-run-show-details) | Show a run details. |
 | [pfazure run show-metrics](#pfazure-run-show-metrics) | Show run metrics. |
 | [pfazure run visualize](#pfazure-run-visualize) | Visualize a run. |
+| [pfazure run archive](#pfazure-run-archive) | Archive a run. |
+| [pfazure run restore](#pfazure-run-restore) | Restore a run. |
+| [pfazure run update](#pfazure-run-update) | Update a run. |
 
 ### pfazure run create
 
@@ -60,7 +63,7 @@ Local path to the data file or remote data. e.g. azureml:name:version.
 
 `--column-mapping`
 
-Inputs column mapping, use `${data.xx}` to refer to data file columns, use `${run.inputs.xx}` and `${run.outputs.xx}` to refer to run inputs/outputs columns.
+Inputs column mapping, use `${data.xx}` to refer to data columns, use `${run.inputs.xx}` to refer to referenced run's data columns, and `${run.outputs.xx}` to refer to run outputs columns.
 
 `--run`
 
