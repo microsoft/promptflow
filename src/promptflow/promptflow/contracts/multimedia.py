@@ -1,6 +1,6 @@
 import base64
 import hashlib
-from typing import Callable
+from typing import Callable, Optional
 
 
 class PFBytes(bytes):
@@ -15,14 +15,18 @@ class PFBytes(bytes):
         # See https://docs.python.org/3/reference/datamodel.html#object.__new__
         return super().__new__(cls, value)
 
-    def __init__(self, value: bytes, mime_type: str, sourceUrl: str = None):
+    def __init__(self, value: bytes, mime_type: str, source_url: Optional[str] = None):
         # Here the first argument should also be "value", the same as __new__.
         # Otherwise we will get error when initialize the object.
         super().__init__()
         # Use this hash to identify this bytes.
         self._hash = hashlib.sha1(value).hexdigest()[:8]
         self._mime_type = mime_type.lower()
-        self._sourceUrl = sourceUrl
+        self._source_url = source_url
+
+    @property
+    def source_url(self):
+        return self._source_url
 
     def to_base64(self, with_type: bool = False, dict_type: bool = False):
         """Returns the base64 representation of the PFBytes."""
@@ -39,8 +43,8 @@ class Image(PFBytes):
     ~promptflow.contracts.multimedia.PFBytes.
     """
 
-    def __init__(self, value: bytes, mime_type: str = "image/*", sourceUrl: str = None):
-        return super().__init__(value, mime_type, sourceUrl)
+    def __init__(self, value: bytes, mime_type: str = "image/*", source_url: Optional[str] = None):
+        return super().__init__(value, mime_type, source_url)
 
     def __str__(self):
         return f"Image({self._hash})"

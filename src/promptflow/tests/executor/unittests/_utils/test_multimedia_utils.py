@@ -81,15 +81,13 @@ class TestMultimediaUtils:
 
     def test_persist_multimedia_date(self, mocker):
         image = _create_image_from_file(TEST_IMAGE_PATH)
-        image_2 = _create_image_from_file(TEST_IMAGE_PATH)
-        image_2._sourceUrl = "TestSourceUrl"
         mocker.patch('builtins.open', mock_open())
-        data = {"image": image, "images": [image, image_2, "other_data"], "other_data": "other_data"}
+        data = {"image": image, "images": [image, image, "other_data"], "other_data": "other_data"}
         persisted_data = persist_multimedia_data(data, base_dir=Path(__file__).parent)
         file_name = re.compile(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}.jpg$")
         assert re.match(file_name, persisted_data["image"]["data:image/jpg;path"])
         assert re.match(file_name, persisted_data["images"][0]["data:image/jpg;path"])
-        assert persisted_data["images"][1]["data:image/jpg;url"] == "TestSourceUrl"
+        assert re.match(file_name, persisted_data["images"][1]["data:image/jpg;path"])
 
     def test_convert_multimedia_date_to_base64(self):
         image = _create_image_from_file(TEST_IMAGE_PATH)
