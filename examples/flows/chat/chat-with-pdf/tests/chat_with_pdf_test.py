@@ -2,7 +2,6 @@ import os
 import unittest
 import promptflow
 from base_test import BaseTest
-from promptflow.exceptions import ValidationException
 
 
 class TestChatWithPDF(BaseTest):
