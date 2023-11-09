@@ -23,6 +23,7 @@ from promptflow.tools.exception import (
     ChatAPIInvalidRole
 )
 
+DEPLOYMENT_DEFAULT = "default"
 VALID_LLAMA_ROLES = {"system", "user", "assistant"}
 REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
 REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
@@ -502,21 +503,24 @@ def list_deployment_names(subscription_id: str,
                           resource_group_name: str,
                           workspace_name: str,
                           endpoint: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    deployment_default_list = [{
+        "value": DEPLOYMENT_DEFAULT,
+        "display_value": DEPLOYMENT_DEFAULT
+        }]
 
     if endpoint is None or endpoint.strip() == "" or "/" not in endpoint:
-        return []
-
+        return deployment_default_list
     (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_connection_type(endpoint)
 
     if endpoint_connection_type == "onlineendpoint":
-        return ENDPOINT_CONTAINER.list_deployment_names(
+        return deployment_default_list + ENDPOINT_CONTAINER.list_deployment_names(
             subscription_id,
             resource_group_name,
             workspace_name,
             endpoint_connection_name
         )
     else:
-        return []
+        return deployment_default_list
 
 
 def format_generic_response_payload(output: bytes, response_key: str) -> str:
@@ -1006,7 +1010,10 @@ Please ensure endpoint name and deployment names are correct, and the deployment
 
         # Sanitize deployment name. Empty deployment name is the same as None.
         if deployment_name is not None:
-            deployment_name = None if not deployment_name.strip() else deployment_name
+            deployment_name = deployment_name.strip()
+            
+            if not deployment_name or deployment_name == DEPLOYMENT_DEFAULT:
+                deployment_name = None 
 
         print(f"Executing Open Source LLM Tool for endpoint: '{endpoint}', deployment: '{deployment_name}'")
 
