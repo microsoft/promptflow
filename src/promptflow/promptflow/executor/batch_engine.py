@@ -62,16 +62,16 @@ class BatchEngine:
         result = {}
         for input_key, input_dir in input_dirs.items():
             input_dir = self._resolve_dir(input_dir)
-            result[input_key] = self._resolve_data_from_input_dir(input_dir)
+            result[input_key] = self._resolve_data_from_input_path(input_dir)
         return result
 
-    def _resolve_data_from_input_dir(self, input_dir: Path):
+    def _resolve_data_from_input_path(self, input_path: Path):
         """Resolve input data from directory"""
         result = []
-        if input_dir.is_file():
-            result.extend(resolve_multimedia_data_recursively(input_dir.parent, load_data(input_dir)))
+        if input_path.is_file():
+            result.extend(resolve_multimedia_data_recursively(input_path.parent, load_data(input_path)))
         else:
-            for input_file in input_dir.rglob("*"):
+            for input_file in input_path.rglob("*"):
                 if input_file.is_file():
                     result.extend(resolve_multimedia_data_recursively(input_file.parent, load_data(input_file)))
         return result

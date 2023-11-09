@@ -15,9 +15,11 @@ from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is
 
 SIMPLE_IMAGE_FLOW = "python_tool_with_simple_image"
 SAMPLE_IMAGE_FLOW_WITH_DEFAULT = "python_tool_with_simple_image_with_default"
+SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW = "python_tool_with_invalid_default_value"
 COMPOSITE_IMAGE_FLOW = "python_tool_with_composite_image"
 CHAT_FLOW_WITH_IMAGE = "chat_flow_with_image"
 SIMPLE_IMAGE_FLOW_PATH = FLOW_ROOT / SIMPLE_IMAGE_FLOW
+SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW_PATH = FLOW_ROOT / SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW
 COMPOSITE_IMAGE_FLOW_PATH = FLOW_ROOT / COMPOSITE_IMAGE_FLOW
 CHAT_FLOW_WITH_IMAGE_PATH = FLOW_ROOT / CHAT_FLOW_WITH_IMAGE
 IMAGE_URL = (
@@ -165,7 +167,39 @@ class TestExecutorWithImage:
         assert_contain_image_reference(run_info)
 
     @pytest.mark.parametrize(
-        "flow_folder, input_dirs, inputs_mapping, expected_outputs_number",
+        "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
+        [
+            (
+                SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW,
+                "python_node_2",
+                {},
+                {
+                    "python_node": {
+                        "data:image/jpg;path": str(SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW_PATH / "logo.jpg")
+                    }
+                },
+            )
+        ],
+    )
+    def test_executor_exec_node_with_invalid_default_value(
+        self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections
+    ):
+        working_dir = get_flow_folder(flow_folder)
+        os.chdir(working_dir)
+        run_info = FlowExecutor.load_and_exec_node(
+            get_yaml_file(flow_folder),
+            node_name,
+            flow_inputs=flow_inputs,
+            dependency_nodes_outputs=dependency_nodes_outputs,
+            connections=dev_connections,
+            output_sub_dir=("./temp"),
+            raise_ex=True,
+        )
+        assert run_info.status == Status.Completed
+        assert_contain_image_reference(run_info)
+
+    @pytest.mark.parametrize(
+        "flow_folder, input_dirs, inputs_mapping",
         [
             (
                 SIMPLE_IMAGE_FLOW,
