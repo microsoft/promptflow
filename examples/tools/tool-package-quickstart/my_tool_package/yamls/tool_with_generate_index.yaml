@@ -1,0 +1,80 @@
+my_tool_package.tools.tool_with_generate_index.my_tool:
+  function: my_tool
+  inputs:
+    index_json:
+      type:
+      - string
+      generated_by:
+        func_path: my_tool_package.tools.tool_with_generate_index.generate_index_json
+        func_kwargs: 
+        - name: index_type
+          type: 
+          - string
+          reference: ${inputs.index_type}
+        - name: index
+          type:
+          - string
+          reference: ${inputs.index_assetId}
+        - content_field:
+          type:
+          - string
+          reference: ${inputs.content_field}
+        - embedding_deployment:
+          type:
+          - string
+          optional: true
+          reference: ${inputs.embedding_deployment}
+        reverse_func_path: my_tool_package.tools.tool_with_generate_index.reverse_generate_index_json
+      input_type: UIHide
+    index_type:
+      type: 
+      - string
+      enum:
+        - Azure Cognitive Search
+        - MLIndex
+      input_type: UIOnly 
+    index_assetId:
+      type: 
+      - string
+      enabled_by: index_type
+      enabled_by_value: [MLIndex]
+      dynamic_list:
+        func_path: my_tool_package.tools.tool_with_generate_index.list_indexes
+        func_kwargs: 
+        - name: index_type
+          type: 
+          - string
+          optional: true
+          reference: ${inputs.index_json.index_type}
+      allow_manual_entry: false
+      is_multi_select: false
+    content_field:
+      type:
+      - string
+      enabled_by: index_type
+      enabled_by_value: [MLIndex]
+      dynamic_list:
+        func_path: my_tool_package.tools.tool_with_generate_index.list_content_field
+        func_kwargs: 
+        - name: index_type
+          type: 
+          - string
+          optional: true
+          reference: ${inputs.index_json.index_type}
+    embedding_deployment:
+      type:
+      - string
+      enabled_by: index_type
+      enabled_by_value: [MLIndex]
+      dynamic_list:
+        func_path: my_tool_package.tools.tool_with_generate_index.list_embedding_deployment
+        func_kwargs: 
+        - name: index_type
+          type: 
+          - string
+          optional: true
+          reference: ${inputs.index_json.index_type}
+  module: my_tool_package.tools.tool_with_generate_index
+  name: MLIndex Tool
+  description: This is my tool combined dynamic list and enabled by
+  type: python

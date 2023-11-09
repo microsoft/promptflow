@@ -32,7 +32,7 @@ from ruamel.yaml import YAML
 import promptflow
 from promptflow._constants import EXTENSION_UA
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
-from promptflow._core.tools_manager import gen_dynamic_list
+from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
@@ -61,7 +61,7 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow.contracts.tool import ToolType
+from promptflow.contracts.tool import FuncCallScenario, ToolType
 
 
 def snake_to_camel(name):
@@ -622,6 +622,50 @@ def _generate_tool_meta(
         error_message = "Generate meta failed, detail error(s):\n" + json.dumps(errors, indent=4)
         raise GenerateFlowToolsJsonError(error_message)
     return res
+
+
+def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
+    """Retrieve tool func result according to func_call_scenario.
+
+    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
+    :return: func call result according to func_call_scenario.
+    """
+    if func_call_scenario == FuncCallScenario.GENERATE_INDEX_JSON:
+        _retrieve_tool_func_result_str(function_config)
+    elif func_call_scenario == FuncCallScenario.REVERSE_GENERATE_INDEX_JSON:
+        _retrieve_tool_func_result_dict(function_config)
+
+
+def _retrieve_tool_func_result_base(function_config: Dict):
+    """Retrieve tool func result.
+
+    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
+    """
+    func_path = function_config.get("func_path", "")
+    func_kwargs = function_config.get("func_kwargs", {})
+
+    from promptflow._cli._utils import get_workspace_triad_from_local
+
+    workspace_triad = get_workspace_triad_from_local()
+    if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
+        return retrieve_tool_func_result(func_path, func_kwargs, workspace_triad._asdict())
+    # if no workspace triple available, just skip.
+    else:
+        return retrieve_tool_func_result(func_path, func_kwargs)
+
+
+def _retrieve_tool_func_result_str(function_config: Dict) -> str:
+    result = _retrieve_tool_func_result_base(Dict)
+    # TODO: Validation
+
+    return result
+   
+
+def _retrieve_tool_func_result_dict(function_config: Dict) -> Dict:
+    result = _retrieve_tool_func_result_base(Dict)
+    # TODO: Validation
+
+    return result
 
 
 def _gen_dynamic_list(function_config: Dict) -> List:

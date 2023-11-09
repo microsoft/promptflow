@@ -419,3 +419,9 @@ class Tool:
 
     def _require_connection(self) -> bool:
         return self.type is ToolType.LLM or isinstance(self.connection_type, list) and len(self.connection_type) > 0
+
+
+class FuncCallScenario(str, Enum):
+    DYNAMIC_LIST = "dynamic_list"
+    GENERATE_INDEX_JSON = "generate_index_json"
+    REVERSE_GENERATE_INDEX_JSON = "reverse_generate_index_json"

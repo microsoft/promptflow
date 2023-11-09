@@ -290,6 +290,17 @@ def load_function_from_function_path(func_path: str):
         )
 
 
+class RetrieveToolFuncResultError(UserErrorException):
+    """Base exception raised for retreive tool func result errors."""
+
+    def __init__(self, message):
+        msg = (
+            f"Unable to retreive tool func result due to '{message}'. \nPlease contact the tool author/support team "
+            f"for troubleshooting assistance."
+        )
+        super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)
+
+
 class DynamicListError(UserErrorException):
     """Base exception raised for dynamic list errors."""
 
