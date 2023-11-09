@@ -7,7 +7,7 @@ from promptflow.tools.exception import (
     OpenSourceLLMKeyValidationError,
     ChatAPIInvalidRole
 )
-from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatterBase, get_model_type
+from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatterBase, get_model_type, ModelFamily
 from typing import List, Dict
 
 
@@ -307,7 +307,6 @@ user:
             ],
             chat_input="Sorry I didn't follow, could you say that again?")
         assert len(response) > 25
-
 
     def test_open_source_llm_get_model_llama(self):
         model_assets = [

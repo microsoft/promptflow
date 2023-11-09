@@ -93,7 +93,8 @@ def get_model_type(deployment_model: str) -> str:
     elif model.startswith("gpt2"):
         return ModelFamily.GPT2
     else:
-        raise ValueError(f"Unexpected model type: {model} derived from deployed model: {deployment_model}")
+        print(f"Unexpected model type: {model} derived from deployed model: {deployment_model}")
+        return None
 
 
 def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None) -> Tuple[str, str, str]:
@@ -132,6 +133,8 @@ def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None
     for d in ml_client.online_deployments.list(ep.name):
         if d.name == deployment_name:
             model = get_model_type(d.model)
+            if model is None:
+                raise ValueError(f"Unexpected model format: {d.model}")
             found = True
             break
 
