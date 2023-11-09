@@ -10,15 +10,15 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat
-from typing import Set
+from typing import List
 
 
-def validate_role(role: str, valid_roles: Set[str] = None):
+def validate_role(role: str, valid_roles: List[str] = None):
     if not valid_roles:
-        valid_roles = {"system", "user", "assistant", "function"}
+        valid_roles = ["assistant", "function", "user", "system"]
 
     if role not in valid_roles:
-        valid_roles_str = ','.join(sorted([f'\'{role}:\\n\''for role in valid_roles]))
+        valid_roles_str = ','.join([f'\'{role}:\\n\''for role in valid_roles])
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
             f"lines as role delimiters: {valid_roles_str}. Current parsed role '{role}'"
@@ -91,11 +91,14 @@ def try_parse_name_and_content(role_prompt):
     return None
 
 
-def parse_chat(chat_str):
+def parse_chat(chat_str, valid_roles: List[str] = None):
+    if not valid_roles:
+        valid_roles = ["system", "user", "assistant", "function"]
+
     # openai chat api only supports below roles.
     # customer can add single # in front of role name for markdown highlight.
     # and we still support role name without # prefix for backward compatibility.
-    separator = r"(?i)\n+\s*#?\s*(system|user|assistant|function)\s*:\s*\n"
+    separator = r"(?i)\n+\s*#?\s*(" + "|".join(valid_roles) + r")\s*:\s*\n"
     # Add a newline at the beginning to ensure consistent formatting of role lines.
     # extra new line is removed when appending to the chat list.
     chunks = re.split(separator, '\n'+chat_str)
@@ -126,7 +129,7 @@ def parse_chat(chat_str):
             # Check if prompt follows chat api message format and has valid role.
             # References: https://platform.openai.com/docs/api-reference/chat/create.
             role = chunk.strip().lower()
-            validate_role(role)
+            validate_role(role, valid_roles=valid_roles)
             new_message = {"role": role}
             chat_list.append(new_message)
     return chat_list

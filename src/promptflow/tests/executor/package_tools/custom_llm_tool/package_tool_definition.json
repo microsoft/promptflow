@@ -4,6 +4,7 @@
         "function": "call",
         "inputs": {
             "connection": {"type": ["AzureOpenAIConnection"]},
+            "connection_2": {"type": ["AzureOpenAIConnection"]},
             "api": {"type": ["string"]},
             "template": {"type": ["PromptTemplate"]}
         },
