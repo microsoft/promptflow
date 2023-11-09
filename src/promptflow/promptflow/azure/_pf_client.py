@@ -117,6 +117,16 @@ class PFClient:
         """Return a client to interact with Azure ML services."""
         return self._ml_client
 
+    @property
+    def runs(self):
+        """Return the run operation object that can manage runs."""
+        return self._runs
+
+    @property
+    def flows(self):
+        """Return the flow operation object that can manage flows."""
+        return self._flows
+
     @classmethod
     def from_config(
         cls,
@@ -303,8 +313,3 @@ class PFClient:
         user_agent = kwargs.pop("user_agent", None)
         user_agent = f"{user_agent} {USER_AGENT}" if user_agent else USER_AGENT
         kwargs.setdefault("user_agent", user_agent)
-
-    @property
-    def runs(self):
-        """Return the run operation object that can manage runs."""
-        return self._runs

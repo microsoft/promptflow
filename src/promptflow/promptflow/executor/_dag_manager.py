@@ -1,4 +1,5 @@
-from typing import Any, List, Mapping
+import inspect
+from typing import Any, Callable, List, Mapping
 
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node
 from promptflow.executor import _input_assignment_parser
@@ -44,14 +45,33 @@ class DAGManager:
             del self._pending_nodes[node.name]
         return bypassed_nodes
 
-    def get_node_valid_inputs(self, node: Node) -> Mapping[str, Any]:
+    def get_node_valid_inputs(self, node: Node, f: Callable) -> Mapping[str, Any]:
         """Returns the valid inputs for the node, including the flow inputs, literal values and
-        the outputs of completed nodes."""
-        return {
-            name: self._get_node_dependency_value(i)
-            for name, i in (node.inputs or {}).items()
-            if not self._is_node_dependency_bypassed(i)
-        }
+        the outputs of completed nodes. The valid inputs are determined by the function of the node.
+
+        :param node: The node for which to determine the valid inputs.
+        :type node: Node
+        :param f: The function of the current node, which is used to determine the valid inputs.
+            In the case when node dependency is bypassed, the input is not required when parameter has default value,
+            and the input is set to None when parameter has no default value.
+        :type f: Callable
+        :return: A dictionary mapping each valid input name to its value.
+        :rtype: dict
+        """
+
+        results = {}
+        signature = inspect.signature(f).parameters
+        for name, i in (node.inputs or {}).items():
+            if self._is_node_dependency_bypassed(i):
+                # If the parameter has default value, the input will not be set so that the default value will be used.
+                if signature.get(name) is not None and signature[name].default is not inspect.Parameter.empty:
+                    continue
+                # If the parameter has no default value, the input will be set to None so that function will not fail.
+                else:
+                    results[name] = None
+            else:
+                results[name] = self._get_node_dependency_value(i)
+        return results
 
     def get_bypassed_node_outputs(self, node: Node):
         """Returns the outputs of the bypassed node."""
@@ -110,11 +130,13 @@ class DAGManager:
             return True
 
         # Bypass node if the activate condition is not met
-        if node.activate and (
-            self._is_node_dependency_bypassed(node.activate.condition)
-            or not self._is_condition_met(node.activate.condition, node.activate.condition_value)
-        ):
-            return True
+        if node.activate:
+            # If the node referenced by activate condition is bypassed, the current node should be bypassed
+            if self._is_node_dependency_bypassed(node.activate.condition):
+                return True
+            # If a node has activate config, we will always use this config
+            # to determine whether the node should be bypassed.
+            return not self._is_condition_met(node.activate.condition, node.activate.condition_value)
 
         # Bypass node if all of its node reference dependencies are bypassed
         node_dependencies = [i for i in node.inputs.values() if i.value_type == InputValueType.NODE_REFERENCE]
@@ -138,7 +160,13 @@ class DAGManager:
         return _input_assignment_parser.parse_value(node_dependency, self._completed_nodes_outputs, self._flow_inputs)
 
     def _is_node_dependency_bypassed(self, dependency: InputAssignment) -> bool:
-        """Returns True if the dependencies of the condition are bypassed."""
+        """Returns True if the node dependency is bypassed.
+
+        There are three types of the node dependency:
+        1. The inputs of the node
+        2. The skip condition and skip return value of the node
+        3. The activate condition of the node
+        """
         # The node should not be bypassed when its dependency is bypassed by skip config and the dependency has outputs
         return (
             dependency.value_type == InputValueType.NODE_REFERENCE

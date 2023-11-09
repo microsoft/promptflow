@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 from azure.ai.ml._restclient.v2023_06_01_preview.models import WorkspaceConnectionPropertiesV2BasicResource
 
@@ -5,6 +7,7 @@ from promptflow.azure.operations._arm_connection_operations import ArmConnection
 
 
 def build_from_data_and_assert(data, expected):
+    data = copy.deepcopy(data)
     obj = WorkspaceConnectionPropertiesV2BasicResource.deserialize(data)
     assert ArmConnectionOperations.build_connection_dict_from_rest_object("mock", obj) == expected
 
@@ -160,6 +163,10 @@ def test_build_cognitive_service_category_connection_from_rest_object():
     }
     build_from_data_and_assert(data, expected)
 
+    # Test category + kind as connection type
+    del data["properties"]["metadata"]["azureml.flow.connection_type"]
+    build_from_data_and_assert(data, expected)
+
 
 @pytest.mark.unittest
 def test_build_connection_missing_metadata():
@@ -173,7 +180,6 @@ def test_build_connection_missing_metadata():
             "category": "CognitiveService",
             "target": "mock_target",
             "metadata": {
-                "Kind": "Content Safety",
                 "ApiVersion": "2023-04-30-preview",
             },
         },
