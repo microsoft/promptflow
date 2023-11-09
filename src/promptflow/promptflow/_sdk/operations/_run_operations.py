@@ -22,7 +22,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
-from promptflow._sdk._utils import incremental_print, safe_parse_object_list
+from promptflow._sdk._utils import incremental_print, print_red_error, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -140,7 +140,10 @@ class RunOperations(TelemetryMixin):
             available_logs = local_storage.logger.get_logs()
             incremental_print(available_logs, printed, file_handler)
             self._print_run_summary(run)
-            # won't print error here, put it in run dict
+            # print error message when run is failed
+            if run.status == RunStatus.FAILED:
+                error_message = local_storage.load_exception()["message"]
+                print_red_error(error_message)
         except KeyboardInterrupt:
             error_message = "The output streaming for the run was interrupted, but the run is still executing."
             print(error_message)
