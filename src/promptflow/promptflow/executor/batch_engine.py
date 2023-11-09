@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.load_data import load_data
@@ -31,8 +31,8 @@ class BatchEngine:
         input_dirs: Dict[str, str],
         inputs_mapping: Dict[str, str],
         output_dir: Path,
-        run_id: str = None,
-        max_lines_count: int = None,
+        run_id: Optional[str] = None,
+        max_lines_count: Optional[int] = None,
     ) -> BulkResult:
         """Run flow in batch mode
 
@@ -43,9 +43,9 @@ class BatchEngine:
         :param output_dir: output dir
         :type output_dir: The directory path of output files
         :param run_id: The run id of this run
-        :type run_id: str
-        :param max_lines_count: The max count of inputs
-        :type max_lines_count: int
+        :type run_id: Optional[str]
+        :param max_lines_count: The max count of inputs. If it is None, all inputs will be used.
+        :type max_lines_count: Optional[int]
         :return: The result of this batch run
         :rtype: ~promptflow.executor._result.BulkResult
         """
