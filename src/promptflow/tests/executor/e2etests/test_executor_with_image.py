@@ -168,7 +168,7 @@ class TestExecutorWithImage:
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
         [(SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW, "python_node_2",
-         {"image": {"data:image/jpg;path": str(SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW_PATH / "logo.jpg")}},
+         {},
          {"python_node": {"data:image/jpg;path":
                           str(SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW_PATH / "logo.jpg")}})],
     )
