@@ -27,11 +27,6 @@ class ChatInputList(list):
         return "\n".join(map(str, self))
 
 
-class MessageFormat(str, Enum):
-    OpenAI = "openai"
-    AzureOpenAI = "aoai"
-
-
 def validate_role(role: str, valid_roles: Set[str] = None):
     if not valid_roles:
         valid_roles = {"system", "user", "assistant", "function"}
@@ -110,11 +105,7 @@ def try_parse_name_and_content(role_prompt):
     return None
 
 
-def parse_chat(
-        chat_str,
-        images: List[Image] = None,
-        valid_roles: Set[str] = None,
-        message_format: MessageFormat = MessageFormat.OpenAI):
+def parse_chat(chat_str, images: List[Image] = None, valid_roles: Set[str] = None):
     # openai chat api only supports below roles.
     # customer can add single # in front of role name for markdown highlight.
     # and we still support role name without # prefix for backward compatibility.
@@ -143,13 +134,13 @@ def parse_chat(
                                 "or view sample 'How to use functions with chat models' in our gallery.")
                 # "name" is optional for other role types.
                 else:
-                    last_message["content"] = to_content_str_or_list(chunk, hash2images, message_format)
+                    last_message["content"] = to_content_str_or_list(chunk, hash2images)
             else:
                 if last_message["role"] == "function":
                     last_message["name"], last_message["content"] = parsed_result
                 else:
                     last_message["name"] = parsed_result[0]
-                    last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images, message_format)
+                    last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images)
         else:
             if chunk.strip() == "":
                 continue
@@ -162,34 +153,25 @@ def parse_chat(
     return chat_list
 
 
-def to_content_str_or_list(
-        chat_str: str,
-        hash2images: Mapping[str, Image],
-        message_format: MessageFormat):
+def to_content_str_or_list(chat_str: str, hash2images: Mapping[str, Image]):
     chunks = chat_str.split("\n")
     include_image = False
     result = []
     for chunk in chunks:
         if chunk.strip() in hash2images:
             image_message = {}
-            if message_format == MessageFormat.AzureOpenAI:
-                image_message["image"] = hash2images[chunk.strip()].to_base64()
-            else:
-                image_message["type"] = "image_url"
-                image_bs64 = hash2images[chunk.strip()].to_base64()
-                image_mine_type = hash2images[chunk.strip()]._mime_type
-                image_message["image_url"] = {
-                    "url": f"data:{image_mine_type};base64,{image_bs64}"
-                }
+            image_message["type"] = "image_url"
+            image_bs64 = hash2images[chunk.strip()].to_base64()
+            image_mine_type = hash2images[chunk.strip()]._mime_type
+            image_message["image_url"] = {
+                "url": f"data:{image_mine_type};base64,{image_bs64}"
+            }
             result.append(image_message)
             include_image = True
         elif chunk.strip() == "":
             continue
         else:
-            if message_format == MessageFormat.AzureOpenAI:
-                result.append(chunk)
-            else:
-                result.append({"type": "text", "text": chunk})
+            result.append({"type": "text", "text": chunk})
     return result if include_image else chat_str
 
 
