@@ -165,31 +165,35 @@ class TestExecutorWithImage:
         assert_contain_image_reference(run_info)
 
     @pytest.mark.parametrize(
-        "flow_folder, input_dirs, inputs_mapping",
+        "flow_folder, input_dirs, inputs_mapping, expected_outputs_number",
         [
             (
                 SIMPLE_IMAGE_FLOW,
                 {"data": "."},
                 {"image": "${data.image}"},
+                4,
             ),
             (
                 SAMPLE_IMAGE_FLOW_WITH_DEFAULT,
                 {"data": "."},
                 {"image_2": "${data.image_2}"},
+                4,
             ),
             (
                 COMPOSITE_IMAGE_FLOW,
                 {"data": "."},
                 {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
+                2,
             ),
         ],
     )
-    def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping):
+    def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping, expected_outputs_number):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), {})
         output_dir = Path("outputs")
         bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
 
         assert isinstance(bulk_result, BulkResult)
+        assert len(bulk_result.outputs) == expected_outputs_number
         for i, output in enumerate(bulk_result.outputs):
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
