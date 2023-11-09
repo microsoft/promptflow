@@ -61,7 +61,7 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow.contracts.tool import ToolFuncCallScenario, ToolType
+from promptflow.contracts.tool import ToolType
 
 
 def snake_to_camel(name):
@@ -627,19 +627,9 @@ def _generate_tool_meta(
 def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     """Retrieve tool func result according to func_call_scenario.
 
+    :param func_call_scenario: function call scenario
     :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
     :return: func call result according to func_call_scenario.
-    """
-    if func_call_scenario == ToolFuncCallScenario.GENERATED_BY:
-        _retrieve_tool_func_result_str(function_config)
-    elif func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
-        _retrieve_tool_func_result_dict(function_config)
-
-
-def _retrieve_tool_func_result_base(function_config: Dict):
-    """Retrieve tool func result.
-
-    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
     """
     func_path = function_config.get("func_path", "")
     func_kwargs = function_config.get("func_kwargs", {})
@@ -648,24 +638,10 @@ def _retrieve_tool_func_result_base(function_config: Dict):
 
     workspace_triad = get_workspace_triad_from_local()
     if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
-        return retrieve_tool_func_result(func_path, func_kwargs, workspace_triad._asdict())
+        return retrieve_tool_func_result(func_call_scenario, func_path, func_kwargs, workspace_triad._asdict())
     # if no workspace triple available, just skip.
     else:
-        return retrieve_tool_func_result(func_path, func_kwargs)
-
-
-def _retrieve_tool_func_result_str(function_config: Dict) -> str:
-    result = _retrieve_tool_func_result_base(Dict)
-    # TODO: Validation
-
-    return result
-   
-
-def _retrieve_tool_func_result_dict(function_config: Dict) -> Dict:
-    result = _retrieve_tool_func_result_base(Dict)
-    # TODO: Validation
-
-    return result
+        return retrieve_tool_func_result(func_call_scenario, func_path, func_kwargs)
 
 
 def _gen_dynamic_list(function_config: Dict) -> List:

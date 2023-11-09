@@ -35,6 +35,7 @@ from promptflow._utils.tool_utils import (
     get_prompt_param_name_from_func,
     load_function_from_function_path,
     validate_dynamic_list_func_response_type,
+    validate_tool_func_result,
 )
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
@@ -178,7 +179,7 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
             )
 
 
-def retrieve_tool_func_result(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
+def retrieve_tool_func_result(func_call_scenario: str, func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
@@ -196,6 +197,7 @@ def retrieve_tool_func_result(func_path: str, func_input_params_dict: Dict, ws_t
     except Exception as e:
         raise RetrieveToolFuncResultError(f"Error when calling function {func_path}: {e}")
 
+    validate_tool_func_result(unc_call_scenario, result)
     return result
 
 

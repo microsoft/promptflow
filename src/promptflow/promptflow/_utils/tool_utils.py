@@ -14,7 +14,7 @@ from jinja2 import Environment, meta
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from ..contracts.tool import ConnectionType, InputDefinition, Tool, ValueType
+from ..contracts.tool import ConnectionType, InputDefinition, Tool, ToolFuncCallScenario, ValueType
 from ..contracts.types import PromptTemplate
 
 module_logger = logging.getLogger(__name__)
@@ -242,6 +242,15 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
                 )
 
 
+def validate_tool_func_result(func_call_scenario: str, result):
+    if func_call_scenario == ToolFuncCallScenario.GENERATED_BY:
+        if not isinstance(result, Dict):
+            raise RetrieveToolFuncResultValidationError(f"ToolFuncCallScenario {func_call_scenario} response must be a dict. {result} is not a dict.")
+    elif func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
+        if not isinstance(result, str):
+            raise RetrieveToolFuncResultValidationError(f"ToolFuncCallScenario {func_call_scenario} response must be a str. {result} is not a str.")
+
+
 def append_workspace_triple_to_func_input_params(
     func_sig_params: Dict, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str]
 ):
@@ -299,6 +308,10 @@ class RetrieveToolFuncResultError(UserErrorException):
             f"for troubleshooting assistance."
         )
         super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)
+        
+
+class RetrieveToolFuncResultValidationError(RetrieveToolFuncResultError):
+    pass
 
 
 class DynamicListError(UserErrorException):
