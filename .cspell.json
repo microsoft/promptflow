@@ -143,5 +143,8 @@
     "llms",
     "vcrpy"
   ],
+  "flagWords": [
+    "Prompt Flow"
+  ],
   "allowCompoundWords": true
 }
