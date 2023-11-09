@@ -2,6 +2,7 @@ import functools
 import json
 import os
 import re
+import requests
 import sys
 import time
 import urllib.request
@@ -782,13 +783,18 @@ class ServerlessLlamaContentFormatter(ContentFormatterBase):
             base_body.update(model_kwargs)
 
         else:
-            prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
+            prompt_value = ContentFormatterBase.escape_special_characters(prompt)
+            #base_body = {
+                # "model": self.model_id,
+             #   "prompt": prompt_value,
+                #"n": 1,
+            #}
+            #base_body.update(model_kwargs)
             base_body = {
-                "model": self.model_id,
-                "prompt": prompt_value,
-                "n": 1,
+                "max_tokens": 100,
+                "temperature": 0.8,
+                "prompt": "The seattle seahawks"
             }
-            base_body.update(model_kwargs)
 
         return json.dumps(base_body)
 
@@ -878,15 +884,19 @@ class AzureMLOnlineEndpoint:
         headers = {
             "Content-Type": "application/json",
             "Authorization": ("Bearer " + self.endpoint_api_key),
-            "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family}
+            # "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
+            }
 
         # If this is not set it'll use the default deployment on the endpoint.
         if self.deployment_name is not None:
             headers["azureml-model-deployment"] = self.deployment_name
 
-        req = urllib.request.Request(self.endpoint_url, body, headers)
-        response = urllib.request.urlopen(req, timeout=50)
-        result = response.read()
+        result = requests.post(self.endpoint_url, data=body, headers=headers)
+        assert result.status_code == 200
+
+        # req = urllib.request.Request(self.endpoint_url, body, headers)
+        #response = urllib.request.urlopen(req, timeout=50)
+        # result = response.read()
         return result
 
     def __call__(
@@ -904,12 +914,51 @@ class AzureMLOnlineEndpoint:
         """
         _model_kwargs = self.model_kwargs or {}
 
-        body = self.content_formatter.format_request_payload(prompt, _model_kwargs)
-        endpoint_request = str.encode(body)
-        endpoint_response = self._call_endpoint(endpoint_request)
+        request_body = self.content_formatter.format_request_payload(prompt, _model_kwargs)
+        # endpoint_request = str.encode(body)
+        # endpoint_response = self._call_endpoint(endpoint_request)
+
+        endpoint_response = self._call_endpoint_request_lib(request_body)
+        
         response = self.content_formatter.format_response_payload(endpoint_response)
 
         return response
+
+    def _call_endpoint(self, body: bytes) -> bytes:
+        """call."""
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": ("Bearer " + self.endpoint_api_key),
+            # "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
+            }
+
+        # If this is not set it'll use the default deployment on the endpoint.
+        if self.deployment_name is not None:
+            headers["azureml-model-deployment"] = self.deployment_name
+
+        req = urllib.request.Request(self.endpoint_url, body, headers)
+        response = urllib.request.urlopen(req, timeout=50)
+        result = response.read()
+        return result
+
+    def _call_endpoint_request_lib(self, request_body: str) -> str:
+        """call."""
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": ("Bearer " + self.endpoint_api_key),
+            # "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
+            }
+
+        # If this is not set it'll use the default deployment on the endpoint.
+        if self.deployment_name is not None:
+            headers["azureml-model-deployment"] = self.deployment_name
+
+        result = requests.post(self.endpoint_url, data=request_body, headers=headers)
+        assert result.status_code == 200
+
+        return result.text
 
 
 class OpenSourceLLM(ToolProvider):
@@ -1022,9 +1071,17 @@ Please ensure endpoint name and deployment names are correct, and the deployment
 
         print(f"Executing Open Source LLM Tool for endpoint: '{endpoint}', deployment: '{deployment_name}'")
 
-        (self.endpoint_uri,
-            self.endpoint_key,
-            self.model_family) = self.get_endpoint_details(
+        if 'endpoint_uri' in kwargs or 'endpoint_key' in kwargs or 'model_family' in kwargs:
+            self.endpoint_uri = kwargs["endpoint_uri"]
+            self.endpoint_key = kwargs["endpoint_key"]
+            self.model_family = kwargs["model_family"]
+            del kwargs["endpoint_uri"]
+            del kwargs["endpoint_key"]
+            del kwargs["model_family"]
+        else:
+            (self.endpoint_uri,
+             self.endpoint_key,
+             self.model_family) = self.get_endpoint_details(
                 subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION", None),
                 resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP", None),
                 workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME", None),
