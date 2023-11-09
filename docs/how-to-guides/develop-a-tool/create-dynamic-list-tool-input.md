@@ -29,7 +29,7 @@ To enable dynamic listing, the tool author defines a request function with the f
 This function can make backend calls to retrieve the latest options, returning them in a standardized dictionary structure for the dynamic list. The required and optional keys enable configuring how each option appears and behaves in the tool input dropdown. See [my_list_func](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_dynamic_list_input.py) as an example.
 
 ```python
-def my_list_func(prefix: str = "", **kwargs) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+def my_list_func(prefix: str = "", size: int = 10, **kwargs) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
     """This is a dummy function to generate a list of items.
 
     :param prefix: prefix to add to each item.
@@ -146,11 +146,16 @@ def list_endpoint_names(subscription_id, resource_group_name, workspace_name, pr
         workspace_name=workspace_name)
     result = []
     for ep in ml_client.online_endpoints.list():
+        hyperlink = (
+            f"https://ml.azure.com/endpoints/realtime/{ep.name}/detail?wsid=/subscriptions/"
+            f"{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft."
+            f"MachineLearningServices/workspaces/{workspace_name}"
+        )
         cur_item = {
             "value": ep.name,
             "display_value": f"{prefix}_{ep.name}",
             # external link to jump to the endpoint page.
-            "hyperlink": f"https://ml.azure.com/endpoints/realtime/{ep.name}/detail?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",
+            "hyperlink": hyperlink,
             "description": f"this is endpoint: {ep.name}",
         }
         result.append(cur_item)
