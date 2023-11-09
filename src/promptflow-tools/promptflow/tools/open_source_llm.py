@@ -549,7 +549,9 @@ Instead, received {response_json} and access failed at key `{e}`.
 def get_model_type(deployment_model: str) -> str:
     m = re.match(r'azureml://registries/[^/]+/models/([^/]+)/versions/', deployment_model)
     if m is None:
-        raise ValueError(f"Unexpected model format: {deployment_model}")
+        print(f"Unexpected model format: {deployment_model}. Skipping")
+        return None
+
     model = m[1].lower()
     if model.startswith("llama-2"):
         return ModelFamily.LLAMA

@@ -15,6 +15,7 @@ promptflow.tools.open_source_llm.OpenSourceLLM.call:
       allow_manual_entry: false
       is_multi_select: false
     deployment_name:
+      default: null
       type:
       - string
       dynamic_list:

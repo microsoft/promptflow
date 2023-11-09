@@ -440,7 +440,12 @@ user:
             "azureml://registries/azureml/models/falcon-40b/versions/2",
             "azureml://registries/azureml-meta/models/Llama-70b/versions/13",
             "azureml://registries/azureml/models/openai-whisper-large/versions/14",
-            "azureml://registries/azureml/models/ask-wikipedia/versions/2"
+            "azureml://registries/azureml/models/ask-wikipedia/versions/2",
+            "definitely not real",
+            "",
+            "ausreml://registries/azureml/models/ask-wikipedia/versions/2",
+            "azureml://registries/azureml/models/ask-wikipedia/version/2",
+            "azureml://registries/azureml/models/ask-wikipedia/version/"
         ]
 
         for asset_name in bad_model_assets:
