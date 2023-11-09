@@ -23,9 +23,6 @@ def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
 
 @pytest.fixture
 def endpoints_provider(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
-    if not open_source_llm_ws_service_connection:
-        pytest.skip("Service Credential not available")
-
     from azure.ai.ml import MLClient
     from azure.identity import DefaultAzureCredential
     credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
@@ -218,14 +215,12 @@ Why was that the greatest movie of all time?"""
             + "HTTPError: HTTP Error 404: Not Found")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
             response = os_llm.call(self.chat_prompt, API.CHAT)
             assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name_with_deployment(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
@@ -233,14 +228,12 @@ Why was that the greatest movie of all time?"""
                 response = os_llm.call(self.chat_prompt, API.CHAT, deployment_name=deployment_name)
                 assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
             response = os_llm.call(self.completion_prompt, API.COMPLETION)
             assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name_with_deployment(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
