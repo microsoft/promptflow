@@ -479,6 +479,10 @@ ENDPOINT_CONTAINER = EndpointsContainer()
 CUSTOM_CONNECTION_CONTAINER = CustomConnectionsContainer()
 SERVERLESS_ENDPOINT_CONTAINER = ServerlessEndpointsContainer()
 
+        
+def is_serverless_endpoint(endpoint_url: str) -> bool:
+    return "serverless.ml.azure.com" in endpoint_url or "inference.ai.azure.com" in endpoint_url
+
 
 def parse_endpoint_connection_type(endpoint_connection_name: str) -> Tuple[str, str]:
     endpoint_connection_details = endpoint_connection_name.split("/")
@@ -808,7 +812,7 @@ class ContentFormatterFactory:
         model_family: ModelFamily, api: API, chat_history: Optional[List[Dict]] = [], endpoint_url: Optional[str] = ""
     ) -> ContentFormatterBase:
         if model_family == ModelFamily.LLAMA:
-            if "serverless.ml.azure.com" in endpoint_url:
+            if is_serverless_endpoint(endpoint_url):
                 return ServerlessLlamaContentFormatter(chat_history=chat_history, api=api)
             else:
                 return LlamaContentFormatter(chat_history=chat_history, api=api)
@@ -943,7 +947,8 @@ Please ensure endpoint name and deployment names are correct, and the deployment
     def sanitize_endpoint_url(self,
                               endpoint_url: str,
                               api_type: API):
-        if "serverless.ml.azure.com" in endpoint_url:
+
+        if is_serverless_endpoint(endpoint_url):
             if api_type == API.CHAT:
                 if not endpoint_url.endswith("/v1/chat/completions"):
                     return endpoint_url + "/v1/chat/completions"
