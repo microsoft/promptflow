@@ -58,6 +58,23 @@ def create_run_against_run(client, run: Run) -> Run:
     )
 
 
+def assert_run_with_invalid_column_mapping(client: PFClient, run: Run, capfd: pytest.CaptureFixture) -> None:
+    assert run.status == RunStatus.FAILED
+
+    expected_error_message = "The input for batch run is incorrect. Couldn't find these mapping relations"
+
+    client.stream(run.name)
+    out, _ = capfd.readouterr()
+    assert expected_error_message in out
+
+    local_storage = LocalStorageOperations(run)
+    assert os.path.exists(local_storage._exception_path)
+
+    exception = local_storage.load_exception()
+    assert expected_error_message in exception["message"]
+    assert exception["code"] == "BulkRunException"
+
+
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
@@ -321,7 +338,7 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=run_name)
 
-    def test_referenced_output_not_exist(self, pf):
+    def test_referenced_output_not_exist(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
         # failed run won't generate output
         failed_run = pf.run(
             flow=f"{FLOWS_DIR}/failed_flow",
@@ -336,13 +353,7 @@ class TestFlowRun:
             flow=f"{FLOWS_DIR}/failed_flow",
             column_mapping={"text": "${run.outputs.text}"},
         )
-
-        local_storage = LocalStorageOperations(run)
-        assert os.path.exists(local_storage._exception_path)
-
-        exception = local_storage.load_exception()
-        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
-        assert exception["code"] == "BulkRunException"
+        assert_run_with_invalid_column_mapping(pf, run, capfd)
 
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
@@ -650,7 +661,12 @@ class TestFlowRun:
         additional_includes = _get_additional_includes(snapshot_path / "flow.dag.yaml")
         assert not additional_includes
 
-    def test_input_mapping_source_not_found_error(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
+    def test_input_mapping_source_not_found_error(
+        self,
+        azure_open_ai_connection: AzureOpenAIConnection,
+        pf: PFClient,
+        capfd: pytest.CaptureFixture,
+    ):
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -660,13 +676,7 @@ class TestFlowRun:
             column_mapping={"not_exist": "${data.not_exist_key}"},
             name=name,
         )
-
-        local_storage = LocalStorageOperations(run)
-        assert os.path.exists(local_storage._exception_path)
-
-        exception = local_storage.load_exception()
-        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
-        assert exception["code"] == "BulkRunException"
+        assert_run_with_invalid_column_mapping(pf, run, capfd)
 
     def test_input_mapping_with_dict(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
