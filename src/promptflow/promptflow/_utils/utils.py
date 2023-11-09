@@ -142,7 +142,7 @@ def log_progress(
     total_count: int,
     formatter="{count} / {total_count} finished.",
 ):
-    log_interval = max(int(total_count / 10), 1)
+    log_interval = max(int(total_count / 10), 1) if total_count < 100 else 10
     if count > 0 and (count % log_interval == 0 or count == total_count):
         average_execution_time = round((datetime.now().timestamp() - run_start_time.timestamp()) / count, 2)
         estimated_execution_time = round(average_execution_time * (total_count - count), 2)
