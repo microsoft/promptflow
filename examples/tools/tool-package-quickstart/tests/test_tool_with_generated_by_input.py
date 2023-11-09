@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from my_tool_package.tools.tool_with_generate_index import (generate_index_json, list_content_fields, list_embedding_deployment,
+from my_tool_package.tools.tool_with_generated_by_input import (generate_index_json, list_content_fields, list_embedding_deployment,
                                                             list_indexes, my_tool, reverse_generate_index_json)
 
 
