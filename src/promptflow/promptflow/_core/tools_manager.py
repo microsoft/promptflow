@@ -198,12 +198,8 @@ def retrieve_tool_func_result(func_call_scenario: str, func_path: str, func_inpu
         raise RetrieveToolFuncResultError(f"Error when calling function {func_path}: {e}")
 
     validate_tool_func_result(func_call_scenario, result)
-    result_with_log = {
-        "result": result,
-        "logs": {}
-    }
 
-    return result_with_log
+    return result
 
 
 def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):

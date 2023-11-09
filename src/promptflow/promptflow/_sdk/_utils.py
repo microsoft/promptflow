@@ -638,11 +638,16 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
 
     workspace_triad = get_workspace_triad_from_local()
     if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
-        return retrieve_tool_func_result(func_call_scenario, func_path, func_kwargs, workspace_triad._asdict())
+        result = retrieve_tool_func_result(func_call_scenario, func_path, func_kwargs, workspace_triad._asdict())
     # if no workspace triple available, just skip.
     else:
-        return retrieve_tool_func_result(func_call_scenario, func_path, func_kwargs)
+        result = retrieve_tool_func_result(func_call_scenario, func_path, func_kwargs)
 
+    result_with_log = {
+        "result": result,
+        "logs": {}
+    }
+    return result_with_log
 
 def _gen_dynamic_list(function_config: Dict) -> List:
     """Generate dynamic list for a tool input.
