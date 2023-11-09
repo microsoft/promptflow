@@ -1,4 +1,3 @@
-import enum
 from enum import Enum
 from typing import Dict, List, Union
 import json
@@ -85,37 +84,21 @@ def switch_category_threshold(sensitivity: TextCategorySensitivity) -> int:
     return switcher.get(sensitivity, f"Non-supported sensitivity: {sensitivity}")
 
 
-class MediaType(enum.Enum):
+class MediaType(Enum):
     Text = 1
     Image = 2
 
 
-class Category(enum.Enum):
+class Category(Enum):
     Hate = 1
     SelfHarm = 2
     Sexual = 3
     Violence = 4
 
 
-class Action(enum.Enum):
+class Action(Enum):
     Accept = "Accept"
     Reject = "Reject"
-
-
-class DetectionError(Exception):
-    def __init__(self, code: str, message: str) -> None:
-        """
-        Exception raised when there is an error in detecting the content.
-
-        Args:
-        - code (str): The error code.
-        - message (str): The error message.
-        """
-        self.code = code
-        self.message = message
-
-    def __repr__(self) -> str:
-        return f"DetectionError(code={self.code}, message={self.message})"
 
 
 class Decision(object):
@@ -284,8 +267,7 @@ class ContentSafety(object):
         ):
             final_action = Action.Reject
 
-        print(final_action.name)
-        print(action_result)
+        print(f"Action result: {action_result}")
         return Decision(final_action, action_result)
 
     def make_decision_1001(
@@ -324,6 +306,5 @@ class ContentSafety(object):
         ):
             final_action = Action.Reject
 
-        print(final_action.name)
-        print(action_result)
+        print(f"Action result: {action_result}")
         return Decision(final_action, action_result)

@@ -165,7 +165,7 @@ class AzureContentSafetyInputValueError(UserErrorException):
 
 
 class AzureContentSafetySystemError(SystemErrorException):
-    """Base exception raised when the input type of Azure Content Safety is invalid."""
+    """Base exception raised when failed to call Azure Content Safety api with system error."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs, target=ErrorTarget.TOOL)
