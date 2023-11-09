@@ -15,6 +15,7 @@
     <?define PromptflowCliVersionGuid = "d4e99207-77be-4bdf-a430-b08632c5aa2b" ?>
     <?define PromptflowSystemPathGuid = "4c321045-d4e0-4446-bda4-8c19eaa42af1" ?>
     <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
+    <?define RemovePromptflowFolderGuid = "ee843aa5-2b72-4958-be84-53dbac17efc7" ?>
     <?define UpgradeCode = "772aa21f-f8d4-4771-b910-1dbce3f1920c" ?>
     <?define Architecture = "64-bit" ?>
 
@@ -23,6 +24,7 @@
     <?define PromptflowCliVersionGuid = "f706b208-a15d-4ae7-9185-cfcc43656570" ?>
     <?define PromptflowSystemPathGuid = "9661fe6a-ff48-4e7c-a60d-fc34c2d06ef3" ?>
     <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
+    <?define RemovePromptflowFolderGuid = "588ca5e1-38c6-4659-8b38-762df7ed5b28" ?>
     <?define UpgradeCode = $(var.UpgradeCode32) ?>
     <?define Architecture = "32-bit" ?>
 
@@ -96,6 +98,10 @@
 
     <Fragment>
         <ComponentGroup Id="PromptflowCliSettingsGroup">
+            <Component Id="RemovePromptflowFolder" Directory="DynamicCliDir" Guid="$(var.RemovePromptflowFolderGuid)">
+                <RemoveFolder Id="DynamicCliDir" On="uninstall" />
+            </Component>
+
             <Component Id="PromptflowSystemPath" Directory="DynamicCliDir" Guid="$(var.PromptflowSystemPathGuid)">
                 <Environment Id="PromptflowAddedToPATH"
                      Name="PATH"
