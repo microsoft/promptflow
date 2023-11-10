@@ -231,14 +231,23 @@ class TestSubmitter:
 
     def exec_with_inputs(self, inputs):
         # TODO: unify all exec_line calls here
-
         from promptflow.executor.flow_executor import FlowExecutor
 
+        # validate connection objs
+        connection_obj_dict = {}
+        for key, connection_obj in self.flow_context.connection_objs.items():
+            scrubbed_secrets = connection_obj._get_scrubbed_secrets()
+            if scrubbed_secrets:
+                raise UserErrorException(
+                    f"Connection {connection_obj} contains scrubbed secrets with key {scrubbed_secrets.keys()}, "
+                    "please make sure connection has decrypted secrets to use in flow execution. "
+                )
+            connection_obj_dict[key] = connection_obj._to_execution_connection_dict()
         connections = SubmitterHelper.resolve_connections(
             flow=self.flow, client=self._client, connections_to_ignore=self.flow_context.connection_objs.keys()
         )
         # update connections with connection objs
-        connections.update(self.flow_context.connection_objs)
+        connections.update(connection_obj_dict)
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(
             environment_variables=self.flow_context.environment_variables, client=self._client
