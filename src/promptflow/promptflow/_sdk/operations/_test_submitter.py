@@ -51,7 +51,7 @@ class TestSubmitter:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
-        self.flow_context.resolve_connections()
+        self.flow_context._resolve_connections()
         with variant_overwrite_context(
             flow_path=self._origin_flow.code,
             tuning_node=tuning_node,
