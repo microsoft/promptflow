@@ -2,6 +2,11 @@ name: Create promptflow release tag
 
 on:
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release version"
+        required: true
+        type: string
 
 jobs:
   create_release_tag:
@@ -63,8 +68,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.release_tag }}
-          release_name: promptflow ${{ env.release_version }}
+          tag_name: promptflow_${{ inputs.release_version }}
+          release_name: promptflow ${{ inputs.release_version }}
           body_path: ./src/promptflow/release_note.md
           draft: false
           prerelease: false
@@ -75,6 +80,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./src/promptflow-$release_version.tar.gz
-          asset_name: promptflow-$release_version.tar.gz
+          asset_path: ./src/promptflow-${{ inputs.release_version }}.tar.gz
+          asset_name: promptflow-${{ inputs.release_version }}.tar.gz
           asset_content_type: application/gzip
