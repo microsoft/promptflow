@@ -28,11 +28,10 @@ class BatchInputProcessor:
         self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs}
 
     def process_batch_inputs(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
-        input_dicts = self.resolve_input_data(input_dirs)
-        return self.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        input_dicts = self._resolve_input_data(input_dirs)
+        return self._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
 
-    # region resolve data
-    def resolve_input_data(self, input_dirs: Dict[str, str]):
+    def _resolve_input_data(self, input_dirs: Dict[str, str]):
         """Resolve input data from input dirs"""
         result = {}
         for input_key, input_dir in input_dirs.items():
@@ -61,10 +60,7 @@ class BatchInputProcessor:
             return result[: self._max_lines_count]
         return result
 
-    # endregion
-
-    # region input mapping
-    def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
+    def _validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
 
         :param inputs: The inputs to the flow.
@@ -97,8 +93,8 @@ class BatchInputProcessor:
         result_mapping.update(inputs_mapping)
         return result_mapping
 
-    @staticmethod
     def _apply_inputs_mapping_for_all_lines(
+        self,
         input_dict: Mapping[str, List[Mapping[str, Any]]],
         inputs_mapping: Mapping[str, str],
     ) -> List[Dict[str, Any]]:
@@ -146,7 +142,7 @@ class BatchInputProcessor:
                     "proceeding. If you need additional help, feel free to contact support for further assistance."
                 )
             )
-        merged_list = BatchInputProcessor._merge_input_dicts_by_line(input_dict)
+        merged_list = self._merge_input_dicts_by_line(input_dict)
         if len(merged_list) == 0:
             raise InputMappingError(
                 message_format=(
@@ -158,8 +154,8 @@ class BatchInputProcessor:
         result = [BatchInputProcessor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
         return result
 
-    @staticmethod
     def _merge_input_dicts_by_line(
+        self,
         input_dict: Mapping[str, List[Mapping[str, Any]]],
     ) -> List[Mapping[str, Mapping[str, Any]]]:
         for input_key, list_of_one_input in input_dict.items():
@@ -298,5 +294,3 @@ class BatchInputProcessor:
         if LINE_NUMBER_KEY in inputs:
             result[LINE_NUMBER_KEY] = inputs[LINE_NUMBER_KEY]
         return result
-
-    # endregion
