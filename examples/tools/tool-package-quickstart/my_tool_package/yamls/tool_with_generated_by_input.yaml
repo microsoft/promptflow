@@ -14,10 +14,12 @@ my_tool_package.tools.tool_with_generated_by_input.my_tool:
         - name: index
           type:
           - string
+          optional: true
           reference: ${inputs.index_assetId}
         - content_field:
           type:
           - string
+          optional: true
           reference: ${inputs.content_field}
         - embedding_deployment:
           type:
