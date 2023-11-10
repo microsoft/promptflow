@@ -73,17 +73,17 @@ def test_reverse_generate_index_json():
     index = list_indexes(index_type)[0]
     content_field = list_content_fields(index_type)[0]
     embedding_deployment = list_embedding_deployment(index_type)[1]
-    indexs = {
+    indexes = {
         "index_type": index_type,
         "index": index,
         "content_field": content_field,
         "embedding_deployment": embedding_deployment,
     }
-    input_json = json.dumps(indexs)
+    input_json = json.dumps(indexes)
 
     result = reverse_generate_index_json(input_json)
 
-    for k, v in indexs.items():
+    for k, v in indexes.items():
         assert result[k] == v
 
 
