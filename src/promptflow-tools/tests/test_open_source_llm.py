@@ -334,27 +334,27 @@ user:
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
             endpoint=None)
-        assert len(deployments) == 0
+        assert len(deployments) == 1
+        assert deployments[0]['value'] == 'default'
 
         deployments = list_deployment_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
             endpoint='')
-        assert len(deployments) == 0
+        assert len(deployments) == 1
+        assert deployments[0]['value'] == 'default'
 
         deployments = list_deployment_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
             endpoint='fake_endpoint name')
-        assert len(deployments) == 0
+        assert len(deployments) == 1
+        assert deployments[0]['value'] == 'default'
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_dynamic_list_happy_path(self, chat_endpoints_provider):
-        # workaround to set env variables from service credential
-        print(chat_endpoints_provider)
-
         endpoints = list_endpoint_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
@@ -382,7 +382,9 @@ user:
             if "onlineEndpoint" in endpoint['value']:
                 assert len(deployments) > 0
             else:
-                assert len(deployments) == 0
+                assert len(deployments) == 1
+                assert deployments[0]['value'] == 'default'
+                continue
 
             for deployment in deployments:
                 response = self.stateless_os_llm.call(

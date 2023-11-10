@@ -46,6 +46,11 @@ def handle_online_endpoint_error(max_retries: int = 3,
                         error_message = f"Exception hit calling Online Endpoint: {type(e).__name__}: {str(e)}"
                         print(error_message, file=sys.stderr)
                         raise OpenSourceLLMOnlineEndpointError(message=error_message)
+                except OpenSourceLLMOnlineEndpointError as e:
+                    if i == max_retries - 1:
+                        error_message = f"Exception hit calling Online Endpoint: {type(e).__name__}: {str(e)}"
+                        print(error_message, file=sys.stderr)
+                        raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
                     delay *= exponential_base
                     time.sleep(delay)
@@ -784,17 +789,13 @@ class ServerlessLlamaContentFormatter(ContentFormatterBase):
 
         else:
             prompt_value = ContentFormatterBase.escape_special_characters(prompt)
-            #base_body = {
-                # "model": self.model_id,
-             #   "prompt": prompt_value,
-                #"n": 1,
-            #}
-            #base_body.update(model_kwargs)
             base_body = {
+                "n": 1,
                 "max_tokens": 100,
                 "temperature": 0.8,
-                "prompt": "The seattle seahawks"
+                "prompt": prompt_value
             }
+            base_body.update(model_kwargs)
 
         return json.dumps(base_body)
 
@@ -878,27 +879,6 @@ class AzureMLOnlineEndpoint:
         """Return type of llm."""
         return "azureml_endpoint"
 
-    def _call_endpoint(self, body: bytes) -> bytes:
-        """call."""
-
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": ("Bearer " + self.endpoint_api_key),
-            # "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
-            }
-
-        # If this is not set it'll use the default deployment on the endpoint.
-        if self.deployment_name is not None:
-            headers["azureml-model-deployment"] = self.deployment_name
-
-        result = requests.post(self.endpoint_url, data=body, headers=headers)
-        assert result.status_code == 200
-
-        # req = urllib.request.Request(self.endpoint_url, body, headers)
-        #response = urllib.request.urlopen(req, timeout=50)
-        # result = response.read()
-        return result
-
     def __call__(
         self,
         prompt: str
@@ -919,7 +899,7 @@ class AzureMLOnlineEndpoint:
         # endpoint_response = self._call_endpoint(endpoint_request)
 
         endpoint_response = self._call_endpoint_request_lib(request_body)
-        
+
         response = self.content_formatter.format_response_payload(endpoint_response)
 
         return response
@@ -930,7 +910,7 @@ class AzureMLOnlineEndpoint:
         headers = {
             "Content-Type": "application/json",
             "Authorization": ("Bearer " + self.endpoint_api_key),
-            # "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
+            "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
             }
 
         # If this is not set it'll use the default deployment on the endpoint.
@@ -948,7 +928,7 @@ class AzureMLOnlineEndpoint:
         headers = {
             "Content-Type": "application/json",
             "Authorization": ("Bearer " + self.endpoint_api_key),
-            # "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
+            "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
             }
 
         # If this is not set it'll use the default deployment on the endpoint.
@@ -956,7 +936,10 @@ class AzureMLOnlineEndpoint:
             headers["azureml-model-deployment"] = self.deployment_name
 
         result = requests.post(self.endpoint_url, data=request_body, headers=headers)
-        assert result.status_code == 200
+        if result.status_code != 200:
+            error_message = f"Request failure while calling Online Endpoint Status:{result.status_code}: Error:{result.text}"
+            print(error_message, file=sys.stderr)
+            raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
         return result.text
 
