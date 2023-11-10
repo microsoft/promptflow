@@ -85,10 +85,10 @@ def inject_operation_headers(f):
     def wrapper(*args, **kwargs):
         # Inject headers from operation context, overwrite injected header with headers from kwargs.
         injected_headers = get_aoai_telemetry_headers()
-        original_headers = kwargs.get("headers")
+        original_headers = kwargs.get("headers") if IS_LEGACY_OPENAI else kwargs.get("extra_headers")
         if original_headers and isinstance(original_headers, dict):
             injected_headers.update(original_headers)
-        kwargs.update(headers=injected_headers)
+        kwargs.update(headers=injected_headers) if IS_LEGACY_OPENAI else kwargs.update(extra_headers=injected_headers)
 
         return f(*args, **kwargs)
 
@@ -113,6 +113,16 @@ def available_openai_apis():
                 # E.g. ChatCompletion API was introduced in 2023 and requires openai>=0.27.0 to work.
                 # Older versions of openai do not have this API and will raise an AttributeError if we try to use it.
                 pass
+    else:
+        from openai import resources
+
+        for api in ("Completions", "Chat", "Embeddings"):
+            if api == "Chat":
+                openai_api = getattr(resources.chat, "Completions")
+            else:
+                openai_api = getattr(resources, api)
+            if hasattr(openai_api, "create"):
+                yield openai_api
 
 
 def inject_openai_api():
@@ -127,17 +137,17 @@ def inject_openai_api():
             # If not, modify it by calling the inject function with it as an argument
             openai_api.create = inject(openai_api.create)
 
-    # The openai package reads api configs from environment variables only at import time.
-    # So we need to update the openai api configs from environment variables here.
-    # Please refer to this issue: https://github.com/openai/openai-python/issues/557.
-    openai.api_key = os.environ.get("OPENAI_API_KEY", openai.api_key)
-    openai.organization = os.environ.get("OPENAI_ORGANIZATION", openai.organization)
-    openai.api_type = os.environ.get("OPENAI_API_TYPE", openai.api_type)
-    openai.api_version = os.environ.get("OPENAI_API_VERSION", openai.api_version)
-
     if IS_LEGACY_OPENAI:
+        # For the openai versions lower than 1.0.0, it reads api configs from environment variables only at
+        # import time. So we need to update the openai api configs from environment variables here.
+        # Please refer to this issue: https://github.com/openai/openai-python/issues/557.
+        # The issue has been fixed in openai>=1.0.0.
+        openai.api_key = os.environ.get("OPENAI_API_KEY", openai.api_key)
         openai.api_key_path = os.environ.get("OPENAI_API_KEY_PATH", openai.api_key_path)
+        openai.organization = os.environ.get("OPENAI_ORGANIZATION", openai.organization)
         openai.api_base = os.environ.get("OPENAI_API_BASE", openai.api_base)
+        openai.api_type = os.environ.get("OPENAI_API_TYPE", openai.api_type)
+        openai.api_version = os.environ.get("OPENAI_API_VERSION", openai.api_version)
 
 
 def recover_openai_api():
