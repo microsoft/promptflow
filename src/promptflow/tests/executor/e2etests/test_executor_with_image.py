@@ -166,7 +166,9 @@ class TestExecutorWithImage:
                 {},
                 {
                     "python_node": {
-                        "data:image/jpg;path": str(SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW_PATH / "logo.jpg")
+                        "data:image/jpg;path": str(
+                            FLOW_ROOT / SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW / "logo.jpg"
+                        )
                     }
                 },
             )
