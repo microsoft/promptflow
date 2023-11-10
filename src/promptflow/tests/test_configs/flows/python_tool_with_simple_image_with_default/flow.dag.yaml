@@ -1,0 +1,19 @@
+inputs:
+  image_1:
+    type: image
+    default: logo.jpg
+  image_2:
+    type: image
+outputs:
+  output:
+    type: image
+    reference: ${python_node.output}
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: pick_an_image.py
+  inputs:
+    image_1: ${inputs.image_1}
+    image_2: ${inputs.image_2}

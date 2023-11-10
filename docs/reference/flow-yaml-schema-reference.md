@@ -10,7 +10,7 @@ The source JSON schema can be found at [Flow.schema.json](https://azuremlschemas
 
 | Key                        | Type      | Description                                                                                                                                                                                                       |
 |----------------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `$schema`                  | string    | The YAML schema. If you use the Prompt flow VS Code extension to author the YAML file, including `$schema` at the top of your file enables you to invoke schema and resource completions.              |
+| `$schema`                  | string    | The YAML schema. If you use the prompt flow VS Code extension to author the YAML file, including `$schema` at the top of your file enables you to invoke schema and resource completions.              |
 | `inputs`                   | object    | Dictionary of flow inputs. The key is a name for the input within the context of the flow and the value is the flow input definition.                                                                             |
 | `inputs.<input_name>`      | object    | The flow input definition. See [Flow input](#flow-input) for the set of configurable properties.                                                                                                                  |
 | `outputs`                  | object    | Dictionary of flow outputs. The key is a name for the output within the context of the flow and the value is the flow output definition.                                                                          |
@@ -18,7 +18,7 @@ The source JSON schema can be found at [Flow.schema.json](https://azuremlschemas
 | `nodes`                    | array     | Sets of dictionary of individual nodes to run as steps within the flow. Node can use built-in tool or third-party tool. See [Nodes](#nodes) for more information.                                                 |
 | `node_variants`            | object    | Dictionary of nodes with variants. The key is the node name and value contains variants definition and `default_variant_id`. See [Node variants](#node-variants) for more information.                            |
 | `environment`              | object    | The environment to use for the flow. The key can be `image` or `python_requirements_txt` and the value can be either a image or a python requirements text file.                                                  |
-| `additional_includes`      | array     | Additional includes is a list of files that can be shared among flows. Users can specify additional files and folders used by flow, and Prompt flow will help copy them all to the snapshot during flow creation. |
+| `additional_includes`      | array     | Additional includes is a list of files that can be shared among flows. Users can specify additional files and folders used by flow, and prompt flow will help copy them all to the snapshot during flow creation. |
 
 
 ### Flow input

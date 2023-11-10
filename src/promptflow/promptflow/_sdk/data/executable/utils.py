@@ -19,7 +19,7 @@ def show_image(image, key=None):
 
 def json_dumps(value):
     try:
-        return json.dumps(value)
+        return json.dumps(value, ensure_ascii=False)
     except Exception:
         return value
 
