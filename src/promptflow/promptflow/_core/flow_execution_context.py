@@ -21,9 +21,9 @@ from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
 from promptflow.exceptions import PromptflowException
 
-from .openai_injector import Tracer
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
+from .tracer import Tracer
 
 
 class FlowExecutionContext(ThreadLocalSingleton):
