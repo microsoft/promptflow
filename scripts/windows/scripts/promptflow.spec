@@ -45,6 +45,7 @@ pf_exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon='../resources/logo32.ico',
+    version="./version_info.txt",
 )
 
 
@@ -81,6 +82,7 @@ pfazure_exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon='../resources/logo32.ico',
+    version="./version_info.txt",
 )
 
 pfs_a = Analysis(
@@ -116,6 +118,7 @@ pfs_exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon='../resources/logo32.ico',
+    version="./version_info.txt",
 )
 
 coll = COLLECT(
