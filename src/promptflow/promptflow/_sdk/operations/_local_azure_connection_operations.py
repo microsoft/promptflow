@@ -34,8 +34,6 @@ class LocalAzureConnectionOperations(TelemetryMixin):
     def get_credential(cls):
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
 
-        if interactive_credential_disabled():
-            return DefaultAzureCredential(exclude_interactive_browser_credential=True)
         if is_from_cli():
             try:
                 # Try getting token for cli without interactive login
@@ -47,6 +45,8 @@ class LocalAzureConnectionOperations(TelemetryMixin):
                     "See https://docs.microsoft.com/cli/azure/authenticate-azure-cli for more details."
                 )
                 exit(1)
+        if interactive_credential_disabled():
+            return DefaultAzureCredential(exclude_interactive_browser_credential=True)
         if is_github_codespaces():
             # For code spaces, append device code credential as the fallback option.
             credential = DefaultAzureCredential()
