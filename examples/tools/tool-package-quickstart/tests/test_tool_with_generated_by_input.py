@@ -1,8 +1,13 @@
 import json
 import unittest
 
-from my_tool_package.tools.tool_with_generated_by_input import (generate_index_json, list_content_fields, list_embedding_deployment,
-                                                            list_indexes, my_tool, reverse_generate_index_json)
+from my_tool_package.tools.tool_with_generated_by_input import (
+    generate_index_json, list_content_fields,
+    list_embedding_deployment,
+    list_indexes,
+    my_tool,
+    reverse_generate_index_json,
+)
 
 
 def test_my_tool():
@@ -10,11 +15,15 @@ def test_my_tool():
     index = list_indexes(index_type)[0]
     content_field = list_content_fields(index_type)[0]
     embedding_deployment = list_embedding_deployment(index_type)[1]
-    index_json = generate_index_json(index_type=index_type, index=index,
-                                     content_field=content_field, embedding_deployment=embedding_deployment)
-    
+    index_json = generate_index_json(
+        index_type=index_type,
+        index=index,
+        content_field=content_field,
+        embedding_deployment=embedding_deployment
+    )
+
     result = my_tool(index_json, index_type, index, content_field, embedding_deployment)
-    
+
     assert result == f'Hello {index_json}'
 
 
@@ -23,9 +32,13 @@ def test_generate_index_json():
     index = list_indexes(index_type)[0]
     content_field = list_content_fields(index_type)[0]
     embedding_deployment = list_embedding_deployment(index_type)[1]
-    
-    index_json = generate_index_json(index_type=index_type, index=index,
-                                     content_field=content_field, embedding_deployment=embedding_deployment)
+
+    index_json = generate_index_json(
+        index_type=index_type,
+        index=index,
+        content_field=content_field,
+        embedding_deployment=embedding_deployment
+    )
     indexs = json.loads(index_json)
 
     assert indexs["index_type"] == index_type
@@ -67,9 +80,9 @@ def test_reverse_generate_index_json():
         "embedding_deployment": embedding_deployment,
     }
     input_json = json.dumps(indexs)
-    
+
     result = reverse_generate_index_json(input_json)
-    
+
     for k, v in indexs.items():
         assert result[k] == v
 
