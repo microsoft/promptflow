@@ -9,7 +9,7 @@ from promptflow._core.operation_context import OperationContext
 from ..recording_utilities import RecordStorage
 
 if RecordStorage.is_replaying_mode():
-    pytest.skip(reason="Doesn't support serve in replay mode")
+    pytest.skip(allow_module_level=True, reason="Doesn't support serve in replay mode")
 
 
 @pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
