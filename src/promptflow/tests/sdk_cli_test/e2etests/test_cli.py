@@ -1527,6 +1527,7 @@ class TestCli:
             pass
         pf.runs.get(name=name2)
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="cannot support complex reply format")
     def test_data_scrubbing(self):
         # Prepare connection
         run_pf_command(
