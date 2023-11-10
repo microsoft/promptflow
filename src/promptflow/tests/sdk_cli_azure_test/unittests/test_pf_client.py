@@ -15,7 +15,7 @@ from promptflow._sdk.operations._local_azure_connection_operations import LocalA
 class TestPFClient:
     # Test pf client when connection provider is azureml.
     # This tests suites need azure dependencies.
-    def test_connection_provider(self):
+    def test_connection_provider(self, subscription_id: str, resource_group_name: str, workspace_name: str):
         target = "promptflow._sdk._pf_client.Configuration"
         with mock.patch(target) as mocked:
             mocked.return_value.get_connection_provider.return_value = "abc"
@@ -38,7 +38,7 @@ class TestPFClient:
 
         with mock.patch(target) as mocked:
             mocked.return_value.get_connection_provider.return_value = "azureml:" + RESOURCE_ID_FORMAT.format(
-                "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
+                subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name
             )
             client = PFClient()
             assert isinstance(client.connections, LocalAzureConnectionOperations)
@@ -47,7 +47,7 @@ class TestPFClient:
             config={
                 "connection.provider": "azureml:"
                 + RESOURCE_ID_FORMAT.format(
-                    "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
+                    subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name
                 )
             }
         )

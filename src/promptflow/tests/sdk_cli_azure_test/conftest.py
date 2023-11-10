@@ -16,7 +16,6 @@ from azure.ai.ml import MLClient
 from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
-from dotenv import load_dotenv
 from pytest_mock import MockerFixture
 
 from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
@@ -28,8 +27,6 @@ from .recording_utilities import PFAzureIntegrationTestRecording, get_pf_client_
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
-
-load_dotenv()
 
 
 @pytest.fixture
@@ -44,23 +41,23 @@ def tenant_id() -> str:
 
 @pytest.fixture
 def ml_client(
-    default_subscription_id: str,
-    default_resource_group: str,
-    default_workspace: str,
+    subscription_id: str,
+    resource_group_name: str,
+    workspace_name: str,
 ) -> MLClient:
     """return a machine learning client using default e2e testing workspace"""
 
     return MLClient(
         credential=get_cred(),
-        subscription_id=default_subscription_id,
-        resource_group_name=default_resource_group,
-        workspace_name=default_workspace,
+        subscription_id=subscription_id,
+        resource_group_name=resource_group_name,
+        workspace_name=workspace_name,
         cloud="AzureCloud",
     )
 
 
 @pytest.fixture
-def remote_client() -> PFClient:
+def remote_client(subscription_id: str, resource_group_name: str, workspace_name: str) -> PFClient:
     if is_replay():
         yield get_pf_client_for_replay()
     else:
@@ -68,33 +65,17 @@ def remote_client() -> PFClient:
         with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
             yield PFClient(
                 credential=get_cred(),
-                subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-                resource_group_name="promptflow",
-                workspace_name="promptflow-eastus",
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
             )
 
 
 @pytest.fixture()
-def remote_workspace_resource_id() -> str:
+def remote_workspace_resource_id(subscription_id: str, resource_group_name: str, workspace_name: str) -> str:
     return "azureml:" + RESOURCE_ID_FORMAT.format(
-        "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
+        subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name
     )
-
-
-@pytest.fixture
-def remote_client_int() -> PFClient:
-    if is_replay():
-        yield get_pf_client_for_replay()
-    else:
-        # enable telemetry for non-playback CI
-        with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
-            client = MLClient(
-                credential=get_cred(),
-                subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-                resource_group_name="promptflow",
-                workspace_name="promptflow-int",
-            )
-            yield PFClient(ml_client=client)
 
 
 @pytest.fixture()
@@ -114,62 +95,8 @@ def remote_web_classification_data(remote_client: PFClient) -> Data:
 
 
 @pytest.fixture
-def runtime() -> str:
-    return "test-runtime-ci"
-
-
-@pytest.fixture
-def runtime_int() -> str:
-    return "daily-image-mir"
-
-
-@pytest.fixture
-def ml_client_with_acr_access(
-    default_subscription_id: str,
-    default_resource_group: str,
-    workspace_with_acr_access: str,
-) -> MLClient:
-    """return a machine learning client using default e2e testing workspace"""
-
-    return MLClient(
-        credential=get_cred(),
-        subscription_id=default_subscription_id,
-        resource_group_name=default_resource_group,
-        workspace_name=workspace_with_acr_access,
-        cloud="AzureCloud",
-    )
-
-
-@pytest.fixture
-def ml_client_int(
-    default_subscription_id: str,
-    default_resource_group: str,
-) -> MLClient:
-    """return a machine learning client using default e2e testing workspace"""
-
-    return MLClient(
-        credential=get_cred(),
-        subscription_id="d128f140-94e6-4175-87a7-954b9d27db16",
-        resource_group_name=default_resource_group,
-        workspace_name="promptflow-int",
-        cloud="AzureCloud",
-    )
-
-
-@pytest.fixture
-def ml_client_canary(
-    default_subscription_id: str,
-    default_resource_group: str,
-) -> MLClient:
-    """return a machine learning client using default e2e testing workspace"""
-
-    return MLClient(
-        credential=get_cred(),
-        subscription_id=default_subscription_id,
-        resource_group_name=default_resource_group,
-        workspace_name="promptflow-canary-dev",
-        cloud="AzureCloud",
-    )
+def runtime(runtime_name: str) -> str:
+    return runtime_name
 
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."

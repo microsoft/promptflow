@@ -1,14 +1,21 @@
 # Release History
 
-## 0.1.0b9 (Upcoming)
+## 1.0.0 (2023.11.09)
 
 ### Features Added
 
+- [Executor] Add `enable_kwargs` tag in tools.json for customer python tool.
 - [SDK/CLI] Support `pfazure flow create`. Create a flow on Azure AI from local flow folder.
+- [SDK/CLI] Changed column mapping `${run.inputs.xx}`'s behavior, it will refer to run's data columns instead of run's inputs columns.
 
 ### Bugs Fixed
 
 - [SDK/CLI] Keep original format in run output.jsonl.
+- [Executor] Fix the bug that raise an error when an aggregation node references a bypassed node
+
+### Improvements
+
+- [Executor] Set the outputs of the bypassed nodes as None
 
 ## 0.1.0b8 (2023.10.26)
 

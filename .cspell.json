@@ -73,7 +73,8 @@
     "msrest",
     "cref",
     "msal",
-    "pfbytes"
+    "pfbytes",
+    "Apim"
   ],
   "ignoreWords": [
     "openmpi",
@@ -143,7 +144,10 @@
     "Hwfoxydrg",
     "llms",
     "vcrpy",
-    "tiiuae"
+    "uionly"
+  ],
+  "flagWords": [
+    "Prompt Flow"
   ],
   "allowCompoundWords": true
 }

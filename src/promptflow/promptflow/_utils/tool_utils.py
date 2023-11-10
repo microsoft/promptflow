@@ -14,7 +14,7 @@ from jinja2 import Environment, meta
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from ..contracts.tool import ConnectionType, InputDefinition, Tool, ValueType
+from ..contracts.tool import ConnectionType, InputDefinition, Tool, ToolFuncCallScenario, ValueType
 from ..contracts.types import PromptTemplate
 
 module_logger = logging.getLogger(__name__)
@@ -107,7 +107,8 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
     )
 
 
-def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_conn=False) -> tuple:
+def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_conn=False,
+                          skip_prompt_template=False) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
     input_defs = {}
@@ -117,6 +118,7 @@ def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_c
         if any(k for k in initialize_inputs if k in sign.parameters):
             raise Exception(f'Duplicate inputs found from {f.__name__!r} and "__init__()"!')
         all_inputs = {**initialize_inputs}
+    enable_kwargs = any([param.kind == inspect.Parameter.VAR_KEYWORD for _, param in sign.parameters.items()])
     all_inputs.update(
         {
             k: v
@@ -126,13 +128,18 @@ def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_c
     )
     # Resolve inputs to definitions.
     for k, v in all_inputs.items():
+        # Get value type from annotation
+        value_type = resolve_annotation(v.annotation)
+        if skip_prompt_template and value_type is PromptTemplate:
+            # custom llm tool has prompt template as input, skip it
+            continue
         input_def, is_connection = param_to_definition(v, gen_custom_type_conn=gen_custom_type_conn)
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
     outputs = {}
     # Note: We don't have output definition now
-    return input_defs, outputs, connection_types
+    return input_defs, outputs, connection_types, enable_kwargs
 
 
 def function_to_tool_definition(f: Callable, type=None, initialize_inputs=None) -> Tool:
@@ -146,7 +153,7 @@ def function_to_tool_definition(f: Callable, type=None, initialize_inputs=None) 
     """
     if hasattr(f, "__original_function"):
         f = f.__original_function
-    inputs, outputs, _ = function_to_interface(f, initialize_inputs)
+    inputs, outputs, _, _ = function_to_interface(f, initialize_inputs)
     # Hack to get class name
     class_name = None
     if "." in f.__qualname__:
@@ -236,6 +243,17 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
                 )
 
 
+def validate_tool_func_result(func_call_scenario: str, result):
+    if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
+        if not isinstance(result, Dict):
+            raise RetrieveToolFuncResultValidationError(
+                f"ToolFuncCallScenario {func_call_scenario} response must be a dict. "
+                f"{result} is not a dict."
+            )
+    elif func_call_scenario == ToolFuncCallScenario.DYNAMIC_LIST:
+        validate_dynamic_list_func_response_type(result, f"ToolFuncCallScenario {func_call_scenario}")
+
+
 def append_workspace_triple_to_func_input_params(
     func_sig_params: Dict, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str]
 ):
@@ -282,6 +300,21 @@ def load_function_from_function_path(func_path: str):
             f"Failed to parse function from function path: '{func_path}'. Expected format: format 'my_module.my_func'. "
             f"Detailed error: {e}"
         )
+
+
+class RetrieveToolFuncResultError(UserErrorException):
+    """Base exception raised for retreive tool func result errors."""
+
+    def __init__(self, message):
+        msg = (
+            f"Unable to retreive tool func result due to '{message}'. \nPlease contact the tool author/support team "
+            f"for troubleshooting assistance."
+        )
+        super().__init__(msg, target=ErrorTarget.FUNCTION_PATH)
+
+
+class RetrieveToolFuncResultValidationError(RetrieveToolFuncResultError):
+    pass
 
 
 class DynamicListError(UserErrorException):
