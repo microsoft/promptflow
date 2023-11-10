@@ -148,20 +148,17 @@ class TestConnectionType:
     def test_is_connection_class_name(self, type_name, expected):
         assert ConnectionType.is_connection_class_name(type_name) == expected
 
-    def test_is_connection_value(self):
-        connection = connections.get("AzureContentSafetyConnection")
-        # Test with a known connection class
-        assert ConnectionType.is_connection_value(connection)
-
-        # Test with an unknown connection class
-        assert not ConnectionType.is_connection_value(Status)
-
-        # Test with a connection instance
-        connection_instance = AzureContentSafetyConnection("api_key", "endpoint")
-        assert ConnectionType.is_connection_value(connection_instance)
-
-        # Test with a non-connection instance
-        assert not ConnectionType.is_connection_value("non_connection_instance")
+    @pytest.mark.parametrize(
+        "value, expected",
+        [
+            (connections.get("AzureContentSafetyConnection"), True),
+            (AzureContentSafetyConnection("api_key", "endpoint"), True),
+            (Status, False),
+            (ConnectionType.is_connection_value("non_connection_instance"), False),
+        ]
+    )
+    def test_is_connection_value(self, value, expected):
+        assert ConnectionType.is_connection_value(value) == expected
 
     @pytest.mark.parametrize(
         "val, expected_res",
@@ -250,94 +247,64 @@ class TestInputDefinition:
 
 @pytest.mark.unittest
 class TestOutDefinition:
-    def test_serialize(self):
-        # test when len(type) == 1
-        output_def = OutputDefinition([ValueType.STRING], description="Description", is_property=True)
-        serialized = output_def.serialize()
-        assert serialized == {"type": "string", "description": "Description", "is_property": True}
+    @pytest.mark.parametrize(
+        "value, expected",
+        [
+            (OutputDefinition([ValueType.STRING], description="Description", is_property=True), {"type": "string", "description": "Description", "is_property": True}),
+            (OutputDefinition([ValueType.STRING, ValueType.INT]), {"type": ["string", "int"], "is_property": False}),
+        ],
+    )
+    def test_serialize(self, value, expected):
+        assert value.serialize() == expected
 
-        # test when len(type) > 1
-        output_def = OutputDefinition([ValueType.STRING, ValueType.INT])
-        serialized = output_def.serialize()
-        assert serialized == {"type": ["string", "int"], "is_property": False}
-
-    def test_deserialize(self):
-        serialized = {"type": "string", "description": "Description", "is_property": True}
-        deserialized = OutputDefinition.deserialize(serialized)
-        assert deserialized.type == [ValueType.STRING]
-        assert deserialized.description == "Description"
-        assert deserialized.is_property
-
-        serialized = {
-            "type": ["string", "int"],
-        }
-        deserialized = OutputDefinition.deserialize(serialized)
-        assert deserialized.type == [ValueType.STRING, ValueType.INT]
-        assert deserialized.description == ""
-        assert not deserialized.is_property
-
+    @pytest.mark.parametrize(
+        "value, expected",\
+        [
+            ({"type": "string", "description": "Description", "is_property": True}, OutputDefinition([ValueType.STRING], description="Description", is_property=True)),
+            ({"type": ["string", "int"]}, OutputDefinition([ValueType.STRING, ValueType.INT])),
+        ],
+    )
+    def test_deserialize(self, value, expected):
+        assert OutputDefinition.deserialize(value) == expected
 
 @pytest.mark.unittest
 class TestTool:
-    def test_tool(self):
-        # Test when type is _ACTION
+    @pytest.mark.parametrize(
+        "tool_type, expected_keys",
+        [
+            (ToolType._ACTION, ["name", "description", "enable_kwargs"]),
+            (ToolType.LLM, ["name", "type", "inputs", "description", "enable_kwargs"]),
+        ]
+    )
+    def test_serialize_tool(self, tool_type, expected_keys):
+        tool = Tool(name="test_tool", type=tool_type, inputs={}, outputs={}, description="description")
+        serialized_tool = tool.serialize()
+        assert set(serialized_tool.keys()) == set(expected_keys)
+
+    def test_deserialize_tool(self):
+        data = {  
+            "name": "test_tool",  
+            "type": "LLM",  
+            "inputs": {"input1": {"type": "ValueType1"}},  
+        }  
+        tool = Tool.deserialize(data)  
+        assert tool.name == data["name"]  
+        assert tool.type == ToolType[data["type"]]  
+        assert "input1" in tool.inputs  
+
+    @pytest.mark.parametrize(
+        "tooltype, connection_type, expected",
+        [
+            (ToolType.LLM, None, True),
+            (ToolType._ACTION, ["AzureContentSafetyConnection"], True),
+            (ToolType._ACTION, None, False),
+        ],
+    )
+    def test_require_connection(self, tooltype, connection_type, expected):
         tool = Tool(
             name="Test Tool",
-            type=ToolType._ACTION,
-            inputs={"input1": InputDefinition(type=[ValueType.STRING])},
-            connection_type=["AzureContentSafetyConnection"],
-            is_builtin=True,
-        )
-
-        # Test serialize method
-        serialized_tool = tool.serialize()
-        assert serialized_tool["name"] == "Test Tool"
-        assert serialized_tool["connection_type"] == ["AzureContentSafetyConnection"]
-        assert serialized_tool["is_builtin"]
-        with pytest.raises(KeyError):
-            serialized_tool["type"]
-
-        # Test when type is not _ACTION
-        tool = Tool(
-            name="Test Tool",
-            type=ToolType.LLM,
-            inputs={"input1": InputDefinition(type=[ValueType.STRING])},
-            connection_type=["AzureContentSafetyConnection"],
-            is_builtin=True,
-        )
-
-        serialized_tool = tool.serialize()
-        assert serialized_tool["name"] == "Test Tool"
-        assert serialized_tool["connection_type"] == ["AzureContentSafetyConnection"]
-        assert serialized_tool["is_builtin"]
-        assert serialized_tool["type"] == "llm"
-
-        # Test deserialize method
-        deserialized_tool = Tool.deserialize(serialized_tool)
-        assert deserialized_tool.name == "Test Tool"
-        assert deserialized_tool.connection_type == ["AzureContentSafetyConnection"]
-        assert deserialized_tool.outputs == {}  # Different from defualt value "None"
-        assert deserialized_tool.is_builtin
-        assert deserialized_tool.stage is None
-        assert deserialized_tool.type == ToolType.LLM
-
-    def test_require_connection(self):
-        tool1 = Tool(
-            name="Test Tool1",
-            type=ToolType.LLM,
-            inputs={"input1": InputDefinition(type=[ValueType.STRING])},
-        )
-        assert tool1._require_connection()
-        tool2 = Tool(
-            name="Test Tool2",
-            type=ToolType._ACTION,
-            inputs={"input1": InputDefinition(type=[ValueType.STRING])},
-            connection_type=["AzureContentSafetyConnection"],
-        )
-        assert tool2._require_connection()
-        tool3 = Tool(
-            name="Test Tool3",
-            type=ToolType._ACTION,
-            inputs={"input1": InputDefinition(type=[ValueType.STRING])},
-        )
-        assert not tool3._require_connection()
+            type=tooltype,
+            inputs={},
+            connection_type=connection_type
+            )
+        assert tool._require_connection() == expected

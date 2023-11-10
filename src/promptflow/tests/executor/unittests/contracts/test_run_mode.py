@@ -3,11 +3,19 @@ from promptflow.contracts.run_mode import RunMode
 
 
 @pytest.mark.unittest
-def test_parse():
-    assert RunMode.parse("Test") == RunMode.Test
-    assert RunMode.parse("SingleNode") == RunMode.SingleNode
-    assert RunMode.parse("Batch") == RunMode.Batch
-    assert RunMode.parse("Default") == RunMode.Test
+@pytest.mark.parametrize(
+    "run_mode, expected",
+    [
+        ("Test", RunMode.Test),
+        ("SingleNode", RunMode.SingleNode),
+        ("Batch", RunMode.Batch),
+        ("Default", RunMode.Test),
+    ],
+)
+def test_parse(run_mode, expected):
+    assert RunMode.parse(run_mode) == expected
 
+@pytest.mark.unittest
+def test_parse_invalid():
     with pytest.raises(ValueError):
         RunMode.parse(123)
