@@ -11,7 +11,7 @@ Azure Content Safety is a content moderation service developed by Microsoft that
 ## Prerequisites
 
 - Create an [Azure Content Safety](https://aka.ms/acs-create) resource.
-- Add "Azure Content Safety" connection in Prompt Flow. Fill "API key" field with "Primary key" from "Keys and Endpoint" section of created resource.
+- Add "Azure Content Safety" connection in prompt flow. Fill "API key" field with "Primary key" from "Keys and Endpoint" section of created resource.
 
 ## Inputs
 
