@@ -7,8 +7,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-import pandas as pd
-
 from ._configuration import Configuration
 from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._logger_factory import LoggerFactory
@@ -139,7 +137,7 @@ class PFClient:
 
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
-    ) -> pd.DataFrame:
+    ) -> "DataFrame":
         """Get the details from the run including inputs and outputs.
 
         .. note::
