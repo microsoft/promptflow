@@ -156,6 +156,7 @@ def parse_chat(chat_str, images: List[Image] = None, valid_roles: Set[str] = Non
 
 
 def to_content_str_or_list(chat_str: str, hash2images: Mapping[str, Image]):
+    chat_str = chat_str.strip()
     chunks = chat_str.split("\n")
     include_image = False
     result = []
