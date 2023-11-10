@@ -1,5 +1,4 @@
-**/scripts/build
-scripts/installer/windows/scripts/build
-scripts/installer/windows/scripts/dist
-scripts/installer/windows/wix
-scripts/installer/windows/out
+**/windows/scripts/build
+**/windows/scripts/dist
+**/windows/wix
+**/windows/out
