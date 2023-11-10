@@ -241,7 +241,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     ) -> List[Run]:
         """List runs in the workspace.
 
-        :param max_results: The max number of runs to return, defaults to 100
+        :param max_results: The max number of runs to return, defaults to 50, max is 100
         :type max_results: int
         :param list_view_type: The list view type, defaults to ListViewType.ACTIVE_ONLY
         :type list_view_type: ListViewType

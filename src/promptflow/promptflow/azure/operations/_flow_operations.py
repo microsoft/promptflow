@@ -11,6 +11,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+import requests
 from azure.ai.ml._artifacts._artifact_utilities import _check_and_upload_path
 from azure.ai.ml._scope_dependent_operations import (
     OperationConfig,
@@ -57,7 +58,7 @@ class FlowOperations(_ScopeDependentOperations):
     attaches it as an attribute.
     """
 
-    _FLOW_RESOURCE_PATTERN = re.compile(r"azureml:.*?/workspaces/(?P<datastore>.*?)/flows/(?P<flow_id>.*?)$")
+    _FLOW_RESOURCE_PATTERN = re.compile(r"azureml:.*?/workspaces/(?P<experiment_id>.*?)/flows/(?P<flow_id>.*?)$")
 
     def __init__(
         self,
@@ -84,15 +85,38 @@ class FlowOperations(_ScopeDependentOperations):
         )
         return url
 
+    @cached_property
+    def _index_service_endpoint_url(self):
+        """Get the endpoint url for the workspace."""
+        endpoint = self._service_caller._service_endpoint
+        return endpoint + "index/v1.0" + self._common_azure_url_pattern
+
     def _get_flow_portal_url(self, flow_resource_id: str):
         """Get the portal url for the run."""
         match = self._FLOW_RESOURCE_PATTERN.match(flow_resource_id)
         if not match or len(match.groups()) != 2:
             logger.warning("Failed to parse flow resource id '%s'", flow_resource_id)
             return None
-        datastore, flow_id = match.groups()
-        url = f"https://ml.azure.com/prompts/flow/{datastore}/{flow_id}/details?wsid={self._common_azure_url_pattern}"
+        experiment_id, flow_id = match.groups()
+        # TODO[2785705]: Handle the case when endpoint is other clouds
+        url = (
+            f"https://ml.azure.com/prompts/flow/{experiment_id}/{flow_id}/details?wsid={self._common_azure_url_pattern}"
+        )
         return url
+
+    def _get_flow_portal_url_from_index_entity(self, entity: Dict):
+        """Enrich the index entity with flow portal url."""
+        result = None
+        experiment_id = entity["properties"].get("experimentId", None)
+        flow_id = entity["properties"].get("flowId", None)
+
+        if experiment_id and flow_id:
+            # TODO[2785705]: Handle the case when endpoint is other clouds
+            result = (
+                f"https://ml.azure.com/prompts/flow/{experiment_id}/{flow_id}"
+                f"/details?wsid={self._common_azure_url_pattern}"
+            )
+        return result
 
     @monitor_operation(activity_name="pfazure.flows.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, flow: Union[str, Path], name=None, type=None, **kwargs) -> Flow:
@@ -126,10 +150,9 @@ class FlowOperations(_ScopeDependentOperations):
             flow_definition_file_path=flow_definition_file_path,
             **kwargs,
         )
-        result_flow = Flow._from_rest_object(rest_flow)
+        result_flow = Flow._from_pf_service(rest_flow)
+        result_flow.flow_portal_url = self._get_flow_portal_url(rest_flow.flow_resource_id)
         flow_dict = result_flow._to_dict()
-        flow_portal_url = self._get_flow_portal_url(rest_flow.flow_resource_id)
-        flow_dict["flow_portal_url"] = flow_portal_url
         print(f"Flow created successfully:\n{json.dumps(flow_dict, indent=4)}")
 
         return result_flow
@@ -257,39 +280,95 @@ class FlowOperations(_ScopeDependentOperations):
     def list(
         self,
         max_results: int = MAX_LIST_CLI_RESULTS,
-        owned_only: bool = True,
         flow_type: Optional[FlowType] = None,
         list_view_type: ListViewType = ListViewType.ACTIVE_ONLY,
+        include_others: bool = False,
         **kwargs,
     ) -> List[Flow]:
         """List flows from azure.
 
-        :param max_results: The max number of runs to return, defaults to 100
+        :param max_results: The max number of runs to return, defaults to 50, max is 100
         :type max_results: int
-        :param owned_only: Whether to list owned flows only, defaults to True
-        :type owned_only: bool
         :param flow_type: The flow type, defaults to None, which means all flow types. Other supported flow types are
             ["standard", "evaluation", "chat"].
         :type flow_type: Optional[FlowType]
         :param list_view_type: The list view type, defaults to ListViewType.ACTIVE_ONLY
         :type list_view_type: ListViewType
+        :param include_others: Whether to list flows owned by other users in the remote workspace, defaults to False
+        :type include_others: bool
         :return: The list of runs.
         :rtype: List[~promptflow.azure. entities.Run]
         """
-        # TODO: support pagination
-        rest_flow_result = self._service_caller.list_flows(
-            subscription_id=self._operation_scope.subscription_id,
-            resource_group_name=self._operation_scope.resource_group_name,
-            workspace_name=self._operation_scope.workspace_name,
-            owned_only=owned_only,
-            flow_type=flow_type,
-            list_view_type=list_view_type,
-        )
-        # note that the service may return flow rest obj with no flow name
-        flows = [Flow._from_rest_object(rest_flow) for rest_flow in rest_flow_result if rest_flow.flow_name]
-        flows = flows[0:max_results]
-        flows = sorted(flows, key=lambda x: x.created_date, reverse=True)
-        return flows
+        if not isinstance(max_results, int) or max_results < 1:
+            raise FlowOperationError(f"'max_results' must be a positive integer, got {max_results!r}")
+
+        normalized_flow_type = str(flow_type).lower()
+        if flow_type is not None and normalized_flow_type not in FlowType.get_all_values():
+            raise FlowOperationError(f"'flow_type' must be one of {FlowType.get_all_values()}, got {flow_type!r}.")
+
+        headers = self._service_caller._get_headers()
+        if list_view_type == ListViewType.ACTIVE_ONLY:
+            filter_archived = ["false"]
+        elif list_view_type == ListViewType.ARCHIVED_ONLY:
+            filter_archived = ["true"]
+        elif list_view_type == ListViewType.ALL:
+            filter_archived = ["true", "false"]
+        else:
+            raise FlowOperationError(
+                f"Invalid list view type: {list_view_type!r}, expecting one of ['ActiveOnly', 'ArchivedOnly', 'All']"
+            )
+
+        user_object_id, user_tenant_id = self._service_caller._get_user_identity_info()
+        payload = {
+            "filters": [
+                {"field": "type", "operator": "eq", "values": ["flows"]},
+                {"field": "annotations/isArchived", "operator": "eq", "values": filter_archived},
+                {
+                    "field": "properties/creationContext/createdBy/userTenantId",
+                    "operator": "eq",
+                    "values": [user_tenant_id],
+                },
+            ],
+            "freeTextSearch": "",
+            "order": [{"direction": "Desc", "field": "properties/creationContext/createdTime"}],
+            # index service can return 100 results at most
+            "pageSize": min(max_results, 100),
+            "skip": 0,
+            "includeTotalResultCount": True,
+            "searchBuilder": "AppendPrefix",
+        }
+
+        # add flow filter to only list flows from current user
+        if not include_others:
+            payload["filters"].append(
+                {
+                    "field": "properties/creationContext/createdBy/userObjectId",
+                    "operator": "eq",
+                    "values": [user_object_id],
+                }
+            )
+
+        endpoint = self._index_service_endpoint_url
+        url = endpoint + "/entities"
+        response = requests.post(url, headers=headers, json=payload)
+
+        if response.status_code == 200:
+            entities = json.loads(response.text)
+            flow_entities = entities["value"]
+        else:
+            raise FlowOperationError(
+                f"Failed to get flows from index service. Code: {response.status_code}, text: {response.text}"
+            )
+
+        # transform to flow instances
+        flow_instances = []
+        for entity in flow_entities:
+            flow = Flow._from_index_service(entity)
+            # add flow portal url
+            flow.flow_portal_url = self._get_flow_portal_url_from_index_entity(entity)
+            flow_instances.append(flow)
+
+        return flow_instances
 
     def _download(self, source, dest):
         # TODO: support download flow

@@ -895,3 +895,14 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
     if output:
         with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
+
+
+def remove_empty_element_from_dict(obj: dict) -> dict:
+    """Remove empty element from dict, e.g. {"a": 1, "b": {}} -> {"a": 1}"""
+    new_dict = {}
+    for key, value in obj.items():
+        if isinstance(value, dict):
+            value = remove_empty_element_from_dict(value)
+        if value is not None:
+            new_dict[key] = value
+    return new_dict

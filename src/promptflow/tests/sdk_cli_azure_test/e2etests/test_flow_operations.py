@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from promptflow._sdk._constants import FlowType
+from promptflow._sdk._errors import FlowOperationError
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -19,12 +20,12 @@ data_dir = tests_root_dir / "test_configs/datas"
 # TODO: enable the following tests after test CI can access test workspace
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
-@pytest.mark.usefixtures(
-    "mock_set_headers_with_user_aml_token",
-    "single_worker_thread_pool",
-    "vcr_recording",
-)
-@pytest.mark.skip(reason="Enable this after recording is ready for flow operations.")
+# @pytest.mark.usefixtures(
+#     "mock_set_headers_with_user_aml_token",
+#     "single_worker_thread_pool",
+#     "vcr_recording",
+# )
+# @pytest.mark.skip(reason="Enable this after recording is ready for flow operations.")
 class TestFlow:
     def test_create_flow(self, remote_client):
         flow_source = flow_test_dir / "simple_fetch_url/"
@@ -43,15 +44,25 @@ class TestFlow:
         assert result.tags == tags
         assert result.path.endswith(f"/promptflow/{flow_name}/flow.dag.yaml")
 
-    def test_list_flows(self, remote_client):
-        flows = remote_client.flows.list(max_results=3)
-        for flow in flows:
-            print(json.dumps(flow._to_dict(), indent=4))
-        assert len(flows) == 3
-
     def test_flow_test_with_config(self, remote_workspace_resource_id):
         from promptflow import PFClient
 
         client = PFClient(config={"connection.provider": remote_workspace_resource_id})
         output = client.test(flow=flow_test_dir / "web_classification")
         assert output.keys() == {"category", "evidence"}
+
+    def test_list_flows(self, remote_client):
+        flows = remote_client.flows.list(max_results=3)
+        for flow in flows:
+            print(json.dumps(flow._to_dict(), indent=4))
+        assert len(flows) == 3
+
+    def test_list_flows_invalid_cases(self, remote_client):
+        with pytest.raises(FlowOperationError, match="'max_results' must be a positive integer"):
+            remote_client.flows.list(max_results=0)
+
+        with pytest.raises(FlowOperationError, match="'flow_type' must be one of"):
+            remote_client.flows.list(flow_type="unknown")
+
+        with pytest.raises(FlowOperationError, match="Invalid list view type"):
+            remote_client.flows.list(list_view_type="invalid")

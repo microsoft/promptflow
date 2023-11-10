@@ -8,9 +8,9 @@ from promptflow._cli._params import (
     add_param_archived_only,
     add_param_flow_type,
     add_param_include_archived,
+    add_param_include_others,
     add_param_max_results,
     add_param_output_format,
-    add_param_owned_only,
     add_param_set,
     logging_params,
 )
@@ -84,8 +84,6 @@ Examples:
 pfazure flow list
 # List most recent 10 runs status:
 pfazure flow list --max-results 10
-# List flows that are owned by current user:
-pfazure flow list --owned-only
 # List active and archived flows:
 pfazure flow list --include-archived
 # List archived flow only:
@@ -94,10 +92,12 @@ pfazure flow list --archived-only
 pfazure flow list --output table
 # List flows with specific type:
 pfazure flow list --type standard
+# List flows that are owned by all users:
+pfazure flow list --include-others
 """
     add_params = [
         add_param_max_results,
-        add_param_owned_only,
+        add_param_include_others,
         add_param_flow_type,
         add_param_archived_only,
         add_param_include_archived,
@@ -171,7 +171,7 @@ def list_flows(args: argparse.Namespace):
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     flows = pf.flows.list(
         max_results=args.max_results,
-        owned_only=args.owned_only,
+        include_others=args.include_others,
         flow_type=args.type,
         list_view_type=get_list_view_type(args.archived_only, args.include_archived),
     )

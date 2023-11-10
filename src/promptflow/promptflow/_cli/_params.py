@@ -322,11 +322,11 @@ def add_param_output_format(parser):
     )
 
 
-def add_param_owned_only(parser):
+def add_param_include_others(parser):
     parser.add_argument(
-        "--owned-only",
+        "--include-others",
         action="store_true",
-        help="Only get records that are owned by the user.",
+        help="Get records that are owned by all users.",
     )
 
 
