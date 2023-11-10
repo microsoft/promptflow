@@ -1,5 +1,13 @@
 # Release History
 
+## 1.1.0 (Upcoming)
+### Features Added
+
+### Bugs Fixed
+
+### Improvements
+- Force 'az login' if using azureml connection provider in cli command.
+
 ## 1.0.0 (2023.11.09)
 
 ### Features Added
