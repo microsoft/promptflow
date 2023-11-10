@@ -39,12 +39,12 @@ def test_generate_index_json():
         content_field=content_field,
         embedding_deployment=embedding_deployment
     )
-    indexs = json.loads(index_json)
+    indexes = json.loads(index_json)
 
-    assert indexs["index_type"] == index_type
-    assert indexs["index"] == index
-    assert indexs["content_field"] == content_field
-    assert indexs["embedding_deployment"] == embedding_deployment
+    assert indexes["index_type"] == index_type
+    assert indexes["index"] == index
+    assert indexes["content_field"] == content_field
+    assert indexes["embedding_deployment"] == embedding_deployment
 
 
 def test_list_indexes():
