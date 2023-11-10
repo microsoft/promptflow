@@ -192,8 +192,7 @@ def mock_origin(original):
 @pytest.fixture
 def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-        lowercase_cls_name = request.cls.__name__.lower()
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / f"{lowercase_cls_name}_node_cache.shelve"
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
         RecordStorage.get_instance(file_path)
 
 
