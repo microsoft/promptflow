@@ -1,3 +1,4 @@
+**/scripts/build
 scripts/installer/windows/scripts/build
 scripts/installer/windows/scripts/dist
 scripts/installer/windows/wix
