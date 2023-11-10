@@ -633,7 +633,9 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     """
     func_path = function_config.get("func_path", "")
     func_kwargs = function_config.get("func_kwargs", {})
-
+    # May call azure control plane api in the custom function to list Azure resources.
+    # which may need Azure workspace triple.
+    # TODO: move this method to a common place.
     from promptflow._cli._utils import get_workspace_triad_from_local
 
     workspace_triad = get_workspace_triad_from_local()
