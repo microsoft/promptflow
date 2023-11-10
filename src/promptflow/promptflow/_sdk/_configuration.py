@@ -23,6 +23,10 @@ class ConfigFileNotFound(ValidationException):
     pass
 
 
+class InvalidConfigFile(ValidationException):
+    pass
+
+
 class Configuration(object):
 
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
@@ -138,7 +142,7 @@ class Configuration(object):
 
         subscription_id, resource_group, workspace_name = MLClient._get_workspace_info(found_path)
         if not (subscription_id and resource_group and workspace_name):
-            raise ValueError(
+            raise InvalidConfigFile(
                 "The subscription_id, resource_group and workspace_name can not be empty. Got: "
                 f"subscription_id: {subscription_id}, resource_group: {resource_group}, "
                 f"workspace_name: {workspace_name} from file {found_path}."

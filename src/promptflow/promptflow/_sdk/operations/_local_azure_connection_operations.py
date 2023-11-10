@@ -7,7 +7,7 @@ from typing import List
 
 from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, LOGGER_NAME, MAX_LIST_CLI_RESULTS
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import disable_interactive_credential, is_from_cli, is_github_codespaces, print_red_error
+from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces, print_red_error
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import TelemetryMixin
@@ -34,7 +34,7 @@ class LocalAzureConnectionOperations(TelemetryMixin):
     def get_credential(cls):
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
 
-        if disable_interactive_credential():
+        if interactive_credential_disabled():
             return DefaultAzureCredential(exclude_interactive_browser_credential=True)
         if is_from_cli():
             try:

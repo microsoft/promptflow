@@ -30,7 +30,7 @@ from marshmallow import ValidationError
 from ruamel.yaml import YAML
 
 import promptflow
-from promptflow._constants import EXTENSION_UA
+from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._core.tools_manager import gen_dynamic_list
 from promptflow._sdk._constants import (
@@ -898,11 +898,13 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
 
 
 def is_github_codespaces():
+    # Ref:
+    # https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace
     return os.environ.get("CODESPACES", None) == "true"
 
 
-def disable_interactive_credential():
-    return os.environ.get("PF_NO_INTERACTIVE_LOGIN", "false").lower() == "true"
+def interactive_credential_disabled():
+    return os.environ.get(PF_NO_INTERACTIVE_LOGIN, "false").lower() == "true"
 
 
 def is_from_cli():
