@@ -112,6 +112,11 @@ See more details of this topic in [Develop a flow](./develop-a-flow/index.md).
 
 ### Create necessary connections
 
+:::{note}
+If you are using `WSL` or other OS without default keyring storage backend, you may encounter `StoreConnectionEncryptionKeyError`, please refer to [FAQ](./faq.md#connection-creation-failed-with-storeconnectionencryptionkeyerror) for the solutions.
+:::
+
+
 The [`connection`](../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
 
 The sample flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) uses connection `open_ai_connection` inside, e.g. `classify_with_llm` node needs to talk to `llm` using the connection.

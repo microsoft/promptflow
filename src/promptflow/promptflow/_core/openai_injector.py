@@ -5,6 +5,7 @@
 import functools
 import inspect
 import os
+import pkg_resources
 from datetime import datetime
 
 import openai
@@ -16,6 +17,7 @@ from .tracer import Tracer
 
 USER_AGENT_HEADER = "x-ms-useragent"
 PROMPTFLOW_PREFIX = "ms-azure-ai-promptflow-"
+IS_LEGACY_OPENAI = pkg_resources.get_distribution("openai").version.startswith("0.")
 
 
 def inject_function(args_to_ignore=None, trace_type=TraceType.LLM):
@@ -100,16 +102,17 @@ def inject(f):
 
 
 def available_openai_apis():
-    for api in ("Completion", "ChatCompletion", "Embedding"):
-        try:
-            openai_api = getattr(openai, api)
-            if hasattr(openai_api, "create"):
-                yield openai_api
-        except AttributeError:
-            # This is expected for older versions of openai or unsupported APIs.
-            # E.g. ChatCompletion API was introduced in 2023 and requires openai>=0.27.0 to work.
-            # Older versions of openai do not have this API and will raise an AttributeError if we try to use it.
-            pass
+    if IS_LEGACY_OPENAI:
+        for api in ("Completion", "ChatCompletion", "Embedding"):
+            try:
+                openai_api = getattr(openai, api)
+                if hasattr(openai_api, "create"):
+                    yield openai_api
+            except AttributeError:
+                # This is expected for older versions of openai or unsupported APIs.
+                # E.g. ChatCompletion API was introduced in 2023 and requires openai>=0.27.0 to work.
+                # Older versions of openai do not have this API and will raise an AttributeError if we try to use it.
+                pass
 
 
 def inject_openai_api():
@@ -128,11 +131,13 @@ def inject_openai_api():
     # So we need to update the openai api configs from environment variables here.
     # Please refer to this issue: https://github.com/openai/openai-python/issues/557.
     openai.api_key = os.environ.get("OPENAI_API_KEY", openai.api_key)
-    openai.api_key_path = os.environ.get("OPENAI_API_KEY_PATH", openai.api_key_path)
     openai.organization = os.environ.get("OPENAI_ORGANIZATION", openai.organization)
-    openai.api_base = os.environ.get("OPENAI_API_BASE", openai.api_base)
     openai.api_type = os.environ.get("OPENAI_API_TYPE", openai.api_type)
     openai.api_version = os.environ.get("OPENAI_API_VERSION", openai.api_version)
+
+    if IS_LEGACY_OPENAI:
+        openai.api_key_path = os.environ.get("OPENAI_API_KEY_PATH", openai.api_key_path)
+        openai.api_base = os.environ.get("OPENAI_API_BASE", openai.api_base)
 
 
 def recover_openai_api():

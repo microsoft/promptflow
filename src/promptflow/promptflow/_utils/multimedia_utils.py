@@ -84,7 +84,7 @@ def _create_image_from_url(url: str, mime_type: str = None):
         if not mime_type:
             format = imghdr.what(None, response.content)
             mime_type = f"image/{format}" if format else "image/*"
-        return Image(response.content, mime_type=mime_type)
+        return Image(response.content, mime_type=mime_type, source_url=url)
     else:
         raise InvalidImageInput(
             message_format=f"Error while fetching image from URL: {url}. "

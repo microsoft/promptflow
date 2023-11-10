@@ -92,6 +92,9 @@ pf.visualize(base_run)
 
 ![q_0](../../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
 
+Feel free to check [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow.md) for all SDK public interfaces.
+
+
 :::
 
 :::{tab-item} VS Code Extension
@@ -106,6 +109,7 @@ Click the bulk test button on the top of the visual editor to trigger flow test.
 
 ::::
 
+We also have a more detailed documentation  [Manage runs](../manage-runs.md) demonstrating how to manage your finished runs with CLI, SDK and VS Code Extension.
 
 ## Evaluate your flow
 
@@ -228,6 +232,8 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 Learn more about:
 - [Tune prompts with variants](../tune-prompts-with-variants.md)
 - [Deploy a flow](../deploy-a-flow/index.md)
+- [Manage runs](../manage-runs.md)
+- [Python library reference](../../reference/python-library-reference/promptflow.md)
 
 ```{toctree}
 :maxdepth: 1

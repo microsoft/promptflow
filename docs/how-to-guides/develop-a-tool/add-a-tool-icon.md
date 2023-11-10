@@ -1,4 +1,4 @@
-# Add a Tool Icon
+# Adding a Tool Icon
 A tool icon serves as a graphical representation of your tool in the user interface (UI). Follow this guidance to add a custom tool icon when developing your own tool package.
 
 Adding a custom tool icon is optional. If you do not provide one, the system uses a default icon.
