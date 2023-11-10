@@ -53,14 +53,14 @@ def subprocess_run_cli_command(cmd, time_limit=3600, is_print_stats=True):
 
 
 @pytest.fixture
-def operation_scope_args(default_subscription_id, default_resource_group, default_workspace):
+def operation_scope_args(subscription_id: str, resource_group_name: str, workspace_name: str):
     return [
         "--subscription",
-        default_subscription_id,
+        subscription_id,
         "--resource-group",
-        default_resource_group,
+        resource_group_name,
         "--workspace-name",
-        default_workspace,
+        workspace_name,
     ]
 
 

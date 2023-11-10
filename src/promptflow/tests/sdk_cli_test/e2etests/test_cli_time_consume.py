@@ -113,7 +113,3 @@ class TestCliTimeConsume:
                 "--format",
                 "docker"
             ), time_limit=10)
-    #
-    # def test_pfazure_run_list(self):
-    #     pass
-    #
