@@ -2,7 +2,12 @@ from promptflow import tool
 from typing import Dict, List
 
 
-def generate_index_json(index_type: str = "", index: str = "", content_field: str = "", embedding_deployment="") -> str:
+def generate_index_json(
+    index_type: str = "",
+    index: str = "",
+    content_field: str = "",
+    embedding_deployment=""
+) -> str:
     """This is a dummy function to generate a index json from inputs.
     """
 
@@ -55,5 +60,11 @@ def list_embedding_deployment(index_type: str) -> List[str]:
 
 
 @tool
-def my_tool(index_json: str, index_type: str, index_assetId: str, content_fields: str, embedding_deployment: str) -> str:
+def my_tool(
+    index_json: str,
+    index_type: str,
+    index_assetId: str,
+    content_fields: str,
+    embedding_deployment: str
+) -> str:
     return f"Hello {index_json}"

@@ -179,7 +179,12 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
             )
 
 
-def retrieve_tool_func_result(func_call_scenario: str, func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
+def retrieve_tool_func_result(
+    func_call_scenario: str,
+    func_path: str,
+    func_input_params_dict: Dict,
+    ws_triple_dict: Dict[str, str] = {}
+):
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters

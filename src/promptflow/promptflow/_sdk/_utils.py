@@ -651,6 +651,7 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     }
     return result_with_log
 
+
 def _gen_dynamic_list(function_config: Dict) -> List:
     """Generate dynamic list for a tool input.
 
