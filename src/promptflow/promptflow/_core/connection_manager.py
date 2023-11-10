@@ -15,6 +15,7 @@ from promptflow._utils.utils import try_import
 from promptflow.connections import _Connection
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
+from promptflow.exceptions import UserErrorException
 
 
 class ConnectionManager:
@@ -44,6 +45,12 @@ class ConnectionManager:
         for key, connection_dict in _dict.items():
             if isinstance(connection_dict, _Connection):
                 # support directly pass connection object to executor
+                scrubbed_secrets = connection_dict._get_scrubbed_secrets()
+                if scrubbed_secrets:
+                    raise UserErrorException(
+                        f"Connection {connection_dict} contains scrubbed secrets with key {scrubbed_secrets.keys()}, "
+                        "please make sure connection has decrypted secrets to use in flow execution. "
+                    )
                 connections[key] = connection_dict
                 continue
             typ = connection_dict.get("type")

@@ -110,3 +110,11 @@ class TestFlowAsFunc:
         with pytest.raises(InvalidFlowError) as e:
             f(key="a")
         assert "Variant variant_2 not found for node print_val" in str(e.value)
+
+    def test_non_scrubbed_connection(self):
+        f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
+        f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={"k": "*****"})}}
+
+        with pytest.raises(UserErrorException) as e:
+            f(text="hello")
+        assert "please make sure connection has decrypted secrets to use in flow execution." in str(e)
