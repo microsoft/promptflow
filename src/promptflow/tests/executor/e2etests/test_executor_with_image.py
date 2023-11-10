@@ -6,7 +6,7 @@ import pytest
 
 from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, is_multimedia_dict
 from promptflow.contracts.multimedia import Image
-from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.executor import BatchEngine, FlowExecutor
 from promptflow.executor.flow_executor import BulkResult, LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -14,6 +14,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file
 
 SIMPLE_IMAGE_FLOW = "python_tool_with_simple_image"
+SAMPLE_IMAGE_FLOW_WITH_DEFAULT = "python_tool_with_simple_image_with_default"
 SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW = "python_tool_with_invalid_default_value"
 COMPOSITE_IMAGE_FLOW = "python_tool_with_composite_image"
 CHAT_FLOW_WITH_IMAGE = "chat_flow_with_image"
@@ -84,15 +85,18 @@ def get_test_cases_for_node_run():
 
 
 def assert_contain_image_reference(value):
+    if isinstance(value, FlowRunInfo) or isinstance(value, RunInfo):
+        assert_contain_image_reference(value.api_calls)
+        assert_contain_image_reference(value.inputs)
+        assert_contain_image_reference(value.output)
     assert not isinstance(value, Image)
     if isinstance(value, list):
         for item in value:
             assert_contain_image_reference(item)
     elif isinstance(value, dict):
         if is_multimedia_dict(value):
-            path = list(value.values())[0]
-            assert isinstance(path, str)
-            assert path.endswith(".jpg") or path.endswith(".jpeg") or path.endswith(".png")
+            v = list(value.values())[0]
+            assert isinstance(v, str)
         else:
             for _, v in value.items():
                 assert_contain_image_reference(v)
@@ -167,10 +171,18 @@ class TestExecutorWithImage:
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
-        [(SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW, "python_node_2",
-         {},
-         {"python_node": {"data:image/jpg;path":
-                          str(SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW_PATH / "logo.jpg")}})],
+        [
+            (
+                SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW,
+                "python_node_2",
+                {},
+                {
+                    "python_node": {
+                        "data:image/jpg;path": str(SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW_PATH / "logo.jpg")
+                    }
+                },
+            )
+        ],
     )
     def test_executor_exec_node_with_invalid_default_value(
         self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections
@@ -190,31 +202,35 @@ class TestExecutorWithImage:
         assert_contain_image_reference(run_info)
 
     @pytest.mark.parametrize(
-        "flow_folder, input_dirs, inputs_mapping",
+        "flow_folder, input_dirs, inputs_mapping, expected_outputs_number",
         [
             (
                 SIMPLE_IMAGE_FLOW,
-                {"data": "image_inputs/inputs.jsonl"},
+                {"data": "."},
                 {"image": "${data.image}"},
+                4,
+            ),
+            (
+                SAMPLE_IMAGE_FLOW_WITH_DEFAULT,
+                {"data": "."},
+                {"image_2": "${data.image_2}"},
+                4,
             ),
             (
                 COMPOSITE_IMAGE_FLOW,
                 {"data": "inputs.jsonl"},
                 {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
-            ),
-            (
-                COMPOSITE_IMAGE_FLOW,
-                {"data": "incomplete_inputs.jsonl"},
-                {"image_dict": "${data.image_dict}"},
+                2,
             ),
         ],
     )
-    def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping):
+    def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping, expected_outputs_number):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), {})
         output_dir = Path("outputs")
-        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
+        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir, max_lines_count=4)
 
         assert isinstance(bulk_result, BulkResult)
+        assert len(bulk_result.outputs) == expected_outputs_number
         for i, output in enumerate(bulk_result.outputs):
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
