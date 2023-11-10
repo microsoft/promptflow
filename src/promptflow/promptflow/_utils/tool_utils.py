@@ -246,6 +246,8 @@ def validate_tool_func_result(func_call_scenario: str, result):
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         if not isinstance(result, Dict):
             raise RetrieveToolFuncResultValidationError(f"ToolFuncCallScenario {func_call_scenario} response must be a dict. {result} is not a dict.")
+    elif func_call_scenario == ToolFuncCallScenario.DYNAMIC_LIST:
+        validate_dynamic_list_func_response_type(result, f"ToolFuncCallScenario {func_call_scenario}")
 
 
 def append_workspace_triple_to_func_input_params(
