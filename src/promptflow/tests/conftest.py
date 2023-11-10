@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE
+from ._constants import CONNECTION_FILE, ENV_FILE
 from _pytest.monkeypatch import MonkeyPatch
 from filelock import FileLock
 from pytest_mock import MockerFixture
@@ -18,6 +18,11 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
+
+
+@pytest.fixture(scope="session", autouse=True)
+def modify_work_directory():
+    os.chdir(Path(__file__).parent.parent.absolute())
 
 
 @pytest.fixture(autouse=True, scope="session")
