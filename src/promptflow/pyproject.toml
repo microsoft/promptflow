@@ -5,7 +5,6 @@ line-length = 120
 markers = [
     "sdk_test",
     "cli_test",
-    "record_replay",
     "unittest",
     "e2etest",
     "flaky",

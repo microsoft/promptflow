@@ -84,6 +84,6 @@ jobs:
         -p promptflow `
         -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
         -l eastus `
-        -m "record_replay" `
+        -m "unittest or e2etest" `
         --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
 

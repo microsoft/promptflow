@@ -24,7 +24,6 @@ DATAS_DIR = "./tests/test_configs/datas"
 )
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
-@pytest.mark.record_replay
 class TestFlowAsFunc:
     def test_flow_as_a_func(self):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")

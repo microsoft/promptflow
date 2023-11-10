@@ -82,7 +82,6 @@ def assert_run_with_invalid_column_mapping(client: PFClient, run: Run, capfd: py
 )
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
-@pytest.mark.record_replay
 class TestFlowRun:
     def test_basic_flow_bulk_run(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -274,6 +273,7 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support strong type in replay")
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
     ):
@@ -826,7 +826,7 @@ class TestFlowRun:
         assert "error" in run_dict
         assert run_dict["error"] == exception
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Skip in replaying mode")
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="System metrics not supported in replaying mode")
     def test_system_metrics_in_properties(self, pf) -> None:
         run = create_run_against_multi_line_data(pf)
         assert FlowRunProperties.SYSTEM_METRICS in run.properties

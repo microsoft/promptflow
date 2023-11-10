@@ -56,7 +56,6 @@ def run_pf_command(*args, cwd=None):
 )
 @pytest.mark.cli_test
 @pytest.mark.e2etest
-@pytest.mark.record_replay
 class TestCli:
     def test_pf_version(self, capfd):
         run_pf_command("--version")

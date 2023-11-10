@@ -26,7 +26,6 @@ _client = PFClient()
 )
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
-@pytest.mark.record_replay
 class TestFlowTest:
     def test_pf_test_flow(self):
         inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
