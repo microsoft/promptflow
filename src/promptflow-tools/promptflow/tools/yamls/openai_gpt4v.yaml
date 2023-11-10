@@ -1,9 +1,8 @@
-promptflow.tools.openai_gpt4v.OpenAI.chat:
+promptflow.tools.openai_gpt4v.chat:
   name: OpenAI GPT-4V
   description: Use OpenAI GPT-4V to leverage vision ability.
   type: custom_llm
   module: promptflow.tools.openai_gpt4v
-  class_name: OpenAI
   function: chat
   default_prompt: |
     # system:
