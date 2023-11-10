@@ -25,3 +25,7 @@ Building
 1. `cd scripts/installer/windows/scripts` and run `pyinstaller promptflow.spec`.
 2. `cd scripts/installer/windows` and Run `msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj`.
 3. The unsigned MSI will be in the `scripts/installer/windows/out` folder.
+
+Notes
+--------
+- If you encounter "Access is denied" error when running promptflow. Please follow the [link](https://learn.microsoft.com/en-us/microsoft-365/security/defender-endpoint/attack-surface-reduction-rules-deployment-implement?view=o365-worldwide#customize-attack-surface-reduction-rules) to add the executable to the Windows Defender Attack Surface Reduction (ASR) rule.
