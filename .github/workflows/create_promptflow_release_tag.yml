@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+
       - name: create branch
         run: |
           set -x -e
@@ -39,3 +40,41 @@ jobs:
 
           git tag promptflow_$release_version
           git push origin --tags
+
+          # write environment variable to `GITHUB_ENV` to pass values between steps
+          # https://docs.github.com/en/github-ae@latest/actions/learn-github-actions/variables#passing-values-between-steps-and-jobs-in-a-workflow
+          echo "release_version=$release_version" >> "$GITHUB_ENV"
+          echo "release_tag=$release_tag" >> "$GITHUB_ENV"
+
+      - name: create asset
+        run: |
+          cd src
+          tar -czvf promptflow-$release_version.tar.gz promptflow
+
+      - name: create release note
+        run: |
+          cp ./scripts/release/promptflow-release-note.md ./src/promptflow/release_note.md
+          sed -i "s/{{VERSION}}/$release_version/g" ./src/promptflow/release_note.md
+          cat ./src/promptflow/release_note.md
+
+      - name: create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.release_tag }}
+          release_name: promptflow ${{ env.release_version }}
+          body_path: ./src/promptflow/release_note.md
+          draft: false
+          prerelease: false
+
+      - name: upload asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./src/promptflow-$release_version.tar.gz
+          asset_name: promptflow-$release_version.tar.gz
+          asset_content_type: application/gzip
