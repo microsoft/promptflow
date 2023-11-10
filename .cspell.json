@@ -28,7 +28,7 @@
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
     "**/setup.py",
-    "scripts/windows/**"
+    "scripts/installer/windows/**"
   ],
   "words": [
     "aoai",
