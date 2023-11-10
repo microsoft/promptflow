@@ -124,3 +124,15 @@ class TestFlowAsFunc:
         with pytest.raises(UserErrorException) as e:
             f(text="hello")
         assert "please make sure connection has decrypted secrets to use in flow execution." in str(e)
+
+    def test_local_connection_object(self, pf, azure_open_ai_connection):
+        f = load_flow(f"{FLOWS_DIR}/web_classification")
+        f.context.connections = {"classify_with_llm": {"connection": azure_open_ai_connection}}
+        f()
+
+        # local connection without secret will lead to error
+        connection = pf.connections.get("azure_open_ai_connection", with_secrets=False)
+        f.context.connections = {"classify_with_llm": {"connection": connection}}
+        with pytest.raises(UserErrorException) as e:
+            f()
+        assert "please make sure connection has decrypted secrets to use in flow execution." in str(e)
