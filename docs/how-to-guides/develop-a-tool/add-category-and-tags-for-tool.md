@@ -1,11 +1,15 @@
-# Add Category and Tags for Tool
-Previously, all tools were listed at the top level. It would be challenging for users to find their desired tool, especially when dozens of tools are installed. To simplify the tool list and help users locate their target tools more easily, we've introduced `category` and `tags` features. The `category` feature helps organize tools into separate folders, while `tags` allow users to search and filter tools with matching tags.
+# Adding Category and Tags for Tool
 
-| name     | type | is_required | description |
-| ---------| -----| ---------- | ----------- |
-| category | str  | false      | A string that groups tools with similar characteristics. |
-| tags     | dict | false      | A dictionary of key-value pairs to describe the different perspectives of the tool. |
-> [!Note] If a tool isn't assigned a category, it will be displayed in the root folder. Similarly, if no tags are assigned, the tags field will remain empty.
+This document is dedicated to guiding you through the process of categorizing and tagging your tools for optimal organization and efficiency. Categories helps you organize your tools into specific folders, making it much easier to find what you need. Tags, on the other hand, work like labels that offer more detailed descriptions. They enable you to quickly search and filter tools based on specific characteristics or functions. By using categories and tags, you'll not only tailor your tool library to your preferences but also save time by effortlessly finding the right tool for any task.
+
+| Attribute | Type | Required | Description |
+| --------- | ---- | -------- | ----------- |
+| category  | str  | No       | Organizes tools into folders by common features. |
+| tags      | dict | No       | Offers detailed, searchable descriptions of tools through key-value pairs. |
+
+**Important Notes:**
+- Tools without an assigned category will be listed in the root folder.
+- Tools lacking tags will display an empty tags field.
 
 ## Prerequisites
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.0 or later.
