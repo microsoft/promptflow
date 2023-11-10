@@ -4,7 +4,6 @@ import re
 import sys
 import time
 
-from enum import Enum
 from jinja2 import Template
 from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout, APIConnectionError
 from promptflow.contracts.multimedia import Image
@@ -164,11 +163,12 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping[str, Image]):
         if chunk.strip() in hash2images:
             image_message = {}
             image_message["type"] = "image_url"
-            image_bs64 = hash2images[chunk.strip()].to_base64()
-            image_mine_type = hash2images[chunk.strip()]._mime_type
-            image_message["image_url"] = {
-                "url": f"data:{image_mine_type};base64,{image_bs64}"
-            }
+            image_url = hash2images[chunk.strip()].source_url
+            if not image_url:
+                image_bs64 = hash2images[chunk.strip()].to_base64()
+                image_mine_type = hash2images[chunk.strip()]._mime_type
+                image_url = {"url": f"data:{image_mine_type};base64,{image_bs64}"}
+            image_message["image_url"] = image_url
             result.append(image_message)
             include_image = True
         elif chunk.strip() == "":
