@@ -35,6 +35,8 @@ from promptflow._sdk._utils import (
 )
 from promptflow._utils.load_data import load_data
 
+from ..recording_utilities import RecordStorage
+
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
 
@@ -158,6 +160,7 @@ class TestUtils:
             result = _generate_connections_dir()
             assert result == expected_result
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="No connection in replay mode")
     def test_refresh_connections_dir(self):
         from promptflow._core.tools_manager import collect_package_tools_and_connections
 

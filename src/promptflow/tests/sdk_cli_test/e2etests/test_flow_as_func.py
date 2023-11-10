@@ -7,20 +7,25 @@ from types import GeneratorType
 import pytest
 
 from promptflow import load_flow
-from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection
+from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
+from promptflow._sdk.entities import CustomConnection
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
+
+from ..recording_utilities import RecordStorage
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowAsFunc:
-    def test_flow_as_a_func(self, azure_open_ai_connection: AzureOpenAIConnection):
+    def test_flow_as_a_func(self):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
         result = f(key="unknown")
         assert result["output"] is None
@@ -35,6 +40,7 @@ class TestFlowAsFunc:
             f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
         assert "Connection 'not_exist' is not found" in str(e.value)
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="TODO: support customized python tool in future")
     def test_flow_as_a_func_with_connection_obj(self):
         f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
         f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}}
@@ -76,6 +82,7 @@ class TestFlowAsFunc:
             f()
         assert "Required input(s) ['text'] are missing" in str(e.value)
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Stream not supported in replaying mode.")
     def test_stream_output(self):
         f = load_flow(f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output")
         f.context.streaming = True
@@ -93,11 +100,19 @@ class TestFlowAsFunc:
         result = f(key="key")
         assert result["output"] == "value"
 
-    def test_flow_as_a_func_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection):
-        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+    def test_flow_as_a_func_with_variant(self):
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input_with_variant").absolute()
         f = load_flow(
             flow_path,
         )
-        f.context.variant = "${summarize_text_content.variant_0}"
+        f.context.variant = "${print_val.variant1}"
+        # variant1 will use a mock_custom_connection
+        with pytest.raises(ConnectionNotFoundError) as e:
+            f(key="a")
+        assert "Connection 'mock_custom_connection' is not found." in str(e.value)
 
-        f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
+        # non-exist variant
+        f.context.variant = "${print_val.variant_2}"
+        with pytest.raises(InvalidFlowError) as e:
+            f(key="a")
+        assert "Variant variant_2 not found for node print_val" in str(e.value)

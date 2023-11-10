@@ -428,6 +428,7 @@ def list_runs(
     runs = pf.runs.list(max_results=max_results, list_view_type=list_view_type)
     run_list = [run._to_dict() for run in runs]
     _output_result_list_with_format(result_list=run_list, output_format=output)
+    return runs
 
 
 @exception_handler("Show run")

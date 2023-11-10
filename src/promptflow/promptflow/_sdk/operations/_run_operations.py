@@ -10,8 +10,6 @@ import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
-import pandas as pd
-
 from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
@@ -22,7 +20,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
-from promptflow._sdk._utils import incremental_print, safe_parse_object_list
+from promptflow._sdk._utils import incremental_print, print_red_error, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -140,7 +138,10 @@ class RunOperations(TelemetryMixin):
             available_logs = local_storage.logger.get_logs()
             incremental_print(available_logs, printed, file_handler)
             self._print_run_summary(run)
-            # won't print error here, put it in run dict
+            # print error message when run is failed
+            if run.status == RunStatus.FAILED:
+                error_message = local_storage.load_exception()["message"]
+                print_red_error(error_message)
         except KeyboardInterrupt:
             error_message = "The output streaming for the run was interrupted, but the run is still executing."
             print(error_message)
@@ -199,7 +200,7 @@ class RunOperations(TelemetryMixin):
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
-    ) -> pd.DataFrame:
+    ) -> "DataFrame":
         """Get the details from the run.
 
         .. note::
@@ -216,6 +217,8 @@ class RunOperations(TelemetryMixin):
         :return: The details data frame.
         :rtype: pandas.DataFrame
         """
+        from pandas import DataFrame
+
         # if all_results is True, set max_results to sys.maxsize
         if all_results:
             max_results = sys.maxsize
@@ -239,7 +242,7 @@ class RunOperations(TelemetryMixin):
             new_k = f"outputs.{k}"
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
-        df = pd.DataFrame(data).head(max_results).reindex(columns=columns)
+        df = DataFrame(data).head(max_results).reindex(columns=columns)
         return df
 
     @monitor_operation(activity_name="pf.runs.get_metrics", activity_type=ActivityType.PUBLICAPI)

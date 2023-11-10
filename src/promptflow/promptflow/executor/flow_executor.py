@@ -293,11 +293,14 @@ class FlowExecutor:
                 node_name=node_name,
                 flow_file=flow_file,
             )
-
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
-        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value)
+        # Only load the node's referenced flow inputs
+        node_referenced_flow_inputs = FlowExecutor._get_node_referenced_flow_inputs(node, flow.inputs)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(
+            node_referenced_flow_inputs, flow_inputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
+            flow, node, inputs_with_default_value)
+        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -306,7 +309,7 @@ class FlowExecutor:
 
         resolved_inputs = {}
         for k, v in resolved_node.node.inputs.items():
-            value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, converted_flow_inputs_for_node)
+            value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, inputs)
             resolved_inputs[k] = value
             if resolved_node.node.aggregation:
                 # For aggregation node, we need to convert value to list.
@@ -790,6 +793,17 @@ class FlowExecutor:
             if key not in updated_inputs and (value and value.default):
                 updated_inputs[key] = value.default
         return updated_inputs
+
+    @staticmethod
+    def _get_node_referenced_flow_inputs(
+            node, flow_inputs: Dict[str, FlowInputDefinition]) -> Dict[str, FlowInputDefinition]:
+        node_referenced_flow_inputs = {}
+        for _, value in node.inputs.items():
+            # Only add flow input to node_referenced_flow_inputs when it is exist and referenced by node.
+            # If flow input is not exist, we will raise exception in FlowValidator.convert_flow_inputs_for_node.
+            if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
+                node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
+        return node_referenced_flow_inputs
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.

@@ -14,5 +14,6 @@ nodes:
     path: ./my_prompt.jinja2
   inputs:
     connection: azure_open_ai_connection
+    connection_2: azure_open_ai_connection
     api: completion
     text: ${inputs.text}

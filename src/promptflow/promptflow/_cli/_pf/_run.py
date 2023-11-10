@@ -449,7 +449,7 @@ def list_runs(
     archived_only: bool,
     include_archived: bool,
     output,
-) -> None:
+):
     pf_client = PFClient()
     # aligned behaviour with v2 SDK, all_results will overwrite max_results
     if all_results:
@@ -460,6 +460,7 @@ def list_runs(
     )
     json_list = [run._to_dict() for run in runs]
     _output_result_list_with_format(result_list=json_list, output_format=output)
+    return runs
 
 
 @exception_handler("Show run")

@@ -14,7 +14,6 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
 from typing import Any, Dict, List, Optional, Union
 
-import pandas as pd
 import requests
 import yaml
 from azure.ai.ml._scope_dependent_operations import (
@@ -26,7 +25,6 @@ from azure.ai.ml._scope_dependent_operations import (
 from azure.ai.ml.constants._common import AzureMLResourceType
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
-from pandas import DataFrame
 
 from promptflow._sdk._constants import (
     LINE_NUMBER,
@@ -322,7 +320,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     @monitor_operation(activity_name="pfazure.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False, **kwargs
-    ) -> DataFrame:
+    ) -> "DataFrame":
         """Get the details from the run.
 
         .. note::
@@ -339,6 +337,8 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         :return: The details data frame.
         :rtype: pandas.DataFrame
         """
+        from pandas import DataFrame
+
         # if all_results is True, set max_results to sys.maxsize
         if all_results:
             max_results = sys.maxsize
@@ -382,7 +382,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             new_k = f"outputs.{k}"
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
-        df = pd.DataFrame(data).reindex(columns=columns)
+        df = DataFrame(data).reindex(columns=columns)
         if f"outputs.{LINE_NUMBER}" in columns:
             df = df.set_index(f"outputs.{LINE_NUMBER}")
         return df
