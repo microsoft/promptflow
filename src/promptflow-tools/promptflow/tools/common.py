@@ -27,12 +27,12 @@ class ChatInputList(list):
         return "\n".join(map(str, self))
 
 
-def validate_role(role: str, valid_roles: Set[str] = None):
+def validate_role(role: str, valid_roles: List[str] = None):
     if not valid_roles:
-        valid_roles = {"system", "user", "assistant", "function"}
+        valid_roles = ["assistant", "function", "user", "system"]
 
     if role not in valid_roles:
-        valid_roles_str = ','.join(sorted([f'\'{role}:\\n\''for role in valid_roles]))
+        valid_roles_str = ','.join([f'\'{role}:\\n\''for role in valid_roles])
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
             f"lines as role delimiters: {valid_roles_str}. Current parsed role '{role}'"
@@ -106,6 +106,9 @@ def try_parse_name_and_content(role_prompt):
 
 
 def parse_chat(chat_str, images: List[Image] = None, valid_roles: Set[str] = None):
+    if not valid_roles:
+        valid_roles = ["system", "user", "assistant", "function"]
+
     # openai chat api only supports below roles.
     # customer can add single # in front of role name for markdown highlight.
     # and we still support role name without # prefix for backward compatibility.
@@ -147,7 +150,7 @@ def parse_chat(chat_str, images: List[Image] = None, valid_roles: Set[str] = Non
             # Check if prompt follows chat api message format and has valid role.
             # References: https://platform.openai.com/docs/api-reference/chat/create.
             role = chunk.strip().lower()
-            validate_role(role, valid_roles)
+            validate_role(role, valid_roles=valid_roles)
             new_message = {"role": role}
             chat_list.append(new_message)
     return chat_list
