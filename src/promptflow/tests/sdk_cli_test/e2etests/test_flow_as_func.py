@@ -40,6 +40,7 @@ class TestFlowAsFunc:
             f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
         assert "Connection 'not_exist' is not found" in str(e.value)
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="TODO: support customized python tool in future")
     def test_flow_as_a_func_with_connection_obj(self):
         f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
         f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}}

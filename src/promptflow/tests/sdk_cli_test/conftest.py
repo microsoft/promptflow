@@ -14,7 +14,7 @@ from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
 from promptflow._utils.utils import environment_variable_overwrite
 
-from .recording_utilities import ENVIRON_TEST_MODE, RecordMode, RecordStorage
+from .recording_utilities import RecordStorage
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -201,17 +201,3 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
     original_fun = FlowExecutionContext.invoke_tool
     mocker.patch("promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun))
     yield
-
-
-@pytest.fixture
-def recording_enabled(mocker: MockerFixture):
-    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.RECORD})
-    yield
-    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.LIVE})
-
-
-@pytest.fixture
-def replaying_enabledc(mocker: MockerFixture):
-    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.REPLAY})
-    yield
-    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.LIVE})

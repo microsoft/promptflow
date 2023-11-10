@@ -6,6 +6,11 @@ import pytest
 
 from promptflow._core.operation_context import OperationContext
 
+from ..recording_utilities import RecordStorage
+
+if RecordStorage.is_replaying_mode():
+    pytest.skip(reason="Doesn't support serve in replay mode")
+
 
 @pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
 @pytest.mark.e2etest
@@ -83,9 +88,9 @@ def test_chat_swagger(serving_client_llm_chat):
                                     "properties": {
                                         "chat_history": {
                                             "type": "array",
-                                            "items": {"type": "object", "additionalProperties": {}}
+                                            "items": {"type": "object", "additionalProperties": {}},
                                         },
-                                        "question": {"type": "string", "default": "What is ChatGPT?"}
+                                        "question": {"type": "string", "default": "What is ChatGPT?"},
                                     },
                                     "required": ["chat_history", "question"],
                                     "type": "object",
