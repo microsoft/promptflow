@@ -223,3 +223,12 @@ def environment_variable_overwrite(key, val):
             os.environ[key] = backup_value
         else:
             os.environ.pop(key)
+
+
+def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path]) -> Path:
+    """Resolve directory to absolute path with base_dir as root"""
+    path = sub_dir if isinstance(sub_dir, Path) else Path(sub_dir)
+    if not path.is_absolute():
+        base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
+        path = base_dir / sub_dir
+    return path
