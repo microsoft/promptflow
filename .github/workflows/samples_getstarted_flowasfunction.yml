@@ -43,7 +43,7 @@ jobs:
       - name: Test Notebook
         working-directory: examples/tutorials/get-started
         run: |
-          papermill -k python flow-as-function.ipynb flow-as-function.output.ipynb -p api_key secrets.AOAI_API_KEY_TEST -p api_base secrets.AOAI_API_ENDPOINT_TEST -p api_verson 2023-07-01-preview
+          papermill -k python flow-as-function.ipynb flow-as-function.output.ipynb -p api_key secrets.AOAI_API_KEY_TEST -p api_base secrets.AOAI_API_ENDPOINT_TEST -p api_version 2023-07-01-preview
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3

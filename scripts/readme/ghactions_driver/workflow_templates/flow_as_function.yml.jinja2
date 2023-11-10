@@ -26,7 +26,7 @@ steps:
   - name: Test Notebook
     working-directory: {{ gh_working_dir }}
     run: |
-      papermill -k python {{ name }}.ipynb {{ name }}.output.ipynb -p api_key secrets.AOAI_API_KEY_TEST -p api_base secrets.AOAI_API_ENDPOINT_TEST -p api_verson 2023-07-01-preview
+      papermill -k python {{ name }}.ipynb {{ name }}.output.ipynb -p api_key secrets.AOAI_API_KEY_TEST -p api_base secrets.AOAI_API_ENDPOINT_TEST -p api_version 2023-07-01-preview
   - name: Upload artifact
     if: ${{ '{{' }} always() }}
     uses: actions/upload-artifact@v3
