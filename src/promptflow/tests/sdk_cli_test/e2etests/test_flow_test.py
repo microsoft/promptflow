@@ -37,6 +37,7 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support strong type in replay")
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
