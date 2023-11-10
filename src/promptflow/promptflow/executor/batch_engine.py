@@ -85,8 +85,7 @@ class BatchEngine:
             bulk_logger.warning(
                 (
                     "The data provided exceeds the maximum lines limit. Currently, only the first "
-                    f"{self._max_lines_count} lines are processed. We are actively working to "
-                    "support larger datasets in the near future. Please stay tuned for updates."
+                    f"{self._max_lines_count} lines are processed."
                 )
             )
             return result[: self._max_lines_count]
