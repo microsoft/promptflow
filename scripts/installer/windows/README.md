@@ -11,7 +11,7 @@ Prerequisites
     https://www.microsoft.com/download/details.aspx?id=48159
 3. You need to have curl.exe, unzip.exe and msbuild.exe available under PATH.
 4. Install 'WIX Toolset build tools' following the instructions below.
-   - Enter the directory where the README is located (`cd scripts/windows`), `mkdir wix` and `cd wix`.
+   - Enter the directory where the README is located (`cd scripts/installer/windows`), `mkdir wix` and `cd wix`.
    - `curl --output wix-archive.zip  https://azurecliprod.blob.core.windows.net/msi/wix310-binaries-mirror.zip`
    - `unzip wix-archive.zip` and `del wix-archive.zip`
 5. We recommend creating a clean virtual Python environment and installing all dependencies using src/promptflow/setup.py.
@@ -22,6 +22,6 @@ Prerequisites
 
 Building
 --------
-1. `cd scripts/windows/scripts` and run `pyinstaller promptflow.spec`.
-2. `cd scripts/windows` and Run `msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj`.
-3. The unsigned MSI will be in the `scripts/windows/out` folder.
+1. `cd scripts/installer/windows/scripts` and run `pyinstaller promptflow.spec`.
+2. `cd scripts/installer/windows` and Run `msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj`.
+3. The unsigned MSI will be in the `scripts/installer/windows/out` folder.
