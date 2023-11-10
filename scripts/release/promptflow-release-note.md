@@ -1,6 +1,6 @@
 # promptflow-{{VERSION}}
 
-We are pleased to annouce the release of promptflow {{VERSION}}.
+We are pleased to announce the release of promptflow {{VERSION}}.
 
 This release includes some new features, bug fixes, and improvements. We recommend that all users upgrade to this version.
 
