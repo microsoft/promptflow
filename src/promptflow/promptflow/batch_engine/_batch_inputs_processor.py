@@ -15,7 +15,7 @@ from promptflow.executor._errors import InputMappingError
 from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 
 
-class BatchInputProcessor:
+class BatchInputsProcessor:
     def __init__(
         self,
         working_dir: Path,
@@ -151,7 +151,7 @@ class BatchInputProcessor:
                 )
             )
 
-        result = [BatchInputProcessor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
+        result = [BatchInputsProcessor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
         return result
 
     def _merge_input_dicts_by_line(

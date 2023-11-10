@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute
-from promptflow.batch_engine._batch_input_processor import BatchInputProcessor
+from promptflow.batch_engine._batch_inputs_processor import BatchInputsProcessor
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
 
@@ -49,7 +49,7 @@ class BatchEngine:
         :rtype: ~promptflow.executor._result.BulkResult
         """
         # resolve input data from input dirs and apply inputs mapping
-        batch_input_processor = BatchInputProcessor(
+        batch_input_processor = BatchInputsProcessor(
             self.flow_executor._working_dir, self.flow_executor._flow.inputs, max_lines_count
         )
         batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
