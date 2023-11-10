@@ -85,7 +85,7 @@ def _create_image_from_url(url: str, mime_type: str = None):
             mime_type = magic.from_buffer(response.content, mime=True)
             if not mime_type.startswith("image/"):
                 mime_type = "image/*"
-        return Image(response.content, mime_type=mime_type)
+        return Image(response.content, mime_type=mime_type, source_url=url)
     else:
         raise InvalidImageInput(
             message_format=f"Error while fetching image from URL: {url}. "
