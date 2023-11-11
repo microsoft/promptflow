@@ -5,10 +5,7 @@
 import argparse
 import functools
 import json
-import logging
 from typing import Dict, List, Optional
-
-import pandas as pd
 
 from promptflow._cli._params import (
     add_param_all_results,
@@ -25,14 +22,9 @@ from promptflow._cli._utils import (
     activate_action,
     exception_handler,
     pretty_print_dataframe_as_table,
+    pretty_print_run_list,
 )
-from promptflow._sdk._constants import (
-    LOGGER_NAME,
-    MAX_LIST_CLI_RESULTS,
-    MAX_SHOW_DETAILS_RESULTS,
-    CLIListOutputFormat,
-    ListViewType,
-)
+from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, MAX_SHOW_DETAILS_RESULTS, CLIListOutputFormat, ListViewType
 from promptflow._sdk._errors import InvalidRunStatusError
 from promptflow._sdk._utils import print_red_error
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
@@ -460,19 +452,7 @@ def list_runs(
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
     runs = pf.runs.list(max_results=max_results, list_view_type=list_view_type)
     run_list = [run._to_dict() for run in runs]
-    if output == CLIListOutputFormat.TABLE:
-        df = pd.DataFrame(run_list)
-        df.fillna("", inplace=True)
-        pretty_print_dataframe_as_table(df)
-    elif output == CLIListOutputFormat.JSON:
-        print(json.dumps(run_list, indent=4))
-    else:
-        logger = logging.getLogger(LOGGER_NAME)
-        warning_message = (
-            f"Unknown output format {output!r}, accepted values are 'json' and 'table';" "will print using 'json'."
-        )
-        logger.warning(warning_message)
-        print(json.dumps(run_list, indent=4))
+    pretty_print_run_list(run_list=run_list, output=output)
     return runs
 
 

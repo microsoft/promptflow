@@ -4,10 +4,7 @@
 
 import argparse
 import json
-import logging
 from typing import Callable, Dict, List, Optional, Tuple
-
-import pandas as pd
 
 from promptflow._cli._params import (
     add_param_all_results,
@@ -26,8 +23,9 @@ from promptflow._cli._utils import (
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
     pretty_print_dataframe_as_table,
+    pretty_print_run_list,
 )
-from promptflow._sdk._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, CLIListOutputFormat, get_list_view_type
+from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, CLIListOutputFormat, get_list_view_type
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
@@ -481,19 +479,8 @@ def list_runs(
         list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
     json_list = [run._to_dict() for run in runs]
-    if output == CLIListOutputFormat.TABLE:
-        df = pd.DataFrame(json_list)
-        df.fillna("", inplace=True)
-        pretty_print_dataframe_as_table(df)
-    elif output == CLIListOutputFormat.JSON:
-        print(json.dumps(json_list, indent=4))
-    else:
-        logger = logging.getLogger(LOGGER_NAME)
-        warning_message = (
-            f"Unknown output format {output!r}, accepted values are 'json' and 'table';" "will print using 'json'."
-        )
-        logger.warning(warning_message)
-        print(json.dumps(json_list, indent=4))
+    pretty_print_run_list(run_list=json_list, output=output)
+    return runs
 
 
 @exception_handler("Show run")
