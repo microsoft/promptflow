@@ -3,7 +3,7 @@ import openai
 from promptflow.contracts.types import PromptTemplate
 from promptflow._internal import tool
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
-    parse_chat, to_bool, post_process_chat_api_response, preprocess_template_string, \
+    parse_chat, post_process_chat_api_response, preprocess_template_string, \
     find_referenced_image_set, convert_to_chat_list
 
 
@@ -34,8 +34,6 @@ def chat(
     chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **converted_kwargs)
     messages = parse_chat(chat_str, list(referenced_images))
 
-    # TODO: remove below type conversion after client can pass json rather than string.
-    stream = to_bool(stream)
     params = {
         "model": model,
         "messages": messages,
