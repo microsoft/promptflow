@@ -39,18 +39,18 @@ def chat(
     params = {
         "model": model,
         "messages": messages,
-        "temperature": float(temperature),
-        "top_p": float(top_p),
-        "n": int(n),
+        "temperature": temperature,
+        "top_p": top_p,
+        "n": n,
         "stream": stream,
-        "presence_penalty": float(presence_penalty),
-        "frequency_penalty": float(frequency_penalty),
+        "presence_penalty": presence_penalty,
+        "frequency_penalty": frequency_penalty,
     }
 
     if stop:
         params["stop"] = stop
-    if max_tokens and str(max_tokens).lower() != "inf":
-        params["max_tokens"] = int(max_tokens)
+    if max_tokens:
+        params["max_tokens"] = max_tokens
 
     completion = openai.ChatCompletion.create(**{**_connection_dict, **params})
     return post_process_chat_api_response(completion, stream, None)
