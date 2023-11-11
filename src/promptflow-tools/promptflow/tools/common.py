@@ -310,7 +310,7 @@ def post_process_chat_api_response(completion, stream, functions):
 
 def preprocess_template_string(template_string: str) -> str:
     """Remove the image input decorator from the template string and place the image input in a new line."""
-    pattern = re.compile(r'\!\[(\s*image\s*)\]\(\{\{(\s*[\S^{}]+\s*)\}\}\)')
+    pattern = re.compile(r'\!\[(\s*image\s*)\]\(\{\{(\s*[^\s{}]+\s*)\}\}\)')
 
     # Find all matches in the input string
     matches = pattern.findall(template_string)

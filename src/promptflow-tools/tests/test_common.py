@@ -2,7 +2,7 @@ import pytest
 
 from promptflow.contracts.multimedia import Image
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, \
-    process_function_call, parse_chat, find_referenced_image_set
+    process_function_call, parse_chat, find_referenced_image_set, preprocess_template_string
 
 
 class TestCommon:
@@ -118,3 +118,16 @@ class TestCommon:
     def test_find_referenced_image_set(self, kwargs, expected_result):
         actual_result = find_referenced_image_set(kwargs)
         assert actual_result == expected_result
+
+    @pytest.mark.parametrize(
+        "input_string, expected_output",
+        [
+            ("![image]({{img1}})", "\n{{img1}}\n"),
+            ("![image]({{img1}})![image]({{img2}})", "\n{{img1}}\n\n{{img2}}\n"),
+            ("No image here", "No image here"),
+            ("![image]({{img1}}) Some text ![image]({{img2}})", "\n{{img1}}\n Some text \n{{img2}}\n"),
+        ],
+    )
+    def test_preprocess_template_string(self, input_string, expected_output):
+        actual_result = preprocess_template_string(input_string)
+        assert actual_result == expected_output
