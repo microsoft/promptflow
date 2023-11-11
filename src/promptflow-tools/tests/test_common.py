@@ -2,7 +2,7 @@ import pytest
 
 from promptflow.contracts.multimedia import Image
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, \
-    process_function_call, parse_chat
+    process_function_call, parse_chat, find_referenced_image_set
 
 
 class TestCommon:
@@ -95,4 +95,26 @@ class TestCommon:
     )
     def test_parse_chat_with_name_in_role_prompt(self, chat_str, expected_result):
         actual_result = parse_chat(chat_str)
+        assert actual_result == expected_result
+
+    @pytest.mark.parametrize(
+        "kwargs, expected_result",
+        [
+            ({}, set()),
+            ({"image_1": Image("image1".encode()), "image_2": Image("image2".encode()), "t1": "text"}, {
+                Image("image1".encode()), Image("image2".encode())
+            }),
+            ({"images": [Image("image1".encode()), Image("image2".encode())]}, {
+                Image("image1".encode()), Image("image2".encode())
+            }),
+            ({"image_1": Image("image1".encode()), "image_2": Image("image1".encode())}, {
+                Image("image1".encode())
+            }),
+            ({"images": {"image_1": Image("image1".encode()), "image_2": Image("image2".encode())}}, {
+                Image("image1".encode()), Image("image2".encode())
+            })
+        ]
+    )
+    def test_find_referenced_image_set(self, kwargs, expected_result):
+        actual_result = find_referenced_image_set(kwargs)
         assert actual_result == expected_result
