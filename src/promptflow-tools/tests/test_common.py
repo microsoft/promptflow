@@ -1,8 +1,8 @@
 import pytest
 
 from promptflow.contracts.multimedia import Image
-from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, \
-    process_function_call, parse_chat, find_referenced_image_set, preprocess_template_string
+from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
+    parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList
 
 
 class TestCommon:
@@ -130,4 +130,19 @@ class TestCommon:
     )
     def test_preprocess_template_string(self, input_string, expected_output):
         actual_result = preprocess_template_string(input_string)
+        assert actual_result == expected_output
+
+    @pytest.mark.parametrize(
+        "input_data, expected_output",
+        [
+            ({}, {}),
+            ({"key": "value"}, {"key": "value"}),
+            (["item1", "item2"], ChatInputList(["item1", "item2"])),
+            ({"key": ["item1", "item2"]}, {"key": ChatInputList(["item1", "item2"])}),
+            (["item1", ["nested_item1", "nested_item2"]],
+             ChatInputList(["item1", ChatInputList(["nested_item1", "nested_item2"])])),
+        ],
+    )
+    def test_convert_to_chat_list(self, input_data, expected_output):
+        actual_result = convert_to_chat_list(input_data)
         assert actual_result == expected_output
