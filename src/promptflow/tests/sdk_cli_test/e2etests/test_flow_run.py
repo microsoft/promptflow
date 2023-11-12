@@ -20,6 +20,8 @@ from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 
+from ..recording_utilities import RecordStorage
+
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -75,7 +77,9 @@ def assert_run_with_invalid_column_mapping(client: PFClient, run: Run, capfd: py
     assert exception["code"] == "BulkRunException"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowRun:
@@ -269,6 +273,7 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support strong type in replay")
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
     ):
@@ -821,6 +826,7 @@ class TestFlowRun:
         assert "error" in run_dict
         assert run_dict["error"] == exception
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="System metrics not supported in replaying mode")
     def test_system_metrics_in_properties(self, pf) -> None:
         run = create_run_against_multi_line_data(pf)
         assert FlowRunProperties.SYSTEM_METRICS in run.properties

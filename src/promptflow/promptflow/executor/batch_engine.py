@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.load_data import load_data
+from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.executor._result import BulkResult
@@ -50,7 +51,8 @@ class BatchEngine:
         :rtype: ~promptflow.executor._result.BulkResult
         """
         # resolve input data from input dirs and apply inputs mapping
-        input_dicts = self._resolve_data(input_dirs, max_lines_count)
+        self._max_lines_count = max_lines_count
+        input_dicts = self._resolve_data(input_dirs)
         mapped_inputs = self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
         # run flow in batch mode
         output_dir = self._resolve_dir(output_dir)
@@ -60,15 +62,15 @@ class BatchEngine:
         self._persist_outputs(batch_result.outputs, output_dir)
         return batch_result
 
-    def _resolve_data(self, input_dirs: Dict[str, str], max_lines_count: int = None):
+    def _resolve_data(self, input_dirs: Dict[str, str]):
         """Resolve input data from input dirs"""
         result = {}
         for input_key, input_dir in input_dirs.items():
             input_dir = self._resolve_dir(input_dir)
-            result[input_key] = self._resolve_data_from_input_path(input_dir, max_lines_count)
+            result[input_key] = self._resolve_data_from_input_path(input_dir)
         return result
 
-    def _resolve_data_from_input_path(self, input_path: Path, max_lines_count: int = None):
+    def _resolve_data_from_input_path(self, input_path: Path):
         """Resolve input data from directory"""
         result = []
         if input_path.is_file():
@@ -77,9 +79,17 @@ class BatchEngine:
             for input_file in input_path.rglob("*"):
                 if input_file.is_file():
                     result.extend(resolve_multimedia_data_recursively(input_file.parent, load_data(input_file)))
-                    if max_lines_count and len(result) >= max_lines_count:
+                    if self._max_lines_count and len(result) >= self._max_lines_count:
                         break
-        return result[:max_lines_count] if max_lines_count and len(result) > max_lines_count else result
+        if self._max_lines_count and len(result) > self._max_lines_count:
+            bulk_logger.warning(
+                (
+                    "The data provided exceeds the maximum lines limit. Currently, only the first "
+                    f"{self._max_lines_count} lines are processed."
+                )
+            )
+            return result[: self._max_lines_count]
+        return result
 
     def _resolve_dir(self, dir: Union[str, Path]) -> Path:
         """Resolve input dir to absolute path"""

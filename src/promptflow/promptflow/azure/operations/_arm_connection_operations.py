@@ -220,8 +220,8 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         except AccessDeniedError:
             auth_error_message = (
                 "Access denied to list workspace secret due to invalid authentication. "
-                "Please ensure you have gain RBAC role 'AzureML Data Scientist' for current workspace, "
-                "and wait for a few minutes to make sure the new role takes effect. "
+                "Please ensure you have gain RBAC role 'Azure Machine Learning Workspace Connection Secrets Reader' "
+                "for current workspace, and wait for a few minutes to make sure the new role takes effect. "
             )
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         try:
