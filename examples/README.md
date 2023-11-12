@@ -72,11 +72,7 @@
 | path | status | description |
 ------|--------|-------------
 | [basic-chat](flows/chat/basic-chat/README.md) | [![samples_flows_chat_basic_chat](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_basic_chat.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_basic_chat.yml) |  This example shows how to create a basic chat flow |
-<<<<<<< HEAD
-| [chat-math-variant](flows/chat/chat-math-variant/README.md) | [![samples_flows_chat_chat_math_variant](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_math_variant.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_math_variant.yml) |  Chat flow is designed for conversational application development, building upon the capabilities of standard flow and providing enhanced support for chat inputs/outputs and chat history management |
-=======
 | [chat-math-variant](flows/chat/chat-math-variant/README.md) | [![samples_flows_chat_chat_math_variant](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_math_variant.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_math_variant.yml) |  This is a prompt tuning case with 3 prompt variants for math question answering |
->>>>>>> 48132db3dd247817428a3e032d8c3c9030c58e08
 | [chat-with-pdf](flows/chat/chat-with-pdf/README.md) | [![samples_flows_chat_chat_with_pdf](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_with_pdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_with_pdf.yml) |  This is a simple flow that allow you to ask questions about the content of a PDF file and get answers |
 | [chat-with-wikipedia](flows/chat/chat-with-wikipedia/README.md) | [![samples_flows_chat_chat_with_wikipedia](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_with_wikipedia.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_with_wikipedia.yml) |  This flow demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message |
 

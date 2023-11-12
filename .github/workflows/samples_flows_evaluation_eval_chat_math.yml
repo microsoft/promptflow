@@ -12,6 +12,9 @@ on:
     paths: [ examples/flows/evaluation/eval-chat-math/**, examples/*requirements.txt, .github/workflows/samples_flows_evaluation_eval_chat_math.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_readme_ci:
     runs-on: ubuntu-latest
