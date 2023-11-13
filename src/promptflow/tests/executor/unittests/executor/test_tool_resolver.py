@@ -422,7 +422,7 @@ class TestToolResolver:
             provider="mock",
         )
         resolved_tool = ResolvedTool(node=node, callable=mock_package_func, definition=tool, init_args=None)
-        resolved_tool = tool_resolver._integrate_prompt_in_package_node(node, resolved_tool)
+        resolved_tool = tool_resolver._integrate_prompt_in_package_node(resolved_tool)
         kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 

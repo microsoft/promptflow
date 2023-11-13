@@ -10,6 +10,8 @@ import time
 import uuid
 from functools import wraps
 
+import pydash
+
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
@@ -531,7 +533,14 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 logger.debug(f"Waiting for session {action}, current status: {status}")
 
         if status == "Succeeded":
-            logger.info(f"Session {action} finished with status {status}.")
+            error_msg = pydash.get(response, "error.message", None)
+            if error_msg:
+                logger.warning(
+                    f"Session {action} finished with status {status}. "
+                    f"But there are warnings when installing the packages: {error_msg}."
+                )
+            else:
+                logger.info(f"Session {action} finished with status {status}.")
         else:
             # refine response error message
             try:
