@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
+from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -31,15 +32,6 @@ class AbstractExecutorProxy:
         """Execute a line"""
         raise NotImplementedError()
 
-    def exec_batch(
-        self,
-        batch_inputs: List[Mapping[str, Any]],
-        output_dir: Path,
-        run_id: Optional[str] = None,
-    ) -> List[LineResult]:
-        """Execute a batch run"""
-        raise NotImplementedError()
-
     def exec_aggregation(
         self,
         batch_inputs: List[dict],
@@ -53,3 +45,16 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
     @property
     def api_endpoint(self) -> str:
         raise NotImplementedError()
+
+    def exec_line(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+    ) -> LineResult:
+        import requests
+
+        payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
+        resp = requests.post(self.api_endpoint, json=payload, timeout=LINE_TIMEOUT_SEC)
+        # TODO: Implement LineResult deserialization
+        return LineResult.deserialize(resp.json())

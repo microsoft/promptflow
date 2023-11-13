@@ -11,7 +11,7 @@ from promptflow.batch.base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch.python_executor_proxy import PythonExecutorProxy
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
-from promptflow.executor._result import BulkResult
+from promptflow.executor._result import BulkResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
@@ -44,6 +44,7 @@ class BatchEngine:
             self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
                 flow_file, working_dir, connections=connections, storage=storage
             )
+        self._storage = storage
 
     def run(
         self,
@@ -92,7 +93,10 @@ class BatchEngine:
             apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
         ]
         run_id = run_id or str(uuid.uuid4())
-        line_results = self._executor_proxy.exec_batch(batch_inputs, run_id, output_dir)
+        if isinstance(self._executor_proxy, PythonExecutorProxy):
+            line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
+        else:
+            line_results = self._exec_batch_internal(batch_inputs, output_dir, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         aggr_results = self._executor_proxy.exec_aggregation(batch_inputs, line_results, run_id)
         outputs = [
@@ -106,6 +110,20 @@ class BatchEngine:
             line_results=line_results,
             aggr_results=aggr_results,
         )
+
+    def _exec_batch_internal(
+        self,
+        batch_inputs: List[Mapping[str, Any]],
+        run_id: Optional[str] = None,
+    ) -> List[LineResult]:
+        line_results = []
+        for i, each_line_input in enumerate(batch_inputs):
+            line_result = self._executor_proxy.exec_line(each_line_input, i, run_id=run_id)
+            for node_run in line_result.node_run_infos.values():
+                self._storage.persist_node_run(node_run)
+            self._storage.persist_flow_run(line_result.run_info)
+            line_results.append(line_result)
+        return line_results
 
     def _persist_outputs(self, outputs: List[Mapping[str, Any]], output_dir: Path):
         """Persist outputs to json line file in output directory"""

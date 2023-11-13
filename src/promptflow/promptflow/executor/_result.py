@@ -20,6 +20,11 @@ class LineResult:
     run_info: FlowRunInfo  # The run info of the line.
     node_run_infos: Mapping[str, RunInfo]  # The run info of the nodes in the line.
 
+    @staticmethod
+    def deserialize(data: dict) -> "LineResult":
+        """Deserialize a LineResult from a dict."""
+        pass
+
 
 @dataclass
 class AggregationResult:
