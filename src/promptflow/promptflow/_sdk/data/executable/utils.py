@@ -19,7 +19,7 @@ def show_image(image, key=None):
 
 def json_dumps(value):
     try:
-        return json.dumps(value)
+        return json.dumps(value, ensure_ascii=False)
     except Exception:
         return value
 
@@ -108,9 +108,9 @@ def render_single_list_message(message_items):
     for item in message_items:
         if isinstance(item, list):
             render_single_list_message(item)
-        if isinstance(item, dict):
+        elif isinstance(item, dict):
             render_single_dict_message(item)
-        if isinstance(item, str):
+        elif isinstance(item, str):
             st.text(item)
 
 

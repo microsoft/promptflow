@@ -1,4 +1,4 @@
-name: step_create_conda_environment
+name: step_create_python_environment
 inputs:
   pipFilePath:
     required: false

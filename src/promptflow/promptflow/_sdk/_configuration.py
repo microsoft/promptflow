@@ -23,6 +23,10 @@ class ConfigFileNotFound(ValidationException):
     pass
 
 
+class InvalidConfigFile(ValidationException):
+    pass
+
+
 class Configuration(object):
 
     CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
@@ -139,10 +143,10 @@ class Configuration(object):
 
         subscription_id, resource_group, workspace_name = MLClient._get_workspace_info(found_path)
         if not (subscription_id and resource_group and workspace_name):
-            raise ValueError(
+            raise InvalidConfigFile(
                 "The subscription_id, resource_group and workspace_name can not be empty. Got: "
                 f"subscription_id: {subscription_id}, resource_group: {resource_group}, "
-                f"workspace_name: {workspace_name}."
+                f"workspace_name: {workspace_name} from file {found_path}."
             )
         return RESOURCE_ID_FORMAT.format(subscription_id, resource_group, AZUREML_RESOURCE_PROVIDER, workspace_name)
 

@@ -10,6 +10,8 @@ import time
 import uuid
 from functools import wraps
 
+import pydash
+
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
@@ -144,6 +146,14 @@ class FlowServiceCaller(RequestTelemetryMixin):
             )
 
         headers["aml-user-token"] = aml_token
+
+    def _get_user_identity_info(self):
+        import jwt
+
+        token = self._credential.get_token("https://management.azure.com/.default")
+        decoded_token = jwt.decode(token.token, options={"verify_signature": False})
+        user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
+        return user_object_id, user_tenant_id
 
     @_request_wrapper()
     def create_flow(
@@ -531,7 +541,14 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 logger.debug(f"Waiting for session {action}, current status: {status}")
 
         if status == "Succeeded":
-            logger.info(f"Session {action} finished with status {status}.")
+            error_msg = pydash.get(response, "error.message", None)
+            if error_msg:
+                logger.warning(
+                    f"Session {action} finished with status {status}. "
+                    f"But there are warnings when installing the packages: {error_msg}."
+                )
+            else:
+                logger.info(f"Session {action} finished with status {status}.")
         else:
             # refine response error message
             try:

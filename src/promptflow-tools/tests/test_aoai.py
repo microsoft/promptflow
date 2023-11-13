@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+import json
 
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tools.aoai import chat, completion
@@ -67,6 +68,23 @@ class TestAOAI:
             chat_history=chat_history,
             functions=functions,
             function_call=function_call
+        )
+        assert "function_call" in result
+        assert result["function_call"]["name"] == "get_current_weather"
+
+    def test_aoai_chat_with_name_in_roles(
+            self, azure_open_ai_connection, example_prompt_template_with_name_in_roles, chat_history, functions):
+        result = chat(
+            connection=azure_open_ai_connection,
+            prompt=example_prompt_template_with_name_in_roles,
+            deployment_name="gpt-35-turbo",
+            max_tokens="inF",
+            temperature=0,
+            functions=functions,
+            name="get_location",
+            result=json.dumps({"location": "Austin"}),
+            question="What is the weather in Boston?",
+            prev_question="Where is Boston?"
         )
         assert "function_call" in result
         assert result["function_call"]["name"] == "get_current_weather"

@@ -17,6 +17,10 @@ We are going to use AzureOpenAIConnection as an example for strong type connecti
 
 ## Create a connection
 
+:::{note}
+If you are using `WSL` or other OS without default keyring storage backend, you may encounter `StoreConnectionEncryptionKeyError`, please refer to [FAQ](./faq.md#connection-creation-failed-with-storeconnectionencryptionkeyerror) for the solutions.
+:::
+
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
