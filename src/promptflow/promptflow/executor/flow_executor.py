@@ -20,7 +20,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import ToolInvoker
+from promptflow._core.tool import ToolInvoker, STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import flow_logger, logger
@@ -1215,12 +1215,20 @@ class FlowExecutor:
         :return: None
         """
         for node in self._flow.nodes:
+            streaming_option_parameter = self._parse_streaming_option_parameter(node)
             if (
-                self._flow.is_llm_node(node)
+                streaming_option_parameter is not None
                 and self._flow.is_referenced_by_flow_output(node)
                 and not self._flow.is_referenced_by_other_node(node)
             ):
-                self._tools_manager.wrap_tool(node.name, wrapper=_inject_stream_options(stream_required))
+                wrapper = _inject_stream_options(stream_required, streaming_option_parameter)
+                self._tools_manager.wrap_tool(node.name, wrapper=wrapper)
+
+    def _parse_streaming_option_parameter(self, node: Node) -> Optional[str]:
+        if self._flow.is_llm_node(node):
+            return "stream"
+        tool_function = self._tools_manager.get_tool(node.name)
+        return getattr(tool_function, STREAMING_OPTION_PARAMETER_ATTR, None)
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
@@ -1238,7 +1246,7 @@ class FlowExecutor:
             self._tools_manager.wrap_tool(node.name, wrapper=_ensure_node_result_is_serializable)
 
 
-def _inject_stream_options(should_stream: Callable[[], bool]):
+def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_parameter="stream"):
     """Inject the stream options to the decorated function.
 
     AzureOpenAI.completion and AzureOpenAI.chat tools support both stream and non-stream mode.
@@ -1248,13 +1256,13 @@ def _inject_stream_options(should_stream: Callable[[], bool]):
     def stream_option_decorator(f):
         # We only wrap the function if it has a "stream" parameter
         signature = inspect.signature(f)
-        if "stream" not in signature.parameters:
+        if streaming_option_parameter not in signature.parameters:
             return f
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             kwargs = kwargs or {}
-            kwargs.update(stream=should_stream())
+            kwargs.update({streaming_option_parameter: should_stream()})
 
             return f(*args, **kwargs)
 
