@@ -9,24 +9,25 @@ The flow examples in this guide come from [examples/flows/standard](https://gith
 
 In general:
 - For `CLI`, you can run `pfazure flow --help` in the terminal to see help messages.
-- For `SDK`, you can refer to [Promptflow Python Library Reference](../reference/python-library-reference/promptflow.md) and check `promptflow.azure.PFClient.flows` for more flow operations.
+- For `SDK`, you can refer to [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow.md) and check `promptflow.azure.PFClient.flows` for more flow operations.
+
+:::{admonition} Prerequisites
+[Prerequisites](./quick-start.md#prerequisites) are the same as [Quick start](./quick-start.md#prerequisites).
+:::
 
 Let's take a look at the following topics:
-
 - [Manage flows](#manage-flows)
-- [Prerequisites](#prerequisites)
   - [Create a flow](#create-a-flow)
   - [List flows](#list-flows)
-
-# Prerequisites
-
-[Prerequisites](./quick-start.md#prerequisites) are the same as [Quick start](./quick-start.md#prerequisites).
 
 ## Create a flow
 
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
+
+To set the target workspace, you can either speficy it in the CLI command or set default value in the Azure CLI.
+You can refer to [Quick start](./quick-start.md#submit-a-run-to-workspace) for more information.
 
 To create a flow to Azure from local flow directory, you can use 
 
