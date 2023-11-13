@@ -311,7 +311,7 @@ class ToolResolver:
             )
         resolved_tool.callable = partial(callable, **{prompt_tpl_param_name: prompt_tpl})
         #  Copy the attributes to make sure they are still available after partial.
-        attributes_to_set = ["_streaming_option_param"]
+        attributes_to_set = ["_streaming_option_parameter"]
         for attr in attributes_to_set:
             attr_val = getattr(callable, attr, None)
             if attr_val is not None:
