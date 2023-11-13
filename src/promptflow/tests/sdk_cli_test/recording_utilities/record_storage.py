@@ -141,9 +141,8 @@ class RecordStorage(object):
         # not all items are reserved in the output dict.
         output = saved_output["output"]
         output_type = saved_output["output_type"]
-        if isinstance(output, str) and output_type != "str":
-            output_convert = json.loads(output)
-            return output_convert
+        if "generator" in output_type:
+            return self._create_output_generator(output, output_type)
         else:
             return output
 
@@ -159,7 +158,88 @@ class RecordStorage(object):
         else:
             return item
 
-    def set_record(self, input_dict: Dict, output) -> None:
+    def _parse_output_generator(self, output):
+        output_type = ""
+        output_value = None
+        output_generator = None
+        if isinstance(output, dict):
+            output_value = {}
+            output_generator = {}
+            for item in output.items():
+                k, v = item
+                if type(v).__name__ == "generator":
+                    vlist = list(v)
+
+                    def vgenerator():
+                        for vitem in vlist:
+                            yield vitem
+
+                    output_value[k] = vlist
+                    output_generator[k] = vgenerator()
+                    output_type = "dict[generator]"
+                else:
+                    output_value[k] = v
+        elif isinstance(output, list):
+            output_value = []
+            output_generator = []
+            for item in output:
+                if type(item).__name__ == "generator":
+                    ilist = list(item)
+
+                    def igenerator():
+                        for i in ilist:
+                            yield i
+
+                    output_value.append(ilist)
+                    output_generator.append(igenerator())
+                    output_type = "list[generator]"
+                else:
+                    output_value.append(item)
+        elif type(output).__name__ == "generator":
+            output_value = list(output)
+
+            def generator():
+                for item in output_value:
+                    yield item
+
+            output_generator = generator()
+            output_type = "generator"
+        else:
+            output_value = output
+            output_generator = None
+            output_type = type(output).__name__
+        return output_value, output_generator, output_type
+
+    def _create_output_generator(self, output, output_type):
+        output_generator = None
+        if output_type == "dict[generator]":
+            output_generator = {}
+            for k, v in output.items():
+
+                def vgenerator():
+                    for item in v:
+                        yield item
+
+                output_generator[k] = vgenerator()
+        elif output_type == "list[generator]":
+            output_generator = []
+            for item in output:
+
+                def igenerator():
+                    for i in item:
+                        yield i
+
+                output_generator.append(igenerator())
+        elif output_type == "generator":
+
+            def generator():
+                for item in output:
+                    yield item
+
+            output_generator = generator()
+        return output_generator
+
+    def set_record(self, input_dict: Dict, output):
         """
         Set record to local storage, always override the old record.
 
@@ -172,33 +252,41 @@ class RecordStorage(object):
         input_dict["_args"] = self._recursive_create_hashable_args(input_dict["_args"])
         hash_value: str = hashlib.sha1(str(sorted(input_dict.items())).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
+        output_value, output_generator, output_type = self._parse_output_generator(output)
 
         if current_saved_records is None:
             current_saved_records = {}
             current_saved_records[hash_value] = {
                 "input": input_dict,
-                "output": output,
-                "output_type": type(output).__name__,
+                "output": output_value,
+                "output_type": output_type,
             }
         else:
             saved_output = current_saved_records.get(hash_value, None)
             if saved_output is not None:
-                if saved_output["output"] == output and saved_output["output_type"] == type(output).__name__:
-                    return
+                if saved_output["output"] == output_value and saved_output["output_type"] == output_type:
+                    if "generator" in output_type:
+                        return output_generator
+                    else:
+                        return output_value
                 else:
                     current_saved_records[hash_value] = {
                         "input": input_dict,
-                        "output": output,
-                        "output_type": type(output).__name__,
+                        "output": output_value,
+                        "output_type": output_type,
                     }
             else:
                 current_saved_records[hash_value] = {
                     "input": input_dict,
-                    "output": output,
-                    "output_type": type(output).__name__,
+                    "output": output_value,
+                    "output_type": output_type,
                 }
         self.cached_items[self._record_file_str] = current_saved_records
         self._write_file()
+        if "generator" in output_type:
+            return output_generator
+        else:
+            return output_value
 
     @classmethod
     def get_test_mode_from_environ(cls) -> str:
