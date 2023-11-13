@@ -566,6 +566,7 @@ class Flow:
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
+    code_language: str = "python"
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -580,6 +581,7 @@ class Flow:
             "inputs": {name: i.serialize() for name, i in self.inputs.items()},
             "outputs": {name: o.serialize() for name, o in self.outputs.items()},
             "tools": [serialize(t) for t in self.tools],
+            "language": self.code_language,
         }
         return data
 
@@ -615,6 +617,7 @@ class Flow:
         Flow._import_requisites(tools, nodes)
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
+        language = data.get("language", "python")
         return Flow(
             # TODO: Remove this fallback.
             data.get("id", data.get("name", "default_flow_id")),
@@ -624,6 +627,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
+            language=language,
         )
 
     def _apply_default_node_variants(self: "Flow"):

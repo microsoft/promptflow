@@ -426,6 +426,7 @@ class FlowExecutor:
         return result
 
     def _handle_line_failures(self, run_infos: List[FlowRunInfo], raise_on_line_failure: bool = False):
+        # TODO: legacy executor in runtime uses this function. It will be removed once legacy executor is deprecated.
         failed = [i for i, r in enumerate(run_infos) if r.status == Status.Failed]
         failed_msg = None
         if len(failed) > 0:
@@ -444,6 +445,7 @@ class FlowExecutor:
     def _exec_batch_with_process_pool(
         self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
     ) -> List[LineResult]:
+        # TODO: legacy executor in runtime uses this function. It will be removed once legacy executor is deprecated.
         nlines = len(batch_inputs)
         line_number = [
             batch_input["line_number"] for batch_input in batch_inputs if "line_number" in batch_input.keys()
@@ -721,6 +723,7 @@ class FlowExecutor:
         return line_result
 
     def _add_line_results(self, line_results: List[LineResult]):
+        # TODO: runtime uses this function.
         self._run_tracker._flow_runs.update({result.run_info.run_id: result.run_info for result in line_results})
         self._run_tracker._node_runs.update(
             {
