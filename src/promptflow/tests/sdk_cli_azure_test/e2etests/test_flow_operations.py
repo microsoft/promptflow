@@ -29,20 +29,20 @@ data_dir = tests_root_dir / "test_configs/datas"
 class TestFlow:
     def test_create_flow(self, remote_client):
         flow_source = flow_test_dir / "simple_fetch_url/"
-        flow_name = f"{flow_source.name}_{uuid.uuid4()}"
+        flow_display_name = f"{flow_source.name}_{uuid.uuid4()}"
         description = "test flow"
         tags = {"owner": "sdk"}
         result = remote_client.flows.create_or_update(
-            flow=flow_source, name=flow_name, type=FlowType.STANDARD, description=description, tags=tags
+            flow=flow_source, display_name=flow_display_name, type=FlowType.STANDARD, description=description, tags=tags
         )
         remote_flow_dag_path = result.path
 
         # make sure the flow is created successfully
         assert remote_client.flows._storage_client._check_file_share_file_exist(remote_flow_dag_path) is True
-        assert result.name == flow_name
+        assert result.display_name == flow_display_name
         assert result.type == FlowType.STANDARD
         assert result.tags == tags
-        assert result.path.endswith(f"/promptflow/{flow_name}/flow.dag.yaml")
+        assert result.path.endswith(f"/promptflow/{flow_display_name}/flow.dag.yaml")
 
     def test_flow_test_with_config(self, remote_workspace_resource_id):
         from promptflow import PFClient
