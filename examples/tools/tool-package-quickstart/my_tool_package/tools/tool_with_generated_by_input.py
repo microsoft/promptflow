@@ -1,9 +1,9 @@
-from enum import Enum
 from typing import Union
 
 from promptflow import tool
 from typing import Dict, List
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection, CognitiveSearchConnection
+
 
 def generate_index_json(
     index_type: str,
@@ -67,7 +67,14 @@ def reverse_generate_index_json(index_json: str) -> Dict:
 
 
 def list_index_types(subscription_id, resource_group_name, workspace_name) -> List[str]:
-    return [{"value": "Azure Cognitive Search"}, {"value": "PineCone"}, {"value": "FAISS"}, {"value": "Workspace MLIndex"}, {"value": "MLIndex from path"}]
+    return [
+        {"value": "Azure Cognitive Search"},
+        {"value": "PineCone"},
+        {"value": "FAISS"},
+        {"value": "Workspace MLIndex"},
+        {"value": "MLIndex from path"}
+    ]
+
 
 def list_indexes(subscription_id, resource_group_name, workspace_name) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
     import random
@@ -86,11 +93,24 @@ def list_indexes(subscription_id, resource_group_name, workspace_name) -> List[D
 
     return result
 
+
 def list_fields(subscription_id, resource_group_name, workspace_name) -> List[str]:
-    return [{"value": "id"}, {"value": "content"}, {"value": "catelog"}, {"value": "sourcepage"}, {"value": "sourcefile"}, {"value": "title"}, {"value": "content_hash"}, {"value": "meta_json_string"}, {"value": "content_vector_open_ai"}]
+    return [
+        {"value": "id"},
+        {"value": "content"},
+        {"value": "catelog"},
+        {"value": "sourcepage"},
+        {"value": "sourcefile"},
+        {"value": "title"},
+        {"value": "content_hash"},
+        {"value": "meta_json_string"},
+        {"value": "content_vector_open_ai"}
+    ]
+
 
 def list_semantic_configuration(subscription_id, resource_group_name, workspace_name) -> List[str]:
     return [{"value": "azureml-default"}]
+
 
 def list_embedding_deployment(embedding_connection: str) -> List[str]:
     return [{"value": "text-embedding-ada-002"}, {"value": "ada-1k-tpm"}]
