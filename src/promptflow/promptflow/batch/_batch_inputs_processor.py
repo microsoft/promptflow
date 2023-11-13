@@ -10,7 +10,7 @@ from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow._utils.utils import resolve_dir_to_absolute
-from promptflow.batch_engine._errors import InputMappingError
+from promptflow.batch._errors import InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 

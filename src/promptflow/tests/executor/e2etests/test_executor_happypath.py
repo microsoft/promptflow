@@ -4,7 +4,7 @@ from types import GeneratorType
 import pytest
 
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow.batch_engine._batch_inputs_processor import BatchInputsProcessor
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status

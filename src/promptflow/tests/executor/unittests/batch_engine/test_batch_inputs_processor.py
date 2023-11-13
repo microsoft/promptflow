@@ -3,8 +3,8 @@ import json
 import pytest
 
 from promptflow._core._errors import UnexpectedError
-from promptflow.batch_engine._batch_inputs_processor import BatchInputsProcessor
-from promptflow.batch_engine._errors import InputMappingError
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+from promptflow.batch._errors import InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
 

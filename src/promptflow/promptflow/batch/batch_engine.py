@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute
-from promptflow.batch_engine._batch_inputs_processor import BatchInputsProcessor
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
 

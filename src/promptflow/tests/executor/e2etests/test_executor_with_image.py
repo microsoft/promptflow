@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, is_multimedia_dict
-from promptflow.batch_engine import BatchEngine
+from promptflow.batch import BatchEngine
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.executor import FlowExecutor
