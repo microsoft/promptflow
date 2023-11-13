@@ -536,7 +536,7 @@ def get_promptflow_sdk_version() -> str:
 def print_pf_version():
     print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
     print()
-    print("Python location '{}'".format(os.path.abspath(sys.executable)))
+    print("Executable '{}'".format(os.path.abspath(sys.executable)))
     print('Python ({}) {}'.format(platform.system(), sys.version))
 
 
