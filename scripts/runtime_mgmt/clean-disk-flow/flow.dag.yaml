@@ -1,5 +1,4 @@
-id: clean_runtime_disk
-name: Clean runtime disk
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   topic:
     type: string
