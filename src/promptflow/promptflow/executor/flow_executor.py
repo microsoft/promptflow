@@ -884,14 +884,6 @@ class FlowExecutor:
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)
 
-    @staticmethod
-    def apply_inputs_mapping(
-        inputs: Mapping[str, Mapping[str, Any]],
-        inputs_mapping: Mapping[str, str],
-    ) -> Dict[str, Any]:
-        # TODO: This function will be removed after the batch engine refactoring is completed.
-        return BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
-
     def _extract_outputs(self, nodes_outputs, bypassed_nodes, flow_inputs):
         outputs = {}
         for name, output in self._flow.outputs.items():
@@ -943,6 +935,14 @@ class FlowExecutor:
                 output.reference.value, node_result, output.reference.property
             )
         return outputs
+
+    @staticmethod
+    def apply_inputs_mapping(
+        inputs: Mapping[str, Mapping[str, Any]],
+        inputs_mapping: Mapping[str, str],
+    ) -> Dict[str, Any]:
+        # TODO: This function will be removed after the batch engine refactoring is completed.
+        return BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
