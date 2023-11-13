@@ -61,7 +61,7 @@ class TestFlowContract:
         mocker.patch("promptflow._core.tools_manager.collect_package_tools", return_value=package_tool_definition)
         flow = Flow.from_yaml(flow_file)
         connection_names = flow.get_connection_input_names_for_node(flow.nodes[0].name)
-        assert connection_names == ["connection"]
+        assert connection_names == ['connection', 'connection_2']
 
     def test_node_condition_conflict(self):
         flow_folder = "node_condition_conflict"

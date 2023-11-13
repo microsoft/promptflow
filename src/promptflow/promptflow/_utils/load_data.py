@@ -7,14 +7,14 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
-import pandas as pd
-
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 module_logger = logging.getLogger(__name__)
 
 
-def _pd_read_file(local_path: str, logger: logging.Logger = None) -> pd.DataFrame:
+def _pd_read_file(local_path: str, logger: logging.Logger = None) -> "DataFrame":
+    import pandas as pd
+
     local_path = str(local_path)
     # if file is empty, return empty DataFrame directly
     if (
@@ -68,8 +68,10 @@ def _bfs_dir(dir_path: List[str]) -> Tuple[List[str], List[str]]:
     return files, dirs
 
 
-def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = None) -> pd.DataFrame:
+def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = None) -> "DataFrame":
     """load data from directory"""
+    import pandas as pd
+
     df = pd.DataFrame()
 
     # BFS traverse directory to collect files to load
@@ -102,7 +104,7 @@ def load_data(
     return result
 
 
-def load_df(local_path: Union[str, Path], logger: logging.Logger = None, max_rows_count: int = None) -> pd.DataFrame:
+def load_df(local_path: Union[str, Path], logger: logging.Logger = None, max_rows_count: int = None) -> "DataFrame":
     """load data from local file to df. For the usage of PRS."""
     lp = local_path if isinstance(local_path, Path) else Path(local_path)
     try:

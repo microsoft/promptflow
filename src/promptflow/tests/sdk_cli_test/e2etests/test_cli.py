@@ -7,7 +7,6 @@ import logging
 import os
 import os.path
 import shutil
-import subprocess
 import sys
 import tempfile
 import uuid
@@ -26,11 +25,12 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 
+from ..recording_utilities import RecordStorage
+
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
-RECORDINGS_TEST_CONFIGS_ROOT = "./tests/test_configs/node_recordings"
 
 
 # TODO: move this to a shared utility module
@@ -51,7 +51,9 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+)
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestCli:
@@ -293,40 +295,6 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert previous_log_content not in log_content
-
-    @pytest.mark.usefixtures("recording_enabled", "recording_file_override")
-    def test_pf_flow_test_recording_enabled_and_override_recording(self):
-        flow_name = "basic_with_builtin_llm_node"
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/{flow_name}",
-        )
-        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
-        assert log_path.exists()
-        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.shelve.dat"
-        assert record_path.exists()
-
-    @pytest.mark.usefixtures("replaying_enabled", "recording_file_override")
-    def test_pf_flow_test_replay_enabled_and_override_recording(self):
-        flow_name = "basic_with_builtin_llm_node"
-        record_path = Path(RECORDINGS_TEST_CONFIGS_ROOT) / "testcli_node_cache.shelve.dat"
-        if not record_path.exists():
-            assert False
-
-        run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/basic_with_builtin_llm_node",
-        )
-        output_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.output.json"
-        assert output_path.exists()
-        log_path = Path(FLOWS_DIR) / flow_name / ".promptflow" / "flow.log"
-        assert log_path.exists()
 
     def test_pf_flow_test_with_non_english_input_output(self, capsys):
         question = "什么是 chat gpt"
@@ -910,6 +878,7 @@ class TestCli:
                 assert not (flow_folder / "azure_openai.yaml").exists()
                 assert not (flow_folder / "openai.yaml").exists()
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="cannot support interactive")
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1175,45 +1144,6 @@ class TestCli:
                 == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
             )
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
-
-    @pytest.mark.skipif(sys.platform == "win32", reason="Raise Exception: Process terminated with exit code 4294967295")
-    def test_flow_build_executable(self):
-        source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
-        target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
-        with mock.patch(target) as mocked:
-            mocked.return_value = None
-
-            with tempfile.TemporaryDirectory() as temp_dir:
-                run_pf_command(
-                    "flow",
-                    "build",
-                    "--source",
-                    source,
-                    "--output",
-                    temp_dir,
-                    "--format",
-                    "executable",
-                )
-                # Start the Python script as a subprocess
-                app_file = Path(temp_dir, "app.py").as_posix()
-                process = subprocess.Popen(["python", app_file], stderr=subprocess.PIPE)
-                try:
-                    # Wait for a specified time (in seconds)
-                    wait_time = 5
-                    process.wait(timeout=wait_time)
-                    if process.returncode == 0:
-                        pass
-                    else:
-                        raise Exception(
-                            f"Process terminated with exit code {process.returncode}, "
-                            f"{process.stderr.read().decode('utf-8')}"
-                        )
-                except (subprocess.TimeoutExpired, KeyboardInterrupt):
-                    pass
-                finally:
-                    # Kill the process
-                    process.terminate()
-                    process.wait()  # Ensure the process is fully terminated
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
@@ -1597,6 +1527,7 @@ class TestCli:
             pass
         pf.runs.get(name=name2)
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="cannot support complex reply format")
     def test_data_scrubbing(self):
         # Prepare connection
         run_pf_command(

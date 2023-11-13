@@ -108,9 +108,9 @@ def render_single_list_message(message_items):
     for item in message_items:
         if isinstance(item, list):
             render_single_list_message(item)
-        if isinstance(item, dict):
+        elif isinstance(item, dict):
             render_single_dict_message(item)
-        if isinstance(item, str):
+        elif isinstance(item, str):
             st.text(item)
 
 

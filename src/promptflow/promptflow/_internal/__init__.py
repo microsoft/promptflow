@@ -41,6 +41,7 @@ from promptflow._core.tools_manager import (
     register_apis,
     register_builtins,
     register_connections,
+    retrieve_tool_func_result,
 )
 from promptflow._core.tracer import Tracer
 from promptflow._sdk._constants import LOCAL_MGMT_DB_PATH
@@ -83,7 +84,12 @@ from promptflow._utils.logger_utils import (
     logger,
     update_log_path,
 )
-from promptflow._utils.multimedia_utils import _create_image_from_file, is_multimedia_dict, persist_multimedia_data
+from promptflow._utils.multimedia_utils import (
+    _create_image_from_file,
+    convert_multimedia_data_to_base64,
+    is_multimedia_dict,
+    persist_multimedia_data,
+)
 from promptflow._utils.utils import (
     AttrDict,
     camel_to_snake,
