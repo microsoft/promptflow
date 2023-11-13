@@ -215,7 +215,6 @@ class TestAzureCli:
         )
         mocked.assert_called_once()
 
-    @pytest.mark.usefixtures("mock_get_azure_pf_client", "mock_set_headers_with_user_aml_token")
     def test_flow_create(
         self,
         mocker: MockFixture,
@@ -237,7 +236,6 @@ class TestAzureCli:
         )
         mocked.assert_called_once()
 
-    @pytest.mark.usefixtures("mock_get_azure_pf_client", "mock_set_headers_with_user_aml_token")
     def test_flow_list(
         self,
         mocker: MockFixture,
