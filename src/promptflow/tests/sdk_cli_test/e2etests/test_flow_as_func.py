@@ -136,3 +136,10 @@ class TestFlowAsFunc:
         with pytest.raises(UserErrorException) as e:
             f()
         assert "please make sure connection has decrypted secrets to use in flow execution." in str(e)
+
+    def test_non_secret_connection(self):
+        f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
+        # execute connection without secrets won't get error since the connection doesn't have scrubbed secrets
+        # we only raise error when there are scrubbed secrets in connection
+        f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={})}}
+        f(text="hello")
