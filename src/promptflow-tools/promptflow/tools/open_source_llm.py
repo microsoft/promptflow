@@ -5,12 +5,10 @@ import re
 import requests
 import sys
 import time
-import urllib.request
 
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Tuple, Mapping, Optional, Union
-from urllib.request import HTTPError
 
 from promptflow._core.tool import ToolProvider, tool
 from promptflow._sdk._constants import ConnectionType
@@ -41,11 +39,6 @@ def handle_online_endpoint_error(max_retries: int = 3,
             for i in range(max_retries):
                 try:
                     return func(*args, **kwargs)
-                except HTTPError as e:
-                    if i == max_retries - 1:
-                        error_message = f"Exception hit calling Online Endpoint: {type(e).__name__}: {str(e)}"
-                        print(error_message, file=sys.stderr)
-                        raise OpenSourceLLMOnlineEndpointError(message=error_message)
                 except OpenSourceLLMOnlineEndpointError as e:
                     if i == max_retries - 1:
                         error_message = f"Exception hit calling Online Endpoint: {type(e).__name__}: {str(e)}"
@@ -106,19 +99,26 @@ class ServerlessEndpointsContainer:
         url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name)
 
         try:
-            req = urllib.request.Request(url=url, headers=headers)
-            response = urllib.request.urlopen(req, timeout=50)
-            result = response.read()
-            return json.loads(result)['value']
+            response = requests.get(url, headers=headers, timeout=50)
+            return json.loads(response.content)['value']
         except Exception as e:
             print(f"Error encountered when listing serverless endpoints. Exception: {e}", file=sys.stderr)
             return []
 
     def _validate_model_family(self, serverless_endpoint):
         try:
-            if (serverless_endpoint.get('properties', {}).get('offer', {}).get('publisher') == 'Meta'
-                    and "llama" in serverless_endpoint.get('properties', {}).get('offer', {}).get('offerName')
-                    and serverless_endpoint.get('properties', {}).get('provisioningState') == "Succeeded"):
+            if serverless_endpoint.get('properties', {}).get('provisioningState') != "Succeeded":
+                return None
+
+            if (try_get_from_dict(serverless_endpoint,
+                                  ['properties', 'offer', 'publisher']) == 'Meta'
+                    and "llama" in try_get_from_dict(serverless_endpoint,
+                                                     ['properties', 'offer', 'offerName'])):
+                return ModelFamily.LLAMA
+            if (try_get_from_dict(serverless_endpoint,
+                                  ['properties', 'marketplaceInfo', 'publisherId']) == 'metagenai'
+                    and "llama" in try_get_from_dict(serverless_endpoint,
+                                                     ['properties', 'marketplaceInfo', 'offerId'])):
                 return ModelFamily.LLAMA
         except Exception as ex:
             print(f"Ignoring endpoint {serverless_endpoint['id']} due to error: {ex}")
@@ -151,10 +151,8 @@ class ServerlessEndpointsContainer:
                                           workspace_name,
                                           f"{serverless_endpoint_name}/listKeys")
         try:
-            req = urllib.request.Request(url=url, data=str.encode(""), headers=headers)
-            response = urllib.request.urlopen(req, timeout=50)
-            result = response.read()
-            return json.loads(result)
+            response = requests.post(url, headers=headers, timeout=50)
+            return json.loads(response.content)
         except Exception as e:
             print(f"Unable to get key from selected serverless endpoint. Exception: {e}", file=sys.stderr)
 
@@ -167,10 +165,8 @@ class ServerlessEndpointsContainer:
         url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name, serverless_endpoint_name)
 
         try:
-            req = urllib.request.Request(url=url, headers=headers)
-            response = urllib.request.urlopen(req, timeout=50)
-            result = response.read()
-            return json.loads(result)
+            response = requests.get(url, headers=headers, timeout=50)
+            return json.loads(response.content)
         except Exception as e:
             print(f"Unable to get selected serverless endpoint. Exception: {e}", file=sys.stderr)
 
@@ -490,6 +486,17 @@ def is_serverless_endpoint(endpoint_url: str) -> bool:
     return "serverless.ml.azure.com" in endpoint_url or "inference.ai.azure.com" in endpoint_url
 
 
+def try_get_from_dict(some_dict: Dict, key_list: List):
+    for key in key_list:
+        if some_dict is None:
+            return some_dict
+        elif key in some_dict:
+            some_dict = some_dict[key]
+        else:
+            return None
+    return some_dict
+
+
 def parse_endpoint_connection_type(endpoint_connection_name: str) -> Tuple[str, str]:
     endpoint_connection_details = endpoint_connection_name.split("/")
     return (endpoint_connection_details[0].lower(), endpoint_connection_details[1])
@@ -790,8 +797,8 @@ class ServerlessLlamaContentFormatter(ContentFormatterBase):
         else:
             prompt_value = ContentFormatterBase.escape_special_characters(prompt)
             base_body = {
-                "n": 1,
                 "prompt": prompt_value,
+                "n": 1,
             }
             base_body.update(model_kwargs)
 
@@ -877,46 +884,7 @@ class AzureMLOnlineEndpoint:
         """Return type of llm."""
         return "azureml_endpoint"
 
-    def _call_endpoint(self, body: bytes) -> bytes:
-        """call."""
-
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": ("Bearer " + self.endpoint_api_key),
-            "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
-            }
-
-        # If this is not set it'll use the default deployment on the endpoint.
-        if self.deployment_name is not None:
-            headers["azureml-model-deployment"] = self.deployment_name
-
-        req = urllib.request.Request(self.endpoint_url, body, headers)
-        response = urllib.request.urlopen(req, timeout=50)
-        result = response.read()
-        return result
-
-    def __call__(
-        self,
-        prompt: str
-    ) -> str:
-        """Call out to an AzureML Managed Online endpoint.
-        Args:
-            prompt: The prompt to pass into the model.
-        Returns:
-            The string generated by the model.
-        Example:
-            .. code-block:: python
-                response = azureml_model("Tell me a joke.")
-        """
-        _model_kwargs = self.model_kwargs or {}
-
-        request_body = self.content_formatter.format_request_payload(prompt, _model_kwargs)
-        endpoint_response = self._call_endpoint_request_lib(request_body)
-        response = self.content_formatter.format_response_payload(endpoint_response)
-
-        return response
-
-    def _call_endpoint_request_lib(self, request_body: str) -> str:
+    def _call_endpoint(self, request_body: str) -> str:
         """call."""
 
         headers = {
@@ -936,6 +904,27 @@ class AzureMLOnlineEndpoint:
             raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
         return result.text
+
+    def __call__(
+        self,
+        prompt: str
+    ) -> str:
+        """Call out to an AzureML Managed Online endpoint.
+        Args:
+            prompt: The prompt to pass into the model.
+        Returns:
+            The string generated by the model.
+        Example:
+            .. code-block:: python
+                response = azureml_model("Tell me a joke.")
+        """
+        _model_kwargs = self.model_kwargs or {}
+
+        request_body = self.content_formatter.format_request_payload(prompt, _model_kwargs)
+        endpoint_response = self._call_endpoint(request_body)
+        response = self.content_formatter.format_response_payload(endpoint_response)
+
+        return response
 
 
 class OpenSourceLLM(ToolProvider):
@@ -989,7 +978,19 @@ Please ensure endpoint name and deployment names are correct, and the deployment
                              workspace_name: str,
                              endpoint: str,
                              api_type: API,
-                             deployment_name: str = None) -> Tuple[str, str, str]:
+                             deployment_name: str = None,
+                             **kwargs) -> Tuple[str, str, str]:
+        if self.endpoint_values_in_kwargs(**kwargs):
+            endpoint_uri = kwargs["endpoint_uri"]
+            endpoint_key = kwargs["endpoint_key"]
+            model_family = kwargs["model_family"]
+
+            # clean these up, aka don't send them to MIR
+            del kwargs["endpoint_uri"]
+            del kwargs["endpoint_key"]
+            del kwargs["model_family"]
+
+            return (endpoint_uri, endpoint_key, model_family)
 
         (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_connection_type(endpoint)
 
@@ -1024,6 +1025,18 @@ Please ensure endpoint name and deployment names are correct, and the deployment
             raise OpenSourceLLMUserError(message=f"Invalid endpoint connection type: {endpoint_connection_type}")
         return (self.sanitize_endpoint_url(endpoint_url, api_type), endpoint_key, model_family)
 
+    def endpoint_values_in_kwargs(self, **kwargs):
+        # This is mostly for testing, suggest not using this since security\privacy concerns for the endpoint key
+        if 'endpoint_uri' not in kwargs and 'endpoint_key' not in kwargs and 'model_family' not in kwargs:
+            return False
+
+        if 'endpoint_uri' not in kwargs or 'endpoint_key' not in kwargs or 'model_family' not in kwargs:
+            message = """Endpoint connection via kwargs not fully set.
+If using kwargs, the following values must be set: endpoint_uri, endpoint_key, and model_family"""
+            raise OpenSourceLLMKeyValidationError(message=message)
+
+        return True
+
     @tool
     @handle_online_endpoint_error()
     def call(
@@ -1038,25 +1051,24 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         model_kwargs: Optional[Dict] = {},
         **kwargs
     ) -> str:
-
         # Sanitize deployment name. Empty deployment name is the same as None.
         if deployment_name is not None:
             deployment_name = deployment_name.strip()
-            
             if not deployment_name or deployment_name == DEPLOYMENT_DEFAULT:
                 deployment_name = None 
 
         print(f"Executing Open Source LLM Tool for endpoint: '{endpoint}', deployment: '{deployment_name}'")
 
         (self.endpoint_uri,
-            self.endpoint_key,
-            self.model_family) = self.get_endpoint_details(
+         self.endpoint_key,
+         self.model_family) = self.get_endpoint_details(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION", None),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP", None),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME", None),
             endpoint=endpoint,
             api_type=api,
-            deployment_name=deployment_name)
+            deployment_name=deployment_name,
+            **kwargs)
 
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
 
