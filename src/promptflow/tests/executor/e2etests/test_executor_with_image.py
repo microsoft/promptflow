@@ -125,7 +125,7 @@ class TestExecutorWithImage:
         "flow_folder, inputs",
         get_test_cases_for_simple_input(SIMPLE_IMAGE_FLOW)
         + get_test_cases_for_composite_input(COMPOSITE_IMAGE_FLOW)
-        + get_test_cases_for_chat_flow()
+        + get_test_cases_for_chat_flow(),
     )
     def test_executor_exec_line_with_image(self, flow_folder, inputs, dev_connections):
         working_dir = get_flow_folder(flow_folder)
@@ -219,9 +219,10 @@ class TestExecutorWithImage:
         ],
     )
     def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping, expected_outputs_number):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), {})
+        flow_file = get_yaml_file(flow_folder)
+        working_dir = get_flow_folder(flow_folder)
         output_dir = Path("outputs")
-        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir, max_lines_count=4)
+        bulk_result = BatchEngine(flow_file, working_dir).run(input_dirs, inputs_mapping, output_dir, max_lines_count=4)
 
         assert isinstance(bulk_result, BulkResult)
         assert len(bulk_result.outputs) == expected_outputs_number
@@ -240,10 +241,10 @@ class TestExecutorWithImage:
         shutil.rmtree(output_dir)
 
     @pytest.mark.parametrize(
-            "flow_folder, inputs",
-            get_test_cases_for_simple_input(EVAL_FLOW_WITH_SIMPLE_IMAGE)
-            + get_test_cases_for_composite_input(EVAL_FLOW_WITH_COMPOSITE_IMAGE)
-        )
+        "flow_folder, inputs",
+        get_test_cases_for_simple_input(EVAL_FLOW_WITH_SIMPLE_IMAGE)
+        + get_test_cases_for_composite_input(EVAL_FLOW_WITH_COMPOSITE_IMAGE),
+    )
     def test_executor_exec_aggregation_with_image(self, flow_folder, inputs, dev_connections):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
