@@ -43,7 +43,7 @@ def add_parser_flow_create(subparsers):
     """Add flow create parser to the pf flow subparsers."""
     epilog = """
 Use "--set" to set flow properties like:
-    display_name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
+    display-name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
     type: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
     description: Flow description. e.g. "--set description=<description>."
     tags: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
