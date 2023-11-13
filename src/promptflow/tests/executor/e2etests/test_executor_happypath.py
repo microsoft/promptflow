@@ -198,6 +198,7 @@ class TestExecutor:
             "script_with_import",
             "package_tools",
             "connection_as_input",
+            "async_tools",
         ],
     )
     def test_executor_exec_line(self, flow_folder, dev_connections):
