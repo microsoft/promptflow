@@ -28,7 +28,7 @@ def api_wrapper(func):
     return wrapper
 
 
-def local_user_only_api_wrapper(func):
+def local_user_only(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Get the user name from request.
