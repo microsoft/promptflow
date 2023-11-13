@@ -1,0 +1,36 @@
+inputs:
+  input_str:
+    type: string
+    default: Hello
+outputs:
+  ouput1:
+    type: string
+    reference: ${async_passthrough1.output}
+  output2:
+    type: string
+    reference: ${async_passthrough2.output}
+nodes:
+- name: async_passthrough
+  type: python
+  source:
+    type: code
+    path: async_passthrough.py
+  inputs:
+    input1: ${inputs.input_str}
+    wait_seconds: 3
+- name: async_passthrough1
+  type: python
+  source:
+    type: code
+    path: async_passthrough.py
+  inputs:
+    input1: ${async_passthrough.output}
+    wait_seconds: 3
+- name: async_passthrough2
+  type: python
+  source:
+    type: code
+    path: async_passthrough.py
+  inputs:
+    input1: ${async_passthrough.output}
+    wait_seconds: 3
