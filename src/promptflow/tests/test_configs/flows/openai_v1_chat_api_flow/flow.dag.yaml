@@ -1,0 +1,19 @@
+inputs:
+  question:
+    type: string
+  chat_history:
+    type: list
+outputs:
+  answer:
+    type: string
+    reference: ${chat.output}
+nodes:
+- name: chat
+  type: python
+  source:
+    type: code
+    path: chat.py
+  inputs:
+    question: ${inputs.question}
+    chat_history: ${inputs.chat_history}
+    connection: azure_open_ai_connection

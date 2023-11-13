@@ -114,15 +114,17 @@ def available_openai_apis():
                 # Older versions of openai do not have this API and will raise an AttributeError if we try to use it.
                 pass
     else:
-        from openai import resources
-
         for api in ("Completions", "Chat", "Embeddings"):
-            if api == "Chat":
-                openai_api = getattr(resources.chat, "Completions")
-            else:
-                openai_api = getattr(resources, api)
-            if hasattr(openai_api, "create"):
-                yield openai_api
+            try:
+                if api == "Chat":
+                    openai_api = getattr(openai.resources.chat, "Completions")
+                else:
+                    openai_api = getattr(openai.resources, api)
+                if hasattr(openai_api, "create"):
+                    yield openai_api
+            except Exception:
+                # To avoid breaking changes included in future upgrades, we ignore all exceptions here.
+                pass
 
 
 def inject_openai_api():
