@@ -110,7 +110,7 @@ def parse_chat(chat_str, images: List = None, valid_roles: Set[str] = None):
     # openai chat api only supports below roles.
     # customer can add single # in front of role name for markdown highlight.
     # and we still support role name without # prefix for backward compatibility.
-    separator = r"(?i)^\s*#?\s*(system|user|assistant|function)\s*:\s*\n"
+    separator = r"(?i)^\s*#?\s*(" + "|".join(valid_roles) + r")\s*:\s*\n"
 
     images = images or []
     hash2images = {str(x): x for x in images}
