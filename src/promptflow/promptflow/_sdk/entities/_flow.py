@@ -66,7 +66,7 @@ class FlowContext:
         overrides=None,
         streaming=None,
     ):
-        self.connections, self.connection_objs = connections or {}, {}
+        self.connections, self._connection_objs = connections or {}, {}
         self.variant = variant
         self.environment_variables = environment_variables or {}
         self.overrides = overrides or {}
@@ -81,7 +81,7 @@ class FlowContext:
                     if isinstance(conn, _Connection):
                         name = self._get_connection_obj_name(conn)
                         v[k] = name
-                        self.connection_objs[name] = conn
+                        self._connection_objs[name] = conn
 
     @classmethod
     def _get_connection_obj_name(cls, connection):

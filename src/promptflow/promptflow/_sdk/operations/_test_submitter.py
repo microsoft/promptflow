@@ -235,10 +235,10 @@ class TestSubmitter:
         from promptflow.executor.flow_executor import FlowExecutor
 
         connections = SubmitterHelper.resolve_connections(
-            flow=self.flow, client=self._client, connections_to_ignore=self.flow_context.connection_objs.keys()
+            flow=self.flow, client=self._client, connections_to_ignore=self.flow_context._connection_objs.keys()
         )
         # update connections with connection objs
-        connections.update(self.flow_context.connection_objs)
+        connections.update(self.flow_context._connection_objs)
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(
             environment_variables=self.flow_context.environment_variables, client=self._client
