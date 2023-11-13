@@ -23,6 +23,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None
     ) -> "PythonExecutorProxy":
+        # TODO: Raise error if connections is None
         flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage)
         return cls(flow_executor)
 
