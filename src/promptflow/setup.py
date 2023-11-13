@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import os
-import platform
 import re
 from pathlib import Path
 from typing import Any, Match, cast
@@ -49,13 +48,8 @@ REQUIRES = [
     "ruamel.yaml>=0.17.35,<0.18.0",  # used to generate connection templates with preserved comments
     "pyarrow>=9.0.0,<14.0.0",  # used to read parquet file with pandas.read_parquet
     "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
+    "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
 ]
-
-system = platform.system()
-if system == "Windows" or system == "Darwin":
-    REQUIRES.append("python-magic-bin>=0.4.14")  # used to detect mime type of mulitmedia input
-else:
-    REQUIRES.append("python-magic>=0.4.27")  # used to detect mime type of mulitmedia input
 
 setup(
     name=PACKAGE_NAME,

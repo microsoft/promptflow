@@ -1,5 +1,5 @@
 import base64
-import magic
+import filetype
 import os
 import re
 import uuid
@@ -72,7 +72,7 @@ def _create_image_from_file(f: Path, mime_type: str = None):
 def _create_image_from_base64(base64_str: str, mime_type: str = None):
     image_bytes = base64.b64decode(base64_str)
     if not mime_type:
-        mime_type = magic.from_buffer(image_bytes, mime=True)
+        mime_type = filetype.guess_mime(image_bytes)
         if not mime_type.startswith("image/"):
             mime_type = "image/*"
     return Image(image_bytes, mime_type=mime_type)
@@ -82,7 +82,7 @@ def _create_image_from_url(url: str, mime_type: str = None):
     response = requests.get(url)
     if response.status_code == 200:
         if not mime_type:
-            mime_type = magic.from_buffer(response.content, mime=True)
+            mime_type = filetype.guess_mime(response.content)
             if not mime_type.startswith("image/"):
                 mime_type = "image/*"
         return Image(response.content, mime_type=mime_type, source_url=url)
