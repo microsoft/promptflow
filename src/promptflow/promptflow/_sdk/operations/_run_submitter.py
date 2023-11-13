@@ -305,6 +305,7 @@ class RunSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
+        batch_engine = BatchEngine(flow.path, flow.code, connections=connections, storage=local_storage)
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
@@ -314,7 +315,6 @@ class RunSubmitter:
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
-            batch_engine = BatchEngine(flow.path, flow.code, connections=connections, storage=local_storage)
             bulk_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
