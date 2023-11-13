@@ -4,14 +4,14 @@
 
 from flask import Blueprint, jsonify, request
 
-from promptflow._sdk._service.utils import api_wrapper
+from promptflow._sdk._service.utils import local_user_only_api_wrapper
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
 connection_bp = Blueprint("connection", __name__, url_prefix="/connection/v1.0")
 
 
 @connection_bp.route("/list", methods=["GET"])
-@api_wrapper
+@local_user_only_api_wrapper
 def list():
     # parse query parameters
     max_results = request.args.get("max_results", default=50, type=int)
@@ -24,7 +24,7 @@ def list():
 
 
 @connection_bp.route("/<string:name>", methods=["GET"])
-@api_wrapper
+@local_user_only_api_wrapper
 def get(name: str):
     # parse query parameters
     with_secrets = request.args.get("with_secrets", default=False, type=bool)

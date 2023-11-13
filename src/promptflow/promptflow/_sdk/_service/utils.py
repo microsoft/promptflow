@@ -13,7 +13,6 @@ from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 def api_wrapper(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        validate_request_user()
         try:
             result = func(*args, **kwargs)
             return result
@@ -29,11 +28,15 @@ def api_wrapper(func):
     return wrapper
 
 
-def validate_request_user():
-    # Get the user name from request.
-    user = request.environ.get("REMOTE_USER") or request.headers.get("X-Remote-User")
-    if user != getpass.getuser():
-        abort(403)
+def local_user_only_api_wrapper(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Get the user name from request.
+        user = request.environ.get("REMOTE_USER") or request.headers.get("X-Remote-User")
+        if user != getpass.getuser():
+            abort(403)
+        return api_wrapper(func)(*args, **kwargs)
+    return wrapper
 
 
 def is_port_in_use(port: int):

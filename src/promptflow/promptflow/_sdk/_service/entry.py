@@ -27,7 +27,7 @@ def main():
     args = parser.parse_args(command_args)
     port = args.port
 
-    if port and is_port_in_use():
+    if port and is_port_in_use(port):
         raise UserErrorException(f"Service port {port} is used.")
     if not port:
         (HOME_PROMPT_FLOW_DIR / SERVICE_CONFIG_FILE).touch(mode=read_write_by_user(), exist_ok=True)
