@@ -93,7 +93,7 @@ def list_semantic_configuration(subscription_id, resource_group_name, workspace_
     return [{"value": "azureml-default"}]
 
 def list_embedding_deployment(embedding_connection: str) -> List[str]:
-    result = [{"value": "text-embedding-ada-002"}, {"value": "ada-1k-tpm"}]
+    return [{"value": "text-embedding-ada-002"}, {"value": "ada-1k-tpm"}]
 
 
 @tool
