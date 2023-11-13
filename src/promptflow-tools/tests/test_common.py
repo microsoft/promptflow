@@ -67,6 +67,11 @@ class TestCommon:
                 {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}]),
             ("\n#system:\nfirst\n\n#system:\nsecond", None, [
                 {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}]),
+            ("\n#system:\nfirst\n#assistant:\n#user:\nsecond", None, [
+                {'role': 'system', 'content': 'first'},
+                {'role': 'assistant', 'content': ''},
+                {'role': 'user', 'content': 'second'}
+            ]),
             ("#user:\ntell me about the images\nImage(1edf82c2)\nImage(9b65b0f4)", [
                 Image("image1".encode()), Image("image2".encode(), "image/png", "https://image_url")], [
                 {'role': 'user', 'content': [
