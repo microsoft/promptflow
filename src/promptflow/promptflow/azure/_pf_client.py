@@ -8,7 +8,6 @@ from typing import Dict, List, Optional, Union
 
 from azure.ai.ml import MLClient
 from azure.core.credentials import TokenCredential
-from pandas import DataFrame
 
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
@@ -270,7 +269,7 @@ class PFClient:
 
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
-    ) -> DataFrame:
+    ) -> "DataFrame":
         """Get the details from the run including inputs and outputs.
 
         .. note::
