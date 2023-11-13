@@ -26,7 +26,7 @@ Let's take a look at the following topics:
 :::{tab-item} CLI
 :sync: CLI
 
-To set the target workspace, you can either speficy it in the CLI command or set default value in the Azure CLI.
+To set the target workspace, you can either specify it in the CLI command or set default value in the Azure CLI.
 You can refer to [Quick start](./quick-start.md#submit-a-run-to-workspace) for more information.
 
 To create a flow to Azure from local flow directory, you can use 
