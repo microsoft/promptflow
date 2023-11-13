@@ -1,19 +1,22 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import argparse
-import logging
-import sys
-import timeit
-
-from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands
-from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands
-from promptflow._sdk._constants import LOGGER_NAME
-from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import get_promptflow_sdk_version
+# pylint: disable=wrong-import-position
+import time
 
 # Log the start time
-start_time = timeit.default_timer()
+start_time = time.perf_counter()
+
+# E402 module level import not at top of file
+import argparse  # noqa: E402
+import logging  # noqa: E402
+import sys  # noqa: E402
+
+from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
+from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
+from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
+from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
+from promptflow._sdk._utils import get_promptflow_sdk_version  # noqa: E402
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -38,7 +41,7 @@ def entry(argv):
 
     args = parser.parse_args(argv)
     # Log the init finish time
-    init_finish_time = timeit.default_timer()
+    init_finish_time = time.perf_counter()
     try:
         # --verbose, enable info logging
         if hasattr(args, "verbose") and args.verbose:
@@ -66,7 +69,7 @@ def entry(argv):
         raise ex
     finally:
         # Log the invoke finish time
-        invoke_finish_time = timeit.default_timer()
+        invoke_finish_time = time.perf_counter()
         logger.info(
             "Command ran in %.3f seconds (init: %.3f, invoke: %.3f)",
             invoke_finish_time - start_time,
