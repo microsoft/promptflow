@@ -627,7 +627,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
-            language=language,
+            code_language=language,
         )
 
     def _apply_default_node_variants(self: "Flow"):
