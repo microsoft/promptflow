@@ -23,12 +23,9 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.flow_utils import apply_default_value_for_input
+from promptflow._utils.flow_utils import apply_default_value_for_input, handle_line_failures
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import (
-    load_multimedia_data,
-    load_multimedia_data_recursively
-)
+from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -427,23 +424,6 @@ class FlowExecutor:
             result[idx] = value
         return result
 
-    def _handle_line_failures(self, run_infos: List[FlowRunInfo], raise_on_line_failure: bool = False):
-        # TODO: legacy executor in runtime uses this function. It will be removed once legacy executor is deprecated.
-        failed = [i for i, r in enumerate(run_infos) if r.status == Status.Failed]
-        failed_msg = None
-        if len(failed) > 0:
-            failed_indexes = ",".join([str(i) for i in failed])
-            first_fail_exception = run_infos[failed[0]].error["message"]
-            if raise_on_line_failure:
-                failed_msg = "Flow run failed due to the error: " + first_fail_exception
-                raise Exception(failed_msg)
-
-            failed_msg = (
-                f"{len(failed)}/{len(run_infos)} flow run failed, indexes: [{failed_indexes}],"
-                f" exception of index {failed[0]}: {first_fail_exception}"
-            )
-            logger.error(failed_msg)
-
     def _exec_batch_with_process_pool(
         self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
     ) -> List[LineResult]:
@@ -772,7 +752,7 @@ class FlowExecutor:
                 inputs, run_id, output_dir, validate_inputs=validate_inputs
             )
             self._add_line_results(line_results)  # For bulk run, currently we need to add line results to run_tracker
-            self._handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
+            handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
             aggr_results = self._exec_aggregation_with_bulk_results(inputs, line_results, run_id)
         outputs = [
             {LINE_NUMBER_KEY: r.run_info.index, **r.output}
