@@ -5,6 +5,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import logger
@@ -12,7 +13,6 @@ from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursive
 from promptflow._utils.utils import resolve_dir_to_absolute
 from promptflow.batch._errors import InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
-from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 
 
 class BatchInputsProcessor:

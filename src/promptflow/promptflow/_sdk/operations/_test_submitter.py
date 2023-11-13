@@ -156,7 +156,8 @@ class TestSubmitter:
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
     ):
-        from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
+        from promptflow._constants import LINE_NUMBER_KEY
+        from promptflow.executor.flow_executor import FlowExecutor
 
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)

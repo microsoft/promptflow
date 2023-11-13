@@ -2,6 +2,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import apply_default_value_for_input, handle_line_failures
 from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute
@@ -11,7 +12,6 @@ from promptflow.batch.python_executor_proxy import PythonExecutorProxy
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import BulkResult
-from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
