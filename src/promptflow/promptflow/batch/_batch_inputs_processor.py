@@ -19,7 +19,7 @@ class BatchInputsProcessor:
     def __init__(
         self,
         working_dir: Path,
-        flow_inputs: Dict[str, FlowInputDefinition],
+        flow_inputs: Mapping[str, FlowInputDefinition],
         max_lines_count: Optional[int] = None,
     ):
         self._working_dir = working_dir
