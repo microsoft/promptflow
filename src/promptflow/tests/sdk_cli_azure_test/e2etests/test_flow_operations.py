@@ -1,13 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
 import uuid
 from pathlib import Path
 
 import pytest
 
-from promptflow._cli._pf_azure._flow import list_flows
 from promptflow._sdk._constants import FlowType
+from promptflow._sdk._errors import FlowOperationError
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -43,18 +44,25 @@ class TestFlow:
         assert result.tags == tags
         assert result.path.endswith(f"/promptflow/{flow_name}/flow.dag.yaml")
 
-    @pytest.mark.skip(reason="This test is not ready yet.")
-    def test_list_flows(self, client):
-        flows = list_flows(
-            subscription_id=client.subscription_id,
-            resource_group=client.resource_group_name,
-            workspace_name=client.workspace_name,
-        )
-        print(flows)
-
     def test_flow_test_with_config(self, remote_workspace_resource_id):
         from promptflow import PFClient
 
         client = PFClient(config={"connection.provider": remote_workspace_resource_id})
         output = client.test(flow=flow_test_dir / "web_classification")
         assert output.keys() == {"category", "evidence"}
+
+    def test_list_flows(self, remote_client):
+        flows = remote_client.flows.list(max_results=3)
+        for flow in flows:
+            print(json.dumps(flow._to_dict(), indent=4))
+        assert len(flows) == 3
+
+    def test_list_flows_invalid_cases(self, remote_client):
+        with pytest.raises(FlowOperationError, match="'max_results' must be a positive integer"):
+            remote_client.flows.list(max_results=0)
+
+        with pytest.raises(FlowOperationError, match="'flow_type' must be one of"):
+            remote_client.flows.list(flow_type="unknown")
+
+        with pytest.raises(FlowOperationError, match="Invalid list view type"):
+            remote_client.flows.list(list_view_type="invalid")

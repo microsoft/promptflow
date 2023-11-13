@@ -24,7 +24,10 @@ from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import (
+    load_multimedia_data,
+    load_multimedia_data_recursively
+)
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -610,6 +613,8 @@ class FlowExecutor:
             node.inputs = {
                 k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
             }
+        # Load multimedia data for the flow inputs of aggregation nodes.
+        inputs = load_multimedia_data(self._flow.inputs, inputs)
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
         run_tracker = self._run_tracker
