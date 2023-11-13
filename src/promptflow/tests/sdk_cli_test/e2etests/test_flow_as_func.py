@@ -137,6 +137,7 @@ class TestFlowAsFunc:
             f()
         assert "please make sure connection has decrypted secrets to use in flow execution." in str(e)
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Returning dict is not supported for now.")
     def test_non_secret_connection(self):
         f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
         # execute connection without secrets won't get error since the connection doesn't have scrubbed secrets
