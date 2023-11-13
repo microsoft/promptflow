@@ -966,9 +966,9 @@ class FlowExecutor:
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
         # TODO: This function will be removed after the batch engine refactoring is completed.
-        from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+        from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
 
-        return BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
+        return apply_inputs_mapping(inputs, inputs_mapping)
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
         """Enable the LLM node that is connected to output to return streaming results controlled by `stream_required`.

@@ -3,7 +3,7 @@ import json
 import pytest
 
 from promptflow._core._errors import UnexpectedError
-from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor, apply_inputs_mapping
 from promptflow.batch._errors import InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
@@ -39,7 +39,7 @@ class TestBatchInputsProcessor:
         ],
     )
     def test_apply_inputs_mapping(self, inputs, inputs_mapping, expected):
-        result = BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
+        result = apply_inputs_mapping(inputs, inputs_mapping)
         assert expected == result, "Expected: {}, Actual: {}".format(expected, result)
 
     @pytest.mark.parametrize(
@@ -61,7 +61,7 @@ class TestBatchInputsProcessor:
     )
     def test_apply_inputs_mapping_error(self, inputs, inputs_mapping, error_code, error_message):
         with pytest.raises(error_code) as e:
-            BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
+            apply_inputs_mapping(inputs, inputs_mapping)
         assert error_message in str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
     @pytest.mark.parametrize(
