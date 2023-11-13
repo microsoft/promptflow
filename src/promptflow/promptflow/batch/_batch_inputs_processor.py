@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -249,8 +250,6 @@ def apply_inputs_mapping(
     :rtype: Dict[str, Any]
     :raises InputMappingError: If any of the input mapping relations are not found in the inputs.
     """
-    import re
-
     result = {}
     notfound_mapping_relations = []
     for map_to_key, map_value in inputs_mapping.items():
