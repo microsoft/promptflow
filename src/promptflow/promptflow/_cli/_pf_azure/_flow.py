@@ -4,9 +4,23 @@
 import argparse
 from typing import Dict, List
 
-from promptflow._cli._params import add_param_set, logging_params
+from promptflow._cli._params import (
+    add_param_archived_only,
+    add_param_flow_type,
+    add_param_include_archived,
+    add_param_include_others,
+    add_param_max_results,
+    add_param_output_format,
+    add_param_set,
+    logging_params,
+)
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
-from promptflow._cli._utils import _set_workspace_argument_for_subparsers, activate_action
+from promptflow._cli._utils import (
+    _output_result_list_with_format,
+    _set_workspace_argument_for_subparsers,
+    activate_action,
+)
+from promptflow._sdk._constants import get_list_view_type
 
 
 def add_parser_flow(subparsers):
@@ -19,7 +33,7 @@ def add_parser_flow(subparsers):
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_flow_create(flow_subparsers)
     # add_parser_flow_get(flow_subparsers)
-    # add_parser_flow_list(flow_subparsers)
+    add_parser_flow_list(flow_subparsers)
     # add_parser_flow_delete(flow_subparsers)
     # add_parser_flow_download(flow_subparsers)
     flow_parser.set_defaults(action="flow")
@@ -63,15 +77,41 @@ pfazure flow create --flow <flow-folder-path> --set name=<flow-name> type=<flow-
 
 def add_parser_flow_list(subparsers):
     """Add flow list parser to the pf flow subparsers."""
-    add_params = [_set_workspace_argument_for_subparsers] + logging_params
+    epilog = """
+Examples:
+
+# List flows:
+pfazure flow list
+# List most recent 10 runs status:
+pfazure flow list --max-results 10
+# List active and archived flows:
+pfazure flow list --include-archived
+# List archived flow only:
+pfazure flow list --archived-only
+# List all flows as table:
+pfazure flow list --output table
+# List flows with specific type:
+pfazure flow list --type standard
+# List flows that are owned by all users:
+pfazure flow list --include-others
+"""
+    add_params = [
+        add_param_max_results,
+        add_param_include_others,
+        add_param_flow_type,
+        add_param_archived_only,
+        add_param_include_archived,
+        add_param_output_format,
+        _set_workspace_argument_for_subparsers,
+    ] + logging_params
 
     activate_action(
         name="list",
         description="List flows for promptflow.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="pf flow list",
+        help_message="pfazure flow list",
         action_param_name="sub_action",
     )
 
@@ -104,6 +144,8 @@ def add_parser_flow_download(subparsers):
 def dispatch_flow_commands(args: argparse.Namespace):
     if args.sub_action == "create":
         create_flow(args)
+    elif args.sub_action == "list":
+        list_flows(args)
 
 
 def _get_flow_operation(subscription_id, resource_group, workspace_name):
@@ -124,20 +166,17 @@ def create_flow(args: argparse.Namespace):
     )
 
 
-def list_flows(
-    workspace_name: str,
-    resource_group: str,
-    subscription_id: str,
-):
+def list_flows(args: argparse.Namespace):
     """List flows for promptflow."""
-    flow_operations = _get_flow_operation(subscription_id, resource_group, workspace_name)
-    flows = flow_operations._list()
-    flow_count = len(flows)
-    print(f"Collected {flow_count} flows.")
-    if flow_count > 0:
-        print("=================== Flows ===================")
-        for flow in flows:
-            print(f"Name: {flow.name!r}, owner: {flow.owner!r}, flow_id: {flow.flow_id!r}")
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    flows = pf.flows.list(
+        max_results=args.max_results,
+        include_others=args.include_others,
+        flow_type=args.type,
+        list_view_type=get_list_view_type(args.archived_only, args.include_archived),
+    )
+    flow_list = [flow._to_dict() for flow in flows]
+    _output_result_list_with_format(flow_list, args.output)
 
 
 def download_flow(

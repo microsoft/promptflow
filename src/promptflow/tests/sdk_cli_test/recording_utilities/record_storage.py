@@ -129,7 +129,8 @@ class RecordStorage(object):
         :return: original output of node run
         :rtype: object
         """
-        hash_value: str = hashlib.sha1(str(sorted(input_dict)).encode("utf-8")).hexdigest()
+        input_dict["_args"] = self._recursive_create_hashable_args(input_dict["_args"])
+        hash_value: str = hashlib.sha1(str(sorted(input_dict.items())).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
         if current_saved_records is None:
             raise RecordFileMissingException(f"This should except earlier, record file not found {self.record_file}.")
@@ -148,6 +149,18 @@ class RecordStorage(object):
         else:
             return output
 
+    def _recursive_create_hashable_args(self, item):
+        if isinstance(item, tuple):
+            return [self._recursive_create_hashable_args(i) for i in item]
+        if isinstance(item, list):
+            return [self._recursive_create_hashable_args(i) for i in item]
+        if isinstance(item, dict):
+            return {k: self._recursive_create_hashable_args(v) for k, v in item.items()}
+        elif "module: promptflow.connections" in str(item) or "object at" in str(item):
+            return ()
+        else:
+            return item
+
     def set_record(self, input_dict: Dict, output) -> None:
         """
         Set record to local storage, always override the old record.
@@ -157,7 +170,9 @@ class RecordStorage(object):
         :param output: original output of node run
         :type output: object
         """
-        hash_value: str = hashlib.sha1(str(sorted(input_dict)).encode("utf-8")).hexdigest()
+        # filter args, object at will not hash
+        input_dict["_args"] = self._recursive_create_hashable_args(input_dict["_args"])
+        hash_value: str = hashlib.sha1(str(sorted(input_dict.items())).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
 
         if current_saved_records is None:

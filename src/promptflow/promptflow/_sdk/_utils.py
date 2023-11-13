@@ -30,7 +30,7 @@ from marshmallow import ValidationError
 from ruamel.yaml import YAML
 
 import promptflow
-from promptflow._constants import EXTENSION_UA
+from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
@@ -645,10 +645,7 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     else:
         result = retrieve_tool_func_result(func_call_scenario, func_path, func_kwargs)
 
-    result_with_log = {
-        "result": result,
-        "logs": {}
-    }
+    result_with_log = {"result": result, "logs": {}}
     return result_with_log
 
 
@@ -923,3 +920,31 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
     if output:
         with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
+
+
+def remove_empty_element_from_dict(obj: dict) -> dict:
+    """Remove empty element from dict, e.g. {"a": 1, "b": {}} -> {"a": 1}"""
+    new_dict = {}
+    for key, value in obj.items():
+        if isinstance(value, dict):
+            value = remove_empty_element_from_dict(value)
+        if value is not None:
+            new_dict[key] = value
+    return new_dict
+
+
+def is_github_codespaces():
+    # Ref:
+    # https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace
+    return os.environ.get("CODESPACES", None) == "true"
+
+
+def interactive_credential_disabled():
+    return os.environ.get(PF_NO_INTERACTIVE_LOGIN, "false").lower() == "true"
+
+
+def is_from_cli():
+    from promptflow._cli._user_agent import USER_AGENT as CLI_UA
+    from promptflow._core.operation_context import OperationContext
+
+    return CLI_UA in OperationContext.get_instance().get_user_agent()
