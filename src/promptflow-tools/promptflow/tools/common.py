@@ -137,11 +137,8 @@ def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
                 else:
                     last_message["content"] = to_content_str_or_list(chunk, hash2images)
             else:
-                if last_message["role"] == "function":
-                    last_message["name"], last_message["content"] = parsed_result
-                else:
-                    last_message["name"] = parsed_result[0]
-                    last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images)
+                last_message["name"] = parsed_result[0]
+                last_message["content"] = to_content_str_or_list(parsed_result[1], hash2images)
         else:
             if chunk.strip() == "":
                 continue
