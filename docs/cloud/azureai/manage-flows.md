@@ -1,7 +1,7 @@
 # Manage flows
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
+This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
 This documentation will walk you through how to manage your flow with CLI and SDK on [Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2). 
