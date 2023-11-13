@@ -108,15 +108,17 @@ class TestMultimediaUtils:
         }
 
     def test_load_multimedia_data(self):
+        # Case 1: Test normal node
         inputs = {
             "image": FlowInputDefinition(type=ValueType.IMAGE),
             "images": FlowInputDefinition(type=ValueType.LIST),
             "object": FlowInputDefinition(type=ValueType.OBJECT),
         }
+        image_dict = {"data:image/jpg;path": str(TEST_IMAGE_PATH)}
         line_inputs = {
-            "image": {"data:image/jpg;path": str(TEST_IMAGE_PATH)},
-            "images": [{"data:image/jpg;path": str(TEST_IMAGE_PATH)}, {"data:image/jpg;path": str(TEST_IMAGE_PATH)}],
-            "object": {"image": {"data:image/jpg;path": str(TEST_IMAGE_PATH)}, "other_data": "other_data"}
+            "image": image_dict,
+            "images": [image_dict, image_dict],
+            "object": {"image": image_dict, "other_data": "other_data"}
         }
         updated_inputs = load_multimedia_data(inputs, line_inputs)
         image = _create_image_from_file(TEST_IMAGE_PATH)
@@ -124,4 +126,17 @@ class TestMultimediaUtils:
             "image": image,
             "images": [image, image],
             "object": {"image": image, "other_data": "other_data"}
+        }
+
+        # Case 2: Test aggregation node
+        line_inputs = {
+            "image": [image_dict, image_dict],
+            "images": [[image_dict, image_dict], [image_dict]],
+            "object": [{"image": image_dict, "other_data": "other_data"}, {"other_data": "other_data"}]
+        }
+        updated_inputs = load_multimedia_data(inputs, line_inputs)
+        assert updated_inputs == {
+            "image": [image, image],
+            "images": [[image, image], [image]],
+            "object": [{"image": image, "other_data": "other_data"}, {"other_data": "other_data"}]
         }

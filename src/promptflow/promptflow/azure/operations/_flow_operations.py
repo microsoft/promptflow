@@ -119,14 +119,14 @@ class FlowOperations(_ScopeDependentOperations):
         return result
 
     @monitor_operation(activity_name="pfazure.flows.create_or_update", activity_type=ActivityType.PUBLICAPI)
-    def create_or_update(self, flow: Union[str, Path], name=None, type=None, **kwargs) -> Flow:
+    def create_or_update(self, flow: Union[str, Path], display_name=None, type=None, **kwargs) -> Flow:
         """Create a flow to remote from local source.
 
         :param flow: The source of the flow to create.
         :type flow: Union[str, Path]
-        :param name: The name of the flow to create. Default to be flow folder name + timestamp if not specified.
-            e.g. "web-classification-10-27-2023-14-19-10"
-        :type name: str
+        :param display_name: The display name of the flow to create. Default to be flow folder name + timestamp
+            if not specified. e.g. "web-classification-10-27-2023-14-19-10"
+        :type display_name: str
         :param type: The type of the flow to create. One of ["standard", evaluation", "chat"].
             Default to be "standard" if not specified.
         :type type: str
@@ -136,16 +136,20 @@ class FlowOperations(_ScopeDependentOperations):
         :type tags: Dict[str, str]
         """
         # validate the parameters
-        azure_flow, flow_name, flow_type, kwargs = self._validate_flow_creation_parameters(flow, name, type, **kwargs)
+        azure_flow, flow_display_name, flow_type, kwargs = self._validate_flow_creation_parameters(
+            flow, display_name, type, **kwargs
+        )
         # upload to file share
-        file_share_flow_path = self._resolve_flow_code_and_upload_to_file_share(flow=azure_flow, flow_name=flow_name)
+        file_share_flow_path = self._resolve_flow_code_and_upload_to_file_share(
+            flow=azure_flow, flow_display_name=flow_display_name
+        )
         if not file_share_flow_path:
             raise FlowOperationError(f"File share path should not be empty, got {file_share_flow_path!r}.")
 
         # create flow to remote
         flow_definition_file_path = f"{file_share_flow_path}/{DAG_FILE_NAME}"
         rest_flow = self._create_remote_flow_via_file_share_path(
-            flow_name=flow_name,
+            flow_display_name=flow_display_name,
             flow_type=flow_type,
             flow_definition_file_path=flow_definition_file_path,
             **kwargs,
@@ -157,14 +161,16 @@ class FlowOperations(_ScopeDependentOperations):
 
         return result_flow
 
-    def _validate_flow_creation_parameters(self, source, flow_name, flow_type, **kwargs):
+    def _validate_flow_creation_parameters(self, source, flow_display_name, flow_type, **kwargs):
         """Validate the parameters for flow creation operation."""
         flow = load_flow(source)
         # if no flow name specified, use "flow name + timestamp"
-        if not flow_name:
-            flow_name = f"{flow.name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
-        elif not isinstance(flow_name, str):
-            raise FlowOperationError(f"Flow name must be a string, got {type(flow_name)!r}: {flow_name!r}.")
+        if not flow_display_name:
+            flow_display_name = f"{flow.display_name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
+        elif not isinstance(flow_display_name, str):
+            raise FlowOperationError(
+                f"Flow name must be a string, got {type(flow_display_name)!r}: {flow_display_name!r}."
+            )
 
         # if no flow type specified, use default flow type "standard"
         supported_flow_types = FlowType.get_all_values()
@@ -194,9 +200,11 @@ class FlowOperations(_ScopeDependentOperations):
                 f"Tags type must be 'Dict[str, str]', got non-dict or non-string key/value in tags: {tags}."
             )
 
-        return flow, flow_name, flow_type, kwargs
+        return flow, flow_display_name, flow_type, kwargs
 
-    def _resolve_flow_code_and_upload_to_file_share(self, flow: Flow, flow_name: str, ignore_tools_json=False) -> str:
+    def _resolve_flow_code_and_upload_to_file_share(
+        self, flow: Flow, flow_display_name: str, ignore_tools_json=False
+    ) -> str:
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         file_share_flow_path = ""
 
@@ -231,16 +239,16 @@ class FlowOperations(_ScopeDependentOperations):
             self._storage_client = storage_client
 
             # check if the file share directory exists
-            if storage_client._check_file_share_directory_exist(flow_name):
+            if storage_client._check_file_share_directory_exist(flow_display_name):
                 raise FlowOperationError(
-                    f"Remote flow folder {flow_name!r} already exists under '{storage_client.file_share_prefix}'. "
-                    f"Please change the flow folder name and try again."
+                    f"Remote flow folder {flow_display_name!r} already exists under "
+                    f"'{storage_client.file_share_prefix}'. Please change the flow folder name and try again."
                 )
 
             try:
                 storage_client.upload_dir(
                     source=code.path,
-                    dest=flow_name,
+                    dest=flow_display_name,
                     msg="test",
                     ignore_file=code._ignore_file,
                     show_progress=False,
@@ -248,17 +256,19 @@ class FlowOperations(_ScopeDependentOperations):
             except Exception as e:
                 raise FlowOperationError(f"Failed to upload flow to file share due to: {str(e)}.") from e
 
-            file_share_flow_path = f"{storage_client.file_share_prefix}/{flow_name}"
+            file_share_flow_path = f"{storage_client.file_share_prefix}/{flow_display_name}"
             logger.info(f"Successfully uploaded flow to file share path {file_share_flow_path!r}.")
         return file_share_flow_path
 
-    def _create_remote_flow_via_file_share_path(self, flow_name, flow_type, flow_definition_file_path, **kwargs):
+    def _create_remote_flow_via_file_share_path(
+        self, flow_display_name, flow_type, flow_definition_file_path, **kwargs
+    ):
         """Create a flow to remote from file share path."""
         service_flow_type = CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE[flow_type]
         description = kwargs.get("description", None)
         tags = kwargs.get("tags", None)
         body = {
-            "flow_name": flow_name,
+            "flow_name": flow_display_name,
             "flow_definition_file_path": flow_definition_file_path,
             "flow_type": service_flow_type,
             "description": description,
