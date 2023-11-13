@@ -704,7 +704,6 @@ class FlowExecutor:
         return line_result
 
     def _add_line_results(self, line_results: List[LineResult]):
-        # TODO: runtime uses this function.
         self._run_tracker._flow_runs.update({result.run_info.run_id: result.run_info for result in line_results})
         self._run_tracker._node_runs.update(
             {
