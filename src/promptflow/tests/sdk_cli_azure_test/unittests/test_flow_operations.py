@@ -22,7 +22,7 @@ class TestFlow:
 
         flow_source = flow_test_dir / "web_classification/"
         with pytest.raises(FlowOperationError, match="Flow name must be a string"):
-            remote_client.flows.create_or_update(flow=flow_source, name=object())
+            remote_client.flows.create_or_update(flow=flow_source, display_name=object())
 
         with pytest.raises(FlowOperationError, match="Flow type 'fake_flow_type' is not supported"):
             remote_client.flows.create_or_update(flow=flow_source, type="fake_flow_type")
