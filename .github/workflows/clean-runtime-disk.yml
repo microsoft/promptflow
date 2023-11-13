@@ -1,4 +1,4 @@
-name: clean-runtime-disk
+name: Clean runtime disk
 
 on:
   pull_request:
@@ -37,5 +37,6 @@ jobs:
         shell: pwsh
         working-directory: ${{ github.workspace }}/scripts/runtime_mgmt
         run: |
+          pip install promptflow[azure]
           python create-clean-run.py --path canary.json
           python create-clean-run.py --path production.json
