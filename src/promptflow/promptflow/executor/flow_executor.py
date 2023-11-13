@@ -26,7 +26,6 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
-from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
@@ -967,6 +966,8 @@ class FlowExecutor:
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
         # TODO: This function will be removed after the batch engine refactoring is completed.
+        from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+
         return BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
