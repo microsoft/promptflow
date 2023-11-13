@@ -14,7 +14,7 @@ class OpenAI(ToolProvider):
         self.connection = connection
         self._connection_dict = dict(self.connection)
 
-    @tool(streaming_option_parameter = "stream")
+    @tool(streaming_option_parameter="stream")
     @handle_openai_error()
     def chat(
             self,
