@@ -12,6 +12,7 @@ from typing import Callable, Optional, List, Dict, Union, get_args, get_origin
 from dataclasses import dataclass, InitVar, field
 
 module_logger = logging.getLogger(__name__)
+STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
 
 
 # copied from promptflow.contracts.tool import ToolType
@@ -49,7 +50,7 @@ def tool(
     description: str = None,
     type: str = None,
     input_settings=None,
-    streaming_option_parameter=None,
+    streaming_option_parameter: Optional[str] = None,
     **kwargs,
 ) -> Callable:
     """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.
@@ -88,7 +89,8 @@ def tool(
         new_f.__type = type
         new_f.__input_settings = input_settings
         new_f.__extra_info = kwargs
-        new_f._streaming_option_parameter = streaming_option_parameter
+        if streaming_option_parameter and isinstance(streaming_option_parameter, str):
+            setattr(new_f, STREAMING_OPTION_PARAMETER_ATTR, streaming_option_parameter)
 
         return new_f
 

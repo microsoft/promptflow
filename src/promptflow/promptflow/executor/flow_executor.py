@@ -20,7 +20,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import ToolInvoker
+from promptflow._core.tool import ToolInvoker, STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import flow_logger, logger
@@ -1223,7 +1223,7 @@ class FlowExecutor:
         if self._flow.is_llm_node(node):
             return "stream"
         tool_function = self._tools_manager.get_tool(node.name)
-        return getattr(tool_function, "streaming_option_parameter", None)
+        return getattr(tool_function, STREAMING_OPTION_PARAMETER_ATTR, None)
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
