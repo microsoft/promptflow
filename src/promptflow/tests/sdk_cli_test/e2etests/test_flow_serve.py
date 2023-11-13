@@ -6,8 +6,6 @@ import pytest
 
 from promptflow._core.operation_context import OperationContext
 
-from ..recording_utilities import RecordStorage
-
 
 @pytest.mark.usefixtures("flow_serving_client", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
@@ -159,10 +157,6 @@ def test_unknown_api(flow_serving_client):
     assert response.status_code == 404
 
 
-@pytest.mark.skipif(
-    RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(),
-    reason="Stream not supported in record/replay mode.",
-)
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
     "accept, expected_status_code, expected_content_type",
@@ -209,10 +203,6 @@ def test_stream_llm_chat(
         print(result)
 
 
-@pytest.mark.skipif(
-    RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(),
-    reason="Stream not supported in record/replay mode.",
-)
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
     "accept, expected_status_code, expected_content_type",
@@ -274,10 +264,6 @@ def test_stream_python_stream_tools(
         )
 
 
-@pytest.mark.skipif(
-    RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(),
-    reason="Stream not supported in record/replay mode.",
-)
 @pytest.mark.usefixtures("recording_injection")
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
