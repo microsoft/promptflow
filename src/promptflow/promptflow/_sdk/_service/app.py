@@ -2,10 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, Blueprint
+from flask_restx import Api
 
-from promptflow._sdk._service.connection import connection_bp
-from promptflow._sdk._service.run import run_bp
+from promptflow._sdk._service.connection import api as connection_api
+from promptflow._sdk._service.run import api as run_api
 from promptflow._sdk._utils import get_promptflow_sdk_version
 
 
@@ -17,6 +18,12 @@ def heartbeat():
 def create_app():
     app = Flask(__name__)
     app.add_url_rule("/heartbeat", view_func=heartbeat)
-    app.register_blueprint(run_bp)
-    app.register_blueprint(connection_bp)
+    api_v1 = Blueprint("PromptFlow Service", __name__, url_prefix="/v1.0")
+    api = Api(api_v1, version='1.0')
+    api.add_namespace(connection_api)
+    api.add_namespace(run_api)
+    # api.init_app(app)
+
+    app.register_blueprint(api_v1)
+    # app.register_blueprint(connection_bp)
     return app
