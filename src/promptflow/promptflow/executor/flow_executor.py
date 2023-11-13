@@ -23,6 +23,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.flow_utils import apply_default_value_for_input
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
@@ -290,9 +291,7 @@ class FlowExecutor:
             )
         # Only load the node's referenced flow inputs
         node_referenced_flow_inputs = FlowExecutor._get_node_referenced_flow_inputs(node, flow.inputs)
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(
-            node_referenced_flow_inputs, flow_inputs
-        )
+        inputs_with_default_value = apply_default_value_for_input(node_referenced_flow_inputs, flow_inputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
             flow, node, inputs_with_default_value
         )
@@ -643,7 +642,7 @@ class FlowExecutor:
         :rtype: dict
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = apply_default_value_for_input(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -701,7 +700,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -760,10 +759,7 @@ class FlowExecutor:
 
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
-        inputs = [
-            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
-            for each_line_input in inputs
-        ]
+        inputs = [apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in inputs]
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
@@ -784,14 +780,6 @@ class FlowExecutor:
             line_results=line_results,
             aggr_results=aggr_results,
         )
-
-    @staticmethod
-    def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
-        updated_inputs = dict(line_inputs or {})
-        for key, value in inputs.items():
-            if key not in updated_inputs and (value and value.default):
-                updated_inputs[key] = value.default
-        return updated_inputs
 
     @staticmethod
     def _get_node_referenced_flow_inputs(

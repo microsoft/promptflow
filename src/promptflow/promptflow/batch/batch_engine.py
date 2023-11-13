@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.flow_utils import apply_default_value_for_input
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
@@ -11,7 +12,7 @@ from promptflow.batch.python_executor_proxy import PythonExecutorProxy
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.executor._result import BulkResult
-from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
+from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
@@ -89,8 +90,7 @@ class BatchEngine:
     ) -> BulkResult:
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         batch_inputs = [
-            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
-            for each_line_input in batch_inputs
+            apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
         ]
         run_id = run_id or str(uuid.uuid4())
         line_results = self._executor_proxy.exec_batch(batch_inputs, run_id, output_dir)

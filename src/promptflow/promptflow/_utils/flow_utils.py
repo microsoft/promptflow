@@ -5,9 +5,10 @@ import hashlib
 import os
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Any, Dict, Mapping, Union
 
 from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow.contracts.flow import FlowInputDefinition
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -42,3 +43,11 @@ def get_flow_lineage_id(flow_dir: Union[str, PathLike]):
     # hash the value to avoid it gets too long, and it's not user visible.
     lineage_id = hashlib.sha256(lineage_id.encode()).hexdigest()
     return lineage_id
+
+
+def apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+    updated_inputs = dict(line_inputs or {})
+    for key, value in inputs.items():
+        if key not in updated_inputs and (value and value.default):
+            updated_inputs[key] = value.default
+    return updated_inputs
