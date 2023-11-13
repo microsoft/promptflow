@@ -1,15 +1,15 @@
 # Adding a Tool Icon
-A tool icon serves as a graphical representation of your tool in the user interface (UI). Follow this guidance to add a custom tool icon when developing your own tool package.
+A tool icon serves as a graphical representation of your tool in the user interface (UI). This document offers guidance on integrating a tool icon when developing your own tool package. It offers instructions on how to add a single icon that seamlessly adapts to both dark and light modes. Additionally, the document also provides detailed steps on how to add distinct icons for dark and light modes separately.
 
 Adding a custom tool icon is optional. If you do not provide one, the system uses a default icon.
 
 ## Prerequisites
 
-- Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.0.10 or a more recent version.
+- Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.4.2 or later.
 - Create a tool package as described in [Create and Use Tool Package](create-and-use-tool-package.md).
-- Prepare custom icon image that meets these requirements:
+- Prepare custom icon images that meet these requirements:
 
-  - Use PNG, JPG or BMP format.
+  - Use PNG, JPG, or BMP format.
   - 16x16 pixels to prevent distortion when resizing.
   - Avoid complex images with lots of detail or contrast, as they may not resize well. 
 
@@ -20,10 +20,11 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
   pip install pillow
   ```
 
-## Add tool icon with _icon_ parameter 
+## Add tool icon using command
+### Add a tool icon for both light and dark mode  
 Run the command below in your tool project directory to automatically generate your tool YAML, use _-i_ or _--icon_ parameter to add a custom tool icon:
 ```
-python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -i <tool-icon-path>
+python <promptflow github repo>\scripts\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -i <tool-icon-path>
 ```
 Here we use [an existing tool project](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart) as an example.
 ```
@@ -49,6 +50,38 @@ my_tool_package.tools.my_tool_1.my_tool:
   type: python
 ```
 
+### Add tool icons for light and dark mode respectively
+Run the command below in your tool project directory to automatically generate your tool YAML, use _--icon-light_ to add a custom tool icon for the light mode and use _--icon-dark_ to add a custom tool icon for the dark mode:
+```
+python <promptflow github repo>\scripts\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> --icon-light <light-tool-icon-path> --icon-dark <dark-tool-icon-path>
+```
+Here we use [an existing tool project](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart) as an example.
+```
+cd D:\proj\github\promptflow\examples\tools\tool-package-quickstart
+
+python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m my_tool_package.tools.my_tool_1 -o my_tool_package\yamls\my_tool_1.yaml --icon-light my_tool_package\icons\custom-tool-icon-light.png --icon-dark my_tool_package\icons\custom-tool-icon-dark.png
+```
+
+In the auto-generated tool YAML file, the light and dark custom tool icon data URIs are added in the `icon` field:
+```yaml
+my_tool_package.tools.my_tool_1.my_tool:
+  function: my_tool
+  icon:
+    dark: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAB00lEQVR4nI1SO2iTURT+7iNNb16a+Cg6iJWqRKwVRIrWV6GVUkrFdqiVShBaxIIi4iY4iouDoy4ODkKn4uQkDs5FfEzFYjEtJYQo5P/z35j/3uNw7Z80iHqHC/ec8z3OuQeMMcYYAHenU8n84YMAABw7mo93dEQpAIyBAyAiF1Kq8/Wrl5fHR1x6tjC9uPBcSrlZD4BxIgIgBCei+bnC6cGxSuWHEEIIUa58H7l0dWZqwlqSUjhq7oDWEoAL584Y6ymljDHGmM543BhvaPAsAKLfEjIyB6BeryPw796+EWidUInr16b5z6rWAYCmKXeEEADGRy+SLgXlFfLWbbWoyytULZ4f6Hee2yDgnAG4OVsoff20try08eX92vLSzJVJAJw3q7dISSnDMFx48UypeCa97cPHz7fu3Y/FYo1Go8nbCiAiIUStVus/eaKvN691IAQnsltI24wZY9Kp1Ju373K5bDKZNMa6gf5ZIWrG9/0g0K3W/wYIw3Dvnq6dO7KNMPwvgOf5x3uPHOrp9n3/HwBrLYCu3bv6Tg0PjU0d2L8PAEWfDKCtac6YIVrfKN2Zn8tkUqvfigBaR88Ya66uezMgl93+9Mmjxw8fJBIqWv7NAvwCHeuq7gEPU/QAAAAASUVORK5CYII=
+    light: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAB2UlEQVR4nH1SO2hUQRQ9c18K33u72cXs7jOL8UeQCCJoJaIgKAiCWKilaGNlYREFDRGNjayVWKiFFmITECFKJKIokQRRsDFENoooUchHU5qdWZ2512KymxcNOcUwc5nDuefeA2FhZpGFU0S0Mf5S0zpdF2FhISgopUREKfXj59yhoycmPn4GAKDncuXa9VtKKWYGACgowHOdc9a6g0eOA7mx8apzzlp76vRZoGXw6XMRsdb6nwSAmYnoQ3Xi5fBIdk2SiSMiCoKgNZslteruvX4ASikvSwAEAGDqdYhAXO+VypevkwODQ4+HnlGcq2mDNLwtZq5pvWP3AYRJ0Lq2uG5rWNgYFjaBVt+8c19E/jRaWvQgImPj1e279ufaN8elzly5K1/u6r7QZ51zrjmoBqHJ+TU/39ax5cy5i53bdnb39KXtLpr28OMLgiCfz78YHpmemi0W2piZWdIWaMmDCIDWet/ePUlS0toQUWM8yxG8jrVuw/qOTBw19rUiQUQoCGZm50z9txf8By3/K0Rh+PDRk8lv3+MoWklBBACmpmdKxcKn96O3b1SqC6FSyxOUgohk4pjZ9T8YeDX6ptye+PoSpNIrfkGv3747fOzk+UtXjTE+BM14M8tfl7BQR9VzUXEAAAAASUVORK5CYII=
+  inputs:
+    connection:
+      type:
+      - CustomConnection
+    input_text:
+      type:
+      - string
+  module: my_tool_package.tools.my_tool_1
+  name: my_tool
+  type: python
+```
+Note: If you specify only a light icon without a dark icon, the defined icon will be used in light mode, while the system default icon will be used in dark mode. Similarly, if only a dark icon is specified, the defined icon will be used in dark mode, and the system default icon will be used in light mode.
+
 ## Verify the tool icon in VS Code extension
 Follow [steps](create-and-use-tool-package.md#use-your-tool-from-vscode-extension) to use your tool from VS Code extension. Your tool displays with the custom icon:  
 ![custom-tool-with-icon-in-extension](../../media/how-to-guides/develop-a-tool/custom-tool-with-icon-in-extension.png)
@@ -57,7 +90,7 @@ Follow [steps](create-and-use-tool-package.md#use-your-tool-from-vscode-extensio
 ### Can I preview the tool icon image before adding it to a tool?
 Yes, you could run below command under the root folder to generate a data URI for your custom tool icon. Make sure the output file has an `.html` extension.
 ```
-python <path-to-scripts>\tool\convert_image_to_data_url.py --image-path <image_input_path> -o <html_output_path>
+python <promptflow github repo>\scripts\tool\convert_image_to_data_url.py --image-path <image_input_path> -o <html_output_path>
 ```
 For example:
 ```
