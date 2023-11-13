@@ -1,6 +1,11 @@
 name: clean-runtime-disk
 
 on:
+  pull_request:
+    paths:
+      - "scripts/runtime_mgmt/clean-disk-flow/*"
+      - "scripts/runtime_mgmt/create-clean-run.py"
+
   schedule:
     - cron: "30 20 * * *"  # 4:30 Beijing Time (GMT+8)
 
