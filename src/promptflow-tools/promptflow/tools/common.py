@@ -10,7 +10,7 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat
-from typing import Set, List, Mapping
+from typing import List, Mapping
 
 
 class ChatInputList(list):
@@ -103,7 +103,7 @@ def try_parse_name_and_content(role_prompt):
     return None
 
 
-def parse_chat(chat_str, images: List = None, valid_roles: Set[str] = None):
+def parse_chat(chat_str, images: List = None, valid_roles: List[str] = None):
     if not valid_roles:
         valid_roles = ["system", "user", "assistant", "function"]
 
