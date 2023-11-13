@@ -25,7 +25,10 @@ from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import apply_default_value_for_input
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import (
+    load_multimedia_data,
+    load_multimedia_data_recursively
+)
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -607,6 +610,8 @@ class FlowExecutor:
             node.inputs = {
                 k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
             }
+        # Load multimedia data for the flow inputs of aggregation nodes.
+        inputs = load_multimedia_data(self._flow.inputs, inputs)
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
         run_tracker = self._run_tracker
@@ -956,9 +961,9 @@ class FlowExecutor:
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
         # TODO: This function will be removed after the batch engine refactoring is completed.
-        from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+        from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
 
-        return BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
+        return apply_inputs_mapping(inputs, inputs_mapping)
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
         """Enable the LLM node that is connected to output to return streaming results controlled by `stream_required`.
