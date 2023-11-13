@@ -2,17 +2,15 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch.base_executor_proxy import AbstractExecutorProxy
+from promptflow.batch.python_executor_proxy import PythonExecutorProxy
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import FlowRunInfo, Status
-from promptflow.contracts.run_mode import RunMode
-from promptflow.executor._flow_nodes_scheduler import DEFAULT_CONCURRENCY_BULK
-from promptflow.executor._result import BulkResult, LineResult
+from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -22,7 +20,9 @@ OUTPUT_FILE_NAME = "output.jsonl"
 class BatchEngine:
     """This class is used to execute flows in batch mode"""
 
-    executor_proxy_classes: Mapping[str, AbstractExecutorProxy] = {}
+    executor_proxy_classes: Mapping[str, AbstractExecutorProxy] = {
+        "python": PythonExecutorProxy,
+    }
 
     @classmethod
     def register_executor(cls, type, executor_proxy_cls: AbstractExecutorProxy):
@@ -52,6 +52,7 @@ class BatchEngine:
         output_dir: Path,
         run_id: Optional[str] = None,
         max_lines_count: Optional[int] = None,
+        raise_on_line_failure: Optional[bool] = False,
     ) -> BulkResult:
         """Run flow in batch mode
 
@@ -74,7 +75,7 @@ class BatchEngine:
         # run flow in batch mode
         output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
         with _change_working_dir(self._working_dir):
-            batch_result = self.flow_executor.exec_bulk(batch_inputs, run_id, output_dir=output_dir)
+            batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
         # persist outputs to output dir
         self._persist_outputs(batch_result.outputs, output_dir)
         return batch_result
@@ -83,43 +84,18 @@ class BatchEngine:
         self,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
-        validate_inputs: bool = True,
-        raise_on_line_failure: bool = False,
-        node_concurrency=DEFAULT_CONCURRENCY_BULK,
         output_dir: Path = None,
+        raise_on_line_failure: bool = False,
     ) -> BulkResult:
-        """The entry points for bulk run execution
-
-        :param batch_inputs: A list of dictionaries containing input data.
-        :type batch_inputs: List[Dict[str, Any]]
-        :param run_id: Run ID.
-        :type run_id: Optional[str]
-        :param validate_inputs: Whether to validate the inputs. Defaults to True.
-        :type validate_inputs: Optional[bool]
-        :param raise_on_line_failure: Whether to raise an exception on line failure. Defaults to False. \
-        [To be deprecated]
-        :type raise_on_line_failure: Optional[bool]
-        :param node_concurrency: The node concurrency. Defaults to DEFAULT_CONCURRENCY_BULK.
-        :type node_concurrency: Optional[int]
-        :return: The bulk result.
-        :rtype: ~promptflow.executor.flow_executor.BulkResult
-        """
-
-        self.flow_executor._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         batch_inputs = [
-            FlowExecutor._apply_default_value_for_input(self.flow_executor._flow.inputs, each_line_input)
+            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
             for each_line_input in batch_inputs
         ]
         run_id = run_id or str(uuid.uuid4())
-        with self.flow_executor._run_tracker.node_log_manager:
-            OperationContext.get_instance().run_mode = RunMode.Batch.name
-            line_results = self._exec_batch_with_process_pool(
-                batch_inputs, run_id, output_dir, validate_inputs=validate_inputs
-            )
-            self._add_line_results(line_results)  # For bulk run, currently we need to add line results to run_tracker
-            self._handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-            aggr_results = self._exec_aggregation_with_bulk_results(batch_inputs, line_results, run_id)
+        line_results = self._executor_proxy.exec_batch(batch_inputs, run_id, output_dir)
+        self._handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
+        aggr_results = self._executor_proxy.exec_aggregation(batch_inputs, line_results, run_id)
         outputs = [
             {LINE_NUMBER_KEY: r.run_info.index, **r.output}
             for r in line_results
@@ -131,50 +107,6 @@ class BatchEngine:
             line_results=line_results,
             aggr_results=aggr_results,
         )
-
-    def _add_line_results(self, line_results: List[LineResult]):
-        self.flow_executor._run_tracker._flow_runs.update(
-            {result.run_info.run_id: result.run_info for result in line_results}
-        )
-        self.flow_executor._run_tracker._node_runs.update(
-            {
-                node_run_info.run_id: node_run_info
-                for result in line_results
-                for node_run_info in result.node_run_infos.values()
-            }
-        )
-
-    def _exec_batch_with_process_pool(
-        self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
-    ) -> List[LineResult]:
-        nlines = len(batch_inputs)
-        line_number = [
-            batch_input["line_number"] for batch_input in batch_inputs if "line_number" in batch_input.keys()
-        ]
-        has_line_number = len(line_number) > 0
-        if not has_line_number:
-            line_number = [i for i in range(nlines)]
-
-        # TODO: Such scenario only occurs in legacy scenarios, will be deprecated.
-        has_duplicates = len(line_number) != len(set(line_number))
-        if has_duplicates:
-            line_number = [i for i in range(nlines)]
-
-        result_list = []
-
-        from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
-
-        with LineExecutionProcessPool(
-            self,
-            nlines,
-            run_id,
-            variant_id,
-            validate_inputs,
-            output_dir,
-        ) as pool:
-            result_list = pool.run(zip(line_number, batch_inputs))
-
-        return sorted(result_list, key=lambda r: r.run_info.index)
 
     def _handle_line_failures(self, run_infos: List[FlowRunInfo], raise_on_line_failure: bool = False):
         """Handle line failures in batch run"""

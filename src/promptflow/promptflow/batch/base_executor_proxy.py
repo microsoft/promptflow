@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
-from promptflow.executor._result import LineResult
+from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 
@@ -23,20 +23,29 @@ class AbstractExecutorProxy:
         pass
 
     def exec_line(
-        self, inputs: Mapping[str, Any], index: Optional[int] = None, run_id: Optional[str] = None
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
     ) -> LineResult:
         """Execute a line"""
         raise NotImplementedError()
 
-    def exec_batch(self):
-        pass
+    def exec_batch(
+        self,
+        batch_inputs: List[Mapping[str, Any]],
+        output_dir: Path,
+        run_id: Optional[str] = None,
+    ) -> List[LineResult]:
+        """Execute a batch run"""
+        raise NotImplementedError()
 
     def exec_aggregation(
         self,
         batch_inputs: List[dict],
-        results: List[LineResult],
-        run_id=None,
-    ):
+        line_results: List[LineResult],
+        run_id: Optional[str] = None,
+    ) -> AggregationResult:
         pass
 
 

@@ -445,7 +445,6 @@ class FlowExecutor:
     def _exec_batch_with_process_pool(
         self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
     ) -> List[LineResult]:
-        # TODO: legacy executor in runtime uses this function. It will be removed once legacy executor is deprecated.
         nlines = len(batch_inputs)
         line_number = [
             batch_input["line_number"] for batch_input in batch_inputs if "line_number" in batch_input.keys()
