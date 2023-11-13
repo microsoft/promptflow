@@ -1,13 +1,15 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+# pylint: disable=wrong-import-position
+import time
+
+# Log the start time
+start_time = time.perf_counter()
+
 import argparse
 import logging
 import sys
-import timeit
-
-# Log the start time
-start_time = timeit.default_timer()
 
 from promptflow._cli._pf._config import add_config_parser, dispatch_config_commands
 from promptflow._cli._pf._connection import add_connection_parser, dispatch_connection_commands
@@ -45,7 +47,7 @@ def entry(argv):
 
     args = parser.parse_args(argv)
     # Log the init finish time
-    init_finish_time = timeit.default_timer()
+    init_finish_time = time.perf_counter()
     try:
         # --verbose, enable info logging
         if hasattr(args, "verbose") and args.verbose:
@@ -79,7 +81,7 @@ def entry(argv):
         raise ex
     finally:
         # Log the invoke finish time
-        invoke_finish_time = timeit.default_timer()
+        invoke_finish_time = time.perf_counter()
         logger.info(
             "Command ran in %.3f seconds (init: %.3f, invoke: %.3f)",
             invoke_finish_time - start_time,
