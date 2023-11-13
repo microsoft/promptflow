@@ -936,14 +936,6 @@ class FlowExecutor:
             )
         return outputs
 
-    @staticmethod
-    def apply_inputs_mapping(
-        inputs: Mapping[str, Mapping[str, Any]],
-        inputs_mapping: Mapping[str, str],
-    ) -> Dict[str, Any]:
-        # TODO: This function will be removed after the batch engine refactoring is completed.
-        return BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
-
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
@@ -968,6 +960,14 @@ class FlowExecutor:
                 current_value=self._node_concurrency,
             )
         return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context).execute()
+
+    @staticmethod
+    def apply_inputs_mapping(
+        inputs: Mapping[str, Mapping[str, Any]],
+        inputs_mapping: Mapping[str, str],
+    ) -> Dict[str, Any]:
+        # TODO: This function will be removed after the batch engine refactoring is completed.
+        return BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
         """Enable the LLM node that is connected to output to return streaming results controlled by `stream_required`.
