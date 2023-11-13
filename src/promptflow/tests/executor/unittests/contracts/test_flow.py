@@ -13,8 +13,10 @@ from promptflow.contracts.flow import (
     InputAssignment,
     InputValueType,
     Node,
+    NodeVariant,
+    NodeVariants,
 )
-from promptflow.contracts.tool import ConnectionType, InputDefinition, Tool, ToolType, ValueType
+from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import UserErrorException
 
 from ...utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_yaml_file
@@ -22,8 +24,7 @@ from ...utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_yaml
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent.parent / "package_tools"
 
 
-# Is this unittest or e2etest?
-@pytest.mark.e2etest
+@pytest.mark.unittest
 class TestFlowContract:
     @pytest.mark.parametrize(
         "flow_folder, expected_connection_names",
@@ -73,42 +74,81 @@ class TestFlowContract:
         assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
     @pytest.mark.parametrize(
-        "flow_folder",
+        "flow, expected_value",
         [
-            ("web_classification"),
-            ("flow_with_dict_input_with_variant"),
+            (
+                Flow(id="flow_id", name="flow_name", nodes=[], inputs={}, outputs={}, tools=[]),
+                {"id": "flow_id", "name": "flow_name", "nodes": [], "inputs": {}, "outputs": {}, "tools": []},
+            ),
+            (
+                Flow(
+                    id="flow_id",
+                    name="flow_name",
+                    nodes=[Node(name="node1", tool="tool1", inputs={})],
+                    inputs={"input1": FlowInputDefinition(type=ValueType.STRING)},
+                    outputs={"output1": FlowOutputDefinition(type=ValueType.STRING, reference=None)},
+                    tools=[],
+                ),
+                {
+                    "id": "flow_id",
+                    "name": "flow_name",
+                    "nodes": [{"name": "node1", "tool": "tool1", "inputs": {}}],
+                    "inputs": {"input1": {"type": ValueType.STRING.value}},
+                    "outputs": {"output1": {"type": ValueType.STRING.value}},
+                    "tools": [],
+                },
+            ),
         ],
     )
-    def test_flow_serialize(self, flow_folder):
-        flow_yaml = get_yaml_file(flow_folder)
-        flow = Flow.from_yaml(flow_yaml)
-        serialized_flow = flow.serialize()
-        assert serialized_flow["name"] == flow.name
-        assert serialized_flow["nodes"] == [n.serialize() for n in flow.nodes]
-        assert serialized_flow["inputs"] == {name: i.serialize() for name, i in flow.inputs.items()}
-        assert serialized_flow["tools"] == [t.serialize() for t in flow.tools]
+    def test_flow_serialize(self, flow, expected_value):
+        assert flow.serialize() == expected_value
 
-        deserialize_flow = Flow.deserialize(serialized_flow)
-        assert deserialize_flow.name == flow.name
-        assert len(deserialize_flow.nodes) == len(flow.nodes)
-        assert deserialize_flow.inputs == flow.inputs
-        assert deserialize_flow.outputs == flow.outputs
-        assert deserialize_flow.tools == flow.tools
+    @pytest.mark.parametrize(
+        "data, expected_value",
+        [
+            (
+                {
+                    "id": "flow_id",
+                    "name": "flow_name",
+                    "nodes": [{"name": "node1", "tool": "tool1", "inputs": {}, "outputs": {}}],
+                    "inputs": {"input1": {"type": ValueType.STRING.value}},
+                    "outputs": {"output1": {"type": ValueType.STRING.value}},
+                    "tools": [],
+                },
+                Flow(
+                    id="flow_id",
+                    name="flow_name",
+                    nodes=[Node(name="node1", tool="tool1", inputs={})],
+                    inputs={
+                        "input1": FlowInputDefinition(
+                            type=ValueType.STRING, description="", enum=[], is_chat_input=False, is_chat_history=None
+                        )
+                    },
+                    outputs={
+                        "output1": FlowOutputDefinition(
+                            type=ValueType.STRING,
+                            reference=InputAssignment(
+                                value="", value_type=InputValueType.LITERAL, section="", property=""
+                            ),
+                            description="",
+                            evaluation_only=False,
+                            is_chat_output=False,
+                        )
+                    },
+                    tools=[],
+                    node_variants={},
+                ),
+            ),
+        ],
+    )
+    def test_flow_deserialize(self, data, expected_value):
+        assert Flow.deserialize(data) == expected_value
 
     def test_import_requisites(self):
-        tool1 = Tool(name="tool1", type=ToolType.PYTHON, inputs={"name": InputDefinition(type=["int"])}, module="yaml")
-        tool2 = Tool(
-            name="tool2", type=ToolType.PYTHON, inputs={"name": InputDefinition(type=["int"])}, module="module"
-        )
-        node1 = Node(
-            name="node1", tool="tool1", inputs={"name": InputAssignment("value", InputValueType.LITERAL)}, module="yaml"
-        )
-        node2 = Node(
-            name="node2",
-            tool="tool2",
-            inputs={"name": InputAssignment("value", InputValueType.LITERAL)},
-            module="module",
-        )
+        tool1 = Tool(name="tool1", type=ToolType.PYTHON, inputs={}, module="yaml")
+        tool2 = Tool(name="tool2", type=ToolType.PYTHON, inputs={}, module="module")
+        node1 = Node(name="node1", tool="tool1", inputs={}, module="yaml")
+        node2 = Node(name="node2", tool="tool2", inputs={}, module="module")
         tools = [tool1, tool2]
         nodes = [node1, node2]
 
@@ -118,113 +158,192 @@ class TestFlowContract:
         assert str(e.value).startswith("Failed to import modules with error:")
 
     def test_apply_default_node_variants(self):
-        flow_folder = "flow_with_dict_input_with_variant"
-        flow_yaml = get_yaml_file(flow_folder)
-        flow = Flow.from_yaml(flow_yaml)
+        node_variant = NodeVariant(
+            node=Node(name="print_val_variant", tool=None, inputs={"input2": None}, use_variants=False),
+            description=None,
+        )
+        node_variants = {
+            "print_val": NodeVariants(
+                default_variant_id="variant1",
+                variants={"variant1": node_variant},
+            )
+        }
+        flow1 = Flow(
+            id="test_flow_id",
+            name="test_flow",
+            nodes=[Node(name="print_val", tool=None, inputs={"input1": None}, use_variants=True)],
+            inputs={},
+            outputs={},
+            tools=[],
+            node_variants=node_variants,
+        )
         # test when node.use_variants is True
-        flow._apply_default_node_variants()
-        assert flow.nodes[0].use_variants is False
-        assert flow.nodes[0].inputs == flow.node_variants["print_val"].variants["variant1"].node.inputs
+        flow1._apply_default_node_variants()
+        assert flow1.nodes[0].use_variants is False
+        assert flow1.nodes[0].inputs.keys() == {"input2"}
+        assert flow1.nodes[0].name == "print_val"
+
+        flow2 = Flow(
+            id="test_flow_id",
+            name="test_flow",
+            nodes=[Node(name="print_val", tool=None, inputs={"input1": None}, use_variants=False)],
+            inputs={},
+            outputs={},
+            tools=[],
+            node_variants=node_variants,
+        )
         # test when node.use_variants is False
-        flow = Flow.from_yaml(flow_yaml)
-        flow.nodes[0].use_variants = False
-        tmp_nodes = flow.nodes
-        flow._apply_default_node_variants()
-        assert flow.nodes == tmp_nodes
+        tmp_nodes = flow2.nodes
+        flow2._apply_default_node_variants()
+        assert flow2.nodes == tmp_nodes
 
     def test_apply_default_node_variant(self):
-        flow_folder = "flow_with_dict_input_with_variant"
-        flow_yaml = get_yaml_file(flow_folder)
-        flow = Flow.from_yaml(flow_yaml)
-        node = flow.nodes[0]
-        variant = flow.node_variants
+        node = Node(name="print_val", tool=None, inputs={"input1": None}, use_variants=True)
+        node_variant = NodeVariant(
+            node=Node(name="print_val_variant", tool=None, inputs={"input2": None}, use_variants=False),
+            description=None,
+        )
         # test when node_variants is None
-        assert Flow._apply_default_node_variant(node, {}) == node
+        assert Flow._apply_default_node_variant(node, None) == node
+
         # test when node.name is not in node_variants
-        variant_change_nodename = variant.copy()
-        variant_change_nodename["test"] = variant_change_nodename.pop("print_val")
-        assert Flow._apply_default_node_variant(node, variant_change_nodename) == node
+        node_variants1 = {"test": NodeVariants(default_variant_id="variant1", variants={"variant1": node_variant})}
+        assert Flow._apply_default_node_variant(node, node_variants1) == node
+        node_variants2 = {"print_val": NodeVariants(default_variant_id="test", variants={"variant1": node_variant})}
         # test when default_variant_id is not in variants
-        variant_change_id = variant.copy()
-        variant_change_id["print_val"].default_variant_id = "test"
-        assert Flow._apply_default_node_variant(node, variant_change_id) == node
+        assert Flow._apply_default_node_variant(node, node_variants2) == node
 
     def test_apply_node_overrides(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
+        llm_node = Node(name="llm_node", tool=None, inputs={}, connection="open_ai_connection")
+        test_node = Node(
+            name="test_node", tool=None, inputs={"test": InputAssignment("test_value1", InputValueType.LITERAL)}
+        )
+        flow = Flow(id="test_flow_id", name="test_flow", nodes=[llm_node, test_node], inputs={}, outputs={}, tools=[])
         assert flow == flow._apply_node_overrides(None)
         assert flow == flow._apply_node_overrides({})
 
         node_overrides = {
-            "llm_node1.connection": "some_connection",
+            "other_node.connection": "some_connection",
         }
         with pytest.raises(ValueError):
             flow._apply_node_overrides(node_overrides)
 
         node_overrides = {
-            "classify_with_llm.connection": "custom_connection",
-            "fetch_text_content_from_url.test": "test",
+            "llm_node.connection": "custom_connection",
+            "test_node.test": "test_value2",
         }
         flow = flow._apply_node_overrides(node_overrides)
-        assert flow.nodes[3].connection == "custom_connection"
-        assert flow.nodes[0].inputs["test"].value == "test"
+        assert flow.nodes[0].connection == "custom_connection"
+        assert flow.nodes[1].inputs["test"].value == "test_value2"
 
     def test_has_aggregation_node(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert not flow.has_aggregation_node()
-        flow.nodes[0].aggregation = True
-        assert flow.has_aggregation_node()
+        llm_node = Node(name="llm_node", tool=None, inputs={})
+        aggre_node = Node(name="aggre_node", tool=None, inputs={}, aggregation=True)
+        flow1 = Flow(id="id", name="name", nodes=[llm_node], inputs={}, outputs={}, tools=[])
+        assert not flow1.has_aggregation_node()
+        flow2 = Flow(id="id", name="name", nodes=[llm_node, aggre_node], inputs={}, outputs={}, tools=[])
+        assert flow2.has_aggregation_node()
+
+    def test_get_node(self):
+        llm_node = Node(name="llm_node", tool=None, inputs={})
+        flow = Flow(id="id", name="name", nodes=[llm_node], inputs={}, outputs={}, tools=[])
+        assert flow.get_node("llm_node") is llm_node
+        assert flow.get_node("other_node") is None
+
+    def test_get_tool(self):
+        tool = Tool(name="tool", type=ToolType.PYTHON, inputs={})
+        flow = Flow(id="id", name="name", nodes=[], inputs={}, outputs={}, tools=[tool])
+        assert flow.get_tool("tool") is tool
+        assert flow.get_tool("other_tool") is None
 
     def test_is_reduce_node(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert not flow.is_reduce_node("test")
-        assert not flow.is_reduce_node("fetch_text_content_from_url")
-        flow.nodes[0].aggregation = True
-        assert flow.is_reduce_node("fetch_text_content_from_url")
+        llm_node = Node(name="llm_node", tool=None, inputs={})
+        aggre_node = Node(name="aggre_node", tool=None, inputs={}, aggregation=True)
+        flow = Flow(id="id", name="name", nodes=[llm_node, aggre_node], inputs={}, outputs={}, tools=[])
+        assert not flow.is_reduce_node("llm_node")
+        assert flow.is_reduce_node("aggre_node")
 
     def test_is_normal_node(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert not flow.is_normal_node("test")
-        assert flow.is_normal_node("fetch_text_content_from_url")
-        flow.nodes[0].aggregation = True
-        assert not flow.is_normal_node("fetch_text_content_from_url")
+        llm_node = Node(name="llm_node", tool=None, inputs={})
+        aggre_node = Node(name="aggre_node", tool=None, inputs={}, aggregation=True)
+        flow = Flow(id="id", name="name", nodes=[llm_node, aggre_node], inputs={}, outputs={}, tools=[])
+        assert flow.is_normal_node("llm_node")
+        assert not flow.is_normal_node("aggre_node")
 
     def test_is_llm_node(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert flow.is_llm_node(flow.nodes[3])
-        assert not flow.is_llm_node(flow.nodes[0])
+        llm_node = Node(name="llm_node", tool=None, inputs={}, type=ToolType.LLM)
+        aggre_node = Node(name="aggre_node", tool=None, inputs={}, aggregation=True)
+        flow = Flow(id="id", name="name", nodes=[llm_node, aggre_node], inputs={}, outputs={}, tools=[])
+        assert flow.is_llm_node(llm_node)
+        assert not flow.is_llm_node(aggre_node)
 
     def test_is_referenced_by_flow_output(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert not flow.is_referenced_by_flow_output(flow.nodes[0])
-        assert flow.is_referenced_by_flow_output(flow.nodes[4])
+        llm_node = Node(name="llm_node", tool=None, inputs={})
+        aggre_node = Node(name="aggre_node", tool=None, inputs={}, aggregation=True)
+        output = {
+            "output": FlowOutputDefinition(
+                type=ValueType.STRING, reference=InputAssignment("llm_node", InputValueType.NODE_REFERENCE, "output")
+            )
+        }
+        flow = Flow(id="id", name="name", nodes=[llm_node, aggre_node], inputs={}, outputs=output, tools=[])
+        assert flow.is_referenced_by_flow_output(llm_node)
+        assert not flow.is_referenced_by_flow_output(aggre_node)
 
     def test_is_node_referenced_by(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert not flow.is_node_referenced_by(flow.nodes[3], flow.nodes[2])
-        assert flow.is_node_referenced_by(flow.nodes[2], flow.nodes[3])
+        llm_node = Node(name="llm_node", tool=None, inputs={})
+        aggre_node = Node(
+            name="aggre_node",
+            tool=None,
+            inputs={"input": InputAssignment(value="llm_node", value_type=InputValueType.NODE_REFERENCE)},
+            aggregation=True,
+        )
+        flow = Flow(id="id", name="name", nodes=[llm_node, aggre_node], inputs={}, outputs={}, tools=[])
+        assert not flow.is_node_referenced_by(aggre_node, llm_node)
+        assert flow.is_node_referenced_by(llm_node, aggre_node)
 
     def test_is_referenced_by_other_node(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert not flow.is_referenced_by_other_node(flow.nodes[0])
-        assert flow.is_referenced_by_other_node(flow.nodes[2])
+        llm_node = Node(name="llm_node", tool=None, inputs={})
+        aggre_node = Node(
+            name="aggre_node",
+            tool=None,
+            inputs={"input": InputAssignment(value="llm_node", value_type=InputValueType.NODE_REFERENCE)},
+            aggregation=True,
+        )
+        flow = Flow(id="id", name="name", nodes=[llm_node, aggre_node], inputs={}, outputs={}, tools=[])
+        assert not flow.is_referenced_by_other_node(aggre_node)
+        assert flow.is_referenced_by_other_node(llm_node)
 
     def test_is_chat_flow(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert not flow.is_chat_flow()
-        flow = Flow.from_yaml(get_yaml_file("chat_flow"))
-        assert flow.is_chat_flow()
+        chat_input = {"question": FlowInputDefinition(type=ValueType.STRING, is_chat_input=True)}
+        standard_flow = Flow(id="id", name="name", nodes=[], inputs={}, outputs={}, tools=[])
+        chat_flow = Flow(id="id", name="name", nodes=[], inputs=chat_input, outputs={}, tools=[])
+        assert not standard_flow.is_chat_flow()
+        assert chat_flow.is_chat_flow()
 
     def test_get_chat_input_name(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert flow.get_chat_input_name() is None
-        flow = Flow.from_yaml(get_yaml_file("chat_flow"))
-        assert flow.get_chat_input_name() == "question"
+        chat_input = {"question": FlowInputDefinition(type=ValueType.STRING, is_chat_input=True)}
+        standard_flow = Flow(id="id", name="name", nodes=[], inputs={}, outputs={}, tools=[])
+        chat_flow = Flow(id="id", name="name", nodes=[], inputs=chat_input, outputs={}, tools=[])
+        assert standard_flow.get_chat_input_name() is None
+        assert chat_flow.get_chat_input_name() == "question"
 
     def test_get_chat_output_name(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert flow.get_chat_output_name() is None
-        flow = Flow.from_yaml(get_yaml_file("chat_flow"))
-        assert flow.get_chat_output_name() == "answer"
+        chat_output = {"answer": FlowOutputDefinition(type=ValueType.STRING, reference=None, is_chat_output=True)}
+        standard_flow = Flow(id="id", name="name", nodes=[], inputs={}, outputs={}, tools=[])
+        chat_flow = Flow(id="id", name="name", nodes=[], inputs={}, outputs=chat_output, tools=[])
+        assert standard_flow.get_chat_output_name() is None
+        assert chat_flow.get_chat_output_name() == "answer"
+
+    def test_get_connection_name_from_tool(self):
+        tool1 = Tool(name="tool", type=ToolType.PYTHON, inputs={"input1": InputDefinition(type=["connection"])})
+        node1 = Node(name="node", tool=tool1, inputs={"input1": InputAssignment("value", InputValueType.LITERAL)})
+        flow1 = Flow(id="id", name="name", nodes=[node1], inputs={}, outputs={}, tools=[tool1])
+        assert flow1._get_connection_name_from_tool(tool1, node1) == {"input1": "value"}
+
+        tool2 = Tool(name="tool", type=ToolType.PYTHON, inputs={"input1": InputDefinition(type=[ValueType.STRING])})
+        node2 = Node(name="node", tool=tool2, inputs={})
+        flow2 = Flow(id="id", name="name", nodes=[node1], inputs={}, outputs={}, tools=[tool2])
+        assert flow2._get_connection_name_from_tool(tool2, node2) == {}
 
     def test_get_connection_input_names_for_node(self):
         flow = Flow.from_yaml(get_yaml_file("web_classification"))
@@ -235,9 +354,6 @@ class TestFlowContract:
         with pytest.raises(UserErrorException):
             flow.get_connection_input_names_for_node("fetch_text_content_from_url")
 
-        flow = Flow.from_yaml(get_yaml_file("custom_connection_flow"))
-        assert flow.get_connection_input_names_for_node("print_env") == ["connection"]
-
     def test_replace_with_variant(self):
         flow = Flow.from_yaml(get_yaml_file("web_classification"))
         tool_cnt = len(flow.tools)
@@ -247,25 +363,21 @@ class TestFlowContract:
 
 @pytest.mark.unittest
 class TestInputAssignment:
-    def test_serialize(self):
-        input_assignment = InputAssignment("value", InputValueType.LITERAL)
-
-        # Test if the serialization is correct
-        assert input_assignment.serialize() == "value"
-
-        input_assignment.value_type = InputValueType.FLOW_INPUT
-        assert input_assignment.serialize() == "${flow.value}"
-
-        input_assignment.value_type = InputValueType.NODE_REFERENCE
-        input_assignment.section = "section"
-        assert input_assignment.serialize() == "${value.section}"
-
-        input_assignment.property = "property"
-        assert input_assignment.serialize() == "${value.section.property}"
-
-        input_assignment.value = AzureContentSafetyConnection
-        input_assignment.value_type = InputValueType.LITERAL
-        assert input_assignment.serialize() == ConnectionType.serialize_conn(input_assignment.value)
+    @pytest.mark.parametrize(
+        "value, expected_value",
+        [
+            (InputAssignment("value", InputValueType.LITERAL), "value"),
+            (InputAssignment("value", InputValueType.FLOW_INPUT), "${flow.value}"),
+            (InputAssignment("value", InputValueType.NODE_REFERENCE, "section"), "${value.section}"),
+            (
+                InputAssignment("value", InputValueType.NODE_REFERENCE, "section", "property"),
+                "${value.section.property}",
+            ),
+            (InputAssignment(AzureContentSafetyConnection, InputValueType.LITERAL, "section", "property"), "ABCMeta"),
+        ],
+    )
+    def test_serialize(self, value, expected_value):
+        assert value.serialize() == expected_value
 
     @pytest.mark.parametrize(
         "serialized_value, expected_value",
@@ -304,12 +416,10 @@ class TestFlowInputAssignment:
 
     def test_deserialize(self):
         expected_input = FlowInputAssignment("section.property", prefix="inputs.", value_type=InputValueType.FLOW_INPUT)
-        input_assignment = FlowInputAssignment.deserialize("inputs.section.property")
-        assert input_assignment == expected_input
+        assert FlowInputAssignment.deserialize("inputs.section.property") == expected_input
 
         expected_flow = FlowInputAssignment("section.property", prefix="flow.", value_type=InputValueType.FLOW_INPUT)
-        flow_assignment = FlowInputAssignment.deserialize("flow.section.property")
-        assert flow_assignment == expected_flow
+        assert FlowInputAssignment.deserialize("flow.section.property") == expected_flow
 
         with pytest.raises(ValueError):
             FlowInputAssignment.deserialize("value")
@@ -317,127 +427,143 @@ class TestFlowInputAssignment:
 
 @pytest.mark.unittest
 class TestNode:
-    def test_serialize(self):
-        node = Node(name="test_node", tool="test_tool", inputs={})
-        serialized_node = node.serialize()
-        assert serialized_node["name"] == "test_node"
-        assert serialized_node["tool"] == "test_tool"
-        assert serialized_node["inputs"] == {}
+    @pytest.mark.parametrize(
+        "node, expected_value",
+        [
+            (
+                Node(name="test_node", tool="test_tool", inputs={}),
+                {"name": "test_node", "tool": "test_tool", "inputs": {}},
+            ),
+            (
+                Node(name="test_node", tool="test_tool", inputs={}, aggregation=True),
+                {"name": "test_node", "tool": "test_tool", "inputs": {}, "aggregation": True, "reduce": True},
+            ),
+        ],
+    )
+    def test_serialize(self, node, expected_value):
+        assert node.serialize() == expected_value
 
-        node = Node(name="test_node", tool="test_tool", inputs={}, aggregation=True)
-        serialized_node = node.serialize()
-        assert serialized_node["aggregation"]
-        assert serialized_node["reduce"]
-
-    def test_deserialize(self):
-        data = {"name": "test_node", "tool": "test_tool", "inputs": {}}
-        node = Node.deserialize(data)
-        assert node.name == "test_node"
-        assert node.tool == "test_tool"
-        assert node.inputs == {}
+    @pytest.mark.parametrize(
+        "data, expected_value",
+        [
+            (
+                {"name": "test_node", "tool": "test_tool", "inputs": {}},
+                Node(name="test_node", tool="test_tool", inputs={}),
+            ),
+            (
+                {"name": "test_node", "tool": "test_tool", "inputs": {}, "aggregation": True},
+                Node(name="test_node", tool="test_tool", inputs={}, aggregation=True),
+            ),
+        ],
+    )
+    def test_deserialize(self, data, expected_value):
+        assert Node.deserialize(data) == expected_value
 
 
 @pytest.mark.unittest
 class TestFlowInputDefinition:
-    def test_serialize(self):
-        flow_input = FlowInputDefinition(
-            type=ValueType.STRING,
-            default="default",
-            description="description",
-            enum=["enum1", "enum2"],
-            is_chat_input=True,
-            is_chat_history=True,
-        )
+    @pytest.mark.parametrize(
+        "value, expected_value",
+        [
+            (FlowInputDefinition(type=ValueType.BOOL), {"type": ValueType.BOOL.value}),
+            (
+                FlowInputDefinition(
+                    type=ValueType.STRING,
+                    default="default",
+                    description="description",
+                    enum=["enum1", "enum2"],
+                    is_chat_input=True,
+                    is_chat_history=True,
+                ),
+                {
+                    "type": ValueType.STRING.value,
+                    "default": "default",
+                    "description": "description",
+                    "enum": ["enum1", "enum2"],
+                    "is_chat_input": True,
+                    "is_chat_history": True,
+                },
+            ),
+        ],
+    )
+    def test_serialize(self, value, expected_value):
+        assert value.serialize() == expected_value
 
-        serialized_flow_input = flow_input.serialize()
-        assert serialized_flow_input["type"] == ValueType.STRING.value
-        assert serialized_flow_input["default"] == "default"
-        assert serialized_flow_input["description"] == "description"
-        assert serialized_flow_input["enum"] == ["enum1", "enum2"]
-        assert serialized_flow_input["is_chat_input"]
-        assert serialized_flow_input["is_chat_history"]
-
-        flow_input_reduced = FlowInputDefinition(type=ValueType.BOOL)
-        serialized_flow_reduced = flow_input_reduced.serialize()
-        assert serialized_flow_reduced["type"] == ValueType.BOOL.value
-        assert serialized_flow_reduced.get("default") is None
-        assert serialized_flow_reduced.get("is_chat_input") is None
-        assert serialized_flow_reduced.get("is_chat_history") is None
-
-    def test_deserialize(self):
-        data = {
-            "type": ValueType.STRING,
-            "default": "default",
-            "description": "description",
-            "enum": ["enum1", "enum2"],
-            "is_chat_input": True,
-            "is_chat_history": True,
-        }
-        flow_input_def = FlowInputDefinition.deserialize(data)
-        assert flow_input_def.type == ValueType.STRING.value
-        assert flow_input_def.default == "default"
-        assert flow_input_def.description == "description"
-        assert flow_input_def.enum == ["enum1", "enum2"]
-        assert flow_input_def.is_chat_input
-        assert flow_input_def.is_chat_history
-
-        data = {
-            "type": ValueType.STRING,
-        }
-        flow_input_def = FlowInputDefinition.deserialize(data)
-        assert flow_input_def.type == ValueType.STRING.value
-        assert flow_input_def.default is None
-        assert flow_input_def.description == ""
-        assert flow_input_def.enum == []
-        assert flow_input_def.is_chat_input is False
-        assert flow_input_def.is_chat_history is None
+    @pytest.mark.parametrize(
+        "data, expected_value",
+        [
+            (
+                {
+                    "type": ValueType.STRING,
+                    "default": "default",
+                    "description": "description",
+                    "enum": ["enum1", "enum2"],
+                    "is_chat_input": True,
+                    "is_chat_history": True,
+                },
+                FlowInputDefinition(
+                    type=ValueType.STRING,
+                    default="default",
+                    description="description",
+                    enum=["enum1", "enum2"],
+                    is_chat_input=True,
+                    is_chat_history=True,
+                ),
+            ),
+            (
+                {
+                    "type": ValueType.STRING,
+                },
+                FlowInputDefinition(
+                    type=ValueType.STRING, description="", enum=[], is_chat_input=False, is_chat_history=None
+                ),
+            ),
+        ],
+    )
+    def test_deserialize(self, data, expected_value):
+        assert FlowInputDefinition.deserialize(data) == expected_value
 
 
 @pytest.mark.unittest
 class TestFlowOutputDefinition:
-    def test_serialize(self):
-        input_assignment = InputAssignment("value", InputValueType.NODE_REFERENCE)
-        flow_output = FlowOutputDefinition(
-            type=ValueType.STRING,
-            reference=input_assignment,
-            description="description",
-            evaluation_only=True,
-            is_chat_output=True,
-        )
-        serialized_flow_output = flow_output.serialize()
-        assert serialized_flow_output["type"] == ValueType.STRING.value
-        assert serialized_flow_output["reference"] == "${value.}"
-        assert serialized_flow_output["description"] == "description"
-        assert serialized_flow_output["evaluation_only"]
-        assert serialized_flow_output["is_chat_output"]
+    @pytest.mark.parametrize(
+        "value, expected_value",
+        [
+            (FlowOutputDefinition(type=ValueType.BOOL, reference=None), {"type": ValueType.BOOL.value}),
+            (
+                FlowOutputDefinition(
+                    type=ValueType.STRING,
+                    reference=InputAssignment("value", InputValueType.NODE_REFERENCE),
+                    description="description",
+                    evaluation_only=True,
+                    is_chat_output=True,
+                ),
+                {
+                    "type": ValueType.STRING.value,
+                    "reference": "${value.}",
+                    "description": "description",
+                    "evaluation_only": True,
+                    "is_chat_output": True,
+                },
+            ),
+        ],
+    )
+    def test_serialize(self, value, expected_value):
+        assert value.serialize() == expected_value
 
-        flow_output_reduced = FlowOutputDefinition(type=ValueType.BOOL, reference=input_assignment)
-        serialized_flow_reduced = flow_output_reduced.serialize()
-        assert serialized_flow_reduced.get("type") == ValueType.BOOL.value
-        assert serialized_flow_reduced.get("reference") == "${value.}"
-        assert serialized_flow_reduced.get("description") is None
-        assert serialized_flow_reduced.get("evaluation_only") is None
-        assert serialized_flow_reduced.get("is_chat_output") is None
-
-    def test_deserialize(self):
-        data = {
-            "type": ValueType.STRING,
-            "reference": "${value.}",
-            "description": "description",
-            "evaluation_only": True,
-            "is_chat_output": True,
-        }
-        flow_output_def = FlowOutputDefinition.deserialize(data)
-        assert flow_output_def.type == ValueType.STRING.value
-        assert flow_output_def.reference.value_type == InputValueType.NODE_REFERENCE
-        assert flow_output_def.description == "description"
-        assert flow_output_def.evaluation_only
-        assert flow_output_def.is_chat_output
-
-        data = {"type": ValueType.STRING, "reference": "${flow.section.property}"}
-        flow_output_def = FlowOutputDefinition.deserialize(data)
-        assert flow_output_def.type == ValueType.STRING.value
-        assert flow_output_def.reference.value_type == InputValueType.FLOW_INPUT
-        assert flow_output_def.description == ""
-        assert flow_output_def.evaluation_only is False
-        assert flow_output_def.is_chat_output is False
+    @pytest.mark.parametrize(
+        "data, expected_value",
+        [
+            (
+                {
+                    "type": ValueType.STRING,
+                },
+                FlowOutputDefinition(
+                    type=ValueType.STRING,
+                    reference=InputAssignment("", InputValueType.LITERAL),
+                ),
+            ),
+        ],
+    )
+    def test_deserialize(self, data, expected_value):
+        assert FlowOutputDefinition.deserialize(data) == expected_value
