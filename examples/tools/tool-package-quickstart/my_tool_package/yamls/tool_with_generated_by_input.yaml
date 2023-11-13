@@ -17,8 +17,7 @@ my_tool_package.tools.tool_with_generated_by_input.my_tool:
           optional: true
           reference: ${inputs.index}
         - name: index_connection
-          type:
-            - [CognitiveSearchConnection]
+          type: [CognitiveSearchConnection]
           optional: true
           reference: ${inputs.index_connection}
         - name: index_name
@@ -47,8 +46,7 @@ my_tool_package.tools.tool_with_generated_by_input.my_tool:
           optional: true
           reference: ${inputs.semantic_configuration}
         - name: embedding_connection
-          type:
-            - [AzureOpenAIConnection, OpenAIConnection]
+          type: [AzureOpenAIConnection, OpenAIConnection]
           optional: true
           reference: ${inputs.embedding_connection}
         - name: embedding_deployment
@@ -78,8 +76,7 @@ my_tool_package.tools.tool_with_generated_by_input.my_tool:
         func_path: my_tool_package.tools.tool_with_generated_by_input.list_indexes
       input_type: uionly_hidden 
     index_connection:
-      type:
-        - [CognitiveSearchConnection]
+      type: [CognitiveSearchConnection]
       enabled_by: index_type
       enabled_by_value: ["Azure Cognitive Search"]
       input_type: uionly_hidden 
@@ -122,8 +119,7 @@ my_tool_package.tools.tool_with_generated_by_input.my_tool:
         func_path: my_tool_package.tools.tool_with_generated_by_input.list_semantic_configuration
       input_type: uionly_hidden
     embedding_connection:
-      type:
-        - [AzureOpenAIConnection, OpenAIConnection]
+      type: [AzureOpenAIConnection, OpenAIConnection]
       enabled_by: index_type
       enabled_by_value: ["Azure Cognitive Search"]
       input_type: uionly_hidden
