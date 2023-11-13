@@ -102,10 +102,9 @@ class RecordStorage(object):
         file_content = self.cached_items.get(self._record_file_str, None)
 
         if file_content is not None:
-            saved_dict = shelve.open(str(self.record_file.resolve()))
-            for key, value in file_content.items():
-                saved_dict[key] = value
-            saved_dict.close()
+            with shelve.open(str(self.record_file.resolve()), writeback=True) as saved_dict:
+                for key, value in file_content.items():
+                    saved_dict[key] = value
 
     def _load_file(self) -> None:
         local_content = self.cached_items.get(self._record_file_str, None)
@@ -113,10 +112,9 @@ class RecordStorage(object):
             if not self.exists_record_file(self.record_file.parent, self.record_file.parts[-1]):
                 return
             self.cached_items[self._record_file_str] = {}
-            saved_dict = shelve.open(str(self.record_file.resolve()))
-            for key, value in saved_dict.items():
-                self.cached_items[self._record_file_str][key] = value
-            saved_dict.close()
+            with shelve.open(str(self.record_file.resolve()), writeback=True) as saved_dict:
+                for key, value in saved_dict.items():
+                    self.cached_items[self._record_file_str][key] = value
 
     def get_record(self, input_dict: Dict) -> object:
         """
@@ -185,7 +183,7 @@ class RecordStorage(object):
         else:
             saved_output = current_saved_records.get(hash_value, None)
             if saved_output is not None:
-                if saved_output["output"] == str(output) and saved_output["output_type"] == type(output).__name__:
+                if saved_output["output"] == output and saved_output["output_type"] == type(output).__name__:
                     return
                 else:
                     current_saved_records[hash_value] = {
@@ -196,7 +194,7 @@ class RecordStorage(object):
             else:
                 current_saved_records[hash_value] = {
                     "input": input_dict,
-                    "output": str(output),
+                    "output": output,
                     "output_type": type(output).__name__,
                 }
         self.cached_items[self._record_file_str] = current_saved_records

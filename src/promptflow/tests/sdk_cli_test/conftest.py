@@ -2,12 +2,14 @@ import base64
 import json
 import os
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import pytest
 from pytest_mock import MockerFixture
 
 from promptflow import PFClient
 from promptflow._core.flow_execution_context import FlowExecutionContext
+from promptflow._sdk._orm.connection import Connection
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
@@ -77,19 +79,35 @@ def setup_local_connection(local_client, azure_open_ai_connection):
     global _connection_setup
     if _connection_setup:
         return
-    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
     if RecordStorage.is_replaying_mode():
-        connection_dict["azure_open_ai_connection"] = {
-            "type": "AzureOpenAIConnection",
-            "value": {
-                "api_type": azure_open_ai_connection.api_type,
-                "api_key": azure_open_ai_connection.api_key,
-                "api_base": azure_open_ai_connection.api_base,
-                "api_version": azure_open_ai_connection.api_version,
+        connection_dict = {
+            "azure_open_ai_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {
+                    "api_base": "dummy_base",
+                    "api_key": "dummy_key",
+                    "api_type": "azure",
+                    "api_version": "2023-07-01-preview",
+                },
+            },
+            "custom_connection": {
+                "secret_keys": ["key1"],
+                "type": "CustomConnection",
+                "value": {"key1": "hey", "key2": "val2"},
+            },
+            "custom_strong_type_connection": {
+                "secret_keys": ["api_key"],
+                "type": "CustomConnection",
+                "value": {
+                    "api_base": "This is my first custom connection.",
+                    "api_key": "<your-key>",
+                    "promptflow.connection.custom_type": "MyFirstConnection",
+                    "promptflow.connection.module": "my_tool_package.connections",
+                },
             },
         }
-        connection_dict["azure_open_ai_connection"]["api_key"] = azure_open_ai_connection.api_key
-        connection_dict["azure_open_ai_connection"]["api_base"] = azure_open_ai_connection.api_base
+    else:
+        connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
     for name, _dct in connection_dict.items():
         if _dct["type"] == "BingConnection":
             continue
@@ -189,6 +207,47 @@ def mock_origin(original):
     return mock_invoke_tool
 
 
+class MockConnectionItem:
+    def __init__(self, d):
+        for k, v in d.items():
+            if isinstance(k, (list, tuple)):
+                setattr(self, k, [MockConnectionItem(x) if isinstance(x, dict) else x for x in v])
+            else:
+                setattr(self, k, MockConnectionItem(v) if isinstance(v, dict) else v)
+
+
+class MockConnection:
+    conn_list: Dict[str, "Connection"] = {}
+
+    @staticmethod
+    def create_or_update(connection: "Connection") -> None:
+        name = connection.connectionName
+        saved_dict = MockConnection.conn_list.get(name, None)
+        update_dict = {k: v for k, v in connection.__dict__.items() if not k.startswith("_")}
+        if saved_dict is not None:
+            saved_dict.update(update_dict)
+            mock_connection_item = MockConnectionItem(saved_dict)
+            mock_connection_item.__dict__ = saved_dict
+            MockConnection.conn_list[name] = mock_connection_item
+        else:
+            mock_connection_item = MockConnectionItem(update_dict)
+            mock_connection_item.__dict__ = update_dict
+            MockConnection.conn_list[name] = mock_connection_item
+        pass
+
+    @staticmethod
+    def get(name: str, raise_error=True) -> "Connection":
+        return MockConnection.conn_list.get(name, None)
+
+    @staticmethod
+    def list(max_results: Optional[int] = None, all_results: bool = False) -> List["Connection"]:
+        return [run_info for run_info in MockConnection.conn_list.values()]
+
+    @staticmethod
+    def delete(name: str) -> None:
+        MockConnection.conn_list.pop(name, None)
+
+
 @pytest.fixture
 def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
@@ -200,4 +259,9 @@ def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixtur
 def recording_injection(mocker: MockerFixture, recording_file_override):
     original_fun = FlowExecutionContext.invoke_tool
     mocker.patch("promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun))
+    if RecordStorage.is_replaying_mode():
+        mocker.patch("promptflow._sdk._orm.connection.Connection.create_or_update", MockConnection.create_or_update)
+        mocker.patch("promptflow._sdk._orm.connection.Connection.get", MockConnection.get)
+        mocker.patch("promptflow._sdk._orm.connection.Connection.list", MockConnection.list)
+        mocker.patch("promptflow._sdk._orm.connection.Connection.delete", MockConnection.delete)
     yield
