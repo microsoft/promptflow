@@ -26,6 +26,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
@@ -882,6 +883,14 @@ class FlowExecutor:
         node_run_infos = run_tracker.collect_child_node_runs(line_run_id)
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)
+
+    @staticmethod
+    def apply_inputs_mapping(
+        inputs: Mapping[str, Mapping[str, Any]],
+        inputs_mapping: Mapping[str, str],
+    ) -> Dict[str, Any]:
+        # TODO: This function will be removed after the batch engine refactoring is completed.
+        return BatchInputsProcessor.apply_inputs_mapping(inputs, inputs_mapping)
 
     def _extract_outputs(self, nodes_outputs, bypassed_nodes, flow_inputs):
         outputs = {}
