@@ -2,7 +2,7 @@
 # Prompt flow
 
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
-[![Python](https://img.shields.io/pypi/pyversions/promptflow.svg?maxAge=2592000)](https://pypi.python.org/pypi/promptflow/) 
+[![Python](https://img.shields.io/pypi/pyversions/promptflow.svg?maxAge=2592000)](https://pypi.python.org/pypi/promptflow/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow)](https://pypi.org/project/promptflow/)
 [![CLI](https://img.shields.io/badge/CLI-reference-blue)](https://microsoft.github.io/promptflow/reference/pf-command-reference.html)
 [![vsc extension](https://img.shields.io/visual-studio-marketplace/i/prompt-flow.prompt-flow?logo=Visual%20Studio&label=Extension%20)](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow)
@@ -13,7 +13,7 @@
 [![CONTRIBUTING](https://img.shields.io/badge/Contributing-8A2BE2)](https://github.com/microsoft/promptflow/blob/main/CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
-> Welcome to join us to make Prompt flow better by
+> Welcome to join us to make prompt flow better by
 > participating [discussions](https://github.com/microsoft/promptflow/discussions),
 > opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
 > submitting [PRs](https://github.com/microsoft/promptflow/pulls).
@@ -30,7 +30,7 @@ With prompt flow, you will be able to:
     - Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
 - **Streamlined development cycle for production**
     - Deploy your flow to the serving platform you choose or integrate into your app's code base easily.
-    - (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
+    - (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
 
 ------
 
@@ -79,4 +79,4 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-#### Continue to delve deeper into [Prompt flow](https://github.com/microsoft/promptflow).
+#### Continue to delve deeper into [prompt flow](https://github.com/microsoft/promptflow).
