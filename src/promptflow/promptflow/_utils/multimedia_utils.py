@@ -84,7 +84,7 @@ def _create_image_from_url(url: str, mime_type: str = None):
         if not mime_type:
             format = imghdr.what(None, response.content)
             mime_type = f"image/{format}" if format else "image/*"
-        return Image(response.content, mime_type=mime_type)
+        return Image(response.content, mime_type=mime_type, source_url=url)
     else:
         raise InvalidImageInput(
             message_format=f"Error while fetching image from URL: {url}. "
@@ -152,9 +152,9 @@ def _save_image_to_file(
 ):
     ext = _get_extension_from_mime_type(image._mime_type)
     file_name = f"{file_name}.{ext}" if ext else file_name
-    image_path = str(relative_path / file_name) if relative_path else file_name
+    image_path = (relative_path / file_name).as_posix() if relative_path else file_name
     if use_absolute_path:
-        image_path = str(Path(folder_path / image_path).resolve())
+        image_path = Path(folder_path / image_path).resolve().as_posix()
     image_reference = {f"data:{image._mime_type};path": image_path}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)
@@ -210,7 +210,11 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
         if value.type == ValueType.IMAGE:
-            updated_inputs[key] = create_image(updated_inputs[key])
+            if isinstance(updated_inputs[key], list):
+                # For aggregation node, the image input is a list.
+                updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
+            else:
+                updated_inputs[key] = create_image(updated_inputs[key])
         elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
             updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
     return updated_inputs
