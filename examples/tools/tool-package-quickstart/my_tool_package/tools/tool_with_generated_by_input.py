@@ -17,7 +17,7 @@ def generate_index_json(
     embedding_connection: Union[AzureOpenAIConnection, OpenAIConnection] = "",
     embedding_deployment: str = ""
 ) -> str:
-    """This is a dummy function to generate a index json base on the inputs.
+    """This is a dummy function to generate a index json based on the inputs.
     """
 
     import json
