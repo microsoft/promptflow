@@ -76,7 +76,11 @@ def list_index_types(subscription_id, resource_group_name, workspace_name) -> Li
     ]
 
 
-def list_indexes(subscription_id, resource_group_name, workspace_name) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+def list_indexes(
+        subscription_id,
+        resource_group_name,
+        workspace_name
+    ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
     import random
 
     words = ["apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew", "kiwi", "lemon"]
