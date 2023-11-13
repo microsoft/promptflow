@@ -1,4 +1,5 @@
 import pytest
+
 from promptflow.contracts.run_mode import RunMode
 
 
@@ -14,6 +15,7 @@ from promptflow.contracts.run_mode import RunMode
 )
 def test_parse(run_mode, expected):
     assert RunMode.parse(run_mode) == expected
+
 
 @pytest.mark.unittest
 def test_parse_invalid():

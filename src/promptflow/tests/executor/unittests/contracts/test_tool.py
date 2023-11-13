@@ -1,10 +1,10 @@
+from enum import Enum
+from typing import Any, Callable, NewType, Optional, Tuple, TypeVar, Union
 
 import pytest
-from typing import Any, Callable, NewType, Optional, Tuple, TypeVar, Union
-from promptflow._sdk.entities import CustomStrongTypeConnection
 
-from enum import Enum
 from promptflow._core.tools_manager import connections
+from promptflow._sdk.entities import CustomStrongTypeConnection
 from promptflow._sdk.entities._connection import AzureContentSafetyConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import Status
@@ -155,7 +155,7 @@ class TestConnectionType:
             (AzureContentSafetyConnection("api_key", "endpoint"), True),
             (Status, False),
             (ConnectionType.is_connection_value("non_connection_instance"), False),
-        ]
+        ],
     )
     def test_is_connection_value(self, value, expected):
         assert ConnectionType.is_connection_value(value) == expected
@@ -250,7 +250,10 @@ class TestOutDefinition:
     @pytest.mark.parametrize(
         "value, expected",
         [
-            (OutputDefinition([ValueType.STRING], description="Description", is_property=True), {"type": "string", "description": "Description", "is_property": True}),
+            (
+                OutputDefinition([ValueType.STRING], description="Description", is_property=True),
+                {"type": "string", "description": "Description", "is_property": True},
+            ),
             (OutputDefinition([ValueType.STRING, ValueType.INT]), {"type": ["string", "int"], "is_property": False}),
         ],
     )
@@ -258,14 +261,18 @@ class TestOutDefinition:
         assert value.serialize() == expected
 
     @pytest.mark.parametrize(
-        "value, expected",\
+        "value, expected",
         [
-            ({"type": "string", "description": "Description", "is_property": True}, OutputDefinition([ValueType.STRING], description="Description", is_property=True)),
+            (
+                {"type": "string", "description": "Description", "is_property": True},
+                OutputDefinition([ValueType.STRING], description="Description", is_property=True),
+            ),
             ({"type": ["string", "int"]}, OutputDefinition([ValueType.STRING, ValueType.INT])),
         ],
     )
     def test_deserialize(self, value, expected):
         assert OutputDefinition.deserialize(value) == expected
+
 
 @pytest.mark.unittest
 class TestTool:
@@ -274,7 +281,7 @@ class TestTool:
         [
             (ToolType._ACTION, ["name", "description", "enable_kwargs"]),
             (ToolType.LLM, ["name", "type", "inputs", "description", "enable_kwargs"]),
-        ]
+        ],
     )
     def test_serialize_tool(self, tool_type, expected_keys):
         tool = Tool(name="test_tool", type=tool_type, inputs={}, outputs={}, description="description")
@@ -282,15 +289,15 @@ class TestTool:
         assert set(serialized_tool.keys()) == set(expected_keys)
 
     def test_deserialize_tool(self):
-        data = {  
-            "name": "test_tool",  
-            "type": "LLM",  
-            "inputs": {"input1": {"type": "ValueType1"}},  
-        }  
-        tool = Tool.deserialize(data)  
-        assert tool.name == data["name"]  
-        assert tool.type == ToolType[data["type"]]  
-        assert "input1" in tool.inputs  
+        data = {
+            "name": "test_tool",
+            "type": "LLM",
+            "inputs": {"input1": {"type": "ValueType1"}},
+        }
+        tool = Tool.deserialize(data)
+        assert tool.name == data["name"]
+        assert tool.type == ToolType[data["type"]]
+        assert "input1" in tool.inputs
 
     @pytest.mark.parametrize(
         "tooltype, connection_type, expected",
@@ -301,10 +308,5 @@ class TestTool:
         ],
     )
     def test_require_connection(self, tooltype, connection_type, expected):
-        tool = Tool(
-            name="Test Tool",
-            type=tooltype,
-            inputs={},
-            connection_type=connection_type
-            )
+        tool = Tool(name="Test Tool", type=tooltype, inputs={}, connection_type=connection_type)
         assert tool._require_connection() == expected
