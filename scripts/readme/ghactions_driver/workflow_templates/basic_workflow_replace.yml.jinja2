@@ -10,7 +10,7 @@ steps:
       python-version: "3.9"
   - name: Generate config.json for canary workspace (scheduled runs only)
     if: github.event_name == 'schedule'
-    run: echo '${{ '{{' }} secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ '{{' }} github.workspace }}/examples/config.json
+    run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
   - name: Generate config.json for production workspace
     if: github.event_name != 'schedule'
     run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON }}' > ${{ github.workspace }}/examples/config.json
