@@ -15,6 +15,8 @@ from promptflow.contracts.flow import (
     Node,
     NodeVariant,
     NodeVariants,
+    ToolSource,
+    ToolSourceType,
 )
 from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import UserErrorException
@@ -62,7 +64,7 @@ class TestFlowContract:
         mocker.patch("promptflow._core.tools_manager.collect_package_tools", return_value=package_tool_definition)
         flow = Flow.from_yaml(flow_file)
         connection_names = flow.get_connection_input_names_for_node(flow.nodes[0].name)
-        assert connection_names == ['connection', 'connection_2']
+        assert connection_names == ["connection", "connection_2"]
 
     def test_node_condition_conflict(self):
         flow_folder = "node_condition_conflict"
@@ -399,6 +401,31 @@ class TestInputAssignment:
         input_assignment = InputAssignment.deserialize(serialized_value)
         assert input_assignment == expected_value
 
+    @pytest.mark.parametrize(
+        "serialized_reference, expected_value",
+        [
+            ("input", InputAssignment("input", InputValueType.NODE_REFERENCE, "output")),
+            ("flow.section", FlowInputAssignment("section", value_type=InputValueType.FLOW_INPUT, prefix="flow.")),
+            (
+                "flow.section.property",
+                FlowInputAssignment("section.property", value_type=InputValueType.FLOW_INPUT, prefix="flow."),
+            ),
+        ],
+    )
+    def test_deserialize_reference(self, serialized_reference, expected_value):
+        assert InputAssignment.deserialize_reference(serialized_reference) == expected_value
+
+    @pytest.mark.parametrize(
+        "serialized_node_reference, expected_value",
+        [
+            ("value", InputAssignment("value", InputValueType.NODE_REFERENCE, "output")),
+            ("value.section", InputAssignment("value", InputValueType.NODE_REFERENCE, "section")),
+            ("value.section.property", InputAssignment("value", InputValueType.NODE_REFERENCE, "section", "property")),
+        ],
+    )
+    def test_deserialize_node_reference(self, serialized_node_reference, expected_value):
+        assert InputAssignment.deserialize_node_reference(serialized_node_reference) == expected_value
+
 
 @pytest.mark.unittest
 class TestFlowInputAssignment:
@@ -423,6 +450,23 @@ class TestFlowInputAssignment:
 
         with pytest.raises(ValueError):
             FlowInputAssignment.deserialize("value")
+
+
+@pytest.mark.unittest
+class TestToolSource:
+    @pytest.mark.parametrize(
+        "tool_source, expected_value",
+        [
+            ({}, ToolSource(type=ToolSourceType.Code)),
+            ({"type": ToolSourceType.Code.value}, ToolSource(type=ToolSourceType.Code)),
+            (
+                {"type": ToolSourceType.Package.value, "tool": "tool", "path": "path"},
+                ToolSource(type=ToolSourceType.Package, tool="tool", path="path"),
+            ),
+        ],
+    )
+    def test_deserialize(self, tool_source, expected_value):
+        assert ToolSource.deserialize(tool_source) == expected_value
 
 
 @pytest.mark.unittest
