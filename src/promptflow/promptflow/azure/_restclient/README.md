@@ -14,3 +14,53 @@ Download swagger.json from [here](https://int.api.azureml-test.ms/flow/swagger/v
 + cd to [promptflow/azure/_restclient](../promptflow/azure/_restclient)
 + run `autorest --v3 --python --track2 --version=3.8.0 --use=@autorest/python@5.12.2 --input-file=swagger.json --output-folder=. --namespace=flow --modelerfour.lenient-model-deduplication`
   + don't change `--use`. latest version of `autorest/python` will generate code following different pattern, which is not compatible with our code.
+
+## Troubleshooting
+
+### Duplicate object schemas with "xxx" name detected.
+
+This may be caused by the duplicate generated class names.
+
+```json
+"FlowFeature": {
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "nullable": true
+    },
+    "description": {
+      "type": "string",
+      "nullable": true
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "Runtime": {
+          "$ref": "#/components/schemas/FlowFeatureState"
+        },
+        "Executor": {
+          "$ref": "#/components/schemas/FlowFeatureState"
+        },
+        "PFS": {
+          "$ref": "#/components/schemas/FlowFeatureState"
+        }
+      },
+      "additionalProperties": false,
+      "nullable": true
+    }
+  },
+  "additionalProperties": false
+},
+"FlowFeatureState": {
+  "enum": [
+    "Ready",
+    "E2ETest"
+  ],
+  "type": "string"
+},
+```
+
+`FlowFeature` has a nested object field `state`, which will be generated to a new class named `FlowFetureState`, and it duplicates with the enum `FlowFeatureState`.
+
+To fix this, server side needs to change the class name in the schema, in this case, server side changed the object `state` to `states` and the problem is resolved.
