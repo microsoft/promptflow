@@ -6,7 +6,6 @@ import time
 
 from jinja2 import Template
 from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout, APIConnectionError
-from promptflow.contracts.multimedia import Image
 from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
@@ -104,7 +103,7 @@ def try_parse_name_and_content(role_prompt):
     return None
 
 
-def parse_chat(chat_str, images: List[Image] = None, valid_roles: Set[str] = None):
+def parse_chat(chat_str, images: List = None, valid_roles: Set[str] = None):
     if not valid_roles:
         valid_roles = ["system", "user", "assistant", "function"]
 
@@ -155,7 +154,7 @@ def parse_chat(chat_str, images: List[Image] = None, valid_roles: Set[str] = Non
     return chat_list
 
 
-def to_content_str_or_list(chat_str: str, hash2images: Mapping[str, Image]):
+def to_content_str_or_list(chat_str: str, hash2images: Mapping):
     chat_str = chat_str.strip()
     chunks = chat_str.split("\n")
     include_image = False
@@ -164,7 +163,8 @@ def to_content_str_or_list(chat_str: str, hash2images: Mapping[str, Image]):
         if chunk.strip() in hash2images:
             image_message = {}
             image_message["type"] = "image_url"
-            image_url = hash2images[chunk.strip()].source_url
+            image_url = hash2images[chunk.strip()].source_url \
+                if hasattr(hash2images[chunk.strip()], "source_url") else None
             if not image_url:
                 image_bs64 = hash2images[chunk.strip()].to_base64()
                 image_mine_type = hash2images[chunk.strip()]._mime_type
@@ -333,19 +333,23 @@ def convert_to_chat_list(obj):
         return obj
 
 
-def add_referenced_images_to_set(value, image_set):
-    if isinstance(value, Image):
+def add_referenced_images_to_set(value, image_set, image_type):
+    if isinstance(value, image_type):
         image_set.add(value)
     elif isinstance(value, list):
         for item in value:
-            add_referenced_images_to_set(item, image_set)
+            add_referenced_images_to_set(item, image_set, image_type)
     elif isinstance(value, dict):
         for _, item in value.items():
-            add_referenced_images_to_set(item, image_set)
+            add_referenced_images_to_set(item, image_set, image_type)
 
 
 def find_referenced_image_set(kwargs: dict):
     referenced_images = set()
-    for _, value in kwargs.items():
-        add_referenced_images_to_set(value, referenced_images)
+    try:
+        from promptflow.contracts.multimedia import Image
+        for _, value in kwargs.items():
+            add_referenced_images_to_set(value, referenced_images, Image)
+    except ImportError:
+        pass
     return referenced_images
