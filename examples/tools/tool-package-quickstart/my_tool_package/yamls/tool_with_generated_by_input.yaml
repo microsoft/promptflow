@@ -59,7 +59,7 @@ my_tool_package.tools.tool_with_generated_by_input.my_tool:
         reverse_func_path: my_tool_package.tools.tool_with_generated_by_input.reverse_generate_index_json
     queries:
       type:
-        - object
+        - string
     top_k:
       type:
         - int

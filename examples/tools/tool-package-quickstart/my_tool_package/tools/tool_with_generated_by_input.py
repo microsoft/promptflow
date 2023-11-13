@@ -97,5 +97,5 @@ def list_embedding_deployment(embedding_connection: str) -> List[str]:
 
 
 @tool
-def my_tool(index_json: str, query: object, top_k: int) -> str:
+def my_tool(index_json: str, queries: str, top_k: int) -> str:
     return f"Hello {index_json}"
