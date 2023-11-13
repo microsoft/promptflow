@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import inspect
 import logging
 import threading
 import time
@@ -10,7 +11,7 @@ from contextvars import ContextVar
 from logging import WARNING
 from typing import Callable, List
 
-from promptflow._core._errors import ToolExecutionError
+from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.tool import parse_all_args
@@ -21,9 +22,9 @@ from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
 from promptflow.exceptions import PromptflowException
 
-from .openai_injector import Tracer
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
+from .tracer import Tracer
 
 
 class FlowExecutionContext(ThreadLocalSingleton):
@@ -88,23 +89,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
             output = Tracer.pop(output)
             return output
 
-        self._current_tool = f
-        all_args = parse_all_args(argnames, args, kwargs)
-        node_run_id = self._generate_current_node_run_id()
-        flow_logger.info(f"Executing node {self._current_node.name}. node run id: {node_run_id}")
-        parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
-        run_info: RunInfo = self._run_tracker.start_node_run(
-            node=self._current_node.name,
-            flow_run_id=self._run_id,
-            parent_run_id=parent_run_id,
-            run_id=node_run_id,
-            index=self._line_number,
-        )
+        run_info = self.prepare_node_run(f, argnames, args, kwargs)
+        node_run_id = run_info.run_id
 
-        run_info.index = self._line_number
-        run_info.variant_id = self._variant_id
-
-        self._run_tracker.set_inputs(node_run_id, {key: value for key, value in all_args.items() if key != "self"})
         traces = []
         try:
             hit_cache = False
@@ -144,6 +131,70 @@ class FlowExecutionContext(ThreadLocalSingleton):
             raise
         finally:
             self._run_tracker.persist_node_run(run_info)
+
+    def prepare_node_run(self, f, argnames=[], args=[], kwargs={}):
+        self._current_tool = f
+        all_args = parse_all_args(argnames, args, kwargs)
+        node_run_id = self._generate_current_node_run_id()
+        flow_logger.info(f"Executing node {self._current_node.name}. node run id: {node_run_id}")
+        parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
+        run_info: RunInfo = self._run_tracker.start_node_run(
+            node=self._current_node.name,
+            flow_run_id=self._run_id,
+            parent_run_id=parent_run_id,
+            run_id=node_run_id,
+            index=self._line_number,
+        )
+        run_info.index = self._line_number
+        self._run_tracker.set_inputs(node_run_id, {key: value for key, value in all_args.items() if key != "self"})
+        return run_info
+
+    async def invoke_tool_async(self, f: Callable, kwargs):
+        if not inspect.iscoroutinefunction(f):
+            raise UnexpectedError(
+                message_format="Tool {function} is not a coroutine function.",
+                function=f.__name__
+            )
+        run_info = self.prepare_node_run(f, kwargs=kwargs)
+        node_run_id = run_info.run_id
+
+        traces = []
+        try:
+            Tracer.start_tracing(node_run_id)
+            trace = Tracer.push_tool(f, kwargs=kwargs)
+            trace.node_name = run_info.node
+            result = await self._invoke_tool_async_inner(f, kwargs)
+            result = Tracer.pop(result)
+            traces = Tracer.end_tracing()
+            self._current_tool = None
+            self._run_tracker.end_run(node_run_id, result=result, traces=traces)
+            flow_logger.info(f"Node {self._current_node.name} completes.")
+            return result
+        except Exception as e:
+            logger.exception(f"Node {self._current_node.name} in line {self._line_number} failed. Exception: {e}.")
+            Tracer.pop(error=e)
+            if not traces:
+                traces = Tracer.end_tracing()
+            self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
+            raise
+        finally:
+            self._run_tracker.persist_node_run(run_info)
+
+    async def _invoke_tool_async_inner(self, f: Callable, kwargs):
+        try:
+            return await f(**kwargs)
+        except PromptflowException as e:
+            # All the exceptions from built-in tools are PromptflowException.
+            # For these cases, raise the exception directly.
+            if f.__module__ is not None:
+                e.module = f.__module__
+            raise e
+        except Exception as e:
+            node_name = self._current_node.name if self._current_node else f.__name__
+            # Otherwise, we assume the error comes from user's tool.
+            # For these cases, raise ToolExecutionError, which is classified as UserError
+            # and shows stack trace in the error message to make it easy for user to troubleshoot.
+            raise ToolExecutionError(node_name=node_name, module=f.__module__) from e
 
     def invoke_tool(self, f: Callable, args, kwargs):
         node_name = self._current_node.name if self._current_node else f.__name__
