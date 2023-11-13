@@ -361,7 +361,7 @@ class LineExecutionProcessPool:
                 raise ProcessPoolError(
                     message_format=f"Process {os.getpid()} failed with exception: {e}",
                     target=ErrorTarget.EXECUTOR,
-                )
+                ) from e
         return result_list
 
     def _generate_thread_status_messages(self, pool: ThreadPool, total_count: int):
