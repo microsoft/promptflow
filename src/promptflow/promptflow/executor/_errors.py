@@ -164,10 +164,6 @@ class InvalidReferenceProperty(NodeReferenceError):
     pass
 
 
-class OutputReferenceBypassed(NodeReferenceError):
-    pass
-
-
 class OutputReferenceNotExist(NodeReferenceError):
     pass
 
@@ -190,6 +186,16 @@ class LineExecutionTimeoutError(UserErrorException):
     def __init__(self, line_number, timeout):
         super().__init__(
             message=f"Line {line_number} execution timeout for exceeding {timeout} seconds", target=ErrorTarget.EXECUTOR
+        )
+
+
+class EmptyLLMApiMapping(UserErrorException):
+    """Exception raised when connection_type_to_api_mapping is empty and llm node provider can't be inferred"""
+
+    def __init__(self):
+        super().__init__(
+            message="LLM api mapping is empty, please ensure 'promptflow-tools' package has been installed.",
+            target=ErrorTarget.EXECUTOR,
         )
 
 

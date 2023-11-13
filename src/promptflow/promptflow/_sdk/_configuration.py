@@ -23,6 +23,10 @@ class ConfigFileNotFound(ValidationException):
     pass
 
 
+class InvalidConfigFile(ValidationException):
+    pass
+
+
 class Configuration(object):
 
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
@@ -34,7 +38,7 @@ class Configuration(object):
     CONNECTION_PROVIDER = "connection.provider"
     _instance = None
 
-    def __init__(self):
+    def __init__(self, overrides=None):
         if not os.path.exists(self.CONFIG_PATH.parent):
             os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
         if not os.path.exists(self.CONFIG_PATH):
@@ -43,6 +47,10 @@ class Configuration(object):
         self._config = load_yaml(self.CONFIG_PATH)
         if not self._config:
             self._config = {}
+        # Allow config override by kwargs
+        overrides = overrides or {}
+        for key, value in overrides.items():
+            pydash.set_(self._config, key, value)
 
     @property
     def config(self):
@@ -133,16 +141,26 @@ class Configuration(object):
                 )
 
         subscription_id, resource_group, workspace_name = MLClient._get_workspace_info(found_path)
+        if not (subscription_id and resource_group and workspace_name):
+            raise InvalidConfigFile(
+                "The subscription_id, resource_group and workspace_name can not be empty. Got: "
+                f"subscription_id: {subscription_id}, resource_group: {resource_group}, "
+                f"workspace_name: {workspace_name} from file {found_path}."
+            )
         return RESOURCE_ID_FORMAT.format(subscription_id, resource_group, AZUREML_RESOURCE_PROVIDER, workspace_name)
 
     def get_connection_provider(self) -> Optional[str]:
         """Get the current connection provider. Default to local if not configured."""
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
+        return self.resolve_connection_provider(provider)
+
+    @classmethod
+    def resolve_connection_provider(cls, provider) -> Optional[str]:
         if provider is None:
             return ConnectionProvider.LOCAL
         if provider == ConnectionProvider.AZUREML.value:
             # Note: The below function has azure-ai-ml dependency.
-            return "azureml:" + self._get_workspace_from_config()
+            return "azureml:" + cls._get_workspace_from_config()
         # If provider not None and not Azure, return it directly.
         # It can be the full path of a workspace.
         return provider

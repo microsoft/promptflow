@@ -1,8 +1,8 @@
-While how LLMs work may be elusive to many developers, how LLM apps work is not - they essentially involve a series of calls to external services such as LLMs/databases/search engines, or intermediate data processing, all glued together. Thus LLM apps are merely Directed Acyclic Graphs (DAGs) of function calls. These DAGs are flows in Prompt flow.
+While how LLMs work may be elusive to many developers, how LLM apps work is not - they essentially involve a series of calls to external services such as LLMs/databases/search engines, or intermediate data processing, all glued together. Thus LLM apps are merely Directed Acyclic Graphs (DAGs) of function calls. These DAGs are flows in prompt flow.
 
 # Flows
 
-A flow in prompt flow is a DAG of functions (we call them [tools](./concept-tools.md)). These functions/tools connected via input/output dependencies and executed based on the topology by Prompt flow executor.
+A flow in prompt flow is a DAG of functions (we call them [tools](./concept-tools.md)). These functions/tools connected via input/output dependencies and executed based on the topology by prompt flow executor.
 
 A flow is represented as a YAML file and can be visualized with our [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow). Here is an example:
 
@@ -27,5 +27,5 @@ Our examples should also give you an idea when to use what:
 
 - [Quick start](../how-to-guides/quick-start.md)
 - [Initialize and test a flow](../how-to-guides/init-and-test-a-flow.md)
-- [Run and evaluate a flow](../how-to-guides/run-and-evaluate-a-flow.md)
+- [Run and evaluate a flow](../how-to-guides/run-and-evaluate-a-flow/index.md)
 - [Tune prompts using variants](../how-to-guides/tune-prompts-with-variants.md)

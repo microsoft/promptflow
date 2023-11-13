@@ -1,11 +1,10 @@
 import pytest
-
+from tempfile import mkdtemp
+from pathlib import Path
 from promptflow.contracts.run_info import Status
-from promptflow.executor._errors import OutputReferenceBypassed
 from promptflow.executor.flow_executor import BulkResult, FlowExecutor, LineResult
-
+from promptflow._utils.logger_utils import LogContext
 from ..utils import (
-    WRONG_FLOW_ROOT,
     get_bulk_inputs,
     get_flow_expected_result,
     get_flow_expected_status_summary,
@@ -13,7 +12,12 @@ from ..utils import (
     get_yaml_file,
 )
 
-ACTIVATE_FLOW_TEST_CASES = ["conditional_flow_with_activate", "activate_with_no_inputs"]
+ACTIVATE_FLOW_TEST_CASES = [
+    "conditional_flow_with_activate",
+    "activate_with_no_inputs",
+    "all_depedencies_bypassed_with_activate_met",
+    "activate_condition_always_met",
+]
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -36,17 +40,16 @@ class TestExecutorActivate:
         expected_status_summary = get_flow_expected_status_summary(flow_folder)
         self.assert_activate_bulk_run_result(results, expected_result, expected_status_summary)
 
-    def test_wrong_flow_activate(self, dev_connections):
+    def test_all_nodes_bypassed(self, dev_connections):
         flow_folder = "all_nodes_bypassed"
-        executor = FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
-        with pytest.raises(OutputReferenceBypassed) as e:
-            executor.exec_line(get_flow_inputs(flow_folder, WRONG_FLOW_ROOT))
-        error_message = (
-            "The output 'result' for flow is incorrect. "
-            "The node 'third_node' referenced by the output has been bypassed. "
-            "Please refrain from using bypassed nodes as output sources."
-        )
-        assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
+        file_path = Path(mkdtemp()) / "flow.log"
+        with LogContext(file_path):
+            executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+            result = executor.exec_line(get_flow_inputs(flow_folder))
+        assert result.output["result"] is None
+        with open(file_path) as fin:
+            content = fin.read()
+            assert "The node referenced by output:'third_node' is bypassed, which is not recommended." in content
 
     def assert_activate_bulk_run_result(self, result: BulkResult, expected_result, expected_status_summary):
         # Validate the flow outputs
@@ -83,3 +86,15 @@ class TestExecutorActivate:
         bypassed_nodes_run_infos = [result.node_run_infos[i] for i in expected_bypassed_nodes]
         assert all([node.status == Status.Bypassed for node in bypassed_nodes_run_infos])
         assert all([node.output is None for node in bypassed_nodes_run_infos])
+
+    def test_aggregate_bypassed_nodes(self, dev_connections):
+        flow_folder = "conditional_flow_with_aggregate_bypassed"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        results = executor.exec_bulk(get_bulk_inputs(flow_folder))
+        expected_result = get_flow_expected_result(flow_folder)
+        expected_status_summary = get_flow_expected_status_summary(flow_folder)
+        self.assert_activate_bulk_run_result(results, expected_result, expected_status_summary)
+
+        # Validate the aggregate result
+        assert results.aggr_results.node_run_infos["aggregation_double"].output == 3
+        assert results.aggr_results.node_run_infos["aggregation_square"].output == 12.5

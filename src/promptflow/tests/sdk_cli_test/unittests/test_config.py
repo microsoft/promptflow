@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
-from promptflow._sdk._configuration import ConfigFileNotFound, Configuration
+from promptflow._sdk._configuration import ConfigFileNotFound, Configuration, InvalidConfigFile
 from promptflow._utils.context_utils import _change_working_dir
 
 CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
@@ -39,8 +39,7 @@ class TestConfig:
 
     def test_get_workspace_from_config(self):
         # New instance instead of get_instance() to avoid side effect
-        conf = Configuration()
-        conf.set_config("connection.provider", "azureml")
+        conf = Configuration(overrides={"connection.provider": "azureml"})
         # Test config within flow folder
         target_folder = CONFIG_DATA_ROOT / "mock_flow1"
         with _change_working_dir(target_folder):
@@ -56,3 +55,8 @@ class TestConfig:
         # Test config not found
         with pytest.raises(ConfigFileNotFound):
             Configuration._get_workspace_from_config(path=CONFIG_DATA_ROOT.parent)
+        # Test empty config
+        target_folder = CONFIG_DATA_ROOT / "mock_flow_empty_config"
+        with pytest.raises(InvalidConfigFile):
+            with _change_working_dir(target_folder):
+                conf.get_connection_provider()

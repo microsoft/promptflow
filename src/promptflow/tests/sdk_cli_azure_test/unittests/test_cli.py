@@ -9,6 +9,7 @@ from pytest_mock import MockFixture
 
 from promptflow._cli._pf_azure.entry import main
 from promptflow._sdk._constants import VIS_PORTAL_URL_TMPL
+from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.azure.operations._run_operations import RunOperations
 
 
@@ -25,14 +26,14 @@ def run_pf_command(*args, cwd=None):
 
 
 @pytest.fixture
-def operation_scope_args(default_subscription_id, default_resource_group, default_workspace):
+def operation_scope_args(subscription_id: str, resource_group_name: str, workspace_name: str):
     return [
         "--subscription",
-        default_subscription_id,
+        subscription_id,
         "--resource-group",
-        default_resource_group,
+        resource_group_name,
         "--workspace-name",
-        default_workspace,
+        workspace_name,
     ]
 
 
@@ -89,9 +90,9 @@ class TestAzureCli:
         self,
         mocker: MockFixture,
         operation_scope_args,
-        default_subscription_id,
-        default_resource_group,
-        default_workspace,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
     ):
         mocked_run = MagicMock()
         mocked_run._to_dict.return_value = {"name": "test_run"}
@@ -121,9 +122,9 @@ class TestAzureCli:
         mocker.patch.dict(
             os.environ,
             {
-                "AZUREML_ARM_WORKSPACE_NAME": default_workspace,
-                "AZUREML_ARM_SUBSCRIPTION": default_subscription_id,
-                "AZUREML_ARM_RESOURCEGROUP": default_resource_group,
+                "AZUREML_ARM_WORKSPACE_NAME": workspace_name,
+                "AZUREML_ARM_SUBSCRIPTION": subscription_id,
+                "AZUREML_ARM_RESOURCEGROUP": resource_group_name,
             },
         )
         run_pf_command(
@@ -137,9 +138,9 @@ class TestAzureCli:
 
     def test_run_visualize(
         self,
-        default_subscription_id: str,
-        default_resource_group: str,
-        default_workspace: str,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
         operation_scope_args: List[str],
         capfd: pytest.CaptureFixture,
     ) -> None:
@@ -154,9 +155,9 @@ class TestAzureCli:
         )
         captured = capfd.readouterr()
         expected_portal_url = VIS_PORTAL_URL_TMPL.format(
-            subscription_id=default_subscription_id,
-            resource_group_name=default_resource_group,
-            workspace_name=default_workspace,
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
             names=names,
         )
         assert expected_portal_url in captured.out
@@ -209,6 +210,51 @@ class TestAzureCli:
             "display_name=test_run",
             "description='test_description'",
             "tags.key1=value1",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_flow_create(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+    ):
+        mocked = mocker.patch.object(FlowOperations, "create_or_update")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        run_pf_command(
+            "flow",
+            "create",
+            "--flow",
+            ".",
+            "--set",
+            "name=test_flow",
+            "type=standard",
+            "description='test_description'",
+            "tags.key1=value1",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_flow_list(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+    ):
+        mocked_flow = MagicMock()
+        mocked_flow._to_dict.return_value = {"name": "test_flow"}
+        mocked = mocker.patch.object(FlowOperations, "list")
+        mocked.return_value = [mocked_flow]
+        run_pf_command(
+            "flow",
+            "list",
+            "--max-results",
+            "10",
+            "--include-archived",
+            "--type",
+            "standard",
+            "--include-others",
+            "--output",
+            "table",
             *operation_scope_args,
         )
         mocked.assert_called_once()

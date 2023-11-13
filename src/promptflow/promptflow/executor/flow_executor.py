@@ -20,22 +20,23 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import ToolInvoker
+from promptflow._core.tool import ToolInvoker, STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.logger_utils import logger
+from promptflow._utils.logger_utils import flow_logger, logger
+from promptflow._utils.multimedia_utils import (
+    load_multimedia_data,
+    load_multimedia_data_recursively
+)
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
-from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
     InputMappingError,
     NodeOutputNotFound,
-    OutputReferenceBypassed,
     OutputReferenceNotExist,
     SingleNodeValidationError,
 )
@@ -49,7 +50,7 @@ from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
-from promptflow.storage._run_storage import DefaultRunStorage, DummyRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -243,6 +244,7 @@ class FlowExecutor:
         flow_file: Path,
         node_name: str,
         *,
+        output_sub_dir: Optional[str] = None,
         flow_inputs: Optional[Mapping[str, Any]] = None,
         dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
         connections: Optional[dict] = None,
@@ -294,9 +296,14 @@ class FlowExecutor:
                 node_name=node_name,
                 flow_file=flow_file,
             )
-
-        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
+        # Only load the node's referenced flow inputs
+        node_referenced_flow_inputs = FlowExecutor._get_node_referenced_flow_inputs(node, flow.inputs)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(
+            node_referenced_flow_inputs, flow_inputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
+            flow, node, inputs_with_default_value)
+        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
+        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -305,7 +312,7 @@ class FlowExecutor:
 
         resolved_inputs = {}
         for k, v in resolved_node.node.inputs.items():
-            value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, converted_flow_inputs_for_node)
+            value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, inputs)
             resolved_inputs[k] = value
             if resolved_node.node.aggregation:
                 # For aggregation node, we need to convert value to list.
@@ -321,7 +328,9 @@ class FlowExecutor:
         resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
 
         # TODO: Simplify the logic here
-        run_tracker = RunTracker(DummyRunStorage())
+        sub_dir = "." if output_sub_dir is None else output_sub_dir
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+        run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
             ToolInvoker.activate(DefaultToolInvoker())
 
@@ -438,8 +447,8 @@ class FlowExecutor:
             )
             logger.error(failed_msg)
 
-    def _exec_batch_with_threads(
-        self, batch_inputs: List[dict], run_id, validate_inputs: bool = True, variant_id: str = ""
+    def _exec_batch_with_process_pool(
+        self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
     ) -> List[LineResult]:
         nlines = len(batch_inputs)
         line_number = [
@@ -464,6 +473,7 @@ class FlowExecutor:
             run_id,
             variant_id,
             validate_inputs,
+            output_dir,
         ) as pool:
             result_list = pool.run(zip(line_number, batch_inputs))
 
@@ -603,6 +613,8 @@ class FlowExecutor:
             node.inputs = {
                 k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
             }
+        # Load multimedia data for the flow inputs of aggregation nodes.
+        inputs = load_multimedia_data(self._flow.inputs, inputs)
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
         run_tracker = self._run_tracker
@@ -696,8 +708,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = self._process_images_from_inputs(self._flow.inputs, inputs_with_default_value)
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -734,6 +745,7 @@ class FlowExecutor:
         validate_inputs: bool = True,
         raise_on_line_failure: bool = False,
         node_concurrency=DEFAULT_CONCURRENCY_BULK,
+        output_dir: Path = None,
     ) -> BulkResult:
         """The entry points for bulk run execution
 
@@ -761,7 +773,9 @@ class FlowExecutor:
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
-            line_results = self._exec_batch_with_threads(inputs, run_id, validate_inputs=validate_inputs)
+            line_results = self._exec_batch_with_process_pool(
+                inputs, run_id, output_dir, validate_inputs=validate_inputs
+            )
             self._add_line_results(line_results)  # For bulk run, currently we need to add line results to run_tracker
             self._handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
             aggr_results = self._exec_aggregation_with_bulk_results(inputs, line_results, run_id)
@@ -785,58 +799,16 @@ class FlowExecutor:
                 updated_inputs[key] = value.default
         return updated_inputs
 
-    def _process_images_from_inputs(
-        self,
-        inputs: Dict[str, FlowInputDefinition],
-        line_inputs: Mapping,
-    ) -> Dict[str, Any]:
-        updated_inputs = dict(line_inputs or {})
-        for key, value in inputs.items():
-            if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image._create(updated_inputs[key], self._working_dir)
-            elif value.type == ValueType.LIST:
-                updated_inputs[key] = self._process_images_in_input_list(updated_inputs[key])
-        return updated_inputs
-
-    def _process_images_in_input_list(self, value):
-        if isinstance(value, list):
-            return [self._process_images_in_input_list(item) for item in value]
-        elif isinstance(value, dict):
-            if PFBytes._is_multimedia_dict(value):
-                return Image._from_dict(value)
-            else:
-                return {k: self._process_images_in_input_list(v) for k, v in value.items()}
-        else:
-            return value
-
     @staticmethod
-    def _persist_images_from_output(output: dict, base_dir: Path, sub_dir: Path = None):
-        if sub_dir.is_absolute():
-            folder_path = sub_dir
-            relative_path = None
-        else:
-            folder_path = base_dir
-            relative_path = sub_dir
-        for key, value in output.items():
-            output[key] = FlowExecutor._persist_images_recursively(value, key, folder_path, relative_path)
-        return output
-
-    @staticmethod
-    def _persist_images_recursively(value: Any, prefix: str, folder_path: Path, relative_path: Path = None):
-        if isinstance(value, Image):
-            file_name = f"{prefix}_{uuid.uuid4()}"
-            return value._save_to_file(file_name, folder_path, relative_path)
-        elif isinstance(value, list):
-            return [
-                FlowExecutor._persist_images_recursively(item, prefix, folder_path, relative_path) for item in value
-            ]
-        elif isinstance(value, dict):
-            return {
-                k: FlowExecutor._persist_images_recursively(v, prefix, folder_path, relative_path)
-                for k, v in value.items()
-            }
-        else:
-            return value
+    def _get_node_referenced_flow_inputs(
+            node, flow_inputs: Dict[str, FlowInputDefinition]) -> Dict[str, FlowInputDefinition]:
+        node_referenced_flow_inputs = {}
+        for _, value in node.inputs.items():
+            # Only add flow input to node_referenced_flow_inputs when it is exist and referenced by node.
+            # If flow input is not exist, we will raise exception in FlowValidator.convert_flow_inputs_for_node.
+            if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
+                node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
+        return node_referenced_flow_inputs
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
@@ -852,8 +824,7 @@ class FlowExecutor:
             logger.warning(
                 msg=(
                     "Starting run without column mapping may lead to unexpected results. "
-                    "Please consult the following documentation for more information: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
                 )
             )
 
@@ -928,8 +899,9 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-                # Make sure the run_info with converted inputs results rather than original inputs
-                run_info.inputs = inputs
+            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            # Make sure the run_info with converted inputs results rather than original inputs
+            run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
@@ -984,16 +956,6 @@ class FlowExecutor:
                 # Note that the reduce node referenced in the output is not supported.
                 continue
             if node.name not in nodes_outputs:
-                if node.name in bypassed_nodes:
-                    raise OutputReferenceBypassed(
-                        message_format=(
-                            "The output '{output_name}' for flow is incorrect. "
-                            "The node '{node_name}' referenced by the output has been bypassed. "
-                            "Please refrain from using bypassed nodes as output sources."
-                        ),
-                        output_name=name,
-                        node_name=node.name,
-                    )
                 raise NodeOutputNotFound(
                     message_format=(
                         "The output '{output_name}' for flow is incorrect. "
@@ -1002,6 +964,10 @@ class FlowExecutor:
                     ),
                     output_name=name,
                     node_name=node.name,
+                )
+            if output.reference.value in bypassed_nodes:
+                flow_logger.warning(
+                    f"The node referenced by output:'{output.reference.value}' is bypassed, which is not recommended."
                 )
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
@@ -1108,8 +1074,7 @@ class FlowExecutor:
                 message_format=(
                     "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                     "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                    "For more information, refer to the following documentation: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "For more information, refer to the following documentation: https://aka.ms/pf/column-mapping"
                 ),
                 invalid_relations=invalid_relations,
             )
@@ -1250,12 +1215,20 @@ class FlowExecutor:
         :return: None
         """
         for node in self._flow.nodes:
+            streaming_option_parameter = self._parse_streaming_option_parameter(node)
             if (
-                self._flow.is_llm_node(node)
+                streaming_option_parameter is not None
                 and self._flow.is_referenced_by_flow_output(node)
                 and not self._flow.is_referenced_by_other_node(node)
             ):
-                self._tools_manager.wrap_tool(node.name, wrapper=_inject_stream_options(stream_required))
+                wrapper = _inject_stream_options(stream_required, streaming_option_parameter)
+                self._tools_manager.wrap_tool(node.name, wrapper=wrapper)
+
+    def _parse_streaming_option_parameter(self, node: Node) -> Optional[str]:
+        if self._flow.is_llm_node(node):
+            return "stream"
+        tool_function = self._tools_manager.get_tool(node.name)
+        return getattr(tool_function, STREAMING_OPTION_PARAMETER_ATTR, None)
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
@@ -1273,7 +1246,7 @@ class FlowExecutor:
             self._tools_manager.wrap_tool(node.name, wrapper=_ensure_node_result_is_serializable)
 
 
-def _inject_stream_options(should_stream: Callable[[], bool]):
+def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_parameter="stream"):
     """Inject the stream options to the decorated function.
 
     AzureOpenAI.completion and AzureOpenAI.chat tools support both stream and non-stream mode.
@@ -1283,13 +1256,13 @@ def _inject_stream_options(should_stream: Callable[[], bool]):
     def stream_option_decorator(f):
         # We only wrap the function if it has a "stream" parameter
         signature = inspect.signature(f)
-        if "stream" not in signature.parameters:
+        if streaming_option_parameter not in signature.parameters:
             return f
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             kwargs = kwargs or {}
-            kwargs.update(stream=should_stream())
+            kwargs.update({streaming_option_parameter: should_stream()})
 
             return f(*args, **kwargs)
 

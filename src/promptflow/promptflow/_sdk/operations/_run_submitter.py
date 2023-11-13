@@ -13,6 +13,7 @@ from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
+from pydash import objects
 
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
@@ -44,13 +45,11 @@ from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.load_data import load_data
-from promptflow._utils.utils import reverse_transpose
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.executor import FlowExecutor
+from promptflow.executor import BatchEngine, FlowExecutor
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -154,6 +153,22 @@ def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathL
         yaml.safe_dump(flow_dag, f)
 
 
+def overwrite_flow(flow_path: Path, params_overrides: dict):
+    if not params_overrides:
+        return
+    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
+    # update flow dag & change nodes list to name: obj dict
+    flow_dag[NODES] = {node["name"]: node for node in flow_dag[NODES]}
+    # apply overrides on flow dag
+    for param, val in params_overrides.items():
+        objects.set_(flow_dag, param, val)
+    # revert nodes to list
+    flow_dag[NODES] = list(flow_dag[NODES].values())
+
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
+        yaml.safe_dump(flow_dag, f)
+
+
 def remove_additional_includes(flow_path: Path):
     flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
     flow_dag.pop("additional_includes", None)
@@ -168,6 +183,7 @@ def variant_overwrite_context(
     variant: str = None,
     connections: dict = None,
     *,
+    overrides: dict = None,
     drop_node_variants: bool = False,
 ):
     """Override variant and connections in the flow."""
@@ -180,6 +196,7 @@ def variant_overwrite_context(
             # always overwrite variant since we need to overwrite default variant if not specified.
             overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections)
+            overwrite_flow(Path(temp_dir), overrides)
             remove_additional_includes(Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
@@ -191,6 +208,7 @@ def variant_overwrite_context(
             shutil.copy2(flow_dag_path.resolve().as_posix(), temp_dag_file)
             overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections, working_dir=flow_dir_path)
+            overwrite_flow(Path(temp_dir), overrides)
             flow = Flow(code=flow_dir_path, path=temp_dag_file)
             yield flow
 
@@ -205,30 +223,35 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow):
+    def resolve_connections(flow: Flow, client=None, connections_to_ignore=None):
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
         with _change_working_dir(flow.code):
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
-        return get_local_connections_from_executable(executable=executable)
+        return get_local_connections_from_executable(
+            executable=executable, client=client, connections_to_ignore=connections_to_ignore
+        )
 
     @classmethod
-    def resolve_environment_variables(cls, environment_variables: dict):
+    def resolve_environment_variables(cls, environment_variables: dict, client=None):
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
         if not environment_variables:
             return None
         connection_names = get_used_connection_names_from_dict(environment_variables)
-        connections = cls.resolve_connection_names(connection_names=connection_names)
+        connections = cls.resolve_connection_names(connection_names=connection_names, client=client)
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 
     @staticmethod
-    def resolve_connection_names(connection_names, raise_error=False):
-        from promptflow import PFClient
-
-        local_client = PFClient()
+    def resolve_connection_names(connection_names, client, raise_error=False):
         result = {}
         for n in connection_names:
             try:
-                conn = local_client.connections.get(name=n, with_secrets=True)
+                conn = client.connections.get(name=n, with_secrets=True)
                 result[n] = conn._to_execution_connection_dict()
             except Exception as e:
                 if raise_error:
@@ -288,27 +311,34 @@ class RunSubmitter:
             flow.code,
             storage=local_storage,
         )
+        batch_engine = BatchEngine(flow_executor=flow_executor)
         # prepare data
-        input_dicts = self._resolve_data(run)
+        input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
-        mapped_inputs = flow_executor.validate_and_apply_inputs_mapping(input_dicts, column_mapping)
         bulk_result = None
         status = Status.Failed.value
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
-            bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
+            bulk_result = batch_engine.run(
+                input_dirs=input_dirs,
+                inputs_mapping=column_mapping,
+                output_dir=local_storage.outputs_folder,
+                run_id=run_id,
+            )
             # Filter the failed line result
-            failed_line_result = \
-                [result for result in bulk_result.line_results if result.run_info.status == Status.Failed]
+            failed_line_result = [
+                result for result in bulk_result.line_results if result.run_info.status == Status.Failed
+            ]
             if failed_line_result:
                 # Log warning message when there are failed line run in bulk run.
-                error_log = \
-                    f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
+                error_log = f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
                 if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
-                    error_log = error_log + \
-                                f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                    error_log = (
+                        error_log
+                        + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                    )
                 logger.warning(error_log)
             # The bulk run is completed if the exec_bulk successfully completed.
             status = Status.Completed.value
@@ -323,10 +353,9 @@ class RunSubmitter:
             # won't raise the exception since it's already included in run object.
         finally:
             # persist snapshot and result
-            # snapshot: flow directory and (mapped) inputs
+            # snapshot: flow directory
             local_storage.dump_snapshot(flow)
-            local_storage.dump_inputs(mapped_inputs)
-            # result: outputs and metrics
+            # persist inputs, outputs and metrics
             local_storage.persist_result(bulk_result)
             # exceptions
             local_storage.dump_exception(exception=exception, bulk_results=bulk_result)
@@ -340,23 +369,17 @@ class RunSubmitter:
                 system_metrics=system_metrics,
             )
 
-    def _resolve_data(self, run: Run):
-        result = {}
-        input_dicts = {}
-        if run.data:
-            input_dicts["data"] = run.data
-        for input_key, local_file in input_dicts.items():
-            result[input_key] = load_data(local_file)
+    def _resolve_input_dirs(self, run: Run):
+        result = {"data": run.data if run.data else None}
         if run.run is not None:
-            referenced_outputs = self.run_operations._get_outputs(run.run)
-            if referenced_outputs:
-                variant_output = reverse_transpose(referenced_outputs)
-                result["run.outputs"] = variant_output
-            referenced_inputs = self.run_operations._get_inputs(run.run)
-            if referenced_inputs:
-                variant_input = reverse_transpose(referenced_inputs)
-                result["run.inputs"] = variant_input
-        return result
+            result.update(
+                {
+                    "run.outputs": self.run_operations._get_outputs_path(run.run),
+                    # to align with cloud behavior, run.inputs should refer to original data
+                    "run.inputs": self.run_operations._get_data_path(run.run),
+                }
+            )
+        return {k: str(Path(v).resolve()) for k, v in result.items() if v is not None}
 
     @classmethod
     def _validate_column_mapping(cls, column_mapping: dict):

@@ -1,20 +1,34 @@
+import importlib
 import json
 import os
 import tempfile
 from multiprocessing import Lock
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE
+from _constants import (
+    CONNECTION_FILE,
+    DEFAULT_RESOURCE_GROUP_NAME,
+    DEFAULT_RUNTIME_NAME,
+    DEFAULT_SUBSCRIPTION_ID,
+    DEFAULT_WORKSPACE_NAME,
+    ENV_FILE,
+)
 from _pytest.monkeypatch import MonkeyPatch
+from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
+from sdk_cli_test.recording_utilities import RecordStorage
 
+from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
+
+load_dotenv()
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -65,6 +79,11 @@ def env_with_secrets_config_file():
 
 @pytest.fixture
 def azure_open_ai_connection() -> AzureOpenAIConnection:
+    if RecordStorage.is_replaying_mode():
+        return AzureOpenAIConnection(
+            api_key="dummy_key",
+            api_base="dummy_base",
+        )
     return ConnectionManager().get("azure_open_ai_connection")
 
 
@@ -72,26 +91,6 @@ def azure_open_ai_connection() -> AzureOpenAIConnection:
 def temp_output_dir() -> str:
     with tempfile.TemporaryDirectory() as temp_dir:
         yield temp_dir
-
-
-@pytest.fixture
-def default_subscription_id() -> str:
-    return "96aede12-2f73-41cb-b983-6d11a904839b"
-
-
-@pytest.fixture
-def default_resource_group() -> str:
-    return "promptflow"
-
-
-@pytest.fixture
-def default_workspace() -> str:
-    return "promptflow-eastus"
-
-
-@pytest.fixture
-def workspace_with_acr_access() -> str:
-    return "promptflow-eastus-dev"
 
 
 @pytest.fixture
@@ -121,3 +120,72 @@ def install_custom_tool_pkg():
             import sys
 
             subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.2"])
+
+
+@pytest.fixture
+def mocked_ws_triple() -> AzureMLWorkspaceTriad:
+    return AzureMLWorkspaceTriad("mock_subscription_id", "mock_resource_group", "mock_workspace_name")
+
+
+@pytest.fixture(scope="session")
+def mock_list_func():
+    """Mock function object for dynamic list testing."""
+
+    def my_list_func(prefix: str = "", size: int = 10, **kwargs):
+        return [
+            {
+                "value": "fig0",
+                "display_value": "My_fig0",
+                "hyperlink": "https://www.bing.com/search?q=fig0",
+                "description": "this is 0 item",
+            },
+            {
+                "value": "kiwi1",
+                "display_value": "My_kiwi1",
+                "hyperlink": "https://www.bing.com/search?q=kiwi1",
+                "description": "this is 1 item",
+            },
+        ]
+
+    return my_list_func
+
+
+@pytest.fixture(scope="session")
+def mock_module_with_list_func(mock_list_func):
+    """Mock module object for dynamic list testing."""
+    mock_module = MagicMock()
+    mock_module.my_list_func = mock_list_func
+    mock_module.my_field = 1
+    original_import_module = importlib.import_module  # Save this to prevent recursion
+
+    with patch.object(importlib, "import_module") as mock_import:
+
+        def side_effect(module_name):
+            if module_name == "my_tool_package.tools.tool_with_dynamic_list_input":
+                return mock_module
+            else:
+                return original_import_module(module_name)
+
+        mock_import.side_effect = side_effect
+        yield
+
+
+# below fixtures are used for pfazure and global config tests
+@pytest.fixture
+def subscription_id() -> str:
+    return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
+
+
+@pytest.fixture
+def resource_group_name() -> str:
+    return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
+
+
+@pytest.fixture
+def workspace_name() -> str:
+    return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
+
+
+@pytest.fixture
+def runtime_name() -> str:
+    return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)

@@ -120,13 +120,31 @@ def collect_tool_methods_in_module(m):
     return tools
 
 
-def _parse_tool_from_function(f, gen_custom_type_conn=False):
+def collect_tool_methods_with_init_inputs_in_module(m):
+    tools = []
+    for _, obj in inspect.getmembers(m):
+        if isinstance(obj, type) and issubclass(obj, ToolProvider) and obj.__module__ == m.__name__:
+            for _, method in inspect.getmembers(obj):
+                if is_tool(method):
+                    tools.append((method, obj.get_initialize_inputs()))
+    return tools
+
+
+def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False):
+    try:
+        tool_type = getattr(f, "__type") or ToolType.PYTHON
+    except Exception as e:
+        raise e
+    tool_name = getattr(f, "__name")
+    description = getattr(f, "__description")
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
     if hasattr(f, "__original_function"):
         f = f.__original_function
     try:
-        inputs, _, _ = function_to_interface(f, gen_custom_type_conn=gen_custom_type_conn)
+        inputs, _, _, enable_kwargs = function_to_interface(
+            f, initialize_inputs=initialize_inputs, gen_custom_type_conn=gen_custom_type_conn,
+            skip_prompt_template=skip_prompt_template)
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise BadFunctionInterface(
@@ -139,13 +157,14 @@ def _parse_tool_from_function(f, gen_custom_type_conn=False):
         class_name = f.__qualname__.replace(f".{f.__name__}", "")
     # Construct the Tool structure
     return Tool(
-        name=f.__qualname__,
-        description=inspect.getdoc(f),
+        name=tool_name or f.__qualname__,
+        description=description or inspect.getdoc(f),
         inputs=inputs,
-        type=ToolType.PYTHON,
+        type=tool_type,
         class_name=class_name,
         function=f.__name__,
         module=f.__module__,
+        enable_kwargs=enable_kwargs,
     )
 
 
@@ -200,31 +219,36 @@ def load_python_module(content, source=None):
 
 
 def collect_tool_function_in_module(m):
-    tools = collect_tool_functions_in_module(m)
-    if len(tools) == 0:
+    tool_functions = collect_tool_functions_in_module(m)
+    tool_methods = collect_tool_methods_with_init_inputs_in_module(m)
+    num_tools = len(tool_functions) + len(tool_methods)
+    if num_tools == 0:
         raise NoToolDefined(
             message_format=(
                 "No tool found in the python script. "
                 "Please make sure you have one and only one tool definition in your script."
             )
         )
-    elif len(tools) > 1:
-        tool_names = ", ".join(t.__name__ for t in tools)
+    elif num_tools > 1:
+        tool_names = ", ".join(t.__name__ for t in tool_functions + tool_methods)
         raise MultipleToolsDefined(
             message_format=(
                 "Expected 1 but collected {tool_count} tools: {tool_names}. "
                 "Please make sure you have one and only one tool definition in your script."
             ),
-            tool_count=len(tools),
+            tool_count=num_tools,
             tool_names=tool_names,
         )
-    return tools[0]
+    if tool_functions:
+        return tool_functions[0], None
+    else:
+        return tool_methods[0]
 
 
 def generate_python_tool(name, content, source=None):
     m = load_python_module(content, source)
-    f = collect_tool_function_in_module(m)
-    tool = _parse_tool_from_function(f)
+    f, initialize_inputs = collect_tool_function_in_module(m)
+    tool = _parse_tool_from_function(f, initialize_inputs=initialize_inputs)
     tool.module = None
     if name is not None:
         tool.name = name

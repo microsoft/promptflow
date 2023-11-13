@@ -1,6 +1,6 @@
 import pytest
 
-from promptflow.tools.common import parse_function_role_prompt, ChatAPIInvalidFunctions, validate_functions, \
+from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, \
     process_function_call, parse_chat
 
 
@@ -30,12 +30,10 @@ class TestCommon:
     @pytest.mark.parametrize(
         "function_call, error_message",
         [
-            ({"name": "get_current_weather"}, "must be str, bytes or bytearray"),
-            ("{'name': 'get_current_weather'}", "is an invalid json"),
-            ("get_current_weather", "is an invalid json"),
             ("123", "function_call parameter '123' must be a dict"),
-            ('{"name1": "get_current_weather"}', 'function_call parameter {"name1": "get_current_weather"} must '
-                                                 'contain "name" field'),
+            ({"name1": "get_current_weather"},
+             'function_call parameter {"name1": "get_current_weather"} must '
+             'contain "name" field'),
         ],
     )
     def test_chat_api_invalid_function_call(self, function_call, error_message):
@@ -44,12 +42,6 @@ class TestCommon:
             process_function_call(function_call)
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
-
-    def test_parse_function_role_prompt(self):
-        function_str = "name:\n get_location  \n\ncontent:\nBoston\nabc"
-        result = parse_function_role_prompt(function_str)
-        assert result[0] == "get_location"
-        assert result[1] == 'Boston\nabc'
 
     @pytest.mark.parametrize(
         "chat_str, expected_result",
@@ -77,5 +69,22 @@ class TestCommon:
         ]
     )
     def test_success_parse_role_prompt(self, chat_str, expected_result):
+        actual_result = parse_chat(chat_str)
+        assert actual_result == expected_result
+
+    @pytest.mark.parametrize(
+        "chat_str, expected_result",
+        [
+            ("\n#system:\n##name:\nAI \n content:\nfirst\n\n#user:\nsecond", [
+                {'role': 'system', 'name': 'AI', 'content': 'first'}, {'role': 'user', 'content': 'second'}]),
+            ("\nuser:\nname:\n\nperson\n content:\n", [
+                {'role': 'user', 'name': 'person', 'content': ''}]),
+            ("\nsystem:\nname:\n\n content:\nfirst", [
+                {'role': 'system', 'content': 'name:\n\n content:\nfirst'}]),
+            ("\nsystem:\nname:\n\n", [
+                {'role': 'system', 'content': 'name:\n\n'}])
+        ]
+    )
+    def test_parse_chat_with_name_in_role_prompt(self, chat_str, expected_result):
         actual_result = parse_chat(chat_str)
         assert actual_result == expected_result

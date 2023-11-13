@@ -10,11 +10,13 @@ import time
 import uuid
 from functools import wraps
 
+import pydash
+
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
 from promptflow._telemetry.telemetry import TelemetryMixin
-from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME
+from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.exceptions import ValidationException, UserErrorException, PromptflowException
 
@@ -144,6 +146,14 @@ class FlowServiceCaller(RequestTelemetryMixin):
             )
 
         headers["aml-user-token"] = aml_token
+
+    def _get_user_identity_info(self):
+        import jwt
+
+        token = self._credential.get_token("https://management.azure.com/.default")
+        decoded_token = jwt.decode(token.token, options={"verify_signature": False})
+        user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
+        return user_object_id, user_tenant_id
 
     @_request_wrapper()
     def create_flow(
@@ -500,11 +510,24 @@ class FlowServiceCaller(RequestTelemetryMixin):
         sleep_period = 5
         status = None
         timeout_seconds = SESSION_CREATION_TIMEOUT_SECONDS
+        # polling timeout, if user set SESSION_CREATION_TIMEOUT_SECONDS in environment var, use it
+        if os.environ.get(SESSION_CREATION_TIMEOUT_ENV_VAR):
+            try:
+                timeout_seconds = float(os.environ.get(SESSION_CREATION_TIMEOUT_ENV_VAR))
+            except ValueError:
+                raise UserErrorException(
+                    "Environment variable {} with value {} set but failed to parse. "
+                    "Please reset the value to a number.".format(
+                        SESSION_CREATION_TIMEOUT_ENV_VAR, os.environ.get(SESSION_CREATION_TIMEOUT_ENV_VAR)
+                    )
+                )
         # InProgress is only known non-terminal status for now.
         while status in [None, "InProgress"]:
             if time_run + sleep_period > timeout_seconds:
-                message = f"Timeout for session {action} {session_id} for {AUTOMATIC_RUNTIME}.\n" \
-                          "Please resubmit the flow later."
+                message = f"Polling timeout for session {session_id} {action} " \
+                          f"for {AUTOMATIC_RUNTIME} after {timeout_seconds} seconds.\n" \
+                          f"To proceed the {action} for {AUTOMATIC_RUNTIME}, you can retry using the same flow, " \
+                          "and we will continue polling status of previous session. \n"
                 raise Exception(message)
             time_run += sleep_period
             time.sleep(sleep_period)
@@ -518,7 +541,14 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 logger.debug(f"Waiting for session {action}, current status: {status}")
 
         if status == "Succeeded":
-            logger.info(f"Session {action} finished with status {status}.")
+            error_msg = pydash.get(response, "error.message", None)
+            if error_msg:
+                logger.warning(
+                    f"Session {action} finished with status {status}. "
+                    f"But there are warnings when installing the packages: {error_msg}."
+                )
+            else:
+                logger.info(f"Session {action} finished with status {status}.")
         else:
             # refine response error message
             try:

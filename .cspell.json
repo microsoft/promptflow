@@ -27,7 +27,8 @@
     "src/promptflow/tests/**",
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
-    "**/setup.py"
+    "**/setup.py",
+    "scripts/installer/windows/**"
   ],
   "words": [
     "aoai",
@@ -72,7 +73,8 @@
     "msrest",
     "cref",
     "msal",
-    "pfbytes"
+    "pfbytes",
+    "Apim"
   ],
   "ignoreWords": [
     "openmpi",
@@ -139,7 +141,13 @@
     "gunicorn",
     "pkill",
     "pgrep",
-    "Hwfoxydrg"
+    "Hwfoxydrg",
+    "llms",
+    "vcrpy",
+    "uionly"
+  ],
+  "flagWords": [
+    "Prompt Flow"
   ],
   "allowCompoundWords": true
 }

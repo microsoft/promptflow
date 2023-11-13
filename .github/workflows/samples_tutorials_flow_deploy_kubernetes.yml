@@ -12,6 +12,9 @@ on:
     paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_kubernetes.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_readme_ci:
     runs-on: ubuntu-latest
@@ -22,8 +25,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - name: Generate config.json
+      - name: Generate config.json for canary workspace (scheduled runs only)
+        if: github.event_name == 'schedule'
         run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
+      - name: Generate config.json for production workspace
+        if: github.event_name != 'schedule'
+        run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
         working-directory: examples
         run: |

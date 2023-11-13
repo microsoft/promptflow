@@ -2,10 +2,13 @@ import PyPDF2
 import faiss
 import os
 
+from pathlib import Path
+
 from utils.oai import OAIEmbedding
 from utils.index import FAISSIndex
 from utils.logging import log
 from utils.lock import acquire_lock
+from constants import INDEX_DIR
 
 
 def create_faiss_index(pdf_path: str) -> str:
@@ -13,7 +16,9 @@ def create_faiss_index(pdf_path: str) -> str:
     chunk_overlap = int(os.environ.get("CHUNK_OVERLAP"))
     log(f"Chunk size: {chunk_size}, chunk overlap: {chunk_overlap}")
 
-    index_persistent_path = ".index/" + pdf_path + f".index_{chunk_size}_{chunk_overlap}"
+    file_name = Path(pdf_path).name + f".index_{chunk_size}_{chunk_overlap}"
+    index_persistent_path = Path(INDEX_DIR) / file_name
+    index_persistent_path = index_persistent_path.resolve().as_posix()
     lock_path = index_persistent_path + ".lock"
     log("Index path: " + os.path.abspath(index_persistent_path))
 

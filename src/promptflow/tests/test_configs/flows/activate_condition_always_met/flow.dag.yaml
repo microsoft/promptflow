@@ -1,0 +1,40 @@
+inputs:
+  text:
+    type: string
+    default: hello
+outputs:
+  output:
+    type: string
+    reference: ${nodeC.output}
+nodes:
+- name: nodeA
+  type: python
+  source:
+    type: code
+    path: pass_through.py
+  inputs:
+    input1: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: hi
+- name: nodeB
+  type: python
+  source:
+    type: code
+    path: pass_through.py
+  inputs:
+    input1: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: hi
+- name: nodeC
+  type: python
+  source:
+    type: code
+    path: summary_result.py
+  inputs:
+    input1: ${nodeA.output}
+    input2: ${nodeB.output}
+  activate:
+    when: dummy
+    is: dummy

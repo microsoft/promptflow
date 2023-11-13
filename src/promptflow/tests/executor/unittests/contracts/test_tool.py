@@ -25,8 +25,8 @@ class TestToolContract:
             (my_connection, True),
             (MyConnection, True),
             (list, False),
-            (list[str], False),
-            (list[int], False),
+            # (list[str], False), # Python 3.9
+            # (list[int], False),
             ([1, 2, 3], False),
             (float, False),
             (int, False),
@@ -36,9 +36,9 @@ class TestToolContract:
             (Union[str, int], False),
             # ((int | str), False), # Python 3.10
             (tuple, False),
-            (tuple[str, int], False),
+            # (tuple[str, int], False), # Python 3.9
             (Tuple[int, ...], False),
-            (dict[str, Any], False),
+            # (dict[str, Any], False), # Python 3.9
             ({"test1": [1, 2, 3], "test2": [4, 5, 6], "test3": [7, 8, 9]}, False),
             (Any, False),
             (None, False),
