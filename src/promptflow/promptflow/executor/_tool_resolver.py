@@ -310,4 +310,10 @@ class ToolResolver:
                 target=ErrorTarget.EXECUTOR,
             )
         resolved_tool.callable = partial(callable, **{prompt_tpl_param_name: prompt_tpl})
+        #  Copy the attributes to make sure they are still available after partial.
+        attributes_to_set = ["_streaming_option_param"]
+        for attr in attributes_to_set:
+            attr_val = getattr(callable, attr, None)
+            if attr_val is not None:
+                setattr(resolved_tool.callable, attr, attr_val)
         return resolved_tool

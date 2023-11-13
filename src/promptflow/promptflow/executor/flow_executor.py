@@ -1223,7 +1223,7 @@ class FlowExecutor:
         if self._flow.is_llm_node(node):
             return "stream"
         tool_function = self._tools_manager.get_tool(node.name)
-        return tool_function._streaming_option_parameter
+        return getattr(tool_function, "streaming_option_parameter", None)
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
