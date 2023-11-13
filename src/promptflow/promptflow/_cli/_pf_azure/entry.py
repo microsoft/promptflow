@@ -7,15 +7,16 @@ import time
 # Log the start time
 start_time = time.perf_counter()
 
-import argparse
-import logging
-import sys
+# E402 module level import not at top of file
+import argparse  # noqa: E402
+import logging  # noqa: E402
+import sys  # noqa: E402
 
-from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands
-from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands
-from promptflow._sdk._constants import LOGGER_NAME
-from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import get_promptflow_sdk_version
+from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
+from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
+from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
+from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
+from promptflow._sdk._utils import get_promptflow_sdk_version  # noqa: E402
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
