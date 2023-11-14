@@ -149,6 +149,7 @@
         <ComponentGroup Id="ProductComponents">
           <ComponentGroupRef Id="PromptflowCliComponentGroup"/>
           <ComponentGroupRef Id="PromptflowCliSettingsGroup"/>
+          <ComponentGroupRef Id="SharedFiles"/>
         </ComponentGroup>
     </Fragment>
 </Wix>
