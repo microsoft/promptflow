@@ -153,8 +153,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
     async def invoke_tool_async(self, node: Node, f: Callable, kwargs):
         if not inspect.iscoroutinefunction(f):
             raise UnexpectedError(
-                message_format="Tool {function} is not a coroutine function.",
-                function=f
+                message_format="Tool {function} in node {node} is not a coroutine function.",
+                function=f,
+                node=node.name,
             )
         run_info = self.prepare_node_run(node, f, kwargs=kwargs)
         node_run_id = run_info.run_id
