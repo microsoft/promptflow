@@ -144,7 +144,8 @@
     "pgrep",
     "Hwfoxydrg",
     "llms",
-    "vcrpy"
+    "vcrpy",
+    "llmops"
   ],
   "flagWords": [
     "Prompt Flow"
