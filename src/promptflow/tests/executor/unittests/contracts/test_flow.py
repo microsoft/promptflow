@@ -154,13 +154,18 @@ class TestFlow:
         tool2 = Tool(name="tool2", type=ToolType.PYTHON, inputs={}, module="module")
         node1 = Node(name="node1", tool="tool1", inputs={}, module="yaml")
         node2 = Node(name="node2", tool="tool2", inputs={}, module="module")
-        tools = [tool1, tool2]
-        nodes = [node1, node2]
 
         with pytest.raises(FailedToImportModule) as e:
-            Flow._import_requisites(tools, nodes)
+            Flow._import_requisites([tool1], [node2])
+        assert str(e.value).startswith(
+            "Failed to import modules with error: Import node 'node2' provider module 'module' failed."
+        )
 
-        assert str(e.value).startswith("Failed to import modules with error:")
+        with pytest.raises(FailedToImportModule) as e:
+            Flow._import_requisites([tool2], [node1])
+        assert str(e.value).startswith(
+            "Failed to import modules with error: Import tool 'tool2' module 'module' failed."
+        )
 
     def test_apply_default_node_variants(self):
         node_variant = NodeVariant(
@@ -202,21 +207,39 @@ class TestFlow:
         flow2._apply_default_node_variants()
         assert flow2.nodes == tmp_nodes
 
-    def test_apply_default_node_variant(self):
+    @pytest.mark.parametrize(
+        "node_variants",
+        [
+            (None),
+            (
+                {
+                    "test": NodeVariants(
+                        default_variant_id="variant1",
+                        variants={
+                            "variant1": NodeVariant(
+                                node=Node(name="print_val_variant", tool=None, inputs={"input2": None})
+                            )
+                        },
+                    )
+                }
+            ),
+            (
+                {
+                    "print_val": NodeVariants(
+                        default_variant_id="test",
+                        variants={
+                            "variant1": NodeVariant(
+                                node=Node(name="print_val_variant", tool=None, inputs={"input2": None})
+                            )
+                        },
+                    )
+                }
+            ),
+        ],
+    )
+    def test_apply_default_node_variant(self, node_variants):
         node = Node(name="print_val", tool=None, inputs={"input1": None}, use_variants=True)
-        node_variant = NodeVariant(
-            node=Node(name="print_val_variant", tool=None, inputs={"input2": None}, use_variants=False),
-            description=None,
-        )
-        # test when node_variants is None
-        assert Flow._apply_default_node_variant(node, None) == node
-
-        # test when node.name is not in node_variants
-        node_variants1 = {"test": NodeVariants(default_variant_id="variant1", variants={"variant1": node_variant})}
-        assert Flow._apply_default_node_variant(node, node_variants1) == node
-        node_variants2 = {"print_val": NodeVariants(default_variant_id="test", variants={"variant1": node_variant})}
-        # test when default_variant_id is not in variants
-        assert Flow._apply_default_node_variant(node, node_variants2) == node
+        assert Flow._apply_default_node_variant(node, node_variants) == node
 
     def test_apply_node_overrides(self):
         llm_node = Node(name="llm_node", tool=None, inputs={}, connection="open_ai_connection")

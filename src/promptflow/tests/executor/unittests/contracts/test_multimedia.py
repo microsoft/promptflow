@@ -20,8 +20,8 @@ class TestMultimediaContract:
             assert b._mime_type == "image/*"
             assert b._hash == "a94a8fe5"
             assert b.to_base64() == "dGVzdA=="
-            assert b.to_base64(True) == "data:image/*;base64,dGVzdA=="
-            assert b.to_base64(True, True) == {"data:image/*;base64": "dGVzdA=="}
+            assert b.to_base64(with_type=True) == "data:image/*;base64,dGVzdA=="
+            assert b.to_base64(with_type=True, dict_type=True) == {"data:image/*;base64": "dGVzdA=="}
             assert bytes(b) == content
             assert b.source_url is None
             if isinstance(b, Image):
