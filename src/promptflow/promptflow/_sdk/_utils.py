@@ -8,6 +8,7 @@ import json
 import logging
 import multiprocessing
 import os
+import platform
 import re
 import shutil
 import sys
@@ -532,6 +533,13 @@ def get_promptflow_sdk_version() -> str:
         return "0.0.1"
 
 
+def print_pf_version():
+    print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
+    print()
+    print("Executable '{}'".format(os.path.abspath(sys.executable)))
+    print('Python ({}) {}'.format(platform.system(), sys.version))
+
+
 class PromptflowIgnoreFile(IgnoreFile):
 
     # TODO add more files to this list.
@@ -645,10 +653,7 @@ def _retrieve_tool_func_result(func_call_scenario: str, function_config: Dict):
     else:
         result = retrieve_tool_func_result(func_call_scenario, func_path, func_kwargs)
 
-    result_with_log = {
-        "result": result,
-        "logs": {}
-    }
+    result_with_log = {"result": result, "logs": {}}
     return result_with_log
 
 
@@ -923,6 +928,17 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
     if output:
         with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
+
+
+def remove_empty_element_from_dict(obj: dict) -> dict:
+    """Remove empty element from dict, e.g. {"a": 1, "b": {}} -> {"a": 1}"""
+    new_dict = {}
+    for key, value in obj.items():
+        if isinstance(value, dict):
+            value = remove_empty_element_from_dict(value)
+        if value is not None:
+            new_dict[key] = value
+    return new_dict
 
 
 def is_github_codespaces():
