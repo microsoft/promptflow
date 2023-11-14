@@ -22,7 +22,7 @@ class AbstractExecutorProxy:
         """Destroy the executor"""
         pass
 
-    async def exec_line(
+    async def exec_line_async(
         self,
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
