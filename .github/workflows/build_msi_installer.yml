@@ -1,14 +1,10 @@
-name: Build MSI Installer CI
+name: Build and Package MSI
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-
-env:
-  packageSetupType: promptflow_with_extra
-  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 
 jobs:
   build_msi_installer:
