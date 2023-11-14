@@ -139,7 +139,7 @@
                                KeyPath="yes"/>
             </Component>
             <Component Id="PromptflowService" Directory="DynamicCliDir" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="File1" Source="!(wix.SharedFiles.File1)" KeyPath="yes" />
+                <File Id="File2" Source="!(wix.SharedFiles.File1)" KeyPath="yes" />
                 <ServiceInstall Id="ServiceInstaller" Name="PromptflowService" DisplayName="Prompt Flow Service" Description="Provides run and connection management for prompt flow" Start="auto" Type="ownProcess" ErrorControl="normal" />
                 <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="PromptflowService" Wait="no" />
             </Component>
