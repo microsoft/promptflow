@@ -1,0 +1,75 @@
+name: Build MSI Installer CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  packageSetupType: promptflow_with_extra
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+
+jobs:
+  build_msi_installer:
+    runs-on: windows-latest
+    name: Build Windows MSI
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Install Wix Toolset
+        shell:  pwsh
+        working-directory: ${{ github.workspace }}/scripts/installer/windows
+        run: |
+          Invoke-WebRequest -Uri 'https://azurecliprod.blob.core.windows.net/msi/wix310-binaries-mirror.zip' -OutFile 'wix-archive.zip'
+          Expand-Archive -Path 'wix-archive.zip' -DestinationPath 'wix'
+          Remove-Item -Path 'wix-archive.zip'
+
+
+      - name: Install Python and dependencies
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install promptflow[azure,executable] promptflow-tools
+        shell: pwsh
+
+      - name: Get promptflow version
+        id: get-version
+        run: |
+          version=$(python -c "import promptflow; print(promptflow.__version__)")
+          echo "::set-output name=version::$version"
+        shell: pwsh
+
+      - name: Build Python project
+        working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
+        run: |
+          echo "Version from promptflow: ${{ steps.get-version.outputs.version }}"
+          $text = Get-Content "version_info.txt" -Raw
+          $text = $text -replace '\$\((env\.CLI_VERSION)\)', ${{ steps.get-version.outputs.version }}
+          $text | Out-File -FilePath "version_info.txt" -Encoding utf8
+          pyinstaller promptflow.spec
+        shell: pwsh
+
+      - name: Build Wix project
+        working-directory: ${{ github.workspace }}/scripts/installer/windows
+        run: |
+          $env:CLI_VERSION = ${{ steps.get-version.outputs.version }}
+          msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
+        shell: pwsh
+
+      - name: Upload MSI to Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: msi-artifact
+          path: scripts/installer/windows/out/*.msi

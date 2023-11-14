@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <?define ProductVersion="1.0.0.0" ?>
+    <?define ProductVersion="$(env.CLI_VERSION)" ?>
 
     <?define ProductName = "promptflow" ?>
-    <?define ProductDescription = "Command-line tools for promptflow." ?>
+    <?define ProductDescription = "Command-line tools for prompt flow." ?>
     <?define ProductAuthor = "Microsoft Corporation" ?>
     <?define ProductResources = ".\resources\" ?>
     <?define UpgradeCode32 = "8b748161-e07a-48f2-8cdf-401480df4694" ?>

@@ -35,7 +35,7 @@ VSVersionInfo(
         StringStruct('InternalName', 'setup'),
         StringStruct('LegalCopyright', 'Copyright (c) Microsoft Corporation. All rights reserved.'),
         StringStruct('ProductName', 'Microsoft prompt flow'),
-        StringStruct('ProductVersion', '1.0.0.0')])
+        StringStruct('ProductVersion', '$(env.CLI_VERSION)')])
       ]), 
     VarFileInfo([VarStruct('Translation', [1033, 1252])])
   ]
