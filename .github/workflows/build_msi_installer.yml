@@ -2,7 +2,8 @@ name: Build and Package MSI
 
 on:
   workflow_dispatch:
-  push:
+  # will delete pull request when it's ready
+  pull_request:
     branches:
       - main
 
