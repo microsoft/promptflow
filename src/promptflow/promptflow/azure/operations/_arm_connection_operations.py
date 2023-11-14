@@ -69,6 +69,17 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         return _Connection._from_execution_connection_dict(name=name, data=connection_dict)
 
     @classmethod
+    def _direct_get(cls, name, subscription_id, resource_group_name, workspace_name, credential):
+        """
+        This method is added for local pf_client with workspace provider to ensure we only requires limited
+        permission(workspace/list secrets). As create azure pf_client requires workspace read permission.
+        """
+        connection_dict = cls._build_connection_dict(
+            name, subscription_id, resource_group_name, workspace_name, credential
+        )
+        return _Connection._from_execution_connection_dict(name=name, data=connection_dict)
+
+    @classmethod
     def open_url(cls, token, url, action, host="management.azure.com", method="GET", model=None) -> Union[Any, dict]:
         """
         :type token: str
@@ -199,19 +210,33 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         # Note: Filter empty values out to ensure default values can be picked when init class object.
         return {**meta, "value": {k: v for k, v in value.items() if v}}
 
-    def build_connection_dict(self, name) -> dict:
+    def build_connection_dict(self, name):
+        return self._build_connection_dict(
+            name,
+            self._operation_scope.subscription_id,
+            self._operation_scope.resource_group_name,
+            self._operation_scope.workspace_name,
+            self._credential,
+        )
+
+    @classmethod
+    def _build_connection_dict(cls, name, subscription_id, resource_group_name, workspace_name, credential) -> dict:
         """
         :type name: str
+        :type subscription_id: str
+        :type resource_group_name: str
+        :type workspace_name: str
+        :type credential: azure.identity.TokenCredential
         """
         url = GET_CONNECTION_URL.format(
-            sub=self._operation_scope.subscription_id,
-            rg=self._operation_scope.resource_group_name,
-            ws=self._operation_scope.workspace_name,
+            sub=subscription_id,
+            rg=resource_group_name,
+            ws=workspace_name,
             name=name,
         )
         try:
-            rest_obj: WorkspaceConnectionPropertiesV2BasicResource = self.open_url(
-                self._credential.get_token("https://management.azure.com/.default").token,
+            rest_obj: WorkspaceConnectionPropertiesV2BasicResource = cls.open_url(
+                credential.get_token("https://management.azure.com/.default").token,
                 url=url,
                 action="listsecrets",
                 method="POST",
@@ -225,7 +250,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
             )
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         try:
-            return self.build_connection_dict_from_rest_object(name, rest_obj)
+            return cls.build_connection_dict_from_rest_object(name, rest_obj)
         except Exception as e:
             raise BuildConnectionError(
                 message_format=f"Build connection dict for connection {{name}} failed with {e}.",
