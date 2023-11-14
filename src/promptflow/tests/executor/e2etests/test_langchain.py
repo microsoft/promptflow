@@ -21,7 +21,7 @@ class TestLangchain:
             ("openai_completion_api_flow", {"prompt": "${data.prompt}"}),
         ],
     )
-    def test_executor_exec_bulk_with_langchain(self, flow_folder, inputs_mapping, dev_connections):
+    def test_batch_with_langchain(self, flow_folder, inputs_mapping, dev_connections):
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
         )

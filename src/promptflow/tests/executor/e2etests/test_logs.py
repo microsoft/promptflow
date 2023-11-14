@@ -83,7 +83,7 @@ class TestExecutorLogs:
             loggers_name_list = ["execution", "execution.flow"]
             assert all(logger in log_content for logger in loggers_name_list)
 
-        # bulk run: test exec_bulk
+        # bulk run: test batch_engine.run
         # setting run_mode to BulkTest is a requirement to use bulk_logger
         with LogContext(bulk_run_log_path, run_mode=RunMode.Batch):
             self.submit_bulk_run(folder_name)
@@ -111,7 +111,7 @@ class TestExecutorLogs:
             node_logs_list = ["print_input in line", "stdout> STDOUT:", "stderr> STDERR:"]
             assert all(node_log in log_content for node_log in node_logs_list)
 
-        # bulk run: test exec_bulk
+        # bulk run: test batch_engine.run
         # setting run_mode to BulkTest is a requirement to use bulk_logger
         with LogContext(bulk_run_log_path, run_mode=RunMode.Batch):
             self.submit_bulk_run(folder_name)
