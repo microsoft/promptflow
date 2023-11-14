@@ -35,6 +35,11 @@ def handle_line_failures(run_infos: List[FlowRunInfo], raise_on_line_failure: bo
 
 
 def get_aggregation_inputs_properties(flow: Flow) -> AbstractSet[str]:
+    """Return the serialized InputAssignment of the aggregation nodes inputs.
+
+    For example, an aggregation node refers the outputs of a node named "grade",
+    then this function will return set("${grade.output}").
+    """
     normal_node_names = {node.name for node in flow.nodes if flow.is_normal_node(node.name)}
     properties = set()
     for node in flow.nodes:
