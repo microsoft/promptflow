@@ -69,10 +69,6 @@ if __name__ == "__main__":
         ]
         pytest_command = pytest_command + [f"--cov-config={args.coverage_config}"]
     pytest_command += [
-        "-n",
-        args.n,
-        "--dist",
-        "loadgroup",
         "--log-level=info",
         "--log-format=%(asctime)s %(levelname)s %(message)s",
         "--log-date-format=[%Y-%m-%d %H:%M:%S]",

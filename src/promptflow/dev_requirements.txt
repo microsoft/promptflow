@@ -17,7 +17,6 @@ pytest-mock
 pytest-nunit
 pytest-sugar
 pytest-timeout
-pytest-xdist
 setuptools
 setuptools_rust
 twine==4.0.0
