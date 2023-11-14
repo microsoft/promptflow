@@ -3,7 +3,7 @@
 ## 1.1.0 (Upcoming)
 ### Features Added
 - Add `pfazure flow list` to list flows from Azure AI.
-- [Executor] Added support for image input and output in the executor.
+- Add support for image input and output in prompt flow.
 
 ### Bugs Fixed
 
