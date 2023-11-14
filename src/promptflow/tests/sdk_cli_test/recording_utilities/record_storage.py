@@ -159,6 +159,13 @@ class RecordStorage(object):
             return item
 
     def _parse_output_generator(self, output):
+        """
+        Special handling for generator type. Since pickle will not work for generator.
+        Returns the real list for reocrding, and create a generator for original output.
+        Parse output has a simplified hypothesis: output is simple dict, list or generator,
+        because a full schema of output is too heavy to handle.
+        Example: {"answer": <generator>, "a": "b"}, [<generator>, a, b], <generator>
+        """
         output_type = ""
         output_value = None
         output_generator = None
@@ -211,25 +218,37 @@ class RecordStorage(object):
         return output_value, output_generator, output_type
 
     def _create_output_generator(self, output, output_type):
+        """
+        Special handling for generator type.
+        Returns a generator for original output.
+        Create output has a simplified hypothesis:
+        All list with output type generator is treated as generator.
+        """
         output_generator = None
         if output_type == "dict[generator]":
             output_generator = {}
             for k, v in output.items():
+                if type(v).__name__ == "list":
 
-                def vgenerator():
-                    for item in v:
-                        yield item
+                    def vgenerator():
+                        for item in v:
+                            yield item
 
-                output_generator[k] = vgenerator()
+                    output_generator[k] = vgenerator()
+                else:
+                    output_generator[k] = v
         elif output_type == "list[generator]":
             output_generator = []
             for item in output:
+                if type(item).__name__ == "list":
 
-                def igenerator():
-                    for i in item:
-                        yield i
+                    def igenerator():
+                        for i in item:
+                            yield i
 
-                output_generator.append(igenerator())
+                    output_generator.append(igenerator())
+                else:
+                    output_generator.append(item)
         elif output_type == "generator":
 
             def generator():
