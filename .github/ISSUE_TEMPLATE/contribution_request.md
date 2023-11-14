@@ -1,6 +1,6 @@
 ---
 name: Contribution request
-about:
+about: Create a request of review to contribution
 title: "[Contribution Request]"
 labels: enhancement
 assignees: ''
