@@ -6,11 +6,8 @@ import pytest
 
 from promptflow._core.operation_context import OperationContext
 
-from ..recording_utilities import RecordStorage
 
-
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
-@pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
+@pytest.mark.usefixtures("flow_serving_client", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_swagger(flow_serving_client):
     swagger_dict = json.loads(flow_serving_client.get("/swagger.json").data.decode())
@@ -59,8 +56,7 @@ def test_swagger(flow_serving_client):
     }
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
-@pytest.mark.usefixtures("serving_client_llm_chat", "setup_local_connection")
+@pytest.mark.usefixtures("serving_client_llm_chat", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_chat_swagger(serving_client_llm_chat):
     swagger_dict = json.loads(serving_client_llm_chat.get("/swagger.json").data.decode())
@@ -119,8 +115,7 @@ def test_chat_swagger(serving_client_llm_chat):
     }
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
-@pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
+@pytest.mark.usefixtures("flow_serving_client", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_user_agent(flow_serving_client):
     operation_context = OperationContext.get_instance()
@@ -128,8 +123,7 @@ def test_user_agent(flow_serving_client):
     assert "promptflow-local-serving" in operation_context.get_user_agent()
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
-@pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
+@pytest.mark.usefixtures("flow_serving_client", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_serving_api(flow_serving_client):
     response = flow_serving_client.get("/health")
@@ -143,8 +137,7 @@ def test_serving_api(flow_serving_client):
     assert os.environ["API_TYPE"] == "azure"
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
-@pytest.mark.usefixtures("evaluation_flow_serving_client", "setup_local_connection")
+@pytest.mark.usefixtures("evaluation_flow_serving_client", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
     response = evaluation_flow_serving_client.post("/score", data=json.dumps({"url": "https://www.microsoft.com/"}))
@@ -154,7 +147,6 @@ def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
     assert "category" in json.loads(response.data.decode())
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
 @pytest.mark.e2etest
 def test_unknown_api(flow_serving_client):
     response = flow_serving_client.get("/unknown")
@@ -165,7 +157,7 @@ def test_unknown_api(flow_serving_client):
     assert response.status_code == 404
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
     "accept, expected_status_code, expected_content_type",
@@ -212,7 +204,6 @@ def test_stream_llm_chat(
         print(result)
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
     "accept, expected_status_code, expected_content_type",
@@ -274,7 +265,7 @@ def test_stream_python_stream_tools(
         )
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
+@pytest.mark.usefixtures("recording_injection")
 @pytest.mark.e2etest
 @pytest.mark.parametrize(
     "accept, expected_status_code, expected_content_type",
@@ -312,8 +303,7 @@ def test_stream_python_nonstream_tools(
         print(result)
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
-@pytest.mark.usefixtures("serving_client_image_python_flow", "setup_local_connection")
+@pytest.mark.usefixtures("serving_client_image_python_flow", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_image_flow(serving_client_image_python_flow, sample_image):
     response = serving_client_image_python_flow.post("/score", data=json.dumps({"image": sample_image}))
@@ -326,8 +316,7 @@ def test_image_flow(serving_client_image_python_flow, sample_image):
     assert re.match(key_regex, list(response["output"].keys())[0])
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support serve in replay mode")
-@pytest.mark.usefixtures("serving_client_composite_image_flow", "setup_local_connection")
+@pytest.mark.usefixtures("serving_client_composite_image_flow", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_list_image_flow(serving_client_composite_image_flow, sample_image):
     image_dict = {"data:image/jpg;base64": sample_image}
