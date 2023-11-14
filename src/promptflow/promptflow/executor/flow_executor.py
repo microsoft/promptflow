@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
 import copy
 import functools
 import inspect
@@ -38,6 +39,7 @@ from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
+from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
 from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
@@ -897,7 +899,17 @@ class FlowExecutor:
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
-        nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+        #  TODO: Use a mixed scheduler to support both async and thread pool mode.
+        should_use_async = all(
+            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
+        )
+        if should_use_async:
+            flow_logger.info("Start executing nodes in async mode.")
+            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
+            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
+        else:
+            flow_logger.info("Start executing nodes in thread pool mode.")
+            nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
