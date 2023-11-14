@@ -47,7 +47,7 @@ class Run(Resource):
         return jsonify(run_dict)
 
 
-@api.route("/metadata/<string:name>", endpoint="metadata1")
+@api.route("/metadata/<string:name>")
 class MetaData(Resource):
 
     def get(self, name: str):

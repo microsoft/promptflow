@@ -18,12 +18,10 @@ def heartbeat():
 def create_app():
     app = Flask(__name__)
     app.add_url_rule("/heartbeat", view_func=heartbeat)
-    api_v1 = Blueprint("PromptFlow Service", __name__, url_prefix="/v1.0")
-    api = Api(api_v1, version='1.0')
+    api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0")
+    api = Api(api_v1, title="Prompt Flow Service", version='1.0')
     api.add_namespace(connection_api)
     api.add_namespace(run_api)
-    # api.init_app(app)
 
     app.register_blueprint(api_v1)
-    # app.register_blueprint(connection_bp)
     return app

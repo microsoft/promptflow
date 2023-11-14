@@ -19,8 +19,8 @@ def api_wrapper(func):
             response = jsonify({"error_message": "Not Found"})
             response.status_code = 404
             return response
-        except Exception:  # pylint: disable=broad-except
-            response = jsonify({"error_message": "Internal Server Error"})
+        except Exception as e:  # pylint: disable=broad-except
+            response = jsonify({"error_message": f"Internal Server Error, {e}"})
             response.status_code = 500
             return response
 
