@@ -36,6 +36,17 @@ class BatchEngine:
 
     @classmethod
     def register_executor(cls, type: ProgramLanguage, executor_proxy_cls: AbstractExecutorProxy):
+        """Register a executor proxy class for a specific program language.
+
+        This method allows users to register a executor proxy class for a particular
+        programming language. The executor proxy class will be used when creating an instance
+        of the BatchEngine for flows written in the specified language.
+
+        :param type: The flow program language of the executor proxy,
+        :type type: ~promptflow.contracts.flow.ProgramLanguage
+        :param executor_proxy_cls: The executor proxy class to be registered.
+        :type executor_proxy_cls:  ~promptflow.batch.AbstractExecutorProxy
+        """
         cls.executor_proxy_classes[type] = executor_proxy_cls
 
     def __init__(
@@ -77,6 +88,8 @@ class BatchEngine:
         :type run_id: Optional[str]
         :param max_lines_count: The max count of inputs. If it is None, all inputs will be used.
         :type max_lines_count: Optional[int]
+        :param raise_on_line_failure: Whether to raise exception when a line fails.
+        :type raise_on_line_failure: Optional[bool]
         :return: The result of this batch run
         :rtype: ~promptflow.executor._result.BatchResult
         """
