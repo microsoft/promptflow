@@ -3,24 +3,27 @@
 # ---------------------------------------------------------
 
 from flask import jsonify, request
-from flask_restx import Namespace, Resource, fields, Api
+from flask_restx import Namespace, Resource
+from werkzeug.datastructures import FileStorage
 
 from promptflow._sdk._service.utils import api_wrapper
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
 
-api = Namespace("connection", description="Connection Management")
+api = Namespace("Connections", description="Connections Management")
 
-get_connection = api.model(
-    "Connection", {"name": fields.String(required=True, description="Connection name")}
-)
-# list_connection = connection_api.model("ListConnection", )
+upload_parser = api.parser()
+upload_parser.add_argument('connection_file', location='files', type=FileStorage, required=True)
+upload_parser.add_argument('X-Remote-User', location='headers', required=True)
 
 
-@api.route("/list")
-@api.header(name="X-Remote-User", description="Login user name")
+remote_parser = api.parser()
+remote_parser.add_argument('X-Remote-User', location='headers', required=True)
+
+
+@api.route("/")
 class ConnectionList(Resource):
-    @api.doc(description="List all connection")
+    @api.doc(parser=remote_parser, description="List all connection")
     @api_wrapper
     def get(self):
         # parse query parameters
@@ -35,10 +38,9 @@ class ConnectionList(Resource):
 
 @api.route("/<string:name>")
 @api.param("name", "The connection name.")
-@api.header(name="X-Remote-User", description="Login user name")
 class Connection(Resource):
 
-    @api.doc(description="Get connection")
+    @api.doc(parser=remote_parser, description="Get connection")
     @api_wrapper
     def get(self, name: str):
         # parse query parameters
@@ -50,8 +52,17 @@ class Connection(Resource):
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)
 
-    def post(self):
+    @api.doc(parser=upload_parser, description="Create connection")
+    @api_wrapper
+    def post(self, name: str):
         pass
 
-    def delete(self):
+    @api.doc(parser=remote_parser, description="Update connection")
+    @api_wrapper
+    def put(self, name: str):
+        pass
+
+    @api.doc(parser=remote_parser, description="Delete connection")
+    @api_wrapper
+    def delete(self, name: str):
         pass
