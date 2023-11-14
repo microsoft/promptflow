@@ -22,6 +22,14 @@ from .tool import ConnectionType, Tool, ToolType, ValueType
 logger = logging.getLogger(__name__)
 
 
+class CodeLanguage(Enum):
+    """The enum of code language."""
+
+    PYTHON = "python"
+    CSHARP = "csharp"
+    JAVASCRIPT = "javascript"
+
+
 class InputValueType(Enum):
     """The enum of input value type."""
 
@@ -557,6 +565,8 @@ class Flow:
     :type tools: List[Tool]
     :param node_variants: The node variants of the flow.
     :type node_variants: Dict[str, NodeVariants]
+    :param code_language: The code language of the flow.
+    :type code_language: ~promptflow.contracts.flow.CodeLanguage
     """
 
     id: str
@@ -566,7 +576,7 @@ class Flow:
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
-    code_language: str = "python"
+    code_language: CodeLanguage = CodeLanguage.PYTHON
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -581,7 +591,7 @@ class Flow:
             "inputs": {name: i.serialize() for name, i in self.inputs.items()},
             "outputs": {name: o.serialize() for name, o in self.outputs.items()},
             "tools": [serialize(t) for t in self.tools],
-            "language": self.code_language,
+            "language": self.code_language.value,
         }
         return data
 
@@ -626,7 +636,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
-            code_language=data.get("language", "python"),
+            code_language=CodeLanguage(data.get("language", CodeLanguage.PYTHON.value)),
         )
 
     def _apply_default_node_variants(self: "Flow"):
