@@ -44,7 +44,7 @@ jobs:
       - name: Get promptflow version
         id: get-version
         run: |
-          version=$(python -c "import promptflow; print(promptflow.__version__)")
+          $version=$(python -c "import promptflow; print(promptflow.__version__)")
           echo "::set-output name=version::$version"
         shell: pwsh
 
