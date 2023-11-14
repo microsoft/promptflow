@@ -65,9 +65,9 @@ jobs:
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', ${{ steps.get-version.outputs.version }}
           $text | Out-File -FilePath "promptflow.wixproj" -Encoding utf8
           
-          $text = Get-Content "promptflow.wxs" -Raw
+          $text = Get-Content "product.wxs" -Raw
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', ${{ steps.get-version.outputs.version }}
-          $text | Out-File -FilePath "promptflow.wxs" -Encoding utf8
+          $text | Out-File -FilePath "product.wxs" -Encoding utf8
           
           msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
