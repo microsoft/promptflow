@@ -8,6 +8,7 @@ import json
 import logging
 import multiprocessing
 import os
+import platform
 import re
 import stat
 import shutil
@@ -531,6 +532,13 @@ def get_promptflow_sdk_version() -> str:
     except AttributeError:
         # if promptflow is installed from source, it does not have __version__ attribute
         return "0.0.1"
+
+
+def print_pf_version():
+    print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
+    print()
+    print("Executable '{}'".format(os.path.abspath(sys.executable)))
+    print('Python ({}) {}'.format(platform.system(), sys.version))
 
 
 class PromptflowIgnoreFile(IgnoreFile):
