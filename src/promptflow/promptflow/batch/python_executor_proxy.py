@@ -27,14 +27,6 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage)
         return cls(flow_executor)
 
-    def exec_line(
-        self,
-        inputs: Mapping[str, Any],
-        index: Optional[int] = None,
-        run_id: Optional[str] = None,
-    ) -> LineResult:
-        return self._flow_executor.exec_line(inputs, index=index, run_id=run_id)
-
     def exec_aggregation(
         self,
         batch_inputs: Mapping[str, Any],

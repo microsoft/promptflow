@@ -131,11 +131,7 @@ class BatchEngine:
     ) -> List[LineResult]:
         line_results = []
         for i, each_line_input in enumerate(batch_inputs):
-            if inspect.iscoroutinefunction(self._executor_proxy.exec_line):
-                line_result = asyncio.run(self._executor_proxy.exec_line(each_line_input, i, run_id=run_id))
-            else:
-                line_result = self._executor_proxy.exec_line(each_line_input, i, run_id=run_id)
-
+            line_result = asyncio.run(self._executor_proxy.exec_line(each_line_input, i, run_id=run_id))
             for node_run in line_result.node_run_infos.values():
                 self._storage.persist_node_run(node_run)
             self._storage.persist_flow_run(line_result.run_info)
