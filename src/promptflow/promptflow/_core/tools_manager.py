@@ -193,10 +193,13 @@ def retrieve_tool_func_result(
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
+    module_logger.log(f"func_sig_params of  func_path is: '{func_sig_params}'")
+    module_logger.log(f"func_input_params_dict is: '{func_input_params_dict}'")
     # Validate if func input params are all in func signature params.
     for input_param in func_input_params_dict:
         if input_param not in func_sig_params:
-            raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
+            module_logger.warning(f"Input parameter '{input_param}' not in function's arguments")
+            # raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
     # Append workspace triple to func input params if func signature has kwargs param.
     # Or append ws_triple_dict params that are in func signature.
     combined_func_input_params = append_workspace_triple_to_func_input_params(
@@ -215,10 +218,13 @@ def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dic
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
+    module_logger.log(f"func_sig_params of  func_path is: '{func_sig_params}'")
+    module_logger.log(f"func_input_params_dict is: '{func_input_params_dict}'")
     # Validate if func input params are all in func signature params.
     for input_param in func_input_params_dict:
         if input_param not in func_sig_params:
-            raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
+            module_logger.warning(f"Input parameter '{input_param}' not in function's arguments")
+            # raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
     combined_func_input_params = append_workspace_triple_to_func_input_params(
         func_sig_params, func_input_params_dict, ws_triple_dict
     )
