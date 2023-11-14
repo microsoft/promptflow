@@ -86,6 +86,10 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
+        <Module Id="MergeModuleID" Language="1033" Version="1.0.0.0">
+            <ComponentGroupRef Id="PromptflowCliComponentGroup" />
+        </Module>
+
     </Product>
 
     <Fragment>
