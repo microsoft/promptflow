@@ -89,7 +89,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             output = Tracer.pop(output)
             return output
 
-        run_info = self.prepare_node_run(f, argnames, args, kwargs)
+        run_info = self.prepare_node_run(self._current_node, f, argnames, args, kwargs)
         node_run_id = run_info.run_id
 
         traces = []
@@ -132,14 +132,14 @@ class FlowExecutionContext(ThreadLocalSingleton):
         finally:
             self._run_tracker.persist_node_run(run_info)
 
-    def prepare_node_run(self, f, argnames=[], args=[], kwargs={}):
+    def prepare_node_run(self, node: Node, f, argnames=[], args=[], kwargs={}):
         self._current_tool = f
         all_args = parse_all_args(argnames, args, kwargs)
-        node_run_id = self._generate_current_node_run_id()
-        flow_logger.info(f"Executing node {self._current_node.name}. node run id: {node_run_id}")
+        node_run_id = self._generate_node_run_id(node)
+        flow_logger.info(f"Executing node {node.name}. node run id: {node_run_id}")
         parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
         run_info: RunInfo = self._run_tracker.start_node_run(
-            node=self._current_node.name,
+            node=node.name,
             flow_run_id=self._run_id,
             parent_run_id=parent_run_id,
             run_id=node_run_id,
@@ -150,13 +150,14 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._run_tracker.set_inputs(node_run_id, {key: value for key, value in all_args.items() if key != "self"})
         return run_info
 
-    async def invoke_tool_async(self, f: Callable, kwargs):
+    async def invoke_tool_async(self, node: Node, f: Callable, kwargs):
         if not inspect.iscoroutinefunction(f):
             raise UnexpectedError(
-                message_format="Tool {function} is not a coroutine function.",
-                function=f.__name__
+                message_format="Tool '{function}' in node '{node}' is not a coroutine function.",
+                function=f,
+                node=node.name,
             )
-        run_info = self.prepare_node_run(f, kwargs=kwargs)
+        run_info = self.prepare_node_run(node, f, kwargs=kwargs)
         node_run_id = run_info.run_id
 
         traces = []
@@ -164,15 +165,15 @@ class FlowExecutionContext(ThreadLocalSingleton):
             Tracer.start_tracing(node_run_id)
             trace = Tracer.push_tool(f, kwargs=kwargs)
             trace.node_name = run_info.node
-            result = await self._invoke_tool_async_inner(f, kwargs)
+            result = await self._invoke_tool_async_inner(node, f, kwargs)
             result = Tracer.pop(result)
             traces = Tracer.end_tracing()
             self._current_tool = None
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
-            flow_logger.info(f"Node {self._current_node.name} completes.")
+            flow_logger.info(f"Node {node.name} completes.")
             return result
         except Exception as e:
-            logger.exception(f"Node {self._current_node.name} in line {self._line_number} failed. Exception: {e}.")
+            logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
             Tracer.pop(error=e)
             if not traces:
                 traces = Tracer.end_tracing()
@@ -181,7 +182,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         finally:
             self._run_tracker.persist_node_run(run_info)
 
-    async def _invoke_tool_async_inner(self, f: Callable, kwargs):
+    async def _invoke_tool_async_inner(self, node: Node, f: Callable, kwargs):
         try:
             return await f(**kwargs)
         except PromptflowException as e:
@@ -191,11 +192,10 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 e.module = f.__module__
             raise e
         except Exception as e:
-            node_name = self._current_node.name if self._current_node else f.__name__
             # Otherwise, we assume the error comes from user's tool.
             # For these cases, raise ToolExecutionError, which is classified as UserError
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
-            raise ToolExecutionError(node_name=node_name, module=f.__module__) from e
+            raise ToolExecutionError(node_name=node.name, module=f.__module__) from e
 
     def invoke_tool(self, f: Callable, args, kwargs):
         node_name = self._current_node.name if self._current_node else f.__name__
@@ -253,9 +253,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             except Exception as ex:
                 # Not a critical path, swallow the exception.
                 logging.warning(f"Failed to persist cache result. run_id: {run_info.run_id}. Exception: {ex}")
-
-    def _generate_current_node_run_id(self) -> str:
-        return self._generate_node_run_id(self._current_node)
 
     def _generate_node_run_id(self, node: Node) -> str:
         if node.aggregation:

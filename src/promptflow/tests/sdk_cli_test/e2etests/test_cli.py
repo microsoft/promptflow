@@ -25,8 +25,6 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 
-from ..recording_utilities import RecordStorage
-
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
@@ -52,7 +50,7 @@ def run_pf_command(*args, cwd=None):
 
 
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
 )
 @pytest.mark.cli_test
 @pytest.mark.e2etest
@@ -878,7 +876,6 @@ class TestCli:
                 assert not (flow_folder / "azure_openai.yaml").exists()
                 assert not (flow_folder / "openai.yaml").exists()
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="cannot support interactive")
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1527,7 +1524,6 @@ class TestCli:
             pass
         pf.runs.get(name=name2)
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="cannot support complex reply format")
     def test_data_scrubbing(self):
         # Prepare connection
         run_pf_command(
