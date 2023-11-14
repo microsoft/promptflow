@@ -39,7 +39,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.executor.flow_executor import BulkResult
+from promptflow.executor.flow_executor import BatchResult
 from promptflow.storage import AbstractRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -282,7 +282,7 @@ class LocalStorageOperations(AbstractRunStorage):
         with open(self._metrics_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(metrics, f, ensure_ascii=False)
 
-    def dump_exception(self, exception: Exception, bulk_results: BulkResult) -> None:
+    def dump_exception(self, exception: Exception, bulk_results: BatchResult) -> None:
         """Dump exception to local storage.
 
         :param exception: Exception raised during bulk run.
@@ -399,7 +399,7 @@ class LocalStorageOperations(AbstractRunStorage):
         )
         line_run_record.dump(self._run_infos_folder / filename)
 
-    def persist_result(self, result: Optional[BulkResult]) -> None:
+    def persist_result(self, result: Optional[BatchResult]) -> None:
         """Persist metrics from return of executor."""
         if result is None:
             return

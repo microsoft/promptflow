@@ -44,7 +44,7 @@ from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_FLOW,
     FlowNodesScheduler,
 )
-from promptflow.executor._result import AggregationResult, BulkResult, LineResult
+from promptflow.executor._result import AggregationResult, BatchResult, LineResult
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
@@ -708,7 +708,7 @@ class FlowExecutor:
         raise_on_line_failure: bool = False,
         node_concurrency=DEFAULT_CONCURRENCY_BULK,
         output_dir: Path = None,
-    ) -> BulkResult:
+    ) -> BatchResult:
         """The entry points for bulk run execution
 
         :param inputs: A list of dictionaries containing input data.
@@ -723,7 +723,7 @@ class FlowExecutor:
         :param node_concurrency: The node concurrency. Defaults to DEFAULT_CONCURRENCY_BULK.
         :type node_concurrency: Optional[int]
         :return: The bulk result.
-        :rtype: ~promptflow.executor.flow_executor.BulkResult
+        :rtype: ~promptflow.executor.flow_executor.BatchResult
         """
 
         self._node_concurrency = node_concurrency
@@ -743,7 +743,7 @@ class FlowExecutor:
             for r in line_results
             if r.run_info.status == Status.Completed
         ]
-        return BulkResult(
+        return BatchResult(
             outputs=outputs,
             metrics=aggr_results.metrics,
             line_results=line_results,

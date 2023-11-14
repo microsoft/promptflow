@@ -11,7 +11,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
-from promptflow.executor.flow_executor import BulkResult, LineResult
+from promptflow.executor.flow_executor import BatchResult, LineResult
 from promptflow.storage import AbstractRunStorage
 
 from ..utils import (
@@ -109,7 +109,7 @@ class TestExecutor:
         bulk_inputs = self.get_bulk_inputs()
         nlines = len(bulk_inputs)
         bulk_results = executor.exec_bulk(bulk_inputs, run_id)
-        assert isinstance(bulk_results, BulkResult)
+        assert isinstance(bulk_results, BatchResult)
         msg = f"Bulk result only has {len(bulk_results.line_results)}/{nlines} outputs"
         assert len(bulk_results.outputs) == nlines, msg
         for i, output in enumerate(bulk_results.outputs):
@@ -148,7 +148,7 @@ class TestExecutor:
         run_id = str(uuid.uuid4())
         bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
         bulk_results = executor.exec_bulk(bulk_inputs, run_id)
-        assert isinstance(bulk_results, BulkResult)
+        assert isinstance(bulk_results, BatchResult)
         assert isinstance(bulk_results.metrics, dict)
         assert bulk_results.metrics == get_flow_expected_metrics(flow_folder)
         status_summary = bulk_results.get_status_summary()
@@ -160,7 +160,7 @@ class TestExecutor:
         run_id = str(uuid.uuid4())
         bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
         bulk_results = executor.exec_bulk(bulk_inputs, run_id)
-        assert isinstance(bulk_results, BulkResult)
+        assert isinstance(bulk_results, BatchResult)
         status_summary = bulk_results.get_status_summary()
         assert status_summary == get_flow_expected_status_summary(flow_folder)
 
@@ -175,7 +175,7 @@ class TestExecutor:
         batch_inputs_processor = BatchInputsProcessor(executor._working_dir, executor._flow.inputs)
         resolved_inputs = batch_inputs_processor._validate_and_apply_inputs_mapping(bulk_inputs, bulk_inputs_mapping)
         bulk_results = executor.exec_bulk(resolved_inputs, run_id)
-        assert isinstance(bulk_results, BulkResult)
+        assert isinstance(bulk_results, BatchResult)
         assert len(bulk_results.outputs) == 2
         assert bulk_results.outputs == [
             {"line_number": 0, "output": 1},

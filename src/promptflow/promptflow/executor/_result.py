@@ -50,7 +50,7 @@ class AggregationResult:
 
 
 @dataclass
-class BulkResult:
+class BatchResult:
     """The result of a bulk run."""
 
     outputs: List[Mapping[str, Any]]

@@ -27,7 +27,7 @@ from promptflow.executor._errors import (
     ResolveToolError,
     SingleNodeValidationError,
 )
-from promptflow.executor.flow_executor import BulkResult
+from promptflow.executor.flow_executor import BatchResult
 
 from ..utils import FLOW_ROOT, WRONG_FLOW_ROOT, get_yaml_file
 
@@ -408,7 +408,7 @@ class TestValidation:
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections, raise_ex=False)
 
         result = executor.exec_bulk(batch_input, validate_inputs=validate)
-        assert isinstance(result, BulkResult)
+        assert isinstance(result, BatchResult)
         assert len(result.line_results) == len(batch_input)
         if error_class is None:
             assert result.line_results[0].run_info.status == Status.Completed

@@ -5,7 +5,7 @@ import pytest
 
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
-from promptflow.executor._result import BulkResult, LineResult
+from promptflow.executor._result import BatchResult, LineResult
 
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
 
@@ -28,7 +28,7 @@ class TestLangchain:
         input_dirs = {"data": get_flow_inputs_file(flow_folder)}
         output_dir = Path(mkdtemp())
         bulk_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
-        assert isinstance(bulk_results, BulkResult)
+        assert isinstance(bulk_results, BatchResult)
         for _, line_result in enumerate(bulk_results.line_results):
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.status == Status.Completed

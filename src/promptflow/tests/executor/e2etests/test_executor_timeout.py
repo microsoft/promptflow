@@ -7,7 +7,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
-from promptflow.executor.flow_executor import BulkResult, LineResult
+from promptflow.executor.flow_executor import BatchResult, LineResult
 from promptflow.storage import AbstractRunStorage
 
 from ..utils import get_flow_sample_inputs, get_yaml_file
@@ -75,7 +75,7 @@ class TestExecutor:
         bulk_inputs = self.get_bulk_inputs()
         nlines = len(bulk_inputs)
         bulk_results = executor.exec_bulk(bulk_inputs, run_id)
-        assert isinstance(bulk_results, BulkResult)
+        assert isinstance(bulk_results, BatchResult)
         assert len(bulk_results.line_results) == nlines
 
         for i, line_result in enumerate(bulk_results.line_results):
@@ -103,7 +103,7 @@ class TestExecutor:
         bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
         nlines = len(bulk_inputs)
         bulk_results = executor.exec_bulk(bulk_inputs, run_id)
-        assert isinstance(bulk_results, BulkResult)
+        assert isinstance(bulk_results, BatchResult)
         assert len(bulk_results.line_results) == nlines
 
         for line_result in bulk_results.line_results:

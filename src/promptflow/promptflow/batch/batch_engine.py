@@ -20,7 +20,7 @@ from promptflow.batch.python_executor_proxy import PythonExecutorProxy
 from promptflow.contracts.flow import Flow, ProgramLanguage
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import PromptflowException
-from promptflow.executor._result import AggregationResult, BulkResult, LineResult
+from promptflow.executor._result import AggregationResult, BatchResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -64,7 +64,7 @@ class BatchEngine:
         run_id: Optional[str] = None,
         max_lines_count: Optional[int] = None,
         raise_on_line_failure: Optional[bool] = False,
-    ) -> BulkResult:
+    ) -> BatchResult:
         """Run flow in batch mode
 
         :param input_dirs: The directories path of input files
@@ -78,7 +78,7 @@ class BatchEngine:
         :param max_lines_count: The max count of inputs. If it is None, all inputs will be used.
         :type max_lines_count: Optional[int]
         :return: The result of this batch run
-        :rtype: ~promptflow.executor._result.BulkResult
+        :rtype: ~promptflow.executor._result.BatchResult
         """
         # resolve input data from input dirs and apply inputs mapping
         batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
@@ -99,7 +99,7 @@ class BatchEngine:
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
-    ) -> BulkResult:
+    ) -> BatchResult:
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         batch_inputs = [
             apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
@@ -116,7 +116,7 @@ class BatchEngine:
             for r in line_results
             if r.run_info.status == Status.Completed
         ]
-        return BulkResult(
+        return BatchResult(
             outputs=outputs,
             metrics=aggr_results.metrics,
             line_results=line_results,

@@ -9,7 +9,7 @@ from promptflow.batch import BatchEngine
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.executor import FlowExecutor
-from promptflow.executor.flow_executor import BulkResult, LineResult
+from promptflow.executor.flow_executor import BatchResult, LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file
@@ -224,7 +224,7 @@ class TestExecutorWithImage:
         output_dir = Path("outputs")
         bulk_result = BatchEngine(flow_file, working_dir).run(input_dirs, inputs_mapping, output_dir, max_lines_count=4)
 
-        assert isinstance(bulk_result, BulkResult)
+        assert isinstance(bulk_result, BatchResult)
         assert len(bulk_result.outputs) == expected_outputs_number
         for i, output in enumerate(bulk_result.outputs):
             assert isinstance(output, dict)

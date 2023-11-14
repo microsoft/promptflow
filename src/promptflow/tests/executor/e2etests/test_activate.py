@@ -1,9 +1,12 @@
-import pytest
-from tempfile import mkdtemp
 from pathlib import Path
-from promptflow.contracts.run_info import Status
-from promptflow.executor.flow_executor import BulkResult, FlowExecutor, LineResult
+from tempfile import mkdtemp
+
+import pytest
+
 from promptflow._utils.logger_utils import LogContext
+from promptflow.contracts.run_info import Status
+from promptflow.executor.flow_executor import BatchResult, FlowExecutor, LineResult
+
 from ..utils import (
     get_bulk_inputs,
     get_flow_expected_result,
@@ -51,7 +54,7 @@ class TestExecutorActivate:
             content = fin.read()
             assert "The node referenced by output:'third_node' is bypassed, which is not recommended." in content
 
-    def assert_activate_bulk_run_result(self, result: BulkResult, expected_result, expected_status_summary):
+    def assert_activate_bulk_run_result(self, result: BatchResult, expected_result, expected_status_summary):
         # Validate the flow outputs
         for i, output in enumerate(result.outputs):
             expected_outputs = expected_result[i]["expected_outputs"].copy()
