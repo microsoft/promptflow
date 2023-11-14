@@ -161,11 +161,11 @@ def mock_module_with_list_func(mock_list_func):
 
     with patch.object(importlib, "import_module") as mock_import:
 
-        def side_effect(module_name):
+        def side_effect(module_name, *args, **kwargs):
             if module_name == "my_tool_package.tools.tool_with_dynamic_list_input":
                 return mock_module
             else:
-                return original_import_module(module_name)
+                return original_import_module(module_name, *args, **kwargs)
 
         mock_import.side_effect = side_effect
         yield
