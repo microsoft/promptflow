@@ -675,7 +675,7 @@ class FlowExecutor:
         inputs = apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
-            # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
+            # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
             operation_context = OperationContext.get_instance()
             operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
@@ -900,9 +900,7 @@ class FlowExecutor:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        should_use_async = all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        )
+        should_use_async = all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
         if should_use_async:
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)

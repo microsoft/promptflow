@@ -334,7 +334,7 @@ class RunSubmitter:
                         + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
                     )
                 logger.warning(error_log)
-            # The bulk run is completed if the exec_bulk successfully completed.
+            # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
