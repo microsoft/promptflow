@@ -90,6 +90,8 @@ class BatchEngine:
             batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
         # persist outputs to output dir
         self._persist_outputs(batch_result.outputs, output_dir)
+        # destroy executor proxy
+        self._executor_proxy.destroy()
         return batch_result
 
     def _exec_batch(
