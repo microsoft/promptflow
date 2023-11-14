@@ -78,7 +78,7 @@ def assert_run_with_invalid_column_mapping(client: PFClient, run: Run, capfd: py
 
 
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
 )
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
@@ -273,7 +273,6 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support strong type in replay")
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
     ):

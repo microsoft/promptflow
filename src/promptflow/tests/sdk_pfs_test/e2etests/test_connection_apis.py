@@ -32,3 +32,7 @@ class TestConnectionAPIs:
         assert conn_from_pfs["name"] == name
         assert conn_from_pfs["configs"]["api_base"] == "test"
         assert "api_key" in conn_from_pfs["secrets"]
+
+    def test_list_connection_with_invalid_user(self, pfs_op: PFSOperations) -> None:
+        conn_from_pfs = pfs_op.connection_operation_with_invalid_user()
+        assert conn_from_pfs.status_code == 403

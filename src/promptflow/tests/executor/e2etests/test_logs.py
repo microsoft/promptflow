@@ -123,6 +123,7 @@ class TestExecutorLogs:
             lines = fin.readlines()
         lines = [line for line in lines if line.strip()]
         target_texts = [
+            "INFO     Start executing nodes in thread pool mode.",
             "INFO     Start to run 1 nodes with concurrency level 16.",
             "INFO     Executing node long_run_node.",
             "WARNING  long_run_node in line 0 has been running for 60 seconds, stacktrace of thread",

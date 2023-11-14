@@ -18,9 +18,9 @@ T = TypeVar("T", bound="Enum")
 
 
 def _deserialize_enum(cls: Type[T], val) -> T:
-    if not all(isinstance(i, str) for i in cls):
+    if not all(isinstance(i.value, str) for i in cls):
         return val
-    typ = next((i for i in cls if val.lower() == i.lower()), None)
+    typ = next((i for i in cls if val.lower() == i.value.lower()), None)
     # Keep string value for unknown type, as they may be resolved later after some requisites imported.
     # Type resolve will be ensured in 'ensure_node_inputs_type' before execution.
     return typ if typ else val
@@ -60,12 +60,13 @@ class ValueType(str, Enum):
             return ValueType.INT
         if isinstance(t, float):
             return ValueType.DOUBLE
+        # FilePath is a subclass of str, so it must be checked before str
+        if isinstance(t, FilePath):
+            return ValueType.FILE_PATH
         if isinstance(t, str):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
-        if isinstance(t, FilePath):
-            return ValueType.FILE_PATH
         return ValueType.OBJECT
 
     @staticmethod
@@ -254,7 +255,7 @@ class InputDefinition:
         """
 
         data = {}
-        data["type"] = ([t.value for t in self.type],)
+        data["type"] = [t.value for t in self.type]
         if len(self.type) == 1:
             data["type"] = self.type[0].value
         if self.default:
