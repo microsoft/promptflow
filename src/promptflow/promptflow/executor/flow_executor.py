@@ -20,7 +20,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import ToolInvoker
+from promptflow._core.tool import ToolInvoker, STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import flow_logger, logger
@@ -34,12 +34,7 @@ from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
-from promptflow.executor._errors import (
-    InputMappingError,
-    NodeOutputNotFound,
-    OutputReferenceNotExist,
-    SingleNodeValidationError,
-)
+from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -299,9 +294,11 @@ class FlowExecutor:
         # Only load the node's referenced flow inputs
         node_referenced_flow_inputs = FlowExecutor._get_node_referenced_flow_inputs(node, flow.inputs)
         inputs_with_default_value = FlowExecutor._apply_default_value_for_input(
-            node_referenced_flow_inputs, flow_inputs)
+            node_referenced_flow_inputs, flow_inputs
+        )
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
-            flow, node, inputs_with_default_value)
+            flow, node, inputs_with_default_value
+        )
         inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
@@ -801,7 +798,8 @@ class FlowExecutor:
 
     @staticmethod
     def _get_node_referenced_flow_inputs(
-            node, flow_inputs: Dict[str, FlowInputDefinition]) -> Dict[str, FlowInputDefinition]:
+        node, flow_inputs: Dict[str, FlowInputDefinition]
+    ) -> Dict[str, FlowInputDefinition]:
         node_referenced_flow_inputs = {}
         for _, value in node.inputs.items():
             # Only add flow input to node_referenced_flow_inputs when it is exist and referenced by node.
@@ -809,39 +807,6 @@ class FlowExecutor:
             if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
-
-    def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
-        """Validate and apply inputs mapping for all lines in the flow.
-
-        :param inputs: The inputs to the flow.
-        :type inputs: Any
-        :param inputs_mapping: The mapping of input names to their corresponding values.
-        :type inputs_mapping: Dict[str, Any]
-        :return: A list of dictionaries containing the resolved inputs for each line in the flow.
-        :rtype: List[Dict[str, Any]]
-        """
-        if not inputs_mapping:
-            logger.warning(
-                msg=(
-                    "Starting run without column mapping may lead to unexpected results. "
-                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
-                )
-            )
-
-        inputs_mapping = self._complete_inputs_mapping_by_default_value(inputs_mapping)
-        resolved_inputs = self._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
-        return resolved_inputs
-
-    def _complete_inputs_mapping_by_default_value(self, inputs_mapping):
-        inputs_mapping = inputs_mapping or {}
-        result_mapping = self._default_inputs_mapping
-        # For input has default value, we don't try to read data from default mapping.
-        # Default value is in higher priority than default mapping.
-        for key, value in self._flow.inputs.items():
-            if value and value.default:
-                del result_mapping[key]
-        result_mapping.update(inputs_mapping)
-        return result_mapping
 
     def _exec(
         self,
@@ -1005,202 +970,10 @@ class FlowExecutor:
         inputs: Mapping[str, Mapping[str, Any]],
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
-        """Apply input mapping to inputs for new contract.
+        # TODO: This function will be removed after the batch engine refactoring is completed.
+        from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
 
-        .. admonition:: Examples
-
-            .. code-block:: python
-
-                inputs: {
-                    "data": {"answer": "I'm fine, thank you.", "question": "How are you?"},
-                    "baseline": {"answer": "The weather is good."},
-                }
-                inputs_mapping: {
-                    "question": "${data.question}",
-                    "groundtruth": "${data.answer}",
-                    "baseline": "${baseline.answer}",
-                    "deployment_name": "literal_value",
-                }
-
-                Returns: {
-                    "question": "How are you?",
-                    "groundtruth": "I'm fine, thank you."
-                    "baseline": "The weather is good.",
-                    "deployment_name": "literal_value",
-                }
-
-        :param inputs: A mapping of input keys to their corresponding values.
-        :type inputs: Mapping[str, Mapping[str, Any]]
-        :param inputs_mapping: A mapping of input keys to their corresponding mapping expressions.
-        :type inputs_mapping: Mapping[str, str]
-        :return: A dictionary of input keys to their corresponding mapped values.
-        :rtype: Dict[str, Any]
-        :raises InputMappingError: If any of the input mapping relations are not found in the inputs.
-        """
-        import re
-
-        result = {}
-        notfound_mapping_relations = []
-        for map_to_key, map_value in inputs_mapping.items():
-            # Ignore reserved key configuration from input mapping.
-            if map_to_key == LINE_NUMBER_KEY:
-                continue
-            if not isinstance(map_value, str):  # All non-string values are literal values.
-                result[map_to_key] = map_value
-                continue
-            match = re.search(r"^\${([^{}]+)}$", map_value)
-            if match is not None:
-                pattern = match.group(1)
-                # Could also try each pair of key value from inputs to match the pattern.
-                # But split pattern by '.' is one deterministic way.
-                # So, give key with less '.' higher priority.
-                splitted_str = pattern.split(".")
-                find_match = False
-                for i in range(1, len(splitted_str)):
-                    key = ".".join(splitted_str[:i])
-                    source = ".".join(splitted_str[i:])
-                    if key in inputs and source in inputs[key]:
-                        find_match = True
-                        result[map_to_key] = inputs[key][source]
-                        break
-                if not find_match:
-                    notfound_mapping_relations.append(map_value)
-            else:
-                result[map_to_key] = map_value  # Literal value
-        # Return all not found mapping relations in one exception to provide better debug experience.
-        if notfound_mapping_relations:
-            invalid_relations = ", ".join(notfound_mapping_relations)
-            raise InputMappingError(
-                message_format=(
-                    "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
-                    "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                    "For more information, refer to the following documentation: https://aka.ms/pf/column-mapping"
-                ),
-                invalid_relations=invalid_relations,
-            )
-        # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
-        if LINE_NUMBER_KEY in inputs:
-            result[LINE_NUMBER_KEY] = inputs[LINE_NUMBER_KEY]
-        return result
-
-    @staticmethod
-    def _merge_input_dicts_by_line(
-        input_dict: Mapping[str, List[Mapping[str, Any]]],
-    ) -> List[Mapping[str, Mapping[str, Any]]]:
-        for input_key, list_of_one_input in input_dict.items():
-            if not list_of_one_input:
-                raise InputMappingError(
-                    message_format=(
-                        "The input for batch run is incorrect. Input from key '{input_key}' is an empty list, "
-                        "which means we cannot generate a single line input for the flow run. "
-                        "Please rectify the input and try again."
-                    ),
-                    input_key=input_key,
-                )
-
-        # Check if line numbers are aligned.
-        all_lengths_without_line_number = {
-            input_key: len(list_of_one_input)
-            for input_key, list_of_one_input in input_dict.items()
-            if not any(LINE_NUMBER_KEY in one_item for one_item in list_of_one_input)
-        }
-        if len(set(all_lengths_without_line_number.values())) > 1:
-            raise InputMappingError(
-                message_format=(
-                    "The input for batch run is incorrect. Line numbers are not aligned. "
-                    "Some lists have dictionaries missing the 'line_number' key, "
-                    "and the lengths of these lists are different. "
-                    "List lengths are: {all_lengths_without_line_number}. "
-                    "Please make sure these lists have the same length or add 'line_number' key to each dictionary."
-                ),
-                all_lengths_without_line_number=all_lengths_without_line_number,
-            )
-
-        # Collect each line item from each input.
-        tmp_dict = {}
-        for input_key, list_of_one_input in input_dict.items():
-            if input_key in all_lengths_without_line_number:
-                # Assume line_number start from 0.
-                for index, one_line_item in enumerate(list_of_one_input):
-                    if index not in tmp_dict:
-                        tmp_dict[index] = {}
-                    tmp_dict[index][input_key] = one_line_item
-            else:
-                for one_line_item in list_of_one_input:
-                    if LINE_NUMBER_KEY in one_line_item:
-                        index = one_line_item[LINE_NUMBER_KEY]
-                        if index not in tmp_dict:
-                            tmp_dict[index] = {}
-                        tmp_dict[index][input_key] = one_line_item
-        result = []
-        for line, values_for_one_line in tmp_dict.items():
-            # Missing input is not acceptable line.
-            if len(values_for_one_line) != len(input_dict):
-                continue
-            values_for_one_line[LINE_NUMBER_KEY] = line
-            result.append(values_for_one_line)
-        return result
-
-    @staticmethod
-    def _apply_inputs_mapping_for_all_lines(
-        input_dict: Mapping[str, List[Mapping[str, Any]]],
-        inputs_mapping: Mapping[str, str],
-    ) -> List[Dict[str, Any]]:
-        """Apply input mapping to all input lines.
-
-        For example:
-        input_dict = {
-            'data': [{'question': 'q1', 'answer': 'ans1'}, {'question': 'q2', 'answer': 'ans2'}],
-            'baseline': [{'answer': 'baseline_ans1'}, {'answer': 'baseline_ans2'}],
-            'output': [{'answer': 'output_ans1', 'line_number': 0}, {'answer': 'output_ans2', 'line_number': 1}],
-        }
-        inputs_mapping: {
-            "question": "${data.question}",  # Question from the data
-            "groundtruth": "${data.answer}",  # Answer from the data
-            "baseline": "${baseline.answer}",  # Answer from the baseline
-            "deployment_name": "text-davinci-003",  # literal value
-            "answer": "${output.answer}",  # Answer from the output
-            "line_number": "${output.line_number}",  # Answer from the output
-        }
-
-        Returns:
-        [{
-            "question": "q1",
-            "groundtruth": "ans1",
-            "baseline": "baseline_ans1",
-            "answer": "output_ans1",
-            "deployment_name": "text-davinci-003",
-            "line_number": 0,
-        },
-        {
-            "question": "q2",
-            "groundtruth": "ans2",
-            "baseline": "baseline_ans2",
-            "answer": "output_ans2",
-            "deployment_name": "text-davinci-003",
-            "line_number": 1,
-        }]
-        """
-        if inputs_mapping is None:
-            # This exception should not happen since developers need to use _default_inputs_mapping for None input.
-            # So, this exception is one system error.
-            raise UnexpectedError(
-                message_format=(
-                    "The input for batch run is incorrect. Please make sure to set up a proper input mapping before "
-                    "proceeding. If you need additional help, feel free to contact support for further assistance."
-                )
-            )
-        merged_list = FlowExecutor._merge_input_dicts_by_line(input_dict)
-        if len(merged_list) == 0:
-            raise InputMappingError(
-                message_format=(
-                    "The input for batch run is incorrect. Could not find one complete line on the provided input. "
-                    "Please ensure that you supply data on the same line to resolve this issue."
-                )
-            )
-
-        result = [FlowExecutor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
-        return result
+        return apply_inputs_mapping(inputs, inputs_mapping)
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
         """Enable the LLM node that is connected to output to return streaming results controlled by `stream_required`.
@@ -1215,12 +988,20 @@ class FlowExecutor:
         :return: None
         """
         for node in self._flow.nodes:
+            streaming_option_parameter = self._parse_streaming_option_parameter(node)
             if (
-                self._flow.is_llm_node(node)
+                streaming_option_parameter is not None
                 and self._flow.is_referenced_by_flow_output(node)
                 and not self._flow.is_referenced_by_other_node(node)
             ):
-                self._tools_manager.wrap_tool(node.name, wrapper=_inject_stream_options(stream_required))
+                wrapper = _inject_stream_options(stream_required, streaming_option_parameter)
+                self._tools_manager.wrap_tool(node.name, wrapper=wrapper)
+
+    def _parse_streaming_option_parameter(self, node: Node) -> Optional[str]:
+        if self._flow.is_llm_node(node):
+            return "stream"
+        tool_function = self._tools_manager.get_tool(node.name)
+        return getattr(tool_function, STREAMING_OPTION_PARAMETER_ATTR, None)
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
@@ -1238,7 +1019,7 @@ class FlowExecutor:
             self._tools_manager.wrap_tool(node.name, wrapper=_ensure_node_result_is_serializable)
 
 
-def _inject_stream_options(should_stream: Callable[[], bool]):
+def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_parameter="stream"):
     """Inject the stream options to the decorated function.
 
     AzureOpenAI.completion and AzureOpenAI.chat tools support both stream and non-stream mode.
@@ -1248,13 +1029,13 @@ def _inject_stream_options(should_stream: Callable[[], bool]):
     def stream_option_decorator(f):
         # We only wrap the function if it has a "stream" parameter
         signature = inspect.signature(f)
-        if "stream" not in signature.parameters:
+        if streaming_option_parameter not in signature.parameters:
             return f
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             kwargs = kwargs or {}
-            kwargs.update(stream=should_stream())
+            kwargs.update({streaming_option_parameter: should_stream()})
 
             return f(*args, **kwargs)
 

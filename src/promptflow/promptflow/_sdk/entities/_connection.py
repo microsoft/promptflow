@@ -271,6 +271,10 @@ class _Connection(YAMLTranslatableMixin):
             return CustomConnection(name=name, configs=configs, secrets=secrets)
         return type_cls(name=name, **value_dict)
 
+    def _get_scrubbed_secrets(self):
+        """Return the scrubbed secrets of connection."""
+        return {key: val for key, val in self.secrets.items() if self._is_scrubbed_value(val)}
+
 
 class _StrongTypeConnection(_Connection):
     def _to_orm_object(self):

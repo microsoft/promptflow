@@ -37,7 +37,7 @@ from promptflow.azure._restclient.flow_service_caller import FlowRequestExceptio
 def add_parser_run(subparsers):
     """Add run parser to the pfazure subparsers."""
     run_parser = subparsers.add_parser(
-        "run", description="A CLI tool to manage cloud runs for prompt flow.", help="Manage promptflow runs."
+        "run", description="A CLI tool to manage cloud runs for prompt flow.", help="Manage prompt flow runs."
     )
     subparsers = run_parser.add_subparsers()
 

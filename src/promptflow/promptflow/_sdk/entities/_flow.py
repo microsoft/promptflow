@@ -71,9 +71,9 @@ class FlowContext:
         self.environment_variables = environment_variables or {}
         self.overrides = overrides or {}
         self.streaming = streaming
-        # self.connection_provider = connection_provider
+        # TODO: introduce connection provider support
 
-    def resolve_connections(self):
+    def _resolve_connections(self):
         # resolve connections and create placeholder for connection objects
         for _, v in self.connections.items():
             if isinstance(v, dict):

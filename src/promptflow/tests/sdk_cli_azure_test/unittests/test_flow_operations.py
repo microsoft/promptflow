@@ -5,7 +5,6 @@
 from pathlib import Path
 
 import pytest
-from pytest_mock import MockerFixture
 
 from promptflow._sdk._errors import FlowOperationError
 
@@ -22,7 +21,7 @@ class TestFlow:
 
         flow_source = flow_test_dir / "web_classification/"
         with pytest.raises(FlowOperationError, match="Flow name must be a string"):
-            remote_client.flows.create_or_update(flow=flow_source, name=object())
+            remote_client.flows.create_or_update(flow=flow_source, display_name=object())
 
         with pytest.raises(FlowOperationError, match="Flow type 'fake_flow_type' is not supported"):
             remote_client.flows.create_or_update(flow=flow_source, type="fake_flow_type")
@@ -32,15 +31,6 @@ class TestFlow:
 
         with pytest.raises(FlowOperationError, match="got non-dict or non-string key/value in tags"):
             remote_client.flows.create_or_update(flow=flow_source, tags={"key": object()})
-
-    def test_create_flow_when_flow_name_already_exist(self, remote_client, mocker: MockerFixture):
-        mocker.patch(
-            "promptflow.azure.operations._flow_operations.FlowFileStorageClient._check_file_share_directory_exist",
-            return_value=True,
-        )
-        flow_source = flow_test_dir / "web_classification/"
-        with pytest.raises(FlowOperationError, match="Please change the flow folder name"):
-            remote_client.flows.create_or_update(flow=flow_source)
 
     def test_parse_flow_portal_url(self, remote_client):
         flow_resource_id = (
