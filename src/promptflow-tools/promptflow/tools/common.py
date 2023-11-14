@@ -3,14 +3,15 @@ import json
 import re
 import sys
 import time
+from typing import List
 
 from jinja2 import Template
-from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout, APIConnectionError
-from promptflow.exceptions import SystemErrorException, UserErrorException
+from openai import APIError, RateLimitError, APIConnectionError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat
-from typing import List
+
+from promptflow.exceptions import SystemErrorException, UserErrorException
 
 
 def validate_role(role: str, valid_roles: List[str] = None):
@@ -18,7 +19,7 @@ def validate_role(role: str, valid_roles: List[str] = None):
         valid_roles = ["assistant", "function", "user", "system"]
 
     if role not in valid_roles:
-        valid_roles_str = ','.join([f'\'{role}:\\n\''for role in valid_roles])
+        valid_roles_str = ','.join([f'\'{role}:\\n\'' for role in valid_roles])
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
             f"lines as role delimiters: {valid_roles_str}. Current parsed role '{role}'"
@@ -101,7 +102,7 @@ def parse_chat(chat_str, valid_roles: List[str] = None):
     separator = r"(?i)\n+\s*#?\s*(" + "|".join(valid_roles) + r")\s*:\s*\n"
     # Add a newline at the beginning to ensure consistent formatting of role lines.
     # extra new line is removed when appending to the chat list.
-    chunks = re.split(separator, '\n'+chat_str)
+    chunks = re.split(separator, '\n' + chat_str)
     chat_list = []
     for chunk in chunks:
         last_message = chat_list[-1] if len(chat_list) > 0 else None
@@ -154,7 +155,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                 except (SystemErrorException, UserErrorException) as e:
                     # Throw inner wrapped exception directly
                     raise e
-                except (RateLimitError, ServiceUnavailableError, APIError, Timeout, APIConnectionError) as e:
+                except (RateLimitError, APIConnectionError) as e:
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
                     #  Use default Timeout 600s, refer to
@@ -174,8 +175,8 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                     if not retry_after_in_header:
                         retry_after_seconds = delay * (2 ** i)
                         msg = (
-                            f"{type(e).__name__} #{i}, but no Retry-After header, "
-                            + f"Back off {retry_after_seconds} seconds for retry."
+                                f"{type(e).__name__} #{i}, but no Retry-After header, "
+                                + f"Back off {retry_after_seconds} seconds for retry."
                         )
                         print(msg, file=sys.stderr)
                     else:
@@ -186,7 +187,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         )
                         print(msg, file=sys.stderr)
                     time.sleep(retry_after_seconds)
-                except OpenAIError as e:
+                except APIError as e:
                     # For other non-retriable errors from OpenAIError,
                     # For example, AuthenticationError, APIConnectionError, InvalidRequestError, InvalidAPIType
                     # Mark UserError for all the non-retriable OpenAIError
@@ -240,6 +241,18 @@ def process_function_call(function_call):
     return param
 
 
+def convert_function_call_message_to_dict(obj):
+    if isinstance(obj, (str, int, float, bool, type(None))):
+        return obj
+    elif isinstance(obj, list):
+        return [convert_function_call_message_to_dict(v) for v in obj]
+    elif isinstance(obj, dict):
+        return {k: convert_function_call_message_to_dict(v) for k, v in obj.items()}
+    else:
+        # assume it's a class
+        return {k: convert_function_call_message_to_dict(v) for k, v in obj.__dict__.items() if not k.startswith('_')}
+
+
 def post_process_chat_api_response(completion, stream, functions):
     if stream:
         if functions is not None:
@@ -249,7 +262,7 @@ def post_process_chat_api_response(completion, stream, functions):
         def generator():
             for chunk in completion:
                 if chunk.choices:
-                    yield getattr(chunk.choices[0]["delta"], "content", "")
+                    yield chunk.choices[0].delta.content or ""
 
         # We must return the generator object, not using yield directly here.
         # Otherwise, the function itself will become a generator, despite whether stream is True or False.
@@ -258,7 +271,7 @@ def post_process_chat_api_response(completion, stream, functions):
         # When calling function, function_call response will be returned as a field in message, so we need return
         # message directly. Otherwise, we only return content.
         if functions is not None:
-            return completion.choices[0].message
+            return convert_function_call_message_to_dict(completion.choices[0].message)
         else:
             # chat api may return message with no content.
             return getattr(completion.choices[0].message, "content", "")

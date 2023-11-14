@@ -1,14 +1,14 @@
 from enum import Enum
 
-import openai
+from openai import OpenAI as OpenAIClient
+from promptflow.tools.common import render_jinja_template, handle_openai_error, \
+    parse_chat, to_bool, validate_functions, process_function_call, post_process_chat_api_response
 
-from promptflow.connections import OpenAIConnection
-from promptflow.contracts.types import PromptTemplate
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ToolProvider, tool, register_apis
-from promptflow.tools.common import render_jinja_template, handle_openai_error, \
-    parse_chat, to_bool, validate_functions, process_function_call, post_process_chat_api_response
+from promptflow.connections import OpenAIConnection
+from promptflow.contracts.types import PromptTemplate
 
 
 class Engine(str, Enum):
@@ -25,8 +25,11 @@ class Engine(str, Enum):
 class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
-        self.connection = connection
-        self._connection_dict = dict(self.connection)
+        self._connection_dict = dict(connection)
+        self._client = OpenAIClient(
+            api_key=self._connection_dict["api_key"],
+            organization=self._connection_dict["organization"]
+        )
 
     @tool
     @handle_openai_error()
@@ -55,7 +58,7 @@ class OpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
         stream = to_bool(stream)
-        response = openai.Completion.create(
+        response = self._client.completions.create(
             prompt=prompt,
             model=model.value if isinstance(model, Enum) else model,
             # empty string suffix should be treated as None.
@@ -73,15 +76,14 @@ class OpenAI(ToolProvider):
             best_of=int(best_of),
             # Logit bias must be a dict if we passed it to openai api.
             logit_bias=logit_bias if logit_bias else {},
-            user=user,
-            **self._connection_dict,
+            user=user
         )
 
         if stream:
             def generator():
                 for chunk in response:
                     if chunk.choices:
-                        yield getattr(chunk.choices[0], "text", "")
+                        yield chunk.choices[0].text or ""
 
             # We must return the generator object, not using yield directly here.
             # Otherwise, the function itself will become a generator, despite whether stream is True or False.
@@ -136,20 +138,8 @@ class OpenAI(ToolProvider):
             params["functions"] = functions
             params["function_call"] = process_function_call(function_call)
 
-        completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
+        completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions)
-
-    # TODO: embedding is a separate builtin tool, will remove it from llm.
-    @tool
-    @handle_openai_error()
-    def embedding(self, input, model: str = "text-embedding-ada-002", user: str = ""):
-        response = openai.Embedding.create(
-            input=input,
-            model=model,
-            user=user,
-            **self._connection_dict,
-        )
-        return response["data"][0]["embedding"]
 
 
 register_apis(OpenAI)
