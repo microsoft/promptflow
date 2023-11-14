@@ -27,12 +27,12 @@ class TestLangchain:
         )
         input_dirs = {"data": get_flow_inputs_file(flow_folder)}
         output_dir = Path(mkdtemp())
-        bulk_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
-        assert isinstance(bulk_results, BatchResult)
-        for _, line_result in enumerate(bulk_results.line_results):
+        batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
+        assert isinstance(batch_results, BatchResult)
+        for _, line_result in enumerate(batch_results.line_results):
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.status == Status.Completed
-        openai_metrics = bulk_results.get_openai_metrics()
+        openai_metrics = batch_results.get_openai_metrics()
         assert "completion_tokens" in openai_metrics
         assert "prompt_tokens" in openai_metrics
         assert "total_tokens" in openai_metrics

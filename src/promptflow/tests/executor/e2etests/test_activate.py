@@ -4,14 +4,17 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._utils.logger_utils import LogContext
+from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
-from promptflow.executor.flow_executor import BatchResult, FlowExecutor, LineResult
+from promptflow.executor import FlowExecutor
+from promptflow.executor._result import BatchResult, LineResult
 
 from ..utils import (
-    get_bulk_inputs,
     get_flow_expected_result,
     get_flow_expected_status_summary,
+    get_flow_folder,
     get_flow_inputs,
+    get_flow_inputs_file,
     get_yaml_file,
 )
 
@@ -35,13 +38,19 @@ class TestExecutorActivate:
         expected_result = expected_result[0] if isinstance(expected_result, list) else get_flow_expected_result
         self.assert_activate_flow_run_result(results, expected_result)
 
-    def test_bulk_run_activate(self, dev_connections):
+    def test_batch_run_activate(self, dev_connections):
         flow_folder = "conditional_flow_with_activate"
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-        results = executor.exec_bulk(get_bulk_inputs(flow_folder))
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
+        )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="inputs.json")}
+        inputs_mapping = {"incident_id": "${data.incident_id}", "incident_content": "${data.incident_content}"}
+        output_dir = Path(mkdtemp())
+        batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
+
         expected_result = get_flow_expected_result(flow_folder)
         expected_status_summary = get_flow_expected_status_summary(flow_folder)
-        self.assert_activate_bulk_run_result(results, expected_result, expected_status_summary)
+        self.assert_activate_bulk_run_result(batch_results, expected_result, expected_status_summary)
 
     def test_all_nodes_bypassed(self, dev_connections):
         flow_folder = "all_nodes_bypassed"
@@ -53,6 +62,22 @@ class TestExecutorActivate:
         with open(file_path) as fin:
             content = fin.read()
             assert "The node referenced by output:'third_node' is bypassed, which is not recommended." in content
+
+    def test_aggregate_bypassed_nodes(self):
+        flow_folder = "conditional_flow_with_aggregate_bypassed"
+        batch_engine = BatchEngine(get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections={})
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="inputs.json")}
+        inputs_mapping = {"case": "${data.case}", "value": "${data.value}"}
+        output_dir = Path(mkdtemp())
+        batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
+
+        expected_result = get_flow_expected_result(flow_folder)
+        expected_status_summary = get_flow_expected_status_summary(flow_folder)
+        self.assert_activate_bulk_run_result(batch_results, expected_result, expected_status_summary)
+
+        # Validate the aggregate result
+        assert batch_results.aggr_results.node_run_infos["aggregation_double"].output == 3
+        assert batch_results.aggr_results.node_run_infos["aggregation_square"].output == 12.5
 
     def assert_activate_bulk_run_result(self, result: BatchResult, expected_result, expected_status_summary):
         # Validate the flow outputs
@@ -89,15 +114,3 @@ class TestExecutorActivate:
         bypassed_nodes_run_infos = [result.node_run_infos[i] for i in expected_bypassed_nodes]
         assert all([node.status == Status.Bypassed for node in bypassed_nodes_run_infos])
         assert all([node.output is None for node in bypassed_nodes_run_infos])
-
-    def test_aggregate_bypassed_nodes(self, dev_connections):
-        flow_folder = "conditional_flow_with_aggregate_bypassed"
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-        results = executor.exec_bulk(get_bulk_inputs(flow_folder))
-        expected_result = get_flow_expected_result(flow_folder)
-        expected_status_summary = get_flow_expected_status_summary(flow_folder)
-        self.assert_activate_bulk_run_result(results, expected_result, expected_status_summary)
-
-        # Validate the aggregate result
-        assert results.aggr_results.node_run_infos["aggregation_double"].output == 3
-        assert results.aggr_results.node_run_infos["aggregation_square"].output == 12.5

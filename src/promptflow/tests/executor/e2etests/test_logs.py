@@ -53,8 +53,8 @@ class TestExecutorLogs:
         self.assert_flow_result(flow_result, content)
 
         # Test node logs in bulk run
-        bulk_results = self.submit_bulk_run(folder_name)
-        for line_result in bulk_results.line_results:
+        batch_results = self.submit_bulk_run(folder_name)
+        for line_result in batch_results.line_results:
             self.assert_flow_result(line_result, line_result.run_info.inputs["text"])
 
         # Test node logs in single node run
