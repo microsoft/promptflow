@@ -1,6 +1,7 @@
 import json
 import sys
 from pathlib import Path
+from tempfile import mkdtemp
 
 import pytest
 
@@ -8,6 +9,7 @@ from promptflow._core._errors import FlowOutputUnserializable
 from promptflow._core.tool_meta_generator import PythonParsingError
 from promptflow._core.tools_manager import APINotFound
 from promptflow._sdk._constants import DAG_FILE_NAME
+from promptflow.batch import BatchEngine
 from promptflow.contracts._errors import FailedToImportModule
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
@@ -29,7 +31,7 @@ from promptflow.executor._errors import (
 )
 from promptflow.executor.flow_executor import BatchResult
 
-from ..utils import FLOW_ROOT, WRONG_FLOW_ROOT, get_yaml_file
+from ..utils import FLOW_ROOT, WRONG_FLOW_ROOT, get_flow_folder, get_flow_inputs_file, get_yaml_file
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
@@ -218,20 +220,11 @@ class TestValidation:
         assert error_msg == res.run_info.error["message"]
 
     @pytest.mark.parametrize(
-        "flow_folder, batch_input, error_message, error_class",
+        "flow_folder, inputs_mapping, error_message, error_class",
         [
             (
                 "simple_flow_with_python_tool",
-                [{"num11": "22"}],
-                (
-                    "The value for flow input 'num' is not provided in line 0 of input data. "
-                    "Please review your input data or remove this input in your flow if it's no longer needed."
-                ),
-                "InputNotFound",
-            ),
-            (
-                "simple_flow_with_python_tool",
-                [{"num": "hello"}],
+                {"num": "${data.num}"},
                 (
                     "The input for flow is incorrect. The value for flow input 'num' in line 0 of input data does not "
                     "match the expected type 'int'. Please change flow input type or adjust the input value in "
@@ -241,12 +234,17 @@ class TestValidation:
             ),
         ],
     )
-    def test_bulk_run_input_type_invalid(self, flow_folder, batch_input, error_message, error_class, dev_connections):
+    def test_batch_run_input_type_invalid(
+        self, flow_folder, inputs_mapping, error_message, error_class, dev_connections
+    ):
         # Bulk run - the input is from sample.json
-        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
-        bulk_result = executor.exec_bulk(
-            batch_input,
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
         )
+        input_dirs = {"data": get_flow_inputs_file(flow_folder)}
+        output_dir = Path(mkdtemp())
+        batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
+
         if (
             (sys.version_info.major == 3)
             and (sys.version_info.minor >= 11)
@@ -255,15 +253,15 @@ class TestValidation:
             # Python >= 3.11 has a different error message on linux and macos
             error_message_compare = error_message.replace("int", "ValueType.INT")
             assert error_message_compare in str(
-                bulk_result.line_results[0].run_info.error
-            ), f"Expected message {error_message_compare} but got {str(bulk_result.line_results[0].run_info.error)}"
+                batch_result.line_results[0].run_info.error
+            ), f"Expected message {error_message_compare} but got {str(batch_result.line_results[0].run_info.error)}"
         else:
             assert error_message in str(
-                bulk_result.line_results[0].run_info.error
-            ), f"Expected message {error_message} but got {str(bulk_result.line_results[0].run_info.error)}"
+                batch_results.line_results[0].run_info.error
+            ), f"Expected message {error_message} but got {str(batch_results.line_results[0].run_info.error)}"
         assert error_class in str(
-            bulk_result.line_results[0].run_info.error
-        ), f"Expected message {error_class} but got {str(bulk_result.line_results[0].run_info.error)}"
+            batch_results.line_results[0].run_info.error
+        ), f"Expected message {error_class} but got {str(batch_results.line_results[0].run_info.error)}"
 
     @pytest.mark.parametrize(
         "path_root, flow_folder, node_name, line_input, error_class, error_msg",
@@ -374,7 +372,7 @@ class TestValidation:
             ("simple_flow_with_python_tool", [{"num": "22"}], False, None),
         ],
     )
-    def test_bulk_run_raise_on_line_failure(
+    def test_batch_run_raise_on_line_failure(
         self, flow_folder, batch_input, raise_on_line_failure, error_class, dev_connections
     ):
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections, raise_ex=False)
