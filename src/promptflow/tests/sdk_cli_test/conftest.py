@@ -190,6 +190,7 @@ def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixtur
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
         RecordStorage.get_instance(file_path)
+    yield
 
 
 @pytest.fixture
@@ -199,4 +200,4 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
         mocker.patch(
             "promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun)
         )
-        yield
+    yield
