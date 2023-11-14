@@ -64,6 +64,7 @@ class TestFlowContract:
         flow = Flow.from_yaml(flow_file)
         connection_names = flow.get_connection_input_names_for_node(flow.nodes[0].name)
         assert connection_names == ["connection", "connection_2"]
+        assert flow.get_connection_input_names_for_node("not_exist") == []
 
     def test_node_condition_conflict(self):
         flow_folder = "node_condition_conflict"
