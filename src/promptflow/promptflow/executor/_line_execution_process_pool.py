@@ -356,8 +356,8 @@ class LineExecutionProcessPool:
                         for _ in range(self._n_process)
                     ],
                 )
-            except PromptflowException as e:
-                raise e
+            except PromptflowException:
+                raise
             except Exception as e:
                 logger.error(f"Process {os.getpid()} failed with exception: {e}")
                 raise ProcessPoolError(
