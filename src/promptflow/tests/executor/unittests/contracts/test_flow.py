@@ -15,6 +15,7 @@ from promptflow.contracts.flow import (
     Node,
     NodeVariant,
     NodeVariants,
+    ProgramLanguage,
     ToolSource,
     ToolSourceType,
 )
@@ -83,7 +84,15 @@ class TestFlow:
         [
             (
                 Flow(id="flow_id", name="flow_name", nodes=[], inputs={}, outputs={}, tools=[]),
-                {"id": "flow_id", "name": "flow_name", "nodes": [], "inputs": {}, "outputs": {}, "tools": []},
+                {
+                    "id": "flow_id",
+                    "name": "flow_name",
+                    "nodes": [],
+                    "inputs": {},
+                    "outputs": {},
+                    "tools": [],
+                    "language": "python",
+                },
             ),
             (
                 Flow(
@@ -101,6 +110,7 @@ class TestFlow:
                     "inputs": {"input1": {"type": ValueType.STRING.value}},
                     "outputs": {"output1": {"type": ValueType.STRING.value}},
                     "tools": [],
+                    "language": "python",
                 },
             ),
         ],
@@ -142,6 +152,7 @@ class TestFlow:
                     },
                     tools=[],
                     node_variants={},
+                    program_language=ProgramLanguage.PYTHON,
                 ),
             ),
         ],
