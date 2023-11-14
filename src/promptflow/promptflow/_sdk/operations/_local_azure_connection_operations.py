@@ -24,7 +24,8 @@ class LocalAzureConnectionOperations(TelemetryMixin):
         self._pfazure_client = None
         self._credential = self._get_credential()
 
-    def _get_client(self):
+    @property
+    def _client(self):
         if self._pfazure_client is None:
             from promptflow.azure._pf_client import PFClient as PFAzureClient
 
@@ -102,7 +103,7 @@ class LocalAzureConnectionOperations(TelemetryMixin):
             logger.warning(
                 "max_results and all_results are not supported for workspace connection and will be ignored."
             )
-        return self._get_client()._connections.list()
+        return self._client._connections.list()
 
     @monitor_operation(activity_name="pf.connections.azure.get", activity_type=ActivityType.PUBLICAPI)
     def get(self, name: str, **kwargs) -> _Connection:
@@ -122,7 +123,7 @@ class LocalAzureConnectionOperations(TelemetryMixin):
             return ArmConnectionOperations._direct_get(
                 name, self._subscription_id, self._resource_group, self._workspace_name, self._credential
             )
-        return self._get_client()._connections.get(name)
+        return self._client._connections.get(name)
 
     @monitor_operation(activity_name="pf.connections.azure.delete", activity_type=ActivityType.PUBLICAPI)
     def delete(self, name: str) -> None:
