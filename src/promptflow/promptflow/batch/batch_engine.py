@@ -18,7 +18,7 @@ from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute,
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch.base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch.python_executor_proxy import PythonExecutorProxy
-from promptflow.contracts.flow import CodeLanguage, Flow
+from promptflow.contracts.flow import Flow, ProgramLanguage
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import PromptflowException
 from promptflow.executor._result import AggregationResult, BulkResult, LineResult
@@ -32,11 +32,11 @@ class BatchEngine:
     """This class is used to execute flows in batch mode"""
 
     executor_proxy_classes: Mapping[str, AbstractExecutorProxy] = {
-        CodeLanguage.PYTHON: PythonExecutorProxy,
+        ProgramLanguage.PYTHON: PythonExecutorProxy,
     }
 
     @classmethod
-    def register_executor(cls, type: CodeLanguage, executor_proxy_cls: AbstractExecutorProxy):
+    def register_executor(cls, type: ProgramLanguage, executor_proxy_cls: AbstractExecutorProxy):
         cls.executor_proxy_classes[type] = executor_proxy_cls
 
     def __init__(
