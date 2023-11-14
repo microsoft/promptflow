@@ -322,6 +322,8 @@ try:
     from ._models_py3 import FlowBaseDto
     from ._models_py3 import FlowDto
     from ._models_py3 import FlowEnvironment
+    from ._models_py3 import FlowFeature
+    from ._models_py3 import FlowFeatureState
     from ._models_py3 import FlowGraph
     from ._models_py3 import FlowGraphAnnotationNode
     from ._models_py3 import FlowGraphLayout
@@ -333,9 +335,11 @@ try:
     from ._models_py3 import FlowNodeVariant
     from ._models_py3 import FlowOutputDefinition
     from ._models_py3 import FlowProperties
+    from ._models_py3 import FlowRunBasePath
     from ._models_py3 import FlowRunInfo
     from ._models_py3 import FlowRunResult
     from ._models_py3 import FlowRunSettings
+    from ._models_py3 import FlowRuntimeCapability
     from ._models_py3 import FlowRuntimeDto
     from ._models_py3 import FlowSampleDto
     from ._models_py3 import FlowSessionDto
@@ -349,6 +353,7 @@ try:
     from ._models_py3 import GeneralSettings
     from ._models_py3 import GeneratePipelineComponentRequest
     from ._models_py3 import GenerateToolMetaRequest
+    from ._models_py3 import GetDynamicListRequest
     from ._models_py3 import GlobalJobDispatcherConfiguration
     from ._models_py3 import GlobsOptions
     from ._models_py3 import GraphAnnotationNode
@@ -529,6 +534,7 @@ try:
     from ._models_py3 import ResourceConfig
     from ._models_py3 import ResourceConfiguration
     from ._models_py3 import ResourcesSetting
+    from ._models_py3 import RetrieveToolFuncResultRequest
     from ._models_py3 import RetryConfiguration
     from ._models_py3 import RootError
     from ._models_py3 import RunAnnotations
@@ -551,6 +557,7 @@ try:
     from ._models_py3 import RunStatusPeriod
     from ._models_py3 import RunTypeV2
     from ._models_py3 import RunTypeV2Index
+    from ._models_py3 import RuntimeConfiguration
     from ._models_py3 import SampleMeta
     from ._models_py3 import SavePipelineDraftRequest
     from ._models_py3 import SavedDataSetReference
@@ -617,6 +624,9 @@ try:
     from ._models_py3 import TensorflowConfiguration
     from ._models_py3 import TestDataSettings
     from ._models_py3 import Tool
+    from ._models_py3 import ToolFuncResponse
+    from ._models_py3 import ToolInputDynamicList
+    from ._models_py3 import ToolInputGeneratedBy
     from ._models_py3 import ToolMetaDto
     from ._models_py3 import ToolSetting
     from ._models_py3 import ToolSourceMeta
@@ -974,6 +984,8 @@ except (SyntaxError, ImportError):
     from ._models import FlowBaseDto  # type: ignore
     from ._models import FlowDto  # type: ignore
     from ._models import FlowEnvironment  # type: ignore
+    from ._models import FlowFeature  # type: ignore
+    from ._models import FlowFeatureState  # type: ignore
     from ._models import FlowGraph  # type: ignore
     from ._models import FlowGraphAnnotationNode  # type: ignore
     from ._models import FlowGraphLayout  # type: ignore
@@ -985,9 +997,11 @@ except (SyntaxError, ImportError):
     from ._models import FlowNodeVariant  # type: ignore
     from ._models import FlowOutputDefinition  # type: ignore
     from ._models import FlowProperties  # type: ignore
+    from ._models import FlowRunBasePath  # type: ignore
     from ._models import FlowRunInfo  # type: ignore
     from ._models import FlowRunResult  # type: ignore
     from ._models import FlowRunSettings  # type: ignore
+    from ._models import FlowRuntimeCapability  # type: ignore
     from ._models import FlowRuntimeDto  # type: ignore
     from ._models import FlowSampleDto  # type: ignore
     from ._models import FlowSessionDto  # type: ignore
@@ -1001,6 +1015,7 @@ except (SyntaxError, ImportError):
     from ._models import GeneralSettings  # type: ignore
     from ._models import GeneratePipelineComponentRequest  # type: ignore
     from ._models import GenerateToolMetaRequest  # type: ignore
+    from ._models import GetDynamicListRequest  # type: ignore
     from ._models import GlobalJobDispatcherConfiguration  # type: ignore
     from ._models import GlobsOptions  # type: ignore
     from ._models import GraphAnnotationNode  # type: ignore
@@ -1181,6 +1196,7 @@ except (SyntaxError, ImportError):
     from ._models import ResourceConfig  # type: ignore
     from ._models import ResourceConfiguration  # type: ignore
     from ._models import ResourcesSetting  # type: ignore
+    from ._models import RetrieveToolFuncResultRequest  # type: ignore
     from ._models import RetryConfiguration  # type: ignore
     from ._models import RootError  # type: ignore
     from ._models import RunAnnotations  # type: ignore
@@ -1203,6 +1219,7 @@ except (SyntaxError, ImportError):
     from ._models import RunStatusPeriod  # type: ignore
     from ._models import RunTypeV2  # type: ignore
     from ._models import RunTypeV2Index  # type: ignore
+    from ._models import RuntimeConfiguration  # type: ignore
     from ._models import SampleMeta  # type: ignore
     from ._models import SavePipelineDraftRequest  # type: ignore
     from ._models import SavedDataSetReference  # type: ignore
@@ -1269,6 +1286,9 @@ except (SyntaxError, ImportError):
     from ._models import TensorflowConfiguration  # type: ignore
     from ._models import TestDataSettings  # type: ignore
     from ._models import Tool  # type: ignore
+    from ._models import ToolFuncResponse  # type: ignore
+    from ._models import ToolInputDynamicList  # type: ignore
+    from ._models import ToolInputGeneratedBy  # type: ignore
     from ._models import ToolMetaDto  # type: ignore
     from ._models import ToolSetting  # type: ignore
     from ._models import ToolSourceMeta  # type: ignore
@@ -1408,6 +1428,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     EntityStatus,
     ExecutionPhase,
     FeaturizationMode,
+    FlowFeatureStateEnum,
     FlowPatchOperationType,
     FlowRunMode,
     FlowRunTypeEnum,
@@ -1422,6 +1443,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     GraphSdkCodeType,
     HttpStatusCode,
     IdentityType,
+    InputType,
     IntellectualPropertyAccessMode,
     JobInputType,
     JobLimitsType,
@@ -1494,6 +1516,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     TaskStatus,
     TaskStatusCode,
     TaskType,
+    ToolFuncCallScenario,
     ToolType,
     TrainingOutputType,
     TriggerOperationType,
@@ -1831,6 +1854,8 @@ __all__ = [
     'FlowBaseDto',
     'FlowDto',
     'FlowEnvironment',
+    'FlowFeature',
+    'FlowFeatureState',
     'FlowGraph',
     'FlowGraphAnnotationNode',
     'FlowGraphLayout',
@@ -1842,9 +1867,11 @@ __all__ = [
     'FlowNodeVariant',
     'FlowOutputDefinition',
     'FlowProperties',
+    'FlowRunBasePath',
     'FlowRunInfo',
     'FlowRunResult',
     'FlowRunSettings',
+    'FlowRuntimeCapability',
     'FlowRuntimeDto',
     'FlowSampleDto',
     'FlowSessionDto',
@@ -1858,6 +1885,7 @@ __all__ = [
     'GeneralSettings',
     'GeneratePipelineComponentRequest',
     'GenerateToolMetaRequest',
+    'GetDynamicListRequest',
     'GlobalJobDispatcherConfiguration',
     'GlobsOptions',
     'GraphAnnotationNode',
@@ -2038,6 +2066,7 @@ __all__ = [
     'ResourceConfig',
     'ResourceConfiguration',
     'ResourcesSetting',
+    'RetrieveToolFuncResultRequest',
     'RetryConfiguration',
     'RootError',
     'RunAnnotations',
@@ -2060,6 +2089,7 @@ __all__ = [
     'RunStatusPeriod',
     'RunTypeV2',
     'RunTypeV2Index',
+    'RuntimeConfiguration',
     'SampleMeta',
     'SavePipelineDraftRequest',
     'SavedDataSetReference',
@@ -2126,6 +2156,9 @@ __all__ = [
     'TensorflowConfiguration',
     'TestDataSettings',
     'Tool',
+    'ToolFuncResponse',
+    'ToolInputDynamicList',
+    'ToolInputGeneratedBy',
     'ToolMetaDto',
     'ToolSetting',
     'ToolSourceMeta',
@@ -2263,6 +2296,7 @@ __all__ = [
     'EntityStatus',
     'ExecutionPhase',
     'FeaturizationMode',
+    'FlowFeatureStateEnum',
     'FlowPatchOperationType',
     'FlowRunMode',
     'FlowRunTypeEnum',
@@ -2277,6 +2311,7 @@ __all__ = [
     'GraphSdkCodeType',
     'HttpStatusCode',
     'IdentityType',
+    'InputType',
     'IntellectualPropertyAccessMode',
     'JobInputType',
     'JobLimitsType',
@@ -2349,6 +2384,7 @@ __all__ = [
     'TaskStatus',
     'TaskStatusCode',
     'TaskType',
+    'ToolFuncCallScenario',
     'ToolType',
     'TrainingOutputType',
     'TriggerOperationType',

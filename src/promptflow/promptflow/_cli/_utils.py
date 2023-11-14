@@ -439,19 +439,20 @@ def _copy_to_flow(flow_path, source_file):
         shutil.copytree(source_file, target, dirs_exist_ok=True)
 
 
-def pretty_print_run_list(run_list: list, output):
+def _output_result_list_with_format(result_list: List[Dict], output_format: CLIListOutputFormat) -> None:
     import pandas as pd
 
-    if output == CLIListOutputFormat.TABLE:
-        df = pd.DataFrame(run_list)
+    if output_format == CLIListOutputFormat.TABLE:
+        df = pd.DataFrame(result_list)
         df.fillna("", inplace=True)
         pretty_print_dataframe_as_table(df)
-    elif output == CLIListOutputFormat.JSON:
-        print(json.dumps(run_list, indent=4))
+    elif output_format == CLIListOutputFormat.JSON:
+        print(json.dumps(result_list, indent=4))
     else:
         logger = logging.getLogger(LOGGER_NAME)
         warning_message = (
-            f"Unknown output format {output!r}, accepted values are 'json' and 'table';" "will print using 'json'."
+            f"Unknown output format {output_format!r}, accepted values are 'json' and 'table';"
+            "will print using 'json'."
         )
         logger.warning(warning_message)
-        print(json.dumps(run_list, indent=4))
+        print(json.dumps(result_list, indent=4))

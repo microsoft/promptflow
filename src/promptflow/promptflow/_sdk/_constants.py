@@ -328,4 +328,5 @@ SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE = {value: key for key, value in CLIENT_FLOW
 
 class AzureFlowSource:
     LOCAL = "local"
-    AZURE = "azure"
+    PF_SERVICE = "pf_service"
+    INDEX = "index"

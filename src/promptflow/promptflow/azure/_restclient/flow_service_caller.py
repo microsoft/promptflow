@@ -147,6 +147,14 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
         headers["aml-user-token"] = aml_token
 
+    def _get_user_identity_info(self):
+        import jwt
+
+        token = self._credential.get_token("https://management.azure.com/.default")
+        decoded_token = jwt.decode(token.token, options={"verify_signature": False})
+        user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
+        return user_object_id, user_tenant_id
+
     @_request_wrapper()
     def create_flow(
         self,
