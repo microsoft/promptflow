@@ -2,7 +2,7 @@
 
 Prompt flow streamlines the process of developing AI applications based on LLM, easing prompt engineering, prototyping, evaluating, and fine-tuning for high-quality products.
 
-Transitioning to production, however, typically requires a comprehensive **LLMOps process**. This can often be a complex task, demanding high availability and security, particularly vital for large-scale team collaboration and lifecycle management when deploying to production.
+Transitioning to production, however, typically requires a comprehensive **LLMOps** process, LLMOps is short for large language model operations. This can often be a complex task, demanding high availability and security, particularly vital for large-scale team collaboration and lifecycle management when deploying to production.
 
 To assist in this journey, we've introduced **Azure AI**, a **cloud-based platform** tailored for executing LLMOps, focusing on boosting productivity for enterprises.
 
