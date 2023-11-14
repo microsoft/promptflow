@@ -109,16 +109,12 @@ class FlowNodesScheduler:
         node, dag_manager = args
         # We are using same run tracker and cache manager for all threads, which may not thread safe.
         # But for bulk run scenario, we've doing this for a long time, and it works well.
-        context = self._context.copy()
-        try:
-            context.start()
-            f = self._tools_manager.get_tool(node.name)
-            kwargs = dag_manager.get_node_valid_inputs(node, f)
-            if inspect.iscoroutinefunction(f):
-                # TODO: Run async functions in flow level event loop
-                result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
-            else:
-                result = context.invoke_tool_with_cache(node, f, kwargs=kwargs)
-            return result
-        finally:
-            context.end()
+        context = self._context
+        f = self._tools_manager.get_tool(node.name)
+        kwargs = dag_manager.get_node_valid_inputs(node, f)
+        if inspect.iscoroutinefunction(f):
+            # TODO: Run async functions in flow level event loop
+            result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
+        else:
+            result = context.invoke_tool_with_cache(node, f, kwargs=kwargs)
+        return result
