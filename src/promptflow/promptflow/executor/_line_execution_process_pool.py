@@ -17,7 +17,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
-from promptflow.exceptions import ErrorTarget
+from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow._core._errors import ProcessPoolError
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
@@ -355,6 +355,8 @@ class LineExecutionProcessPool:
                         for _ in range(self._n_process)
                     ],
                 )
+            except PromptflowException:
+                raise
             except Exception as e:
                 logger.error(f"Process {os.getpid()} failed with exception: {e}")
                 raise ProcessPoolError(

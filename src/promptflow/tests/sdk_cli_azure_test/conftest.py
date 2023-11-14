@@ -197,4 +197,8 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client: PFClient) -> 
         "promptflow._cli._pf_azure._run._get_azure_pf_client",
         return_value=remote_client,
     )
+    mocker.patch(
+        "promptflow._cli._pf_azure._flow._get_azure_pf_client",
+        return_value=remote_client,
+    )
     yield
