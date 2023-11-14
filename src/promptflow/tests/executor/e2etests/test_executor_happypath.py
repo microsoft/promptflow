@@ -25,7 +25,6 @@ from ..utils import (
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
-SAMPLE_FLOW_WITH_LANGCHAIN_TRACES = "flow_with_langchain_traces"
 
 
 class MemoryRunStorage(AbstractRunStorage):
