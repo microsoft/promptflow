@@ -14,7 +14,7 @@ from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
 from promptflow._utils.utils import environment_variable_overwrite
 
-from .recording_utilities import RecordStorage
+from .recording_utilities import RecordFileMissingException, RecordItemMissingException, RecordStorage
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -167,10 +167,18 @@ def mock_origin(original):
                 obj = RecordStorage.get_instance().get_record(input_dict)
                 return obj
 
-            obj = original(self, func, *args, **kwargs)
             # Record mode will record item to record file
             if RecordStorage.is_recording_mode():
-                obj = RecordStorage.get_instance().set_record(input_dict, obj)
+                # If already recorded, use previous result
+                # If record item missing, call related functions and record result
+                try:
+                    obj = RecordStorage.get_instance().get_record(input_dict)
+                except (RecordItemMissingException, RecordFileMissingException):
+                    obj_original = original(self, func, *args, **kwargs)
+                    obj = RecordStorage.get_instance().set_record(input_dict, obj_original)
+                # More exceptions should just raise
+            else:
+                obj = original(self, func, *args, **kwargs)
             return obj
         return original(self, func, *args, **kwargs)
 
@@ -186,6 +194,9 @@ def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixtur
 
 @pytest.fixture
 def recording_injection(mocker: MockerFixture, recording_file_override):
-    original_fun = FlowExecutionContext.invoke_tool
-    mocker.patch("promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun))
-    yield
+    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        original_fun = FlowExecutionContext.invoke_tool
+        mocker.patch(
+            "promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun)
+        )
+        yield

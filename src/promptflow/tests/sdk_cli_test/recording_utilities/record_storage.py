@@ -98,13 +98,21 @@ class RecordStorage(object):
                 return True
         return False
 
-    def _write_file(self) -> None:
+    def _write_file(self, hashkey) -> None:
         file_content = self.cached_items.get(self._record_file_str, None)
 
         if file_content is not None:
-            with shelve.open(str(self.record_file.resolve()), writeback=True) as saved_dict:
-                for key, value in file_content.items():
-                    saved_dict[key] = value
+            file_content_line = file_content.get(hashkey, None)
+            if file_content_line is not None:
+                saved_dict = shelve.open(str(self.record_file.resolve()), writeback=False)
+                saved_dict[hashkey] = file_content_line
+                saved_dict.close()
+            else:
+                raise RecordItemMissingException(f"Record item not found in cache with hashkey {hashkey}.")
+        else:
+            raise RecordFileMissingException(
+                f"This exception should not happen here, but record file is not found {self._record_file_str}."
+            )
 
     def _load_file(self) -> None:
         local_content = self.cached_items.get(self._record_file_str, None)
@@ -112,9 +120,10 @@ class RecordStorage(object):
             if not self.exists_record_file(self.record_file.parent, self.record_file.parts[-1]):
                 return
             self.cached_items[self._record_file_str] = {}
-            with shelve.open(str(self.record_file.resolve()), writeback=True) as saved_dict:
-                for key, value in saved_dict.items():
-                    self.cached_items[self._record_file_str][key] = value
+            saved_dict = shelve.open(str(self.record_file.resolve()), writeback=False)
+            for key, value in saved_dict.items():
+                self.cached_items[self._record_file_str][key] = value
+            saved_dict.close()
 
     def get_record(self, input_dict: Dict) -> object:
         """
@@ -131,7 +140,7 @@ class RecordStorage(object):
         hash_value: str = hashlib.sha1(str(sorted(input_dict.items())).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
         if current_saved_records is None:
-            raise RecordFileMissingException(f"This should except earlier, record file not found {self.record_file}.")
+            raise RecordFileMissingException(f"Record file not found {self.record_file}.")
         saved_output = current_saved_records.get(hash_value, None)
         if saved_output is None:
             raise RecordItemMissingException(
@@ -154,7 +163,7 @@ class RecordStorage(object):
         if isinstance(item, dict):
             return {k: self._recursive_create_hashable_args(v) for k, v in item.items()}
         elif "module: promptflow.connections" in str(item) or "object at" in str(item):
-            return ()
+            return []
         else:
             return item
 
@@ -164,7 +173,7 @@ class RecordStorage(object):
         Returns the real list for reocrding, and create a generator for original output.
         Parse output has a simplified hypothesis: output is simple dict, list or generator,
         because a full schema of output is too heavy to handle.
-        Example: {"answer": <generator>, "a": "b"}, [<generator>, a, b], <generator>
+        Example: {"answer": <generator>, "a": "b"}, <generator>
         """
         output_type = ""
         output_value = None
@@ -186,22 +195,6 @@ class RecordStorage(object):
                     output_type = "dict[generator]"
                 else:
                     output_value[k] = v
-        elif isinstance(output, list):
-            output_value = []
-            output_generator = []
-            for item in output:
-                if type(item).__name__ == "generator":
-                    ilist = list(item)
-
-                    def igenerator():
-                        for i in ilist:
-                            yield i
-
-                    output_value.append(ilist)
-                    output_generator.append(igenerator())
-                    output_type = "list[generator]"
-                else:
-                    output_value.append(item)
         elif type(output).__name__ == "generator":
             output_value = list(output)
 
@@ -237,18 +230,6 @@ class RecordStorage(object):
                     output_generator[k] = vgenerator()
                 else:
                     output_generator[k] = v
-        elif output_type == "list[generator]":
-            output_generator = []
-            for item in output:
-                if type(item).__name__ == "list":
-
-                    def igenerator():
-                        for i in item:
-                            yield i
-
-                    output_generator.append(igenerator())
-                else:
-                    output_generator.append(item)
         elif output_type == "generator":
 
             def generator():
@@ -301,7 +282,7 @@ class RecordStorage(object):
                     "output_type": output_type,
                 }
         self.cached_items[self._record_file_str] = current_saved_records
-        self._write_file()
+        self._write_file(hash_value)
         if "generator" in output_type:
             return output_generator
         else:

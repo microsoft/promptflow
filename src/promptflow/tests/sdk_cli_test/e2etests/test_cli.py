@@ -950,16 +950,16 @@ class TestCli:
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
-        # with pytest.raises(SystemExit):
-        #     run_pf_command(
-        #         "flow",
-        #         "test",
-        #         "--flow",
-        #         f"{FLOWS_DIR}/chat_flow_with_multi_output_invalid",
-        #         "--interactive",
-        #     )
-        # outerr = capsys.readouterr()
-        # assert "chat flow does not support multiple chat outputs" in outerr.out
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_with_multi_output_invalid",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat flow does not support multiple chat outputs" in outerr.out
 
     def test_flow_test_with_default_chat_history(self):
         run_pf_command(
