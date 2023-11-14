@@ -61,13 +61,13 @@ class TestConnection:
                 },
             ),
             (
-                "openai_connection_api_base.yaml",
+                "openai_connection_base_url.yaml",
                 OpenAIConnection,
                 {
                     "name": "my_open_ai_connection",
                     "api_key": "<to-be-replaced>",
                     "organization": "org",
-                    "api_base": "custom_api_base",
+                    "base_url": "custom_api_base",
                 },
                 {
                     "module": "promptflow.connections",
