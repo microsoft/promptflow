@@ -15,8 +15,8 @@ from promptflow._utils.execution_utils import (
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute, transpose
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch.base_executor_proxy import AbstractExecutorProxy
-from promptflow.batch.python_executor_proxy import PythonExecutorProxy
 from promptflow.contracts.flow import Flow, ProgramLanguage
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import PromptflowException
