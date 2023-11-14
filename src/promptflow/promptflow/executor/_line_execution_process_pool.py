@@ -16,6 +16,8 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
+from promptflow.exceptions import ErrorTarget
+from promptflow._core._errors import ProcessPoolError
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.multimedia import Image
@@ -346,13 +348,20 @@ class LineExecutionProcessPool:
                 self._nlines,
             ),
         ):
-            self._pool.starmap(
-                self._timeout_process_wrapper,
-                [
-                    (run_start_time, self._inputs_queue, self._line_timeout_sec, result_list)
-                    for _ in range(self._n_process)
-                ],
-            )
+            try:
+                self._pool.starmap(
+                    self._timeout_process_wrapper,
+                    [
+                        (run_start_time, self._inputs_queue, self._line_timeout_sec, result_list)
+                        for _ in range(self._n_process)
+                    ],
+                )
+            except Exception as e:
+                logger.error(f"Process {os.getpid()} failed with exception: {e}")
+                raise ProcessPoolError(
+                    message_format=f"Process {os.getpid()} failed with exception: {e}",
+                    target=ErrorTarget.EXECUTOR,
+                ) from e
         return result_list
 
     def _generate_thread_status_messages(self, pool: ThreadPool, total_count: int):

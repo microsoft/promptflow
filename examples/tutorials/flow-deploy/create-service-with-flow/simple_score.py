@@ -4,6 +4,7 @@ import logging
 from flask import Flask, jsonify, request
 
 from promptflow import load_flow
+from promptflow.connections import AzureOpenAIConnection
 from promptflow.entities import FlowContext
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
@@ -13,7 +14,11 @@ class SimpleScoreApp(Flask):
 
 
 app = SimpleScoreApp(__name__)
+logging.basicConfig(format="%(threadName)s:%(message)s")
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# load flow as a function, the function object can be shared accross threads.
+f = load_flow("./echo_connection_flow/")
 
 
 @app.errorhandler(Exception)
@@ -50,17 +55,19 @@ def score():
     logger.info(f"Start loading request data '{raw_data}'.")
     data = json.loads(raw_data)
 
-    # load flow as a function
-    f = load_flow("../../../flows/standard/web-classification")
-    # configure flow contexts
+    # create a dummy connection object
+    # the connection object will only exist in memory and won't store in local db.
+    llm_connection = AzureOpenAIConnection(
+        name="llm_connection", api_key="[determined by request]", api_base="[determined by request]"
+    )
+
+    # configure flow contexts, create a new context object for each request to make sure they are thread safe.
     f.context = FlowContext(
-        # override flow connections, the overrides may come from the request
-        # connections={"classify_with_llm.connection": "another_ai_connection"},
+        # override flow connections with connection object created above
+        connections={"echo_connection": {"connection": llm_connection}},
         # override the flow nodes' inputs or other flow configs, the overrides may come from the request
-        # **Note**: after this change, node "classify_with_llm" will take input temperature from request
-        overrides={"nodes.classify_with_llm.inputs.temperature": float(data["temperature"])}
-        if "temperature" in data
-        else {},
+        # **Note**: after this change, node "echo_connection" will take input node_input from request
+        overrides={"nodes.echo_connection.inputs.node_input": data["node_input"]} if "node_input" in data else {},
     )
     # data in request will be passed to flow as kwargs
     result_dict = f(**data)
@@ -74,5 +81,5 @@ def create_app(**kwargs):
 
 
 if __name__ == "__main__":
-    # test this with curl -X POST http://127.0.0.1:5000/score --header "Content-Type: application/json" --data '{\"url\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\"}'  # noqa: E501
-    create_app().run()
+    # test this with curl -X POST http://127.0.0.1:5000/score --header "Content-Type: application/json" --data '{"flow_input": "some_flow_input", "node_input": "some_node_input"}'  # noqa: E501
+    create_app().run(debug=True)
