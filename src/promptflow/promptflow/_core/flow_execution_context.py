@@ -146,6 +146,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             index=self._line_number,
         )
         run_info.index = self._line_number
+        run_info.variant_id = self._variant_id
         self._run_tracker.set_inputs(node_run_id, {key: value for key, value in all_args.items() if key != "self"})
         return run_info
 
