@@ -109,7 +109,7 @@ class BatchEngine:
         if isinstance(self._executor_proxy, PythonExecutorProxy):
             line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
         else:
-            line_results = self._exec_batch_internal(batch_inputs, output_dir, run_id)
+            line_results = asyncio.run(self._exec_batch_internal(batch_inputs, output_dir, run_id))
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         aggr_results = self._exec_aggregation_internal(batch_inputs, line_results, run_id)
         outputs = [
@@ -124,14 +124,14 @@ class BatchEngine:
             aggr_results=aggr_results,
         )
 
-    def _exec_batch_internal(
+    async def _exec_batch_internal(
         self,
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
         line_results = []
         for i, each_line_input in enumerate(batch_inputs):
-            line_result = asyncio.run(self._executor_proxy.exec_line_async(each_line_input, i, run_id=run_id))
+            line_result = await self._executor_proxy.exec_line_async(each_line_input, i, run_id=run_id)
             for node_run in line_result.node_run_infos.values():
                 self._storage.persist_node_run(node_run)
             self._storage.persist_flow_run(line_result.run_info)
