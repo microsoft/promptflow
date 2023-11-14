@@ -44,7 +44,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         variant_id=None,
     ):
         self._name = name
-        self._current_tool = None
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
         self._run_id = run_id or str(uuid.uuid4())
@@ -97,7 +96,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 result = Tracer.pop(result)
                 traces = Tracer.end_tracing()
 
-            self._current_tool = None
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             # Record result in cache so that future run might reuse its result.
             if not hit_cache and node.enable_cache:
@@ -116,7 +114,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             self._run_tracker.persist_node_run(run_info)
 
     def prepare_node_run(self, node: Node, f, kwargs={}):
-        self._current_tool = f
         node_run_id = self._generate_node_run_id(node)
         flow_logger.info(f"Executing node {node.name}. node run id: {node_run_id}")
         parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
@@ -150,7 +147,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             result = await self._invoke_tool_async_inner(node, f, kwargs)
             result = Tracer.pop(result)
             traces = Tracer.end_tracing()
-            self._current_tool = None
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             flow_logger.info(f"Node {node.name} completes.")
             return result
