@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, List, Mapping, Optional
+from typing import Any, Mapping, Optional
 
 import httpx
 
@@ -36,8 +36,8 @@ class AbstractExecutorProxy:
 
     def exec_aggregation(
         self,
-        batch_inputs: List[dict],
-        line_results: List[LineResult],
+        batch_inputs: Mapping[str, Any],
+        aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         pass
@@ -58,3 +58,14 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
             response = await client.post(self.api_endpoint, json=payload, timeout=LINE_TIMEOUT_SEC)
         return LineResult.deserialize(response.json())
+
+    async def exec_aggregation(
+        self,
+        batch_inputs: Mapping[str, Any],
+        aggregation_inputs: Mapping[str, Any],
+        run_id: Optional[str] = None,
+    ) -> AggregationResult:
+        async with httpx.AsyncClient() as client:
+            payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
+            response = await client.post(self.api_endpoint, json=payload, timeout=LINE_TIMEOUT_SEC)
+        return AggregationResult.deserialize(response.json())

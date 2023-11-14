@@ -9,7 +9,7 @@ import uuid
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
-from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 import yaml
 
@@ -24,7 +24,12 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.flow_utils import apply_default_value_for_input, handle_line_failures
+from promptflow._utils.execution_utils import (
+    apply_default_value_for_input,
+    collect_lines,
+    get_aggregation_inputs_properties,
+    handle_line_failures,
+)
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
@@ -118,7 +123,7 @@ class FlowExecutor:
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
         self._connections = connections
-        self._aggregation_inputs_references = self._get_aggregation_inputs_properties(flow)
+        self._aggregation_inputs_references = get_aggregation_inputs_properties(flow)
         self._aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
         if worker_count is not None:
             self._worker_count = worker_count
@@ -397,24 +402,6 @@ class FlowExecutor:
         """
         return self._aggregation_nodes
 
-    @staticmethod
-    def _get_aggregation_inputs_properties(flow: Flow) -> AbstractSet[str]:
-        normal_node_names = {node.name for node in flow.nodes if flow.is_normal_node(node.name)}
-        properties = set()
-        for node in flow.nodes:
-            if node.name in normal_node_names:
-                continue
-            for value in node.inputs.values():
-                if not value.value_type == InputValueType.NODE_REFERENCE:
-                    continue
-                if value.value in normal_node_names:
-                    properties.add(value.serialize())
-        return properties
-
-    def _collect_lines(self, indexes: List[int], kvs: Mapping[str, List]) -> Mapping[str, List]:
-        """Collect the values from the kvs according to the indexes."""
-        return {k: [v[i] for i in indexes] for k, v in kvs.items()}
-
     def _fill_lines(self, indexes, values, nlines):
         """Fill the values into the result list according to the indexes."""
         result = [None] * nlines
@@ -479,7 +466,7 @@ class FlowExecutor:
             [result.aggregation_inputs for result in results],
             keys=self._aggregation_inputs_references,
         )
-        succeeded_aggregation_inputs = self._collect_lines(succeeded, aggregation_inputs)
+        succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
             aggr_results = self._exec_aggregation(succeeded_inputs, succeeded_aggregation_inputs, run_id)
             logger.info("Finish executing aggregation nodes.")

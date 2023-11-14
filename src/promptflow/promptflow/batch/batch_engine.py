@@ -5,15 +5,24 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._core._errors import UnexpectedError
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.flow_utils import apply_default_value_for_input, handle_line_failures
-from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute
+from promptflow._utils.execution_utils import (
+    apply_default_value_for_input,
+    collect_lines,
+    get_aggregation_inputs_properties,
+    handle_line_failures,
+)
+from promptflow._utils.logger_utils import logger
+from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute, transpose
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch.base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch.python_executor_proxy import PythonExecutorProxy
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
-from promptflow.executor._result import BulkResult, LineResult
+from promptflow.exceptions import PromptflowException
+from promptflow.executor._result import AggregationResult, BulkResult, LineResult
+from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
@@ -100,7 +109,7 @@ class BatchEngine:
         else:
             line_results = self._exec_batch_internal(batch_inputs, output_dir, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-        aggr_results = self._executor_proxy.exec_aggregation(batch_inputs, line_results, run_id)
+        aggr_results = self._exec_aggregation_internal(batch_inputs, line_results, run_id)
         outputs = [
             {LINE_NUMBER_KEY: r.run_info.index, **r.output}
             for r in line_results
@@ -130,6 +139,57 @@ class BatchEngine:
             self._storage.persist_flow_run(line_result.run_info)
             line_results.append(line_result)
         return line_results
+
+    def _exec_aggregation_internal(
+        self,
+        batch_inputs: List[dict],
+        line_results: List[LineResult],
+        run_id: Optional[str] = None,
+    ) -> AggregationResult:
+        aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
+        if not aggregation_nodes:
+            return AggregationResult({}, {}, {})
+
+        logger.info("Executing aggregation nodes...")
+
+        run_infos = [r.run_info for r in line_results]
+        succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
+
+        succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
+        resolved_succeeded_batch_inputs = [
+            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
+        ]
+
+        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
+
+        aggregation_inputs = transpose(
+            [result.aggregation_inputs for result in line_results],
+            keys=get_aggregation_inputs_properties(self._flow),
+        )
+        succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
+        try:
+            if inspect.iscoroutinefunction(self._executor_proxy.exec_aggregation):
+                aggr_results = asyncio.run(
+                    self._executor_proxy.exec_aggregation(succeeded_inputs, succeeded_aggregation_inputs, run_id)
+                )
+            else:
+                aggr_results = self._executor_proxy.exec_aggregation(
+                    succeeded_inputs, succeeded_aggregation_inputs, run_id
+                )
+            logger.info("Finish executing aggregation nodes.")
+            return aggr_results
+        except PromptflowException as e:
+            # For PromptflowException, we already do classification, so throw directly.
+            raise e
+        except Exception as e:
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            raise UnexpectedError(
+                message_format=(
+                    "Unexpected error occurred while executing the aggregated nodes. "
+                    "Please fix or contact support for assistance. The error details: {error_type_and_message}."
+                ),
+                error_type_and_message=error_type_and_message,
+            ) from e
 
     def _persist_outputs(self, outputs: List[Mapping[str, Any]], output_dir: Path):
         """Persist outputs to json line file in output directory"""

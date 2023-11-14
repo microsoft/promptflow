@@ -1,6 +1,6 @@
 import pytest
 
-from promptflow._utils.flow_utils import apply_default_value_for_input
+from promptflow._utils.execution_utils import apply_default_value_for_input
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
 
