@@ -48,7 +48,7 @@ jobs:
           echo "::set-output name=version::$version"
         shell: pwsh
 
-      - name: Build Python project
+      - name: Build Pyinstaller project
         working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
         run: |
           echo "Version from promptflow: ${{ steps.get-version.outputs.version }}"
@@ -61,6 +61,9 @@ jobs:
       - name: Build Wix project
         working-directory: ${{ github.workspace }}/scripts/installer/windows
         run: |
+          $text = Get-Content "promptflow.wixproj" -Raw
+          $text = $text -replace '\$\((env\.CLI_VERSION)\)', ${{ steps.get-version.outputs.version }}
+          $text | Out-File -FilePath "promptflow.wixproj" -Encoding utf8
           $env:CLI_VERSION = ${{ steps.get-version.outputs.version }}
           msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
