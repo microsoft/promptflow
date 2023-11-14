@@ -11,6 +11,7 @@ from promptflow._cli._pf.entry import main
 import multiprocessing
 
 FLOWS_DIR = "./tests/test_configs/flows"
+CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
@@ -24,7 +25,7 @@ def run_cli_command(cmd, time_limit=3600, is_print_stats=True, *, result_queue=N
         pstats_obj = pstats.Stats(pr).sort_stats(pstats.SortKey.CUMULATIVE)
         stats_profile = pstats_obj.get_stats_profile()
         if is_print_stats:
-            print(pstats_obj.print_stats(50))
+            print(pstats_obj.print_stats(10))
         assert stats_profile.total_tt < time_limit
 
         res_value = output.getvalue()
@@ -113,3 +114,37 @@ class TestCliTimeConsume:
                 "--format",
                 "docker"
             ), time_limit=10)
+
+    def test_pf_connection_create(self):
+        name = f"Connection_{str(uuid.uuid4())[:4]}"
+        res = subprocess_run_cli_command(cmd=(
+            "pf",
+            "connection",
+            "create",
+            "--file",
+            f"{CONNECTIONS_DIR}/azure_openai_connection.yaml",
+            "--name",
+            f"{name}",
+        ), time_limit=3)
+
+        assert "api_type" in res
+
+    def test_pf_connection_list(self):
+        name = f"connection_list"
+        res = run_cli_command(cmd=(
+            "pf",
+            "connection",
+            "create",
+            "--file",
+            f"{CONNECTIONS_DIR}/azure_openai_connection.yaml",
+            "--name",
+            f"{name}",
+        ), is_print_stats=False)
+        assert "api_type" in res
+
+        res = subprocess_run_cli_command(cmd=(
+            "pf",
+            "connection",
+            "list"
+        ), time_limit=5)
+        assert "api_type" in res
