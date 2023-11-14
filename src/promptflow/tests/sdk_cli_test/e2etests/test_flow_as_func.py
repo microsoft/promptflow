@@ -27,6 +27,7 @@ class TestFlowAsFunc:
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
         result = f(key="unknown")
         assert result["output"] is None
+        assert "line_number" not in result
 
     def test_flow_as_a_func_with_connection_overwrite(self):
         from promptflow._sdk._errors import ConnectionNotFoundError
