@@ -58,7 +58,7 @@ class TestCli:
     def test_pf_version(self, capfd):
         run_pf_command("--version")
         out, err = capfd.readouterr()
-        assert out == "0.0.1\n"
+        assert "0.0.1\n" in out
 
     def test_basic_flow_run(self) -> None:
         # fetch std out

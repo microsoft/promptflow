@@ -27,8 +27,8 @@ def add_parser_flow(subparsers):
     """Add flow parser to the pf subparsers."""
     flow_parser = subparsers.add_parser(
         "flow",
-        description="Manage flows for promptflow.",
-        help="pfazure flow",
+        description="Manage flows for prompt flow.",
+        help="Manage prompt flows.",
     )
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_flow_create(flow_subparsers)
