@@ -72,13 +72,14 @@ class TestCommon:
                 {'role': 'assistant', 'content': ''},
                 {'role': 'user', 'content': 'second'}
             ]),
-            ("#user:\ntell me about the images\nImage(1edf82c2)\nImage(9b65b0f4)", [
-                Image("image1".encode()), Image("image2".encode(), "image/png", "https://image_url")], [
-                {'role': 'user', 'content': [
-                    {'type': 'text', 'text': 'tell me about the images'},
-                    {'type': 'image_url', 'image_url': {'url': 'data:image/*;base64,aW1hZ2Ux'}},
-                    {'type': 'image_url', 'image_url': 'https://image_url'}]},
-            ])
+            # todo: enable this test case after we support image_url officially
+            # ("#user:\ntell me about the images\nImage(1edf82c2)\nImage(9b65b0f4)", [
+            #     Image("image1".encode()), Image("image2".encode(), "image/png", "https://image_url")], [
+            #     {'role': 'user', 'content': [
+            #         {'type': 'text', 'text': 'tell me about the images'},
+            #         {'type': 'image_url', 'image_url': {'url': 'data:image/*;base64,aW1hZ2Ux'}},
+            #         {'type': 'image_url', 'image_url': 'https://image_url'}]},
+            # ])
         ]
     )
     def test_success_parse_role_prompt(self, chat_str, images, expected_result):

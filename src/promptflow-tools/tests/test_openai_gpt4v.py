@@ -1,5 +1,4 @@
 import pytest
-import json
 
 from promptflow.tools.openai_gpt4v import OpenAI
 
