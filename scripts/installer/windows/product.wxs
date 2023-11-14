@@ -86,10 +86,6 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
-        <Module Id="MergeModuleID" Language="1033" Version="1.0.0.0">
-            <ComponentGroupRef Id="PromptflowCliComponentGroup" />
-        </Module>
-
     </Product>
 
     <Fragment>
@@ -101,6 +97,12 @@
     </Fragment>
 
     <Fragment>
+        <ComponentGroup Id="SharedFiles">
+            <Component Id="File1Component" Guid="*">
+                <File Id="File1" Source="$(var.PromptflowSource)\pfs.exe" />
+            </Component>
+        </ComponentGroup>
+
         <ComponentGroup Id="PromptflowCliSettingsGroup">
             <Component Id="RemovePromptflowFolder" Directory="DynamicCliDir" Guid="$(var.RemovePromptflowFolderGuid)">
                 <RemoveFolder Id="DynamicCliDir" On="uninstall" />
@@ -137,7 +139,7 @@
                                KeyPath="yes"/>
             </Component>
             <Component Id="PromptflowService" Directory="DynamicCliDir" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="PromptflowServiceEXE" Source="$(var.PromptflowSource)\pfs.exe" KeyPath="yes" />
+                <File Id="File1" Source="!(wix.SharedFiles.File1)" KeyPath="yes" />
                 <ServiceInstall Id="ServiceInstaller" Name="PromptflowService" DisplayName="Prompt Flow Service" Description="Provides run and connection management for prompt flow" Start="auto" Type="ownProcess" ErrorControl="normal" />
                 <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="PromptflowService" Wait="no" />
             </Component>
