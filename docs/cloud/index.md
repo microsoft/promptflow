@@ -6,6 +6,7 @@ You can develope your flow locally and seamlessly move the experience to azure c
 :caption: AzureAI
 :maxdepth: 1
 azureai/quick-start
+azureai/manage-flows
 azureai/deploy-to-azure-appservice
 azureai/use-flow-in-azure-ml-pipeline.md
 azureai/faq

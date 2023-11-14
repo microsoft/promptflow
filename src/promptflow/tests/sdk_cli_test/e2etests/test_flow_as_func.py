@@ -12,15 +12,13 @@ from promptflow._sdk.entities import CustomConnection
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
 
-from ..recording_utilities import RecordStorage
-
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
 )
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
@@ -40,7 +38,6 @@ class TestFlowAsFunc:
             f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
         assert "Connection 'not_exist' is not found" in str(e.value)
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="TODO: support customized python tool in future")
     def test_flow_as_a_func_with_connection_obj(self):
         f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
         f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}}
@@ -82,7 +79,6 @@ class TestFlowAsFunc:
             f()
         assert "Required input(s) ['text'] are missing" in str(e.value)
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Stream not supported in replaying mode.")
     def test_stream_output(self):
         f = load_flow(f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output")
         f.context.streaming = True
@@ -137,7 +133,6 @@ class TestFlowAsFunc:
             f()
         assert "please make sure connection has decrypted secrets to use in flow execution." in str(e)
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Returning dict is not supported for now.")
     def test_non_secret_connection(self):
         f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
         # execute connection without secrets won't get error since the connection doesn't have scrubbed secrets

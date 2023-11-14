@@ -80,7 +80,7 @@ jobs:
       run: |
         gci env:* | sort-object name
         $env:PYTHONPATH=""
-        echo '{}' > ${{ github.workspace }}/src/promptflow/connections.json
+        cp ${{ github.workspace }}/src/promptflow/dev-connections.json.example ${{ github.workspace }}/src/promptflow/connections.json
         python "../../scripts/building/run_coverage_tests.py" `
         -p promptflow `
         -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `

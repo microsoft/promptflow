@@ -7,7 +7,7 @@ from flask import jsonify, request
 from flask_restx import Namespace, Resource
 from werkzeug.datastructures import FileStorage
 
-from promptflow._sdk._service.utils import api_wrapper
+from promptflow._sdk._service.utils import local_user_only
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._connection import _Connection
 
@@ -18,7 +18,6 @@ upload_parser = api.parser()
 upload_parser.add_argument('connection_file', location='files', type=FileStorage, required=True)
 upload_parser.add_argument('X-Remote-User', location='headers', required=True)
 
-
 remote_parser = api.parser()
 remote_parser.add_argument('X-Remote-User', location='headers', required=True)
 
@@ -26,7 +25,7 @@ remote_parser.add_argument('X-Remote-User', location='headers', required=True)
 @api.route("/")
 class ConnectionList(Resource):
     @api.doc(parser=remote_parser, description="List all connection")
-    @api_wrapper
+    @local_user_only
     def get(self):
         client = PFClient()
         # parse query parameters
@@ -43,7 +42,7 @@ class ConnectionList(Resource):
 class Connection(Resource):
 
     @api.doc(parser=remote_parser, description="Get connection")
-    @api_wrapper
+    @local_user_only
     def get(self, name: str):
         client = PFClient()
         # parse query parameters
@@ -55,7 +54,7 @@ class Connection(Resource):
         return jsonify(connection_dict)
 
     @api.doc(parser=upload_parser, description="Create connection")
-    @api_wrapper
+    @local_user_only
     def post(self, name: str):
         client = PFClient()
         args = upload_parser.parse_args()
@@ -67,7 +66,7 @@ class Connection(Resource):
         return jsonify(connection._to_dict())
 
     @api.doc(parser=remote_parser, description="Update connection")
-    @api_wrapper
+    @local_user_only
     def put(self, name: str):
         client = PFClient()
         params_override = [{k: v} for k, v in remote_parser.argument_class("").source(request).items()]
@@ -78,7 +77,7 @@ class Connection(Resource):
         return jsonify(connection._to_dict())
 
     @api.doc(parser=remote_parser, description="Delete connection")
-    @api_wrapper
+    @local_user_only
     def delete(self, name: str):
         client = PFClient()
         client.connections.delete(name=name)

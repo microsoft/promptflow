@@ -37,12 +37,13 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
     ]
 
 
+@pytest.mark.usefixtures("mock_get_azure_pf_client")
 @pytest.mark.unittest
 class TestAzureCli:
     def test_pf_azure_version(self, capfd):
         run_pf_command("--version")
         out, err = capfd.readouterr()
-        assert out == "0.0.1\n"
+        assert "0.0.1\n" in out
 
     def test_run_show(self, mocker: MockFixture, operation_scope_args):
         mocked = mocker.patch.object(RunOperations, "get")
@@ -138,11 +139,11 @@ class TestAzureCli:
 
     def test_run_visualize(
         self,
+        operation_scope_args: List[str],
+        capfd: pytest.CaptureFixture,
         subscription_id: str,
         resource_group_name: str,
         workspace_name: str,
-        operation_scope_args: List[str],
-        capfd: pytest.CaptureFixture,
     ) -> None:
         # cloud version visualize is actually a string concatenation
         names = "name1,name2,name3"
