@@ -14,6 +14,7 @@ from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import Flow, FlowContext
+from promptflow._sdk.operations._flow_conext_resolver import FlowContextResolver
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
 from promptflow._utils.context_utils import _change_working_dir
@@ -231,32 +232,14 @@ class TestSubmitter:
 
     def exec_with_inputs(self, inputs):
         # TODO: unify all exec_line calls here
-        from promptflow.executor.flow_executor import FlowExecutor
-
-        # validate connection objs
-        connection_obj_dict = {}
-        for key, connection_obj in self.flow_context._connection_objs.items():
-            scrubbed_secrets = connection_obj._get_scrubbed_secrets()
-            if scrubbed_secrets:
-                raise UserErrorException(
-                    f"Connection {connection_obj} contains scrubbed secrets with key {scrubbed_secrets.keys()}, "
-                    "please make sure connection has decrypted secrets to use in flow execution. "
-                )
-            connection_obj_dict[key] = connection_obj._to_execution_connection_dict()
-        connections = SubmitterHelper.resolve_connections(
-            flow=self.flow, client=self._client, connections_to_ignore=self.flow_context._connection_objs.keys()
-        )
-        # update connections with connection objs
-        connections.update(connection_obj_dict)
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(
             environment_variables=self.flow_context.environment_variables, client=self._client
         )
         SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
-        flow_executor = FlowExecutor.create(
-            flow_file=self.flow.path, connections=connections, working_dir=self.flow.code, raise_ex=True
-        )
-        flow_executor.enable_streaming_for_llm_flow(lambda: self.flow_context.streaming)
+        # cache resolver here
+        flow_resolver = FlowContextResolver.create(flow_path=self.flow.path)
+        flow_executor = flow_resolver.resolve(flow_context=self.flow_context)
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
         return line_result
 
