@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
 from promptflow._core.operation_context import OperationContext
-from promptflow.batch.base_executor_proxy import AbstractExecutorProxy
+from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 from promptflow.executor._flow_nodes_scheduler import DEFAULT_CONCURRENCY_BULK

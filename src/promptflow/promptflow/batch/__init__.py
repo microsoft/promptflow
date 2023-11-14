@@ -3,4 +3,5 @@
 # ---------------------------------------------------------
 
 # flake8: noqa
-from .batch_engine import BatchEngine
+from ._base_executor_proxy import AbstractExecutorProxy
+from ._batch_engine import BatchEngine
