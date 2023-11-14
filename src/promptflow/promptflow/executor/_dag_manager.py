@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, List, Mapping
+from typing import Any, Callable, List, Mapping, Dict
 
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node
 from promptflow.executor import _input_assignment_parser
@@ -16,11 +16,11 @@ class DAGManager:
         # TODO: Validate the DAG to avoid circular dependencies
 
     @property
-    def completed_nodes_outputs(self) -> Mapping[str, Any]:
+    def completed_nodes_outputs(self) -> Dict[str, Any]:
         return self._completed_nodes_outputs
 
     @property
-    def bypassed_nodes(self) -> Mapping[str, Node]:
+    def bypassed_nodes(self) -> Dict[str, Node]:
         return self._bypassed_nodes
 
     def pop_ready_nodes(self) -> List[Node]:
