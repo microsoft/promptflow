@@ -617,7 +617,6 @@ class Flow:
         Flow._import_requisites(tools, nodes)
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
-        language = data.get("language", "python")
         return Flow(
             # TODO: Remove this fallback.
             data.get("id", data.get("name", "default_flow_id")),
@@ -627,7 +626,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
-            code_language=language,
+            code_language=data.get("language", "python"),
         )
 
     def _apply_default_node_variants(self: "Flow"):

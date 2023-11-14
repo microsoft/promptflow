@@ -22,8 +22,13 @@ class LineResult:
 
     @staticmethod
     def deserialize(data: dict) -> "LineResult":
-        """Deserialize a LineResult from a dict."""
-        pass
+        """Deserialize the LineResult from a dict."""
+        return LineResult(
+            output=data.get("output"),
+            aggregation_inputs=data.get("aggregation_inputs", {}),
+            run_info=FlowRunInfo.deserialize(data.get("run_info")),
+            node_run_infos={k: RunInfo.deserialize(v) for k, v in data.get("node_run_infos", {}).items()},
+        )
 
 
 @dataclass
