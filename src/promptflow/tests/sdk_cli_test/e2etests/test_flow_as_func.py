@@ -124,7 +124,7 @@ class TestFlowAsFunc:
     def test_local_connection_object(self, pf, azure_open_ai_connection):
         f = load_flow(f"{FLOWS_DIR}/web_classification")
         f.context.connections = {"classify_with_llm": {"connection": azure_open_ai_connection}}
-        assert False, azure_open_ai_connection.to_dict()
+        assert False, str(azure_open_ai_connection)
         # f()
 
         # # local connection without secret will lead to error
