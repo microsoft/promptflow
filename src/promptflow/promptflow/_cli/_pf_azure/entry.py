@@ -16,7 +16,7 @@ from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_comma
 from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
 from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
-from promptflow._sdk._utils import get_promptflow_sdk_version  # noqa: E402
+from promptflow._sdk._utils import print_pf_version  # noqa: E402
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -29,7 +29,7 @@ def entry(argv):
     parser = argparse.ArgumentParser(
         prog="pfazure",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="PromptFlow CLI cloud version. [Preview]",
+        description="pfazure: manage prompt flow assets in azure. Learn more: https://microsoft.github.io/promptflow.",
     )
     parser.add_argument(
         "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
@@ -52,7 +52,7 @@ def entry(argv):
             for handler in logging.getLogger(LOGGER_NAME).handlers:
                 handler.setLevel(logging.DEBUG)
         if args.version:
-            print(get_promptflow_sdk_version())
+            print_pf_version()
         elif args.action == "run":
             dispatch_run_commands(args)
         elif args.action == "flow":
