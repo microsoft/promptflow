@@ -71,7 +71,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
     @classmethod
     def _direct_get(cls, name, subscription_id, resource_group_name, workspace_name, credential):
         """
-        This method is added for local pf_client with workspace provider to ensure we only requires limited
+        This method is added for local pf_client with workspace provider to ensure we only require limited
         permission(workspace/list secrets). As create azure pf_client requires workspace read permission.
         """
         connection_dict = cls._build_connection_dict(
