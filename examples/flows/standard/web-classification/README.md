@@ -129,3 +129,7 @@ pfazure run show-details --name $run_name
 pfazure run show-metrics --name $run_name
 pfazure run visualize --name $run_name
 ```
+
+## Contact
+
+If you have any questions or feedbacks, please reach out to 
