@@ -3,8 +3,9 @@ from enum import Enum
 try:
     from openai import OpenAI as OpenAIClient
 except Exception:
-    print(
+    raise Exception(
         "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
+
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, to_bool, validate_functions, process_function_call, post_process_chat_api_response
 
