@@ -21,7 +21,7 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
 
-      - name: Install Wix Toolset
+      - name: Install WIX Toolset
         shell:  pwsh
         working-directory: ${{ github.workspace }}/scripts/installer/windows
         run: |
@@ -58,7 +58,7 @@ jobs:
           pyinstaller promptflow.spec
         shell: pwsh
 
-      - name: Build Wix project
+      - name: Build WIX project
         working-directory: ${{ github.workspace }}/scripts/installer/windows
         run: |
           $text = Get-Content "promptflow.wixproj" -Raw

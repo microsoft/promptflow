@@ -97,12 +97,6 @@
     </Fragment>
 
     <Fragment>
-        <ComponentGroup Id="SharedFiles">
-            <Component Id="File1Component" Directory="DynamicCliDir" Guid="*">
-                <File Id="File1" Source="$(var.PromptflowSource)\pfs.exe" />
-            </Component>
-        </ComponentGroup>
-
         <ComponentGroup Id="PromptflowCliSettingsGroup">
             <Component Id="RemovePromptflowFolder" Directory="DynamicCliDir" Guid="$(var.RemovePromptflowFolderGuid)">
                 <RemoveFolder Id="DynamicCliDir" On="uninstall" />
@@ -139,7 +133,7 @@
                                KeyPath="yes"/>
             </Component>
             <Component Id="PromptflowService" Directory="DynamicCliDir" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="File2" Source="!(wix.SharedFiles.File1)" KeyPath="yes" />
+                <File Id="PromptflowServiceEXE" Source="$(var.PromptflowSource)\pfs.exe" KeyPath="yes" />
                 <ServiceInstall Id="ServiceInstaller" Name="PromptflowService" DisplayName="Prompt Flow Service" Description="Provides run and connection management for prompt flow" Start="auto" Type="ownProcess" ErrorControl="normal" />
                 <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="PromptflowService" Wait="no" />
             </Component>
@@ -149,7 +143,6 @@
         <ComponentGroup Id="ProductComponents">
           <ComponentGroupRef Id="PromptflowCliComponentGroup"/>
           <ComponentGroupRef Id="PromptflowCliSettingsGroup"/>
-          <ComponentGroupRef Id="SharedFiles"/>
         </ComponentGroup>
     </Fragment>
 </Wix>
