@@ -4,6 +4,8 @@
 
 import argparse
 
+from promptflow._sdk._constants import CLIListOutputFormat, FlowType
+
 # TODO: avoid azure dependency here
 MAX_LIST_CLI_RESULTS = 50
 
@@ -291,3 +293,49 @@ def add_param_config(parser):
 
 
 logging_params = [add_param_verbose, add_param_debug]
+
+
+def add_param_archived_only(parser):
+    parser.add_argument(
+        "--archived-only",
+        action="store_true",
+        help="Only list archived records.",
+    )
+
+
+def add_param_include_archived(parser):
+    parser.add_argument(
+        "--include-archived",
+        action="store_true",
+        help="List both archived records and active records.",
+    )
+
+
+def add_param_output_format(parser):
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default=CLIListOutputFormat.JSON,
+        help="Output format, accepted values are 'json' and 'table'. Default is 'json'.",
+        choices=[CLIListOutputFormat.TABLE, CLIListOutputFormat.JSON],
+    )
+
+
+def add_param_include_others(parser):
+    parser.add_argument(
+        "--include-others",
+        action="store_true",
+        help="Get records that are owned by all users.",
+    )
+
+
+def add_param_flow_type(parser):
+    parser.add_argument(
+        "--type",
+        type=str,
+        help=(
+            f"The type of the flow. Available values are {FlowType.get_all_values()}. "
+            f"Default to be None, which means all types included."
+        ),
+    )

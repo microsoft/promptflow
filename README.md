@@ -83,15 +83,19 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 pf flow test --flow ./my_chatbot --interactive
 ```
 
+**Core value: ensuring "High Quality” from prototype to production** 
+
+Explore our [**15-minute tutorial**](examples/tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md) that guides you through prompt tuning ➡ batch testing ➡ evaluation, all designed to ensure high quality ready for production.
+
 Next Step! Continue with the **Tutorial**  👇 section to delve deeper into prompt flow.
 
 ## Tutorial 🏃‍♂️
 
-Prompt Flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
+Prompt flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
 
 ### Develop your own LLM apps
 
-#### VS Code Extension<img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="25"/>
+#### VS Code Extension
 
 We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI.
 
