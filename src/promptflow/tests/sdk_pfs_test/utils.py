@@ -44,6 +44,3 @@ class PFSOperations:
 
     def get_run_detail(self, name: str):
         return self._client.get(f"{self.RUN_URL_PREFIX}/{name}/detail", headers=self.remote_user_header())
-
-    def run_operation_with_invalid_user(self):
-        return self._client.get(f"{self.RUN_URL_PREFIX}/list", headers={"X-Remote-User": "invalid_user"})

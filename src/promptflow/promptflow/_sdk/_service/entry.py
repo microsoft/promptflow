@@ -43,6 +43,8 @@ def main():
                 yaml.dump(service_config, f)
 
     app = create_app()
+    if is_port_in_use(port):
+        raise UserErrorException(f"Service port {port} is used.")
     # Set host to localhost, only allow request from localhost.
     waitress.serve(app, host="127.0.0.1", port=port)
 

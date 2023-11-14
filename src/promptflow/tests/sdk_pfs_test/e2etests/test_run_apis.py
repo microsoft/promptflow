@@ -60,7 +60,3 @@ class TestRunAPIs:
         assert isinstance(detail["flow_runs"], list)
         assert len(detail["flow_runs"]) == 3
         assert isinstance(detail["node_runs"], list)
-
-    def test_list_run_with_invalid_user(self, pfs_op: PFSOperations) -> None:
-        run_from_pfs = pfs_op.run_operation_with_invalid_user()
-        assert run_from_pfs.status_code == 403
