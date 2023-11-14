@@ -145,7 +145,8 @@
     "Hwfoxydrg",
     "llms",
     "vcrpy",
-    "uionly"
+    "uionly",
+    "httpx"
   ],
   "flagWords": [
     "Prompt Flow"
