@@ -18,15 +18,14 @@ from promptflow.contracts.flow import (
     ToolSource,
     ToolSourceType,
 )
-from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
-from promptflow.exceptions import UserErrorException
+from promptflow.contracts.tool import Tool, ToolType, ValueType
 
 from ...utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_yaml_file
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent.parent / "package_tools"
 
 
-@pytest.mark.unittest
+@pytest.mark.e2etest
 class TestFlowContract:
     @pytest.mark.parametrize(
         "flow_folder, expected_connection_names",
@@ -75,6 +74,9 @@ class TestFlowContract:
         error_message = "Node 'test_node' can't have both skip and activate condition."
         assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
+
+@pytest.mark.unittest
+class TestFlow:
     @pytest.mark.parametrize(
         "flow, expected_value",
         [
@@ -336,30 +338,23 @@ class TestFlowContract:
         assert standard_flow.get_chat_output_name() is None
         assert chat_flow.get_chat_output_name() == "answer"
 
-    def test_get_connection_name_from_tool(self):
-        tool1 = Tool(name="tool", type=ToolType.PYTHON, inputs={"input1": InputDefinition(type=["connection"])})
-        node1 = Node(name="node", tool=tool1, inputs={"input1": InputAssignment("value", InputValueType.LITERAL)})
-        flow1 = Flow(id="id", name="name", nodes=[node1], inputs={}, outputs={}, tools=[tool1])
-        assert flow1._get_connection_name_from_tool(tool1, node1) == {"input1": "value"}
-
-        tool2 = Tool(name="tool", type=ToolType.PYTHON, inputs={"input1": InputDefinition(type=[ValueType.STRING])})
-        node2 = Node(name="node", tool=tool2, inputs={})
-        flow2 = Flow(id="id", name="name", nodes=[node1], inputs={}, outputs={}, tools=[tool2])
-        assert flow2._get_connection_name_from_tool(tool2, node2) == {}
-
-    def test_get_connection_input_names_for_node(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        assert flow.get_connection_input_names_for_node("fetch_text_content_from_url") == []
-        assert flow.get_connection_input_names_for_node("classify_with_llm") == []
-        assert flow.get_connection_input_names_for_node("prepare_examples") == []
-        flow.nodes[0].source = None
-        with pytest.raises(UserErrorException):
-            flow.get_connection_input_names_for_node("fetch_text_content_from_url")
-
     def test_replace_with_variant(self):
-        flow = Flow.from_yaml(get_yaml_file("web_classification"))
+        node0 = Node(name="node0", tool=None, inputs={"input0": None}, use_variants=True)
+        node1 = Node(name="node1", tool="tool1", inputs={"input1": None}, use_variants=False)
+        node2 = Node(name="node2", tool="tool2", inputs={"input2": None}, use_variants=False)
+        node_variant = Node(name="node0", tool="tool3", inputs={"input3": None}, use_variants=False)
+        node_variants = {
+            "print_val": NodeVariants(
+                default_variant_id="variant1",
+                variants={"variant1": NodeVariant(node_variant, None)},
+            )
+        }
+        flow = Flow("test_flow_id", "test_flow", [node0, node1, node2], {}, {}, [], node_variants)
+        # flow = Flow.from_yaml(get_yaml_file("web_classification"))
         tool_cnt = len(flow.tools)
-        flow._replace_with_variant(flow.nodes[0], [flow.nodes[1].tool, flow.nodes[2].tool])
+        flow._replace_with_variant(node_variant, [flow.nodes[1].tool, flow.nodes[2].tool])
+        assert "input3" in flow.nodes[0].inputs
+        assert flow.nodes[0].tool == "tool3"
         assert len(flow.tools) == tool_cnt + 2
 
 

@@ -18,7 +18,6 @@ T = TypeVar("T", bound="Enum")
 
 
 def _deserialize_enum(cls: Type[T], val) -> T:
-    # Replace i with i.value because in Enum, i is always Enum object, only i.value could be str
     if not all(isinstance(i.value, str) for i in cls):
         return val
     typ = next((i for i in cls if val.lower() == i.value.lower()), None)
@@ -256,7 +255,6 @@ class InputDefinition:
         """
 
         data = {}
-        # Delete the brackets outside data["type"] according to deserialize function
         data["type"] = [t.value for t in self.type]
         if len(self.type) == 1:
             data["type"] = self.type[0].value
