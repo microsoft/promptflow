@@ -258,7 +258,7 @@ class TestSubmitter:
         )
         flow_executor.enable_streaming_for_llm_flow(lambda: self.flow_context.streaming)
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
-        return line_result
+        return line_result.output
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
         """
