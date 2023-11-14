@@ -19,6 +19,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
+from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
 from sdk_cli_test.recording_utilities import RecordStorage
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
@@ -160,11 +161,11 @@ def mock_module_with_list_func(mock_list_func):
 
     with patch.object(importlib, "import_module") as mock_import:
 
-        def side_effect(module_name):
+        def side_effect(module_name, *args, **kwargs):
             if module_name == "my_tool_package.tools.tool_with_dynamic_list_input":
                 return mock_module
             else:
-                return original_import_module(module_name)
+                return original_import_module(module_name, *args, **kwargs)
 
         mock_import.side_effect = side_effect
         yield
@@ -173,17 +174,26 @@ def mock_module_with_list_func(mock_list_func):
 # below fixtures are used for pfazure and global config tests
 @pytest.fixture
 def subscription_id() -> str:
-    return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
+    if is_replay():
+        return SanitizedValues.SUBSCRIPTION_ID
+    else:
+        return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
 
 
 @pytest.fixture
 def resource_group_name() -> str:
-    return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
+    if is_replay():
+        return SanitizedValues.RESOURCE_GROUP_NAME
+    else:
+        return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
 
 
 @pytest.fixture
 def workspace_name() -> str:
-    return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
+    if is_replay():
+        return SanitizedValues.WORKSPACE_NAME
+    else:
+        return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
 
 
 @pytest.fixture
