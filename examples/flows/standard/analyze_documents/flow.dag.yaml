@@ -1,3 +1,5 @@
+environment:
+  python_requirements_txt: requirements.txt
 inputs:
   document_path:
     type: string
