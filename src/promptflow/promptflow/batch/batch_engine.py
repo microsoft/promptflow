@@ -166,7 +166,7 @@ class BatchEngine:
         succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
             aggr_results = asyncio.run(
-                self._executor_proxy.exec_aggregation(succeeded_inputs, succeeded_aggregation_inputs, run_id)
+                self._executor_proxy.exec_aggregation_async(succeeded_inputs, succeeded_aggregation_inputs, run_id)
             )
             logger.info("Finish executing aggregation nodes.")
             return aggr_results

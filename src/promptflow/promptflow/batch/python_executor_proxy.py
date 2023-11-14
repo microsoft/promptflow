@@ -27,7 +27,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage)
         return cls(flow_executor)
 
-    async def exec_aggregation(
+    async def exec_aggregation_async(
         self,
         batch_inputs: Mapping[str, Any],
         aggregation_inputs: Mapping[str, Any],
