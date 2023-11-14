@@ -98,7 +98,7 @@
 
     <Fragment>
         <ComponentGroup Id="SharedFiles">
-            <Component Id="File1Component" Guid="*">
+            <Component Id="File1Component" Directory="DynamicCliDir" Guid="*">
                 <File Id="File1" Source="$(var.PromptflowSource)\pfs.exe" />
             </Component>
         </ComponentGroup>
