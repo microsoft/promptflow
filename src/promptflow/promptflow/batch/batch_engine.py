@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
@@ -166,14 +165,9 @@ class BatchEngine:
         )
         succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
-            if inspect.iscoroutinefunction(self._executor_proxy.exec_aggregation):
-                aggr_results = asyncio.run(
-                    self._executor_proxy.exec_aggregation(succeeded_inputs, succeeded_aggregation_inputs, run_id)
-                )
-            else:
-                aggr_results = self._executor_proxy.exec_aggregation(
-                    succeeded_inputs, succeeded_aggregation_inputs, run_id
-                )
+            aggr_results = asyncio.run(
+                self._executor_proxy.exec_aggregation(succeeded_inputs, succeeded_aggregation_inputs, run_id)
+            )
             logger.info("Finish executing aggregation nodes.")
             return aggr_results
         except PromptflowException as e:

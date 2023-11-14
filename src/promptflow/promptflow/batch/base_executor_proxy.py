@@ -31,10 +31,11 @@ class AbstractExecutorProxy:
         """Execute a line"""
         raise NotImplementedError()
 
-    def exec_aggregation(
+    async def exec_aggregation(
         self,
         batch_inputs: Mapping[str, Any],
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        pass
+        """Execute aggregation nodes"""
+        raise NotImplementedError()
