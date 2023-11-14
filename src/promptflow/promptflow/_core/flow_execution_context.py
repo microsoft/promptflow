@@ -89,12 +89,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
                     hit_cache = True
 
             if not hit_cache:
-                Tracer.start_tracing(node_run_id)
-                trace = Tracer.push_tool(f, [], kwargs)
-                trace.node_name = run_info.node
+                Tracer.start_tracing(node_run_id, node.name)
                 result = self.invoke_tool(node, f, kwargs)
-                result = Tracer.pop(result)
-                traces = Tracer.end_tracing()
+                traces = Tracer.end_tracing(node_run_id)
 
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             # Record result in cache so that future run might reuse its result.
@@ -105,9 +102,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             return result
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
-            Tracer.pop(error=e)
-            if not traces:
-                traces = Tracer.end_tracing()
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
@@ -141,20 +135,15 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
         traces = []
         try:
-            Tracer.start_tracing(node_run_id)
-            trace = Tracer.push_tool(f, kwargs=kwargs)
-            trace.node_name = run_info.node
+            Tracer.start_tracing(node_run_id, node.name)
             result = await self._invoke_tool_async_inner(node, f, kwargs)
-            result = Tracer.pop(result)
-            traces = Tracer.end_tracing()
+            traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             flow_logger.info(f"Node {node.name} completes.")
             return result
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
-            Tracer.pop(error=e)
-            if not traces:
-                traces = Tracer.end_tracing()
+            traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
