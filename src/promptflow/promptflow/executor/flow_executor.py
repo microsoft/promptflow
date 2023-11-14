@@ -339,10 +339,9 @@ class FlowExecutor:
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
             )
-            context.current_node = node
             context.start()
             try:
-                resolved_node.callable(**resolved_inputs)
+                context.invoke_tool_with_cache(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
             except Exception:
                 if raise_ex:
                     raise

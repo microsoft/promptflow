@@ -34,6 +34,13 @@ class Tracer(ThreadLocalSingleton):
         tracer._activate_in_context()
 
     @classmethod
+    def current_run_id(cls):
+        tracer = cls.active_instance()
+        if not tracer:
+            return None
+        return tracer._run_id
+
+    @classmethod
     def end_tracing(cls, raise_ex=False):
         tracer = cls.active_instance()
         if not tracer:

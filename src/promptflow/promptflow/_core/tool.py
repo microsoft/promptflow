@@ -78,11 +78,17 @@ def tool(
         else:
             @functools.wraps(func)
             def new_f(*args, **kwargs):
-                tool_invoker = ToolInvoker.active_instance()
-                # If there is no active tool invoker for tracing or other purposes, just call the function.
-                if tool_invoker is None:
-                    return func(*args, **kwargs)
-                return tool_invoker.invoke_tool(func, *args, **kwargs)
+                from .tracer import Tracer
+                current_run_id = Tracer.current_run_id()
+                if current_run_id is None:
+                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                try:
+                    Tracer.push_tool(func, args, kwargs)
+                    output = func(*args, **kwargs)  # Do nothing if we are handling another tool
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
 
         if type is not None and type not in [k.value for k in ToolType]:
             raise UserErrorException(f"Tool type {type} is not supported yet.")

@@ -51,8 +51,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
         self._variant_id = variant_id
-        #  TODO: use context var qu save the current node to enable multi-threading
-        self._current_node: Node = None
 
     def copy(self):
         return FlowExecutionContext(
@@ -69,35 +67,20 @@ class FlowExecutionContext(ThreadLocalSingleton):
         flow_context_info = {"flow-id": self._flow_id, "root-run-id": self._run_id}
         OperationContext.get_instance().update(flow_context_info)
 
-    @property
-    def current_node(self) -> Node:
-        return self._current_node
-
-    @current_node.setter
-    def current_node(self, node: Node):
-        self._current_node = node
-        self._batch_state = False
-
     def start(self):
         self._activate_in_context(force=True)
         self.update_operation_context()
 
-    def invoke_tool_with_cache(self, f: Callable, argnames: List[str], args, kwargs):
-        if self._current_tool is not None:
-            Tracer.push_tool(f, args, kwargs)
-            output = f(*args, **kwargs)  # Do nothing if we are handling another tool
-            output = Tracer.pop(output)
-            return output
-
-        run_info = self.prepare_node_run(self._current_node, f, argnames, args, kwargs)
+    def invoke_tool_with_cache(self, node: Node, f: Callable, kwargs):
+        run_info = self.prepare_node_run(node, f, kwargs)
         node_run_id = run_info.run_id
 
         traces = []
         try:
             hit_cache = False
             # Get result from cache. If hit cache, no need to execute f.
-            cache_info: CacheInfo = self._cache_manager.calculate_cache_info(self._flow_id, f, args, kwargs)
-            if self._current_node.enable_cache and cache_info:
+            cache_info: CacheInfo = self._cache_manager.calculate_cache_info(self._flow_id, f, [], kwargs)
+            if node.enable_cache and cache_info:
                 cache_result: CacheResult = self._cache_manager.get_cache_result(cache_info)
                 if cache_result and cache_result.hit_cache:
                     # Assign cached_flow_run_id and cached_run_id.
@@ -108,22 +91,22 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
             if not hit_cache:
                 Tracer.start_tracing(node_run_id)
-                trace = Tracer.push_tool(f, args, kwargs)
+                trace = Tracer.push_tool(f, [], kwargs)
                 trace.node_name = run_info.node
-                result = self.invoke_tool(f, args, kwargs)
+                result = self.invoke_tool(node, f, kwargs)
                 result = Tracer.pop(result)
                 traces = Tracer.end_tracing()
 
             self._current_tool = None
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             # Record result in cache so that future run might reuse its result.
-            if not hit_cache and self._current_node.enable_cache:
+            if not hit_cache and node.enable_cache:
                 self._persist_cache(cache_info, run_info)
 
-            flow_logger.info(f"Node {self._current_node.name} completes.")
+            flow_logger.info(f"Node {node.name} completes.")
             return result
         except Exception as e:
-            logger.exception(f"Node {self._current_node.name} in line {self._line_number} failed. Exception: {e}.")
+            logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
             Tracer.pop(error=e)
             if not traces:
                 traces = Tracer.end_tracing()
@@ -132,9 +115,8 @@ class FlowExecutionContext(ThreadLocalSingleton):
         finally:
             self._run_tracker.persist_node_run(run_info)
 
-    def prepare_node_run(self, node: Node, f, argnames=[], args=[], kwargs={}):
+    def prepare_node_run(self, node: Node, f, kwargs={}):
         self._current_tool = f
-        all_args = parse_all_args(argnames, args, kwargs)
         node_run_id = self._generate_node_run_id(node)
         flow_logger.info(f"Executing node {node.name}. node run id: {node_run_id}")
         parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
@@ -147,7 +129,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         )
         run_info.index = self._line_number
         run_info.variant_id = self._variant_id
-        self._run_tracker.set_inputs(node_run_id, {key: value for key, value in all_args.items() if key != "self"})
+        self._run_tracker.set_inputs(node_run_id, {key: value for key, value in kwargs.items() if key != "self"})
         return run_info
 
     async def invoke_tool_async(self, node: Node, f: Callable, kwargs):
@@ -197,8 +179,8 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             raise ToolExecutionError(node_name=node.name, module=f.__module__) from e
 
-    def invoke_tool(self, f: Callable, args, kwargs):
-        node_name = self._current_node.name if self._current_node else f.__name__
+    def invoke_tool(self, node: Node, f: Callable, kwargs):
+        node_name = node.name
         try:
             logging_name = node_name
             if self._line_number is not None:
@@ -213,7 +195,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 log_message_function=generate_elapsed_time_messages,
                 args=(logging_name, start_time, interval_seconds, thread_id),
             ):
-                return f(*args, **kwargs)
+                return f(**kwargs)
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.

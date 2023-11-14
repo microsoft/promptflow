@@ -114,13 +114,11 @@ class FlowNodesScheduler:
             context.start()
             f = self._tools_manager.get_tool(node.name)
             kwargs = dag_manager.get_node_valid_inputs(node, f)
-            context.current_node = node
             if inspect.iscoroutinefunction(f):
                 # TODO: Run async functions in flow level event loop
                 result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
             else:
-                result = f(**kwargs)
-            context.current_node = None
+                result = context.invoke_tool_with_cache(node, f, kwargs=kwargs)
             return result
         finally:
             context.end()
