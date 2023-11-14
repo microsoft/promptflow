@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+from asyncio import Task
 from typing import Dict, List, Tuple, Any
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
@@ -26,7 +27,7 @@ class AsyncNodesScheduler:
     async def execute(
         self,
         nodes: List[Node],
-        inputs: Dict,
+        inputs: Dict[str, Any],
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
         flow_logger.info(f"Start to run {len(nodes)} nodes with the current event loop.")
@@ -41,7 +42,11 @@ class AsyncNodesScheduler:
             dag_manager.completed_nodes_outputs[node] = None
         return dag_manager.completed_nodes_outputs, dag_manager.bypassed_nodes
 
-    async def _wait_and_complete_nodes(self, task2nodes: dict, dag_manager: DAGManager) -> dict:
+    async def _wait_and_complete_nodes(
+        self,
+        task2nodes: Dict[Task, Node],
+        dag_manager: DAGManager
+    ) -> Dict[Task, Node]:
         if not task2nodes:
             raise NoNodeExecutedError("No nodes are ready for execution, but the flow is not completed.")
         tasks = [task for task in task2nodes]
@@ -59,7 +64,7 @@ class AsyncNodesScheduler:
         loop: asyncio.AbstractEventLoop,
         dag_manager: DAGManager,
         context: FlowExecutionContext,
-    ):
+    ) -> Dict[Task[Any], Node]:
         # Bypass nodes and update node run info until there are no nodes to bypass
         nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
@@ -79,7 +84,7 @@ class AsyncNodesScheduler:
         node: Node,
         dag_manager: DAGManager,
         context: FlowExecutionContext,
-    ):
+    ) -> Task[Any]:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         task = context.invoke_tool_async(node, f, kwargs)
