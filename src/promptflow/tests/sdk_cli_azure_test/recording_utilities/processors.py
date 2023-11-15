@@ -191,3 +191,15 @@ class TenantProcessor(RecordingProcessor):
                 self.tenant_id, SanitizedValues.TENANT_ID
             )
         return response
+
+
+class IndexServiceProcessor(RecordingProcessor):
+    """Sanitize index service responses."""
+
+    def process_response(self, response: Dict) -> Dict:
+        if is_json_payload_response(response):
+            if "continuationToken" in response["body"]["string"]:
+                body = json.loads(response["body"]["string"])
+                body.pop("continuationToken", None)
+                response["body"]["string"] = json.dumps(body)
+        return response
