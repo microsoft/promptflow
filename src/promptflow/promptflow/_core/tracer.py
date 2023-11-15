@@ -46,7 +46,7 @@ class Tracer(ThreadLocalSingleton):
         return tracer.to_json()
 
     @classmethod
-    def push_tool(cls, f, args, kwargs):
+    def push_tool(cls, f, args=[], kwargs={}):
         obj = cls.active_instance()
         sig = inspect.signature(f).parameters
         all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}

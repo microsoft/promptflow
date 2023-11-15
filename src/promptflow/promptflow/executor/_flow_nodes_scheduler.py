@@ -2,7 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import contextvars
+import inspect
 from concurrent import futures
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict, List, Tuple
@@ -113,7 +115,11 @@ class FlowNodesScheduler:
             f = self._tools_manager.get_tool(node.name)
             kwargs = dag_manager.get_node_valid_inputs(node, f)
             context.current_node = node
-            result = f(**kwargs)
+            if inspect.iscoroutinefunction(f):
+                # TODO: Run async functions in flow level event loop
+                result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
+            else:
+                result = f(**kwargs)
             context.current_node = None
             return result
         finally:

@@ -12,7 +12,6 @@ from typing import Any, Dict, List
 from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_SECRET_KEYS, PROMPTFLOW_CONNECTIONS
 from promptflow._sdk._constants import CustomStrongTypeConnectionConfigs
 from promptflow._utils.utils import try_import
-from promptflow.connections import _Connection
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
 
@@ -42,10 +41,6 @@ class ConnectionManager:
         cls.import_requisites(_dict)
         connections = {}  # key to connection object
         for key, connection_dict in _dict.items():
-            if isinstance(connection_dict, _Connection):
-                # support directly pass connection object to executor
-                connections[key] = connection_dict
-                continue
             typ = connection_dict.get("type")
             if typ not in cls_mapping:
                 supported = [key for key in cls_mapping.keys() if not key.startswith("_")]
@@ -114,9 +109,6 @@ class ConnectionManager:
         """Import connection required modules."""
         modules = set()
         for key, connection_dict in _dict.items():
-            if isinstance(connection_dict, _Connection):
-                # support directly pass connection object to executor
-                continue
             module = connection_dict.get("module")
             if module:
                 modules.add(module)
