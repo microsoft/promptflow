@@ -23,8 +23,7 @@ EVAL_FLOW_WITH_COMPOSITE_IMAGE = "eval_flow_with_composite_image"
 NESTED_API_CALLS_FLOW = "python_tool_with_image_nested_api_calls"
 
 IMAGE_URL = (
-    "https://github.com/microsoft/promptflow/blob/93776a0631abf991896ab07d294f62082d5df3f3/src"
-    "/promptflow/tests/test_configs/datas/logo.jpg?raw=true"
+    "https://raw.githubusercontent.com/microsoft/promptflow/main/src/promptflow/tests/test_configs/datas/logo.jpg"
 )
 
 
