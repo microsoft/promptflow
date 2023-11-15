@@ -1,5 +1,4 @@
 import json
-import sys
 import uuid
 from collections import namedtuple
 from pathlib import Path
@@ -28,7 +27,7 @@ def mock_stream_chat(**kwargs):
     return stream_response(kwargs)
 
 
-@pytest.mark.skipif(sys.platform == "darwin" or sys.platform == "win32", reason="Skip on Mac and Windows")
+# @pytest.mark.skipif(sys.platform == "darwin" or sys.platform == "win32", reason="Skip on Mac and Windows")
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
@@ -60,7 +59,9 @@ class TestExecutorTelemetry:
 
             # batch run case
             run_id = str(uuid.uuid4())
-            batch_engine = BatchEngine(get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections={})
+            batch_engine = BatchEngine(
+                get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
+            )
             input_dirs = {"data": get_flow_inputs_file(flow_folder)}
             inputs_mapping = {"question": "${data.question}", "chat_history": "${data.chat_history}"}
             output_dir = Path(mkdtemp())
