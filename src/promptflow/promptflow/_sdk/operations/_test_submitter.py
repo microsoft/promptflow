@@ -71,7 +71,9 @@ class TestSubmitter:
                 self._tuning_node = None
                 self._node_variant = None
 
-    def resolve_data(self, node_name: str = None, inputs: dict = None, chat_history_name: str = None):
+    def resolve_data(
+        self, node_name: str = None, inputs: dict = None, chat_history_name: str = None, dataplane_flow=None
+    ):
         """
         Resolve input to flow/node test inputs.
         Raise user error when missing required inputs. And log warning when unknown inputs appeared.
@@ -87,12 +89,14 @@ class TestSubmitter:
         """
         from promptflow.contracts.flow import InputValueType
 
+        # TODO: only store dataplane flow in context resolver
+        dataplane_flow = dataplane_flow or self.dataplane_flow
         inputs = (inputs or {}).copy()
         flow_inputs, dependency_nodes_outputs, merged_inputs = {}, {}, {}
         missing_inputs = []
         # Using default value of inputs as flow input
         if node_name:
-            node = next(filter(lambda item: item.name == node_name, self.dataplane_flow.nodes), None)
+            node = next(filter(lambda item: item.name == node_name, dataplane_flow.nodes), None)
             if not node:
                 raise UserErrorException(f"Cannot find {node_name} in the flow.")
             for name, value in node.inputs.items():
@@ -114,7 +118,7 @@ class TestSubmitter:
                     elif name in inputs:
                         flow_input = inputs.pop(name)
                     else:
-                        flow_input = self.dataplane_flow.inputs[value.value].default
+                        flow_input = dataplane_flow.inputs[value.value].default
                         if flow_input is None:
                             missing_inputs.append(name)
                             continue
@@ -124,7 +128,7 @@ class TestSubmitter:
                     flow_inputs[name] = inputs.pop(name) if name in inputs else value.value
                     merged_inputs[name] = flow_inputs[name]
         else:
-            for name, value in self.dataplane_flow.inputs.items():
+            for name, value in dataplane_flow.inputs.items():
                 if name in inputs:
                     flow_inputs[name] = inputs.pop(name)
                     merged_inputs[name] = flow_inputs[name]
@@ -241,6 +245,8 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
         # cache executor here
         flow_executor = FlowContextResolver.create(flow_path=self.flow.path, flow_context=self.flow_context)
+        # validate inputs
+        flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=flow_executor._flow)
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
         if isinstance(line_result.output, dict):
             # Remove line_number from output

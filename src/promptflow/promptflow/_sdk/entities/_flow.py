@@ -279,9 +279,8 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
         submitter = TestSubmitter(flow=self, flow_context=self.context)
-        # validate inputs
-        flow_inputs, _ = submitter.resolve_data(inputs=kwargs)
+
         result = submitter.exec_with_inputs(
-            inputs=flow_inputs,
+            inputs=kwargs,
         )
         return result.output
