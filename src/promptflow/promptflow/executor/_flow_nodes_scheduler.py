@@ -92,13 +92,9 @@ class FlowNodesScheduler:
         return completed_nodes_outputs
 
     def _bypass_nodes(self, nodes: List[Node]):
-        try:
-            self._context.start()
-            for node in nodes:
-                node_outputs = self._dag_manager.get_bypassed_node_outputs(node)
-                self._context.bypass_node(node, node_outputs)
-        finally:
-            self._context.end()
+        for node in nodes:
+            node_outputs = self._dag_manager.get_bypassed_node_outputs(node)
+            self._context.bypass_node(node, node_outputs)
 
     def _submit_nodes(self, executor: ThreadPoolExecutor, nodes):
         for each_node in nodes:
@@ -116,5 +112,5 @@ class FlowNodesScheduler:
             # TODO: Run async functions in flow level event loop
             result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
         else:
-            result = context.invoke_tool_with_cache(node, f, kwargs=kwargs)
+            result = context.invoke_tool(node, f, kwargs=kwargs)
         return result

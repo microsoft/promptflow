@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import functools
 import inspect
 import logging
 import threading
@@ -9,12 +10,11 @@ import time
 import uuid
 from contextvars import ContextVar
 from logging import WARNING
-from typing import Callable, List
+from typing import Callable
 
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
 from promptflow._core.operation_context import OperationContext
-from promptflow._core.tool import parse_all_args
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import generate_elapsed_time_messages
@@ -62,16 +62,12 @@ class FlowExecutionContext(ThreadLocalSingleton):
             variant_id=self._variant_id,
         )
 
-    def update_operation_context(self):
+    def _update_operation_context(self):
         flow_context_info = {"flow-id": self._flow_id, "root-run-id": self._run_id}
         OperationContext.get_instance().update(flow_context_info)
 
-    def start(self):
-        self._activate_in_context(force=True)
-        self.update_operation_context()
-
-    def invoke_tool_with_cache(self, node: Node, f: Callable, kwargs):
-        run_info = self.prepare_node_run(node, f, kwargs)
+    def invoke_tool(self, node: Node, f: Callable, kwargs):
+        run_info = self._prepare_node_run(node, f, kwargs)
         node_run_id = run_info.run_id
 
         traces = []
@@ -90,7 +86,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
             if not hit_cache:
                 Tracer.start_tracing(node_run_id, node.name)
-                result = self.invoke_tool(node, f, kwargs)
+                result = self._invoke_tool_with_timer(node, f, kwargs)
                 traces = Tracer.end_tracing(node_run_id)
 
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
@@ -107,7 +103,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
         finally:
             self._run_tracker.persist_node_run(run_info)
 
-    def prepare_node_run(self, node: Node, f, kwargs={}):
+    def _prepare_node_run(self, node: Node, f, kwargs={}):
+        # Ensure this thread has a valid operation context
+        self._update_operation_context()
         node_run_id = self._generate_node_run_id(node)
         flow_logger.info(f"Executing node {node.name}. node run id: {node_run_id}")
         parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
@@ -130,7 +128,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 function=f,
                 node=node.name,
             )
-        run_info = self.prepare_node_run(node, f, kwargs=kwargs)
+        run_info = self._prepare_node_run(node, f, kwargs=kwargs)
         node_run_id = run_info.run_id
 
         traces = []
@@ -155,8 +153,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.
-            if f.__module__ is not None:
-                e.module = f.__module__
+            module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
+            if module is not None:
+                e.module = module
             raise e
         except Exception as e:
             # Otherwise, we assume the error comes from user's tool.
@@ -164,7 +163,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             raise ToolExecutionError(node_name=node.name, module=f.__module__) from e
 
-    def invoke_tool(self, node: Node, f: Callable, kwargs):
+    def _invoke_tool_with_timer(self, node: Node, f: Callable, kwargs):
         node_name = node.name
         try:
             logging_name = node_name
@@ -184,8 +183,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.
-            if f.__module__ is not None:
-                e.module = f.__module__
+            module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
+            if module is not None:
+                e.module = module
             raise e
         except Exception as e:
             # Otherwise, we assume the error comes from user's tool.
@@ -208,9 +208,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             variant_id=self._variant_id,
         )
         self._run_tracker.persist_node_run(run_info)
-
-    def end(self):
-        self._deactivate_in_context()
 
     def _persist_cache(self, cache_info: CacheInfo, run_info: RunInfo):
         """Record result in cache storage if hash_id is valid."""

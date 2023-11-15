@@ -2,9 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import inspect
-
-from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tool import ToolInvoker
 
 
