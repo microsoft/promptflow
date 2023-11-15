@@ -12,6 +12,7 @@ from promptflow._sdk._errors import FlowOperationError
 from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+from ..recording_utilities import is_live
 
 tests_root_dir = Path(__file__).parent.parent.parent
 flow_test_dir = tests_root_dir / "test_configs/flows"
@@ -43,6 +44,10 @@ class TestFlow:
         assert result.tags == tags
         assert result.path.endswith(f"/promptflow/{flow_display_name}/flow.dag.yaml")
 
+    @pytest.mark.skipif(
+        condition=not is_live(),
+        reason="Complicated test combining `pf flow test` and global config",
+    )
     def test_flow_test_with_config(self, remote_workspace_resource_id):
         from promptflow import PFClient
 
