@@ -1,6 +1,6 @@
 # Multi Intent Conversational Language Understanding
 
-A flow that can be used to determine multiple intents in a user query leveraging an LLM with Conversatioanal Language Understanding. 
+A flow that can be used to determine multiple intents in a user query leveraging an LLM with Conversational Language Understanding. 
 
 This sample flow utilizes Azure AI Language's Conversational Language Understanding to perform various analyses on text or documents. It performs:
 
@@ -28,7 +28,7 @@ Prepare your [Azure AI Language Resource](https://azure.microsoft.com/en-us/prod
 Create a connection to your Language Resource. The connection uses the `CustomConnection` schema:
 ```
 # Override keys with --set to avoid yaml file changes
-pf connection create -f ../../../connections/azure_ai_language.yml --set secrets.api_key=<your_api_key> configs.endpoint=<your_endpoint> name=azure_ai_language_connection
+pf connection create -f ../connections/azure_ai_language.yml --set secrets.api_key=<your_api_key> configs.endpoint=<your_endpoint> name=azure_ai_language_connection
 ```
 Ensure you have created the `azure_ai_language_connection`:
 ```
@@ -46,4 +46,4 @@ The flow uses a `llm` node to break down compound user queries into simple user 
 This is then passed into the CLU tool to recognize intents and entities in each of the utterances.
 
 ### Contact
-Please reach out to Abhishek Sen (<absen@microsoft.com>) with any issues.
+Please reach out to Abhishek Sen (<absen@microsoft.com>) or <taincidents@microsoft.com> with any issues.

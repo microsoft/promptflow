@@ -36,7 +36,7 @@ Prepare your [Azure AI Language Resource](https://azure.microsoft.com/en-us/prod
 Create a connection to your Language Resource. The connection uses the `CustomConnection` schema:
 ```
 # Override keys with --set to avoid yaml file changes
-pf connection create -f ../../../connections/azure_ai_language.yml --set secrets.api_key=<your_api_key> configs.endpoint=<your_endpoint> name=azure_ai_language_connection
+pf connection create -f ../connections/azure_ai_language.yml --set secrets.api_key=<your_api_key> configs.endpoint=<your_endpoint> name=azure_ai_language_connection
 ```
 Ensure you have created the `azure_ai_language_connection`:
 ```
@@ -48,7 +48,7 @@ To use the `translator` tool, you must have an existing [Azure AI Translator res
 Create a connection to your Translator Resource. The connection uses the `CustomConnection` schema:
 ```
 # Override keys with --set to avoid yaml file changes
-pf connection create -f ../../../connections/azure_ai_translator.yml --set secrets.api_key=<your_api_key> configs.endpoint=<your_endpoint> configs.region=<your_region> name=azure_ai_translator_connection
+pf connection create -f ../connections/azure_ai_translator.yml --set secrets.api_key=<your_api_key> configs.endpoint=<your_endpoint> configs.region=<your_region> name=azure_ai_translator_connection
 ```
 Ensure you have created the `azure_ai_translator_connection`:
 ```
@@ -75,4 +75,4 @@ You can also skip providing column-mapping if provided data has same column name
 The flow first uses a `python` node to read in the provided `.txt` file into a string. This string is passed to a `pii_entity_recognition` node where Personally Identifiable Information (PII) is redacted. The redacted text is passed to `abstractive_summarization`, `extractive_summarization` and `entity_recognition` nodes, where summaries and named-entities are obtained. Finally, the generated abstractive summary is forwarded to a `sentiment_analysis` node to analyze its general sentiment.
 
 ### Contact
-Please reach out to Sean Murray (<murraysean@microsoft.com>) with any issues.
+Please reach out to Sean Murray (<murraysean@microsoft.com>) or <taincidents@microsoft.com> with any issues.
