@@ -5,6 +5,7 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch import BatchEngine
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.contracts.run_info import FlowRunInfo
@@ -185,13 +186,12 @@ class TestBatch:
             {"line_number": 6, "output": 7},
         ]
 
-    # TODO: Add test for flow with langchain traces
     def test_batch_with_openai_metrics(self, dev_connections):
-        classification_executor = FlowExecutor.create(get_yaml_file(SAMPLE_FLOW), dev_connections, raise_ex=True)
-        bulk_inputs = self.get_bulk_inputs()
-        bulk_results = classification_executor.exec_bulk(bulk_inputs)
-        assert len(bulk_results.outputs) == len(bulk_inputs)
-        openai_metrics = bulk_results.get_openai_metrics()
+        inputs_mapping = {"url": "${data.url}"}
+        batch_result = submit_batch_run(SAMPLE_FLOW, inputs_mapping, connections=dev_connections)
+        nlines = get_batch_inputs_line(SAMPLE_FLOW)
+        assert len(batch_result.outputs) == nlines
+        openai_metrics = batch_result.get_openai_metrics()
         assert "total_tokens" in openai_metrics
         assert openai_metrics["total_tokens"] > 0
 
@@ -210,18 +210,17 @@ class TestBatch:
         assert bulk_aggregate_node.output == [default_input_value]
 
     @pytest.mark.parametrize(
-        "flow_folder, batch_input, expected_type, validate_inputs",
+        "flow_folder, batch_input, expected_type",
         [
-            ("simple_aggregation", [{"text": 4}], str, True),
-            ("simple_aggregation", [{"text": 4.5}], str, True),
-            ("simple_aggregation", [{"text": "3.0"}], str, True),
-            ("simple_aggregation", [{"text": 4}], int, False),
+            ("simple_aggregation", [{"text": 4}], str),
+            ("simple_aggregation", [{"text": 4.5}], str),
+            ("simple_aggregation", [{"text": "3.0"}], str),
         ],
     )
-    def test_batch_run_line_result(self, flow_folder, batch_input, expected_type, validate_inputs, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-        bulk_result = executor.exec_bulk(
-            batch_input,
-            validate_inputs=validate_inputs,
-        )
-        assert type(bulk_result.line_results[0].run_info.inputs["text"]) is expected_type
+    def test_batch_run_line_result(self, flow_folder, batch_input, expected_type, dev_connections):
+        input_file = Path(mkdtemp()) / "inputs.jsonl"
+        dump_list_to_jsonl(input_file, batch_input)
+        input_dirs = {"data": input_file}
+        inputs_mapping = {"text": "${data.text}"}
+        batch_results = submit_batch_run(flow_folder, inputs_mapping, input_dirs=input_dirs)
+        assert type(batch_results.line_results[0].run_info.inputs["text"]) is expected_type
