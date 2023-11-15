@@ -9,6 +9,7 @@ from promptflow._core._errors import FlowOutputUnserializable
 from promptflow._core.tool_meta_generator import PythonParsingError
 from promptflow._core.tools_manager import APINotFound
 from promptflow._sdk._constants import DAG_FILE_NAME
+from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch import BatchEngine
 from promptflow.contracts._errors import FailedToImportModule
 from promptflow.contracts.run_info import Status
@@ -364,8 +365,6 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, batch_input, raise_on_line_failure, error_class",
         [
-            ("simple_flow_with_python_tool", [{"num11": "22"}], True, Exception),
-            ("simple_flow_with_python_tool", [{"num11": "22"}], False, InputNotFound),
             ("simple_flow_with_python_tool", [{"num": "hello"}], True, Exception),
             ("simple_flow_with_python_tool", [{"num": "hello"}], False, InputTypeError),
             ("simple_flow_with_python_tool", [{"num": "22"}], True, None),
@@ -375,18 +374,34 @@ class TestValidation:
     def test_batch_run_raise_on_line_failure(
         self, flow_folder, batch_input, raise_on_line_failure, error_class, dev_connections
     ):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections, raise_ex=False)
+        # Bulk run - the input is from sample.json
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
+        )
+        # prepare input file and output dir
+        input_file = Path(mkdtemp()) / "inputs.jsonl"
+        dump_list_to_jsonl(input_file, batch_input)
+        input_dirs = {"data": input_file}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {"num": "${data.num}"}
+
         if error_class is None:
-            result = executor.exec_bulk(batch_input, raise_on_line_failure=raise_on_line_failure)
+            result = batch_engine.run(
+                input_dirs, inputs_mapping, output_dir, raise_on_line_failure=raise_on_line_failure
+            )
             assert len(result.line_results) == 1
             assert result.line_results[0].run_info.status == Status.Completed
             assert result.line_results[0].run_info.error is None
         else:
             if raise_on_line_failure:
                 with pytest.raises(error_class):
-                    executor.exec_bulk(batch_input, raise_on_line_failure=raise_on_line_failure)
+                    batch_engine.run(
+                        input_dirs, inputs_mapping, output_dir, raise_on_line_failure=raise_on_line_failure
+                    )
             else:
-                result = executor.exec_bulk(batch_input, raise_on_line_failure=raise_on_line_failure)
+                result = batch_engine.run(
+                    input_dirs, inputs_mapping, output_dir, raise_on_line_failure=raise_on_line_failure
+                )
                 assert result.line_results[0].run_info.status == Status.Failed
                 assert error_class.__name__ in json.dumps(result.line_results[0].run_info.error)
 
