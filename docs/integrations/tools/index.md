@@ -19,4 +19,5 @@ The table below provides an index of custom tool packages. The columns contain:
 :maxdepth: 1
 :hidden:
 
+azure-ai-language-tool
 ```
