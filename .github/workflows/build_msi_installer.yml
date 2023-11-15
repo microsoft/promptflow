@@ -61,8 +61,14 @@ jobs:
       - name: Build Pyinstaller project
         working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
         run: |
-          echo "Version from promptflow: ${{ steps.get-version.outputs.version }}"
+          echo 'Version from promptflow: ${{ steps.get-version.outputs.version }}'
           $text = Get-Content "version_info.txt" -Raw
+          
+          $versionString = '${{ steps.get-version.outputs.version }}'
+          $versionArray = $versionString.Split('.') + 0
+          $versionTuple = [string]::Join(', ', $versionArray)
+          $text = $text -replace '\$\((env\.FILE_VERSION)\)', $versionTuple
+          
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
           $text | Out-File -FilePath "version_info.txt" -Encoding utf8
           pyinstaller promptflow.spec
@@ -93,10 +99,9 @@ jobs:
           foreach ($msi_file in $msi_files) {
           if ($env:INPUT_UPLOADASLATEST -ieq 'True') {
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "promptflow.msi" --overwrite
-            az storage blob copy start --account-name promptflowartifact --destination-container msi-installer --destination-blob "$($msi_file.Name)"--source-container msi-installer --source-blob "promptflow.msi"
+            az storage blob copy start --account-name promptflowartifact --destination-container msi-installer --destination-blob "$($msi_file.Name)" --source-container msi-installer --source-blob "promptflow.msi"
           } else {
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
-            az storage blob copy start --account-name promptflowartifact --destination-container msi-installer --destination-blob "chenyin-test.msi"--source-container msi-installer --source-blob "$($msi_file.Name)"
           }
           }
         shell: pwsh
