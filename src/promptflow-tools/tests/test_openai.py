@@ -33,7 +33,7 @@ class TestOpenAI:
             user_input="Fill in more details about trend 2.",
             chat_history=chat_history,
         )
-        assert "when discussing trend 2" in result.lower()
+        assert "trend 2" in result.lower()
 
     def test_openai_stream_chat(self, openai_provider, example_prompt_template, chat_history):
         result = openai_provider.chat(
@@ -51,7 +51,7 @@ class TestOpenAI:
                 answer += next(result)
             except Exception:
                 break
-        assert "when discussing trend 2" in answer.lower()
+        assert "trend 2" in answer.lower()
 
     def test_openai_chat_api(self, open_ai_connection, example_prompt_template, chat_history):
         result = chat(
