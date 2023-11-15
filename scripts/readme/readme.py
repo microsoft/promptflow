@@ -305,7 +305,9 @@ if __name__ == "__main__":
         "examples/tutorials/**/README.md",
         "examples/tools/use-cases/**/README.md"
     ]
+    # exclude the readme since this is 3p integration folder, pipeline generation is not included
+    input_glob_readme_exclude = ["examples/flows/integrations/**/README.md"]
     readme_telemetry = []
-    readme_generator.main(input_glob_readme, readme_telemetry)
+    readme_generator.main(input_glob_readme, input_glob_readme_exclude, readme_telemetry)
 
     write_readme(workflow_telemetry, readme_telemetry)
