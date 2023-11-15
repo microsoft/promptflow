@@ -7,7 +7,7 @@ In this document, we will guide you through the process of customizing an LLM to
 ## How to customize an LLM tool
 Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your own tool, please refer to [create and use tool package](create-and-use-tool-package.md).  
 
-1. Develop the tool code as in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_custom_llm_type.py).
+Develop the tool code as in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_custom_llm_type.py).
 - Add a `CustomConnection` input to the tool, which is used to authenticate and establish a connection to the large language model.
 - Add a `PromptTemplate` input to the tool, which serves as an argument to be passed into the large language model.
 
@@ -23,33 +23,6 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
         # Customize your own code to use the connection and prompt here.
         rendered_prompt = Template(prompt, trim_blocks=True, keep_trailing_newline=True).render(**kwargs)
         return rendered_prompt
-    ```
-
-2. Generate the custom LLM tool YAML.  
-    Run the command below in your tool project directory to automatically generate your tool YAML, use _-t "custom_llm"_ or _--tool-type "custom_llm"_ to indicate this is a custom LLM tool:  
-    ```
-    python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -t "custom_llm"
-    ```
-    Here we use [an existing tool](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_custom_llm_type.yaml) as an example.
-    ```
-    cd D:\proj\github\promptflow\examples\tools\tool-package-quickstart
-
-    python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m my_tool_package.tools.tool_with_custom_llm_type -o my_tool_package\yamls\tool_with_custom_llm_type.yaml -n "My Custom LLM Tool" -d "This is a tool to demonstrate how to customize an LLM tool with a PromptTemplate." -t "custom_llm"
-    ```
-    This command will generate a YAML file as follows:
-
-    ```yaml
-    my_tool_package.tools.tool_with_custom_llm_type.my_tool:
-    name: My Custom LLM Tool
-    description: This is a tool to demonstrate how to customize an LLM tool with a PromptTemplate.
-    # The type is custom_llm.
-    type: custom_llm
-    module: my_tool_package.tools.tool_with_custom_llm_type
-    function: my_tool
-    inputs:
-        connection:
-        type:
-            - CustomConnection
     ```
 
 ## Use the tool in VS Code
