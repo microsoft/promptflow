@@ -132,11 +132,6 @@
                                Value="$(var.ProductVersion)"
                                KeyPath="yes"/>
             </Component>
-            <Component Id="PromptflowService" Directory="DynamicCliDir" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="PromptflowServiceEXE" Source="scripts\dist\promptflow\pfs.exe" KeyPath="yes" />
-                <ServiceInstall Id="ServiceInstaller" Name="PromptflowService" DisplayName="Prompt Flow Service" Description="Provides run and connection management for prompt flow" Start="auto" Type="ownProcess" ErrorControl="normal" />
-                <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="PromptflowService" Wait="no" />
-            </Component>
 
         </ComponentGroup>
 

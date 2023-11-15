@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import argparse
 import sys
+import uuid
 
 import waitress
 import yaml
@@ -45,6 +46,14 @@ def main():
     args = parser.parse_args(command_args)
     if args.action == "start":
         start_service(args.port)
+    elif args.action == "install":
+        install_service()
+
+
+def install_service():
+    service_name = f"PromptFlowService_{uuid.uuid1()}"
+    service_install_command = f"sc create {service_name} binpath= %~dp0\MyService.exe start= auto"
+    service_start_command = f"sc start {service_name}"
 
 
 def start_service(port):
