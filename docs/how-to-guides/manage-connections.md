@@ -212,34 +212,54 @@ On the VS Code primary sidebar > prompt flow pane. You can find the connections 
 
 ## Consume connections on cloud (Azure AI)
 
-For flow samlessly developing on the flow that has transited from cloud ( Azure AI) to local, you can directly consume the connection you establish already on cloud, by setting the connection provider to be "Azure AI".
+For a smooth development flow that transitions from cloud (Azure AI) to local environments, you can directly utilize the connection already established on the cloud by setting the connection provider to "Azure AI connections".
 
+You can set the connection provider using the following steps:
 
-The connection provider can be set in the following ways:
+1. Navigate to the connection list in the VS Code primary sidebar.
 
-1. Click on the VS Code primary sidebar, go to the connection list.
-
-1. Click on the `...` (more icon) on the top, select the `Set connection provider` option.
+1. Click on the ... (more options icon) at the top and select the `Set connection provider` option.
 
     ![img](../media/how-to-guides/manage-connections/set-connection-provider.png)
 
-1. Select the connection provider of "Azure AI connections" you want to use. [Click to learn the difference between the connection providers](#manage-connections).
+1. Choose one of the "Azure AI connections" provider types that you wish to use. [Click to learn more about the differences between the connection providers](#manage-connections).
 
     ![img](../media/how-to-guides/manage-connections/set-connection-provider-2.png)
 
+    1. If you choose "Azure AI Connections - for current working directory", then you need to specify the cloud resources in the `config.json` file within the project folder.
 
-### Manage the connection provider
+        ![img](../media/how-to-guides/manage-connections/set-aml-connection-provider.png)
+    
+    1. If you choose "Azure AI Connections - for this machine", specify the cloud resources in the connection string. You can do this in one of two ways:
+    
+        (1) Input connection string in the input box above.
+    For example `azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>`
 
-3 types of connections we support now: Local, Azure AI connection - For current working directory, Azure AI connection - For this machine.
+        ![img](../media/how-to-guides/manage-connections/set-aml-connection-provider-2.png)
 
-|Connection provider|Type|Description|
-|---|---|---|
-| Local Connections| Local provider | Provide the connection you have created in your local machine, storing in the local sqlite. |You can use the local connection provider to manage your local connections.|
-|Azure AI connection - For current working directory| Cloud provider| Provide the connection you have created on an Azure AI project, use the `config.json` file to specify an specific Azure AI project as the provider. <li>Scenario: This is a dynamic approch for comsunming different connections provided by different Azure AI providers for specific working directory.</li>|
-|Azure AI connection - For this machine| Cloud provider| Provide the connection you have created on an Azure AI project, use the `connection string` to specify an specific Azure AI project as the provider. <li>Scenario: This is a static approch for comsunming the same connection provided by the same Azure AI provider for all working directories in your machine.</li>|
+         (2) Follow the wizard to set up your config step by step.
+    
+        ![img](../media/how-to-guides/manage-connections/set-aml-connection-provider-2-wizard.png)
+  1. Once the connection provider is set, the connection list will automatically refresh, displaying the connections retrieved from the selected provider.
 
-By default, is local connection, if you never change. But the provider change will persist in your vs code extension, that means you don't need to change it every time.
+
+Note:
+1. You need to have a project folder open to use the "Azure AI connections - for current working directory" option.
+1. Once you change the connection provider, it will stay that way until you change it again and save the new setting.
+
+### Different connection providers
+
+Currently, we support three types of connections:
+
+|Connection provider|Type|Description|Provider Specification|Use Case|
+|---|---|---|---|---|
+| Local Connections| Local| Enables consume the connections created and locally and stored in local sqlite. |NA| Ideal when connections need to be stored and managed locally.|
+|Azure AI connection - For current working directory| Cloud provider| Enables the consumption of connections from a cloud provider, such as a specific Azure Machine Learning workspace or Azure AI project.| Specify the resource ID in a `config.json` file placed in the project folder. <br> [Click here for more details](./set-global-configs.md#connectionprovider)| A dynamic approach for consuming connections from different providers in specific projects. Allows for setting different provider configurations for different flows by updating the `config.json` in the project folder.|
+|Azure AI connection - For this machine| Cloud| Enables the consumption of connections from a cloud provider, such as a specific Azure Machine Learning workspace or Azure AI project. | Use a `connection string` to specify a cloud resource as the provider on your local machine. <br> [Click here for more details](./set-global-configs.md#full-azure-machine-learning-workspace-resource-id)|A global provider setting that applies across all working directories on your machine.|
+
+
 
 ## Next steps
 - Reach more detail about [connection concepts](../../concepts/concept-connections.md).
 - Try the [connection samples](https://github.com/microsoft/promptflow/blob/main/examples/connections/connection.ipynb).
+- Set global configs on [connection.provider](../how-to-guides/set-global-configs.md#connectionprovider).
