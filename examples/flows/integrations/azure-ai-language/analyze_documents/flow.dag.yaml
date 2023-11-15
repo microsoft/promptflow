@@ -1,0 +1,110 @@
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  document_path:
+    type: string
+    default: ./document1.txt
+  language:
+    type: string
+    default: en
+outputs:
+  extractive_summary:
+    type: string
+    reference: ${Extractive_Summarization.output}
+  abstractive_summary:
+    type: string
+    reference: ${Abstractive_Summarization.output}
+  sentiment:
+    type: string
+    reference: ${Sentiment_Analysis.output}
+  recognized_entities:
+    type: string
+    reference: ${Entity_Recognition.output}
+nodes:
+- name: Read_File
+  type: python
+  source:
+    type: code
+    path: read_file.py
+  inputs:
+    file_path: ${inputs.document_path}
+- name: Translator
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.translator.get_translation
+  inputs:
+    connection: azure_ai_translator_connection
+    text: ${Read_File.output}
+    to:
+    - en
+    parse_response: true
+- name: Parse_Translation
+  type: python
+  source:
+    type: code
+    path: parse_translation.py
+  inputs:
+    translation_results: ${Translator.output}
+    language: en
+- name: PII_Entity_Recognition
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.pii_entity_recognition.get_pii_entity_recognition
+  inputs:
+    connection: azure_ai_language_connection
+    language: ${inputs.language}
+    text: ${Parse_Translation.output}
+    parse_response: true
+    categories:
+    - Address
+    - Age
+    - Date
+    - Email
+    - IPAddress
+    - PhoneNumber
+    - URL
+- name: Abstractive_Summarization
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.abstractive_summarization.get_abstractive_summarization
+  inputs:
+    connection: azure_ai_language_connection
+    language: ${inputs.language}
+    text: ${PII_Entity_Recognition.output}
+    parse_response: true
+    query: quarterly results
+    summary_length: medium
+- name: Sentiment_Analysis
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.sentiment_analysis.get_sentiment_analysis
+  inputs:
+    connection: azure_ai_language_connection
+    language: ${inputs.language}
+    text: ${Abstractive_Summarization.output}
+    parse_response: true
+- name: Entity_Recognition
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.entity_recognition.get_entity_recognition
+  inputs:
+    connection: azure_ai_language_connection
+    language: ${inputs.language}
+    text: ${PII_Entity_Recognition.output}
+    parse_response: true
+- name: Extractive_Summarization
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.extractive_summarization.get_extractive_summarization
+  inputs:
+    connection: azure_ai_language_connection
+    language: ${inputs.language}
+    text: ${PII_Entity_Recognition.output}
+    query: Cloud AI
+    parse_response: true
