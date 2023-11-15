@@ -2,6 +2,12 @@ name: Build and Package MSI
 
 on:
   workflow_dispatch:
+    inputs:
+      UploadAsLatest:
+        type: string
+        default: "False"
+        required: false
+        description: 'Also upload the msi installer to storage account as latest'
   # will delete pull request when it's ready
   pull_request:
     branches:
@@ -13,6 +19,10 @@ jobs:
     name: Build Windows MSI
 
     steps:
+      - name: Check input parameters
+        run: |
+          echo "UploadAsLatest: ${{ inputs.UploadAsLatest }}"
+
       - name: Checkout Repo
         uses: actions/checkout@v3
         with:
@@ -80,5 +90,9 @@ jobs:
       - name: Upload to Azure Storage
         run: |
           $msi_file = Get-ChildItem -Path 'scripts/installer/windows/out/' -Filter *.msi
-          az storage blob upload --account-name promptflowartifact --container-name msi-installer --file scripts/installer/windows/out/$($msi_file.Name)  --name $($msi_file.Name) --overwrite
+          if [inputs.UploadAsLatest == 'False']; then
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file scripts/installer/windows/out/$($msi_file.Name)  --name $($msi_file.Name) --overwrite
+          else
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file scripts/installer/windows/out/$($msi_file.Name)  --name promptflow.msi --overwrite
+          fi
         shell: pwsh
