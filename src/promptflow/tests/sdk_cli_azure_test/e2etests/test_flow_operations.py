@@ -50,18 +50,18 @@ class TestFlow:
         output = client.test(flow=flow_test_dir / "web_classification")
         assert output.keys() == {"category", "evidence"}
 
-    def test_list_flows(self, remote_client):
-        flows = remote_client.flows.list(max_results=3)
+    def test_list_flows(self, pf: PFClient):
+        flows = pf.flows.list(max_results=3)
         for flow in flows:
             print(json.dumps(flow._to_dict(), indent=4))
         assert len(flows) == 3
 
-    def test_list_flows_invalid_cases(self, remote_client):
+    def test_list_flows_invalid_cases(self, pf: PFClient):
         with pytest.raises(FlowOperationError, match="'max_results' must be a positive integer"):
-            remote_client.flows.list(max_results=0)
+            pf.flows.list(max_results=0)
 
         with pytest.raises(FlowOperationError, match="'flow_type' must be one of"):
-            remote_client.flows.list(flow_type="unknown")
+            pf.flows.list(flow_type="unknown")
 
         with pytest.raises(FlowOperationError, match="Invalid list view type"):
-            remote_client.flows.list(list_view_type="invalid")
+            pf.flows.list(list_view_type="invalid")
