@@ -1,4 +1,8 @@
-import openai
+try:
+    from openai import OpenAI as OpenAIClient
+except Exception:
+    raise Exception(
+        "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
 
 from promptflow.connections import OpenAIConnection
 from promptflow.contracts.types import PromptTemplate
@@ -11,8 +15,11 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
 class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
-        self.connection = connection
-        self._connection_dict = dict(self.connection)
+        self._connection_dict = dict(connection)
+        self._client = OpenAIClient(
+            api_key=self._connection_dict["api_key"],
+            organization=self._connection_dict["organization"]
+        )
 
     @tool(streaming_option_parameter="stream")
     @handle_openai_error()
@@ -56,5 +63,5 @@ class OpenAI(ToolProvider):
         if max_tokens:
             params["max_tokens"] = max_tokens
 
-        completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
+        completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, None)
