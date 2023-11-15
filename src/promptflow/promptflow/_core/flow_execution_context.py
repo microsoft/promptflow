@@ -98,6 +98,8 @@ class FlowExecutionContext(ThreadLocalSingleton):
             return result
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
+            if not traces:
+                traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:

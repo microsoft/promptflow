@@ -331,8 +331,6 @@ class FlowExecutor:
         storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
-            ToolInvoker.activate(DefaultToolInvoker())
-
             # Will generate node run in context
             context = FlowExecutionContext(
                 name=flow.name,
