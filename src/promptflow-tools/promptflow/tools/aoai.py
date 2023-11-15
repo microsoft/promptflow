@@ -55,6 +55,7 @@ class AzureOpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
         stream = to_bool(stream)
+        print("test")
         response = openai.Completion.create(
             prompt=prompt,
             engine=deployment_name,
