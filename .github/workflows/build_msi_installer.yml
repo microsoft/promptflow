@@ -93,8 +93,10 @@ jobs:
           foreach ($msi_file in $msi_files) {
           if ($env:INPUT_UPLOADASLATEST -ieq 'True') {
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "promptflow.msi" --overwrite
+            az storage blob copy start --account-name promptflowartifact --destination-container msi-installer --destination-blob "$($msi_file.Name)"--source-container msi-installer --source-blob "promptflow.msi"
           } else {
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
+            az storage blob copy start --account-name promptflowartifact --destination-container msi-installer --destination-blob "chenyin-test.msi"--source-container msi-installer --source-blob "$($msi_file.Name)"
           }
           }
         shell: pwsh
