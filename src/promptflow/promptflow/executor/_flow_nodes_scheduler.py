@@ -117,7 +117,7 @@ class FlowNodesScheduler:
             context.current_node = node
             if inspect.iscoroutinefunction(f):
                 # TODO: Run async functions in flow level event loop
-                result = asyncio.run(context.invoke_tool_async(f, kwargs=kwargs))
+                result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
             else:
                 result = f(**kwargs)
             context.current_node = None
