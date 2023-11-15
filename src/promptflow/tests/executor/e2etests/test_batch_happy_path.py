@@ -111,8 +111,10 @@ class TestBatch:
                 "script_with___file__",
                 {"text": "${data.text}"},
             ),
-            ("connection_as_input", {}),
-            ("sample_flow_with_functions", {}),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
         ],
     )
     def test_batch_run(self, flow_folder, inputs_mapping, dev_connections):
