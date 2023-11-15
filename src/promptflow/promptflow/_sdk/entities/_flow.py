@@ -85,19 +85,20 @@ class FlowContext:
                         self._connection_objs[name] = conn
 
     @classmethod
-    def _get_connection_obj_name(cls, connection):
+    def _get_connection_obj_name(cls, connection: _Connection):
         # create a unique connection name for connection obj
-        connection_name = f"connection_{id(connection)}"
+        # will generate same name if connection has same content
+        connection_dict = connection._to_dict()
+        connection_name = f"connection_{hash(json.dumps(connection_dict, sort_keys=True))}"
         return connection_name
 
     def __hash__(self):
+        self._resolve_connections()
         result = hash(self.variant)
         result ^= hash(json.dumps(self.connections, sort_keys=True))
-        for obj in self._connection_objs.values():
-            # connection obj has to be the same object
-            result ^= hash(id(obj))
         result ^= hash(json.dumps(self.overrides, sort_keys=True))
         # did not hash env vars since they resolve in execution time
+        result ^= hash(self.streaming)
         return result
 
 
