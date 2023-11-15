@@ -1,0 +1,10 @@
+$schema: https://azuremlschemas.azureedge.net/latest/flow.schema.json
+name: template_eval_flow
+display_name: Template Eval Flow
+type: evaluate
+path: ./flow.dag.yaml
+description: Template Evaluation Flow
+properties:
+  promptflow.stage: prod
+  promptflow.section: template
+  promptflow.batch_inputs: samples.json
