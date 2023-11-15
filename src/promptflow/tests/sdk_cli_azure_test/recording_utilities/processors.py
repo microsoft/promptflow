@@ -14,6 +14,7 @@ from .utils import (
     is_json_payload_response,
     sanitize_azure_workspace_triad,
     sanitize_upload_hash,
+    sanitize_username,
 )
 
 
@@ -145,14 +146,17 @@ class StorageProcessor(RecordingProcessor):
 
     def process_request(self, request: Request) -> Request:
         request.uri = sanitize_upload_hash(request.uri)
+        request.uri = sanitize_username(request.uri)
         if is_json_payload_request(request) and request.body is not None:
             body = request.body.decode("utf-8")
             body = sanitize_upload_hash(body)
+            body = sanitize_username(body)
             request.body = body.encode("utf-8")
         return request
 
     def process_response(self, response: Dict) -> Dict:
         if is_json_payload_response(response):
+            response["body"]["string"] = sanitize_username(response["body"]["string"])
             body = json.loads(response["body"]["string"])
             if isinstance(body, dict):
                 self._sanitize_list_secrets_response(body)
