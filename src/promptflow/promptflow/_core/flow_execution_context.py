@@ -150,12 +150,12 @@ class FlowExecutionContext(ThreadLocalSingleton):
             self._run_tracker.persist_node_run(run_info)
 
     async def _invoke_tool_async_inner(self, node: Node, f: Callable, kwargs):
+        module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         try:
             return await f(**kwargs)
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.
-            module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
             if module is not None:
                 e.module = module
             raise e
@@ -163,9 +163,10 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # Otherwise, we assume the error comes from user's tool.
             # For these cases, raise ToolExecutionError, which is classified as UserError
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
-            raise ToolExecutionError(node_name=node.name, module=f.__module__) from e
+            raise ToolExecutionError(node_name=node.name, module=module) from e
 
     def _invoke_tool_with_timer(self, node: Node, f: Callable, kwargs):
+        module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
         node_name = node.name
         try:
             logging_name = node_name
@@ -185,7 +186,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         except PromptflowException as e:
             # All the exceptions from built-in tools are PromptflowException.
             # For these cases, raise the exception directly.
-            module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
             if module is not None:
                 e.module = module
             raise e
@@ -193,7 +193,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # Otherwise, we assume the error comes from user's tool.
             # For these cases, raise ToolExecutionError, which is classified as UserError
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
-            raise ToolExecutionError(node_name=node_name, module=f.__module__) from e
+            raise ToolExecutionError(node_name=node_name, module=module) from e
 
     def bypass_node(self, node: Node, outputs=None):
         """Update teh bypassed node run info."""
