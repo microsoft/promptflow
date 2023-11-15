@@ -17,6 +17,7 @@ if __name__ == "__main__":
         default="all",
     )
     parser.add_argument("-n", help="Pytest number of process to run the tests", default="auto")
+    parser.add_argument("-j", help="Use Junit Report", default="true")
     parser.add_argument(
         "--model-name",
         help="The model file name to run the tests",
@@ -43,6 +44,7 @@ if __name__ == "__main__":
     print("Args.l: " + str(args.l))
     print("Args.m: " + str(args.m))
     print("Args.n: " + str(args.n))
+    print("Args.n: " + str(args.j))
     print("Args.model-name: " + str(args.model_name))
     print("Args.timeout: " + str(args.timeout))
     print("Args.coverage-config: " + str(args.coverage_config))
@@ -54,7 +56,11 @@ if __name__ == "__main__":
     run_command(["pip", "list"])
     run_command(["pip", "show", "promptflow", "promptflow-sdk"])
 
-    pytest_command = ["pytest", "--junit-xml=test-results.xml"]
+    pytest_command = ["pytest"]
+    if (args.j == "true"):
+        pytest_command += ["--junit-xml=test-results.xml"]
+    else:
+        pytest_command += ["--nunit-xml=test-results.xml"]
     pytest_command += test_paths_list
     if args.coverage_config:
         if args.p:
