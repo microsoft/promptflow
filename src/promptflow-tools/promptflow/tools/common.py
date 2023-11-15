@@ -3,7 +3,6 @@ import json
 import re
 import sys
 import time
-from typing import List
 
 from jinja2 import Template
 from openai import APIError, RateLimitError, APIConnectionError
