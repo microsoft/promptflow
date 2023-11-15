@@ -196,16 +196,13 @@ class TestBatch:
         assert openai_metrics["total_tokens"] > 0
 
     def test_batch_with_default_input(self):
-        # Assert for single node run.
         default_input_value = "input value from default"
-        yaml_file = get_yaml_file("default_input")
-        executor = FlowExecutor.create(yaml_file, {})
+        inputs_mapping = {"text": "${data.text}"}
+        batch_result = submit_batch_run("default_input", inputs_mapping)
 
-        # Assert for bulk run.
-        bulk_result = executor.exec_bulk([{}])
-        assert bulk_result.line_results[0].run_info.status == Status.Completed
-        assert bulk_result.line_results[0].output["output"] == default_input_value
-        bulk_aggregate_node = bulk_result.aggr_results.node_run_infos["aggregate_node"]
+        assert batch_result.line_results[0].run_info.status == Status.Completed
+        assert batch_result.line_results[0].output["output"] == default_input_value
+        bulk_aggregate_node = batch_result.aggr_results.node_run_infos["aggregate_node"]
         assert bulk_aggregate_node.status == Status.Completed
         assert bulk_aggregate_node.output == [default_input_value]
 
