@@ -29,7 +29,6 @@ from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
     collect_lines,
     get_aggregation_inputs_properties,
-    handle_line_failures,
 )
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
@@ -46,7 +45,7 @@ from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_FLOW,
     FlowNodesScheduler,
 )
-from promptflow.executor._result import AggregationResult, BatchResult, LineResult
+from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
@@ -700,56 +699,6 @@ class FlowExecutor:
                 for result in line_results
                 for node_run_info in result.node_run_infos.values()
             }
-        )
-
-    def exec_bulk(
-        self,
-        inputs: List[Dict[str, Any]],
-        run_id: str = None,
-        validate_inputs: bool = True,
-        raise_on_line_failure: bool = False,
-        node_concurrency=DEFAULT_CONCURRENCY_BULK,
-        output_dir: Path = None,
-    ) -> BatchResult:
-        """The entry points for bulk run execution
-
-        :param inputs: A list of dictionaries containing input data.
-        :type inputs: List[Dict[str, Any]]
-        :param run_id: Run ID.
-        :type run_id: Optional[str]
-        :param validate_inputs: Whether to validate the inputs. Defaults to True.
-        :type validate_inputs: Optional[bool]
-        :param raise_on_line_failure: Whether to raise an exception on line failure. Defaults to False. \
-        [To be deprecated]
-        :type raise_on_line_failure: Optional[bool]
-        :param node_concurrency: The node concurrency. Defaults to DEFAULT_CONCURRENCY_BULK.
-        :type node_concurrency: Optional[int]
-        :return: The bulk result.
-        :rtype: ~promptflow.executor.flow_executor.BatchResult
-        """
-
-        self._node_concurrency = node_concurrency
-        # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
-        inputs = [apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in inputs]
-        run_id = run_id or str(uuid.uuid4())
-        with self._run_tracker.node_log_manager:
-            OperationContext.get_instance().run_mode = RunMode.Batch.name
-            line_results = self._exec_batch_with_process_pool(
-                inputs, run_id, output_dir, validate_inputs=validate_inputs
-            )
-            self._add_line_results(line_results)  # For bulk run, currently we need to add line results to run_tracker
-            handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-            aggr_results = self._exec_aggregation_with_bulk_results(inputs, line_results, run_id)
-        outputs = [
-            {LINE_NUMBER_KEY: r.run_info.index, **r.output}
-            for r in line_results
-            if r.run_info.status == Status.Completed
-        ]
-        return BatchResult(
-            outputs=outputs,
-            metrics=aggr_results.metrics,
-            line_results=line_results,
-            aggr_results=aggr_results,
         )
 
     @staticmethod
