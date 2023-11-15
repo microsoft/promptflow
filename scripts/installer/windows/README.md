@@ -2,11 +2,11 @@
 
 This document provides instructions on creating the MSI installer.
 
-## Building with Github Actions
+## Option1: Building with Github Actions
 Trigger the [workflow](https://github.com/microsoft/promptflow/actions/workflows/build_msi_installer.yml) manually.
 
 
-## Local Building
+## Option2: Local Building
 ### Prerequisites
 
 1. Turn on the '.NET Framework 3.5' Windows Feature (required for WIX Toolset).
