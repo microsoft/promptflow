@@ -80,24 +80,8 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
 @pytest.fixture()
 def remote_workspace_resource_id(subscription_id: str, resource_group_name: str, workspace_name: str) -> str:
     return "azureml:" + RESOURCE_ID_FORMAT.format(
-        "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
+        subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name
     )
-
-
-@pytest.fixture
-def remote_client_int() -> PFClient:
-    if not is_live():
-        yield get_pf_client_for_playback()
-    else:
-        # enable telemetry for non-playback CI
-        with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
-            client = MLClient(
-                credential=get_cred(),
-                subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-                resource_group_name="promptflow",
-                workspace_name="promptflow-int",
-            )
-            yield PFClient(ml_client=client)
 
 
 @pytest.fixture()
