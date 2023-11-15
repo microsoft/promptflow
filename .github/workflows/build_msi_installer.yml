@@ -78,8 +78,10 @@ jobs:
           name: msi-artifact
           path: scripts/installer/windows/out/*.msi
 
-      - name: Install Azure CLI
-        uses: azure/setup-azure-cli@v1
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Upload to Azure Storage
         env:
