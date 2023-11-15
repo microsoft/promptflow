@@ -35,6 +35,13 @@ class ConnectionCategory(str, Enum):
     CustomKeys = "CustomKeys"
 
 
+def get_case_insensitive_key(d, key, default=None):
+    for k, v in d.items():
+        if k.lower() == key.lower():
+            return v
+    return default
+
+
 class ArmConnectionOperations(_ScopeDependentOperations):
     """ArmConnectionOperations.
 
@@ -59,6 +66,17 @@ class ArmConnectionOperations(_ScopeDependentOperations):
 
     def get(self, name, **kwargs):
         connection_dict = self.build_connection_dict(name)
+        return _Connection._from_execution_connection_dict(name=name, data=connection_dict)
+
+    @classmethod
+    def _direct_get(cls, name, subscription_id, resource_group_name, workspace_name, credential):
+        """
+        This method is added for local pf_client with workspace provider to ensure we only require limited
+        permission(workspace/list secrets). As create azure pf_client requires workspace read permission.
+        """
+        connection_dict = cls._build_connection_dict(
+            name, subscription_id, resource_group_name, workspace_name, credential
+        )
         return _Connection._from_execution_connection_dict(name=name, data=connection_dict)
 
     @classmethod
@@ -96,13 +114,19 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         return data
 
     @classmethod
-    def validate_and_fallback_connection_type(cls, name, type_name, category):
+    def validate_and_fallback_connection_type(cls, name, type_name, category, metadata):
         if type_name:
             return type_name
         if category == ConnectionCategory.AzureOpenAI:
             return "AzureOpenAI"
         if category == ConnectionCategory.CognitiveSearch:
             return "CognitiveSearch"
+        if category == ConnectionCategory.CognitiveService:
+            kind = get_case_insensitive_key(metadata, "Kind")
+            if kind == "Content Safety":
+                return "AzureContentSafety"
+            if kind == "Form Recognizer":
+                return "FormRecognizer"
         raise UnknownConnectionType(
             message_format="Connection {name} is not recognized in PromptFlow, "
             "please make sure the connection is created in PromptFlow.",
@@ -139,19 +163,13 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         #
         # Use Metadata property bag for ApiType, ApiVersion, Kind and other metadata fields
         properties = obj.properties
-        type_name = properties.metadata.get(f"{FLOW_META_PREFIX}connection_type")
-        type_name = cls.validate_and_fallback_connection_type(name, type_name, properties.category)
-        module = properties.metadata.get(f"{FLOW_META_PREFIX}module", "promptflow.connections")
+        type_name = get_case_insensitive_key(properties.metadata, f"{FLOW_META_PREFIX}connection_type")
+        type_name = cls.validate_and_fallback_connection_type(name, type_name, properties.category, properties.metadata)
+        module = get_case_insensitive_key(properties.metadata, f"{FLOW_META_PREFIX}module", "promptflow.connections")
         # Note: Category is connectionType in MT, but type name should be class name, which is flowValueType in MT.
         # Handle old connections here, see details: https://github.com/Azure/promptflow/tree/main/connections
         type_name = f"{type_name}Connection" if not type_name.endswith("Connection") else type_name
         meta = {"type": type_name, "module": module}
-
-        def get_case_insensitive_key(d, key):
-            for k, v in d.items():
-                if k.lower() == key.lower():
-                    return v
-            return None
 
         if properties.category == ConnectionCategory.AzureOpenAI:
             value = {
@@ -192,19 +210,33 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         # Note: Filter empty values out to ensure default values can be picked when init class object.
         return {**meta, "value": {k: v for k, v in value.items() if v}}
 
-    def build_connection_dict(self, name) -> dict:
+    def build_connection_dict(self, name):
+        return self._build_connection_dict(
+            name,
+            self._operation_scope.subscription_id,
+            self._operation_scope.resource_group_name,
+            self._operation_scope.workspace_name,
+            self._credential,
+        )
+
+    @classmethod
+    def _build_connection_dict(cls, name, subscription_id, resource_group_name, workspace_name, credential) -> dict:
         """
         :type name: str
+        :type subscription_id: str
+        :type resource_group_name: str
+        :type workspace_name: str
+        :type credential: azure.identity.TokenCredential
         """
         url = GET_CONNECTION_URL.format(
-            sub=self._operation_scope.subscription_id,
-            rg=self._operation_scope.resource_group_name,
-            ws=self._operation_scope.workspace_name,
+            sub=subscription_id,
+            rg=resource_group_name,
+            ws=workspace_name,
             name=name,
         )
         try:
-            rest_obj: WorkspaceConnectionPropertiesV2BasicResource = self.open_url(
-                self._credential.get_token("https://management.azure.com/.default").token,
+            rest_obj: WorkspaceConnectionPropertiesV2BasicResource = cls.open_url(
+                credential.get_token("https://management.azure.com/.default").token,
                 url=url,
                 action="listsecrets",
                 method="POST",
@@ -213,12 +245,12 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         except AccessDeniedError:
             auth_error_message = (
                 "Access denied to list workspace secret due to invalid authentication. "
-                "Please ensure you have gain RBAC role 'AzureML Data Scientist' for current workspace, "
-                "and wait for a few minutes to make sure the new role takes effect. "
+                "Please ensure you have gain RBAC role 'Azure Machine Learning Workspace Connection Secrets Reader' "
+                "for current workspace, and wait for a few minutes to make sure the new role takes effect. "
             )
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         try:
-            return self.build_connection_dict_from_rest_object(name, rest_obj)
+            return cls.build_connection_dict_from_rest_object(name, rest_obj)
         except Exception as e:
             raise BuildConnectionError(
                 message_format=f"Build connection dict for connection {{name}} failed with {e}.",

@@ -19,7 +19,9 @@ FLOW_RESULT_KEYS = ["category", "evidence"]
 _client = PFClient()
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowTest:
@@ -120,6 +122,9 @@ class TestFlowTest:
 
     @pytest.mark.skip("TODO this test case failed in windows and Mac")
     def test_pf_test_with_additional_includes(self, caplog):
+        from promptflow import VERSION
+
+        print(VERSION)
         with caplog.at_level(level=logging.WARNING, logger=LOGGER_NAME):
             inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
             result = _client.test(flow=f"{FLOWS_DIR}/web_classification_with_additional_include", inputs=inputs)

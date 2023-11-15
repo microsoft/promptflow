@@ -86,7 +86,7 @@ hello_world/
 ![auto-list-tool-in-extension](../../media/how-to-guides/develop-a-tool/auto-list-tool-in-extension.png)
 
 
-## FAQ
+## FAQs
 ### Why is my custom tool not showing up in the UI?
 Confirm that the tool YAML files are included in your custom tool package. You can add the YAML files to [MANIFEST.in](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/MANIFEST.in) and include the package data in [setup.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/setup.py).
 Alternatively, you can test your tool package using the script below to ensure that you've packaged your tool YAML files and configured the package tool entry point correctly.
@@ -130,5 +130,10 @@ Alternatively, you can test your tool package using the script below to ensure t
 * If you encounter a `403 Forbidden Error`, it's likely due to a naming conflict with an existing package. You will need to choose a different name. Package names must be unique on PyPI to avoid confusion and conflicts among users. Before creating a new package, it's recommended to search PyPI (https://pypi.org/) to verify that your chosen name is not already taken. If the name you want is unavailable, consider selecting an alternative name or a variation that clearly differentiates your package from the existing one.
 
 ## Advanced features
-[Customize your tool icon](add-a-tool-icon.md)  
-[Add category and tags for tool](add-category-and-tags-for-tool.md)  
+- [Add a Tool Icon](add-a-tool-icon.md)  
+- [Add Category and Tags for Tool](add-category-and-tags-for-tool.md)  
+- [Create and Use Your Own Custom Strong Type Connection](create-your-own-custom-strong-type-connection.md)  
+- [Customize an LLM Tool](customize_an_llm_tool.md)  
+- [Use File Path as Tool Input](use-file-path-as-tool-input.md)  
+- [Create a Dynamic List Tool Input](create-dynamic-list-tool-input.md)  
+- [Create Cascading Tool Inputs](create-cascading-tool-inputs.md)

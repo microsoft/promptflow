@@ -1,12 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import json
+import uuid
 from pathlib import Path
 
 import pytest
 
-from promptflow._cli._pf_azure._flow import create_flow, list_flows
-from promptflow.azure._load_functions import load_flow
+from promptflow._sdk._constants import FlowType
+from promptflow._sdk._errors import FlowOperationError
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -15,70 +17,52 @@ flow_test_dir = tests_root_dir / "test_configs/flows"
 data_dir = tests_root_dir / "test_configs/datas"
 
 
-@pytest.fixture
-def client(remote_client):
-    return remote_client
-
-
 # TODO: enable the following tests after test CI can access test workspace
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
-@pytest.mark.skip(reason="This test is not ready yet.")
+@pytest.mark.usefixtures(
+    "mock_set_headers_with_user_aml_token",
+    "single_worker_thread_pool",
+    "vcr_recording",
+)
+@pytest.mark.skip(reason="Enable this after recording is ready for flow operations.")
 class TestFlow:
-    def test_flow_no_variants_remote_file(self, client, runtime):
-        local_file = flow_test_dir / "meta_files/remote_flow_short_path.meta.yaml"
-
-        flow = load_flow(source=local_file)
-
-        run = flow.submit_bulk_run(
-            data=data_dir / "classificationAccuracy.csv",
-            connections={},
-            runtime=runtime,
+    def test_create_flow(self, remote_client):
+        flow_source = flow_test_dir / "simple_fetch_url/"
+        flow_display_name = f"{flow_source.name}_{uuid.uuid4()}"
+        description = "test flow"
+        tags = {"owner": "sdk"}
+        result = remote_client.flows.create_or_update(
+            flow=flow_source, display_name=flow_display_name, type=FlowType.STANDARD, description=description, tags=tags
         )
-        print(run)
+        remote_flow_dag_path = result.path
 
-    def test_flow_without_variants(self, client, runtime):
-        local_file = flow_test_dir / "classification_accuracy_evaluation"
+        # make sure the flow is created successfully
+        assert remote_client.flows._storage_client._check_file_share_file_exist(remote_flow_dag_path) is True
+        assert result.display_name == flow_display_name
+        assert result.type == FlowType.STANDARD
+        assert result.tags == tags
+        assert result.path.endswith(f"/promptflow/{flow_display_name}/flow.dag.yaml")
 
-        flow = load_flow(source=local_file)
+    def test_flow_test_with_config(self, remote_workspace_resource_id):
+        from promptflow import PFClient
 
-        run = flow.submit_bulk_run(
-            data=data_dir / "classificationAccuracy.csv",
-            connections={},
-            runtime=runtime,
-            use_flow_snapshot_to_submit=True,
-        )
-        print(run)
+        client = PFClient(config={"connection.provider": remote_workspace_resource_id})
+        output = client.test(flow=flow_test_dir / "web_classification")
+        assert output.keys() == {"category", "evidence"}
 
-    def test_flow(self, client, runtime):
-        local_file = flow_test_dir / "web_classification/"
+    def test_list_flows(self, remote_client):
+        flows = remote_client.flows.list(max_results=3)
+        for flow in flows:
+            print(json.dumps(flow._to_dict(), indent=4))
+        assert len(flows) == 3
 
-        flow = load_flow(source=local_file)
+    def test_list_flows_invalid_cases(self, remote_client):
+        with pytest.raises(FlowOperationError, match="'max_results' must be a positive integer"):
+            remote_client.flows.list(max_results=0)
 
-        run = flow.submit_bulk_run(
-            data=flow_test_dir / "webClassification20.csv",
-            connections={},
-            runtime=runtime,
-            tuning_node_name="summarize_text_content",
-            use_flow_snapshot_to_submit=False,
-        )
+        with pytest.raises(FlowOperationError, match="'flow_type' must be one of"):
+            remote_client.flows.list(flow_type="unknown")
 
-        print(run)
-
-    def test_crud_flow(self, client):
-        flow_source = flow_test_dir / "web_classification/"
-        result = create_flow(
-            source=flow_source,
-            subscription_id=client.subscription_id,
-            resource_group=client.resource_group_name,
-            workspace_name=client.workspace_name,
-        )
-        print(result.as_dict())
-
-    def test_list_flows(self, client):
-        flows = list_flows(
-            subscription_id=client.subscription_id,
-            resource_group=client.resource_group_name,
-            workspace_name=client.workspace_name,
-        )
-        print(flows)
+        with pytest.raises(FlowOperationError, match="Invalid list view type"):
+            remote_client.flows.list(list_view_type="invalid")

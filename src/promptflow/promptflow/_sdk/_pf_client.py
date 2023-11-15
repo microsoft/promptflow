@@ -7,8 +7,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-import pandas as pd
-
 from ._configuration import Configuration
 from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._logger_factory import LoggerFactory
@@ -38,7 +36,7 @@ class PFClient:
         self._config = kwargs.get("config", None) or {}
         # Lazy init to avoid azure credential requires too early
         self._connections = None
-        self._flows = FlowOperations()
+        self._flows = FlowOperations(client=self)
         self._tools = ToolOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
@@ -139,7 +137,7 @@ class PFClient:
 
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
-    ) -> pd.DataFrame:
+    ) -> "DataFrame":
         """Get the details from the run including inputs and outputs.
 
         .. note::
@@ -181,13 +179,17 @@ class PFClient:
         """Run operations that can manage runs."""
         return self._runs
 
+    def _ensure_connection_provider(self) -> str:
+        if not self._connection_provider:
+            # Get a copy with config override instead of the config instance
+            self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
+        return self._connection_provider
+
     @property
     def connections(self) -> ConnectionOperations:
         """Connection operations that can manage connections."""
         if not self._connections:
-            if not self._connection_provider:
-                # Get a copy with config override instead of the config instance
-                self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
+            self._ensure_connection_provider()
             if self._connection_provider == ConnectionProvider.LOCAL.value:
                 logger.debug("Using local connection operations.")
                 self._connections = ConnectionOperations()

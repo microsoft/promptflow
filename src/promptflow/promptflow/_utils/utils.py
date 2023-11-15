@@ -19,6 +19,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
+from promptflow._constants import DEFAULT_ENCODING
+
 T = TypeVar("T")
 
 
@@ -44,9 +46,24 @@ class DateTimeEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
+def is_json_serializable(value: Any) -> bool:
+    try:
+        json.dumps(value)
+        return True
+    except TypeError:
+        return False
+
+
 def load_json(file_path: Union[str, Path]) -> dict:
     with open(file_path, "r") as f:
         return json.load(f)
+
+
+def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
+    with open(file_path, "w", encoding=DEFAULT_ENCODING) as jsonl_file:
+        for data in list_data:
+            json.dump(data, jsonl_file, ensure_ascii=False)
+            jsonl_file.write("\n")
 
 
 def transpose(values: List[Dict[str, Any]], keys: Optional[List] = None) -> Dict[str, List]:
@@ -125,7 +142,9 @@ def log_progress(
     total_count: int,
     formatter="{count} / {total_count} finished.",
 ):
-    log_interval = max(int(total_count / 10), 1)
+    # Calculate log_interval to determine when to log progress.
+    # If total_count is less than 100, log every 10% of total_count; otherwise, log every 10 lines.
+    log_interval = min(10, max(int(total_count / 10), 1))
     if count > 0 and (count % log_interval == 0 or count == total_count):
         average_execution_time = round((datetime.now().timestamp() - run_start_time.timestamp()) / count, 2)
         estimated_execution_time = round(average_execution_time * (total_count - count), 2)
@@ -204,3 +223,12 @@ def environment_variable_overwrite(key, val):
             os.environ[key] = backup_value
         else:
             os.environ.pop(key)
+
+
+def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path]) -> Path:
+    """Resolve directory to absolute path with base_dir as root"""
+    path = sub_dir if isinstance(sub_dir, Path) else Path(sub_dir)
+    if not path.is_absolute():
+        base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
+        path = base_dir / sub_dir
+    return path

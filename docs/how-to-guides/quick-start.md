@@ -36,7 +36,7 @@ pf -v
 
 ## Understand what's a flow
 
-A flow, represented as a YAML file, is a DAG of functions, which is connected via input/output dependencies, and executed based on the topology by Prompt flow executor. See [Flows](../../concepts/concept-flows.md) for more details.
+A flow, represented as a YAML file, is a DAG of functions, which is connected via input/output dependencies, and executed based on the topology by prompt flow executor. See [Flows](../../concepts/concept-flows.md) for more details.
 
 ### Get the flow sample
 
@@ -111,6 +111,11 @@ inputs:
 See more details of this topic in [Develop a flow](./develop-a-flow/index.md).
 
 ### Create necessary connections
+
+:::{note}
+If you are using `WSL` or other OS without default keyring storage backend, you may encounter `StoreConnectionEncryptionKeyError`, please refer to [FAQ](./faq.md#connection-creation-failed-with-storeconnectionencryptionkeyerror) for the solutions.
+:::
+
 
 The [`connection`](../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
 
@@ -251,19 +256,19 @@ The return value of `test` function is the flow/node outputs.
 ```python
 from promptflow import PFClient
 
-pf_client = PFClient()
+pf = PFClient()
 
 flow_path = "web-classification"  # "web-classification" is the directory name
 
 # Test flow
 flow_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}  # The inputs of the flow.
-flow_result = pf_client.test(flow=flow_path, inputs=inputs)
+flow_result = pf.test(flow=flow_path, inputs=inputs)
 print(f"Flow outputs: {flow_result}")
 
 # Test node in the flow
 node_name = "fetch_text_content_from_url"  # The node name in the flow.
 node_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"}  # The inputs of the node.
-node_result = pf_client.test(flow=flow_path, inputs=node_inputs, node=node_name)
+node_result = pf.test(flow=flow_path, inputs=node_inputs, node=node_name)
 print(f"Node outputs: {node_result}")
 ```
 
@@ -297,5 +302,5 @@ Learn more on how to:
 - [Prompt flow in Azure AI](../cloud/azureai/quick-start.md): run and evaluate flow in Azure AI where you can collaborate with team better.
 
 And you can also check our [examples](https://github.com/microsoft/promptflow/tree/main/examples), especially:
-- [Getting Started with Prompt Flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb): the notebook covering the python sdk experience for sample introduced in this doc.
+- [Getting started with prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb): the notebook covering the python sdk experience for sample introduced in this doc.
 - [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.

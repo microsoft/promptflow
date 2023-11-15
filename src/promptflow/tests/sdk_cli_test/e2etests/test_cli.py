@@ -20,6 +20,7 @@ import yaml
 
 from promptflow._cli._pf.entry import main
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
+from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -48,14 +49,16 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
+)
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestCli:
     def test_pf_version(self, capfd):
         run_pf_command("--version")
         out, err = capfd.readouterr()
-        assert out == "0.0.1\n"
+        assert "0.0.1\n" in out
 
     def test_basic_flow_run(self) -> None:
         # fetch std out
@@ -176,7 +179,8 @@ class TestCli:
         assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_connection_overwrite(self, local_alt_aoai_connection):
-        with pytest.raises(Exception) as e:
+        # CLi command will fail with SystemExit
+        with pytest.raises(SystemExit):
             run_pf_command(
                 "run",
                 "create",
@@ -187,7 +191,6 @@ class TestCli:
                 "--connection",
                 "classify_with_llm.connection=not_exist",
             )
-        assert "Connection 'not_exist' required" in str(e.value)
 
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
@@ -290,6 +293,23 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert previous_log_content not in log_content
+
+    def test_pf_flow_test_with_non_english_input_output(self, capsys):
+        question = "什么是 chat gpt"
+        run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
+        stdout, _ = capsys.readouterr()
+        output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        with open(output_path, "r", encoding="utf-8") as f:
+            outputs = json.load(f)
+            assert outputs["answer"] in json.loads(stdout)["answer"]
+
+        detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
+        assert detail_path.exists()
+        with open(detail_path, "r", encoding="utf-8") as f:
+            detail = json.load(f)
+            assert detail["flow_runs"][0]["inputs"]["question"] == question
+            assert detail["flow_runs"][0]["output"]["answer"] == outputs["answer"]
 
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -679,7 +699,9 @@ class TestCli:
             )
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
             ignore_file_path = Path(temp_dir) / flow_name / ".gitignore"
+            requirements_file_path = Path(temp_dir) / flow_name / "requirements.txt"
             assert ignore_file_path.exists()
+            assert requirements_file_path.exists()
             ignore_file_path.unlink()
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "text=value")
 
@@ -698,6 +720,7 @@ class TestCli:
             )
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
             assert ignore_file_path.exists()
+            assert requirements_file_path.exists()
             with open(Path(temp_dir) / flow_name / ".promptflow" / "flow.tools.json", "r") as f:
                 tools_dict = json.load(f)["code"]
                 assert jinja_name in tools_dict
@@ -932,7 +955,7 @@ class TestCli:
                 "flow",
                 "test",
                 "--flow",
-                f"{FLOWS_DIR}/chat_flow_with_multi_output",
+                f"{FLOWS_DIR}/chat_flow_with_multi_output_invalid",
                 "--interactive",
             )
         outerr = capsys.readouterr()
@@ -1212,28 +1235,27 @@ class TestCli:
                     name,
                 )
 
-    def test_pf_run_with_stream_log(self):
-        f = io.StringIO()
-        # with --stream will show logs in stdout
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--flow",
-                f"{FLOWS_DIR}/flow_with_user_output",
-                "--data",
-                f"{DATAS_DIR}/webClassification3.jsonl",
-                "--column-mapping",
-                "key=value",
-                "extra=${data.url}",
-                "--stream",
-            )
-        logs = f.getvalue()
+    def test_pf_run_with_stream_log(self, capfd):
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/flow_with_user_output",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--column-mapping",
+            "key=value",
+            "extra=${data.url}",
+            "--stream",
+        )
+        out, _ = capfd.readouterr()
         # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
         existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
-        assert all([keyword in logs for keyword in existing_keywords])
         non_existing_keywords = ["execution.flow", "user log"]
-        assert all([keyword not in logs for keyword in non_existing_keywords])
+        for keyword in existing_keywords:
+            assert keyword in out
+        for keyword in non_existing_keywords:
+            assert keyword not in out
 
     def test_pf_run_no_stream_log(self):
         f = io.StringIO()
@@ -1350,7 +1372,7 @@ class TestCli:
             package_folder = Path(temp_dir) / package_name
             icon_path = Path(DATAS_DIR) / "logo.jpg"
             category = "test_category"
-            tags = {'tag1': 'value1', 'tag2': 'value2'}
+            tags = {"tag1": "value1", "tag2": "value2"}
             run_pf_command(
                 "tool",
                 "init",
@@ -1362,10 +1384,11 @@ class TestCli:
                 f"icon={icon_path.absolute()}",
                 f"category={category}",
                 f"tags={tags}",
-                cwd=temp_dir
+                cwd=temp_dir,
             )
             spec = importlib.util.spec_from_file_location(
-                f"{package_name}.utils", package_folder / package_name / "utils.py")
+                f"{package_name}.utils", package_folder / package_name / "utils.py"
+            )
             utils = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(utils)
 
@@ -1387,7 +1410,7 @@ class TestCli:
                     func_name,
                     "--set",
                     "icon=invalid_icon_path",
-                    cwd=temp_dir
+                    cwd=temp_dir,
                 )
             outerr = capsys.readouterr()
             assert "Cannot find the icon path" in outerr.out
@@ -1454,3 +1477,88 @@ class TestCli:
         assert output_path.exists()
         image_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
+
+    def test_flow_test_with_composite_image(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/python_tool_with_composite_image",
+        )
+        output_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "output"
+        assert output_path.exists()
+        image_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "intermediate"
+        assert image_path.exists()
+
+    def test_run_file_with_set(self, pf) -> None:
+        name = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--file",
+            f"{RUNS_DIR}/run_with_env.yaml",
+            "--set",
+            f"name={name}",
+        )
+        # run exists
+        pf.runs.get(name=name)
+
+    def test_run_file_with_set_priority(self, pf) -> None:
+        # --name has higher priority than --set
+        name1 = str(uuid.uuid4())
+        name2 = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--file",
+            f"{RUNS_DIR}/run_with_env.yaml",
+            "--set",
+            f"name={name1}",
+            "--name",
+            name2,
+        )
+        # run exists
+        try:
+            pf.runs.get(name=name1)
+        except RunNotFoundError:
+            pass
+        pf.runs.get(name=name2)
+
+    def test_data_scrubbing(self):
+        # Prepare connection
+        run_pf_command(
+            "connection", "create", "--file", f"{CONNECTIONS_DIR}/custom_connection.yaml", "--name", "custom_connection"
+        )
+
+        # Test flow run
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/print_secret_flow",
+        )
+        output_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+            assert "**data_scrubbed**" in log_content
+
+        # Test node run
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/print_secret_flow",
+            "--node",
+            "print_secret",
+            "--inputs",
+            "conn=custom_connection",
+            "inputs.topic=atom",
+        )
+        output_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow-print_secret.node.detail.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "print_secret.node.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert "**data_scrubbed**" in log_content

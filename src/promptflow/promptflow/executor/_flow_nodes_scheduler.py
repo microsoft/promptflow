@@ -2,7 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import contextvars
+import inspect
 from concurrent import futures
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict, List, Tuple
@@ -65,6 +67,8 @@ class FlowNodesScheduler:
                         unfinished_future.cancel()
                     # Even we raise exception here, still need to wait all running jobs finish to exit.
                     raise e
+        for node in self._dag_manager.bypassed_nodes:
+            self._dag_manager.completed_nodes_outputs[node] = None
         return self._dag_manager.completed_nodes_outputs, self._dag_manager.bypassed_nodes
 
     def _execute_nodes(self, executor: ThreadPoolExecutor):
@@ -108,10 +112,14 @@ class FlowNodesScheduler:
         context = self._context.copy()
         try:
             context.start()
-            kwargs = dag_manager.get_node_valid_inputs(node)
             f = self._tools_manager.get_tool(node.name)
+            kwargs = dag_manager.get_node_valid_inputs(node, f)
             context.current_node = node
-            result = f(**kwargs)
+            if inspect.iscoroutinefunction(f):
+                # TODO: Run async functions in flow level event loop
+                result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
+            else:
+                result = f(**kwargs)
             context.current_node = None
             return result
         finally:

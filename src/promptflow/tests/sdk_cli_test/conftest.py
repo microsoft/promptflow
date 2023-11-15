@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 from pathlib import Path
@@ -6,14 +7,18 @@ import pytest
 from pytest_mock import MockerFixture
 
 from promptflow import PFClient
+from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
 from promptflow._utils.utils import environment_variable_overwrite
 
+from .recording_utilities import RecordFileMissingException, RecordItemMissingException, RecordStorage
+
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 
@@ -68,7 +73,7 @@ _connection_setup = False
 
 
 @pytest.fixture
-def setup_local_connection(local_client):
+def setup_local_connection(local_client, azure_open_ai_connection):
     global _connection_setup
     if _connection_setup:
         return
@@ -127,3 +132,72 @@ def serving_client_llm_chat(mocker: MockerFixture):
 @pytest.fixture
 def serving_client_python_stream_tools(mocker: MockerFixture):
     return create_client_by_model("python_stream_tools", mocker)
+
+
+@pytest.fixture
+def sample_image():
+    image_path = (Path(MODEL_ROOT) / "python_tool_with_simple_image" / "logo.jpg").resolve()
+    return base64.b64encode(open(image_path, "rb").read()).decode("utf-8")
+
+
+@pytest.fixture
+def serving_client_image_python_flow(mocker: MockerFixture):
+    return create_client_by_model("python_tool_with_simple_image", mocker)
+
+
+@pytest.fixture
+def serving_client_composite_image_flow(mocker: MockerFixture):
+    return create_client_by_model("python_tool_with_composite_image", mocker)
+
+
+def mock_origin(original):
+    def mock_invoke_tool(self, func, *args, **kwargs):
+        if (
+            func.__qualname__.startswith("AzureOpenAI")
+            or func.__qualname__ == "fetch_text_content_from_url"
+            or func.__qualname__ == "my_python_tool"
+        ):
+            input_dict = {}
+            for key in kwargs:
+                input_dict[key] = kwargs[key]
+            input_dict["_args"] = args
+            input_dict["_func"] = func.__qualname__
+            # Replay mode will direct return item from record file
+            if RecordStorage.is_replaying_mode():
+                obj = RecordStorage.get_instance().get_record(input_dict)
+                return obj
+
+            # Record mode will record item to record file
+            if RecordStorage.is_recording_mode():
+                # If already recorded, use previous result
+                # If record item missing, call related functions and record result
+                try:
+                    obj = RecordStorage.get_instance().get_record(input_dict)
+                except (RecordItemMissingException, RecordFileMissingException):
+                    obj_original = original(self, func, *args, **kwargs)
+                    obj = RecordStorage.get_instance().set_record(input_dict, obj_original)
+                # More exceptions should just raise
+            else:
+                obj = original(self, func, *args, **kwargs)
+            return obj
+        return original(self, func, *args, **kwargs)
+
+    return mock_invoke_tool
+
+
+@pytest.fixture
+def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
+    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
+        RecordStorage.get_instance(file_path)
+    yield
+
+
+@pytest.fixture
+def recording_injection(mocker: MockerFixture, recording_file_override):
+    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        original_fun = FlowExecutionContext.invoke_tool
+        mocker.patch(
+            "promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun)
+        )
+    yield

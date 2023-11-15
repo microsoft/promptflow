@@ -1,0 +1,42 @@
+[
+    {
+        "expected_node_count": 3,
+        "expected_outputs":{
+            "output":{
+                "double": 2,
+                "square": ""
+            }
+        },
+        "expected_bypassed_nodes":["square"]
+    },
+    {
+        "expected_node_count": 3,
+        "expected_outputs":{
+            "output":{
+                "double": 4,
+                "square": ""
+            }
+        },
+        "expected_bypassed_nodes":["square"]
+    },
+    {
+        "expected_node_count": 3,
+        "expected_outputs":{
+            "output":{
+                "double": null,
+                "square": 9
+            }
+        },
+        "expected_bypassed_nodes":["double"]
+    },
+    {
+        "expected_node_count": 3,
+        "expected_outputs":{
+            "output":{
+                "double": null,
+                "square": 16
+            }
+        },
+        "expected_bypassed_nodes":["double"]
+    }
+]

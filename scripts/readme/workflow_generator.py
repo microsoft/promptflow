@@ -75,6 +75,19 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
                 "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
             }
         )
+    elif "flowasfunction" in workflow_name:
+        flow_as_func_template = env.get_template("flow_as_function.yml.jinja2")
+        content = flow_as_func_template.render(
+            {
+                "workflow_name": workflow_name,
+                "ci_name": "samples_notebook_ci",
+                "name": name,
+                "gh_working_dir": gh_working_dir,
+                "path_filter": path_filter,
+                "crontab": f"{schedule_minute} {schedule_hour} * * *",
+                "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
+            }
+        )
     else:
         content = template.render(
             {

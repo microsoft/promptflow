@@ -4,30 +4,31 @@
 
 import argparse
 import json
-import logging
 from typing import Callable, Dict, List, Optional, Tuple
-
-import pandas as pd
 
 from promptflow._cli._params import (
     add_param_all_results,
+    add_param_archived_only,
     add_param_columns_mapping,
     add_param_connections,
     add_param_environment_variables,
+    add_param_include_archived,
     add_param_max_results,
+    add_param_output_format,
     add_param_run_name,
     add_param_set,
     add_parser_build,
     logging_params,
 )
 from promptflow._cli._utils import (
+    _output_result_list_with_format,
     activate_action,
     exception_handler,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
     pretty_print_dataframe_as_table,
 )
-from promptflow._sdk._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, CLIListOutputFormat, get_list_view_type
+from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, get_list_view_type
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
@@ -204,35 +205,12 @@ pf run list --all-results
 # List all runs status as table:
 pf run list --output table
 """
-    add_param_archived_only = lambda parser: parser.add_argument(  # noqa: E731
-        "--archived-only",
-        action="store_true",
-        dest="archived_only",
-        default=False,
-        help="List archived runs only.",
-    )
-    add_param_include_archived = lambda parser: parser.add_argument(  # noqa: E731
-        "--include-archived",
-        action="store_true",
-        dest="include_archived",
-        default=False,
-        help="List archived runs and active runs.",
-    )
-    add_param_output = lambda parser: parser.add_argument(  # noqa: E731
-        "-o",
-        "--output",
-        dest="output",
-        type=str,
-        default=CLIListOutputFormat.JSON,
-        help="Output format, accepted values are 'json' and 'table'. Default is 'json'.",
-    )
-
     add_params = [
         add_param_max_results,
         add_param_all_results,
         add_param_archived_only,
         add_param_include_archived,
-        add_param_output,
+        add_param_output_format,
     ] + logging_params
 
     activate_action(
@@ -471,7 +449,7 @@ def list_runs(
     archived_only: bool,
     include_archived: bool,
     output,
-) -> None:
+):
     pf_client = PFClient()
     # aligned behaviour with v2 SDK, all_results will overwrite max_results
     if all_results:
@@ -481,19 +459,8 @@ def list_runs(
         list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
     json_list = [run._to_dict() for run in runs]
-    if output == CLIListOutputFormat.TABLE:
-        df = pd.DataFrame(json_list)
-        df.fillna("", inplace=True)
-        pretty_print_dataframe_as_table(df)
-    elif output == CLIListOutputFormat.JSON:
-        print(json.dumps(json_list, indent=4))
-    else:
-        logger = logging.getLogger(LOGGER_NAME)
-        warning_message = (
-            f"Unknown output format {output!r}, accepted values are 'json' and 'table';" "will print using 'json'."
-        )
-        logger.warning(warning_message)
-        print(json.dumps(json_list, indent=4))
+    _output_result_list_with_format(result_list=json_list, output_format=output)
+    return runs
 
 
 @exception_handler("Show run")
@@ -572,7 +539,6 @@ def create_run(create_func: Callable, args):
 
     params_override = params_override or []
     if file:
-        params_override = []
         for param_key, param in {
             "name": name,
             "flow": flow,
