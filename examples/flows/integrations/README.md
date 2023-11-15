@@ -6,19 +6,21 @@ This folder contains flow examples contributed by various contributors. Each flo
  
 To ensure consistency and clarity, please follow the guidelines below when creating the README.md file for your flow example. You can also refer to the [README.md](../standard/web-classification/README.md) file in the [web-classification](../standard/web-classification) flow example as a reference.
 
-## Introduction
+Note: Above sample README.md may not have contact information because it's a shared example and people can open issues to this repository if they have any questions about the flow exmaple. For integration samples, **please make sure to include contact information in your README.md file**.
+
+## Introduction (Required)
  
 Provide a detailed description of the flow, including its components, inputs, outputs, and any dependencies. Explain how the flow works and what problem it solves. This section should give users a clear understanding of the flow's functionality and how it can be used.
 
-## Tools Used in this Flow
+## Tools Used in this Flow (Required)
  
 List all the tools (functions) used in the flow. This can include both standard tools provided by prompt flow and any custom tools created specifically for the flow. Include a brief description of each tool and its purpose within the flow.
 
-## Pre-requisites
+## Pre-requisites (Required)
 
 List any pre-requisites that are required to run the flow. This can include any specific versions of prompt flow or other dependencies. If there are any specific configurations or settings that need to be applied, make sure to mention them in this section.
 
-## Getting Started
+## Getting Started (Required)
  
 Provide step-by-step instructions on how to get started with the flow. This should include any necessary setup or configuration steps, such as installing dependencies or setting up connections. If there are specific requirements or prerequisites, make sure to mention them in this section.
 
@@ -35,7 +37,7 @@ If there are any known issues or troubleshooting tips related to the flow, inclu
 If you would like to encourage other users to contribute to your flow or provide guidelines for contributing to the integration folder, include a section with contribution guidelines. This can include instructions on how to submit pull requests, guidelines for code formatting, or any other relevant information.
 
 
-## Contact
+## Contact (Required)
  
 Specify the flow owner and provide contact information in the README.md file. This can include an email address, GitHub username, or any other preferred method of contact. By including this information, users will be able to reach out to the owner with any questions or issues related to the flow.
 
