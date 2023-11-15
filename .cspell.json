@@ -24,6 +24,7 @@
     ".gitignore",
     "scripts/docs/_build/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
+    "src/promptflow/promptflow/azure/_restclient/swagger.json",
     "src/promptflow/tests/**",
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
@@ -144,7 +145,8 @@
     "Hwfoxydrg",
     "llms",
     "vcrpy",
-    "uionly"
+    "uionly",
+    "llmops"
   ],
   "flagWords": [
     "Prompt Flow"
