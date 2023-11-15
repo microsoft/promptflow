@@ -196,7 +196,7 @@ class TestExecutorWithImage:
         assert_contain_image_reference(run_info)
 
     @pytest.mark.parametrize(
-        "flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number",
+        "flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number, has_aggregation_node",
         [
             (
                 SIMPLE_IMAGE_FLOW,
@@ -204,6 +204,7 @@ class TestExecutorWithImage:
                 {"image": "${data.image}"},
                 "output",
                 4,
+                False,
             ),
             (
                 SAMPLE_IMAGE_FLOW_WITH_DEFAULT,
@@ -211,6 +212,7 @@ class TestExecutorWithImage:
                 {"image_2": "${data.image_2}"},
                 "output",
                 4,
+                False,
             ),
             (
                 COMPOSITE_IMAGE_FLOW,
@@ -218,6 +220,7 @@ class TestExecutorWithImage:
                 {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
                 "output",
                 2,
+                False,
             ),
             (
                 CHAT_FLOW_WITH_IMAGE,
@@ -225,28 +228,53 @@ class TestExecutorWithImage:
                 {"question": "${data.question}", "chat_history": "${data.chat_history}"},
                 "answer",
                 2,
+                False,
+            ),
+            (
+                EVAL_FLOW_WITH_SIMPLE_IMAGE,
+                {"data": "inputs.jsonl"},
+                {"image": "${data.image}"},
+                "output",
+                2,
+                True,
+            ),
+            (
+                EVAL_FLOW_WITH_COMPOSITE_IMAGE,
+                {"data": "inputs.jsonl"},
+                {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
+                "output",
+                2,
+                False,
             ),
         ],
     )
     def test_batch_engine_with_image(
-        self, flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number
+        self, flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number, has_aggregation_node
     ):
         flow_file = get_yaml_file(flow_folder)
         working_dir = get_flow_folder(flow_folder)
         output_dir = Path("outputs")
-        bulk_result = BatchEngine(flow_file, working_dir).run(input_dirs, inputs_mapping, output_dir, max_lines_count=4)
+        batch_result = BatchEngine(flow_file, working_dir).run(
+            input_dirs, inputs_mapping, output_dir, max_lines_count=4
+        )
 
-        assert isinstance(bulk_result, BatchResult)
-        assert len(bulk_result.outputs) == expected_outputs_number
-        for i, output in enumerate(bulk_result.outputs):
+        assert isinstance(batch_result, BatchResult)
+        assert len(batch_result.outputs) == expected_outputs_number
+        for i, output in enumerate(batch_result.outputs):
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
             result = output[output_key][0] if isinstance(output[output_key], list) else output[output_key]
             assert all(MIME_PATTERN.search(key) for key in result), f"image is not in {i}th output {output}"
-        for i, line_result in enumerate(bulk_result.line_results):
+
+        for i, line_result in enumerate(batch_result.line_results):
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
+
+        if has_aggregation_node:
+            for _, node_run_info in batch_result.aggr_results.node_run_infos.items():
+                assert node_run_info.status == Status.Completed
+                assert_contain_image_reference(node_run_info)
 
         output_dir = get_flow_folder(flow_folder) / output_dir
         assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
