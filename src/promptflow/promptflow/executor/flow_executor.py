@@ -339,7 +339,13 @@ class FlowExecutor:
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
             )
-            context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
+
+            try:
+                context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
+            except Exception:
+                if raise_ex:  # Only raise exception when raise_ex is True
+                    raise
+
             node_runs = run_tracker.collect_node_runs()
             if len(node_runs) != 1:
                 # Should not happen except there is bug in run_tracker or thread control.
