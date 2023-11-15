@@ -12,7 +12,7 @@ To assist in this journey, we've introduced **Azure AI**, a **cloud-based platfo
 * Deployment and optimization
 * Safe and Responsible AI
 
-<img src="../media/cloud/azureml/llmops_cloud_value.png" width="60%">
+![img](../media/cloud/azureml/llmops_cloud_value.png)
 
 ## Transitioning from local to cloud (Azure AI)
 
