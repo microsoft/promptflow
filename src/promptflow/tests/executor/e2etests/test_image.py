@@ -1,6 +1,6 @@
 import os
-import shutil
 from pathlib import Path
+from tempfile import mkdtemp
 
 import pytest
 
@@ -253,12 +253,14 @@ class TestExecutorWithImage:
     ):
         flow_file = get_yaml_file(flow_folder)
         working_dir = get_flow_folder(flow_folder)
-        output_dir = Path("outputs")
+        output_dir = Path(mkdtemp())
         batch_result = BatchEngine(flow_file, working_dir).run(
             input_dirs, inputs_mapping, output_dir, max_lines_count=4
         )
 
         assert isinstance(batch_result, BatchResult)
+        assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
+
         assert len(batch_result.outputs) == expected_outputs_number
         for i, output in enumerate(batch_result.outputs):
             assert isinstance(output, dict)
@@ -275,10 +277,6 @@ class TestExecutorWithImage:
             for _, node_run_info in batch_result.aggr_results.node_run_infos.items():
                 assert node_run_info.status == Status.Completed
                 assert_contain_image_reference(node_run_info)
-
-        output_dir = get_flow_folder(flow_folder) / output_dir
-        assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
-        shutil.rmtree(output_dir)
 
     @pytest.mark.parametrize(
         "flow_folder, inputs",
