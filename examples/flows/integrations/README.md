@@ -6,7 +6,7 @@ This folder contains flow examples contributed by various contributors. Each flo
  
 To ensure consistency and clarity, please follow the guidelines below when creating the README.md file for your flow example. You can also refer to the [README.md](../standard/web-classification/README.md) file in the [web-classification](../standard/web-classification) flow example as a reference.
 
-Note: Above sample README.md may not have contact information because it's a shared example and people can open issues to this repository if they have any questions about the flow exmaple. For integration samples, **please make sure to include contact information in your README.md file**.
+Note: Above sample README.md may not have contact information because it's a shared example and people can open issues to this repository if they have any questions about the flow example. For integration samples, **please make sure to include contact information in your README.md file**.
 
 ## Introduction (Required)
  
