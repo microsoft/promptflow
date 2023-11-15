@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
-import uuid
 from pathlib import Path
+from typing import Callable
 
 import pytest
 
@@ -26,9 +26,9 @@ data_dir = tests_root_dir / "test_configs/datas"
     "vcr_recording",
 )
 class TestFlow:
-    def test_create_flow(self, pf: PFClient):
+    def test_create_flow(self, pf: PFClient, randstr: Callable[[str], str]):
+        flow_display_name = randstr("flow_display_name")
         flow_source = flow_test_dir / "simple_fetch_url/"
-        flow_display_name = f"{flow_source.name}_{uuid.uuid4()}"
         description = "test flow"
         tags = {"owner": "sdk"}
         result = pf.flows.create_or_update(
