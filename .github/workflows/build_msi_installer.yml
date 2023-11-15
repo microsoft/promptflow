@@ -45,7 +45,7 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Install dependencies
+      - name: Install promptflow dependencies
         run: |
           python -m pip install --upgrade pip
           pip install promptflow[azure,executable] promptflow-tools
@@ -89,10 +89,12 @@ jobs:
 
       - name: Upload to Azure Storage
         run: |
-          $msi_file = Get-ChildItem -Path 'scripts/installer/windows/out/' -Filter *.msi
-          if [inputs.UploadAsLatest == 'False']; then
-            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file scripts/installer/windows/out/$($msi_file.Name)  --name $($msi_file.Name) --overwrite
-          else
-            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file scripts/installer/windows/out/$($msi_file.Name)  --name promptflow.msi --overwrite
-          fi
+          $msi_files = Get-ChildItem -Path 'scripts/installer/windows/out/' -Filter *.msi
+          foreach ($msi_file in $msi_files) {
+          if ($env:INPUT_UPLOADASLATEST -eq 'False') {
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
+          } else {
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "promptflow_test.msi" --overwrite
+          }
+          }
         shell: pwsh
