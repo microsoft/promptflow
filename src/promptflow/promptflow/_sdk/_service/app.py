@@ -25,4 +25,6 @@ def create_app():
         api.add_namespace(run_api)
 
         app.register_blueprint(api_v1)
+        # Disable flask-restx set X-Fields in header. https://flask-restx.readthedocs.io/en/latest/mask.html#usage
+        app.config["RESTX_MASK_SWAGGER"] = False
     return app, api
