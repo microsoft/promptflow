@@ -1,0 +1,40 @@
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  chat_history:
+    type: list
+    is_chat_history: true
+  utterance:
+    type: string
+    is_chat_input: true
+    default: Play BB King and increase the volume.
+outputs:
+  intents:
+    type: string
+    reference: ${Conversational_Language_Understanding.output}
+    is_chat_output: true
+nodes:
+- name: LLM_Rewrite
+  type: llm
+  source:
+    type: code
+    path: chat.jinja2
+  inputs:
+    deployment_name: cluGPTTurbo
+    max_tokens: 256
+    temperature: 0.7
+    question: ${inputs.utterance}
+  connection: CLUGPTModel
+  api: chat
+- name: Conversational_Language_Understanding
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.conversational_language_understanding.get_conversational_language_understanding
+  inputs:
+    connection: azure_ai_language_connection
+    language: en-us
+    utterances: ${LLM_Rewrite.output}
+    project_name: MediaPlayer
+    deployment_name: adv
+    parse_response: false
