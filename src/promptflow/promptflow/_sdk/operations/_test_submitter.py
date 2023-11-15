@@ -232,7 +232,7 @@ class TestSubmitter:
 
     def exec_with_inputs(self, inputs):
         # TODO: unify all exec_line calls here
-        from promptflow.executor.flow_executor import FlowExecutor
+        from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
 
         # validate connection objs
         connection_obj_dict = {}
@@ -259,6 +259,9 @@ class TestSubmitter:
         )
         flow_executor.enable_streaming_for_llm_flow(lambda: self.flow_context.streaming)
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
+        if isinstance(line_result.output, dict):
+            # Remove line_number from output
+            line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):

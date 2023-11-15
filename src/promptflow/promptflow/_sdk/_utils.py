@@ -10,6 +10,7 @@ import multiprocessing
 import os
 import platform
 import re
+import stat
 import shutil
 import sys
 import tempfile
@@ -928,6 +929,10 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
     if output:
         with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
+
+
+def read_write_by_user():
+    return stat.S_IRUSR | stat.S_IWUSR
 
 
 def remove_empty_element_from_dict(obj: dict) -> dict:
