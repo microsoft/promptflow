@@ -28,6 +28,25 @@ nodes:
     path: read_file.py
   inputs:
     file_path: ${inputs.document_path}
+- name: Translator
+  type: python
+  source:
+    type: package
+    tool: language_tools.tools.translator.get_translation
+  inputs:
+    connection: azure_ai_translator_connection
+    text: ${Read_File.output}
+    to:
+    - en
+    parse_response: true
+- name: Parse_Translation
+  type: python
+  source:
+    type: code
+    path: parse_translation.py
+  inputs:
+    translation_results: ${Translator.output}
+    language: en
 - name: PII_Entity_Recognition
   type: python
   source:
@@ -36,7 +55,7 @@ nodes:
   inputs:
     connection: azure_ai_language_connection
     language: ${inputs.language}
-    text: ${Read_File.output}
+    text: ${Parse_Translation.output}
     parse_response: true
     categories:
     - Address

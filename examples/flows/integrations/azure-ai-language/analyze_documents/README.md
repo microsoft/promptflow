@@ -3,6 +3,7 @@
 A flow that analyzes documents with various language-based Machine Learning models. 
 
 This sample flow utilizes Azure AI Language's pre-built and optimized language models to perform various analyses on text or documents. It performs:
+- [Translation](https://learn.microsoft.com/en-us/rest/api/cognitiveservices/translator/translator/translate?view=rest-cognitiveservices-translator-v3.0&tabs=HTTP)
 - [Personally Identifiable Information (PII) detection](https://learn.microsoft.com/en-us/azure/ai-services/language-service/personally-identifiable-information/overview)
 - [Named Entity Recognition (NER)](https://learn.microsoft.com/en-us/azure/ai-services/language-service/named-entity-recognition/overview)
 - [Document Summarization](https://learn.microsoft.com/en-us/azure/ai-services/language-service/summarization/overview?tabs=document-summarization)
@@ -12,6 +13,7 @@ See the [promptflow-azure-ai-language](https://github.com/microsoft/promptflow/b
 
 Tools used in this flow:
 - `python` tool
+- `translator` tool from the `promptflow-azure-ai-language` package
 - `pii_entity_recognition` tool from the `promptflow-azure-ai-language` package
 - `abstractive_summarization` tool from the `promptflow-azure-ai-language` package
 - `extractive_summarization` tool from the `promptflow-azure-ai-language` package
@@ -19,7 +21,8 @@ Tools used in this flow:
 - `sentiment_analysis` tool from the `promptflow-azure-ai-language` package
 
 Connections used in this flow:
-- `Custom` connection
+- `Custom` connection (Azure AI Language)
+- `Custom` connection (Azure AI Translator)
 
 ## Prerequisites
 Install promptflow sdk and other dependencies:
@@ -38,6 +41,18 @@ pf connection create -f ../../../connections/azure_ai_language.yml --set secrets
 Ensure you have created the `azure_ai_language_connection`:
 ```
 pf connection show -n azure_ai_language_connection
+```
+
+To use the `translator` tool, you must have an existing [Azure AI Translator resource](https://azure.microsoft.com/en-us/products/ai-services/ai-translator). [Create a Translator resource](https://learn.microsoft.com/en-us/azure/ai-services/translator/create-translator-resource) first, if necessary. From your Translator Resource, obtain its `api_key`, `endpoint`, and `region` (if applicable).
+
+Create a connection to your Translator Resource. The connection uses the `CustomConnection` schema:
+```
+# Override keys with --set to avoid yaml file changes
+pf connection create -f ../../../connections/azure_ai_translator.yml --set secrets.api_key=<your_api_key> configs.endpoint=<your_endpoint> configs.region=<your_region> name=azure_ai_translator_connection
+```
+Ensure you have created the `azure_ai_translator_connection`:
+```
+pf connection show -n azure_ai_translator_connection
 ```
 
 ## Run flow

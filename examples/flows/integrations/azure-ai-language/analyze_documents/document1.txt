@@ -1,56 +1,56 @@
-Microsoft Cloud strength fuels first quarter results
-October 24, 2023 | Microsoft News Center
-Share on Facebook (opens new window)
+La fortaleza de Microsoft Cloud impulsa los resultados del primer trimestre
+24 de octubre de 2023 | Centro de noticias de Microsoft
+Compartir en Facebook (se abre en una ventana nueva)
  
-Share on LinkedIn (opens new window)
+Compartir en LinkedIn (se abre en una ventana nueva)
  
-Share on Twitter (opens new window)
-REDMOND, Wash. — October 24, 2023 — Microsoft Corp. today announced the following results for the quarter ended September 30, 2023, as compared to the corresponding period of last fiscal year:
+Compartir en Twitter (se abre en una ventana nueva)
+REDMOND, Washington — 24 de octubre de 2023 — Microsoft Corp. anunció hoy los siguientes resultados para el trimestre finalizado el 30 de septiembre de 2023, en comparación con el período correspondiente del año fiscal anterior:
 
-Revenue was $56.5 billion and increased 13% (up 12% in constant currency)
-Operating income was $26.9 billion and increased 25% (up 24% in constant currency)
-Net income was $22.3 billion and increased 27% (up 26% in constant currency)
-Diluted earnings per share was $2.99 and increased 27% (up 26% in constant currency)
-"With copilots, we are making the age of AI real for people and businesses everywhere," said Satya Nadella, chairman and chief executive officer of Microsoft. "We are rapidly infusing AI across every layer of the tech stack and for every role and business process to drive productivity gains for our customers."
+Los ingresos fueron de 56.500 millones de dólares y aumentaron un 13% (un 12% más en moneda constante)
+Los ingresos operativos fueron de 26.900 millones de dólares y aumentaron un 25% (un 24% más en moneda constante)
+Los ingresos netos fueron de 22.300 millones de dólares y aumentaron un 27% (un 26% más en moneda constante)
+El beneficio diluido por acción fue de 2,99 dólares y aumentó un 27% (un 26% más en moneda constante)
+"Con los copilotos, estamos haciendo que la era de la IA sea real para las personas y las empresas de todo el mundo", dijo Satya Nadella, presidente y director ejecutivo de Microsoft. "Estamos infundiendo rápidamente la IA en todas las capas de la pila tecnológica y para cada función y proceso empresarial para impulsar el aumento de la productividad de nuestros clientes".
 
-"Consistent execution by our sales teams and partners drove a strong start to the fiscal year with Microsoft Cloud revenue of $31.8 billion, up 24% (up 23% in constant currency) year-over-year," said Amy Hood, executive vice president and chief financial officer of Microsoft.
+"La ejecución consistente por parte de nuestros equipos de ventas y socios impulsó un fuerte comienzo del año fiscal con ingresos de Microsoft Cloud de 31.800 millones de dólares, un aumento del 24% (un 23% más en moneda constante) año tras año", dijo Amy Hood, vicepresidenta ejecutiva y directora financiera de Microsoft.
 
-Business Highlights
+Aspectos destacados del negocio
 
-Revenue in Productivity and Business Processes was $18.6 billion and increased 13% (up 12% in constant currency), with the following business highlights:
+Los ingresos en Productividad y Procesos de Negocio fueron de 18.600 millones de dólares y aumentaron un 13% (un 12% más en moneda constante), con los siguientes aspectos destacados del negocio:
 
-Office Commercial products and cloud services revenue increased 15% (up 14% in constant currency) driven by Office 365 Commercial revenue growth of 18% (up 17% in constant currency)
-Office Consumer products and cloud services revenue increased 3% (up 4% in constant currency) and Microsoft 365 Consumer subscribers grew to 76.7 million
-LinkedIn revenue increased 8%
-Dynamics products and cloud services revenue increased 22% (up 21% in constant currency) driven by Dynamics 365 revenue growth of 28% (up 26% in constant currency)
-Revenue in Intelligent Cloud was $24.3 billion and increased 19%, with the following business highlights:
+Los ingresos por productos comerciales y servicios en la nube de Office aumentaron un 15 % (un 14 % en moneda constante) impulsados por un crecimiento de los ingresos comerciales de Office 365 del 18 % (un 17 % en moneda constante)
+Los ingresos de productos de Office Consumer y servicios en la nube aumentaron un 3 % (un 4 % más en moneda constante) y los suscriptores de Microsoft 365 Consumer crecieron hasta los 76,7 millones
+Los ingresos de LinkedIn aumentaron un 8%
+Los ingresos por productos y servicios en la nube de Dynamics aumentaron un 22 % (un 21 % en moneda constante) impulsados por un crecimiento de los ingresos de Dynamics 365 del 28 % (un 26 % más en moneda constante)
+Los ingresos en Intelligent Cloud fueron de 24.300 millones de dólares y aumentaron un 19%, con los siguientes aspectos destacados del negocio:
 
-Server products and cloud services revenue increased 21% driven by Azure and other cloud services revenue growth of 29% (up 28% in constant currency)
-Revenue in More Personal Computing was $13.7 billion and increased 3% (up 2% in constant currency), with the following business highlights:
+Los ingresos por productos de servidor y servicios en la nube aumentaron un 21 % impulsados por el crecimiento de los ingresos de Azure y otros servicios en la nube del 29 % (un 28 % más en moneda constante)
+Los ingresos en More Personal Computing fueron de 13.700 millones de dólares y aumentaron un 3% (un 2% más en moneda constante), con los siguientes aspectos comerciales destacados:
 
-Windows revenue increased 5% with Windows OEM revenue growth of 4% and Windows Commercial products and cloud services revenue growth of 8%
-Devices revenue decreased 22%
-Xbox content and services revenue increased 13% (up 12% in constant currency)
-Search and news advertising revenue excluding traffic acquisition costs increased 10% (up 9% in constant currency)
-Microsoft returned $9.1 billion to shareholders in the form of share repurchases and dividends in the first quarter of fiscal year 2024.
+Los ingresos de Windows aumentaron un 5 % con un crecimiento de los ingresos de OEM de Windows del 4 % y un crecimiento de los ingresos de productos comerciales y servicios en la nube de Windows del 8 %
+Los ingresos por dispositivos disminuyeron un 22%
+Los ingresos por contenido y servicios de Xbox aumentaron un 13 % (un 12 % más en moneda constante)
+Los ingresos por publicidad en búsquedas y noticias, excluyendo los costes de adquisición de tráfico, aumentaron un 10 % (un 9 % más en moneda constante)
+Microsoft devolvió 9.100 millones de dólares a los accionistas en forma de recompras de acciones y dividendos en el primer trimestre del año fiscal 2024.
 
-Business Outlook
+Perspectivas de negocio
 
-Microsoft will provide forward-looking guidance in connection with this quarterly earnings announcement on its earnings conference call and webcast.
+Microsoft proporcionará orientación prospectiva en relación con este anuncio de ganancias trimestrales en su conferencia telefónica y webcast de ganancias.
 
-Quarterly Highlights, Product Releases, and Enhancements 
+Aspectos destacados trimestrales, lanzamientos de productos y mejoras
 
-Every quarter Microsoft delivers hundreds of products, either as new releases, services, or enhancements to current products and services. These releases are a result of significant research and development investments, made over multiple years, designed to help customers be more productive and secure and to deliver differentiated value across the cloud and the edge.
+Cada trimestre, Microsoft ofrece cientos de productos, ya sea como nuevas versiones, servicios o mejoras de los productos y servicios actuales. Estos lanzamientos son el resultado de importantes inversiones en investigación y desarrollo, realizadas a lo largo de varios años, diseñadas para ayudar a los clientes a ser más productivos y seguros y para ofrecer un valor diferenciado en la nube y el perímetro.
 
-Here are the major product releases and other highlights for the quarter, organized by product categories, to help illustrate how we are accelerating innovation across our businesses while expanding our market opportunities.
+Estos son los principales lanzamientos de productos y otros aspectos destacados del trimestre, organizados por categorías de productos, para ayudar a ilustrar cómo estamos acelerando la innovación en nuestros negocios al tiempo que ampliamos nuestras oportunidades de mercado.
 
-Environmental, Social, and Governance (ESG)
+Ambientales, Sociales y de Gobernanza (ESG)
 
-To better execute on Microsoft's mission, we focus our Environmental, Social, and Governance (ESG) efforts where we can have the most positive impact. To learn more about our latest initiatives and priorities, please visit our investor relations ESG website.
+Para ejecutar mejor la misión de Microsoft, enfocamos nuestros esfuerzos ambientales, sociales y de gobernanza (ESG) donde podemos tener el impacto más positivo. Para obtener más información sobre nuestras últimas iniciativas y prioridades, visite nuestro sitio web de relaciones con los inversores ESG.
 
 Webcast Details
 
-Satya Nadella, chairman and chief executive officer, Amy Hood, executive vice president and chief financial officer, Alice Jolla, chief accounting officer, Keith Dolliver, corporate secretary and deputy general counsel, and Brett Iversen, vice president of investor relations, will host a conference call and webcast at 2:30 p.m. Pacific time (5:30 p.m. Eastern time) today to discuss details of the company's performance for the quarter and certain forward-looking information. The session may be accessed at http://www.microsoft.com/en-us/investor. The webcast will be available for replay through the close of business on October 24, 2024.
+Satya Nadella, chairman and chief executive officer, Amy Hood, executive vice president and chief financial officer, Alice Jolla, chief accounting officer, Keith Dolliver, corporate secretary and deputy general counsel, and Brett Iversen, vice president of investor relations, will host a conference call and webcast at 2:30 p.m. Pacific time (5:30 p.m. Eastern time) today to discuss details of the company’s performance for the quarter and certain forward-looking information. The session may be accessed at http://www.microsoft.com/en-us/investor. The webcast will be available for replay through the close of business on October 24, 2024.
 
 Constant Currency
 
@@ -75,63 +75,73 @@ Three Months Ended September 30,
 2023 As Reported (GAAP)	$18,592	$24,259	$13,666
 Percentage Change Y/Y (GAAP)	13%	19%	3%
 Constant Currency Impact	$79	$156	$66
-Percentage Change Y/Y Constant Currency	12%	19%	2%
+Variación porcentual a/año moneda constante	12%	19%	2%
  
 
-Selected Product and Service Revenue Constant Currency Reconciliation           
+Conciliación de moneda constante de ingresos por productos y servicios seleccionados
 
-Three Months Ended September 30, 2023
-Percentage Change Y/Y (GAAP)	Constant Currency Impact	Percentage Change Y/Y Constant Currency
-Microsoft Cloud	24%	(1)%	23%
-Office Commercial products and cloud services	15%	(1)%	14%
-Office 365 Commercial	18%	(1)%	17%
-Office Consumer products and cloud services	3%	1%	4%
-LinkedIn	8%	0%	8%
-Dynamics products and cloud services	22%	(1)%	21%
+Tres meses finalizados el 30 de septiembre de 2023
+Cambio porcentual interanual (GAAP)	Impacto de la moneda constante	Variación porcentual a/año moneda constante
+Nube de Microsoft	24%	(1)%	23%
+Productos comerciales de oficina y servicios en la nube	15%	(1)%	14%
+Office 365 Comercial	18%	(1)%	17%
+Productos de consumo de Office y servicios en la nube	3%	1%	4%
+LinkedIn (en inglés)	8%	0%	8%
+Productos de Dynamics y servicios en la nube	22%	(1)%	21%
 Dynamics 365	28%	(2)%	26%
-Server products and cloud services	21%	0%	21%
-Azure and other cloud services	29%	(1)%	28%
+Productos de servidor y servicios en la nube	21%	0%	21%
+Azure y otros servicios en la nube	29%	(1)%	28%
 Windows	5%	0%	5%
 Windows OEM	4%	0%	4%
-Windows Commercial products and cloud services	8%	0%	8%
-Devices	(22)%	0%	(22)%
-Xbox content and services	13%	(1)%	12%
-Search and news advertising excluding traffic acquisition costs	10%	(1)%	9%
-About Microsoft
+Productos comerciales y servicios en la nube de Windows	8%	0%	8%
+Dispositivos	(22)%	0%	(22)%
+Contenido y servicios de Xbox	13%	(1)%	12%
+Publicidad de búsqueda y noticias, excluidos los costes de adquisición de tráfico	10%	(1)%	9%
+Acerca de Microsoft
 
-Microsoft (Nasdaq "MSFT" @microsoft) enables digital transformation for the era of an intelligent cloud and an intelligent edge. Its mission is to empower every person and every organization on the planet to achieve more.
+Microsoft (Nasdaq "MSFT" @microsoft) permite la transformación digital para la era de una nube inteligente y un perímetro inteligente. Su misión es empoderar a todas las personas y organizaciones del planeta para que logren más.
 
-Forward-Looking Statements
+Declaraciones prospectivas
 
-Statements in this release that are "forward-looking statements" are based on current expectations and assumptions that are subject to risks and uncertainties. Actual results could differ materially because of factors such as:
+Las declaraciones en este comunicado que son "declaraciones prospectivas" se basan en expectativas y suposiciones actuales que están sujetas a riesgos e incertidumbres. Los resultados reales podrían diferir materialmente debido a factores como:
 
-intense competition in all of our markets that may lead to lower revenue or operating margins;
-increasing focus on cloud-based services presenting execution and competitive risks;
-significant investments in products and services that may not achieve expected returns;
-acquisitions, joint ventures, and strategic alliances that may have an adverse effect on our business;
-impairment of goodwill or amortizable intangible assets causing a significant charge to earnings;
-cyberattacks and security vulnerabilities that could lead to reduced revenue, increased costs, liability claims, or harm to our reputation or competitive position;
-disclosure and misuse of personal data that could cause liability and harm to our reputation;
-the possibility that we may not be able to protect information stored in our products and services from use by others;
-abuse of our advertising, professional, marketplace, or gaming platforms that may harm our reputation or user engagement;
-the development of the internet of things presenting security, privacy, and execution risks;
-issues about the use of artificial intelligence in our offerings that may result in reputational or competitive harm, or legal liability;
-excessive outages, data losses, and disruptions of our online services if we fail to maintain an adequate operations infrastructure;
-quality or supply problems;
-government litigation and regulatory activity relating to competition rules that may limit how we design and market our products;
-potential consequences of trade and anti-corruption laws;
-potential consequences of existing and increasing legal and regulatory requirements;
-laws and regulations relating to the handling of personal data that may impede the adoption of our services or result in increased costs, legal claims, fines, or reputational damage;
-claims against us that may result in adverse outcomes in legal disputes;
-uncertainties relating to our business with government customers;
-additional tax liabilities;
-an inability to protect and utilize our intellectual property may harm our business and operating results;
-claims that Microsoft has infringed the intellectual property rights of others;
-damage to our reputation or our brands that may harm our business and operating results;
-adverse economic or market conditions that may harm our business;
-catastrophic events or geo-political conditions, such as the COVID-19 pandemic, that may disrupt our business;
-exposure to increased economic and operational uncertainties from operating a global business, including the effects of foreign currency exchange and
-the dependence of our business on our ability to attract and retain talented employees.
-For more information about risks and uncertainties associated with Microsoft's business, please refer to the "Management's Discussion and Analysis of Financial Condition and Results of Operations" and "Risk Factors" sections of Microsoft's SEC filings, including, but not limited to, its annual report on Form 10-K and quarterly reports on Form 10-Q, copies of which may be obtained by contacting Microsoft's Investor Relations department at (800) 285-7772 or at Microsoft's Investor Relations website at http://www.microsoft.com/en-us/investor.
+una intensa competencia en todos nuestros mercados que puede conducir a menores ingresos o márgenes operativos;
+un mayor enfoque en los servicios basados en la nube que presentan riesgos competitivos y de ejecución;
+inversiones significativas en productos y servicios que pueden no alcanzar los rendimientos esperados;
+adquisiciones, empresas conjuntas y alianzas estratégicas que puedan tener un efecto adverso en nuestro negocio;
+deterioro del fondo de comercio o de activos intangibles amortizables que causen un cargo significativo a los resultados;
+ciberataques y vulnerabilidades de seguridad que podrían conducir a una reducción de los ingresos, un aumento de los costes, reclamaciones de responsabilidad o daños a nuestra reputación o posición competitiva;
+divulgación y uso indebido de datos personales que puedan causar responsabilidad y daño a nuestra reputación;
+la posibilidad de que no podamos proteger la información almacenada en nuestros productos y servicios para que no la utilicen otros;
+abuso de nuestras plataformas publicitarias, profesionales, de mercado o de juegos que puedan dañar nuestra reputación o la participación de los usuarios;
+el desarrollo del internet de las cosas que presenta riesgos de seguridad, privacidad y ejecución;
+cuestiones sobre el uso de la inteligencia artificial en nuestras ofertas que puedan dar lugar a daños a la reputación o a la competencia, o a responsabilidades legales;
+interrupciones excesivas, pérdidas de datos e interrupciones de nuestros servicios en línea si no mantenemos una infraestructura operativa adecuada;
+problemas de calidad o de abastecimiento;
+litigios gubernamentales y actividades regulatorias relacionadas con las normas de competencia que pueden limitar la forma en que diseñamos y comercializamos nuestros productos;
+las posibles consecuencias de las leyes comerciales y anticorrupción;
+las posibles consecuencias de los requisitos legales y reglamentarios existentes y crecientes;
+leyes y reglamentos relacionados con el manejo de datos personales que puedan impedir la adopción de nuestros servicios o resultar en un aumento de los costos, reclamos legales, multas o daños a la reputación;
+reclamaciones contra nosotros que puedan dar lugar a resultados adversos en disputas legales;
+incertidumbres relacionadas con nuestro negocio con clientes gubernamentales;
+obligaciones tributarias adicionales;
+la incapacidad de proteger y utilizar nuestra propiedad intelectual puede perjudicar nuestros resultados comerciales y operativos;
+reclamaciones de que Microsoft ha infringido los derechos de propiedad intelectual de terceros;
+daños a nuestra reputación o a nuestras marcas que puedan perjudicar nuestro negocio y nuestros resultados operativos;
+condiciones económicas o de mercado adversas que puedan perjudicar nuestro negocio;
+eventos catastróficos o condiciones geopolíticas, como la pandemia de COVID-19, que pueden interrumpir nuestro negocio;
+exposición a mayores incertidumbres económicas y operativas derivadas de la operación de un negocio global, incluidos los efectos del cambio de moneda extranjera y
+la dependencia de nuestro negocio de nuestra capacidad para atraer y retener empleados talentosos.
+Para obtener más información sobre los riesgos e incertidumbres asociados con el negocio de Microsoft, consulte las secciones "Discusión y análisis de la administración de la situación financiera y los resultados de las operaciones" y "Factores de riesgo" de las presentaciones de Microsoft ante la SEC, incluidos, entre otros, su informe anual en el Formulario 10-K y los informes trimestrales en el Formulario 10-Q, cuyas copias se pueden obtener poniéndose en contacto con el departamento de Relaciones con los Inversores de Microsoft al (800) 285-7772 o en Relaciones con los inversores de Microsoft sitio web en http://www.microsoft.com/en-us/investor.
 
-All information in this release is as of September 30, 2023. The company undertakes no duty to update any forward-looking statement to conform the statement to actual results or changes in the company's expectations.
+Toda la información de este comunicado corresponde al 30 de septiembre de 2023. La compañía no asume ninguna obligación de actualizar ninguna declaración prospectiva para ajustarla a los resultados reales o a los cambios en las expectativas de la compañía.
+
+Para obtener más información, presione solamente:
+
+Relaciones con los medios de comunicación de Microsoft, WE Communications for Microsoft, (425) 638-7777, rrt@we-worldwide.com
+
+Para obtener más información, solo analistas financieros e inversionistas:
+
+Brett Iversen, Vicepresidente de Relaciones con Inversionistas, (425) 706-4400
+
+Nota a los editores: Para obtener más información, noticias y perspectivas de Microsoft, visite el Centro de noticias de Microsoft en http://www.microsoft.com/news. Los enlaces web, los números de teléfono y los títulos eran correctos en el momento de la publicación, pero pueden haber cambiado desde entonces. Información financiera y de accionistas, así como la de hoy a las 2:30 p.m. La conferencia telefónica con inversores y analistas, hora del Pacífico, está disponible en http://www.microsoft.com/en-us/investor.
