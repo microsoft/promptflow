@@ -55,6 +55,7 @@ class TestFlow:
         output = client.test(flow=flow_test_dir / "web_classification")
         assert output.keys() == {"category", "evidence"}
 
+    @pytest.mark.usefixtures("mock_get_user_identity_info")
     def test_list_flows(self, pf: PFClient):
         flows = pf.flows.list(max_results=3)
         for flow in flows:

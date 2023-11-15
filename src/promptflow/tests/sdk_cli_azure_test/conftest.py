@@ -23,7 +23,13 @@ from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
 
 from ._azure_utils import get_cred
-from .recording_utilities import PFAzureIntegrationTestRecording, get_pf_client_for_replay, is_live, is_replay
+from .recording_utilities import (
+    PFAzureIntegrationTestRecording,
+    SanitizedValues,
+    get_pf_client_for_replay,
+    is_live,
+    is_replay,
+)
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -74,8 +80,24 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
 @pytest.fixture()
 def remote_workspace_resource_id(subscription_id: str, resource_group_name: str, workspace_name: str) -> str:
     return "azureml:" + RESOURCE_ID_FORMAT.format(
-        subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name
+        "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
     )
+
+
+@pytest.fixture
+def remote_client_int() -> PFClient:
+    if not is_live():
+        yield get_pf_client_for_playback()
+    else:
+        # enable telemetry for non-playback CI
+        with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+            client = MLClient(
+                credential=get_cred(),
+                subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+                resource_group_name="promptflow",
+                workspace_name="promptflow-int",
+            )
+            yield PFClient(ml_client=client)
 
 
 @pytest.fixture()
@@ -200,5 +222,15 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client: PFClient) -> 
     mocker.patch(
         "promptflow._cli._pf_azure._flow._get_azure_pf_client",
         return_value=remote_client,
+    )
+    yield
+
+
+@pytest.fixture
+def mock_get_user_identity_info(mocker: MockerFixture) -> None:
+    """Mock get user object id and tenant id, currently used in flow list operation."""
+    mocker.patch(
+        "promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._get_user_identity_info",
+        return_value=(SanitizedValues.USER_OBJECT_ID, SanitizedValues.TENANT_ID),
     )
     yield

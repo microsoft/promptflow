@@ -185,6 +185,13 @@ class TenantProcessor(RecordingProcessor):
     def __init__(self, tenant_id: str):
         self.tenant_id = tenant_id
 
+    def process_request(self, request: Request) -> Request:
+        if is_json_payload_request(request) and request.body is not None:
+            body = request.body.decode("utf-8")
+            body = str(body).replace(self.tenant_id, SanitizedValues.TENANT_ID)
+            request.body = body.encode("utf-8")
+        return request
+
     def process_response(self, response: Dict) -> Dict:
         if is_json_payload_response(response):
             response["body"]["string"] = str(response["body"]["string"]).replace(
