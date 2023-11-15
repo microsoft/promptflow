@@ -1,0 +1,9 @@
+$schema: https://azuremlschemas.azureedge.net/latest/flow.schema.json
+name: template_chat_flow
+display_name: Template Chat Flow
+type: chat
+path: ./flow.dag.yaml
+description: Template Chat Flow
+properties:
+  promptflow.stage: prod
+  promptflow.section: template

@@ -1,0 +1,29 @@
+id: template_chat_flow
+name: Template Chat Flow
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  chat_history:
+    type: list
+    is_chat_history: true
+  question:
+    type: list
+    is_chat_input: true
+outputs:
+  answer:
+    type: string
+    reference: ${chat.output}
+    is_chat_output: true
+nodes:
+- name: chat
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: promptflow.tools.openai_gpt4v.OpenAI.chat
+    path: chat.jinja2
+  inputs:
+    connection: openai-connection
+    model: gpt-4-vision-preview
+    max_tokens: 200
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
