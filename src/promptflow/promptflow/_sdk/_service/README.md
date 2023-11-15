@@ -1,21 +1,12 @@
 # Prompt Flow Service
 This document will describle the usage of pfs(prompt flow service) CLI.
 
-### Install prompt flow service
-
-You can execute this command to install pfs as a service in your machine.
-```commandline
-pfs install
-```
-
-**Notes:** Adminstrator privileges are required to install the Service on Windows.
-
 ### Start prompt flow service (optional)
 If you don't install pfs as a service, you need to start pfs manually.
 pfs CLI provides **start** command to start service. You can also use this command to specify the service port.
 
 ```commandline
-usage: pfs start [-h] [-p PORT]
+usage: pfs [-h] [-p PORT]
 
 Start prompt flow service.
 

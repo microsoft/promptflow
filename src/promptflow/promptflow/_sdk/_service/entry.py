@@ -3,8 +3,6 @@
 # ---------------------------------------------------------
 import argparse
 import sys
-import uuid
-
 import waitress
 import yaml
 
@@ -24,39 +22,10 @@ def main():
         description="Prompt Flow Service",
     )
 
-    subparsers = parser.add_subparsers()
-
-    # Add install service sub parser
-    install_parser = subparsers.add_parser(
-        "install",
-        description="Install prompt flow service.",
-        help="pfs install",
-    )
-    install_parser.set_defaults(action="install")
-
-    # Add start service sub parser
-    start_parser = subparsers.add_parser(
-        "start",
-        description="Start prompt flow service.",
-        help="pfs start",
-    )
-    start_parser.add_argument("-p", "--port", type=int, help="port of the promptflow service")
-    start_parser.set_defaults(action="start")
+    parser.add_argument("-p", "--port", type=int, help="port of the promptflow service")
 
     args = parser.parse_args(command_args)
-    if args.action == "start":
-        start_service(args.port)
-    elif args.action == "install":
-        install_service()
-
-
-def install_service():
-    service_name = f"PromptFlowService_{uuid.uuid1()}"
-    service_install_command = f"sc create {service_name} binpath= %~dp0\MyService.exe start= auto"
-    service_start_command = f"sc start {service_name}"
-
-
-def start_service(port):
+    port = args.port
     if port and is_port_in_use(port):
         raise UserErrorException(f"Service port {port} is used.")
     if not port:
