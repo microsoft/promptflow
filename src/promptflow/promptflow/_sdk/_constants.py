@@ -19,6 +19,8 @@ FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_DIR_NAME = ".promptflow"
 HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
+SERVICE_CONFIG_FILE = "pf.yaml"
+PF_SERVICE_PORT_FILE = "pfs.port"
 
 if not HOME_PROMPT_FLOW_DIR.is_dir():
     HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)

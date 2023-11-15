@@ -232,6 +232,8 @@ class TestSubmitter:
 
     def exec_with_inputs(self, inputs):
         # TODO: unify all exec_line calls here
+        from promptflow.executor.flow_executor import LINE_NUMBER_KEY
+
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(
             environment_variables=self.flow_context.environment_variables, client=self._client
@@ -241,6 +243,9 @@ class TestSubmitter:
         flow_resolver = FlowContextResolver.create(flow_path=self.flow.path)
         flow_executor = flow_resolver.resolve(flow_context=self.flow_context)
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
+        if isinstance(line_result.output, dict):
+            # Remove line_number from output
+            line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
