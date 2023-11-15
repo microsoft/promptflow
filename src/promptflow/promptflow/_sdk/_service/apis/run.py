@@ -8,12 +8,17 @@ from flask_restx import Namespace, Resource, fields, Api
 from flask import jsonify, request
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
-from promptflow._sdk._service.utils import api_wrapper
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow.contracts._run_management import RunMetadata
+from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 
 api = Namespace("run", description="Run Management")
+
+
+@api.errorhandler(RunNotFoundError)
+def handle_run_not_found_exception(error):
+    return {"error_message": error.message}, 400
 
 
 @api.route("/list")

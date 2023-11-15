@@ -9,7 +9,7 @@ import yaml
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._service.app import create_app
-from promptflow._sdk._service.utils import get_random_port, is_port_in_use
+from promptflow._sdk._service.utils.utils import get_random_port, is_port_in_use
 from promptflow._sdk._utils import read_write_by_user
 from promptflow.exceptions import UserErrorException
 
@@ -23,10 +23,31 @@ def main():
         description="Prompt Flow Service",
     )
 
-    parser.add_argument("-p", "--port", type=int, help="port of the promptflow service")
-    args = parser.parse_args(command_args)
-    port = args.port
+    subparsers = parser.add_subparsers()
 
+    # Add install service sub parser
+    install_parser = subparsers.add_parser(
+        "install",
+        description="Install prompt flow service.",
+        help="pfs install",
+    )
+    install_parser.set_defaults(action="install")
+
+    # Add start service sub parser
+    start_parser = subparsers.add_parser(
+        "start",
+        description="Start prompt flow service.",
+        help="pfs start",
+    )
+    start_parser.add_argument("-p", "--port", type=int, help="port of the promptflow service")
+    start_parser.set_defaults(action="start")
+
+    args = parser.parse_args(command_args)
+    if args.action == "start":
+        start_service(args.port)
+
+
+def start_service(port):
     if port and is_port_in_use(port):
         raise UserErrorException(f"Service port {port} is used.")
     if not port:
@@ -42,7 +63,7 @@ def main():
                 service_config["service"]["port"] = port
                 yaml.dump(service_config, f)
 
-    app = create_app()
+    app, _ = create_app()
     if is_port_in_use(port):
         raise UserErrorException(f"Service port {port} is used.")
     # Set host to localhost, only allow request from localhost.

@@ -4,12 +4,13 @@
 
 import yaml
 from flask import jsonify, request
-from flask_restx import Namespace, Resource
+from flask_restx import Namespace, Resource, fields
 from werkzeug.datastructures import FileStorage
 
-from promptflow._sdk._service.utils import local_user_only
+from promptflow._sdk._service.utils.utils import local_user_only
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._sdk._errors import ConnectionNotFoundError
 
 
 api = Namespace("Connections", description="Connections Management")
@@ -20,6 +21,31 @@ upload_parser.add_argument('X-Remote-User', location='headers', required=True)
 
 remote_parser = api.parser()
 remote_parser.add_argument('X-Remote-User', location='headers', required=True)
+
+
+@api.errorhandler(ConnectionNotFoundError)
+def handle_connection_not_found_exception(error):
+    return {"error_message": error.message}, 400
+
+
+class Connection(fields.Raw):
+    def format(self, value):
+        return {'name': value.name, 'age': value.age}
+
+
+connection_field = api.model(
+    "Connection",
+    {
+        "name": fields.String,
+        "type": fields.String,
+        "module": fields.String,
+        "configs": fields.Raw(),
+        "secrets": fields.Raw(),
+        "expiry_time": fields.DateTime(),
+        "created_date": fields.DateTime(),
+        "last_modified_date": fields.DateTime(),
+    }
+)
 
 
 @api.route("/")
@@ -42,6 +68,7 @@ class ConnectionList(Resource):
 class Connection(Resource):
 
     @api.doc(parser=remote_parser, description="Get connection")
+    @api.response(code=200, description="Success", model=connection_field)
     @local_user_only
     def get(self, name: str):
         client = PFClient()
@@ -54,6 +81,7 @@ class Connection(Resource):
         return jsonify(connection_dict)
 
     @api.doc(parser=upload_parser, description="Create connection")
+    @api.response(code=200, description="Success", model=connection_field)
     @local_user_only
     def post(self, name: str):
         client = PFClient()
@@ -66,6 +94,7 @@ class Connection(Resource):
         return jsonify(connection._to_dict())
 
     @api.doc(parser=remote_parser, description="Update connection")
+    @api.response(code=200, description="Success", model=connection_field)
     @local_user_only
     def put(self, name: str):
         client = PFClient()
