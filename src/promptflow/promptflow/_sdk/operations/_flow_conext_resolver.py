@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import tempfile
 from functools import lru_cache
 from os import PathLike
 from pathlib import Path
@@ -10,16 +9,11 @@ from typing import Dict
 import yaml
 from pydash import objects
 
-from promptflow._sdk._constants import (
-    DAG_FILE_NAME,
-    DEFAULT_ENCODING,
-    NODES,
-    SUPPORTED_CONNECTION_FIELDS,
-    ConnectionFields,
-)
+from promptflow._sdk._constants import DEFAULT_ENCODING, NODES, SUPPORTED_CONNECTION_FIELDS, ConnectionFields
 from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._utils import get_local_connections_from_executable, parse_variant
 from promptflow._sdk.entities import FlowContext
+from promptflow._sdk.operations._run_submitter import _load_flow_dag
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.flow import Node
 from promptflow.exceptions import UserErrorException
@@ -38,12 +32,11 @@ class FlowContextResolver:
     def __init__(self, flow_path: PathLike):
         from promptflow import PFClient
 
-        # TODO: change dir to flow file
-        self.flow_path = flow_path
+        self.flow_path, flow_dag = _load_flow_dag(flow_path=Path(flow_path))
         self.working_dir = Path(self.flow_path).parent.resolve()
-        self.executable_flow = ExecutableFlow.from_yaml(flow_file=Path(flow_path), working_dir=self.working_dir)
-        # TODO: create a executor here?
-        # self.flow_path, self.flow_dag = _load_flow_dag(flow_path=Path(flow_path))
+        # used to resolve connection inputs
+        self.executable_flow = ExecutableFlow.deserialize(flow_dag)
+        self.executable_flow._set_tool_loader(self.working_dir)
         self.node_name_2_node: Dict[str, Node] = {node.name: node for node in self.executable_flow.nodes}
         # used to load connections.
         # TODO: support connection provider?
@@ -51,18 +44,19 @@ class FlowContextResolver:
 
     @classmethod
     @lru_cache
-    def create(cls, flow_path: PathLike) -> "FlowContextResolver":
+    def create(cls, flow_path: PathLike, flow_context: FlowContext) -> FlowExecutor:
         """Create flow executor."""
-        return cls(flow_path=flow_path)
+        resolver = cls(flow_path=flow_path)
+        resolver.resolve(flow_context=flow_context)
+        return resolver.create_executor(flow_context=flow_context)
 
     def resolve(self, flow_context: FlowContext) -> FlowExecutor:
         """Resolve flow context to executor."""
         # TODO(2813319): changing node object in resolve_overrides may cause perf issue
-        self.resolve_variant(flow_context=flow_context,).resolve_connections(
+        self.resolve_variant(flow_context=flow_context).resolve_connections(
             flow_context=flow_context,
-        )
-        # TODO: support resolve_overrides()
-        # TODO: resolve environment variables, maybe we can resolve before execution
+        ).resolve_overrides(flow_context=flow_context)
+        # TODO: define priority of the contexts
         return self.create_executor(flow_context=flow_context)
 
     def _dump(self, path: Path, drop_node_variants: bool = False):
@@ -160,13 +154,19 @@ class FlowContextResolver:
         """Resolve overrides of the flow and store in-memory."""
         if not flow_context.overrides:
             return self
+        # TODO: check overrides value
+        # dump the executable flow for override
+        flow_dag = self.executable_flow.serialize()
         # update flow dag & change nodes list to name: obj dict
-        self.flow_dag[NODES] = {node["name"]: node for node in self.flow_dag[NODES]}
+        flow_dag[NODES] = {node["name"]: node for node in flow_dag[NODES]}
         # apply overrides on flow dag
-        for param, val in self.flow_context.overrides.items():
-            objects.set_(self.flow_dag, param, val)
+        for param, val in flow_context.overrides.items():
+            objects.set_(flow_dag, param, val)
         # revert nodes to list
-        self.flow_dag[NODES] = list(self.flow_dag[NODES].values())
+        flow_dag[NODES] = list(flow_dag[NODES].values())
+        # load back the
+        self.executable_flow = ExecutableFlow.deserialize(flow_dag)
+        self.executable_flow._set_tool_loader(self.working_dir)
         return self
 
     def load_connections(self, flow_context: FlowContext):
@@ -192,12 +192,9 @@ class FlowContextResolver:
         # TODO: use in-memory ExecutableFlow to create executor
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
-        with tempfile.TemporaryDirectory() as temp_dir:
-            tmp_flow_file = Path(temp_dir) / DAG_FILE_NAME
-            self._dump(tmp_flow_file)
-            connections = self.load_connections(flow_context=flow_context)
-            executor = FlowExecutor.create(
-                flow_file=tmp_flow_file, connections=connections, working_dir=self.working_dir, raise_ex=True
-            )
-            executor.enable_streaming_for_llm_flow(lambda: flow_context.streaming)
-            return executor
+        connections = self.load_connections(flow_context=flow_context)
+        executor = FlowExecutor._create_from_flow(
+            flow=self.executable_flow, connections=connections, working_dir=self.working_dir, raise_ex=True
+        )
+        executor.enable_streaming_for_llm_flow(lambda: flow_context.streaming)
+        return executor

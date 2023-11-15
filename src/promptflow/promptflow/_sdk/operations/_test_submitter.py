@@ -239,9 +239,8 @@ class TestSubmitter:
             environment_variables=self.flow_context.environment_variables, client=self._client
         )
         SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
-        # cache resolver here
-        flow_resolver = FlowContextResolver.create(flow_path=self.flow.path)
-        flow_executor = flow_resolver.resolve(flow_context=self.flow_context)
+        # cache executor here
+        flow_executor = FlowContextResolver.create(flow_path=self.flow.path, flow_context=self.flow_context)
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
         if isinstance(line_result.output, dict):
             # Remove line_number from output

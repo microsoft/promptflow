@@ -21,14 +21,11 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import ToolInvoker, STREAMING_OPTION_PARAMETER_ATTR
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import (
-    load_multimedia_data,
-    load_multimedia_data_recursively
-)
+from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -197,8 +194,32 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+        return cls._create_from_flow(
+            flow_file=flow_file,
+            flow=flow,
+            connections=connections,
+            working_dir=working_dir,
+            storage=storage,
+            raise_ex=raise_ex,
+            node_override=node_override,
+            line_timeout_sec=line_timeout_sec,
+        )
+
+    @classmethod
+    def _create_from_flow(
+        cls,
+        flow: Flow,
+        connections: dict,
+        working_dir: Optional[Path],
+        *,
+        flow_file: Optional[Path] = None,
+        storage: Optional[AbstractRunStorage] = None,
+        raise_ex: bool = True,
+        node_override: Optional[Dict[str, Dict[str, Any]]] = None,
+        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+    ):
+        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
@@ -946,9 +967,7 @@ class FlowExecutor:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        should_use_async = all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        )
+        should_use_async = all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
         if should_use_async:
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)

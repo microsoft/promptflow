@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import abc
+import json
 import logging
 from os import PathLike
 from pathlib import Path
@@ -88,6 +89,16 @@ class FlowContext:
         # create a unique connection name for connection obj
         connection_name = f"connection_{id(connection)}"
         return connection_name
+
+    def __hash__(self):
+        result = hash(self.variant)
+        result ^= hash(json.dumps(self.connections, sort_keys=True))
+        for obj in self._connection_objs.values():
+            # connection obj has to be the same object
+            result ^= hash(id(obj))
+        result ^= hash(json.dumps(self.overrides, sort_keys=True))
+        # did not hash env vars since they resolve in execution time
+        return result
 
 
 class Flow(FlowBase):
