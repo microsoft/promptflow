@@ -55,6 +55,8 @@ class SanitizedValues:
     # storage
     UPLOAD_HASH = "000000000000000000000000000000000000"
     BLOB_STORAGE_REQUEST_HOST = "fake_account_name.blob.core.windows.net"
+    # trick: "unknown_user" is the value when client fails to get username
+    #        use this value so that we don't do extra logic when replay
     USERNAME = "unknown_user"
 
 
