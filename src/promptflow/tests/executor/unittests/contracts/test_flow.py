@@ -15,7 +15,6 @@ from promptflow.contracts.flow import (
     Node,
     NodeVariant,
     NodeVariants,
-    ProgramLanguage,
     ToolSource,
     ToolSourceType,
 )
@@ -152,7 +151,7 @@ class TestFlow:
                     },
                     tools=[],
                     node_variants={},
-                    program_language=ProgramLanguage.PYTHON,
+                    program_language="python",
                 ),
             ),
         ],

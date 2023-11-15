@@ -21,7 +21,6 @@ from promptflow.executor._errors import (
     InputNotFound,
     InputReferenceNotFound,
     InputTypeError,
-    InvalidFlowRequest,
     InvalidSource,
     NodeCircularDependency,
     NodeInputValidationError,
@@ -30,7 +29,6 @@ from promptflow.executor._errors import (
     ResolveToolError,
     SingleNodeValidationError,
 )
-from promptflow.executor.flow_executor import BatchResult
 
 from ..utils import FLOW_ROOT, WRONG_FLOW_ROOT, get_flow_folder, get_flow_inputs_file, get_yaml_file
 
@@ -404,28 +402,3 @@ class TestValidation:
                 )
                 assert result.line_results[0].run_info.status == Status.Failed
                 assert error_class.__name__ in json.dumps(result.line_results[0].run_info.error)
-
-    @pytest.mark.parametrize(
-        "flow_folder, batch_input, validate, error_class,",
-        [
-            ("simple_flow_with_python_tool", [{"num": "14"}], True, None),
-            ("simple_flow_with_python_tool", [{"num": "14"}], False, TypeError),
-            ("simple_flow_with_python_tool", [{"num": 14}], False, None),
-            ("simple_flow_with_python_tool", [{"num11": "14"}], True, InputNotFound),
-            ("simple_flow_with_python_tool", [{"num11": "14"}], False, InvalidFlowRequest),
-            ("simple_flow_with_python_tool", [{"num": "hello"}], True, InputTypeError),
-            ("simple_flow_with_python_tool", [{"num": "hello"}], False, TypeError),
-        ],
-    )
-    def test_bulk_run_validate_inputs(self, flow_folder, batch_input, validate, error_class, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections, raise_ex=False)
-
-        result = executor.exec_bulk(batch_input, validate_inputs=validate)
-        assert isinstance(result, BatchResult)
-        assert len(result.line_results) == len(batch_input)
-        if error_class is None:
-            assert result.line_results[0].run_info.status == Status.Completed
-            assert result.line_results[0].run_info.error is None
-        else:
-            assert result.line_results[0].run_info.status == Status.Failed
-            assert error_class.__name__ in json.dumps(result.line_results[0].run_info.error)

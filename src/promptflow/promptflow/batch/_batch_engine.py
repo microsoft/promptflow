@@ -17,7 +17,7 @@ from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute,
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
-from promptflow.contracts.flow import Flow, ProgramLanguage
+from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import PromptflowException
 from promptflow.executor._result import AggregationResult, BatchResult, LineResult
@@ -31,11 +31,11 @@ class BatchEngine:
     """This class is used to execute flows in batch mode"""
 
     executor_proxy_classes: Mapping[str, AbstractExecutorProxy] = {
-        ProgramLanguage.PYTHON: PythonExecutorProxy,
+        "python": PythonExecutorProxy,
     }
 
     @classmethod
-    def register_executor(cls, type: ProgramLanguage, executor_proxy_cls: AbstractExecutorProxy):
+    def register_executor(cls, type: str, executor_proxy_cls: AbstractExecutorProxy):
         """Register a executor proxy class for a specific program language.
 
         This method allows users to register a executor proxy class for a particular
@@ -43,7 +43,7 @@ class BatchEngine:
         of the BatchEngine for flows written in the specified language.
 
         :param type: The flow program language of the executor proxy,
-        :type type: ~promptflow.contracts.flow.ProgramLanguage
+        :type type: str
         :param executor_proxy_cls: The executor proxy class to be registered.
         :type executor_proxy_cls:  ~promptflow.batch.AbstractExecutorProxy
         """
