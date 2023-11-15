@@ -39,7 +39,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.executor.flow_executor import BatchResult
+from promptflow.executor._result import BatchResult
 from promptflow.storage import AbstractRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)

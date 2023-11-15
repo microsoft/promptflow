@@ -9,7 +9,7 @@ from promptflow.batch import BatchEngine
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.executor import FlowExecutor
-from promptflow.executor.flow_executor import BatchResult, LineResult
+from promptflow.executor._result import BatchResult, LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file

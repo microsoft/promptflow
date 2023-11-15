@@ -10,7 +10,7 @@ from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
-from promptflow.executor.flow_executor import BatchResult, LineResult
+from promptflow.executor._result import BatchResult, LineResult
 from promptflow.storage import AbstractRunStorage
 
 from ..utils import (

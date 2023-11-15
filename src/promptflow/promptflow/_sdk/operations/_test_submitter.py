@@ -232,7 +232,8 @@ class TestSubmitter:
 
     def exec_with_inputs(self, inputs):
         # TODO: unify all exec_line calls here
-        from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
+        from promptflow._constants import LINE_NUMBER_KEY
+        from promptflow.executor.flow_executor import FlowExecutor
 
         # validate connection objs
         connection_obj_dict = {}
@@ -395,7 +396,7 @@ class TestSubmitter:
 
     @staticmethod
     def _raise_error_when_test_failed(test_result, show_trace=False):
-        from promptflow.executor.flow_executor import LineResult
+        from promptflow.executor._result import LineResult
 
         test_status = test_result.run_info.status if isinstance(test_result, LineResult) else test_result.status
 
