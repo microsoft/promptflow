@@ -4,6 +4,7 @@ from types import GeneratorType
 import pytest
 
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -134,7 +135,8 @@ class TestExecutor:
             "groundtruth": "${data.url}",
             "prediction": "${run.outputs.category}",
         }
-        mapped_inputs = eval_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        batch_inputs_processor = BatchInputsProcessor(eval_executor._working_dir, eval_executor._flow.inputs)
+        mapped_inputs = batch_inputs_processor._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
         result = eval_executor.exec_bulk(mapped_inputs)
         assert len(result.outputs) == nlines, f"Only {len(result.outputs)}/{nlines} outputs are returned."
         assert len(result.metrics) > 0, "No metrics are returned."
@@ -170,7 +172,8 @@ class TestExecutor:
         bulk_inputs_mapping = self.get_bulk_inputs(
             flow_folder=flow_folder, sample_inputs_file="inputs_mapping.json", return_dict=True
         )
-        resolved_inputs = executor.validate_and_apply_inputs_mapping(bulk_inputs, bulk_inputs_mapping)
+        batch_inputs_processor = BatchInputsProcessor(executor._working_dir, executor._flow.inputs)
+        resolved_inputs = batch_inputs_processor._validate_and_apply_inputs_mapping(bulk_inputs, bulk_inputs_mapping)
         bulk_results = executor.exec_bulk(resolved_inputs, run_id)
         assert isinstance(bulk_results, BulkResult)
         assert len(bulk_results.outputs) == 2
@@ -198,6 +201,8 @@ class TestExecutor:
             "script_with_import",
             "package_tools",
             "connection_as_input",
+            "async_tools",
+            "async_tools_with_sync_tools",
         ],
     )
     def test_executor_exec_line(self, flow_folder, dev_connections):

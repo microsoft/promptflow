@@ -1,4 +1,5 @@
-from typing import Any, List, Mapping
+import inspect
+from typing import Any, Callable, List, Mapping, Dict
 
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node
 from promptflow.executor import _input_assignment_parser
@@ -15,11 +16,11 @@ class DAGManager:
         # TODO: Validate the DAG to avoid circular dependencies
 
     @property
-    def completed_nodes_outputs(self) -> Mapping[str, Any]:
+    def completed_nodes_outputs(self) -> Dict[str, Any]:
         return self._completed_nodes_outputs
 
     @property
-    def bypassed_nodes(self) -> Mapping[str, Node]:
+    def bypassed_nodes(self) -> Dict[str, Node]:
         return self._bypassed_nodes
 
     def pop_ready_nodes(self) -> List[Node]:
@@ -44,14 +45,33 @@ class DAGManager:
             del self._pending_nodes[node.name]
         return bypassed_nodes
 
-    def get_node_valid_inputs(self, node: Node) -> Mapping[str, Any]:
+    def get_node_valid_inputs(self, node: Node, f: Callable) -> Mapping[str, Any]:
         """Returns the valid inputs for the node, including the flow inputs, literal values and
-        the outputs of completed nodes."""
-        return {
-            name: self._get_node_dependency_value(i)
-            for name, i in (node.inputs or {}).items()
-            if not self._is_node_dependency_bypassed(i)
-        }
+        the outputs of completed nodes. The valid inputs are determined by the function of the node.
+
+        :param node: The node for which to determine the valid inputs.
+        :type node: Node
+        :param f: The function of the current node, which is used to determine the valid inputs.
+            In the case when node dependency is bypassed, the input is not required when parameter has default value,
+            and the input is set to None when parameter has no default value.
+        :type f: Callable
+        :return: A dictionary mapping each valid input name to its value.
+        :rtype: dict
+        """
+
+        results = {}
+        signature = inspect.signature(f).parameters
+        for name, i in (node.inputs or {}).items():
+            if self._is_node_dependency_bypassed(i):
+                # If the parameter has default value, the input will not be set so that the default value will be used.
+                if signature.get(name) is not None and signature[name].default is not inspect.Parameter.empty:
+                    continue
+                # If the parameter has no default value, the input will be set to None so that function will not fail.
+                else:
+                    results[name] = None
+            else:
+                results[name] = self._get_node_dependency_value(i)
+        return results
 
     def get_bypassed_node_outputs(self, node: Node):
         """Returns the outputs of the bypassed node."""
