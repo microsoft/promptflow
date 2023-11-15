@@ -91,10 +91,10 @@ jobs:
         run: |
           $msi_files = Get-ChildItem -Path 'scripts/installer/windows/out/' -Filter *.msi
           foreach ($msi_file in $msi_files) {
-          if ($env:INPUT_UPLOADASLATEST -eq 'False') {
-            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
+          if ($env:INPUT_UPLOADASLATEST -ieq 'True') {
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "promptflow.msi" --overwrite
           } else {
-            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "promptflow_test.msi" --overwrite
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
           }
           }
         shell: pwsh
