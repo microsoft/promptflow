@@ -196,29 +196,41 @@ class TestExecutorWithImage:
         assert_contain_image_reference(run_info)
 
     @pytest.mark.parametrize(
-        "flow_folder, input_dirs, inputs_mapping, expected_outputs_number",
+        "flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number",
         [
             (
                 SIMPLE_IMAGE_FLOW,
                 {"data": "."},
                 {"image": "${data.image}"},
+                "output",
                 4,
             ),
             (
                 SAMPLE_IMAGE_FLOW_WITH_DEFAULT,
                 {"data": "."},
                 {"image_2": "${data.image_2}"},
+                "output",
                 4,
             ),
             (
                 COMPOSITE_IMAGE_FLOW,
                 {"data": "inputs.jsonl"},
                 {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
+                "output",
+                2,
+            ),
+            (
+                CHAT_FLOW_WITH_IMAGE,
+                {"data": "inputs.jsonl"},
+                {"question": "${data.question}", "chat_history": "${data.chat_history}"},
+                "answer",
                 2,
             ),
         ],
     )
-    def test_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping, expected_outputs_number):
+    def test_batch_engine_with_image(
+        self, flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number
+    ):
         flow_file = get_yaml_file(flow_folder)
         working_dir = get_flow_folder(flow_folder)
         output_dir = Path("outputs")
@@ -230,7 +242,7 @@ class TestExecutorWithImage:
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-            result = output["output"][0] if isinstance(output["output"], list) else output["output"]
+            result = output[output_key][0] if isinstance(output[output_key], list) else output[output_key]
             assert all(MIME_PATTERN.search(key) for key in result), f"image is not in {i}th output {output}"
         for i, line_result in enumerate(bulk_result.line_results):
             assert isinstance(line_result, LineResult)
