@@ -66,12 +66,7 @@ class TestBatch:
     def test_batch_storage(self, dev_connections):
         mem_run_storage = MemoryRunStorage()
         run_id = str(uuid.uuid4())
-        inputs_mapping = {
-            "line_number": "${data.line_number}",
-            "variant_id": "${data.variant_id}",
-            "groundtruth": "${data.groundtruth}",
-            "prediction": "${data.prediction}",
-        }
+        inputs_mapping = {"url": "${data.url}"}
         batch_result = submit_batch_run(
             SAMPLE_FLOW, inputs_mapping, run_id=run_id, connections=dev_connections, storage=mem_run_storage
         )
@@ -96,12 +91,7 @@ class TestBatch:
         [
             (
                 SAMPLE_FLOW,
-                {
-                    "line_number": "${data.line_number}",
-                    "variant_id": "${data.variant_id}",
-                    "groundtruth": "${data.groundtruth}",
-                    "prediction": "${data.prediction}",
-                },
+                {"url": "${data.url}"},
             ),
             (
                 "prompt_tools",

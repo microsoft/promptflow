@@ -50,12 +50,7 @@ class TestBatchTimeout:
         # prepare input file and output dir
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
         output_dir = Path(mkdtemp())
-        inputs_mapping = {
-            "line_number": "${data.line_number}",
-            "variant_id": "${data.variant_id}",
-            "groundtruth": "${data.groundtruth}",
-            "prediction": "${data.prediction}",
-        }
+        inputs_mapping = {"url": "${data.url}"}
         batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
         assert isinstance(batch_results, BatchResult)
 
