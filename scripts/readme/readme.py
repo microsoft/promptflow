@@ -293,9 +293,9 @@ def write_readme(workflow_telemetries, readme_telemetries):
 
 
 if __name__ == "__main__":
-    #input_glob = ["examples/**/*.ipynb"]
+    input_glob = ["examples/**/*.ipynb"]
     workflow_telemetry = []
-    #workflow_generator.main(input_glob, workflow_telemetry)
+    workflow_generator.main(input_glob, workflow_telemetry)
 
     input_glob_readme = [
         "examples/flows/**/README.md",
@@ -305,7 +305,7 @@ if __name__ == "__main__":
         "examples/tutorials/**/README.md",
         "examples/tools/use-cases/**/README.md"
     ]
-    input_glob_readme_exclude = ["examples/flows/chat/**/README.md", "examples/flows/standard/**/README.md"]
+    input_glob_readme_exclude = ["examples/flows/integrations/**/README.md"]
     readme_telemetry = []
     readme_generator.main(input_glob_readme, input_glob_readme_exclude, readme_telemetry)
 
