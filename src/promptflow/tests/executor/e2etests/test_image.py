@@ -244,7 +244,7 @@ class TestExecutorWithImage:
                 {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
                 "output",
                 2,
-                False,
+                True,
             ),
         ],
     )
