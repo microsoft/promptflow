@@ -1,3 +1,5 @@
+# Add the script to delete the pfs.exe component from the generated wxs file, which is conflicting with the pfs.exe
+# service component in the project.wxs.
 $content = Get-Content -Path "out\promptflow.wxs"
 $searchText = "pfs.exe"
 
