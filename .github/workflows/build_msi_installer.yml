@@ -88,8 +88,4 @@ jobs:
           AZURE_STORAGE_ACCOUNT_NAME: promptflowartifact
           AZURE_CONTAINER_NAME: msi-installer
         run: |
-          az storage blob upload \
-            --account-name $AZURE_STORAGE_ACCOUNT_NAME \
-            --container-name $AZURE_CONTAINER_NAME \
-            --file scripts/installer/windows/out/*.msi \
-            --name chenyin_test
+          az storage blob upload --account-name $AZURE_STORAGE_ACCOUNT_NAME --container-name $AZURE_CONTAINER_NAME --file scripts/installer/windows/out/*.msi  --name chenyin_test
