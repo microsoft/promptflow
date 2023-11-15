@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: true
 
@@ -72,12 +72,6 @@ jobs:
           msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
 
-      - name: Upload MSI to Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: msi-artifact
-          path: scripts/installer/windows/out/*.msi
-
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -85,6 +79,6 @@ jobs:
 
       - name: Upload to Azure Storage
         run: |
-          $file_name = 'promptflow-${{ steps.get-version.outputs.version }}'
-          az storage blob upload --account-name promptflowartifact --container-name msi-installer --file scripts/installer/windows/out/$file_name.msi  --name chenyin_test
+          $msi_file = Get-ChildItem -Path 'scripts/installer/windows/out/' -Filter *.msi
+          az storage blob upload --account-name promptflowartifact --container-name msi-installer --file scripts/installer/windows/out/$msi_file  --name $msi_file --overwrite
         shell: pwsh
