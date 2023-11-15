@@ -7,11 +7,9 @@ import pytest
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch import BatchEngine
-from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
-from promptflow.executor import FlowExecutor
 from promptflow.executor.flow_executor import BatchResult, LineResult
 from promptflow.storage import AbstractRunStorage
 
@@ -52,6 +50,7 @@ def submit_batch_run(
     run_id=None,
     connections={},
     storage=None,
+    return_output_dir=False,
 ):
     batch_engine = BatchEngine(
         get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=connections, storage=storage
@@ -59,6 +58,8 @@ def submit_batch_run(
     if not input_dirs and inputs_mapping:
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
     output_dir = Path(mkdtemp())
+    if return_output_dir:
+        return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id), output_dir
     return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
 
 
@@ -131,24 +132,22 @@ class TestBatch:
             assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
     def test_batch_run_then_eval(self, dev_connections):
-        classification_executor = FlowExecutor.create(get_yaml_file(SAMPLE_FLOW), dev_connections, raise_ex=True)
-        bulk_inputs = self.get_bulk_inputs()
-        nlines = len(bulk_inputs)
-        bulk_results = classification_executor.exec_bulk(bulk_inputs)
-        assert len(bulk_results.outputs) == len(bulk_inputs)
-        eval_executor = FlowExecutor.create(get_yaml_file(SAMPLE_EVAL_FLOW), dev_connections, raise_ex=True)
-        input_dicts = {"data": bulk_inputs, "run.outputs": bulk_results.outputs}
+        batch_resutls, output_dir = submit_batch_run(
+            SAMPLE_FLOW, {"url": "${data.url}"}, connections=dev_connections, return_output_dir=True
+        )
+        nlines = get_batch_inputs_line(SAMPLE_FLOW)
+        assert len(batch_resutls.outputs) == nlines
+
+        input_dirs = {"data": get_flow_inputs_file(SAMPLE_FLOW, file_name="samples.json"), "run.outputs": output_dir}
         inputs_mapping = {
             "variant_id": "baseline",
             "groundtruth": "${data.url}",
             "prediction": "${run.outputs.category}",
         }
-        batch_inputs_processor = BatchInputsProcessor(eval_executor._working_dir, eval_executor._flow.inputs)
-        mapped_inputs = batch_inputs_processor._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
-        result = eval_executor.exec_bulk(mapped_inputs)
-        assert len(result.outputs) == nlines, f"Only {len(result.outputs)}/{nlines} outputs are returned."
-        assert len(result.metrics) > 0, "No metrics are returned."
-        assert result.metrics["accuracy"] == 0, f"Accuracy should be 0, got {result.metrics}."
+        eval_result = submit_batch_run(SAMPLE_EVAL_FLOW, inputs_mapping, input_dirs=input_dirs)
+        assert len(eval_result.outputs) == nlines, f"Only {len(eval_result.outputs)}/{nlines} outputs are returned."
+        assert len(eval_result.metrics) > 0, "No metrics are returned."
+        assert eval_result.metrics["accuracy"] == 0, f"Accuracy should be 0, got {eval_result.metrics}."
 
     def test_batch_with_metrics(self, dev_connections):
         flow_folder = SAMPLE_EVAL_FLOW
