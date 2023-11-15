@@ -24,7 +24,7 @@ optional arguments:
   -p PORT, --port PORT  port of the promptflow service
 ```
 
-If you don't specify a port to start service, pfs will first use the port in the configure file in "~/.promptflow/pf.port".
+If you don't specify a port to start service, pfs will first use the port in the configure file in "~/.promptflow/pfs.port".
 
 If not found port configuration or the port is used, pfs will use a random port to start the service.
 
