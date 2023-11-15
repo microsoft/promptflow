@@ -218,7 +218,7 @@ class TestExecutorWithImage:
             ),
         ],
     )
-    def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping, expected_outputs_number):
+    def test_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping, expected_outputs_number):
         flow_file = get_yaml_file(flow_folder)
         working_dir = get_flow_folder(flow_folder)
         output_dir = Path("outputs")
