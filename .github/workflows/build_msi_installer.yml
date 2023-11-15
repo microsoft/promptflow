@@ -85,5 +85,6 @@ jobs:
 
       - name: Upload to Azure Storage
         run: |
-          az storage blob upload --account-name promptflowartifact --container-name msi-installer --file scripts/installer/windows/out/*.msi  --name chenyin_test
+          $file_name = 'promptflow-${{ steps.get-version.outputs.version }}'
+          az storage blob upload --account-name promptflowartifact --container-name msi-installer --file scripts/installer/windows/out/$file_name.msi  --name chenyin_test
         shell: pwsh
