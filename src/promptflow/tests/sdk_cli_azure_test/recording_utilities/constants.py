@@ -24,6 +24,7 @@ FILTER_HEADERS = [
     "x-ms-client-session-id",
     "x-ms-client-user-type",
     "x-ms-correlation-request-id",
+    "x-ms-file-permission-key",
     "x-ms-lease-state",
     "x-ms-lease-status",
     "x-ms-server-encrypted",
