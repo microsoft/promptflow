@@ -16,7 +16,7 @@ remote_parser = api.parser()
 remote_parser.add_argument('X-Remote-User', location='headers', required=True)
 
 create_or_update_parser = remote_parser.copy()
-remote_parser.add_argument('connection_dict', type=str, location='args', required=True)
+create_or_update_parser.add_argument('connection_dict', type=str, location='args', required=True)
 
 connection_field = api.model(
     "Connection",
