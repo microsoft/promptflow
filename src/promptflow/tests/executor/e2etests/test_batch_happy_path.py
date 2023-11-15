@@ -43,13 +43,19 @@ class MemoryRunStorage(AbstractRunStorage):
 
 
 def submit_batch_run(
-    flow_folder, inputs_mapping, *, input_file_name="samples.json", run_id=None, connections={}, storage=None
+    flow_folder,
+    inputs_mapping,
+    *,
+    input_dirs={},
+    input_file_name="samples.json",
+    run_id=None,
+    connections={},
+    storage=None,
 ):
     batch_engine = BatchEngine(
         get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=connections, storage=storage
     )
-    input_dirs = {}
-    if inputs_mapping:
+    if not input_dirs and inputs_mapping:
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
     output_dir = Path(mkdtemp())
     return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
@@ -145,40 +151,36 @@ class TestBatch:
 
     def test_batch_with_metrics(self, dev_connections):
         flow_folder = SAMPLE_EVAL_FLOW
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
-        run_id = str(uuid.uuid4())
-        bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
-        bulk_results = executor.exec_bulk(bulk_inputs, run_id)
-        assert isinstance(bulk_results, BatchResult)
-        assert isinstance(bulk_results.metrics, dict)
-        assert bulk_results.metrics == get_flow_expected_metrics(flow_folder)
-        status_summary = bulk_results.get_status_summary()
+        inputs_mapping = {
+            "variant_id": "${data.variant_id}",
+            "groundtruth": "${data.groundtruth}",
+            "prediction": "${data.prediction}",
+        }
+        batch_results = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
+        assert isinstance(batch_results, BatchResult)
+        assert isinstance(batch_results.metrics, dict)
+        assert batch_results.metrics == get_flow_expected_metrics(flow_folder)
+        status_summary = batch_results.get_status_summary()
         assert status_summary == get_flow_expected_status_summary(flow_folder)
 
     def test_batch_with_partial_failure(self, dev_connections):
         flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=False)
-        run_id = str(uuid.uuid4())
-        bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
-        bulk_results = executor.exec_bulk(bulk_inputs, run_id)
-        assert isinstance(bulk_results, BatchResult)
-        status_summary = bulk_results.get_status_summary()
+        inputs_mapping = {"idx": "${data.idx}", "mod": "${data.mod}", "mod_2": "${data.mod_2}"}
+        batch_results = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
+        assert isinstance(batch_results, BatchResult)
+        status_summary = batch_results.get_status_summary()
         assert status_summary == get_flow_expected_status_summary(flow_folder)
 
     def test_batch_with_line_number(self, dev_connections):
         flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=False)
-        run_id = str(uuid.uuid4())
-        bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder, sample_inputs_file="inputs.json", return_dict=True)
-        bulk_inputs_mapping = self.get_bulk_inputs(
-            flow_folder=flow_folder, sample_inputs_file="inputs_mapping.json", return_dict=True
+        input_dirs = {"data": "inputs/data.jsonl", "output": "inputs/output.jsonl"}
+        inputs_mapping = {"idx": "${output.idx}", "mod": "${data.mod}", "mod_2": "${data.mod_2}"}
+        batch_results = submit_batch_run(
+            flow_folder, inputs_mapping, input_dirs=input_dirs, connections=dev_connections
         )
-        batch_inputs_processor = BatchInputsProcessor(executor._working_dir, executor._flow.inputs)
-        resolved_inputs = batch_inputs_processor._validate_and_apply_inputs_mapping(bulk_inputs, bulk_inputs_mapping)
-        bulk_results = executor.exec_bulk(resolved_inputs, run_id)
-        assert isinstance(bulk_results, BatchResult)
-        assert len(bulk_results.outputs) == 2
-        assert bulk_results.outputs == [
+        assert isinstance(batch_results, BatchResult)
+        assert len(batch_results.outputs) == 2
+        assert batch_results.outputs == [
             {"line_number": 0, "output": 1},
             {"line_number": 6, "output": 7},
         ]

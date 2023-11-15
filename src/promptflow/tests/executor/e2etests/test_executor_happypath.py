@@ -13,8 +13,6 @@ from promptflow.storage import AbstractRunStorage
 from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
-SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
-SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
 
 
 class MemoryRunStorage(AbstractRunStorage):
