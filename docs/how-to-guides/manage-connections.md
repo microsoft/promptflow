@@ -210,6 +210,36 @@ On the VS Code primary sidebar > prompt flow pane. You can find the connections 
 :::
 ::::
 
+## Consume connections on cloud (Azure AI)
+
+For flow samlessly developing on the flow that has transited from cloud ( Azure AI) to local, you can directly consume the connection you establish already on cloud, by setting the connection provider to be "Azure AI".
+
+
+The connection provider can be set in the following ways:
+
+1. Click on the VS Code primary sidebar, go to the connection list.
+
+1. Click on the `...` (more icon) on the top, select the `Set connection provider` option.
+
+    ![img](../media/how-to-guides/manage-connections/set-connection-provider.png)
+
+1. Select the connection provider of "Azure AI connections" you want to use. [Click to learn the difference between the connection providers](#manage-connections).
+
+    ![img](../media/how-to-guides/manage-connections/set-connection-provider-2.png)
+
+
+### Manage the connection provider
+
+3 types of connections we support now: Local, Azure AI connection - For current working directory, Azure AI connection - For this machine.
+
+|Connection provider|Type|Description|
+|---|---|---|
+| Local Connections| Local provider | Provide the connection you have created in your local machine, storing in the local sqlite. |You can use the local connection provider to manage your local connections.|
+|Azure AI connection - For current working directory| Cloud provider| Provide the connection you have created on an Azure AI project, use the `config.json` file to specify an specific Azure AI project as the provider. <li>Scenario: This is a dynamic approch for comsunming different connections provided by different Azure AI providers for specific working directory.</li>|
+|Azure AI connection - For this machine| Cloud provider| Provide the connection you have created on an Azure AI project, use the `connection string` to specify an specific Azure AI project as the provider. <li>Scenario: This is a static approch for comsunming the same connection provided by the same Azure AI provider for all working directories in your machine.</li>|
+
+By default, is local connection, if you never change. But the provider change will persist in your vs code extension, that means you don't need to change it every time.
+
 ## Next steps
 - Reach more detail about [connection concepts](../../concepts/concept-connections.md).
 - Try the [connection samples](https://github.com/microsoft/promptflow/blob/main/examples/connections/connection.ipynb).
