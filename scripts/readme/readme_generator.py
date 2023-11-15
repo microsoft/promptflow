@@ -40,10 +40,14 @@ def no_readme_generation_filter(item: Path, index, array) -> bool:
 def main(input_glob, exclude_glob=[], output_files=[]):
     def set_add(p, q):
         return p | q
+
     def set_difference(p, q):
         return p - q
+
     globs = reduce(set_add, [set(Path(ReadmeStepsManage.git_base_dir()).glob(p)) for p in input_glob], set())
-    globs_exclude = reduce(set_difference, [set(Path(ReadmeStepsManage.git_base_dir()).glob(p)) for p in exclude_glob], globs)
+    globs_exclude = reduce(set_difference,
+                           [set(Path(ReadmeStepsManage.git_base_dir()).glob(p)) for p in exclude_glob],
+                           globs)
     readme_items = sorted([i for i in globs_exclude])
 
     readme_items = local_filter(no_readme_generation_filter, readme_items)
