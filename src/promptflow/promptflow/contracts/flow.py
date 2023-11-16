@@ -650,7 +650,7 @@ class Flow:
     @classmethod
     def _resolve_working_dir(cls, flow_file: Path, working_dir=None) -> Path:
         working_dir = cls._parse_working_dir(flow_file, working_dir)
-        sys.path.insert(0, str(working_dir))
+        cls._update_working_dir(working_dir)
         return working_dir
 
     @classmethod
@@ -661,6 +661,10 @@ class Flow:
         return working_dir
 
     @classmethod
+    def _update_working_dir(cls, working_dir: Path):
+        sys.path.insert(0, str(working_dir))
+
+    @classmethod
     def from_yaml(cls, flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = cls._parse_working_dir(flow_file, working_dir)
@@ -668,10 +672,10 @@ class Flow:
             flow_dag = yaml.safe_load(fin)
         return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
 
-    @staticmethod
-    def _from_dict(flow_dag: dict, working_dir: Path) -> "Flow":
+    @classmethod
+    def _from_dict(cls, flow_dag: dict, working_dir: Path) -> "Flow":
         """Load flow from dict."""
-        sys.path.insert(0, str(working_dir))
+        cls._update_working_dir(working_dir)
         flow = Flow.deserialize(flow_dag)
         flow._set_tool_loader(working_dir)
         return flow
