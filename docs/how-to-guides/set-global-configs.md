@@ -66,4 +66,4 @@ The expected format of the config file is as follows:
 ```
 
 > 💡 Tips
-> In addition to the CLI command line setting approach, we also support setting this connection provider through the VS Code extension UI. [Click here to learn more](../cloud/azureai/consume-connections-on-cloud.md).
+> In addition to the CLI command line setting approach, we also support setting this connection provider through the VS Code extension UI. [Click here to learn more](../cloud/azureai/consume-connections-from-azure-ai.md).
