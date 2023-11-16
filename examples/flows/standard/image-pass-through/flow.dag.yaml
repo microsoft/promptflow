@@ -1,0 +1,29 @@
+inputs:
+  image:
+    type: image
+    default: https://img.mp.itc.cn/upload/20160526/0c2848cb6e614b4f9345940fcba2edc7_th.jpg
+    is_chat_input: false
+outputs:
+  output:
+    type: image
+    reference: ${python_node_2.output}
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: pick_an_image.py
+  inputs:
+    image_1: ${inputs.image}
+    image_2: logo_2.png
+  use_variants: false
+- name: python_node_2
+  type: python
+  source:
+    type: code
+    path: pick_an_image.py
+  inputs:
+    image_1: ${python_node.output}
+    image_2: logo.jpg
+  use_variants: false
+node_variants: {}
