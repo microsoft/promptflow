@@ -6,14 +6,16 @@ import pytest
 from promptflow._utils.tool_utils import (
     DynamicListError,
     ListFunctionResponseError,
+    RetrieveToolFuncResultValidationError,
     append_workspace_triple_to_func_input_params,
     function_to_interface,
     load_function_from_function_path,
     param_to_definition,
     validate_dynamic_list_func_response_type,
+    validate_tool_func_result,
 )
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
-from promptflow.contracts.tool import ValueType
+from promptflow.contracts.tool import ValueType, ToolFuncCallScenario
 
 
 # mock functions for dynamic list function testing
@@ -360,3 +362,22 @@ class TestToolUtils:
             "is not callable.'. \nPlease contact the tool author/support team for troubleshooting assistance.",
         ):
             load_function_from_function_path(func_path)
+
+    @pytest.mark.parametrize(
+        "func_call_scenario, result, err_msg",
+        [
+            (
+                ToolFuncCallScenario.REVERSE_GENERATED_BY,
+                "dummy_result",
+                f"ToolFuncCallScenario {ToolFuncCallScenario.REVERSE_GENERATED_BY} response must be a dict. dummy_result is not a dict"
+            ),
+            (
+                "dummy_scenario",
+                "dummy_result",
+                f"ToolFuncCallScenario dummy_scenario invalid. Available scenarios are {ToolFuncCallScenario.__members__.values()}"
+            ),
+        ],
+    )
+    def test_validate_tool_func_result(slef, func_call_scenario, result, err_msg):
+        with pytest.raises(RetrieveToolFuncResultValidationError, match=err_msg):
+            validate_tool_func_result(func_call_scenario, result)
