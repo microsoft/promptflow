@@ -369,12 +369,14 @@ class TestToolUtils:
             (
                 ToolFuncCallScenario.REVERSE_GENERATED_BY,
                 "dummy_result",
-                f"ToolFuncCallScenario {ToolFuncCallScenario.REVERSE_GENERATED_BY} response must be a dict. dummy_result is not a dict"
+                f"ToolFuncCallScenario {ToolFuncCallScenario.REVERSE_GENERATED_BY} response must be a dict. "
+                f"dummy_result is not a dict"
             ),
             (
                 "dummy_scenario",
                 "dummy_result",
-                f"ToolFuncCallScenario dummy_scenario invalid. Available scenarios are {ToolFuncCallScenario.__members__.values()}"
+                f"ToolFuncCallScenario dummy_scenario invalid. "
+                f"Available scenarios are {ToolFuncCallScenario.__members__.values()}"
             ),
         ],
     )

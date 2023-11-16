@@ -275,7 +275,8 @@ class TestToolsManager:
                         "index": "index_1"
                     })
                 },
-                f"ToolFuncCallScenario dummy_senario invalid. Available scenarios are {ToolFuncCallScenario.__members__.values()}"
+                f"ToolFuncCallScenario dummy_senario invalid. "
+                f"Available scenarios are {ToolFuncCallScenario.__members__.values()}"
             ),
             (
                 ToolFuncCallScenario.REVERSE_GENERATED_BY,
