@@ -92,14 +92,24 @@ class FlowContext:
         connection_name = f"connection_{hash(json.dumps(connection_dict, sort_keys=True))}"
         return connection_name
 
+    def _to_dict(self):
+        return {
+            "connections": self.connections,
+            "variant": self.variant,
+            "overrides": self.overrides,
+            "streaming": self.streaming,
+            # TODO: not hash env vars since they resolve in execution time
+            "environment_variables": self.environment_variables,
+        }
+
+    def __eq__(self, other):
+        if isinstance(other, FlowContext):
+            return self._to_dict() == other._to_dict()
+        return False
+
     def __hash__(self):
         self._resolve_connections()
-        result = hash(self.variant)
-        result ^= hash(json.dumps(self.connections, sort_keys=True))
-        result ^= hash(json.dumps(self.overrides, sort_keys=True))
-        # did not hash env vars since they resolve in execution time
-        result ^= hash(self.streaming)
-        return result
+        return hash(json.dumps(self._to_dict(), sort_keys=True))
 
 
 class Flow(FlowBase):

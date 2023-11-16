@@ -9,6 +9,7 @@ import pytest
 from promptflow import load_flow
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
 from promptflow._sdk.entities import CustomConnection
+from promptflow._sdk.operations._flow_conext_resolver import FlowContextResolver
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
 
@@ -137,3 +138,79 @@ class TestFlowAsFunc:
         # we only raise error when there are scrubbed secrets in connection
         f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={})}}
         f(text="hello")
+
+    def test_flow_context_cache(self):
+        # same flow context has same hash
+        assert hash(FlowContext()) == hash(FlowContext())
+        # getting executor for same flow will hit cache
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_custom_connection")
+        flow_executor1 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(),
+        )
+        flow_executor2 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(),
+        )
+        assert flow_executor1 is flow_executor2
+
+        # getting executor for same flow + context will hit cache
+        flow_executor1 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(connections={"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}}),
+        )
+        flow_executor2 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(connections={"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}}),
+        )
+        assert flow_executor1 is flow_executor2
+
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input_with_variant")
+        flow_executor1 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(
+                variant="${print_val.variant1}",
+                connections={"print_val": {"conn": CustomConnection(secrets={"k": "v"})}},
+                overrides={"nodes.print_val.inputs.key": "a"},
+            ),
+        )
+        flow_executor2 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(
+                variant="${print_val.variant1}",
+                connections={"print_val": {"conn": CustomConnection(secrets={"k": "v"})}},
+                overrides={"nodes.print_val.inputs.key": "a"},
+            ),
+        )
+        assert flow_executor1 is flow_executor2
+
+    def test_flow_context_cache_not_hit(self):
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_custom_connection")
+        flow_executor1 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(connections={"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}}),
+        )
+        flow_executor2 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(connections={"hello_node": {"connection": CustomConnection(secrets={"k2": "v"})}}),
+        )
+        assert flow_executor1 is not flow_executor2
+
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input_with_variant")
+        flow_executor1 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(
+                variant="${print_val.variant1}",
+                connections={"print_val": {"conn": CustomConnection(secrets={"k": "v"})}},
+                overrides={"nodes.print_val.inputs.key": "a"},
+            ),
+        )
+        flow_executor2 = FlowContextResolver.create(
+            flow_path=flow_path,
+            flow_context=FlowContext(
+                variant="${print_val.variant1}",
+                connections={"print_val": {"conn": CustomConnection(secrets={"k": "v"})}},
+                overrides={"nodes.print_val.inputs.key": "b"},
+            ),
+        )
+        assert flow_executor1 is not flow_executor2
