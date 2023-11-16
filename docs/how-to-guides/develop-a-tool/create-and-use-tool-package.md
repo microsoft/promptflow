@@ -17,11 +17,11 @@ pip install promptflow
 
 ### Create custom tool package
 You can use [pf tool init](../../reference/pf-command-reference.md#pf-tool-init) to initialize a package tool in current folder:
-```
+```bash
 pf tool init --package <your-package-name> --tool <your-tool-name>
 ```
 For example:
-```
+```bash
 pf tool init --package hello_world --tool hello_world_tool
 ```
 This auto-generated script will create one tool for you. The parameters _destination_ and _package-name_ are mandatory. The parameters _tool-name_ and _function-name_ are optional. If left unfilled, the _tool-name_ will default to _hello_world_tool_, and the _function-name_ will default to _tool-name_.

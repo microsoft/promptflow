@@ -68,7 +68,7 @@ In `input_settings` section of tool, add following properties to the input that 
 - `allow_manual_entry`: Allow user to enter input value manually. Default to false.
 - `is_multi_select`: Allow user to select multiple values. Default to false.
 
-See [tool_with_dynamic_list_input.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_dynamic_list_input.yaml) as an example.
+See [tool_with_dynamic_list_input.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_dynamic_list_input.py) as an example.
 
 ```python
 from promptflow._core.tool import tool
