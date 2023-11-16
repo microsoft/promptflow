@@ -307,7 +307,7 @@ def build_tool_id_mapping(package_tools) -> Dict[str, str]:
     tool_id_mapping = {}
     for tool_id, tool in package_tools.items():
         # "transition_from" is a list of old tool IDs that are mapped to the current tool ID.
-        if "transition_from" in tool:
+        if tool and "transition_from" in tool:
             for old_tool_id in tool["transition_from"]:
                 tool_id_mapping[old_tool_id] = tool_id
 
