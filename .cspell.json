@@ -150,7 +150,8 @@
     "uionly",
     "llmops",
     "Abhishek",
-    "restx"
+    "restx",
+	"coreclr"
   ],
   "flagWords": [
     "Prompt Flow"

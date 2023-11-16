@@ -103,7 +103,12 @@ class Flow(FlowBase):
         self._path = Path(path) if path else None
         self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
+        self._dag = yaml.safe_load(self.path.read_text(encoding=DEFAULT_ENCODING))
         super().__init__(**kwargs)
+
+    @property
+    def language(self) -> str:
+        return self._dag.get("language", "python")
 
     @property
     def code(self) -> Path:
@@ -262,7 +267,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         :param kwargs: flow inputs with key word arguments.
         :return:
         """
-        from promptflow._sdk.operations._test_submitter import TestSubmitter
+        from promptflow._sdk._submitter import TestSubmitter
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
