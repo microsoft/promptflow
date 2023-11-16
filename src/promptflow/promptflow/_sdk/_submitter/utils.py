@@ -47,6 +47,48 @@ def _load_flow_dag(flow_path: Path):
     return flow_path, flow_dag
 
 
+def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
+    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
+
+    # check tuning_node & variant
+    node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
+
+    if tuning_node and tuning_node not in node_name_2_node:
+        raise InvalidFlowError(f"Node {tuning_node} not found in flow")
+    if tuning_node and variant:
+        try:
+            flow_dag[NODE_VARIANTS][tuning_node][VARIANTS][variant]
+        except KeyError as e:
+            raise InvalidFlowError(f"Variant {variant} not found for node {tuning_node}") from e
+    try:
+        node_variants = flow_dag.pop(NODE_VARIANTS, {}) if drop_node_variants else flow_dag.get(NODE_VARIANTS, {})
+        updated_nodes = []
+        for node in flow_dag.get(NODES, []):
+            if not node.get(USE_VARIANTS, False):
+                updated_nodes.append(node)
+                continue
+            # update variant
+            node_name = node["name"]
+            if node_name not in node_variants:
+                raise InvalidFlowError(f"No variant for the node {node_name}.")
+            variants_cfg = node_variants[node_name]
+            variant_id = variant if node_name == tuning_node else None
+            if not variant_id:
+                if DEFAULT_VAR_ID not in variants_cfg:
+                    raise InvalidFlowError(f"Default variant id is not specified for {node_name}.")
+                variant_id = variants_cfg[DEFAULT_VAR_ID]
+            if variant_id not in variants_cfg.get(VARIANTS, {}):
+                raise InvalidFlowError(f"Cannot find the variant {variant_id} for {node_name}.")
+            variant_cfg = variants_cfg[VARIANTS][variant_id][NODE]
+            updated_nodes.append({"name": node_name, **variant_cfg})
+        flow_dag[NODES] = updated_nodes
+    except KeyError as e:
+        raise KeyError("Failed to overwrite tuning node with variant") from e
+
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
+        yaml.safe_dump(flow_dag, f)
+
+
 def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathLike = None):
     if not connections:
         return
@@ -116,48 +158,6 @@ def remove_additional_includes(flow_path: Path):
         yaml.safe_dump(flow_dag, f)
 
 
-def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
-    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
-
-    # check tuning_node & variant
-    node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
-
-    if tuning_node and tuning_node not in node_name_2_node:
-        raise InvalidFlowError(f"Node {tuning_node} not found in flow")
-    if tuning_node and variant:
-        try:
-            flow_dag[NODE_VARIANTS][tuning_node][VARIANTS][variant]
-        except KeyError as e:
-            raise InvalidFlowError(f"Variant {variant} not found for node {tuning_node}") from e
-    try:
-        node_variants = flow_dag.pop(NODE_VARIANTS, {}) if drop_node_variants else flow_dag.get(NODE_VARIANTS, {})
-        updated_nodes = []
-        for node in flow_dag.get(NODES, []):
-            if not node.get(USE_VARIANTS, False):
-                updated_nodes.append(node)
-                continue
-            # update variant
-            node_name = node["name"]
-            if node_name not in node_variants:
-                raise InvalidFlowError(f"No variant for the node {node_name}.")
-            variants_cfg = node_variants[node_name]
-            variant_id = variant if node_name == tuning_node else None
-            if not variant_id:
-                if DEFAULT_VAR_ID not in variants_cfg:
-                    raise InvalidFlowError(f"Default variant id is not specified for {node_name}.")
-                variant_id = variants_cfg[DEFAULT_VAR_ID]
-            if variant_id not in variants_cfg.get(VARIANTS, {}):
-                raise InvalidFlowError(f"Cannot find the variant {variant_id} for {node_name}.")
-            variant_cfg = variants_cfg[VARIANTS][variant_id][NODE]
-            updated_nodes.append({"name": node_name, **variant_cfg})
-        flow_dag[NODES] = updated_nodes
-    except KeyError as e:
-        raise KeyError("Failed to overwrite tuning node with variant") from e
-
-    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        yaml.safe_dump(flow_dag, f)
-
-
 @contextlib.contextmanager
 def variant_overwrite_context(
     flow_path: Path,
@@ -205,7 +205,7 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow, client=None, connections_to_ignore=None):
+    def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
         from .._pf_client import PFClient
 
         client = client or PFClient()

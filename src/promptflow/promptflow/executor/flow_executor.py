@@ -39,6 +39,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
+from promptflow.executor._base import FlowExecutorBase
 from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
@@ -53,7 +54,7 @@ from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 
 
-class FlowExecutor:
+class FlowExecutor(FlowExecutorBase):
     """This class is used to execute a single flow for different inputs.
 
     :param flow: The flow to be executed.

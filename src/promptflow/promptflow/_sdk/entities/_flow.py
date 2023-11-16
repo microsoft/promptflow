@@ -107,10 +107,6 @@ class Flow(FlowBase):
         super().__init__(**kwargs)
 
     @property
-    def language(self) -> str:
-        return self._dag.get("language", "python")
-
-    @property
     def code(self) -> Path:
         return self._code
 
@@ -156,7 +152,7 @@ class Flow(FlowBase):
         raise Exception("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
-        from promptflow._sdk.operations._run_submitter import variant_overwrite_context
+        from promptflow._sdk._submitter import variant_overwrite_context
 
         # TODO: check if there is potential bug here
         # this is a little wired:
