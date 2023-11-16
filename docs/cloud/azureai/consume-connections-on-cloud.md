@@ -1,4 +1,4 @@
-# Consume connections on cloud (Azure AI) in local
+# Consume connections from Azure AI
 
 For a smooth development flow that transitions from cloud (Azure AI) to local environments, you can directly utilize the connection already established on the cloud by setting the connection provider to "Azure AI connections".
 
