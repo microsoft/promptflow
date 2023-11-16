@@ -1,11 +1,11 @@
-# Replay End-to-End Tests
+# Replay end-to-end tests
 
 * This document introduces replay tests for those located in [sdk_cli_azure_test](../../src/promptflow/tests/sdk_cli_azure_test/e2etests/) and [sdk_cli_test](../../src/promptflow/tests/sdk_cli_test/e2etests/).
 * The primary purpose of replay tests is to avoid the need for credentials, Azure workspaces, OpenAI tokens, and to directly test prompt flow behavior.
 * Although there are different techniques behind recording/replaying, there are some common steps to run the tests in replay mode.
 * The key handle of replay tests is the environment variable `PROMPT_FLOW_TEST_MODE`.
 
-## How to Run Tests in Replay Mode
+## How to run tests in replay mode
 
 After cloning the full repo and setting up the proper test environment following [dev_setup.md](./dev_setup.md), run the following command in the root directory of the repo:
 
@@ -14,7 +14,7 @@ After cloning the full repo and setting up the proper test environment following
 
 These tests should work properly without any real connection settings.
 
-## Three Test Modes
+## Test modes
 
 There are 3 representative values of the environment variable `PROMPT_FLOW_TEST_MODE`
 - `live`: Tests run against the real backend, which is the way traditional end-to-end tests do.
@@ -33,15 +33,15 @@ To record a test, don’t forget to clone the full repo and set up the proper te
    * If you have changed/affected tests in __sdk_cli_azure_test__: There should be one new YAML file located in `src/promptflow/tests/test_configs/recordings/`, containing the network traffic of the test.
    * If you have changed/affected tests in __sdk_cli_test__: There may be changes in the folder `src/promptflow/tests/test_configs/node_recordings/`.  Don’t worry if there are no changes, because similar LLM calls may have been recorded before.
 
-## Techniques Behind Replay Test
+## Techniques behind replay test
 
-### sdk_cli_azure_test
+### Sdk_cli_azure_test
 
 End-to-end tests for pfazure aim to test the behavior of the PromptFlow SDK/CLI as it interacts with the service. This process can be time-consuming, error-prone, and require credentials (which are unavailable to pull requests from forked repositories); all of these go against our intention for a smooth development experience.
 
 Therefore, we introduce replay tests, which leverage [VCR.py](https://pypi.org/project/vcrpy/) to record all required network traffic to local files and replay during tests. In this way, we avoid the need for credentials, speed up, and stabilize the test process.
 
-### sdk_cli_test
+### Sdk_cli_test
 
 sdk_cli_test often doesn’t use a real backend. It will directly invokes LLM calls from localhost. Thus the key target of replay tests is to avoid the need for OpenAI tokens. If you have OpenAI / Azure OpenAI tokens yourself, you can try recording the tests. Record Storage will not record your own LLM connection, but only the inputs and outputs of the LLM calls.
 
