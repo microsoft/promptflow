@@ -39,6 +39,8 @@ class ValueType(str, Enum):
     OBJECT = "object"
     FILE_PATH = "file_path"
     IMAGE = "image"
+    FUNCTION_LIST = "function_list"
+    FUNCTION_STR = "function_str"
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":
@@ -120,13 +122,13 @@ class ValueType(str, Enum):
             raise ValueError(f"Invalid boolean value {v!r}")
         if self == ValueType.STRING:
             return str(v)
-        if self == ValueType.LIST:
+        if self == ValueType.LIST or self == ValueType.FUNCTION_LIST:
             if isinstance(v, str):
                 v = json.loads(v)
             if not isinstance(v, list):
                 raise ValueError(f"Invalid list value {v!r}")
             return v
-        if self == ValueType.OBJECT:
+        if self == ValueType.OBJECT or self == ValueType.FUNCTION_STR:
             if isinstance(v, str):
                 try:
                     return json.loads(v)
