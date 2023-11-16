@@ -331,23 +331,19 @@ class FlowExecutor:
         storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
-            ToolInvoker.activate(DefaultToolInvoker())
-
             # Will generate node run in context
             context = FlowExecutionContext(
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
             )
-            context.current_node = node
-            context.start()
+
             try:
-                resolved_node.callable(**resolved_inputs)
+                context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
             except Exception:
-                if raise_ex:
+                if raise_ex:  # Only raise exception when raise_ex is True
                     raise
-            finally:
-                context.end()
+
             node_runs = run_tracker.collect_node_runs()
             if len(node_runs) != 1:
                 # Should not happen except there is bug in run_tracker or thread control.

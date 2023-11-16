@@ -92,13 +92,9 @@ class FlowNodesScheduler:
         return completed_nodes_outputs
 
     def _bypass_nodes(self, nodes: List[Node]):
-        try:
-            self._context.start()
-            for node in nodes:
-                node_outputs = self._dag_manager.get_bypassed_node_outputs(node)
-                self._context.bypass_node(node, node_outputs)
-        finally:
-            self._context.end()
+        for node in nodes:
+            node_outputs = self._dag_manager.get_bypassed_node_outputs(node)
+            self._context.bypass_node(node, node_outputs)
 
     def _submit_nodes(self, executor: ThreadPoolExecutor, nodes):
         for each_node in nodes:
@@ -109,18 +105,12 @@ class FlowNodesScheduler:
         node, dag_manager = args
         # We are using same run tracker and cache manager for all threads, which may not thread safe.
         # But for bulk run scenario, we've doing this for a long time, and it works well.
-        context = self._context.copy()
-        try:
-            context.start()
-            f = self._tools_manager.get_tool(node.name)
-            kwargs = dag_manager.get_node_valid_inputs(node, f)
-            context.current_node = node
-            if inspect.iscoroutinefunction(f):
-                # TODO: Run async functions in flow level event loop
-                result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
-            else:
-                result = f(**kwargs)
-            context.current_node = None
-            return result
-        finally:
-            context.end()
+        context = self._context
+        f = self._tools_manager.get_tool(node.name)
+        kwargs = dag_manager.get_node_valid_inputs(node, f)
+        if inspect.iscoroutinefunction(f):
+            # TODO: Run async functions in flow level event loop
+            result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
+        else:
+            result = context.invoke_tool(node, f, kwargs=kwargs)
+        return result

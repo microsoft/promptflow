@@ -162,7 +162,8 @@ def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
     while i > 0:
         frame_summary = frame_summaries[i]
         if frame_summary.filename == flow_execution_context.__file__:
-            return frame_summaries[i + 1 :]
+            # Here i + 3 means we will skip several system function calls
+            return frame_summaries[i + 3 :]
         i -= 1
     return frame_summaries
 
