@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import argparse
+import json
 from typing import Dict, List
 
 from promptflow._cli._params import (
@@ -125,7 +126,7 @@ Examples:
 # Get flow:
 pfazure flow show --name <flow-name>
 """
-    add_params = [add_param_flow_name] + logging_params
+    add_params = [add_param_flow_name, _set_workspace_argument_for_subparsers] + logging_params
 
     activate_action(
         name="show",
@@ -194,7 +195,7 @@ def show_flow(args: argparse.Namespace):
     """Get a flow for promptflow."""
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     flow = pf.flows.get(args.name)
-    print(flow._to_dict())
+    print(json.dumps(flow._to_dict(), indent=4))
 
 
 def list_flows(args: argparse.Namespace):
