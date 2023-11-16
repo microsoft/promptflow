@@ -17,7 +17,7 @@ nodes:
     path: async_passthrough.py
   inputs:
     input1: ${inputs.input_str}
-    wait_seconds: 3
+    wait_seconds: 1
 - name: async_passthrough1
   type: python
   source:

@@ -558,6 +558,8 @@ class Flow:
     :type tools: List[Tool]
     :param node_variants: The node variants of the flow.
     :type node_variants: Dict[str, NodeVariants]
+    :param program_language: The program language of the flow.
+    :type program_language: str
     """
 
     id: str
@@ -567,6 +569,7 @@ class Flow:
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
+    program_language: str = "python"
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -581,6 +584,7 @@ class Flow:
             "inputs": {name: i.serialize() for name, i in self.inputs.items()},
             "outputs": {name: o.serialize() for name, o in self.outputs.items()},
             "tools": [serialize(t) for t in self.tools],
+            "language": self.program_language,
         }
         return data
 
@@ -625,6 +629,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
+            program_language=data.get("language", "python"),
         )
 
     def _apply_default_node_variants(self: "Flow"):
