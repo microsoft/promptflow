@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from enum import Enum
 from traceback import TracebackException, format_tb
-from types import TracebackType
+from types import TracebackType, FrameType
 
 from promptflow.exceptions import PromptflowException, SystemErrorException, UserErrorException, ValidationException
 
@@ -378,3 +378,10 @@ def infer_error_code_from_class(cls):
         return "ValidationError"
 
     return cls.__name__
+
+
+def is_pf_core_frame(frame: FrameType):
+    """Check if the frame is from promptflow core code."""
+    from promptflow import _core
+    file_of_core = _core.__file__
+    return file_of_core in frame.f_code.co_filename
