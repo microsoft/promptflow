@@ -1,4 +1,5 @@
 # -- Path setup --------------------------------------------------------------
+import os
 import sys
 
 # -- Project information -----------------------------------------------------
@@ -74,6 +75,10 @@ html_sourcelink_suffix = ""
 html_show_sourcelink = False
 
 # Define the json_url for our version switcher.
+json_url = "https://microsoft.github.io/promptflow/scripts/docs/_static/switcher.json"
+
+# Define the version we use for matching in the version switcher.
+version_match = os.environ.get("READTHEDOCS_VERSION")
 
 html_theme_options = {
     "github_url": "https://github.com/microsoft/promptflow",
@@ -92,8 +97,12 @@ html_theme_options = {
     "use_edit_page_button": True,
     "show_toc_level": 1,
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
-    "navbar_center": ["navbar-nav"],
+    "navbar_center": ["version-switcher", "navbar-nav"],
     # "announcement": "Test our announcement here.",
+    "switcher": {
+        "json_url": json_url,
+        "version_match": version_match,
+    },
     "show_nav_level": 1,
 }
 
