@@ -6,6 +6,7 @@ from typing import Dict, List
 
 from promptflow._cli._params import (
     add_param_archived_only,
+    add_param_flow_name,
     add_param_flow_type,
     add_param_include_archived,
     add_param_include_others,
@@ -32,7 +33,7 @@ def add_parser_flow(subparsers):
     )
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_flow_create(flow_subparsers)
-    # add_parser_flow_get(flow_subparsers)
+    add_parser_flow_show(flow_subparsers)
     add_parser_flow_list(flow_subparsers)
     # add_parser_flow_delete(flow_subparsers)
     # add_parser_flow_download(flow_subparsers)
@@ -116,6 +117,27 @@ pfazure flow list --include-others
     )
 
 
+def add_parser_flow_show(subparsers):
+    """Add flow get parser to the pf flow subparsers."""
+    epilog = """
+Examples:
+
+# Get flow:
+pfazure flow show --name <flow-name>
+"""
+    add_params = [add_param_flow_name] + logging_params
+
+    activate_action(
+        name="show",
+        description="Show a flow from Azure.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="pfazure flow show",
+        action_param_name="sub_action",
+    )
+
+
 def add_parser_flow_download(subparsers):
     """Add flow download parser to the pf flow subparsers."""
     add_param_source = lambda parser: parser.add_argument(  # noqa: E731
@@ -144,6 +166,8 @@ def add_parser_flow_download(subparsers):
 def dispatch_flow_commands(args: argparse.Namespace):
     if args.sub_action == "create":
         create_flow(args)
+    elif args.sub_action == "show":
+        show_flow(args)
     elif args.sub_action == "list":
         list_flows(args)
 
@@ -164,6 +188,13 @@ def create_flow(args: argparse.Namespace):
         description=params.get("description", None),
         tags=params.get("tags", None),
     )
+
+
+def show_flow(args: argparse.Namespace):
+    """Get a flow for promptflow."""
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    flow = pf.flows.get(args.name)
+    print(flow._to_dict())
 
 
 def list_flows(args: argparse.Namespace):
