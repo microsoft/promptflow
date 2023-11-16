@@ -151,17 +151,28 @@ def serving_client_composite_image_flow(mocker: MockerFixture):
 
 
 def mock_origin(original):
-    def mock_invoke_tool(self, func, *args, **kwargs):
+    def mock_invoke_tool(self, node, func, kwargs):
+        if type(func).__name__ == "partial":
+            func_wo_partial = func.func
+        else:
+            func_wo_partial = func
+
         if (
-            func.__qualname__.startswith("AzureOpenAI")
-            or func.__qualname__ == "fetch_text_content_from_url"
-            or func.__qualname__ == "my_python_tool"
+            node.provider == "AzureOpenAI"
+            or func_wo_partial.__qualname__.startswith("AzureOpenAI")
+            or func_wo_partial.__qualname__ == "fetch_text_content_from_url"
+            or func_wo_partial.__qualname__ == "my_python_tool"
         ):
             input_dict = {}
             for key in kwargs:
                 input_dict[key] = kwargs[key]
-            input_dict["_args"] = args
-            input_dict["_func"] = func.__qualname__
+            if type(func).__name__ == "partial":
+                input_dict["_args"] = func.args
+                for key in func.keywords:
+                    input_dict[key] = func.keywords[key]
+            else:
+                input_dict["_args"] = []
+            input_dict["_func"] = func_wo_partial.__qualname__
             # Replay mode will direct return item from record file
             if RecordStorage.is_replaying_mode():
                 obj = RecordStorage.get_instance().get_record(input_dict)
@@ -174,13 +185,13 @@ def mock_origin(original):
                 try:
                     obj = RecordStorage.get_instance().get_record(input_dict)
                 except (RecordItemMissingException, RecordFileMissingException):
-                    obj_original = original(self, func, *args, **kwargs)
+                    obj_original = original(self, node, func, kwargs)
                     obj = RecordStorage.get_instance().set_record(input_dict, obj_original)
                 # More exceptions should just raise
             else:
-                obj = original(self, func, *args, **kwargs)
+                obj = original(self, node, func, kwargs)
             return obj
-        return original(self, func, *args, **kwargs)
+        return original(self, node, func, kwargs)
 
     return mock_invoke_tool
 
@@ -196,8 +207,9 @@ def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixtur
 @pytest.fixture
 def recording_injection(mocker: MockerFixture, recording_file_override):
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-        original_fun = FlowExecutionContext.invoke_tool
+        original_fun = FlowExecutionContext._invoke_tool_with_timer
         mocker.patch(
-            "promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun)
+            "promptflow._core.flow_execution_context.FlowExecutionContext._invoke_tool_with_timer",
+            mock_origin(original_fun),
         )
     yield
