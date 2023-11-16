@@ -45,11 +45,11 @@ from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow.batch import BatchEngine
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.executor import BatchEngine, FlowExecutor
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -305,13 +305,7 @@ class RunSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
-        flow_executor = FlowExecutor.create(
-            flow.path,
-            connections,
-            flow.code,
-            storage=local_storage,
-        )
-        batch_engine = BatchEngine(flow_executor=flow_executor)
+        batch_engine = BatchEngine(flow.path, flow.code, connections=connections, storage=local_storage)
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
@@ -340,7 +334,7 @@ class RunSubmitter:
                         + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
                     )
                 logger.warning(error_log)
-            # The bulk run is completed if the exec_bulk successfully completed.
+            # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
