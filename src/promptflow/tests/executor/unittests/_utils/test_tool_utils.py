@@ -55,7 +55,7 @@ class TestToolUtils:
         def func(conn: [AzureOpenAIConnection, CustomConnection], input: [str, int]):
             pass
 
-        input_defs, _, connection_types = function_to_interface(func)
+        input_defs, _, connection_types, _ = function_to_interface(func)
         assert len(input_defs) == 2
         assert input_defs["conn"].type == ["AzureOpenAIConnection", "CustomConnection"]
         assert input_defs["input"].type == [ValueType.OBJECT]
@@ -68,6 +68,19 @@ class TestToolUtils:
         with pytest.raises(Exception) as exec_info:
             function_to_interface(func, {"input_str": "test"})
         assert "Duplicate inputs found from" in exec_info.value.args[0]
+
+    def test_function_to_interface_with_kwargs(self):
+        def func(input_str: str, **kwargs):
+            pass
+
+        _, _, _, enable_kwargs = function_to_interface(func)
+        assert enable_kwargs is True
+
+        def func(input_str: str):
+            pass
+
+        _, _, _, enable_kwargs = function_to_interface(func)
+        assert enable_kwargs is False
 
     def test_param_to_definition(self):
         from promptflow._sdk.entities import CustomStrongTypeConnection

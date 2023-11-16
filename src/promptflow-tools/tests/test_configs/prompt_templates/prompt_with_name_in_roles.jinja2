@@ -1,0 +1,30 @@
+# system:
+## name:
+AI
+
+## content:
+Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.
+
+# user:
+## name:
+person
+
+## content:
+{{prev_question}}
+
+# assistant:
+## name:
+John
+
+## content:
+{{prev_answer}}
+
+# function:
+## name:
+ {{name}}
+
+## content:
+{{result}}
+
+# user:
+{{question}}

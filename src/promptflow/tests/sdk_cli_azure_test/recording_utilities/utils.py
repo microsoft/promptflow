@@ -14,15 +14,23 @@ from vcr.request import Request
 
 from promptflow.azure import PFClient
 
-from .constants import SKIP_LIVE_RECORDING, TEST_RUN_LIVE, SanitizedValues
+from .constants import ENVIRON_TEST_MODE, SanitizedValues, TestMode
+
+
+def get_test_mode_from_environ() -> str:
+    return os.getenv(ENVIRON_TEST_MODE, TestMode.LIVE)
 
 
 def is_live() -> bool:
-    return os.getenv(TEST_RUN_LIVE, "true") == "true"
+    return get_test_mode_from_environ() == TestMode.LIVE
 
 
-def is_live_and_not_recording() -> bool:
-    return is_live() and os.getenv(SKIP_LIVE_RECORDING, "true") == "true"
+def is_record() -> bool:
+    return get_test_mode_from_environ() == TestMode.RECORD
+
+
+def is_replay() -> bool:
+    return get_test_mode_from_environ() == TestMode.REPLAY
 
 
 class FakeTokenCredential:
@@ -59,7 +67,7 @@ def mock_workspace_get(*args, **kwargs) -> Workspace:
     )
 
 
-def get_pf_client_for_playback() -> PFClient:
+def get_pf_client_for_replay() -> PFClient:
     ml_client = MLClient(
         credential=FakeTokenCredential(),
         subscription_id=SanitizedValues.SUBSCRIPTION_ID,
@@ -114,6 +122,22 @@ def sanitize_upload_hash(value: str) -> str:
     value = re.sub(
         r"(LocalUpload)/([0-9a-f]{32})",
         r"\1/{}".format(SanitizedValues.UPLOAD_HASH),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
+def sanitize_username(value: str) -> str:
+    value = re.sub(
+        r"/(Users%2F)([^%?]+)(%2F|\?)",
+        r"/\1{}\3".format(SanitizedValues.USERNAME),
+        value,
+        flags=re.IGNORECASE,
+    )
+    value = re.sub(
+        r"(Users/)([^/]+)(/)",
+        r"\1{}\3".format(SanitizedValues.USERNAME),
         value,
         flags=re.IGNORECASE,
     )

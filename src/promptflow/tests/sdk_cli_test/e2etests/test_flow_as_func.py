@@ -7,7 +7,8 @@ from types import GeneratorType
 import pytest
 
 from promptflow import load_flow
-from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection
+from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError
+from promptflow._sdk.entities import CustomConnection
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
 
@@ -16,14 +17,17 @@ RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowAsFunc:
-    def test_flow_as_a_func(self, azure_open_ai_connection: AzureOpenAIConnection):
+    def test_flow_as_a_func(self):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
         result = f(key="unknown")
         assert result["output"] is None
+        assert "line_number" not in result
 
     def test_flow_as_a_func_with_connection_overwrite(self):
         from promptflow._sdk._errors import ConnectionNotFoundError
@@ -93,11 +97,43 @@ class TestFlowAsFunc:
         result = f(key="key")
         assert result["output"] == "value"
 
-    def test_flow_as_a_func_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection):
-        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+    def test_flow_as_a_func_with_variant(self):
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input_with_variant").absolute()
         f = load_flow(
             flow_path,
         )
-        f.context.variant = "${summarize_text_content.variant_0}"
+        f.context.variant = "${print_val.variant1}"
+        # variant1 will use a mock_custom_connection
+        with pytest.raises(ConnectionNotFoundError) as e:
+            f(key="a")
+        assert "Connection 'mock_custom_connection' is not found." in str(e.value)
 
-        f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
+        # non-exist variant
+        f.context.variant = "${print_val.variant_2}"
+        with pytest.raises(InvalidFlowError) as e:
+            f(key="a")
+        assert "Variant variant_2 not found for node print_val" in str(e.value)
+
+    def test_non_scrubbed_connection(self):
+        f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
+        f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={"k": "*****"})}}
+
+        with pytest.raises(UserErrorException) as e:
+            f(text="hello")
+        assert "please make sure connection has decrypted secrets to use in flow execution." in str(e)
+
+    def test_local_connection_object(self, pf, azure_open_ai_connection):
+        f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
+        # local connection without secret will lead to error
+        connection = pf.connections.get("azure_open_ai_connection", with_secrets=False)
+        f.context.connections = {"hello_node": {"connection": connection}}
+        with pytest.raises(UserErrorException) as e:
+            f(text="hello")
+        assert "please make sure connection has decrypted secrets to use in flow execution." in str(e)
+
+    def test_non_secret_connection(self):
+        f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
+        # execute connection without secrets won't get error since the connection doesn't have scrubbed secrets
+        # we only raise error when there are scrubbed secrets in connection
+        f.context.connections = {"hello_node": {"connection": CustomConnection(secrets={})}}
+        f(text="hello")

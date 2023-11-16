@@ -140,3 +140,7 @@ class RunRecordNotFound(SystemErrorException):
 
 class FlowOutputUnserializable(UserErrorException):
     pass
+
+
+class ProcessPoolError(SystemErrorException):
+    pass

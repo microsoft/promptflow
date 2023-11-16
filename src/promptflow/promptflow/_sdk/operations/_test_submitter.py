@@ -51,7 +51,7 @@ class TestSubmitter:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
-        self.flow_context.resolve_connections()
+        self.flow_context._resolve_connections()
         with variant_overwrite_context(
             flow_path=self._origin_flow.code,
             tuning_node=tuning_node,
@@ -156,7 +156,8 @@ class TestSubmitter:
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
     ):
-        from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
+        from promptflow._constants import LINE_NUMBER_KEY
+        from promptflow.executor.flow_executor import FlowExecutor
 
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
@@ -231,14 +232,24 @@ class TestSubmitter:
 
     def exec_with_inputs(self, inputs):
         # TODO: unify all exec_line calls here
-
+        from promptflow._constants import LINE_NUMBER_KEY
         from promptflow.executor.flow_executor import FlowExecutor
 
+        # validate connection objs
+        connection_obj_dict = {}
+        for key, connection_obj in self.flow_context.connection_objs.items():
+            scrubbed_secrets = connection_obj._get_scrubbed_secrets()
+            if scrubbed_secrets:
+                raise UserErrorException(
+                    f"Connection {connection_obj} contains scrubbed secrets with key {scrubbed_secrets.keys()}, "
+                    "please make sure connection has decrypted secrets to use in flow execution. "
+                )
+            connection_obj_dict[key] = connection_obj._to_execution_connection_dict()
         connections = SubmitterHelper.resolve_connections(
             flow=self.flow, client=self._client, connections_to_ignore=self.flow_context.connection_objs.keys()
         )
         # update connections with connection objs
-        connections.update(self.flow_context.connection_objs)
+        connections.update(connection_obj_dict)
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(
             environment_variables=self.flow_context.environment_variables, client=self._client
@@ -249,6 +260,9 @@ class TestSubmitter:
         )
         flow_executor.enable_streaming_for_llm_flow(lambda: self.flow_context.streaming)
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
+        if isinstance(line_result.output, dict):
+            # Remove line_number from output
+            line_result.output.pop(LINE_NUMBER_KEY, None)
         return line_result
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
@@ -382,7 +396,7 @@ class TestSubmitter:
 
     @staticmethod
     def _raise_error_when_test_failed(test_result, show_trace=False):
-        from promptflow.executor.flow_executor import LineResult
+        from promptflow.executor._result import LineResult
 
         test_status = test_result.run_info.status if isinstance(test_result, LineResult) else test_result.status
 

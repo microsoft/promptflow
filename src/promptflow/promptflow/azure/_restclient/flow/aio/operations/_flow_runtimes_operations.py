@@ -15,7 +15,7 @@ from azure.core.tracing.decorator_async import distributed_trace_async
 
 from ... import models as _models
 from ..._vendor import _convert_request
-from ...operations._flow_runtimes_operations import build_check_ci_availability_request, build_check_mir_availability_request, build_check_runtime_upgrade_request, build_create_runtime_request, build_delete_runtime_request, build_get_runtime_request, build_list_runtimes_request, build_update_runtime_request
+from ...operations._flow_runtimes_operations import build_check_ci_availability_request, build_check_mir_availability_request, build_check_runtime_upgrade_request, build_create_runtime_request, build_delete_runtime_request, build_get_runtime_capability_request, build_get_runtime_latest_config_request, build_get_runtime_request, build_list_runtimes_request, build_update_runtime_request
 T = TypeVar('T')
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
 
@@ -514,6 +514,120 @@ class FlowRuntimesOperations:
         return deserialized
 
     check_runtime_upgrade.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}/needUpgrade'}  # type: ignore
+
+
+    @distributed_trace_async
+    async def get_runtime_capability(
+        self,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+        runtime_name: str,
+        **kwargs: Any
+    ) -> "_models.FlowRuntimeCapability":
+        """get_runtime_capability.
+
+        :param subscription_id: The Azure Subscription ID.
+        :type subscription_id: str
+        :param resource_group_name: The Name of the resource group in which the workspace is located.
+        :type resource_group_name: str
+        :param workspace_name: The name of the workspace.
+        :type workspace_name: str
+        :param runtime_name:
+        :type runtime_name: str
+        :keyword callable cls: A custom type or function that will be passed the direct response
+        :return: FlowRuntimeCapability, or the result of cls(response)
+        :rtype: ~flow.models.FlowRuntimeCapability
+        :raises: ~azure.core.exceptions.HttpResponseError
+        """
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowRuntimeCapability"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
+
+        
+        request = build_get_runtime_capability_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            runtime_name=runtime_name,
+            template_url=self.get_runtime_capability.metadata['url'],
+        )
+        request = _convert_request(request)
+        request.url = self._client.format_url(request.url)
+
+        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+
+        deserialized = self._deserialize('FlowRuntimeCapability', pipeline_response)
+
+        if cls:
+            return cls(pipeline_response, deserialized, {})
+
+        return deserialized
+
+    get_runtime_capability.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/{runtimeName}/capability'}  # type: ignore
+
+
+    @distributed_trace_async
+    async def get_runtime_latest_config(
+        self,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+        **kwargs: Any
+    ) -> "_models.RuntimeConfiguration":
+        """get_runtime_latest_config.
+
+        :param subscription_id: The Azure Subscription ID.
+        :type subscription_id: str
+        :param resource_group_name: The Name of the resource group in which the workspace is located.
+        :type resource_group_name: str
+        :param workspace_name: The name of the workspace.
+        :type workspace_name: str
+        :keyword callable cls: A custom type or function that will be passed the direct response
+        :return: RuntimeConfiguration, or the result of cls(response)
+        :rtype: ~flow.models.RuntimeConfiguration
+        :raises: ~azure.core.exceptions.HttpResponseError
+        """
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.RuntimeConfiguration"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
+
+        
+        request = build_get_runtime_latest_config_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            template_url=self.get_runtime_latest_config.metadata['url'],
+        )
+        request = _convert_request(request)
+        request.url = self._client.format_url(request.url)
+
+        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+
+        deserialized = self._deserialize('RuntimeConfiguration', pipeline_response)
+
+        if cls:
+            return cls(pipeline_response, deserialized, {})
+
+        return deserialized
+
+    get_runtime_latest_config.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRuntimes/latestConfig'}  # type: ignore
 
 
     @distributed_trace_async

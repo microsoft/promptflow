@@ -8,7 +8,7 @@ from promptflow._core._errors import PackageToolNotFoundError, ToolLoadError
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import NodeInputValidationError, ResolveToolError
-from promptflow.executor.flow_executor import LineResult
+from promptflow.executor._result import LineResult
 
 from ..utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_flow_sample_inputs, get_yaml_file
 

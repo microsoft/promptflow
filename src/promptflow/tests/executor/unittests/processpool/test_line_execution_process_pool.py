@@ -1,6 +1,6 @@
-import uuid
-import os
 import multiprocessing
+import os
+import uuid
 from multiprocessing import Queue
 from pathlib import Path
 from tempfile import mkdtemp
@@ -14,9 +14,11 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import (
-    LineExecutionProcessPool, _exec_line, get_multiprocessing_context
+    LineExecutionProcessPool,
+    _exec_line,
+    get_multiprocessing_context,
 )
-from promptflow.executor.flow_executor import LineResult
+from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
 
@@ -205,8 +207,9 @@ class TestLineExecutionProcessPool:
             use_fork = line_execution_process_pool._use_fork
             assert use_fork == (multiprocessing.get_start_method() == "fork")
             sys_start_methods = multiprocessing.get_all_start_methods()
-            exexpected_log_message = "Failed to set start method to 'test', start method test" \
-                f" is not in: {sys_start_methods}."
+            exexpected_log_message = (
+                "Failed to set start method to 'test', start method test" f" is not in: {sys_start_methods}."
+            )
             mock_logger.warning.assert_called_once_with(exexpected_log_message)
 
     def test_process_not_set_environment_variable(self, dev_connections):

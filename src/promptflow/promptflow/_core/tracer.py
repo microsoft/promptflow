@@ -23,18 +23,31 @@ class Tracer(ThreadLocalSingleton):
     CONTEXT_VAR_NAME = "Tracer"
     context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
-    def __init__(self, run_id):
+    def __init__(self, run_id, node_name: Optional[str] = None):
         self._run_id = run_id
+        self._node_name = node_name
         self._traces = []
         self._trace_stack = []
 
     @classmethod
-    def start_tracing(cls, run_id):
-        tracer = cls(run_id)
+    def start_tracing(cls, run_id, node_name: Optional[str] = None):
+        current_run_id = cls.current_run_id()
+        if current_run_id is not None:
+            msg = f"Try to start tracing for run {run_id} but {current_run_id} is already active."
+            logging.warning(msg)
+            return
+        tracer = cls(run_id, node_name)
         tracer._activate_in_context()
 
     @classmethod
-    def end_tracing(cls, raise_ex=False):
+    def current_run_id(cls):
+        tracer = cls.active_instance()
+        if not tracer:
+            return None
+        return tracer._run_id
+
+    @classmethod
+    def end_tracing(cls, run_id: Optional[str] = None, raise_ex=False):
         tracer = cls.active_instance()
         if not tracer:
             msg = "Try end tracing but no active tracer in current context."
@@ -42,11 +55,15 @@ class Tracer(ThreadLocalSingleton):
                 raise Exception(msg)
             logging.warning(msg)
             return []
+        if run_id is not None and tracer._run_id != run_id:
+            msg = f"Try to end tracing for run {run_id} but {tracer._run_id} is active."
+            logging.warning(msg)
+            return []
         tracer._deactivate_in_context()
         return tracer.to_json()
 
     @classmethod
-    def push_tool(cls, f, args, kwargs):
+    def push_tool(cls, f, args=[], kwargs={}):
         obj = cls.active_instance()
         sig = inspect.signature(f).parameters
         all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
@@ -64,6 +81,26 @@ class Tracer(ThreadLocalSingleton):
         )
         obj._push(trace)
         return trace
+
+    @classmethod
+    def invoke_tool(cls, func, args=[], kwargs={}):
+        try:
+            Tracer.push_tool(func, args, kwargs)
+            output = func(*args, **kwargs)
+            return Tracer.pop(output)
+        except Exception as e:
+            Tracer.pop(None, e)
+            raise
+
+    @classmethod
+    async def invoke_tool_async(cls, func, args=[], kwargs={}):
+        try:
+            Tracer.push_tool(func, args, kwargs)
+            output = await func(*args, **kwargs)
+            return Tracer.pop(output)
+        except Exception as e:
+            Tracer.pop(None, e)
+            raise
 
     @classmethod
     def push(cls, trace: Trace):
@@ -94,6 +131,8 @@ class Tracer(ThreadLocalSingleton):
         if not trace.start_time:
             trace.start_time = datetime.utcnow().timestamp()
         if not self._trace_stack:
+            # Set node name for root trace
+            trace.node_name = self._node_name
             self._traces.append(trace)
         else:
             self._trace_stack[-1].children = self._trace_stack[-1].children or []

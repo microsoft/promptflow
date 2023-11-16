@@ -1,11 +1,33 @@
 # Release History
 
-## 0.1.0b9 (Upcoming)
+## 1.1.0 (Upcoming)
+
+### Features Added
+- Add `pfazure flow list` to list flows from Azure AI.
+- Display node status in run visualize page graph view.
+
+### Bugs Fixed
+
+### Improvements
+- Force 'az login' if using azureml connection provider in cli command.
+- Add env variable 'PF_NO_INTERACTIVE_LOGIN' to disable interactive login if using azureml connection provider in promptflow sdk.
+
+## 1.0.0 (2023.11.09)
 
 ### Features Added
 
+- [Executor] Add `enable_kwargs` tag in tools.json for customer python tool.
 - [SDK/CLI] Support `pfazure flow create`. Create a flow on Azure AI from local flow folder.
+- [SDK/CLI] Changed column mapping `${run.inputs.xx}`'s behavior, it will refer to run's data columns instead of run's inputs columns.
 
+### Bugs Fixed
+
+- [SDK/CLI] Keep original format in run output.jsonl.
+- [Executor] Fix the bug that raise an error when an aggregation node references a bypassed node
+
+### Improvements
+
+- [Executor] Set the outputs of the bypassed nodes as None
 
 ## 0.1.0b8 (2023.10.26)
 
@@ -45,7 +67,7 @@
 
 - **pf flow validate**: support validate flow
 - **pf config set**: support set user-level promptflow config.
-  - Support workspace connection provider, usage: `pf config set connection.provider=azureml:/subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>`
+  - Support workspace connection provider, usage: `pf config set connection.provider=azureml://subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>`
 - Support override openai connection's model when submitting a flow. For example: `pf run create --flow ./ --data ./data.jsonl --connection llm.model=xxx --column-mapping url='${data.url}'`
 
 ### Bugs Fixed
