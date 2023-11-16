@@ -85,20 +85,13 @@ jobs:
         -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
         -l eastus `
         -m "unittest or e2etest" `
-        -j false `
         --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
-    - name: Publish NUnit test results
-      if: always()
-      uses: dorny/test-reporter@v1.7.0
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
       with:
-        name: Tests - Replay
-        path: "**/test-results.xml"
-        reporter: dotnet-trx
-        working-directory: "${{ env.testWorkingDirectory }}"
-        list-suites: all
-        list-tests: all
-        max-annotations: 10
-        fail-on-error: 'true'
+        check_name: "Replay Test [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-replay-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+        comment_title: "Replay Test [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-replay-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+        files: "**/test-results.xml"
     - name: Generate Coverage Report
       if: (success() || failure())
       uses: danielpalme/ReportGenerator-GitHub-Action@5.1.25
