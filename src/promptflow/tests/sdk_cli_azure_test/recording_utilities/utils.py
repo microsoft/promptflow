@@ -128,6 +128,22 @@ def sanitize_upload_hash(value: str) -> str:
     return value
 
 
+def sanitize_username(value: str) -> str:
+    value = re.sub(
+        r"/(Users%2F)([^%?]+)(%2F|\?)",
+        r"/\1{}\3".format(SanitizedValues.USERNAME),
+        value,
+        flags=re.IGNORECASE,
+    )
+    value = re.sub(
+        r"(Users/)([^/]+)(/)",
+        r"\1{}\3".format(SanitizedValues.USERNAME),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
 def _is_json_payload(headers: Dict, key: str) -> bool:
     if not headers:
         return False

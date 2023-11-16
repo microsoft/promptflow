@@ -22,7 +22,7 @@ nodes:
     type: code
     path: merge_images.py
   inputs:
-    image_1: 
+    image_1:
     - data:image/jpg;path: logo.jpg
     image_2: ${inputs.image}
     image_3: ${python_node.output}

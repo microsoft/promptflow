@@ -16,3 +16,7 @@ ERROR_RESPONSE_COMPONENT_NAME = "promptflow"
 EXTENSION_UA = "prompt-flow-extension"
 
 DEFAULT_ENCODING = "utf-8"
+
+# Constants related to execution
+LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
+LINE_TIMEOUT_SEC = 600
