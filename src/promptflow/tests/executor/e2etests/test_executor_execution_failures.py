@@ -1,24 +1,9 @@
-import uuid
-from types import GeneratorType
-
 import pytest
 
-from promptflow._utils.dataclass_serializer import serialize
-from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
-from promptflow.contracts.run_info import FlowRunInfo
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
-from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
-from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
-from promptflow.executor.flow_executor import BulkResult, LineResult
-from promptflow.storage import AbstractRunStorage
 
 from ..utils import (
-    FLOW_ROOT,
-    get_flow_expected_metrics,
-    get_flow_expected_status_summary,
-    get_flow_sample_inputs,
     get_yaml_file,
 )
 
