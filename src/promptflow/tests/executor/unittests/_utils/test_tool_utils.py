@@ -381,5 +381,9 @@ class TestToolUtils:
         ],
     )
     def test_validate_tool_func_result(slef, func_call_scenario, result, err_msg):
-        with pytest.raises(RetrieveToolFuncResultValidationError, match=err_msg):
+        error_message = (
+            f"Unable to retreive tool func result due to '{err_msg}'. \nPlease contact the tool author/support team "
+            f"for troubleshooting assistance."
+        )
+        with pytest.raises(RetrieveToolFuncResultValidationError, match=error_message):
             validate_tool_func_result(func_call_scenario, result)
