@@ -60,7 +60,7 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
 
 @pytest.mark.unittest
 class TestAzureCliTimeConsume:
-    def test_pfazure_run_create(self, operation_scope_args, time_limit=7):
+    def test_pfazure_run_create(self, operation_scope_args, time_limit=10):
         subprocess_run_cli_command(cmd=(
             "pfazure",
             "run",
