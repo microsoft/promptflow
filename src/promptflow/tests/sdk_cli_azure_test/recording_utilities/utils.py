@@ -64,6 +64,7 @@ def mock_workspace_get(*args, **kwargs) -> Workspace:
         name=SanitizedValues.WORKSPACE_NAME,
         resource_group=SanitizedValues.RESOURCE_GROUP_NAME,
         discovery_url=SanitizedValues.DISCOVERY_URL,
+        workspace_id=SanitizedValues.WORKSPACE_ID,
     )
 
 
