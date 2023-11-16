@@ -794,7 +794,7 @@ pf config set
 Config connection provider to azure workspace for current user.
 
 ```bash
-pf config set connection.provider="azureml:/subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
+pf config set connection.provider="azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
 ```
 
 ### pf config show
