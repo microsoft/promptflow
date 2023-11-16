@@ -1,0 +1,3 @@
+flow: ./
+data: ./data.jsonl
+runtime: example-runtime-ci

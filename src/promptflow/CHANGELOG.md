@@ -1,14 +1,17 @@
 # Release History
 
 ## 1.1.0 (Upcoming)
+
 ### Features Added
 - Add `pfazure flow list` to list flows from Azure AI.
+- Display node status in run visualize page graph view.
 
 ### Bugs Fixed
 
 ### Improvements
 - Force 'az login' if using azureml connection provider in cli command.
 - Add env variable 'PF_NO_INTERACTIVE_LOGIN' to disable interactive login if using azureml connection provider in promptflow sdk.
+- Improved CLI invoke time.
 
 ## 1.0.0 (2023.11.09)
 
