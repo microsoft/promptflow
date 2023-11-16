@@ -60,6 +60,12 @@ class PromptFlowSDKLogHandler(AzureEventHandler):
         self._custom_dimensions = custom_properties
         self.eu_user = eu_user
 
+    def _check_stats_collection(self):
+        # skip checking stats collection since it's time-consuming
+        # according to doc: https://learn.microsoft.com/en-us/azure/azure-monitor/app/statsbeat
+        # it doesn't affect customers' overall monitoring volume
+        return False
+
     def emit(self, record):
         # skip logging if telemetry is disabled
         if not self._is_telemetry_enabled:

@@ -14,6 +14,7 @@ from promptflow._telemetry.logging_handler import (
     PromptFlowSDKLogHandler,
     get_appinsights_log_handler,
 )
+from promptflow._telemetry.telemetry import get_telemetry_logger
 from promptflow._utils.utils import environment_variable_overwrite
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -142,3 +143,12 @@ class TestTelemetry:
                 assert handler.options.instrumentation_key == EU_INSTRUMENTATION_KEY
             # sleep a while to make sure log thread can finish.
             time.sleep(20)
+
+    def test_cached_logging_handler(self):
+        # should get same logger & handler instance if called multiple times
+        logger = get_telemetry_logger()
+        handler = next((h for h in logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
+        another_logger = get_telemetry_logger()
+        another_handler = next((h for h in another_logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
+        assert logger is another_logger
+        assert handler is another_handler

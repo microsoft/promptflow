@@ -1,4 +1,4 @@
-# UTF-8
+﻿# UTF-8
 #
 # For more details about fixed file info 'ffi' see:
 # http://msdn.microsoft.com/en-us/library/ms646997.aspx
@@ -6,7 +6,7 @@ VSVersionInfo(
   ffi=FixedFileInfo(
     # filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)
     # Set not needed items to zero 0.
-    filevers=(1, 0, 0, 0),
+    filevers=($(env.FILE_VERSION)),
     prodvers=(1, 0, 0, 0),
     # Contains a bitmask that specifies the valid bits 'flags'r
     mask=0x3f,
@@ -35,8 +35,8 @@ VSVersionInfo(
         StringStruct('InternalName', 'setup'),
         StringStruct('LegalCopyright', 'Copyright (c) Microsoft Corporation. All rights reserved.'),
         StringStruct('ProductName', 'Microsoft prompt flow'),
-        StringStruct('ProductVersion', '1.0.0.0')])
-      ]), 
+        StringStruct('ProductVersion', '$(env.CLI_VERSION)')])
+      ]),
     VarFileInfo([VarStruct('Translation', [1033, 1252])])
   ]
 )
