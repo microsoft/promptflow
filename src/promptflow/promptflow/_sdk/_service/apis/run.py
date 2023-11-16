@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 from dataclasses import asdict
-from flask_restx import Namespace, Resource, fields, Api
+from flask_restx import Namespace, Resource
 
 from flask import jsonify, request
 
@@ -11,7 +11,7 @@ from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow.contracts._run_management import RunMetadata
-from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
+from promptflow._sdk._errors import RunNotFoundError
 
 api = Namespace("run", description="Run Management")
 
@@ -23,7 +23,6 @@ def handle_run_not_found_exception(error):
 
 @api.route("/list")
 class RunList(Resource):
-
     @api.doc(description="List all runs")
     def get(self):
         # parse query parameters
@@ -44,7 +43,6 @@ class RunList(Resource):
 
 @api.route("/<string:name>")
 class Run(Resource):
-
     def get(self, name: str):
         op = RunOperations()
         run = op.get(name=name)
@@ -54,7 +52,6 @@ class Run(Resource):
 
 @api.route("/metadata/<string:name>")
 class MetaData(Resource):
-
     def get(self, name: str):
         run_op = RunOperations()
         run = run_op.get(name=name)
@@ -76,7 +73,6 @@ class MetaData(Resource):
 
 @api.route("/detail/<string:name>")
 class Detail(Resource):
-
     def get(self, name: str):
         run_op = RunOperations()
         run = run_op.get(name=name)

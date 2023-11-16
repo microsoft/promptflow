@@ -20,7 +20,7 @@ def create_app():
     app.add_url_rule("/heartbeat", view_func=heartbeat)
     with app.app_context():
         api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0")
-        api = Api(api_v1, title="Prompt Flow Service", version='1.0')
+        api = Api(api_v1, title="Prompt Flow Service", version="1.0")
         api.add_namespace(connection_api)
         api.add_namespace(run_api)
 

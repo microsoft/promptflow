@@ -6,17 +6,17 @@ from flask import jsonify, request
 from flask_restx import Namespace, Resource, fields
 import json
 
-from promptflow._sdk._service.utils.utils import local_user_only, DictItem
+from promptflow._sdk._service.utils.utils import local_user_only
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk._errors import ConnectionNotFoundError
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
 api = Namespace("Connections", description="Connections Management")
 remote_parser = api.parser()
-remote_parser.add_argument('X-Remote-User', location='headers', required=True)
+remote_parser.add_argument("X-Remote-User", location="headers", required=True)
 
 create_or_update_parser = remote_parser.copy()
-create_or_update_parser.add_argument('connection_dict', type=str, location='args', required=True)
+create_or_update_parser.add_argument("connection_dict", type=str, location="args", required=True)
 
 connection_field = api.model(
     "Connection",
@@ -27,15 +27,9 @@ connection_field = api.model(
         "expiry_time": fields.DateTime(),
         "created_date": fields.DateTime(),
         "last_modified_date": fields.DateTime(),
-    }
+    },
 )
-dict_field = api.schema_model(
-    "ConnectionDict",
-    {
-        "additionalProperties": True,
-        "type": "object"
-    }
-)
+dict_field = api.schema_model("ConnectionDict", {"additionalProperties": True, "type": "object"})
 
 
 @api.errorhandler(ConnectionNotFoundError)
@@ -62,7 +56,6 @@ class ConnectionList(Resource):
 @api.route("/<string:name>")
 @api.param("name", "The connection name.")
 class Connection(Resource):
-
     @api.doc(parser=remote_parser, description="Get connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
