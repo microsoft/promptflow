@@ -370,7 +370,7 @@ class TestToolUtils:
                 ToolFuncCallScenario.REVERSE_GENERATED_BY,
                 "dummy_result",
                 f"ToolFuncCallScenario {ToolFuncCallScenario.REVERSE_GENERATED_BY} response must be a dict. "
-                f"dummy_result is not a dict"
+                f"dummy_result is not a dict."
             ),
             (
                 "dummy_scenario",
@@ -385,5 +385,6 @@ class TestToolUtils:
             f"Unable to retreive tool func result due to '{err_msg}'. \nPlease contact the tool author/support team "
             f"for troubleshooting assistance."
         )
-        with pytest.raises(RetrieveToolFuncResultValidationError, match=error_message):
+        with pytest.raises(RetrieveToolFuncResultValidationError) as e:
             validate_tool_func_result(func_call_scenario, result)
+        assert (error_message == str(e.value))
