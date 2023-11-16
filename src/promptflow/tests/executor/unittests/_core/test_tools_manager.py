@@ -155,10 +155,6 @@ class TestToolsManager:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
         assert str(ex.value) == error_message
 
-    # def test_debug_collect_package_tools(self):
-    #     tools = collect_package_tools()
-    #     assert len(tools) > 0
-
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
