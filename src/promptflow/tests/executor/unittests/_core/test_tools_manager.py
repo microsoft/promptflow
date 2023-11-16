@@ -155,6 +155,14 @@ class TestToolsManager:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
         assert str(ex.value) == error_message
 
+    @pytest.mark.skip(reason="enable this test after the tool is ready")
+    def test_collect_package_tools_if_node_source_tool_is_legacy(self):
+        legacy_node_source_tools = [
+            "content_safety_text.tools.content_safety_text_tool.analyze_text"
+        ]
+        package_tools = collect_package_tools(legacy_node_source_tools)
+        assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
+
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib

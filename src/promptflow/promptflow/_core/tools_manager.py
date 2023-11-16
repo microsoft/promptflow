@@ -31,6 +31,7 @@ from promptflow._utils.tool_utils import (
     DynamicListError,
     RetrieveToolFuncResultError,
     append_workspace_triple_to_func_input_params,
+    build_tool_id_mapping,
     function_to_tool_definition,
     get_prompt_param_name_from_func,
     load_function_from_function_path,
@@ -67,7 +68,11 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
             for identifier, tool in package_tools.items():
                 #  Only load required tools to avoid unnecessary loading when keys is provided
                 if isinstance(keys, set) and identifier not in keys:
-                    continue
+                    # Support to collect new tool id if node source tool is a legacy tool.
+                    legacy_tool_ids = tool.get("transition_from", [])
+                    if not set(legacy_tool_ids).intersection(keys):
+                        continue
+
                 m = tool["module"]
                 importlib.import_module(m)  # Import the module to make sure it is valid
                 tool["package"] = entry_point.dist.project_name
@@ -405,18 +410,7 @@ class ToolLoader:
         self._working_dir = working_dir
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
         # Used to handle backward compatibility of tool ID changes.
-        self._tool_id_mapping = self._build_tool_id_mapping()
-
-    # Handling backward compatibility and generating a mapping between the previous and new tool IDs.
-    def _build_tool_id_mapping(self) -> Dict[str, str]:
-        tool_id_mapping = {}
-        for tool_id, tool in self._package_tools.items():
-            # "transition_from" is a list of old tool IDs that are mapped to the current tool ID.
-            if "transition_from" in tool:
-                for old_tool_id in tool["transition_from"]:
-                    tool_id_mapping[old_tool_id] = tool_id
-
-        return tool_id_mapping
+        self._tool_id_mapping = build_tool_id_mapping(self._package_tools)
 
     # TODO: Replace NotImplementedError with NotSupported in the future.
     def load_tool_for_node(self, node: Node) -> Tool:
