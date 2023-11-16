@@ -7,9 +7,11 @@ import pytest
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch import BatchEngine
+from promptflow.batch._errors import EmptyInputsData
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
+from promptflow.executor._errors import InputNotFound
 from promptflow.executor._result import BatchResult, LineResult
 from promptflow.storage import AbstractRunStorage
 
@@ -213,10 +215,33 @@ class TestBatch:
             ("simple_aggregation", [{"text": "3.0"}], str),
         ],
     )
-    def test_batch_run_line_result(self, flow_folder, batch_input, expected_type, dev_connections):
+    def test_batch_run_line_result(self, flow_folder, batch_input, expected_type):
         input_file = Path(mkdtemp()) / "inputs.jsonl"
         dump_list_to_jsonl(input_file, batch_input)
         input_dirs = {"data": input_file}
         inputs_mapping = {"text": "${data.text}"}
         batch_results = submit_batch_run(flow_folder, inputs_mapping, input_dirs=input_dirs)
         assert type(batch_results.line_results[0].run_info.inputs["text"]) is expected_type
+
+    @pytest.mark.parametrize(
+        "flow_folder, input_mapping, error_class, error_message",
+        [
+            (
+                "connection_as_input",
+                {},
+                InputNotFound,
+                "The input for flow cannot be empty in batch mode. Please review your flow and provide valid inputs.",
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+                EmptyInputsData,
+                "Couldn't find any inputs data at the given input paths. Please review the provided path "
+                "and consider resubmitting.",
+            ),
+        ],
+    )
+    def test_batch_run_failure(self, flow_folder, input_mapping, error_class, error_message):
+        with pytest.raises(error_class) as e:
+            submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
+        assert error_message in e.value.message

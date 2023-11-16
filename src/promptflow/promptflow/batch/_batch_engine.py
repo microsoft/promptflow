@@ -60,6 +60,8 @@ class BatchEngine:
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         self._flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+        FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
+
         executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
         with _change_working_dir(self._working_dir):
             self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
