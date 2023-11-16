@@ -8,10 +8,6 @@ on:
         default: "False"
         required: false
         description: 'Also upload the msi installer to storage account as latest'
-  # will delete pull request when it's ready
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build_msi_installer:
