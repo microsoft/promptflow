@@ -39,6 +39,7 @@ from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow._telemetry.activity import ActivityType, monitor_operation
+from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
@@ -50,7 +51,7 @@ from promptflow.exceptions import SystemErrorException
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
-class FlowOperations(_ScopeDependentOperations):
+class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     """FlowOperations that can manage flows.
 
     You should not instantiate this class directly. Instead, you should
@@ -69,7 +70,13 @@ class FlowOperations(_ScopeDependentOperations):
         service_caller: FlowServiceCaller,
         **kwargs: Dict,
     ):
-        super(FlowOperations, self).__init__(operation_scope, operation_config)
+        super().__init__(
+            operation_scope=operation_scope,
+            operation_config=operation_config,
+            workspace_name=operation_scope.workspace_name,
+            subscription_id=operation_scope.subscription_id,
+            resource_group_name=operation_scope.resource_group_name,
+        )
         self._all_operations = all_operations
         self._service_caller = service_caller
         self._credential = credential

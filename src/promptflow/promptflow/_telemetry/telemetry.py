@@ -24,6 +24,27 @@ class TelemetryMixin(object):
         return {}
 
 
+class WorkspaceTelemetryMixin(TelemetryMixin):
+    def __init__(self, subscription_id, resource_group_name, workspace_name, **kwargs):
+        # add telemetry to avoid conflict with subclass properties
+        self._telemetry_subscription_id = subscription_id
+        self._telemetry_resource_group_name = resource_group_name
+        self._telemetry_workspace_name = workspace_name
+        super().__init__(**kwargs)
+
+    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
+        """Return the telemetry values of run operations.
+
+        :return: The telemetry values
+        :rtype: Dict
+        """
+        return {
+            "subscription_id": self._telemetry_subscription_id,
+            "resource_group_name": self._telemetry_resource_group_name,
+            "workspace_name": self._telemetry_workspace_name,
+        }
+
+
 def is_telemetry_enabled():
     """Check if telemetry is enabled. User can enable telemetry by
     1. setting environment variable TELEMETRY_ENABLED to true.
