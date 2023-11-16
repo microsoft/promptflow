@@ -1,0 +1,103 @@
+name: Build and Package MSI
+
+on:
+  workflow_dispatch:
+    inputs:
+      UploadAsLatest:
+        type: string
+        default: "False"
+        required: false
+        description: 'Also upload the msi installer to storage account as latest'
+
+jobs:
+  build_msi_installer:
+    runs-on: windows-latest
+    name: Build Windows MSI
+
+    steps:
+      - name: Check input parameters
+        run: |
+          echo "UploadAsLatest: ${{ inputs.UploadAsLatest }}"
+
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Install WIX Toolset
+        shell:  pwsh
+        working-directory: ${{ github.workspace }}/scripts/installer/windows
+        run: |
+          Invoke-WebRequest -Uri 'https://azurecliprod.blob.core.windows.net/msi/wix310-binaries-mirror.zip' -OutFile 'wix-archive.zip'
+          Expand-Archive -Path 'wix-archive.zip' -DestinationPath 'wix'
+          Remove-Item -Path 'wix-archive.zip'
+
+
+      - name: Install Python and dependencies
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install promptflow dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install promptflow[azure,executable] promptflow-tools
+        shell: pwsh
+
+      - name: Get promptflow version
+        id: get-version
+        run: |
+          $version=$(python -c "import promptflow; print(promptflow.__version__)")
+          echo "::set-output name=version::$version"
+        shell: pwsh
+
+      - name: Build Pyinstaller project
+        working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
+        run: |
+          echo 'Version from promptflow: ${{ steps.get-version.outputs.version }}'
+          $text = Get-Content "version_info.txt" -Raw
+          
+          $versionString = '${{ steps.get-version.outputs.version }}'
+          $versionArray = $versionString.Split('.') + 0
+          $versionTuple = [string]::Join(', ', $versionArray)
+          $text = $text -replace '\$\((env\.FILE_VERSION)\)', $versionTuple
+          
+          $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
+          $text | Out-File -FilePath "version_info.txt" -Encoding utf8
+          pyinstaller promptflow.spec
+        shell: pwsh
+
+      - name: Build WIX project
+        working-directory: ${{ github.workspace }}/scripts/installer/windows
+        run: |
+          $text = Get-Content "promptflow.wixproj" -Raw
+          $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
+          $text | Out-File -FilePath "promptflow.wixproj" -Encoding utf8
+          
+          $text = Get-Content "product.wxs" -Raw
+          $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
+          $text | Out-File -FilePath "product.wxs" -Encoding utf8         
+          
+          msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
+        shell: pwsh
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Upload to Azure Storage
+        run: |
+          $msi_files = Get-ChildItem -Path 'scripts/installer/windows/out/' -Filter *.msi
+          foreach ($msi_file in $msi_files) {
+          if ($env:INPUT_UPLOADASLATEST -ieq 'True') {
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "promptflow.msi" --overwrite
+            az storage blob copy start --account-name promptflowartifact --destination-container msi-installer --destination-blob "$($msi_file.Name)" --source-container msi-installer --source-blob "promptflow.msi"
+          } else {
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
+          }
+          }
+        shell: pwsh
