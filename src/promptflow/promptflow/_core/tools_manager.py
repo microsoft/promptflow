@@ -433,7 +433,7 @@ class ToolLoader:
     def load_tool_for_package_node(self, node: Node) -> Tool:
         # Handle backward compatibility of tool ID changes.
         if node.source.tool in self._tool_id_mapping:
-            new_tool_id = self._tool_id_mapping[node.source.tool]  
+            new_tool_id = self._tool_id_mapping[node.source.tool]
             # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
             module_logger.warning(
                 f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead."
