@@ -198,3 +198,9 @@ class TestFlowTest:
     def test_pf_test_with_non_english_input(self):
         result = _client.test(flow=f"{FLOWS_DIR}/flow_with_non_english_input")
         assert result["output"] == "Hello 日本語"
+
+    def test_pf_node_test_with_dict_input(self):
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input").absolute()
+        inputs = {"print_val.output.result": {"key": "value"}}
+        result = _client._flows._test(flow=flow_path, node="print_val2", inputs=inputs)
+        assert result.status.value == "Completed"

@@ -13,3 +13,10 @@ nodes:
     path: print_val.py
   inputs:
     key: ${inputs.key}
+- name: print_val2
+  type: python
+  source:
+    type: code
+    path: print_val.py
+  inputs:
+    key: ${print_val.output.result}
