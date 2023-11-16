@@ -218,32 +218,40 @@ class TestToolsManager:
     @pytest.mark.parametrize(
         "func_call_scenario, func_path, func_kwargs, expected",
         [
-         (
-            ToolFuncCallScenario.DYNAMIC_LIST,
-            "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func",
-            {"prefix": "My"},
-            list
-         ),
-         (
-            ToolFuncCallScenario.GENERATED_BY,
-            "my_tool_package.tools.tool_with_generated_by_input.generated_by_func",
-            {"index_type": "Azure Cognitive Search"},
-            str
-         ),
-         (
-            ToolFuncCallScenario.REVERSE_GENERATED_BY,
-            "my_tool_package.tools.tool_with_generated_by_input.reverse_generated_by_func",
-            {
-                "index_json": json.dumps({
-                "index_type": "Azure Cognitive Search",
-                "index": "index_1"
-                })
-            },
-            dict
-        )
+            (
+                ToolFuncCallScenario.DYNAMIC_LIST,
+                "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func",
+                {"prefix": "My"},
+                list
+            ),
+            (
+                ToolFuncCallScenario.GENERATED_BY,
+                "my_tool_package.tools.tool_with_generated_by_input.generated_by_func",
+                {"index_type": "Azure Cognitive Search"},
+                str
+            ),
+            (
+                ToolFuncCallScenario.REVERSE_GENERATED_BY,
+                "my_tool_package.tools.tool_with_generated_by_input.reverse_generated_by_func",
+                {
+                    "index_json": json.dumps({
+                        "index_type": "Azure Cognitive Search",
+                        "index": "index_1"
+                    })
+                },
+                dict
+            )
         ]
     )
-    def test_retrieve_tool_func_result(self, func_call_scenario, func_path, func_kwargs, expected, mocked_ws_triple, mock_module_with_for_retrieve_tool_func_result):
+    def test_retrieve_tool_func_result(
+        self,
+        func_call_scenario,
+        func_path,
+        func_kwargs,
+        expected,
+        mocked_ws_triple,
+        mock_module_with_for_retrieve_tool_func_result
+    ):
         from promptflow._sdk._utils import _retrieve_tool_func_result
 
         result = _retrieve_tool_func_result(func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
@@ -251,33 +259,42 @@ class TestToolsManager:
 
         # test gen_dynamic_list with ws_triple.
         with patch("promptflow._cli._utils.get_workspace_triad_from_local", return_value=mocked_ws_triple):
-            result = _retrieve_tool_func_result(func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
+            result = _retrieve_tool_func_result(
+                func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
             assert isinstance(result["result"], expected)
 
     @pytest.mark.parametrize(
-    "func_call_scenario, func_path, func_kwargs, expected",
-    [
-        (
-        "dummy_senario",
-        "my_tool_package.tools.tool_with_generated_by_input.reverse_generated_by_func",
-        {
-            "index_json": json.dumps({
-            "index_type": "Azure Cognitive Search",
-            "index": "index_1"
-            })
-        },
-        f"ToolFuncCallScenario dummy_senario invalid. "
-        ),
-        (
-        ToolFuncCallScenario.REVERSE_GENERATED_BY,
-        "my_tool_package.tools.tool_with_generated_by_input.generated_by_func",
-        {"index_type": "Azure Cognitive Search"},
-        f"ToolFuncCallScenario reverse_generated_by response must be a dict."
-        )
-    ]
+        "func_call_scenario, func_path, func_kwargs, expected",
+        [
+            (
+                "dummy_senario",
+                "my_tool_package.tools.tool_with_generated_by_input.reverse_generated_by_func",
+                {
+                    "index_json": json.dumps({
+                        "index_type": "Azure Cognitive Search",
+                        "index": "index_1"
+                    })
+                },
+                f"ToolFuncCallScenario dummy_senario invalid. Available scenarios are {ToolFuncCallScenario.__members__.values()}"
+            ),
+            (
+                ToolFuncCallScenario.REVERSE_GENERATED_BY,
+                "my_tool_package.tools.tool_with_generated_by_input.generated_by_func",
+                {"index_type": "Azure Cognitive Search"},
+                "ToolFuncCallScenario reverse_generated_by response must be a dict."
+            )
+        ]
     )
-    def test_retrieve_tool_func_result_error(self, func_call_scenario, func_path, func_kwargs, expected, mocked_ws_triple, mock_module_with_for_retrieve_tool_func_result):
+    def test_retrieve_tool_func_result_error(
+        self,
+        func_call_scenario,
+        func_path,
+        func_kwargs,
+        expected,
+        mocked_ws_triple,
+        mock_module_with_for_retrieve_tool_func_result
+    ):
         from promptflow._sdk._utils import _retrieve_tool_func_result
         with pytest.raises(Exception) as e:
             _retrieve_tool_func_result(func_call_scenario, {"func_path": func_path, "func_kwargs": func_kwargs})
-        assert(expected in str(e.value))
+        assert (expected in str(e.value))

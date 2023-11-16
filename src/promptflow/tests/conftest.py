@@ -200,7 +200,11 @@ def mock_reverse_generated_by_func():
 
 
 @pytest.fixture(scope="session")
-def mock_module_with_for_retrieve_tool_func_result(mock_list_func, mock_generated_by_func, mock_reverse_generated_by_func):
+def mock_module_with_for_retrieve_tool_func_result(
+    mock_list_func,
+    mock_generated_by_func,
+    mock_reverse_generated_by_func
+):
     """Mock module object for dynamic list testing."""
     mock_module_list_func = MagicMock()
     mock_module_list_func.my_list_func = mock_list_func
