@@ -90,7 +90,7 @@
             Directory="DynamicCliDir"
             Execute="commit"
             Impersonate="no"
-            ExeCommand="cmd.exe /c SC CREATE PromptService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown &quot;binPath=$(var.ProgramFilesFolder)\promptflow\pfs.exe&quot;"
+            ExeCommand="cmd.exe /c SC CREATE PromptService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown binPath= &quot;&quot;&quot;%ProgramFiles%\promptflow\pfs.exe&quot;&quot;&quot;"
             Return="check" />
         <InstallExecuteSequence>
           <Custom Action="InstallPromptFlowService" After="InstallFinalize" />
