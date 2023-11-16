@@ -80,6 +80,23 @@ class TestToolLoader:
             tool_loader.load_tool_for_node(node)
             assert str(ex.value) == msg
 
+    def test_load_tool_for_package_node_with_legacy_tool_id(self, mocker):
+        package_tools = {
+            "new_tool": Tool(
+                name="new_tool_id", type=ToolType.PYTHON, inputs={}, transition_from=["old_tool_id"]).serialize()
+        }
+        mocker.patch("promptflow._core.tools_manager.collect_package_tools", return_value=package_tools)
+        tool_loader = ToolLoader(working_dir="test_working_dir", package_tool_keys=["new_tool_id"])
+        node: Node = Node(
+            name="test_legacy_tool",
+            tool="old_tool_id",
+            inputs={},
+            type=ToolType.PYTHON,
+            source=ToolSource(type=ToolSourceType.Package, tool="old_tool_id"),
+        )
+        tool = tool_loader.load_tool_for_node(node)
+        assert tool.name == "new_tool_id"
+
     def test_load_tool_for_script_node(self):
         working_dir = Path(__file__).parent
         tool_loader = ToolLoader(working_dir=working_dir)
@@ -137,6 +154,10 @@ class TestToolsManager:
         with pytest.raises(error_code) as ex:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
         assert str(ex.value) == error_message
+
+    # def test_debug_collect_package_tools(self):
+    #     tools = collect_package_tools()
+    #     assert len(tools) > 0
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools

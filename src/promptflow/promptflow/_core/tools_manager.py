@@ -404,6 +404,19 @@ class ToolLoader:
     def __init__(self, working_dir: str, package_tool_keys: Optional[List[str]] = None) -> None:
         self._working_dir = working_dir
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
+        # Used to handle backward compatibility of tool ID changes.
+        self._tool_id_mapping = self._build_tool_id_mapping()
+
+    # Handling backward compatibility and generating a mapping between the previous and new tool IDs.
+    def _build_tool_id_mapping(self) -> Dict[str, str]:
+        tool_id_mapping = {}
+        for tool_id, tool in self._package_tools.items():
+            # "transition_from" is a list of old tool IDs that are mapped to the current tool ID.
+            if "transition_from" in tool:
+                for old_tool_id in tool["transition_from"]:
+                    tool_id_mapping[old_tool_id] = tool_id
+
+        return tool_id_mapping
 
     # TODO: Replace NotImplementedError with NotSupported in the future.
     def load_tool_for_node(self, node: Node) -> Tool:
@@ -424,6 +437,16 @@ class ToolLoader:
             raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
 
     def load_tool_for_package_node(self, node: Node) -> Tool:
+        # Handle backward compatibility of tool ID changes.
+        if node.source.tool in self._tool_id_mapping:
+            new_tool_id = self._tool_id_mapping[node.source.tool]  
+            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
+            module_logger.warning(
+                f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead."
+            )
+            node.source.tool = new_tool_id
+            node.tool = new_tool_id
+
         if node.source.tool in self._package_tools:
             return Tool.deserialize(self._package_tools[node.source.tool])
         raise PackageToolNotFoundError(
