@@ -20,6 +20,7 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 from azure.ai.ml.constants._common import SHORT_URI_FORMAT
+from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
@@ -67,12 +68,14 @@ class FlowOperations(_ScopeDependentOperations):
         all_operations: OperationsContainer,
         credential,
         service_caller: FlowServiceCaller,
+        workspace: Workspace,
         **kwargs: Dict,
     ):
         super(FlowOperations, self).__init__(operation_scope, operation_config)
         self._all_operations = all_operations
         self._service_caller = service_caller
         self._credential = credential
+        self._workspace = workspace
 
     @cached_property
     def _common_azure_url_pattern(self):
@@ -84,6 +87,10 @@ class FlowOperations(_ScopeDependentOperations):
             f"/workspaces/{operation_scope.workspace_name}"
         )
         return url
+
+    @cached_property
+    def _workspace_id(self):
+        return self._workspace._workspace_id
 
     @cached_property
     def _index_service_endpoint_url(self):
@@ -295,7 +302,8 @@ class FlowOperations(_ScopeDependentOperations):
                 subscription_id=self._operation_scope.subscription_id,
                 resource_group_name=self._operation_scope.resource_group_name,
                 workspace_name=self._operation_scope.workspace_name,
-                flow_name=name,
+                flow_id=name,
+                experiment_id=self._workspace_id,  # for flow operations, current experiment id is workspace id
             )
         except HttpResponseError as e:
             if e.status_code == 404:
