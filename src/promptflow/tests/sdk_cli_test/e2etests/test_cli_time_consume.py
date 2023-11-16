@@ -124,7 +124,7 @@ class TestCliTimeConsume:
         assert "api_type" in res
 
     def test_pf_connection_list(self, time_limit=1):
-        name = f"connection_list"
+        name = "connection_list"
         res = run_cli_command(cmd=(
             "pf",
             "connection",
