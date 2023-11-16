@@ -86,6 +86,16 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
+        <CustomAction Id="InstallPromptFlowService"
+            Directory="DynamicCliDir"
+            Execute="commit"
+            Impersonate="no"
+            ExeCommand="cmd.exe /c SC CREATE PromptService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown &quot;binPath=$(var.ProgramFilesFolder)\promptflow\pfs.exe&quot;"
+            Return="check" />
+        <InstallExecuteSequence>
+          <Custom Action="InstallPromptFlowService" After="InstallFinalize" />
+        </InstallExecuteSequence>
+
     </Product>
 
     <Fragment>
