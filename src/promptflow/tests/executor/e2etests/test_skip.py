@@ -1,7 +1,8 @@
 import pytest
 
 from promptflow.contracts.run_info import Status
-from promptflow.executor.flow_executor import FlowExecutor, LineResult
+from promptflow.executor._result import LineResult
+from promptflow.executor.flow_executor import FlowExecutor
 
 from ..utils import get_flow_inputs, get_yaml_file
 

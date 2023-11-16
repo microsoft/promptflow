@@ -11,6 +11,7 @@ from multiprocessing.pool import ThreadPool
 
 import psutil
 
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
@@ -28,8 +29,6 @@ from promptflow.executor._errors import LineExecutionTimeoutError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
-
-LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 
 
 class QueueRunStorage(AbstractRunStorage):

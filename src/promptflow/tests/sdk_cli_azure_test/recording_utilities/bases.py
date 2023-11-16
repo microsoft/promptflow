@@ -16,6 +16,7 @@ from .processors import (
     AzureResourceProcessor,
     AzureWorkspaceTriadProcessor,
     DropProcessor,
+    IndexServiceProcessor,
     RecordingProcessor,
     StorageProcessor,
     TenantProcessor,
@@ -131,6 +132,7 @@ class PFAzureIntegrationTestRecording:
             AzureResourceProcessor(),
             AzureWorkspaceTriadProcessor(),
             DropProcessor(),
+            IndexServiceProcessor(),
             TenantProcessor(tenant_id=self.tenant_id),
         ]
 
