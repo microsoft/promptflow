@@ -6,8 +6,6 @@ import timeit
 import uuid
 from pathlib import Path
 import pytest
-import cProfile
-import pstats
 from promptflow._cli._pf.entry import main
 import multiprocessing
 
@@ -23,7 +21,7 @@ def run_cli_command(cmd, time_limit=3600, result_queue=None):
     with contextlib.redirect_stdout(output):
         main()
     ed = timeit.default_timer()
-    print(f"Total time: {ed - st}s")
+    print(f"{cmd}, \n Total time: {ed - st}s")
     assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
     res_value = output.getvalue()
     if result_queue:
@@ -45,7 +43,7 @@ def subprocess_run_cli_command(cmd, time_limit=3600):
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestCliTimeConsume:
-    def test_pf_run_create(self) -> None:
+    def test_pf_run_create(self, time_limit=7) -> None:
         res = subprocess_run_cli_command(cmd=(
             "pf",
             "run",
@@ -54,11 +52,11 @@ class TestCliTimeConsume:
             f"{FLOWS_DIR}/print_input_flow",
             "--data",
             f"{DATAS_DIR}/print_input_flow.jsonl",
-        ), time_limit=8)
+        ), time_limit=time_limit)
 
         assert "Completed" in res
 
-    def test_pf_run_update(self) -> None:
+    def test_pf_run_update(self, time_limit=3) -> None:
         run_name = str(uuid.uuid4())
         run_cli_command(cmd=(
             "pf",
@@ -80,11 +78,11 @@ class TestCliTimeConsume:
             run_name,
             "--set",
             "description=test pf run update"
-        ), time_limit=4)
+        ), time_limit=time_limit)
 
         assert "Completed" in res
 
-    def test_pf_flow_test(self):
+    def test_pf_flow_test(self, time_limit=3):
         subprocess_run_cli_command(cmd=(
             "pf",
             "flow",
@@ -93,11 +91,11 @@ class TestCliTimeConsume:
             f"{FLOWS_DIR}/print_input_flow",
             "--inputs",
             "text=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
-        ), time_limit=4)
+        ), time_limit=time_limit)
         output_path = Path(FLOWS_DIR) / "print_input_flow" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
 
-    def test_pf_flow_build(self):
+    def test_pf_flow_build(self, time_limit=7):
         with tempfile.TemporaryDirectory() as temp_dir:
             subprocess_run_cli_command(cmd=(
                 "pf",
@@ -109,9 +107,9 @@ class TestCliTimeConsume:
                 temp_dir,
                 "--format",
                 "docker"
-            ), time_limit=8)
+            ), time_limit=time_limit)
 
-    def test_pf_connection_create(self):
+    def test_pf_connection_create(self, time_limit=2):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
         res = subprocess_run_cli_command(cmd=(
             "pf",
@@ -121,11 +119,11 @@ class TestCliTimeConsume:
             f"{CONNECTIONS_DIR}/azure_openai_connection.yaml",
             "--name",
             f"{name}",
-        ), time_limit=3)
+        ), time_limit=time_limit)
 
         assert "api_type" in res
 
-    def test_pf_connection_list(self):
+    def test_pf_connection_list(self, time_limit=2):
         name = f"connection_list"
         res = run_cli_command(cmd=(
             "pf",
@@ -142,5 +140,5 @@ class TestCliTimeConsume:
             "pf",
             "connection",
             "list"
-        ), time_limit=5)
+        ), time_limit=time_limit)
         assert "api_type" in res

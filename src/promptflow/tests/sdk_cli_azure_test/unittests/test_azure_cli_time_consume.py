@@ -1,8 +1,6 @@
-import cProfile
 import contextlib
 import io
 import multiprocessing
-import pstats
 import sys
 import timeit
 from unittest import mock
@@ -30,7 +28,7 @@ def run_cli_command(cmd, time_limit=3600, result_queue=None):
         with contextlib.redirect_stdout(output):
             main()
         ed = timeit.default_timer()
-        print(f"Total time: {ed - st}s")
+        print(f"{cmd}, \nTotal time: {ed - st}s")
         assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
         res_value = output.getvalue()
         if result_queue:
@@ -62,7 +60,7 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
 
 @pytest.mark.unittest
 class TestAzureCliTimeConsume:
-    def test_pfazure_run_create(self, operation_scope_args):
+    def test_pfazure_run_create(self, operation_scope_args, time_limit=7):
         subprocess_run_cli_command(cmd=(
             "pfazure",
             "run",
@@ -72,9 +70,9 @@ class TestAzureCliTimeConsume:
             "--data",
             f"{DATAS_DIR}/print_input_flow.jsonl",
             *operation_scope_args,
-        ), time_limit=8)
+        ), time_limit=time_limit)
 
-    def test_pfazure_run_update(self, operation_scope_args):
+    def test_pfazure_run_update(self, operation_scope_args, time_limit=3):
         subprocess_run_cli_command(cmd=(
             "pfazure",
             "run",
@@ -86,9 +84,9 @@ class TestAzureCliTimeConsume:
             "description='test_description'",
             "tags.key1=value1",
             *operation_scope_args,
-        ), time_limit=4)
+        ), time_limit=time_limit)
 
-    def test_run_restore(self, operation_scope_args,):
+    def test_run_restore(self, operation_scope_args, time_limit=7):
         subprocess_run_cli_command(cmd=(
             "pfazure",
             "run",
@@ -96,4 +94,4 @@ class TestAzureCliTimeConsume:
             "--name",
             "test_run",
             *operation_scope_args,
-        ), time_limit=8)
+        ), time_limit=time_limit)
