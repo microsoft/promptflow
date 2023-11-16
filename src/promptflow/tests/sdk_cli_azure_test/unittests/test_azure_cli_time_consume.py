@@ -4,6 +4,7 @@ import io
 import multiprocessing
 import pstats
 import sys
+import timeit
 from unittest import mock
 import pytest
 from promptflow._cli._pf_azure.entry import main
@@ -13,7 +14,7 @@ FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-def run_cli_command(cmd, time_limit=3600, is_print_stats=True, result_queue=None):
+def run_cli_command(cmd, time_limit=3600, result_queue=None):
     with mock.patch.object(RunOperations, "create_or_update") as create_or_update_fun, \
             mock.patch.object(RunOperations, "update") as update_fun, \
             mock.patch.object(RunOperations, "get") as get_fun, \
@@ -24,27 +25,22 @@ def run_cli_command(cmd, time_limit=3600, is_print_stats=True, result_queue=None
         restore_fun.return_value._to_dict.return_value = {"name": "test_run"}
 
         sys.argv = list(cmd)
-        with cProfile.Profile() as pr:
-            output = io.StringIO()
-            with contextlib.redirect_stdout(output):
-                main()
-
-            pstats_obj = pstats.Stats(pr).sort_stats(pstats.SortKey.CUMULATIVE)
-            stats_profile = pstats_obj.get_stats_profile()
-            if is_print_stats:
-                print(pstats_obj.print_stats(50))
-            assert stats_profile.total_tt < time_limit
-
-            res_value = output.getvalue()
-            if result_queue:
-                result_queue.put(res_value)
-            return res_value
+        output = io.StringIO()
+        st = timeit.default_timer()
+        with contextlib.redirect_stdout(output):
+            main()
+        ed = timeit.default_timer()
+        print(f"Total time: {ed - st}s")
+        assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
+        res_value = output.getvalue()
+        if result_queue:
+            result_queue.put(res_value)
+        return res_value
 
 
-def subprocess_run_cli_command(cmd, time_limit=3600, is_print_stats=True):
+def subprocess_run_cli_command(cmd, time_limit=3600):
     result_queue = multiprocessing.Queue()
     process = multiprocessing.Process(target=run_cli_command, args=(cmd,), kwargs={"time_limit": time_limit,
-                                                                                   "is_print_stats": is_print_stats,
                                                                                    "result_queue": result_queue})
     process.start()
     process.join()
@@ -76,7 +72,7 @@ class TestAzureCliTimeConsume:
             "--data",
             f"{DATAS_DIR}/print_input_flow.jsonl",
             *operation_scope_args,
-        ), time_limit=10)
+        ), time_limit=8)
 
     def test_pfazure_run_update(self, operation_scope_args):
         subprocess_run_cli_command(cmd=(
@@ -90,7 +86,7 @@ class TestAzureCliTimeConsume:
             "description='test_description'",
             "tags.key1=value1",
             *operation_scope_args,
-        ), time_limit=5)
+        ), time_limit=4)
 
     def test_run_restore(self, operation_scope_args,):
         subprocess_run_cli_command(cmd=(
@@ -100,4 +96,4 @@ class TestAzureCliTimeConsume:
             "--name",
             "test_run",
             *operation_scope_args,
-        ), time_limit=10)
+        ), time_limit=8)

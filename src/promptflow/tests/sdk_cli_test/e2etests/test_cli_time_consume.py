@@ -2,6 +2,7 @@ import contextlib
 import io
 import sys
 import tempfile
+import timeit
 import uuid
 from pathlib import Path
 import pytest
@@ -15,29 +16,24 @@ CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-def run_cli_command(cmd, time_limit=3600, is_print_stats=True, *, result_queue=None):
+def run_cli_command(cmd, time_limit=3600, result_queue=None):
     sys.argv = list(cmd)
-    with cProfile.Profile() as pr:
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
-            main()
-
-        pstats_obj = pstats.Stats(pr).sort_stats(pstats.SortKey.CUMULATIVE)
-        stats_profile = pstats_obj.get_stats_profile()
-        if is_print_stats:
-            print(pstats_obj.print_stats(10))
-        assert stats_profile.total_tt < time_limit
-
-        res_value = output.getvalue()
-        if result_queue:
-            result_queue.put(res_value)
-        return res_value
+    output = io.StringIO()
+    st = timeit.default_timer()
+    with contextlib.redirect_stdout(output):
+        main()
+    ed = timeit.default_timer()
+    print(f"Total time: {ed - st}s")
+    assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
+    res_value = output.getvalue()
+    if result_queue:
+        result_queue.put(res_value)
+    return res_value
 
 
-def subprocess_run_cli_command(cmd, time_limit=3600, is_print_stats=True):
+def subprocess_run_cli_command(cmd, time_limit=3600):
     result_queue = multiprocessing.Queue()
     process = multiprocessing.Process(target=run_cli_command, args=(cmd,), kwargs={"time_limit": time_limit,
-                                                                                   "is_print_stats": is_print_stats,
                                                                                    "result_queue": result_queue})
     process.start()
     process.join()
@@ -58,7 +54,7 @@ class TestCliTimeConsume:
             f"{FLOWS_DIR}/print_input_flow",
             "--data",
             f"{DATAS_DIR}/print_input_flow.jsonl",
-        ), time_limit=10)
+        ), time_limit=8)
 
         assert "Completed" in res
 
@@ -74,7 +70,7 @@ class TestCliTimeConsume:
             f"{DATAS_DIR}/print_input_flow.jsonl",
             "--name",
             run_name,
-        ), is_print_stats=False)
+        ))
 
         res = subprocess_run_cli_command(cmd=(
             "pf",
@@ -84,7 +80,7 @@ class TestCliTimeConsume:
             run_name,
             "--set",
             "description=test pf run update"
-        ), time_limit=5)
+        ), time_limit=4)
 
         assert "Completed" in res
 
@@ -97,7 +93,7 @@ class TestCliTimeConsume:
             f"{FLOWS_DIR}/print_input_flow",
             "--inputs",
             "text=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
-        ), time_limit=5)
+        ), time_limit=4)
         output_path = Path(FLOWS_DIR) / "print_input_flow" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
 
@@ -113,7 +109,7 @@ class TestCliTimeConsume:
                 temp_dir,
                 "--format",
                 "docker"
-            ), time_limit=10)
+            ), time_limit=8)
 
     def test_pf_connection_create(self):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
@@ -139,7 +135,7 @@ class TestCliTimeConsume:
             f"{CONNECTIONS_DIR}/azure_openai_connection.yaml",
             "--name",
             f"{name}",
-        ), is_print_stats=False)
+        ))
         assert "api_type" in res
 
         res = subprocess_run_cli_command(cmd=(
