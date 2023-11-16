@@ -159,7 +159,9 @@ def mock_origin(original):
 
         if (
             node.provider == "AzureOpenAI"
+            or node.provider == "OpenAI"
             or func_wo_partial.__qualname__.startswith("AzureOpenAI")
+            or func_wo_partial.__qualname__.startswith("OpenAI")
             or func_wo_partial.__qualname__ == "fetch_text_content_from_url"
             or func_wo_partial.__qualname__ == "my_python_tool"
         ):
