@@ -9,7 +9,8 @@ from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor._flow_nodes_scheduler import RUN_FLOW_NODES_LINEARLY
-from promptflow.executor.flow_executor import FlowExecutor, LineResult
+from promptflow.executor._result import LineResult
+from promptflow.executor.flow_executor import FlowExecutor
 
 from ..utils import get_flow_inputs, get_yaml_file, load_content
 

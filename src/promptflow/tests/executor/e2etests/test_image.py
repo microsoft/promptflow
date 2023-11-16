@@ -1,14 +1,15 @@
 import os
-import shutil
 from pathlib import Path
+from tempfile import mkdtemp
 
 import pytest
 
 from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, is_multimedia_dict
+from promptflow.batch import BatchEngine
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
-from promptflow.executor import BatchEngine, FlowExecutor
-from promptflow.executor.flow_executor import BulkResult, LineResult
+from promptflow.executor import FlowExecutor
+from promptflow.executor._result import BatchResult, LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file
@@ -124,7 +125,7 @@ class TestExecutorWithImage:
         "flow_folder, inputs",
         get_test_cases_for_simple_input(SIMPLE_IMAGE_FLOW)
         + get_test_cases_for_composite_input(COMPOSITE_IMAGE_FLOW)
-        + get_test_cases_for_chat_flow()
+        + get_test_cases_for_chat_flow(),
     )
     def test_executor_exec_line_with_image(self, flow_folder, inputs, dev_connections):
         working_dir = get_flow_folder(flow_folder)
@@ -195,54 +196,93 @@ class TestExecutorWithImage:
         assert_contain_image_reference(run_info)
 
     @pytest.mark.parametrize(
-        "flow_folder, input_dirs, inputs_mapping, expected_outputs_number",
+        "flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number, has_aggregation_node",
         [
             (
                 SIMPLE_IMAGE_FLOW,
                 {"data": "."},
                 {"image": "${data.image}"},
+                "output",
                 4,
+                False,
             ),
             (
                 SAMPLE_IMAGE_FLOW_WITH_DEFAULT,
                 {"data": "."},
                 {"image_2": "${data.image_2}"},
+                "output",
                 4,
+                False,
             ),
             (
                 COMPOSITE_IMAGE_FLOW,
                 {"data": "inputs.jsonl"},
                 {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
+                "output",
                 2,
+                False,
+            ),
+            (
+                CHAT_FLOW_WITH_IMAGE,
+                {"data": "inputs.jsonl"},
+                {"question": "${data.question}", "chat_history": "${data.chat_history}"},
+                "answer",
+                2,
+                False,
+            ),
+            (
+                EVAL_FLOW_WITH_SIMPLE_IMAGE,
+                {"data": "inputs.jsonl"},
+                {"image": "${data.image}"},
+                "output",
+                2,
+                True,
+            ),
+            (
+                EVAL_FLOW_WITH_COMPOSITE_IMAGE,
+                {"data": "inputs.jsonl"},
+                {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
+                "output",
+                2,
+                True,
             ),
         ],
     )
-    def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping, expected_outputs_number):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), {})
-        output_dir = Path("outputs")
-        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir, max_lines_count=4)
+    def test_batch_engine_with_image(
+        self, flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number, has_aggregation_node
+    ):
+        flow_file = get_yaml_file(flow_folder)
+        working_dir = get_flow_folder(flow_folder)
+        output_dir = Path(mkdtemp())
+        batch_result = BatchEngine(flow_file, working_dir).run(
+            input_dirs, inputs_mapping, output_dir, max_lines_count=4
+        )
 
-        assert isinstance(bulk_result, BulkResult)
-        assert len(bulk_result.outputs) == expected_outputs_number
-        for i, output in enumerate(bulk_result.outputs):
+        assert isinstance(batch_result, BatchResult)
+        assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
+
+        assert len(batch_result.outputs) == expected_outputs_number
+        for i, output in enumerate(batch_result.outputs):
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-            result = output["output"][0] if isinstance(output["output"], list) else output["output"]
+            result = output[output_key][0] if isinstance(output[output_key], list) else output[output_key]
             assert all(MIME_PATTERN.search(key) for key in result), f"image is not in {i}th output {output}"
-        for i, line_result in enumerate(bulk_result.line_results):
+
+        for i, line_result in enumerate(batch_result.line_results):
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
-        output_dir = get_flow_folder(flow_folder) / output_dir
-        assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
-        shutil.rmtree(output_dir)
+        if has_aggregation_node:
+            for _, node_run_info in batch_result.aggr_results.node_run_infos.items():
+                assert node_run_info.status == Status.Completed
+                assert_contain_image_reference(node_run_info)
 
     @pytest.mark.parametrize(
-            "flow_folder, inputs",
-            get_test_cases_for_simple_input(EVAL_FLOW_WITH_SIMPLE_IMAGE)
-            + get_test_cases_for_composite_input(EVAL_FLOW_WITH_COMPOSITE_IMAGE)
-        )
+        "flow_folder, inputs",
+        get_test_cases_for_simple_input(EVAL_FLOW_WITH_SIMPLE_IMAGE)
+        + get_test_cases_for_composite_input(EVAL_FLOW_WITH_COMPOSITE_IMAGE),
+    )
     def test_executor_exec_aggregation_with_image(self, flow_folder, inputs, dev_connections):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)

@@ -18,43 +18,6 @@ from promptflow.tools.aoai import AzureOpenAI, chat, completion
 @pytest.mark.unittest
 class TestFlowExecutor:
     @pytest.mark.parametrize(
-        "flow_inputs, inputs, expected_inputs",
-        [
-            (
-                {
-                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
-                },
-                None,  # Could handle None input
-                {"input_from_default": "default_value"},
-            ),
-            (
-                {
-                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
-                },
-                {},
-                {"input_from_default": "default_value"},
-            ),
-            (
-                {
-                    "input_no_default": FlowInputDefinition(type=ValueType.STRING),
-                },
-                {},
-                {},  # No default value for input.
-            ),
-            (
-                {
-                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
-                },
-                {"input_from_default": "input_value", "another_key": "input_value"},
-                {"input_from_default": "input_value", "another_key": "input_value"},
-            ),
-        ],
-    )
-    def test_apply_default_value_for_input(self, flow_inputs, inputs, expected_inputs):
-        result = FlowExecutor._apply_default_value_for_input(flow_inputs, inputs)
-        assert result == expected_inputs
-
-    @pytest.mark.parametrize(
         "flow_inputs, aggregated_flow_inputs, aggregation_inputs, expected_inputs",
         [
             (
