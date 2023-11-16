@@ -1,8 +1,22 @@
 [
   {
+    "version": "dev",
+    "url": "https://pydata-sphinx-theme.readthedocs.io/en/latest/"
+  },
+  {
     "name": "Python",
     "version": "python",
     "url": "https://microsoft.github.io/promptflow/python/",
     "preferred": true
+  },
+  {
+    "name": "JavaScript",
+    "version": "javascript",
+    "url": "https://microsoft.github.io/promptflow/javascript/"
+  },
+  {
+    "name": "C#",
+    "version": "csharp",
+    "url": "https://microsoft.github.io/promptflow/csharp/"
   }
 ]
