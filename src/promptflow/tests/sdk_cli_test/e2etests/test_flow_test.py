@@ -201,6 +201,6 @@ class TestFlowTest:
 
     def test_pf_node_test_with_dict_input(self):
         flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input").absolute()
-        inputs = {"print_val.output.result": {"key": "value"}}
-        result = _client._flows._test(flow=flow_path, node="print_val2", inputs=inputs)
+        inputs = {"get_dict_val.output.value": {"key": "value"}}
+        result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
         assert result.status.value == "Completed"
