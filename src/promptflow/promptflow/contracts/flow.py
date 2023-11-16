@@ -539,6 +539,12 @@ class NodeVariants:
         return NodeVariants(default_variant_id=data.get("default_variant_id", ""), variants=variants)
 
 
+class FlowLanguage(str, Enum):
+    """The enum of tool source type."""
+
+    Python = "python"
+
+
 @dataclass
 class Flow:
     """This class represents a flow.
@@ -568,7 +574,7 @@ class Flow:
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
-    program_language: str = "python"
+    program_language: FlowLanguage = FlowLanguage.Python
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -628,7 +634,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
-            program_language=data.get("language", "python"),
+            program_language=data.get("language", FlowLanguage.Python),
         )
 
     def _apply_default_node_variants(self: "Flow"):
