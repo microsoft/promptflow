@@ -89,12 +89,8 @@
             Directory="DynamicCliDir"
             Execute="commit"
             Impersonate="no"
-            ExeCommand="cmd.exe /c SC CREATE PromptService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown binPath= &quot;\&quot;&quot;&quot;&quot;%ProgramFiles%\promptflow\pfs.exe\&quot;&quot;&quot;&quot;"
+            ExeCommand="cmd.exe /c SC CREATE PromptFlowService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown binPath= &quot;\&quot;%ProgramFiles%\promptflow\pfs.exe\&quot;&quot;"
             Return="check" />
-        <InstallExecuteSequence>
-          <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
-        </InstallExecuteSequence>
-
         <CustomAction Id="UninstallPromptFlowService"
             Directory="DynamicCliDir"
             Execute="commit"
@@ -102,7 +98,9 @@
             ExeCommand="cmd.exe /c SC DELETE PromptService"
             Return="check" />
         <InstallExecuteSequence>
-          <Custom Action="UninstallPromptFlowService" Before="InstallFinalize">REMOVE="ALL"</Custom>
+            <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
+            <Custom Action="UninstallPromptFlowService" Before="InstallFinalize">REMOVE="ALL"</Custom>
+            <ScheduleReboot After='InstallFinalize' />
         </InstallExecuteSequence>
 
     </Product>
