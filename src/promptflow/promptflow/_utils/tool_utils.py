@@ -303,15 +303,15 @@ def load_function_from_function_path(func_path: str):
 
 
 # Handling backward compatibility and generating a mapping between the previous and new tool IDs.
-def build_tool_id_mapping(package_tools) -> Dict[str, str]:
-    tool_id_mapping = {}
+def _find_deprecated_tools(package_tools) -> Dict[str, str]:
+    _deprecated_tools = {}
     for tool_id, tool in package_tools.items():
-        # "transition_from" is a list of old tool IDs that are mapped to the current tool ID.
-        if tool and "transition_from" in tool:
-            for old_tool_id in tool["transition_from"]:
-                tool_id_mapping[old_tool_id] = tool_id
+        # "deprecated_tools" is a list of old tool IDs that are mapped to the current tool ID.
+        if tool and "deprecated_tools" in tool:
+            for old_tool_id in tool["deprecated_tools"]:
+                _deprecated_tools[old_tool_id] = tool_id
 
-    return tool_id_mapping
+    return _deprecated_tools
 
 
 class RetrieveToolFuncResultError(UserErrorException):

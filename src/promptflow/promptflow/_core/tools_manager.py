@@ -30,8 +30,8 @@ from promptflow._utils.connection_utils import (
 from promptflow._utils.tool_utils import (
     DynamicListError,
     RetrieveToolFuncResultError,
+    _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
-    build_tool_id_mapping,
     function_to_tool_definition,
     get_prompt_param_name_from_func,
     load_function_from_function_path,
@@ -68,9 +68,9 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
             for identifier, tool in package_tools.items():
                 #  Only load required tools to avoid unnecessary loading when keys is provided
                 if isinstance(keys, set) and identifier not in keys:
-                    # Support to collect new tool id if node source tool is a legacy tool.
-                    legacy_tool_ids = tool.get("transition_from", [])
-                    if not set(legacy_tool_ids).intersection(keys):
+                    # Support to collect new tool id if node source tool is a deprecated tool.
+                    deprecated_tool_ids = tool.get("deprecated_tools", [])
+                    if not set(deprecated_tool_ids).intersection(keys):
                         continue
 
                 m = tool["module"]
@@ -410,7 +410,7 @@ class ToolLoader:
         self._working_dir = working_dir
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
         # Used to handle backward compatibility of tool ID changes.
-        self._tool_id_mapping = build_tool_id_mapping(self._package_tools)
+        self._deprecated_tools = _find_deprecated_tools(self._package_tools)
 
     # TODO: Replace NotImplementedError with NotSupported in the future.
     def load_tool_for_node(self, node: Node) -> Tool:
@@ -432,8 +432,8 @@ class ToolLoader:
 
     def load_tool_for_package_node(self, node: Node) -> Tool:
         # Handle backward compatibility of tool ID changes.
-        if node.source.tool in self._tool_id_mapping:
-            new_tool_id = self._tool_id_mapping[node.source.tool]
+        if node.source.tool in self._deprecated_tools:
+            new_tool_id = self._deprecated_tools[node.source.tool]
             # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
             module_logger.warning(
                 f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead."

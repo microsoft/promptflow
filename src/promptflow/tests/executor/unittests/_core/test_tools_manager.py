@@ -83,7 +83,7 @@ class TestToolLoader:
     def test_load_tool_for_package_node_with_legacy_tool_id(self, mocker):
         package_tools = {
             "new_tool": Tool(
-                name="new_tool_id", type=ToolType.PYTHON, inputs={}, transition_from=["old_tool_id"]).serialize()
+                name="new_tool_id", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_id"]).serialize()
         }
         mocker.patch("promptflow._core.tools_manager.collect_package_tools", return_value=package_tools)
         tool_loader = ToolLoader(working_dir="test_working_dir", package_tool_keys=["new_tool_id"])
