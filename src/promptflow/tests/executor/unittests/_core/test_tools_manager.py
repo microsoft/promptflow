@@ -82,20 +82,31 @@ class TestToolLoader:
 
     def test_load_tool_for_package_node_with_legacy_tool_id(self, mocker):
         package_tools = {
-            "new_tool": Tool(
-                name="new_tool_id", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_id"]).serialize()
+            "new_tool_1": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+            "new_tool_2": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_2"]).serialize(),
+            "old_tool_2": Tool(name="old tool 2", type=ToolType.PYTHON, inputs={}).serialize(),
         }
         mocker.patch("promptflow._core.tools_manager.collect_package_tools", return_value=package_tools)
-        tool_loader = ToolLoader(working_dir="test_working_dir", package_tool_keys=["new_tool_id"])
-        node: Node = Node(
+        tool_loader = ToolLoader(working_dir="test_working_dir", package_tool_keys=list(package_tools.keys()))
+        node_with_legacy_tool: Node = Node(
             name="test_legacy_tool",
-            tool="old_tool_id",
+            tool="old_tool_1",
             inputs={},
             type=ToolType.PYTHON,
-            source=ToolSource(type=ToolSourceType.Package, tool="old_tool_id"),
+            source=ToolSource(type=ToolSourceType.Package, tool="old_tool_1"),
         )
-        tool = tool_loader.load_tool_for_node(node)
-        assert tool.name == "new_tool_id"
+        assert tool_loader.load_tool_for_node(node_with_legacy_tool).name == "new tool 1"
+
+        node_with_legacy_tool_but_in_package_tools: Node = Node(
+            name="test_legacy_tool_but_in_package_tools",
+            tool="old_tool_2",
+            inputs={},
+            type=ToolType.PYTHON,
+            source=ToolSource(type=ToolSourceType.Package, tool="old_tool_2"),
+        )
+        assert tool_loader.load_tool_for_node(node_with_legacy_tool_but_in_package_tools).name == "old tool 2"
 
     def test_load_tool_for_script_node(self):
         working_dir = Path(__file__).parent
