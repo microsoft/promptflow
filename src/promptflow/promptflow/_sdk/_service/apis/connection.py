@@ -13,13 +13,17 @@ from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
 api = Namespace("Connections", description="Connections Management")
+
+# Define base connection request parsing
 remote_parser = api.parser()
 remote_parser.add_argument("X-Remote-User", location="headers", required=True)
 
+# Define create or update connection request parsing
 create_or_update_parser = remote_parser.copy()
 create_or_update_parser.add_argument("connection_dict", type=str, location="args", required=True)
 
-connection_field = api.model(
+# Response model of list connections
+list_connection_field = api.model(
     "Connection",
     {
         "name": fields.String,
@@ -30,6 +34,7 @@ connection_field = api.model(
         "last_modified_date": fields.DateTime(),
     },
 )
+# Response model of connection operation
 dict_field = api.schema_model("ConnectionDict", {"additionalProperties": True, "type": "object"})
 
 
@@ -41,7 +46,7 @@ def handle_connection_not_found_exception(error):
 @api.route("/")
 class ConnectionList(Resource):
     @api.doc(parser=remote_parser, description="List all connection")
-    @api.marshal_with(connection_field, skip_none=True, as_list=True)
+    @api.marshal_with(list_connection_field, skip_none=True, as_list=True)
     @local_user_only
     def get(self):
         connection_op = ConnectionOperations()
