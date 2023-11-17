@@ -16,9 +16,9 @@ on:
         required: false
         type: string
 env:
-  packageSetupType: promptflow_with_extra
   testWorkingDirectory: src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
+  PROMPT_FLOW_TEST_MODE: "replay"
   IS_IN_CI_PIPELINE: "true"
 jobs:
   id:

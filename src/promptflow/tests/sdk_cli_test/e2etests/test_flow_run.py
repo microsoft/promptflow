@@ -642,7 +642,7 @@ class TestFlowRun:
         )
 
         # patch logger.error to print, so that we can capture the error message using capfd
-        from promptflow.azure.operations import _run_operations
+        from promptflow._sdk.operations import _run_operations
 
         _run_operations.logger.error = print
 
