@@ -13,6 +13,7 @@ from .utils import (
     is_json_payload_request,
     is_json_payload_response,
     sanitize_azure_workspace_triad,
+    sanitize_experiment_id,
     sanitize_upload_hash,
     sanitize_username,
 )
@@ -35,6 +36,23 @@ class AzureWorkspaceTriadProcessor(RecordingProcessor):
 
     def process_response(self, response: Dict) -> Dict:
         response["body"]["string"] = sanitize_azure_workspace_triad(response["body"]["string"])
+        return response
+
+
+class AzureMLExperimentIDProcessor(RecordingProcessor):
+    """Sanitize Azure ML experiment id, currently we use workspace id as the value."""
+
+    def process_request(self, request: Request) -> Request:
+        request.uri = sanitize_experiment_id(request.uri)
+        return request
+
+    def process_response(self, response: Dict) -> Dict:
+        if is_json_payload_response(response):
+            if "experimentId" in response["body"]["string"]:
+                body = json.loads(response["body"]["string"])
+                if "experimentId" in body:
+                    body["experimentId"] = SanitizedValues.WORKSPACE_ID
+                response["body"]["string"] = json.dumps(body)
         return response
 
 

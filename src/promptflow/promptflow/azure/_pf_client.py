@@ -66,6 +66,7 @@ class PFClient:
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
             service_caller=self._service_caller,
+            workspace=workspace,
             **kwargs,
         )
         self._runs = RunOperations(

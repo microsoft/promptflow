@@ -1,6 +1,6 @@
 from traceback import TracebackException
 
-from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERROR, last_frame_info
+from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERROR, last_frame_info, is_pf_core_frame
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 
@@ -73,29 +73,17 @@ class ToolExecutionError(UserErrorException):
         """
         exc = self.inner_exception
         if exc and exc.__traceback__ is not None:
-            # The first frame is always the code in flow.py who invokes the tool.
-            # We do not want to dump it to user code's traceback.
-            # So, just skip it by looking up for `tb_next` here.
             tb = exc.__traceback__.tb_next
             if tb is not None:
+                # The first frames are always our code invoking the tool.
+                # We do not want to dump it to user code's traceback.
+                # So, skip these frames from pf core module.
+                while is_pf_core_frame(tb.tb_frame) and tb.tb_next is not None:
+                    tb = tb.tb_next
                 # We don't use traceback.format_exception since its interface differs between 3.8 and 3.10.
                 # Use this internal class to adapt to different python versions.
                 te = TracebackException(type(exc), exc, tb)
                 formatted_tb = "".join(te.format())
-
-                # For inline scripts that are not saved into a file,
-                # The traceback will show "<string>" as the file name.
-                # For these cases, replace with the node name for better understanding.
-                #
-                # Here is a default traceback for example:
-                #   File "<string>", line 1, in <module>
-                #
-                # It will be updated to something like this:
-                #   In "my_node", line 1, in <module>
-                if self._node_name:
-                    # policy: http://policheck.azurewebsites.net/Pages/TermInfo.aspx?LCID=9&TermID=79670
-                    formatted_tb = formatted_tb.replace('File "<string>"', 'In "{}"'.format(self._node_name))
-
                 return formatted_tb
 
         return None
@@ -143,4 +131,9 @@ class FlowOutputUnserializable(UserErrorException):
 
 
 class ProcessPoolError(SystemErrorException):
+    pass
+
+
+class DuplicateToolMappingError(ValidationException):
+    """Exception raised when multiple tools are linked to the same deprecated tool id."""
     pass
