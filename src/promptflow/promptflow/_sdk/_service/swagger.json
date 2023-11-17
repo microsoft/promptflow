@@ -1,0 +1,283 @@
+{
+    "swagger": "2.0",
+    "basePath": "/v1.0",
+    "paths": {
+        "/Connections/": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Connection"
+                            }
+                        }
+                    }
+                },
+                "description": "List all connection",
+                "operationId": "get_connection_list",
+                "parameters": [
+                    {
+                        "name": "X-Remote-User",
+                        "in": "header",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            }
+        },
+        "/Connections/{name}": {
+            "parameters": [
+                {
+                    "in": "path",
+                    "description": "The connection name.",
+                    "name": "name",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Create connection",
+                "operationId": "post_connection",
+                "parameters": [
+                    {
+                        "name": "X-Remote-User",
+                        "in": "header",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "connection_dict",
+                        "in": "query",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
+                "parameters": [
+                    {
+                        "name": "X-Remote-User",
+                        "in": "header",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "X-Remote-User",
+                        "in": "header",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Update connection",
+                "operationId": "put_connection",
+                "parameters": [
+                    {
+                        "name": "X-Remote-User",
+                        "in": "header",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "connection_dict",
+                        "in": "query",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            }
+        },
+        "/Runs/": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "description": "List all runs",
+                "operationId": "get_run_list",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/detail": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "operationId": "get_detail",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/metadata": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "operationId": "get_meta_data",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        }
+    },
+    "info": {
+        "title": "Prompt Flow Service",
+        "version": "1.0"
+    },
+    "produces": [
+        "application/json"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "tags": [
+        {
+            "name": "Connections",
+            "description": "Connections Management"
+        },
+        {
+            "name": "Runs",
+            "description": "Runs Management"
+        }
+    ],
+    "definitions": {
+        "Connection": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "module": {
+                    "type": "string"
+                },
+                "expiry_time": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "created_date": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "last_modified_date": {
+                    "type": "string",
+                    "format": "date-time"
+                }
+            },
+            "type": "object"
+        },
+        "ConnectionDict": {
+            "additionalProperties": true,
+            "type": "object"
+        }
+    },
+    "responses": {
+        "ParseError": {
+            "description": "When a mask can't be parsed"
+        },
+        "MaskError": {
+            "description": "When any error occurs on mask"
+        }
+    }
+}
