@@ -1,5 +1,5 @@
 # Prompt Flow Service
-This document will describle the usage of pfs(prompt flow service) CLI.
+This document will describe the usage of pfs(prompt flow service) CLI.
 
 ### Start prompt flow service (optional)
 If you don't install pfs as a service, you need to start pfs manually.
