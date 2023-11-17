@@ -3,21 +3,22 @@
 # ---------------------------------------------------------
 
 from dataclasses import asdict
-from flask_restx import Namespace, Resource
 
 from flask import jsonify, request
+from flask_restx import Namespace, Resource
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
+from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow.contracts._run_management import RunMetadata
-from promptflow._sdk._errors import RunNotFoundError
 
 api = Namespace("run", description="Run Management")
 
 
 @api.errorhandler(RunNotFoundError)
 def handle_run_not_found_exception(error):
+    api.logger.warning(f"Raise RunNotFoundError, {error.message}")
     return {"error_message": error.message}, 400
 
 

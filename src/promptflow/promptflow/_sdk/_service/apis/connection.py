@@ -40,6 +40,7 @@ dict_field = api.schema_model("ConnectionDict", {"additionalProperties": True, "
 
 @api.errorhandler(ConnectionNotFoundError)
 def handle_connection_not_found_exception(error):
+    api.logger.warning(f"Raise ConnectionNotFoundError, {error.message}")
     return {"error_message": error.message}, 400
 
 

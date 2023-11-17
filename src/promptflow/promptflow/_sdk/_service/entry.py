@@ -26,7 +26,10 @@ def main():
 
     args = parser.parse_args(command_args)
     port = args.port
+    app, _ = create_app()
+
     if port and is_port_in_use(port):
+        app.logger.warning(f"Service port {port} is used.")
         raise UserErrorException(f"Service port {port} is used.")
     if not port:
         (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
@@ -41,10 +44,11 @@ def main():
                 service_config["service"]["port"] = port
                 yaml.dump(service_config, f)
 
-    app, _ = create_app()
     if is_port_in_use(port):
+        app.logger.warning(f"Service port {port} is used.")
         raise UserErrorException(f"Service port {port} is used.")
     # Set host to localhost, only allow request from localhost.
+    app.logger.info(f"Start Prompt Flow Service on {port}.")
     waitress.serve(app, host="127.0.0.1", port=port)
 
 
