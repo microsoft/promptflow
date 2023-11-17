@@ -75,9 +75,8 @@ jobs:
           if ($env:INPUT_VERSION) {
             $version=$env:INPUT_VERSION
           } else {
-            run_id="${{ github.run_id }}"
-            version="$run_id.$run_id.$run_id"
-            $version=${{ github.run_id }}
+            $run_id="${{ github.run_id }}"
+            $version="$run_id.$run_id.$run_id"
           }
           echo "::set-output name=version::$version"
         env:
