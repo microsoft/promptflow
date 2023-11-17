@@ -315,7 +315,7 @@ def _find_deprecated_tools(package_tools) -> Dict[str, str]:
                     module_logger.warning(
                         f"More than 1 tool {', '.join([_deprecated_tools[old_tool_id], tool_id])}"
                         f" are mapped to the same old tool ID: {old_tool_id}. "
-                        f"Use the last one: {tool_id} as the current tool ID.")
+                        f"Use the last one {tool_id} as the current tool ID.")
                 _deprecated_tools[old_tool_id] = tool_id
 
     return _deprecated_tools
