@@ -23,10 +23,6 @@ Exception: In raise_exception: dummy_input
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-in _invoke_tool_with_timer
-    return f(**kwargs)
-in decorated_tool
-    output = func(*args, **kwargs)
 sync_fail.py", line 13, in raise_an_exception
     raise Exception(f"In tool raise_an_exception: {s}") from e
 Exception: In tool raise_an_exception: dummy_input
@@ -41,10 +37,6 @@ Exception: In raise_exception_async: dummy_input
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-, in _invoke_tool_async_inner
-    return await f(**kwargs)
-in decorated_tool
-    output = await func(*args, **kwargs)
 in raise_an_exception_async
     raise Exception(f"In tool raise_an_exception_async: {s}") from e
 Exception: In tool raise_an_exception_async: dummy_input
