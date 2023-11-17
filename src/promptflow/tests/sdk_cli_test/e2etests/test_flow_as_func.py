@@ -215,3 +215,10 @@ class TestFlowAsFunc:
             ),
         )
         assert flow_executor1 is not flow_executor2
+
+    @pytest.mark.timeout(10)
+    def test_flow_as_func_perf_test(self):
+        # this test should not take long due to caching logic
+        f = load_flow(f"{FLOWS_DIR}/print_env_var")
+        for i in range(100):
+            f(key="key")
