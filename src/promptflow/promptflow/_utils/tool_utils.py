@@ -309,6 +309,13 @@ def _find_deprecated_tools(package_tools) -> Dict[str, str]:
         # "deprecated_tools" is a list of old tool IDs that are mapped to the current tool ID.
         if tool and "deprecated_tools" in tool:
             for old_tool_id in tool["deprecated_tools"]:
+                # throw warning if more than 1 new tools are mapped to the same old tool ID.
+                # use the last one as the current tool ID.
+                if old_tool_id in _deprecated_tools:
+                    module_logger.warning(
+                        f"More than 1 tool {', '.join([_deprecated_tools[old_tool_id], tool_id])}"
+                        f" are mapped to the same old tool ID: {old_tool_id}. "
+                        f"Use the last one: {tool_id} as the current tool ID.")
                 _deprecated_tools[old_tool_id] = tool_id
 
     return _deprecated_tools

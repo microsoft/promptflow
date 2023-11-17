@@ -6,6 +6,7 @@ import pytest
 from promptflow._utils.tool_utils import (
     DynamicListError,
     ListFunctionResponseError,
+    _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_interface,
     load_function_from_function_path,
@@ -13,7 +14,7 @@ from promptflow._utils.tool_utils import (
     validate_dynamic_list_func_response_type,
 )
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
-from promptflow.contracts.tool import ValueType
+from promptflow.contracts.tool import ValueType, Tool, ToolType
 
 
 # mock functions for dynamic list function testing
@@ -360,3 +361,13 @@ class TestToolUtils:
             "is not callable.'. \nPlease contact the tool author/support team for troubleshooting assistance.",
         ):
             load_function_from_function_path(func_path)
+
+    def test_find_deprecated_tools(self):
+        package_tools = {
+            "new_tool_1": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+            "new_tool_2": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+        }
+        deprecated_tools = _find_deprecated_tools(package_tools)
+        assert deprecated_tools == {"old_tool_1": "new_tool_2"}
