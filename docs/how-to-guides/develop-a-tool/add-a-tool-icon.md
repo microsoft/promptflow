@@ -80,7 +80,7 @@ my_tool_package.tools.my_tool_1.my_tool:
   name: my_tool
   type: python
 ```
-Note: If you specify only a light icon without a dark icon, the defined icon will be used in light mode, while the system default icon will be used in dark mode. Similarly, if only a dark icon is specified, the defined icon will be used in dark mode, and the system default icon will be used in light mode.
+Note: Both light and dark icons are optional. If you set either a light or dark icon, it will be used in its respective mode, and the system default icon will be used in the other mode.
 
 ## Verify the tool icon in VS Code extension
 Follow [steps](create-and-use-tool-package.md#use-your-tool-from-vscode-extension) to use your tool from VS Code extension. Your tool displays with the custom icon:  

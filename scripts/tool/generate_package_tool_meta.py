@@ -43,15 +43,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--icon-light",
         type=str,
-        help="your tool's icon image path in light mode, if you need to show the same icon in dark and light mode, \n"
-        "please use `icon` parameter. \n"
+        help="your tool's icon image path for light mode, \n"
+        "if you need to show the same icon in dark and light mode, please use `icon` parameter. \n"
         "If these icon parameters are not provided, the system will use the default icon.",
         required=False)
     parser.add_argument(
         "--icon-dark",
         type=str,
-        help="your tool's icon image path in dark mode, if you need to show the same icon in dark and light mode, \n"
-        "please use `icon` parameter. \n"
+        help="your tool's icon image path for dark mode, \n"
+        "if you need to show the same icon in dark and light mode, please use `icon` parameter. \n"
         "If these icon parameters are not provided, the system will use the default icon.",
         required=False)
     parser.add_argument(
