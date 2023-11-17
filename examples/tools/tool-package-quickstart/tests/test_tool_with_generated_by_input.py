@@ -50,7 +50,7 @@ def test_reverse_generate_index_json():
         assert result[k] == v
 
 
-def list_index_types():
+def test_list_index_types():
     result = list_index_types("", "", "")
     assert isinstance(result, list)
     assert len(result) == 5
