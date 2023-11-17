@@ -37,6 +37,9 @@ class TestConfig:
         new_config = Configuration.get_instance()
         assert new_config is config
 
+    def test_assertFalse(self):
+        raise "Let me see how this fail"
+
     def test_get_workspace_from_config(self):
         # New instance instead of get_instance() to avoid side effect
         conf = Configuration(overrides={"connection.provider": "azureml"})
