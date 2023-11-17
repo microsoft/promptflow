@@ -49,7 +49,6 @@ if __name__ == "__main__":
         default="",
     )
 
-
     args = parser.parse_args()
     print("Working directory: " + str(os.getcwd()))
     print("Args.p: " + str(args.p))
