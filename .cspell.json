@@ -149,7 +149,8 @@
     "vcrpy",
     "uionly",
     "llmops",
-    "Abhishek"
+    "Abhishek",
+    "httpx"
   ],
   "flagWords": [
     "Prompt Flow"
