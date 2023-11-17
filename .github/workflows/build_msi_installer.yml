@@ -77,7 +77,7 @@ jobs:
             $version=$env:INPUT_VERSION
           } else {
             $year = [int](Get-Date -Format "yy")
-            $month = [int]Get-Date -Format "MM")
+            $month = [int](Get-Date -Format "MM")
             $dayhour = [int](Get-Date -Format "ddHH")
             $minutesecond = [int](Get-Date -Format "mmss")
             $version="$year.$month.$dayhour.$minutesecond"
