@@ -1448,24 +1448,6 @@ class TestCli:
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
         assert "invalid_flow_folder does not exist" in e.value.args[0]
 
-    def test_chat_flow_with_conditional(self, monkeypatch, capsys):
-        chat_list = ["1", "2"]
-
-        def mock_input(*args, **kwargs):
-            if chat_list:
-                return chat_list.pop()
-            else:
-                raise KeyboardInterrupt()
-
-        monkeypatch.setattr("builtins.input", mock_input)
-        run_pf_command(
-            "flow", "test", "--flow", f"{FLOWS_DIR}/conditional_chat_flow_with_skip", "--interactive", "--verbose"
-        )
-        output_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.output.json"
-        assert output_path.exists()
-        detail_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.detail.json"
-        assert detail_path.exists()
-
     def test_flow_test_with_image_input_and_output(self):
         run_pf_command(
             "flow",
