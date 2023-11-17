@@ -71,14 +71,15 @@ jobs:
 
       - name: Get promptflow version
         id: get-version
+        # Convert string to int since the version tuple used in "version_info" can't start with 0.
         run: |
           if ($env:INPUT_VERSION) {
             $version=$env:INPUT_VERSION
           } else {
-            $year = Get-Date -Format "yy"
-            $month = Get-Date -Format "MM"
-            $dayhour = Get-Date -Format "ddHH"
-            $minutesecond = Get-Date -Format "mmss"
+            $year = [int](Get-Date -Format "yy")
+            $month = [int]Get-Date -Format "MM")
+            $dayhour = [int](Get-Date -Format "ddHH")
+            $minutesecond = [int](Get-Date -Format "mmss")
             $version="$year.$month.$dayhour.$minutesecond"
           }
           echo "::set-output name=version::$version"
