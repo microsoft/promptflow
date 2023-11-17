@@ -73,7 +73,7 @@ class ToolExecutionError(UserErrorException):
         """
         exc = self.inner_exception
         if exc and exc.__traceback__ is not None:
-            tb = exc.__traceback__
+            tb = exc.__traceback__.tb_next
             if tb is not None:
                 # The first frames are always our code invoking the tool.
                 # We do not want to dump it to user code's traceback.

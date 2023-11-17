@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import json
+import os
 from datetime import datetime
 from enum import Enum
 from traceback import TracebackException, format_tb
@@ -383,5 +384,5 @@ def infer_error_code_from_class(cls):
 def is_pf_core_frame(frame: FrameType):
     """Check if the frame is from promptflow core code."""
     from promptflow import _core
-    file_of_core = _core.__file__
-    return file_of_core in frame.f_code.co_filename
+    folder_of_core = os.path.dirname(_core.__file__)
+    return folder_of_core in frame.f_code.co_filename
