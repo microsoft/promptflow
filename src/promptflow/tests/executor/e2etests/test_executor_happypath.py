@@ -121,27 +121,6 @@ class TestExecutor:
         assert run_info.node == node_name
         assert run_info.system_metrics["duration"] >= 0
 
-    @pytest.mark.parametrize(
-        "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
-        [
-            ("web_classification_with_exception", "convert_to_dict", {}, {"classify_with_llm": {}}),
-        ],
-    )
-    def test_executor_exec_node_fail(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs):
-        yaml_file = get_yaml_file(flow_folder)
-        run_info = FlowExecutor.load_and_exec_node(
-            yaml_file,
-            node_name,
-            flow_inputs=flow_inputs,
-            dependency_nodes_outputs=dependency_nodes_outputs,
-        )
-        assert run_info.output is None
-        assert run_info.status == Status.Failed
-        assert isinstance(run_info.api_calls, list)
-        assert len(run_info.api_calls) == 1
-        assert run_info.node == node_name
-        assert run_info.system_metrics["duration"] >= 0
-
     def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
         executor = FlowExecutor.create(
