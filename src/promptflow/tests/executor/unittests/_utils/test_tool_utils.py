@@ -3,6 +3,7 @@ from typing import Union
 
 import pytest
 
+from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.tool_utils import (
     DynamicListError,
     ListFunctionResponseError,
@@ -369,5 +370,5 @@ class TestToolUtils:
             "new_tool_2": Tool(
                 name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
         }
-        deprecated_tools = _find_deprecated_tools(package_tools)
-        assert deprecated_tools == {"old_tool_1": "new_tool_2"}
+        with pytest.raises(DuplicateToolMappingError, match="secure operation"):
+            _find_deprecated_tools(package_tools)

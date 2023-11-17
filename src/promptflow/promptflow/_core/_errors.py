@@ -140,3 +140,8 @@ class RunRecordNotFound(SystemErrorException):
 
 class FlowOutputUnserializable(UserErrorException):
     pass
+
+
+class DuplicateToolMappingError(ValidationException):
+    """Exception raised when multiple tools are linked to the same deprecated tool id."""
+    pass

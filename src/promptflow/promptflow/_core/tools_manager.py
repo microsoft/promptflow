@@ -30,6 +30,7 @@ from promptflow._utils.connection_utils import (
 from promptflow._utils.tool_utils import (
     DynamicListError,
     RetrieveToolFuncResultError,
+    _DEPRECATED_TOOLS,
     _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_tool_definition,
@@ -69,7 +70,7 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
                 #  Only load required tools to avoid unnecessary loading when keys is provided
                 if isinstance(keys, set) and identifier not in keys:
                     # Support to collect new tool id if node source tool is a deprecated tool.
-                    deprecated_tool_ids = tool.get("deprecated_tools", [])
+                    deprecated_tool_ids = tool.get(_DEPRECATED_TOOLS, [])
                     if not set(deprecated_tool_ids).intersection(keys):
                         continue
 
