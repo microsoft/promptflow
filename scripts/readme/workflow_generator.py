@@ -58,7 +58,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
     if "tutorials" in gh_working_dir:
-        path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml ]"
+        path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml, '!examples/flow/integrations/**' ]"
     else:
         path_filter = f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml ]"
 
