@@ -9,12 +9,9 @@ from typing import Dict
 from promptflow._sdk._constants import NODES
 from promptflow._sdk._utils import get_local_connections_from_executable, parse_variant
 from promptflow._sdk.entities import FlowContext
-from promptflow._sdk.operations._run_submitter import (
-    _load_flow_dag,
-    overwrite_connections,
-    overwrite_flow,
-    overwrite_variant,
-)
+from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.operations._run_submitter import overwrite_connections, overwrite_flow, overwrite_variant
+from promptflow._utils.flow_utils import load_flow_dag
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.flow import Node
 from promptflow.exceptions import UserErrorException
@@ -33,18 +30,18 @@ class FlowContextResolver:
     def __init__(self, flow_path: PathLike):
         from promptflow import PFClient
 
-        self.flow_path, self.flow_dag = _load_flow_dag(flow_path=Path(flow_path))
+        self.flow_path, self.flow_dag = load_flow_dag(flow_path=Path(flow_path))
         self.working_dir = Path(self.flow_path).parent.resolve()
         self.node_name_2_node: Dict[str, Node] = {node["name"]: node for node in self.flow_dag[NODES]}
         self.client = PFClient()
 
     @classmethod
     @lru_cache
-    def create(cls, flow_path: PathLike, flow_context: FlowContext) -> FlowExecutor:
+    def create(cls, flow: Flow) -> FlowExecutor:
         """Create flow executor."""
-        resolver = cls(flow_path=flow_path)
-        resolver._resolve(flow_context=flow_context)
-        return resolver._create_executor(flow_context=flow_context)
+        resolver = cls(flow_path=flow.path)
+        resolver._resolve(flow_context=flow.context)
+        return resolver._create_executor(flow_context=flow.context)
 
     def _resolve(self, flow_context: FlowContext):
         """Resolve flow context to executor."""

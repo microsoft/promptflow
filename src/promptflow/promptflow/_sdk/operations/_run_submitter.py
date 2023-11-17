@@ -10,13 +10,10 @@ import tempfile
 from os import PathLike
 from pathlib import Path
 
-import yaml
 from dotenv import load_dotenv
 from pydash import objects
 
 from promptflow._sdk._constants import (
-    DAG_FILE_NAME,
-    DEFAULT_ENCODING,
     DEFAULT_VAR_ID,
     INPUTS,
     NODE,
@@ -44,6 +41,7 @@ from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow.batch import BatchEngine
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
@@ -51,28 +49,6 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
-
-
-def _resolve_flow_path(flow_path: Path):
-    if flow_path.is_dir():
-        flow_path = flow_path / DAG_FILE_NAME
-    return flow_path
-
-
-def _load_flow_dag(flow_path: Path):
-    flow_path = _resolve_flow_path(flow_path)
-    if not flow_path.exists():
-        raise FileNotFoundError(f"Flow file {flow_path} not found")
-    with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
-        flow_dag = yaml.safe_load(f)
-    return flow_path, flow_dag
-
-
-def dump_flow_dag(flow_dag: dict, flow_path: Path):
-    flow_path = _resolve_flow_path(flow_path)
-    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        yaml.safe_dump(flow_dag, f, default_flow_style=False)
-    return flow_path
 
 
 def overwrite_variant(flow_dag: dict, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
@@ -171,10 +147,9 @@ def overwrite_flow(flow_dag: dict, params_overrides: dict):
 
 
 def remove_additional_includes(flow_path: Path):
-    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
+    flow_path, flow_dag = load_flow_dag(flow_path=flow_path)
     flow_dag.pop("additional_includes", None)
-    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        yaml.safe_dump(flow_dag, f)
+    dump_flow_dag(flow_dag, flow_path)
 
 
 @contextlib.contextmanager
@@ -188,7 +163,7 @@ def variant_overwrite_context(
     drop_node_variants: bool = False,
 ):
     """Override variant and connections in the flow."""
-    flow_dag_path, flow_dag = _load_flow_dag(flow_path)
+    flow_dag_path, flow_dag = load_flow_dag(flow_path)
     flow_dir_path = flow_dag_path.parent
     if _get_additional_includes(flow_dag_path):
         # Merge the flow folder and additional includes to temp folder.

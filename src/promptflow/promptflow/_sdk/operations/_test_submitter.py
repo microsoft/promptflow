@@ -245,7 +245,7 @@ class TestSubmitter:
         )
         SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
         # cache executor here
-        flow_executor = FlowContextResolver.create(flow_path=self.flow.path, flow_context=self.flow_context)
+        flow_executor = FlowContextResolver.create(flow=self.flow)
         # validate inputs
         flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=flow_executor._flow)
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)

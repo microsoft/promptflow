@@ -21,6 +21,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
+from ..._utils.flow_utils import resolve_flow_path
 from .._constants import DAG_FILE_NAME
 from ._connection import _Connection
 from ._validation import SchemaValidatableMixin
@@ -125,6 +126,7 @@ class Flow(FlowBase):
         self._path = Path(path) if path else None
         self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
+        self._content_hash = kwargs.pop("content_hash", None)
         super().__init__(**kwargs)
 
     @property
@@ -163,14 +165,18 @@ class Flow(FlowBase):
     ):
         source_path = Path(source)
         if not source_path.exists():
-            raise Exception(f"Source {source_path.absolute().as_posix()} does not exist")
-        if source_path.is_dir() and (source_path / DAG_FILE_NAME).is_file():
-            return cls(code=source_path.absolute().as_posix(), **kwargs)
-        elif source_path.is_file() and source_path.name == DAG_FILE_NAME:
-            # TODO: for file, we should read the yaml to get code and set path to source_path
-            return cls(code=source_path.absolute().parent.as_posix(), **kwargs)
+            raise UserErrorException(f"Source {source_path.absolute().as_posix()} does not exist")
 
-        raise Exception("Source must be a directory or a 'flow.dag.yaml' file")
+        flow_path = resolve_flow_path(source_path)
+        if flow_path.exists():
+            # TODO: for file, we should read the yaml to get code and set path to source_path
+            # read flow file to get hash
+            with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+                flow_content = f.read()
+                kwargs["content_hash"] = hash(flow_content)
+            return cls(code=flow_path.parent.absolute().as_posix(), **kwargs)
+
+        raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk.operations._run_submitter import variant_overwrite_context
@@ -183,6 +189,14 @@ class Flow(FlowBase):
             from promptflow.contracts.flow import Flow as ExecutableFlow
 
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
+
+    def __eq__(self, other):
+        if isinstance(other, Flow):
+            return self._content_hash == other._content_hash and self.context == other.context
+        return False
+
+    def __hash__(self):
+        return hash(self.context) ^ self._content_hash
 
 
 class ProtectedFlow(Flow, SchemaValidatableMixin):
