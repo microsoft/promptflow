@@ -51,7 +51,7 @@ class Run(Resource):
         return jsonify(run_dict)
 
 
-@api.route("/metadata/<string:name>")
+@api.route("/<string:name>/metadata")
 class MetaData(Resource):
     def get(self, name: str):
         run_op = RunOperations()
@@ -72,7 +72,7 @@ class MetaData(Resource):
         return jsonify(asdict(metadata))
 
 
-@api.route("/detail/<string:name>")
+@api.route("/<string:name>/detail")
 class Detail(Resource):
     def get(self, name: str):
         run_op = RunOperations()

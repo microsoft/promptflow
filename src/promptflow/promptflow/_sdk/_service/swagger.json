@@ -40,7 +40,7 @@
                     "type": "string"
                 }
             ],
-            "post": {
+            "get": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -49,18 +49,12 @@
                         }
                     }
                 },
-                "description": "Create connection",
-                "operationId": "post_connection",
+                "description": "Get connection",
+                "operationId": "get_connection",
                 "parameters": [
                     {
                         "name": "X-Remote-User",
                         "in": "header",
-                        "type": "string",
-                        "required": true
-                    },
-                    {
-                        "name": "connection_dict",
-                        "in": "query",
                         "type": "string",
                         "required": true
                     }
@@ -89,7 +83,7 @@
                     "Connections"
                 ]
             },
-            "get": {
+            "post": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -98,12 +92,18 @@
                         }
                     }
                 },
-                "description": "Get connection",
-                "operationId": "get_connection",
+                "description": "Create connection",
+                "operationId": "post_connection",
                 "parameters": [
                     {
                         "name": "X-Remote-User",
                         "in": "header",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "connection_dict",
+                        "in": "query",
                         "type": "string",
                         "required": true
                     }
@@ -156,7 +156,28 @@
                 ]
             }
         },
-        "/runs/detail/{name}": {
+        "/runs/{name}": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "operationId": "get_run",
+                "tags": [
+                    "runs"
+                ]
+            }
+        },
+        "/runs/{name}/detail": {
             "parameters": [
                 {
                     "name": "name",
@@ -177,7 +198,7 @@
                 ]
             }
         },
-        "/runs/metadata/{name}": {
+        "/runs/{name}/metadata": {
             "parameters": [
                 {
                     "name": "name",
@@ -193,27 +214,6 @@
                     }
                 },
                 "operationId": "get_meta_data",
-                "tags": [
-                    "runs"
-                ]
-            }
-        },
-        "/runs/{name}": {
-            "parameters": [
-                {
-                    "name": "name",
-                    "in": "path",
-                    "required": true,
-                    "type": "string"
-                }
-            ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "operationId": "get_run",
                 "tags": [
                     "runs"
                 ]
