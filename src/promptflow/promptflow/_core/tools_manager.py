@@ -434,7 +434,7 @@ class ToolLoader:
         if node.source.tool in self._package_tools:
             return Tool.deserialize(self._package_tools[node.source.tool])
 
-        # If node source tool is not in package tools, try to find the new tool ID in deprecated tools.
+        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
         # If found, load the tool with the new tool ID for backward compatibility.
         if node.source.tool in self._deprecated_tools:
             new_tool_id = self._deprecated_tools[node.source.tool]
