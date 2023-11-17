@@ -3,11 +3,20 @@ name: Build and Package MSI
 on:
   workflow_dispatch:
     inputs:
-      UploadAsLatest:
+      uploadAsLatest:
         type: string
         default: "False"
         required: false
         description: 'Also upload the msi installer to storage account as latest'
+
+      version:
+        type: string
+        default: ""
+        required: false
+        description: 'Version of promptflow to install (optional). Will build locally if not specified.'
+  pull_request:  ## delete pull request when it's ready
+    branches:
+      - main
 
 jobs:
   build_msi_installer:
@@ -17,7 +26,8 @@ jobs:
     steps:
       - name: Check input parameters
         run: |
-          echo "UploadAsLatest: ${{ inputs.UploadAsLatest }}"
+          echo "uploadAsLatest: ${{ inputs.uploadAsLatest }}"
+          echo "version: ${{ inputs.version }}"
 
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -41,17 +51,35 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Install promptflow dependencies
+      - name: Setup and Install dev promptflow
+        if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
+        uses: "./.github/actions/step_sdk_setup_win"
+        with:
+          setupType: promptflow_with_extra
+          scriptPath: src/promptflow
+
+      - name: Install stable promptflow
+        if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
           python -m pip install --upgrade pip
-          pip install promptflow[azure,executable] promptflow-tools
+          pip install promptflow[azure,executable]==$env:INPUT_VERSION promptflow-tools
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
 
       - name: Get promptflow version
         id: get-version
         run: |
-          $version=$(python -c "import promptflow; print(promptflow.__version__)")
+          if ($env:INPUT_VERSION) {
+            $version=$env:INPUT_VERSION
+          } else {
+            run_id="${{ github.run_id }}"
+            version="$run_id.$run_id.$run_id"
+            $version=${{ github.run_id }}
+          }
           echo "::set-output name=version::$version"
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
 
       - name: Build Pyinstaller project
@@ -100,4 +128,6 @@ jobs:
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
           }
           }
+        env:
+          INPUT_UPLOADASLATEST: ${{ github.event.inputs.uploadAsLatest }}
         shell: pwsh
