@@ -40,7 +40,7 @@
                     "type": "string"
                 }
             ],
-            "get": {
+            "post": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -49,12 +49,18 @@
                         }
                     }
                 },
-                "description": "Get connection",
-                "operationId": "get_connection",
+                "description": "Create connection",
+                "operationId": "post_connection",
                 "parameters": [
                     {
                         "name": "X-Remote-User",
                         "in": "header",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "connection_dict",
+                        "in": "query",
                         "type": "string",
                         "required": true
                     }
@@ -83,7 +89,7 @@
                     "Connections"
                 ]
             },
-            "post": {
+            "get": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -92,18 +98,12 @@
                         }
                     }
                 },
-                "description": "Create connection",
-                "operationId": "post_connection",
+                "description": "Get connection",
+                "operationId": "get_connection",
                 "parameters": [
                     {
                         "name": "X-Remote-User",
                         "in": "header",
-                        "type": "string",
-                        "required": true
-                    },
-                    {
-                        "name": "connection_dict",
-                        "in": "query",
                         "type": "string",
                         "required": true
                     }
@@ -142,7 +142,7 @@
                 ]
             }
         },
-        "/runs/": {
+        "/Runs/": {
             "get": {
                 "responses": {
                     "200": {
@@ -152,11 +152,11 @@
                 "description": "List all runs",
                 "operationId": "get_run_list",
                 "tags": [
-                    "runs"
+                    "Runs"
                 ]
             }
         },
-        "/runs/{name}": {
+        "/Runs/{name}": {
             "parameters": [
                 {
                     "name": "name",
@@ -173,11 +173,11 @@
                 },
                 "operationId": "get_run",
                 "tags": [
-                    "runs"
+                    "Runs"
                 ]
             }
         },
-        "/runs/{name}/detail": {
+        "/Runs/{name}/detail": {
             "parameters": [
                 {
                     "name": "name",
@@ -194,11 +194,11 @@
                 },
                 "operationId": "get_detail",
                 "tags": [
-                    "runs"
+                    "Runs"
                 ]
             }
         },
-        "/runs/{name}/metadata": {
+        "/Runs/{name}/metadata": {
             "parameters": [
                 {
                     "name": "name",
@@ -215,7 +215,7 @@
                 },
                 "operationId": "get_meta_data",
                 "tags": [
-                    "runs"
+                    "Runs"
                 ]
             }
         }
@@ -236,7 +236,7 @@
             "description": "Connections Management"
         },
         {
-            "name": "runs",
+            "name": "Runs",
             "description": "Runs Management"
         }
     ],

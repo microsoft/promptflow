@@ -13,13 +13,13 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow.contracts._run_management import RunMetadata
 
-api = Namespace("runs", description="Runs Management")
+api = Namespace("Runs", description="Runs Management")
 
 
 @api.errorhandler(RunNotFoundError)
 def handle_run_not_found_exception(error):
     api.logger.warning(f"Raise RunNotFoundError, {error.message}")
-    return {"error_message": error.message}, 400
+    return {"error_message": error.message}, 404
 
 
 @api.route("/")
