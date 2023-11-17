@@ -75,10 +75,11 @@ jobs:
           if ($env:INPUT_VERSION) {
             $version=$env:INPUT_VERSION
           } else {
-            $yearmonth = Get-Date -Format "yyMM"
+            $year = Get-Date -Format "yy"
+            $month = Get-Date -Format "MM"
             $dayhour = Get-Date -Format "ddHH"
             $minutesecond = Get-Date -Format "mmss"
-            $version="$yearmonth.$dayhour.$minutesecond"
+            $version="$year.$month.$dayhour.$minutesecond"
           }
           echo "::set-output name=version::$version"
         env:
@@ -92,7 +93,14 @@ jobs:
           $text = Get-Content "version_info.txt" -Raw
           
           $versionString = '${{ steps.get-version.outputs.version }}'
-          $versionArray = $versionString.Split('.') + 0
+          $versionArray = $versionString.Split('.')
+          if ($versionArray.Count -ge 4) {
+              $versionArray = $versionArray[0..3]
+          } else {
+              $remainingLength = 4 - $versionArray.Count
+              $zerosToAppend = @(0) * $remainingLength
+              $versionArray += $zerosToAppend
+          }
           $versionTuple = [string]::Join(', ', $versionArray)
           $text = $text -replace '\$\((env\.FILE_VERSION)\)', $versionTuple
           
