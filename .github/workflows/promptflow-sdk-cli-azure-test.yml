@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: set test mode
-        run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+        run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" && "${{ github.head_ref }}" != release/promptflow/* ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
       
       - name: check test mode from env
         run: echo $PROMPT_FLOW_TEST_MODE
