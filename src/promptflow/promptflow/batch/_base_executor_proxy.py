@@ -56,8 +56,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
     ) -> LineResult:
         async with httpx.AsyncClient() as client:
+            url = self.api_endpoint + "/execution"
             payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
-            response = await client.post(self.api_endpoint, json=payload, timeout=LINE_TIMEOUT_SEC)
+            response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
         return LineResult.deserialize(response.json())
 
     async def exec_aggregation_async(
@@ -67,6 +68,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         async with httpx.AsyncClient() as client:
+            url = self.api_endpoint + "/aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
-            response = await client.post(self.api_endpoint, json=payload, timeout=LINE_TIMEOUT_SEC)
+            response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
         return AggregationResult.deserialize(response.json())
