@@ -22,7 +22,7 @@ If not found port configuration or the port is used, pfs will use a random port 
 ### Swagger of service
 After start the service, it will provide Swagger UI documentation, served from "http://localhost:your-port/v1.0/swagger.json". 
 
-![swagger.png](swagger.png)
+For details, please refer to [swagger.json](./swagger.json).
 
 #### Generate C# client
 1. Right click the project, Add -> Rest API Client... -> Generate with OpenAPI Generator 

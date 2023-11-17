@@ -2,9 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
-
 from flask import Blueprint, Flask, jsonify
 from flask_restx import Api
+from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
 from promptflow._sdk._service.apis.connection import api as connection_api
@@ -42,6 +42,8 @@ def create_app():
         # Basic error handler
         @app.errorhandler(Exception)
         def handle_exception(e):
+            if isinstance(e, HTTPException):
+                return e
             app.logger.error(e, exc_info=True, stack_info=True)
             return jsonify({"error_message": "Internal Server Error"}), 500
 
