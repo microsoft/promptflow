@@ -9,7 +9,7 @@ on:
     - cron: "51 20 * * *" # Every day starting at 4:51 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_runmanagement_runmanagement.yml, '!examples/flow/integrations/**' ]
+    paths: [ examples/**, .github/workflows/samples_runmanagement_runmanagement.yml, '!examples/flows/integrations/**' ]
   workflow_dispatch:
 
 env:
