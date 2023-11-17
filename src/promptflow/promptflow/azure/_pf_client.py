@@ -79,6 +79,7 @@ class PFClient:
             credential=self._ml_client._credential,
             flow_operations=self._flows,
             service_caller=self._service_caller,
+            workspace=workspace,
             **kwargs,
         )
         self._connections = ConnectionOperations(
