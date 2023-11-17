@@ -7,12 +7,11 @@ import re
 from dataclasses import dataclass
 from typing import Dict
 
-from azure.ai.ml import MLClient
-from azure.ai.ml.entities import Workspace
 from azure.core.credentials import AccessToken
 from vcr.request import Request
 
 from promptflow.azure import PFClient
+from promptflow.azure._ml import MLClient, Workspace
 
 from .constants import ENVIRON_TEST_MODE, SanitizedValues, TestMode
 

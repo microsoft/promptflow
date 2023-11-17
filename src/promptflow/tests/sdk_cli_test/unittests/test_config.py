@@ -4,10 +4,10 @@
 from pathlib import Path
 
 import pytest
-from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
 from promptflow._sdk._configuration import ConfigFileNotFound, Configuration, InvalidConfigFile
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow.azure._ml import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
 CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
 
@@ -36,9 +36,6 @@ class TestConfig:
     def test_config_instance(self, config):
         new_config = Configuration.get_instance()
         assert new_config is config
-
-    def test_assertFalse(self):
-        raise "Let me see how this fail"
 
     def test_get_workspace_from_config(self):
         # New instance instead of get_instance() to avoid side effect

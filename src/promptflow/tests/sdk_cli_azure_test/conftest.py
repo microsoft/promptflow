@@ -12,15 +12,13 @@ from unittest.mock import patch
 
 import jwt
 import pytest
-from azure.ai.ml import MLClient
-from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
-from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockerFixture
 
 from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
 from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
+from promptflow.azure._ml import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT, Data, MLClient
 
 from ._azure_utils import get_cred
 from .recording_utilities import (

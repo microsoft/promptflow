@@ -3,11 +3,11 @@
 # ---------------------------------------------------------
 import mock
 import pytest
-from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
 from promptflow import PFClient
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+from promptflow.azure._ml import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
 
 @pytest.mark.sdk_test
