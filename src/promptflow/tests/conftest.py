@@ -30,6 +30,21 @@ from promptflow.connections import AzureOpenAIConnection
 load_dotenv()
 
 
+class SanitizedValues:
+    SUBSCRIPTION_ID = "00000000-0000-0000-0000-000000000000"
+    RESOURCE_GROUP_NAME = "00000"
+    WORKSPACE_NAME = "00000"
+
+
+class TestMode:
+    LIVE = "live"
+    RECORD = "record"
+    REPLAY = "replay"
+
+
+ENVIRON_TEST_MODE = "PROMPT_FLOW_TEST_MODE"
+
+
 @pytest.fixture(autouse=True, scope="session")
 def mock_build_info():
     """Mock BUILD_INFO environment variable in pytest.
@@ -167,9 +182,7 @@ def mock_module_with_list_func(mock_list_func):
 # below fixtures are used for pfazure and global config tests
 @pytest.fixture
 def subscription_id() -> str:
-    from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
-
-    if is_replay():
+    if os.getenv(ENVIRON_TEST_MODE, TestMode.LIVE) == TestMode.REPLAY:
         return SanitizedValues.SUBSCRIPTION_ID
     else:
         return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
@@ -177,9 +190,7 @@ def subscription_id() -> str:
 
 @pytest.fixture
 def resource_group_name() -> str:
-    from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
-
-    if is_replay():
+    if os.getenv(ENVIRON_TEST_MODE, TestMode.LIVE) == TestMode.REPLAY:
         return SanitizedValues.RESOURCE_GROUP_NAME
     else:
         return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
@@ -187,9 +198,7 @@ def resource_group_name() -> str:
 
 @pytest.fixture
 def workspace_name() -> str:
-    from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
-
-    if is_replay():
+    if os.getenv(ENVIRON_TEST_MODE, TestMode.LIVE) == TestMode.REPLAY:
         return SanitizedValues.WORKSPACE_NAME
     else:
         return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
