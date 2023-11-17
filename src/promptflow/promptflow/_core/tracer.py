@@ -83,26 +83,6 @@ class Tracer(ThreadLocalSingleton):
         return trace
 
     @classmethod
-    def invoke_tool(cls, func, args=[], kwargs={}):
-        try:
-            Tracer.push_tool(func, args, kwargs)
-            output = func(*args, **kwargs)
-            return Tracer.pop(output)
-        except Exception as e:
-            Tracer.pop(None, e)
-            raise
-
-    @classmethod
-    async def invoke_tool_async(cls, func, args=[], kwargs={}):
-        try:
-            Tracer.push_tool(func, args, kwargs)
-            output = await func(*args, **kwargs)
-            return Tracer.pop(output)
-        except Exception as e:
-            Tracer.pop(None, e)
-            raise
-
-    @classmethod
     def push(cls, trace: Trace):
         obj = cls.active_instance()
         if not obj:

@@ -337,7 +337,12 @@ class FlowExecutor:
             )
 
             try:
-                context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
+                if inspect.iscoroutinefunction(resolved_node.callable):
+                    asyncio.run(
+                        context.invoke_tool_async(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs),
+                    )
+                else:
+                    context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
             except Exception:
                 if raise_ex:  # Only raise exception when raise_ex is True
                     raise
