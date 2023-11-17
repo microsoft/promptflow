@@ -85,8 +85,8 @@ pfazure_exe = EXE(
     version="./version_info.txt",
 )
 
-pfs_a = Analysis(
-    ['pfs.py'],
+pfsvc_a = Analysis(
+    ['pfsvc.py'],
     pathex=[],
     binaries=[],
     datas=datas,
@@ -100,13 +100,13 @@ pfs_a = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
-pfs_pyz = PYZ(pfs_a.pure, pfs_a.zipped_data, cipher=block_cipher)
-pfs_exe = EXE(
-    pfs_pyz,
-    pfs_a.scripts,
+pfsvc_pyz = PYZ(pfsvc_a.pure, pfsvc_a.zipped_data, cipher=block_cipher)
+pfsvc_exe = EXE(
+    pfsvc_pyz,
+    pfsvc_a.scripts,
     [],
     exclude_binaries=True,
-    name='pfs',
+    name='pfsvc',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -130,10 +130,10 @@ coll = COLLECT(
     pfazure_a.binaries,
     pfazure_a.zipfiles,
     pfazure_a.datas,
-    pfs_exe,
-    pfs_a.binaries,
-    pfs_a.zipfiles,
-    pfs_a.datas,
+    pfsvc_exe,
+    pfsvc_a.binaries,
+    pfsvc_a.zipfiles,
+    pfsvc_a.datas,
     strip=False,
     upx=True,
     upx_exclude=[],
