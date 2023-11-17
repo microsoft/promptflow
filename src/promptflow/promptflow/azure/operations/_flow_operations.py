@@ -20,6 +20,7 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 from azure.ai.ml.constants._common import SHORT_URI_FORMAT
+from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
@@ -67,12 +68,14 @@ class FlowOperations(_ScopeDependentOperations):
         all_operations: OperationsContainer,
         credential,
         service_caller: FlowServiceCaller,
+        workspace: Workspace,
         **kwargs: Dict,
     ):
         super(FlowOperations, self).__init__(operation_scope, operation_config)
         self._all_operations = all_operations
         self._service_caller = service_caller
         self._credential = credential
+        self._workspace = workspace
 
     @cached_property
     def _common_azure_url_pattern(self):
@@ -84,6 +87,10 @@ class FlowOperations(_ScopeDependentOperations):
             f"/workspaces/{operation_scope.workspace_name}"
         )
         return url
+
+    @cached_property
+    def _workspace_id(self):
+        return self._workspace._workspace_id
 
     @cached_property
     def _index_service_endpoint_url(self):
@@ -282,9 +289,31 @@ class FlowOperations(_ScopeDependentOperations):
         )
         return rest_flow_result
 
-    def _get(self, flow_id):
-        # TODO: support load remote flow with meta
-        raise NotImplementedError("Not implemented yet")
+    def get(self, name: str) -> Flow:
+        """Get a flow from azure.
+
+        :param name: The name of the flow to get.
+        :type name: str
+        :return: The flow.
+        :rtype: ~promptflow.azure.entities.Flow
+        """
+        try:
+            rest_flow = self._service_caller.get_flow(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_id=name,
+                experiment_id=self._workspace_id,  # for flow operations, current experiment id is workspace id
+            )
+        except HttpResponseError as e:
+            if e.status_code == 404:
+                raise FlowOperationError(f"Flow {name!r} not found.") from e
+            else:
+                raise FlowOperationError(f"Failed to get flow {name!r} due to: {str(e)}.") from e
+
+        flow = Flow._from_pf_service(rest_flow)
+        flow.flow_portal_url = self._get_flow_portal_url(rest_flow.flow_resource_id)
+        return flow
 
     @monitor_operation(activity_name="pfazure.flows.list", activity_type=ActivityType.PUBLICAPI)
     def list(
