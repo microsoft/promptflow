@@ -47,4 +47,4 @@ promptflow.tools.azure_content_safety.analyze_text:
   name: Content Safety (Text Analyze)
   description: Use Azure Content Safety to detect harmful content.
   type: python
-  transition_from: [content_safety_text.tools.content_safety_text_tool.analyze_text] 
+  deprecated_tools: [content_safety_text.tools.content_safety_text_tool.analyze_text] 
