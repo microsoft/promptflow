@@ -3,7 +3,6 @@ import os
 import sys
 
 # -- Project information -----------------------------------------------------
-from pathlib import Path
 
 project = 'Prompt flow'
 copyright = '2023, Microsoft'
@@ -76,11 +75,11 @@ html_sourcelink_suffix = ""
 html_show_sourcelink = False
 
 # Define the json_url for our version switcher.
-json_url = "https://github.com/microsoft/promptflow/tree/main/scripts/docs/_static/switcher.json"
-json_url = "https://github.com/microsoft/promptflow/tree/brynn/add-version-filter/scripts/docs/_static/switcher.json"
+# json_url = "https://raw.githubusercontent.com/microsoft/promptflow/main/scripts/docs/_static/switcher.json"
+json_url = "https://raw.githubusercontent.com/microsoft/promptflow/brynn/add-version-filter/scripts/docs/_static/switcher.json"
 
 # Define the version we use for matching in the version switcher.
-version_match = os.environ.get("READTHEDOCS_VERSION")
+version_match = os.environ.get("READTHEDOCS_VERSION") or "Python"
 
 html_theme_options = {
     "github_url": "https://github.com/microsoft/promptflow",
