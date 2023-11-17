@@ -128,7 +128,7 @@ jobs:
       working-directory: artifacts
       run: |
         Set-PSDebug -Trace 1
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[Azure]"}}
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
         pip freeze
     - name: Run SDK CLI Azure Test
       if : ${{ matrix.testType == 'sdk-cli' }}

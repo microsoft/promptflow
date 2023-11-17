@@ -71,8 +71,8 @@ except ImportError:
     class FlowOperations(_DummyCallableClassForLazyImportError):
         pass
 
-    AZUREML_RESOURCE_PROVIDER = ""
-    RESOURCE_ID_FORMAT = ""
+    AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
+    RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
     class Data(_DummyCallableClassForLazyImportError):
         pass
