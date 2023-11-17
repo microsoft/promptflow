@@ -30,15 +30,17 @@ from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
 from promptflow._telemetry.activity import ActivityType, monitor_operation
+from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
 
 
-class FlowOperations:
+class FlowOperations(TelemetryMixin):
     """FlowOperations."""
 
     def __init__(self, client):
         self._client = client
+        super().__init__()
 
     @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(

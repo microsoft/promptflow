@@ -3,7 +3,7 @@
 ## 1.1.0 (Upcoming)
 
 ### Features Added
-- Add `pfazure flow list` to list flows from Azure AI.
+- Add `pfazure flow show/list` to show or list flows from Azure AI.
 - Display node status in run visualize page graph view.
 
 ### Bugs Fixed
