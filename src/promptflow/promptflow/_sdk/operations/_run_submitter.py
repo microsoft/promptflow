@@ -76,8 +76,7 @@ def dump_flow_dag(flow_dag: dict, flow_path: Path):
 
 
 def overwrite_variant(flow_dag: dict, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
-    if not tuning_node and not variant:
-        return
+    # need to overwrite default variant if tuning node and variant not specified.
     # check tuning_node & variant
     node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
     if tuning_node and tuning_node not in node_name_2_node:

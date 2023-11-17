@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import copy
 import uuid
 from pathlib import Path
 from unittest.mock import patch
@@ -136,6 +137,7 @@ class TestRun:
             ],
             "node_variants": {
                 "node1": {
+                    "default_variant_id": "variant1",
                     "variants": {
                         "variant1": {
                             "node": {
@@ -157,9 +159,16 @@ class TestRun:
             overwrite_variant(flow_dag, "node1", "variant3")
 
         # Test if function overwrites variant correctly
-        overwrite_variant(flow_dag, "node1", "variant1")
-        assert flow_dag["nodes"][0]["inputs"]["param1"] == "value1_variant1"
-        assert flow_dag["nodes"][0]["inputs"]["param2"] == "value2_variant1"
+        dag = copy.deepcopy(flow_dag)
+        overwrite_variant(dag, "node1", "variant1")
+        assert dag["nodes"][0]["inputs"]["param1"] == "value1_variant1"
+        assert dag["nodes"][0]["inputs"]["param2"] == "value2_variant1"
+
+        # test overwrite default variant
+        dag = copy.deepcopy(flow_dag)
+        overwrite_variant(dag)
+        assert dag["nodes"][0]["inputs"]["param1"] == "value1_variant1"
+        assert dag["nodes"][0]["inputs"]["param2"] == "value2_variant1"
 
     @patch("promptflow._sdk.operations._run_operations.RunOperations.update")
     def test_submit(self, mock_update):

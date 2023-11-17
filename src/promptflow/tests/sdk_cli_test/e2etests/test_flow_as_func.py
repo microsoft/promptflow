@@ -76,10 +76,10 @@ class TestFlowAsFunc:
             f(text="hello")
         assert "Failed to load python module " in str(e.value)
 
-        f = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
+        f = load_flow(f"{FLOWS_DIR}/print_env_var")
         with pytest.raises(UserErrorException) as e:
             f()
-        assert "Required input(s) ['text'] are missing" in str(e.value)
+        assert "Required input(s) ['key'] are missing" in str(e.value)
 
     def test_stream_output(self):
         f = load_flow(f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output")
@@ -143,7 +143,7 @@ class TestFlowAsFunc:
         # same flow context has same hash
         assert hash(FlowContext()) == hash(FlowContext())
         # getting executor for same flow will hit cache
-        flow_path = Path(f"{FLOWS_DIR}/flow_with_custom_connection")
+        flow_path = Path(f"{FLOWS_DIR}/print_env_var")
         flow_executor1 = FlowContextResolver.create(
             flow_path=flow_path,
             flow_context=FlowContext(),
@@ -155,6 +155,7 @@ class TestFlowAsFunc:
         assert flow_executor1 is flow_executor2
 
         # getting executor for same flow + context will hit cache
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_custom_connection")
         flow_executor1 = FlowContextResolver.create(
             flow_path=flow_path,
             flow_context=FlowContext(connections={"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}}),
