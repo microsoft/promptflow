@@ -32,6 +32,7 @@ For more resources on Azure AI, visit the cloud documentation site: [Build AI so
 :maxdepth: 1
 azureai/quick-start
 azureai/manage-flows
+azureai/consume-connections-from-azure-ai
 azureai/deploy-to-azure-appservice
 azureai/use-flow-in-azure-ml-pipeline.md
 azureai/faq
