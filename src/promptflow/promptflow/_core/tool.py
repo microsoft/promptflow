@@ -71,19 +71,32 @@ def tool(
         from promptflow.exceptions import UserErrorException
         if inspect.iscoroutinefunction(func):
             @functools.wraps(func)
-            async def new_f_async(*args, **kwargs):
+            async def decorated_tool(*args, **kwargs):
                 from .tracer import Tracer
                 if Tracer.active_instance() is None:
                     return await func(*args, **kwargs)
-                return await Tracer.invoke_tool_async(func, args, kwargs)
-            new_f = new_f_async
+                try:
+                    Tracer.push_tool(func, args, kwargs)
+                    output = await func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+            new_f = decorated_tool
         else:
             @functools.wraps(func)
-            def new_f(*args, **kwargs):
+            def decorated_tool(*args, **kwargs):
                 from .tracer import Tracer
                 if Tracer.active_instance() is None:
                     return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-                return Tracer.invoke_tool(func, args, kwargs)
+                try:
+                    Tracer.push_tool(func, args, kwargs)
+                    output = func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+            new_f = decorated_tool
 
         if type is not None and type not in [k.value for k in ToolType]:
             raise UserErrorException(f"Tool type {type} is not supported yet.")
