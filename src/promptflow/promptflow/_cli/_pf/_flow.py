@@ -15,7 +15,7 @@ from promptflow._cli._params import (
     add_param_config,
     add_param_entry,
     add_param_environment_variables,
-    add_param_flow_name,
+    add_param_flow_display_name,
     add_param_function,
     add_param_inputs,
     add_param_prompt_template,
@@ -107,7 +107,7 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
     add_params = [
         add_param_type,
         add_param_yes,
-        add_param_flow_name,
+        add_param_flow_display_name,
         add_param_entry,
         add_param_function,
         add_param_prompt_template,
