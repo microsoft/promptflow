@@ -16,7 +16,7 @@ class AbstractExecutorProxy:
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
-        storage: Optional[AbstractRunStorage] = None
+        storage: Optional[AbstractRunStorage] = None,
     ) -> "AbstractExecutorProxy":
         """Create a new executor"""
         raise NotImplementedError()
