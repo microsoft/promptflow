@@ -2,11 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
-import os
 
 from promptflow._sdk._configuration import Configuration
 
-TELEMETRY_ENABLED = "TELEMETRY_ENABLED"
 PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._telemetry"
 
 
@@ -46,19 +44,15 @@ class WorkspaceTelemetryMixin(TelemetryMixin):
 
 
 def is_telemetry_enabled():
-    """Check if telemetry is enabled. User can enable telemetry by
-    1. setting environment variable TELEMETRY_ENABLED to true.
-    2. running `pf config set cli.telemetry_enabled=true` command.
-    If None of the above is set, telemetry is disabled by default.
+    """Check if telemetry is enabled. Telemetry is enabled by default.
+    User can disable it by:
+    1. running `pf config set cli.telemetry_enabled=false` command.
     """
-    telemetry_enabled = os.getenv(TELEMETRY_ENABLED)
-    if telemetry_enabled is not None:
-        return str(telemetry_enabled).lower() == "true"
     config = Configuration.get_instance()
     telemetry_consent = config.get_telemetry_consent()
     if telemetry_consent is not None:
-        return telemetry_consent
-    return False
+        return str(telemetry_consent).lower() == "true"
+    return True
 
 
 def get_telemetry_logger():
@@ -71,10 +65,9 @@ def get_telemetry_logger():
     # check if current logger already has an appinsights handler to avoid logger handler duplication
     for log_handler in current_logger.handlers:
         if isinstance(log_handler, PromptFlowSDKLogHandler):
-            # if existing handler has same region, reuse it
-            config = Configuration.get_instance()
-            if log_handler.eu_user == config.is_eu_user():
-                return current_logger
+            # update existing handler's config
+            log_handler._is_telemetry_enabled = is_telemetry_enabled()
+            return current_logger
     # otherwise, remove the existing handler and create a new one
     for log_handler in current_logger.handlers:
         current_logger.removeHandler(log_handler)
