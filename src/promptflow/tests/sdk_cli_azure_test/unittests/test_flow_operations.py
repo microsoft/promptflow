@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -33,13 +34,24 @@ class TestFlow:
             remote_client.flows.create_or_update(flow=flow_source, tags={"key": object()})
 
     def test_parse_flow_portal_url(self, remote_client):
-        flow_resource_id = (
-            "azureml://locations/eastus/workspaces/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/flows/"
-            "1176ba41-d529-4cc4-9629-4ee3f474c5e2"
-        )
-        url = remote_client.flows._get_flow_portal_url(flow_resource_id)
-        expected_portal_url = (
-            f"https://ml.azure.com/prompts/flow/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/"
-            f"1176ba41-d529-4cc4-9629-4ee3f474c5e2/details?wsid={remote_client.flows._common_azure_url_pattern}"
-        )
-        assert url == expected_portal_url
+        experiment_id = "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"
+        flow_id = "1176ba41-d529-4cc4-9629-4ee3f474c5e2"
+        flow_resource_id = f"azureml://locations/eastus/workspaces/{experiment_id}/flows/{flow_id}"
+
+        # workspace is aml studio
+        with patch.object(remote_client.flows._workspace, "_kind", "default"):
+            url = remote_client.flows._get_flow_portal_url_from_resource_id(flow_resource_id)
+            expected_portal_url = (
+                f"https://ml.azure.com/prompts/flow/{experiment_id}/"
+                f"{flow_id}/details?wsid={remote_client._service_caller._common_azure_url_pattern}"
+            )
+            assert url == expected_portal_url
+
+        # workspace is azure ai studio
+        with patch.object(remote_client.flows._workspace, "_kind", "project"):
+            url = remote_client.flows._get_flow_portal_url_from_resource_id(flow_resource_id)
+            expected_portal_url = (
+                f"https://ai.azure.com/projectflows/{flow_id}/"
+                f"{experiment_id}/details/Flow?wsid={remote_client._service_caller._common_azure_url_pattern}"
+            )
+            assert url == expected_portal_url
