@@ -431,18 +431,19 @@ class ToolLoader:
             raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
 
     def load_tool_for_package_node(self, node: Node) -> Tool:
-        # Handle backward compatibility of tool ID changes.
+        if node.source.tool in self._package_tools:
+            return Tool.deserialize(self._package_tools[node.source.tool])
+
+        # If node source tool is not in package tools, try to find the new tool ID in deprecated tools.
+        # If found, load the tool with the new tool ID for backward compatibility.
         if node.source.tool in self._deprecated_tools:
             new_tool_id = self._deprecated_tools[node.source.tool]
             # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
             module_logger.warning(
                 f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead."
             )
-            node.source.tool = new_tool_id
-            node.tool = new_tool_id
+            return Tool.deserialize(self._package_tools[new_tool_id])
 
-        if node.source.tool in self._package_tools:
-            return Tool.deserialize(self._package_tools[node.source.tool])
         raise PackageToolNotFoundError(
             f"Package tool '{node.source.tool}' is not found in the current environment. "
             f"All available package tools are: {list(self._package_tools.keys())}.",
