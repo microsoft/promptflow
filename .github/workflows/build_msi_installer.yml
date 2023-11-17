@@ -18,6 +18,12 @@ on:
     branches:
       - main
 
+env:
+  packageSetupType: promptflow_with_extra
+  testWorkingDirectory: src/promptflow
+  PYTHONPATH: ${{ github.workspace }}/src/promptflow
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   build_msi_installer:
     runs-on: windows-latest
@@ -56,7 +62,7 @@ jobs:
         uses: "./.github/actions/step_sdk_setup_win"
         with:
           setupType: promptflow_with_extra
-          scriptPath: src/promptflow
+          scriptPath: ${{ env.testWorkingDirectory }}
 
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
