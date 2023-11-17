@@ -23,7 +23,13 @@ from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
 
 from ._azure_utils import get_cred
-from .recording_utilities import PFAzureIntegrationTestRecording, get_pf_client_for_replay, is_live, is_replay
+from .recording_utilities import (
+    PFAzureIntegrationTestRecording,
+    SanitizedValues,
+    get_pf_client_for_replay,
+    is_live,
+    is_replay,
+)
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -172,11 +178,14 @@ def single_worker_thread_pool() -> None:
     def single_worker_thread_pool_executor(*args, **kwargs):
         return ThreadPoolExecutor(max_workers=1)
 
-    with patch(
-        "promptflow.azure.operations._run_operations.ThreadPoolExecutor",
-        new=single_worker_thread_pool_executor,
-    ):
+    if is_live():
         yield
+    else:
+        with patch(
+            "promptflow.azure.operations._run_operations.ThreadPoolExecutor",
+            new=single_worker_thread_pool_executor,
+        ):
+            yield
 
 
 @pytest.fixture
@@ -186,15 +195,34 @@ def mock_set_headers_with_user_aml_token(mocker: MockerFixture) -> None:
     There will be requests fetching cloud metadata during retrieving AML token, which will break during replay.
     As the logic comes from azure-ai-ml, changes in Prompt Flow can hardly affect it, mock it here.
     """
-    mocker.patch("promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._set_headers_with_user_aml_token")
-    return
+    if not is_live():
+        mocker.patch(
+            "promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._set_headers_with_user_aml_token"
+        )
+    yield
 
 
 @pytest.fixture
 def mock_get_azure_pf_client(mocker: MockerFixture, remote_client: PFClient) -> None:
     """Mock PF Azure client to avoid network traffic during replay test."""
-    mocker.patch(
-        "promptflow._cli._pf_azure._run._get_azure_pf_client",
-        return_value=remote_client,
-    )
+    if not is_live():
+        mocker.patch(
+            "promptflow._cli._pf_azure._run._get_azure_pf_client",
+            return_value=remote_client,
+        )
+        mocker.patch(
+            "promptflow._cli._pf_azure._flow._get_azure_pf_client",
+            return_value=remote_client,
+        )
+    yield
+
+
+@pytest.fixture
+def mock_get_user_identity_info(mocker: MockerFixture) -> None:
+    """Mock get user object id and tenant id, currently used in flow list operation."""
+    if not is_live():
+        mocker.patch(
+            "promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._get_user_identity_info",
+            return_value=(SanitizedValues.USER_OBJECT_ID, SanitizedValues.TENANT_ID),
+        )
     yield

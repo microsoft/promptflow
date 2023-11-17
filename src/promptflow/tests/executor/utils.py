@@ -18,13 +18,18 @@ def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag
     return yaml_file
 
 
-def get_flow_inputs(folder_name, root: str = FLOW_ROOT):
-    inputs = load_json(get_flow_folder(folder_name, root) / "inputs.json")
+def get_flow_inputs_file(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs.jsonl"):
+    inputs_file = get_flow_folder(folder_name, root) / file_name
+    return inputs_file
+
+
+def get_flow_inputs(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs.json"):
+    inputs = load_json(get_flow_inputs_file(folder_name, root, file_name))
     return inputs[0] if isinstance(inputs, list) else inputs
 
 
 def get_bulk_inputs(folder_name):
-    inputs = load_json(get_flow_folder(folder_name) / "inputs.json")
+    inputs = load_json(get_flow_inputs_file(folder_name, file_name="inputs.json"))
     return [inputs] if isinstance(inputs, dict) else inputs
 
 

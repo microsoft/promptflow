@@ -72,6 +72,10 @@ After above setup process is finished. You can use `pytest` command to run test,
 
 ![img2](../media/dev_setup/set_up_pycharm_2.png)
 
+### Record and replay tests
+
+Please refer to [Replay End-to-End Tests](./replay-e2e-test.md) to learn how to record and replay tests.
+
 ## How to write docstring.
 
 A clear and consistent API documentation is crucial for the usability and maintainability of our codebase. Please refer to [API Documentation Guidelines](./documentation_guidelines.md) to learn how to write docstring when developing the project.

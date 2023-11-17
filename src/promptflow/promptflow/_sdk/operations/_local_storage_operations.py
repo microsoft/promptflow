@@ -12,7 +12,6 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
-import pandas as pd
 import yaml
 from filelock import FileLock
 
@@ -40,7 +39,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.executor.flow_executor import BulkResult
+from promptflow.executor._result import BatchResult
 from promptflow.storage import AbstractRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -250,11 +249,15 @@ class LocalStorageOperations(AbstractRunStorage):
         return flow_dag["inputs"], flow_dag["outputs"]
 
     def load_inputs(self) -> RunInputs:
+        import pandas as pd
+
         with open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             df = pd.read_json(f, orient="records", lines=True)
             return df.to_dict("list")
 
     def load_outputs(self) -> RunOutputs:
+        import pandas as pd
+
         # for legacy run, simply read the output file and return as list of dict
         if not self._outputs_path.is_file():
             with open(self._legacy_outputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
@@ -279,7 +282,7 @@ class LocalStorageOperations(AbstractRunStorage):
         with open(self._metrics_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(metrics, f, ensure_ascii=False)
 
-    def dump_exception(self, exception: Exception, bulk_results: BulkResult) -> None:
+    def dump_exception(self, exception: Exception, bulk_results: BatchResult) -> None:
         """Dump exception to local storage.
 
         :param exception: Exception raised during bulk run.
@@ -396,7 +399,7 @@ class LocalStorageOperations(AbstractRunStorage):
         )
         line_run_record.dump(self._run_infos_folder / filename)
 
-    def persist_result(self, result: Optional[BulkResult]) -> None:
+    def persist_result(self, result: Optional[BatchResult]) -> None:
         """Persist metrics from return of executor."""
         if result is None:
             return
@@ -424,7 +427,9 @@ class LocalStorageOperations(AbstractRunStorage):
         return path
 
     @staticmethod
-    def _outputs_padding(df: pd.DataFrame, inputs_line_numbers: List[int]) -> pd.DataFrame:
+    def _outputs_padding(df: "DataFrame", inputs_line_numbers: List[int]) -> "DataFrame":
+        import pandas as pd
+
         if len(df) == len(inputs_line_numbers):
             return df
         missing_lines = []
@@ -437,7 +442,9 @@ class LocalStorageOperations(AbstractRunStorage):
         res = res.sort_values(by=LINE_NUMBER, ascending=True)
         return res
 
-    def load_inputs_and_outputs(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def load_inputs_and_outputs(self) -> Tuple["DataFrame", "DataFrame"]:
+        import pandas as pd
+
         if not self._sdk_inputs_path.is_file() or not self._sdk_output_path.is_file():
             inputs, outputs = self._collect_io_from_debug_info()
         else:
@@ -452,7 +459,9 @@ class LocalStorageOperations(AbstractRunStorage):
                     outputs = outputs.set_index(LINE_NUMBER)
         return inputs, outputs
 
-    def _collect_io_from_debug_info(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def _collect_io_from_debug_info(self) -> Tuple["DataFrame", "DataFrame"]:
+        import pandas as pd
+
         inputs, outputs = [], []
         for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
             if line_run_record_file.suffix.lower() != ".jsonl":

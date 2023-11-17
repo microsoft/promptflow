@@ -12,6 +12,7 @@ from typing import Callable, Optional, List, Dict, Union, get_args, get_origin
 from dataclasses import dataclass, InitVar, field
 
 module_logger = logging.getLogger(__name__)
+STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
 
 
 # copied from promptflow.contracts.tool import ToolType
@@ -49,6 +50,7 @@ def tool(
     description: str = None,
     type: str = None,
     input_settings=None,
+    streaming_option_parameter: Optional[str] = None,
     **kwargs,
 ) -> Callable:
     """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.
@@ -67,14 +69,34 @@ def tool(
 
     def tool_decorator(func: Callable) -> Callable:
         from promptflow.exceptions import UserErrorException
-
-        @functools.wraps(func)
-        def new_f(*args, **kwargs):
-            tool_invoker = ToolInvoker.active_instance()
-            # If there is no active tool invoker for tracing or other purposes, just call the function.
-            if tool_invoker is None:
-                return func(*args, **kwargs)
-            return tool_invoker.invoke_tool(func, *args, **kwargs)
+        if inspect.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def decorated_tool(*args, **kwargs):
+                from .tracer import Tracer
+                if Tracer.active_instance() is None:
+                    return await func(*args, **kwargs)
+                try:
+                    Tracer.push_tool(func, args, kwargs)
+                    output = await func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+            new_f = decorated_tool
+        else:
+            @functools.wraps(func)
+            def decorated_tool(*args, **kwargs):
+                from .tracer import Tracer
+                if Tracer.active_instance() is None:
+                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                try:
+                    Tracer.push_tool(func, args, kwargs)
+                    output = func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+            new_f = decorated_tool
 
         if type is not None and type not in [k.value for k in ToolType]:
             raise UserErrorException(f"Tool type {type} is not supported yet.")
@@ -87,6 +109,8 @@ def tool(
         new_f.__type = type
         new_f.__input_settings = input_settings
         new_f.__extra_info = kwargs
+        if streaming_option_parameter and isinstance(streaming_option_parameter, str):
+            setattr(new_f, STREAMING_OPTION_PARAMETER_ATTR, streaming_option_parameter)
 
         return new_f
 

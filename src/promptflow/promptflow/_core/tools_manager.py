@@ -12,7 +12,6 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
-import pkg_resources
 import yaml
 
 from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError, ToolLoadError
@@ -59,6 +58,9 @@ def collect_tools_from_directory(base_dir) -> dict:
 
 def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools from all installed packages."""
+    # lazy load to improve performance for scenarios that don't need to load package tools
+    import pkg_resources
+
     all_package_tools = {}
     if keys is not None:
         keys = set(keys)
@@ -90,6 +92,9 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
 def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools and custom strong type connections from all installed packages."""
+    # lazy load to improve performance for scenarios that don't need to load package tools
+    import pkg_resources
+
     all_package_tools = {}
     all_package_connection_specs = {}
     all_package_connection_templates = {}
@@ -194,10 +199,8 @@ def retrieve_tool_func_result(
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
-    # Validate if func input params are all in func signature params.
-    for input_param in func_input_params_dict:
-        if input_param not in func_sig_params:
-            raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
+    module_logger.warning(f"func_sig_params of func_path is: '{func_sig_params}'")
+    module_logger.warning(f"func_input_params_dict is: '{func_input_params_dict}'")
     # Append workspace triple to func input params if func signature has kwargs param.
     # Or append ws_triple_dict params that are in func signature.
     combined_func_input_params = append_workspace_triple_to_func_input_params(
@@ -216,10 +219,8 @@ def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dic
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
-    # Validate if func input params are all in func signature params.
-    for input_param in func_input_params_dict:
-        if input_param not in func_sig_params:
-            raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
+    module_logger.warning(f"func_sig_params of func_path is: '{func_sig_params}'")
+    module_logger.warning(f"func_input_params_dict is: '{func_input_params_dict}'")
     combined_func_input_params = append_workspace_triple_to_func_input_params(
         func_sig_params, func_input_params_dict, ws_triple_dict
     )

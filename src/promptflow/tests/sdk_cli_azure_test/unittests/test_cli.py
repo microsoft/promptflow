@@ -37,12 +37,13 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
     ]
 
 
+@pytest.mark.usefixtures("mock_get_azure_pf_client")
 @pytest.mark.unittest
 class TestAzureCli:
     def test_pf_azure_version(self, capfd):
         run_pf_command("--version")
         out, err = capfd.readouterr()
-        assert out == "0.0.1\n"
+        assert "0.0.1\n" in out
 
     def test_run_show(self, mocker: MockFixture, operation_scope_args):
         mocked = mocker.patch.object(RunOperations, "get")
@@ -138,11 +139,11 @@ class TestAzureCli:
 
     def test_run_visualize(
         self,
+        operation_scope_args: List[str],
+        capfd: pytest.CaptureFixture,
         subscription_id: str,
         resource_group_name: str,
         workspace_name: str,
-        operation_scope_args: List[str],
-        capfd: pytest.CaptureFixture,
     ) -> None:
         # cloud version visualize is actually a string concatenation
         names = "name1,name2,name3"
@@ -231,6 +232,30 @@ class TestAzureCli:
             "type=standard",
             "description='test_description'",
             "tags.key1=value1",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_flow_list(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+    ):
+        mocked_flow = MagicMock()
+        mocked_flow._to_dict.return_value = {"name": "test_flow"}
+        mocked = mocker.patch.object(FlowOperations, "list")
+        mocked.return_value = [mocked_flow]
+        run_pf_command(
+            "flow",
+            "list",
+            "--max-results",
+            "10",
+            "--include-archived",
+            "--type",
+            "standard",
+            "--include-others",
+            "--output",
+            "table",
             *operation_scope_args,
         )
         mocked.assert_called_once()

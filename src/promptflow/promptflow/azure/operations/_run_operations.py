@@ -14,7 +14,6 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
 from typing import Any, Dict, List, Optional, Union
 
-import pandas as pd
 import requests
 import yaml
 from azure.ai.ml._scope_dependent_operations import (
@@ -26,7 +25,6 @@ from azure.ai.ml._scope_dependent_operations import (
 from azure.ai.ml.constants._common import AzureMLResourceType
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
-from pandas import DataFrame
 
 from promptflow._sdk._constants import (
     LINE_NUMBER,
@@ -45,7 +43,7 @@ from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
@@ -72,7 +70,7 @@ class RunRequestException(Exception):
         super().__init__(message)
 
 
-class RunOperations(_ScopeDependentOperations, TelemetryMixin):
+class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
@@ -94,7 +92,13 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         service_caller: FlowServiceCaller,
         **kwargs: Dict,
     ):
-        super().__init__(operation_scope, operation_config)
+        super().__init__(
+            operation_scope=operation_scope,
+            operation_config=operation_config,
+            workspace_name=operation_scope.workspace_name,
+            subscription_id=operation_scope.subscription_id,
+            resource_group_name=operation_scope.resource_group_name,
+        )
         self._all_operations = all_operations
         self._service_caller = service_caller
         self._credential = credential
@@ -126,18 +130,6 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         """Get the endpoint url for the workspace."""
         endpoint = self._service_caller._service_endpoint
         return endpoint + "history/v1.0" + self._common_azure_url_pattern
-
-    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
-        """Return the telemetry values of run operations.
-
-        :return: The telemetry values
-        :rtype: Dict
-        """
-        return {
-            "subscription_id": self._operation_scope.subscription_id,
-            "resource_group_name": self._operation_scope.resource_group_name,
-            "workspace_name": self._operation_scope.workspace_name,
-        }
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
@@ -241,7 +233,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     ) -> List[Run]:
         """List runs in the workspace.
 
-        :param max_results: The max number of runs to return, defaults to 100
+        :param max_results: The max number of runs to return, defaults to 50, max is 100
         :type max_results: int
         :param list_view_type: The list view type, defaults to ListViewType.ACTIVE_ONLY
         :type list_view_type: ListViewType
@@ -322,7 +314,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     @monitor_operation(activity_name="pfazure.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False, **kwargs
-    ) -> DataFrame:
+    ) -> "DataFrame":
         """Get the details from the run.
 
         .. note::
@@ -339,6 +331,8 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         :return: The details data frame.
         :rtype: pandas.DataFrame
         """
+        from pandas import DataFrame
+
         # if all_results is True, set max_results to sys.maxsize
         if all_results:
             max_results = sys.maxsize
@@ -382,7 +376,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             new_k = f"outputs.{k}"
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
-        df = pd.DataFrame(data).reindex(columns=columns)
+        df = DataFrame(data).reindex(columns=columns)
         if f"outputs.{LINE_NUMBER}" in columns:
             df = df.set_index(f"outputs.{LINE_NUMBER}")
         return df

@@ -156,14 +156,17 @@ def log_progress(
 
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
-    from promptflow._core import flow_execution_context
+    from promptflow._core import tool
+    tool_file = tool.__file__
+    core_folder = os.path.dirname(tool_file)
 
-    i = len(frame_summaries) - 1
-    while i > 0:
-        frame_summary = frame_summaries[i]
-        if frame_summary.filename == flow_execution_context.__file__:
+    for i in range(len(frame_summaries) - 1):
+        cur_file = frame_summaries[i].filename
+        next_file = frame_summaries[i + 1].filename
+        # If the current frame is in tool.py and the next frame is not in _core folder
+        # then we can say that the next frame is in user code.
+        if cur_file == tool_file and not next_file.startswith(core_folder):
             return frame_summaries[i + 1 :]
-        i -= 1
     return frame_summaries
 
 
@@ -223,3 +226,12 @@ def environment_variable_overwrite(key, val):
             os.environ[key] = backup_value
         else:
             os.environ.pop(key)
+
+
+def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path]) -> Path:
+    """Resolve directory to absolute path with base_dir as root"""
+    path = sub_dir if isinstance(sub_dir, Path) else Path(sub_dir)
+    if not path.is_absolute():
+        base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
+        path = base_dir / sub_dir
+    return path

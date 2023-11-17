@@ -16,7 +16,7 @@ if __name__ == "__main__":
         help="Pytest marker to identify the tests to run",
         default="all",
     )
-    parser.add_argument("-n", help="Pytest number of process to run the tests", default="15")
+    parser.add_argument("-n", help="Pytest number of process to run the tests", default="auto")
     parser.add_argument(
         "--model-name",
         help="The model file name to run the tests",
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     run_command(["pip", "list"])
     run_command(["pip", "show", "promptflow", "promptflow-sdk"])
 
-    pytest_command = ["pytest", "--junit-xml=test-results.xml"]
+    pytest_command = ["pytest", "--junitxml=test-results.xml"]
     pytest_command += test_paths_list
     if args.coverage_config:
         if args.p:
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         "-n",
         args.n,
         "--dist",
-        "loadgroup",
+        "loadfile",
         "--log-level=info",
         "--log-format=%(asctime)s %(levelname)s %(message)s",
         "--log-date-format=[%Y-%m-%d %H:%M:%S]",

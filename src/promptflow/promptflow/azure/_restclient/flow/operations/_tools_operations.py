@@ -19,7 +19,7 @@ from .._vendor import _convert_request, _format_url_section
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
-    from typing import Any, Callable, Dict, Generic, Optional, TypeVar
+    from typing import Any, Callable, Dict, Generic, List, Optional, TypeVar
     T = TypeVar('T')
     ClsType = Optional[Callable[[PipelineResponse[HttpRequest, HttpResponse], T, Dict[str, Any]], Any]]
 
@@ -216,6 +216,94 @@ def build_get_package_tools_request(
 
     return HttpRequest(
         method="GET",
+        url=url,
+        params=query_parameters,
+        headers=header_parameters,
+        **kwargs
+    )
+
+
+def build_get_dynamic_list_request(
+    subscription_id,  # type: str
+    resource_group_name,  # type: str
+    workspace_name,  # type: str
+    **kwargs  # type: Any
+):
+    # type: (...) -> HttpRequest
+    content_type = kwargs.pop('content_type', None)  # type: Optional[str]
+    flow_runtime_name = kwargs.pop('flow_runtime_name', None)  # type: Optional[str]
+    flow_id = kwargs.pop('flow_id', None)  # type: Optional[str]
+
+    accept = "application/json"
+    # Construct URL
+    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/dynamicList')
+    path_format_arguments = {
+        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
+        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
+        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
+    }
+
+    url = _format_url_section(url, **path_format_arguments)
+
+    # Construct parameters
+    query_parameters = kwargs.pop("params", {})  # type: Dict[str, Any]
+    if flow_runtime_name is not None:
+        query_parameters['flowRuntimeName'] = _SERIALIZER.query("flow_runtime_name", flow_runtime_name, 'str')
+    if flow_id is not None:
+        query_parameters['flowId'] = _SERIALIZER.query("flow_id", flow_id, 'str')
+
+    # Construct headers
+    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
+    if content_type is not None:
+        header_parameters['Content-Type'] = _SERIALIZER.header("content_type", content_type, 'str')
+    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
+
+    return HttpRequest(
+        method="POST",
+        url=url,
+        params=query_parameters,
+        headers=header_parameters,
+        **kwargs
+    )
+
+
+def build_retrieve_tool_func_result_request(
+    subscription_id,  # type: str
+    resource_group_name,  # type: str
+    workspace_name,  # type: str
+    **kwargs  # type: Any
+):
+    # type: (...) -> HttpRequest
+    content_type = kwargs.pop('content_type', None)  # type: Optional[str]
+    flow_runtime_name = kwargs.pop('flow_runtime_name', None)  # type: Optional[str]
+    flow_id = kwargs.pop('flow_id', None)  # type: Optional[str]
+
+    accept = "application/json"
+    # Construct URL
+    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/RetrieveToolFuncResult')
+    path_format_arguments = {
+        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
+        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
+        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
+    }
+
+    url = _format_url_section(url, **path_format_arguments)
+
+    # Construct parameters
+    query_parameters = kwargs.pop("params", {})  # type: Dict[str, Any]
+    if flow_runtime_name is not None:
+        query_parameters['flowRuntimeName'] = _SERIALIZER.query("flow_runtime_name", flow_runtime_name, 'str')
+    if flow_id is not None:
+        query_parameters['flowId'] = _SERIALIZER.query("flow_id", flow_id, 'str')
+
+    # Construct headers
+    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
+    if content_type is not None:
+        header_parameters['Content-Type'] = _SERIALIZER.header("content_type", content_type, 'str')
+    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
+
+    return HttpRequest(
+        method="POST",
         url=url,
         params=query_parameters,
         headers=header_parameters,
@@ -578,4 +666,154 @@ class ToolsOperations(object):
         return deserialized
 
     get_package_tools.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/packageTools'}  # type: ignore
+
+
+    @distributed_trace
+    def get_dynamic_list(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        flow_runtime_name=None,  # type: Optional[str]
+        flow_id=None,  # type: Optional[str]
+        body=None,  # type: Optional["_models.GetDynamicListRequest"]
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> List[Any]
+        """get_dynamic_list.
+
+        :param subscription_id: The Azure Subscription ID.
+        :type subscription_id: str
+        :param resource_group_name: The Name of the resource group in which the workspace is located.
+        :type resource_group_name: str
+        :param workspace_name: The name of the workspace.
+        :type workspace_name: str
+        :param flow_runtime_name:
+        :type flow_runtime_name: str
+        :param flow_id:
+        :type flow_id: str
+        :param body:
+        :type body: ~flow.models.GetDynamicListRequest
+        :keyword callable cls: A custom type or function that will be passed the direct response
+        :return: list of any, or the result of cls(response)
+        :rtype: list[any]
+        :raises: ~azure.core.exceptions.HttpResponseError
+        """
+        cls = kwargs.pop('cls', None)  # type: ClsType[List[Any]]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
+
+        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+
+        if body is not None:
+            _json = self._serialize.body(body, 'GetDynamicListRequest')
+        else:
+            _json = None
+
+        request = build_get_dynamic_list_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            content_type=content_type,
+            json=_json,
+            flow_runtime_name=flow_runtime_name,
+            flow_id=flow_id,
+            template_url=self.get_dynamic_list.metadata['url'],
+        )
+        request = _convert_request(request)
+        request.url = self._client.format_url(request.url)
+
+        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+
+        deserialized = self._deserialize('[object]', pipeline_response)
+
+        if cls:
+            return cls(pipeline_response, deserialized, {})
+
+        return deserialized
+
+    get_dynamic_list.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/dynamicList'}  # type: ignore
+
+
+    @distributed_trace
+    def retrieve_tool_func_result(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        flow_runtime_name=None,  # type: Optional[str]
+        flow_id=None,  # type: Optional[str]
+        body=None,  # type: Optional["_models.RetrieveToolFuncResultRequest"]
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> "_models.ToolFuncResponse"
+        """retrieve_tool_func_result.
+
+        :param subscription_id: The Azure Subscription ID.
+        :type subscription_id: str
+        :param resource_group_name: The Name of the resource group in which the workspace is located.
+        :type resource_group_name: str
+        :param workspace_name: The name of the workspace.
+        :type workspace_name: str
+        :param flow_runtime_name:
+        :type flow_runtime_name: str
+        :param flow_id:
+        :type flow_id: str
+        :param body:
+        :type body: ~flow.models.RetrieveToolFuncResultRequest
+        :keyword callable cls: A custom type or function that will be passed the direct response
+        :return: ToolFuncResponse, or the result of cls(response)
+        :rtype: ~flow.models.ToolFuncResponse
+        :raises: ~azure.core.exceptions.HttpResponseError
+        """
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.ToolFuncResponse"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
+
+        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+
+        if body is not None:
+            _json = self._serialize.body(body, 'RetrieveToolFuncResultRequest')
+        else:
+            _json = None
+
+        request = build_retrieve_tool_func_result_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            content_type=content_type,
+            json=_json,
+            flow_runtime_name=flow_runtime_name,
+            flow_id=flow_id,
+            template_url=self.retrieve_tool_func_result.metadata['url'],
+        )
+        request = _convert_request(request)
+        request.url = self._client.format_url(request.url)
+
+        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+
+        deserialized = self._deserialize('ToolFuncResponse', pipeline_response)
+
+        if cls:
+            return cls(pipeline_response, deserialized, {})
+
+        return deserialized
+
+    retrieve_tool_func_result.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/RetrieveToolFuncResult'}  # type: ignore
 
