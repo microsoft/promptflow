@@ -29,6 +29,8 @@ from promptflow._utils.connection_utils import (
 from promptflow._utils.tool_utils import (
     DynamicListError,
     RetrieveToolFuncResultError,
+    _DEPRECATED_TOOLS,
+    _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_tool_definition,
     get_prompt_param_name_from_func,
@@ -69,7 +71,11 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
             for identifier, tool in package_tools.items():
                 #  Only load required tools to avoid unnecessary loading when keys is provided
                 if isinstance(keys, set) and identifier not in keys:
-                    continue
+                    # Support to collect new tool id if node source tool is a deprecated tool.
+                    deprecated_tool_ids = tool.get(_DEPRECATED_TOOLS, [])
+                    if not set(deprecated_tool_ids).intersection(keys):
+                        continue
+
                 m = tool["module"]
                 importlib.import_module(m)  # Import the module to make sure it is valid
                 tool["package"] = entry_point.dist.project_name
@@ -405,6 +411,8 @@ class ToolLoader:
     def __init__(self, working_dir: str, package_tool_keys: Optional[List[str]] = None) -> None:
         self._working_dir = working_dir
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
+        # Used to handle backward compatibility of tool ID changes.
+        self._deprecated_tools = _find_deprecated_tools(self._package_tools)
 
     # TODO: Replace NotImplementedError with NotSupported in the future.
     def load_tool_for_node(self, node: Node) -> Tool:
@@ -427,6 +435,17 @@ class ToolLoader:
     def load_tool_for_package_node(self, node: Node) -> Tool:
         if node.source.tool in self._package_tools:
             return Tool.deserialize(self._package_tools[node.source.tool])
+
+        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
+        # If found, load the tool with the new tool ID for backward compatibility.
+        if node.source.tool in self._deprecated_tools:
+            new_tool_id = self._deprecated_tools[node.source.tool]
+            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
+            module_logger.warning(
+                f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead."
+            )
+            return Tool.deserialize(self._package_tools[new_tool_id])
+
         raise PackageToolNotFoundError(
             f"Package tool '{node.source.tool}' is not found in the current environment. "
             f"All available package tools are: {list(self._package_tools.keys())}.",

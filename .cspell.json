@@ -149,7 +149,8 @@
     "vcrpy",
     "uionly",
     "llmops",
-    "Abhishek"
+    "Abhishek",
+    "restx"
   ],
   "flagWords": [
     "Prompt Flow"
