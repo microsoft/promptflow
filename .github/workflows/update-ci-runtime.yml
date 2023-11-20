@@ -39,5 +39,5 @@ jobs:
         working-directory: ${{ github.workspace }}/scripts/runtime_mgmt
         run: |
           pip install promptflow[azure]
-          python update-runtime.py --path canary.json --compute-instance-name ci-lin-cpu-sp4tests
-          # python update-runtime.py --path production.json --compute-instance-name ci-lin-cpu-sp-eastus
+          python update-runtime.py --path canary.json
+          # python update-runtime.py --path production.json
