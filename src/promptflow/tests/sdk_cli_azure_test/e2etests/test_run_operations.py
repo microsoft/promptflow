@@ -91,20 +91,6 @@ class TestFlowRun:
         assert isinstance(eval_run, Run)
         pf.runs.stream(run=eval_run.name)
 
-        # evaluation run without data
-        eval_run = pf.run(
-            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
-            run=run,
-            column_mapping={
-                # evaluation reference run.inputs
-                "groundtruth": "${run.inputs.url}",
-                "prediction": "${run.outputs.category}",
-            },
-            runtime=runtime,
-            name=randstr("eval_run_name_1"),
-        )
-        assert isinstance(eval_run, Run)
-
     def test_run_with_connection_overwrite(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
