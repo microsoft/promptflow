@@ -321,7 +321,7 @@ class Run(YAMLTranslatableMixin):
                 if local_storage._data_path is not None
                 else None
             )
-            result[RunDataKeys.OUTPUT] = local_storage._outputs_path.as_posix()
+            result[RunDataKeys.OUTPUT] = local_storage.outputs_folder.as_posix()
             if self.run:
                 run_name = self.run.name if isinstance(self.run, Run) else self.run
                 result[RunDataKeys.RUN] = properties.pop(FlowRunProperties.RUN, run_name)
