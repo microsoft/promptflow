@@ -1444,9 +1444,10 @@ class TestCli:
         assert package_tool_name in tools_dict["package"]
 
         # Invalid flow parameter
-        with pytest.raises(Exception) as e:
+        with pytest.raises(SystemExit):
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
-        assert "invalid_flow_folder does not exist" in e.value.args[0]
+        outerr = capsys.readouterr()
+        assert "invalid_flow_folder does not exist" in outerr.out
 
     def test_flow_test_with_image_input_and_output(self):
         run_pf_command(
