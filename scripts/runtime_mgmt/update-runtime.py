@@ -12,9 +12,7 @@ from azure.identity import AzureCliCredential
 ENVIRONMENT_YAML = Path(__file__).parent / "runtime-env" / "env.yaml"
 
 EXAMPLE_RUNTIME_NAME = "example-runtime-ci"
-EXAMPLE_RUNTIME_CI_NAME = "ci-lin-cpu-sp"
 TEST_RUNTIME_NAME = "test-runtime-ci"
-# TEST_RUNTIME_CI_NAME = ""  # differ in different region
 
 
 class PFSRuntimeHelper:
@@ -48,7 +46,6 @@ class PFSRuntimeHelper:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", help="Path to config.json", type=str)
-    parser.add_argument("--compute-instance-name", type=str)
     return parser.parse_args()
 
 
@@ -97,17 +94,9 @@ def main(args: argparse.Namespace):
     print("created environment, asset id:", env_asset_id)
 
     print("updating runtime for test...")
-    pfs_runtime_helper.update_runtime(
-        name=TEST_RUNTIME_NAME,
-        env_asset_id=env_asset_id,
-        ci_name=args.compute_instance_name,
-    )
+    pfs_runtime_helper.update_runtime(name=TEST_RUNTIME_NAME, env_asset_id=env_asset_id)
     print("updating runtime for example...")
-    pfs_runtime_helper.update_runtime(
-        name=EXAMPLE_RUNTIME_NAME,
-        env_asset_id=env_asset_id,
-        ci_name=EXAMPLE_RUNTIME_CI_NAME,
-    )
+    pfs_runtime_helper.update_runtime(name=EXAMPLE_RUNTIME_NAME, env_asset_id=env_asset_id)
     print("runtime updated!")
 
 
