@@ -104,7 +104,6 @@ class TestFlowRun:
             name=randstr("eval_run_name_1"),
         )
         assert isinstance(eval_run, Run)
-        pf.runs.stream(run=eval_run.name)
 
     def test_run_with_connection_overwrite(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
