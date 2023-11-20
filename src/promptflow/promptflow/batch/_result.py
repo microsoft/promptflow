@@ -7,10 +7,10 @@ from datetime import datetime
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Mapping
 
+from promptflow._utils.exception_utils import RootErrorCode
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.executor._result import AggregationResult, LineResult
-from promptflow.promptflow._utils.exception_utils import RootErrorCode
 
 
 @dataclass
