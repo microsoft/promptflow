@@ -136,7 +136,9 @@ class BatchEngine:
         ]
         self._persist_outputs(outputs, output_dir)
 
-        return BatchResult.summary(self._start_time, line_results, aggr_results)
+        # summary some infos from line results and aggr results to batch result
+        self._end_time = datetime.utcnow()
+        return BatchResult.summary(self._start_time, self._end_time, line_results, aggr_results)
 
     async def _exec_batch_internal(
         self,

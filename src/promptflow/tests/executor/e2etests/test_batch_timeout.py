@@ -3,12 +3,11 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow.batch import BatchEngine
+from promptflow.batch._result import BatchResult, LineError
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
-from promptflow.executor._result import BatchResult, LineResult
 from promptflow.storage import AbstractRunStorage
 
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
@@ -54,11 +53,16 @@ class TestBatchTimeout:
         batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
         assert isinstance(batch_results, BatchResult)
 
-        for i, line_result in enumerate(batch_results.line_results):
-            assert isinstance(line_result, LineResult)
-            assert line_result.run_info.error["message"] == f"Line {i} execution timeout for exceeding 1 seconds"
-            assert line_result.run_info.error["code"] == "UserError"
-            assert line_result.run_info.status == Status.Failed
+        assert batch_results.status == Status.Completed
+        assert batch_results.total_lines == 2
+        assert batch_results.completed_lines == 0
+        assert batch_results.failed_lines == 2
+        assert batch_results.error_summary.failed_user_error_lines == 2
+        assert batch_results.error_summary.failed_system_error_lines == 0
+        for i, line_error in enumerate(batch_results.error_summary.error_list):
+            assert isinstance(line_error, LineError)
+            assert line_error.error["message"] == f"Line {i} execution timeout for exceeding 1 seconds"
+            assert line_error.error["code"] == "UserError"
 
     @pytest.mark.parametrize(
         "flow_folder",
@@ -83,24 +87,23 @@ class TestBatchTimeout:
         batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
 
         assert isinstance(batch_results, BatchResult)
+        # assert the line status in batch result
+        assert batch_results.status == Status.Completed
+        assert batch_results.total_lines == 3
+        assert batch_results.completed_lines == 2
+        assert batch_results.failed_lines == 1
 
-        for line_result in batch_results.line_results:
-            flow_run_info = line_result.run_info
-            msg = f"Flow run {flow_run_info.run_id} is not persisted in memory storage."
-            assert flow_run_info.run_id in mem_run_storage._flow_runs, msg
-            if flow_run_info.index == 2:
-                assert (
-                    flow_run_info.error["message"]
-                    == f"Line {flow_run_info.index} execution timeout for exceeding 60 seconds"
-                )
-                assert flow_run_info.error["code"] == "UserError"
-                assert flow_run_info.status == Status.Failed
-            else:
-                assert flow_run_info.status == Status.Completed
-            for node_name, node_run_info in line_result.node_run_infos.items():
-                msg = f"Node run {node_run_info.run_id} is not persisted in memory storage."
-                assert node_run_info.run_id in mem_run_storage._node_runs, msg
-                run_info_in_mem = mem_run_storage._node_runs[node_run_info.run_id]
-                assert serialize(node_run_info) == serialize(run_info_in_mem)
-                msg = f"Node run name {node_run_info.node} is not correct, expected {node_name}"
-                assert mem_run_storage._node_runs[node_run_info.run_id].node == node_name
+        # assert the error summary in batch result
+        assert batch_results.error_summary.failed_user_error_lines == 1
+        assert batch_results.error_summary.failed_system_error_lines == 0
+        assert isinstance(batch_results.error_summary.error_list[0], LineError)
+        assert batch_results.error_summary.error_list[0].line_number == 2
+        assert batch_results.error_summary.error_list[0].error["code"] == "UserError"
+        assert (
+            batch_results.error_summary.error_list[0].error["message"]
+            == "Line 2 execution timeout for exceeding 60 seconds"
+        )
+
+        # assert mem_run_storage persists run infos correctly
+        assert len(mem_run_storage._flow_runs) == 3, "Flow run is not persisted in memory storage."
+        assert len(mem_run_storage._node_runs) == 5, "Node run is not persisted in memory storage."
