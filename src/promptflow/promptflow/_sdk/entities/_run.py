@@ -539,6 +539,7 @@ class Run(YAMLTranslatableMixin):
         else:
             try:
                 path = Path(path)
+                path.mkdir(parents=True, exist_ok=True)
             except Exception:  # pylint: disable=broad-except
                 path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
                 warning_message = (
