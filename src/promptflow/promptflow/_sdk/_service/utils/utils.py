@@ -5,27 +5,7 @@ import getpass
 import socket
 from functools import wraps
 
-from flask import abort, jsonify, request
-
-from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
-
-
-def api_wrapper(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-            return result
-        except (ConnectionNotFoundError, RunNotFoundError):
-            response = jsonify({"error_message": "Not Found"})
-            response.status_code = 404
-            return response
-        except Exception:  # pylint: disable=broad-except
-            response = jsonify({"error_message": "Internal Server Error"})
-            response.status_code = 500
-            return response
-
-    return wrapper
+from flask import abort, request
 
 
 def local_user_only(func):
@@ -35,7 +15,8 @@ def local_user_only(func):
         user = request.environ.get("REMOTE_USER") or request.headers.get("X-Remote-User")
         if user != getpass.getuser():
             abort(403)
-        return api_wrapper(func)(*args, **kwargs)
+        return func(*args, **kwargs)
+
     return wrapper
 
 
