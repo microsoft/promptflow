@@ -5,8 +5,8 @@ on:
   pull_request_target:
     paths:
       - src/promptflow/**
-      - scripts/**
-      - '**promptflow-sdk-cli-test.yml'
+      - scripts/building/**
+      - .github/workflows/promptflow-sdk-cli-test.yml
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra
