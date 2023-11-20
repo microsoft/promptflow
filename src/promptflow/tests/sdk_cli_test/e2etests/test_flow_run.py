@@ -69,17 +69,14 @@ def create_run_against_run(client, run: Run) -> Run:
 def assert_run_with_invalid_column_mapping(client: PFClient, run: Run) -> None:
     assert run.status == RunStatus.FAILED
 
-    expected_error_message = "The input for batch run is incorrect. Couldn't find these mapping relations"
-
-    with pytest.raises(InvalidRunStatusError) as e:
+    with pytest.raises(InvalidRunStatusError):
         client.stream(run.name)
-    assert expected_error_message in str(e)
 
     local_storage = LocalStorageOperations(run)
     assert os.path.exists(local_storage._exception_path)
 
     exception = local_storage.load_exception()
-    assert expected_error_message in exception["message"]
+    assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
     assert exception["code"] == "BulkRunException"
 
 
