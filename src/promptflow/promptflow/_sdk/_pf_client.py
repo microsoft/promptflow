@@ -130,7 +130,7 @@ class PFClient:
 
         :param run: Run object or name of the run.
         :type run: Union[str, ~promptflow.sdk.entities.Run]
-        :param raise_on_error: Raises an exception if a run fails.
+        :param raise_on_error: Raises an exception if a run fails or canceled.
         :type raise_on_error: bool
         :return: flow run info.
         :rtype: ~promptflow.sdk.entities.Run

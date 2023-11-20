@@ -116,7 +116,7 @@ class RunOperations(TelemetryMixin):
 
         :param name: Name of the run, or run object.
         :type name: Union[str, ~promptflow.sdk.entities.Run]
-        :param raise_on_error: Raises an exception if a run fails.
+        :param raise_on_error: Raises an exception if a run fails or canceled.
         :type raise_on_error: bool
         :return: Run object.
         :rtype: ~promptflow.entities.Run
