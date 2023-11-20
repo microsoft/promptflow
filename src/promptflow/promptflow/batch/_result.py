@@ -99,7 +99,7 @@ class BatchResult:
     start_time: datetime
     end_time: datetime
     metrics: Mapping[str, str]
-    system_metrics: Mapping[str, Any]
+    system_metrics: SystemMetrics
     error_summary: ErrorSummary
 
     @classmethod
