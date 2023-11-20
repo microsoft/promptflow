@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 # pylint: disable=wrong-import-position
 import time
+import json
 
 # Log the start time
 start_time = time.perf_counter()
@@ -20,7 +21,7 @@ from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  #
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
 from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
-from promptflow._sdk._utils import print_pf_version, setup_user_agent_to_operation_context  # noqa: E402
+from promptflow._sdk._utils import print_pf_version, setup_user_agent_to_operation_context, get_promptflow_sdk_version  # noqa: E402
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -94,6 +95,9 @@ def entry(argv):
 def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
+    if len(command_args) == 1 and command_args[0] == 'version':
+        version_dict = {"promptflow": get_promptflow_sdk_version()}
+        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(',', ': ')) + '\n'
     if len(command_args) == 0:
         command_args.append("-h")
     setup_user_agent_to_operation_context(USER_AGENT)

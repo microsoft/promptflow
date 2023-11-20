@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 # pylint: disable=wrong-import-position
 import time
+import json
 
 # Log the start time
 start_time = time.perf_counter()
@@ -81,6 +82,9 @@ def entry(argv):
 def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
+    if len(command_args) == 1 and command_args[0] == 'version':
+        version_dict = {"promptflow": get_promptflow_sdk_version()}
+        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(',', ': ')) + '\n'
     if len(command_args) == 0:
         command_args.append("-h")
     entry(command_args)
