@@ -130,7 +130,6 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Check if version input is valid and upload JSON file
-        if: ${{ and(ne(github.event.inputs.version, ''), startsWith(github.event.inputs.version, '1.')) }}
         run: |
           $version = "${{ steps.get-version.outputs.version }}"
           if ($version -like '1.*') {
