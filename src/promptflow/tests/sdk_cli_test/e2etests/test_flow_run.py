@@ -953,3 +953,14 @@ class TestFlowRun:
         pf.stream(run.name, raise_on_error=False)
         out, _ = capfd.readouterr()
         assert "The input for batch run is incorrect. Couldn't find these mapping relations" in out
+
+    def test_stream_canceled_run(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
+        run = create_run_against_multi_line_data_without_llm(pf)
+        pf.runs.update(name=run.name, status=RunStatus.CANCELED)
+        # (default) raise_on_error=True
+        with pytest.raises(InvalidRunStatusError):
+            pf.stream(run.name)
+        # raise_on_error=False
+        pf.stream(run.name, raise_on_error=False)
+        out, _ = capfd.readouterr()
+        assert "Run is canceled." in out

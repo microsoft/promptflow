@@ -144,8 +144,11 @@ class RunOperations(TelemetryMixin):
             error_message = "The output streaming for the run was interrupted, but the run is still executing."
             print(error_message)
 
-        if run.status == RunStatus.FAILED:
-            error_message = local_storage.load_exception().get("message", "Run fails with unknown error.")
+        if run.status == RunStatus.FAILED or run.status == RunStatus.CANCELED:
+            if run.status == RunStatus.FAILED:
+                error_message = local_storage.load_exception().get("message", "Run fails with unknown error.")
+            else:
+                error_message = "Run is canceled."
             if raise_on_error:
                 raise InvalidRunStatusError(error_message)
             else:
