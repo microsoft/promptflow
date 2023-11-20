@@ -383,3 +383,11 @@ class FlowValidator:
                     continue
             updated_outputs[k] = v
         return updated_outputs
+
+    @staticmethod
+    def ensure_flow_valid_in_batch_mode(flow: Flow):
+        if not flow.inputs:
+            message = (
+                "The input for flow cannot be empty in batch mode. Please review your flow and provide valid inputs."
+            )
+            raise InputNotFound(message=message)

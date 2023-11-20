@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
 from jinja2 import Environment, meta
 
+from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -18,6 +19,8 @@ from ..contracts.tool import ConnectionType, InputDefinition, Tool, ToolFuncCall
 from ..contracts.types import PromptTemplate
 
 module_logger = logging.getLogger(__name__)
+
+_DEPRECATED_TOOLS = "deprecated_tools"
 
 
 def value_to_str(val):
@@ -305,6 +308,32 @@ def load_function_from_function_path(func_path: str):
             f"Failed to parse function from function path: '{func_path}'. Expected format: format 'my_module.my_func'. "
             f"Detailed error: {e}"
         )
+
+
+# Handling backward compatibility and generating a mapping between the previous and new tool IDs.
+def _find_deprecated_tools(package_tools) -> Dict[str, str]:
+    _deprecated_tools = {}
+    for tool_id, tool in package_tools.items():
+        # a list of old tool IDs that are mapped to the current tool ID.
+        if tool and _DEPRECATED_TOOLS in tool:
+            for old_tool_id in tool[_DEPRECATED_TOOLS]:
+                # throw error to prompt user for manual resolution of this conflict, ensuring secure operation.
+                if old_tool_id in _deprecated_tools:
+                    raise DuplicateToolMappingError(
+                        message_format=(
+                            "The tools '{first_tool_id}', '{second_tool_id}' are both linked to the deprecated "
+                            "tool ID '{deprecated_tool_id}'. To ensure secure operation, please either "
+                            "remove or adjust one of these tools in your environment and fix this conflict."
+                        ),
+                        first_tool_id=_deprecated_tools[old_tool_id],
+                        second_tool_id=tool_id,
+                        deprecated_tool_id=old_tool_id,
+                        target=ErrorTarget.TOOL,
+                    )
+
+                _deprecated_tools[old_tool_id] = tool_id
+
+    return _deprecated_tools
 
 
 class RetrieveToolFuncResultError(UserErrorException):

@@ -3,10 +3,12 @@ from typing import Union
 
 import pytest
 
+from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.tool_utils import (
     DynamicListError,
     ListFunctionResponseError,
     RetrieveToolFuncResultValidationError,
+    _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_interface,
     load_function_from_function_path,
@@ -15,7 +17,7 @@ from promptflow._utils.tool_utils import (
     validate_tool_func_result,
 )
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
-from promptflow.contracts.tool import ValueType, ToolFuncCallScenario
+from promptflow.contracts.tool import ValueType, Tool, ToolFuncCallScenario, ToolType
 
 
 # mock functions for dynamic list function testing
@@ -388,3 +390,13 @@ class TestToolUtils:
         with pytest.raises(RetrieveToolFuncResultValidationError) as e:
             validate_tool_func_result(func_call_scenario, result)
         assert (error_message == str(e.value))
+
+    def test_find_deprecated_tools(self):
+        package_tools = {
+            "new_tool_1": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+            "new_tool_2": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+        }
+        with pytest.raises(DuplicateToolMappingError, match="secure operation"):
+            _find_deprecated_tools(package_tools)

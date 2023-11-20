@@ -6,23 +6,13 @@ Transitioning to production, however, typically requires a comprehensive **LLMOp
 
 To assist in this journey, we've introduced **Azure AI**, a **cloud-based platform** tailored for executing LLMOps, focusing on boosting productivity for enterprises.
 
+* Private data access and controls
+* Collaborative development
+* Automating iterative experimentation and CI/CD
+* Deployment and optimization
+* Safe and Responsible AI
 
-<table>
-    <tr>
-        <td>
-            <ul>
-                <li>Private data access and controls</li>
-                <li>Collaborative development</li>
-                <li>Automating iterative experimentation and CI/CD</li>
-                <li>Deployment and optimization</li>
-                <li>Safe and Responsible AI</li>
-            </ul>
-        </td>
-        <td>
-            <img src="../media/cloud/azureml/llmops_cloud_value.png" width="60%">
-        </td>
-    </tr>
-</table>
+![img](../media/cloud/azureml/llmops_cloud_value.png)
 
 ## Transitioning from local to cloud (Azure AI)
 
@@ -42,6 +32,7 @@ For more resources on Azure AI, visit the cloud documentation site: [Build AI so
 :maxdepth: 1
 azureai/quick-start
 azureai/manage-flows
+azureai/consume-connections-from-azure-ai
 azureai/deploy-to-azure-appservice
 azureai/use-flow-in-azure-ml-pipeline.md
 azureai/faq

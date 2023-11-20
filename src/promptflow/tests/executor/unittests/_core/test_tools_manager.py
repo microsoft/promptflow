@@ -81,6 +81,34 @@ class TestToolLoader:
             tool_loader.load_tool_for_node(node)
             assert str(ex.value) == msg
 
+    def test_load_tool_for_package_node_with_legacy_tool_id(self, mocker):
+        package_tools = {
+            "new_tool_1": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+            "new_tool_2": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_2"]).serialize(),
+            "old_tool_2": Tool(name="old tool 2", type=ToolType.PYTHON, inputs={}).serialize(),
+        }
+        mocker.patch("promptflow._core.tools_manager.collect_package_tools", return_value=package_tools)
+        tool_loader = ToolLoader(working_dir="test_working_dir", package_tool_keys=list(package_tools.keys()))
+        node_with_legacy_tool: Node = Node(
+            name="test_legacy_tool",
+            tool="old_tool_1",
+            inputs={},
+            type=ToolType.PYTHON,
+            source=ToolSource(type=ToolSourceType.Package, tool="old_tool_1"),
+        )
+        assert tool_loader.load_tool_for_node(node_with_legacy_tool).name == "new tool 1"
+
+        node_with_legacy_tool_but_in_package_tools: Node = Node(
+            name="test_legacy_tool_but_in_package_tools",
+            tool="old_tool_2",
+            inputs={},
+            type=ToolType.PYTHON,
+            source=ToolSource(type=ToolSourceType.Package, tool="old_tool_2"),
+        )
+        assert tool_loader.load_tool_for_node(node_with_legacy_tool_but_in_package_tools).name == "old tool 2"
+
     def test_load_tool_for_script_node(self):
         working_dir = Path(__file__).parent
         tool_loader = ToolLoader(working_dir=working_dir)
@@ -138,6 +166,14 @@ class TestToolsManager:
         with pytest.raises(error_code) as ex:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
         assert str(ex.value) == error_message
+
+    @pytest.mark.skip(reason="enable this test after the tool is ready")
+    def test_collect_package_tools_if_node_source_tool_is_legacy(self):
+        legacy_node_source_tools = [
+            "content_safety_text.tools.content_safety_text_tool.analyze_text"
+        ]
+        package_tools = collect_package_tools(legacy_node_source_tools)
+        assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools

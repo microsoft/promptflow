@@ -31,3 +31,12 @@ nodes:
       grades: ${grade.output}
       variant_ids: ${inputs.variant_id}
     aggregation: true
+  - name: aggregation_assert
+    type: python
+    source:
+      type: code
+      path: aggregation_assert.py
+    inputs:
+      input1: ${inputs.groundtruth}
+      input2: ${inputs.prediction}
+    aggregation: true
