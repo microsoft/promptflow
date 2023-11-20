@@ -102,7 +102,11 @@ class TestSubmitter:
                 raise UserErrorException(f"Cannot find {node_name} in the flow.")
             for name, value in node.inputs.items():
                 if value.value_type == InputValueType.NODE_REFERENCE:
-                    input_name = f"{value.value}.{value.section}"
+                    input_name = (
+                        f"{value.value}.{value.section}.{value.property}"
+                        if value.property
+                        else f"{value.value}.{value.section}"
+                    )
                     if input_name in inputs:
                         dependency_input = inputs.pop(input_name)
                     elif name in inputs:
@@ -110,7 +114,9 @@ class TestSubmitter:
                     else:
                         missing_inputs.append(name)
                         continue
-                    dependency_nodes_outputs[value.value] = dependency_input
+                    dependency_nodes_outputs[value.value] = (
+                        {value.property: dependency_input} if value.property else dependency_input
+                    )
                     merged_inputs[name] = dependency_input
                 elif value.value_type == InputValueType.FLOW_INPUT:
                     input_name = f"{value.prefix}{value.value}"
