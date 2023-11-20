@@ -102,7 +102,7 @@ On Azure portal, you can see the created flow in the flow list.
 
 ![img](../../media/cloud/manage-flows/flow_create_1.png)
 
-And the flow source folder on file share is `Users/<alias>/promptflows/<flow-display-name>`:
+And the flow source folder on file share is `Users/<alias>/promptflow/<flow-display-name>`:
 
 ![img](../../media/cloud/manage-flows/flow_create_2.png)
 
