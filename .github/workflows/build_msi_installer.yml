@@ -77,10 +77,10 @@ jobs:
             $version=$env:INPUT_VERSION
           } else {
             $prefix = 0
-            $yearmonth = [int](Get-Date -Format "yyMM")
-            $dayhour = [int](Get-Date -Format "ddHH")
-            $minutesecond = [int](Get-Date -Format "mmss")
-            $version="$prefix.$yearmonth.$dayhour.$minutesecond"
+            $year = [int](Get-Date -Format "yy")
+            $monthday = [int](Get-Date -Format "MMdd")
+            $hourminutesecond = [int](Get-Date -Format "HHmmss")
+            $version="$prefix.$year.$monthday.$hourminutesecond"
           }
           echo "::set-output name=version::$version"
         env:
@@ -140,7 +140,7 @@ jobs:
             Write-Output "Created latest_version.json with version: $version"
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "latest_version.json" --name "latest_version.json" --overwrite
           } else {
-            Write-Output "Version input is either empty or does not start with '1.'"
+            Write-Output "skip uploading since version input is either empty or does not start with '1.'"
           }
 
       - name: Upload to Azure Storage
