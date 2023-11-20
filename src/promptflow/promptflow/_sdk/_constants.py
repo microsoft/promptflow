@@ -73,6 +73,13 @@ VIS_PORTAL_URL_TMPL = (
     "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
 
+# Tool meta info
+UIONLY_HIDDEN = "uionly_hidden"
+SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
+ICON_DARK = "icon_dark"
+ICON_LIGHT = "icon_light"
+ICON = "icon"
+
 
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
