@@ -36,5 +36,5 @@ class TestUtils:
 
     def test_forbidden_new_caller(self):
         with pytest.raises(UserErrorException) as e:
-            FlowServiceCaller(MagicMock(), MagicMock())
+            FlowServiceCaller(MagicMock(), MagicMock(), MagicMock())
         assert "_FlowServiceCallerFactory" in str(e.value)
