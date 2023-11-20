@@ -111,41 +111,50 @@ class RunOperations(TelemetryMixin):
         )
 
     @monitor_operation(activity_name="pf.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, name: Union[str, Run]) -> Run:
+    def stream(self, name: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
 
         :param name: Name of the run, or run object.
         :type name: Union[str, ~promptflow.sdk.entities.Run]
+        :param raise_on_error: Raises an exception if an error is encountered. By default we raise.
+        :type raise_on_error: bool
         :return: Run object.
         :rtype: ~promptflow.entities.Run
         """
-        name = Run._validate_and_return_run_name(name)
-        run = self.get(name=name)
-        local_storage = LocalStorageOperations(run=run)
-
-        file_handler = sys.stdout
         try:
-            printed = 0
-            run = self.get(run.name)
-            while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
+            name = Run._validate_and_return_run_name(name)
+            run = self.get(name=name)
+            local_storage = LocalStorageOperations(run=run)
+
+            file_handler = sys.stdout
+            try:
+                printed = 0
+                run = self.get(run.name)
+                while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
+                    file_handler.flush()
+                    available_logs = local_storage.logger.get_logs()
+                    printed = incremental_print(available_logs, printed, file_handler)
+                    time.sleep(10)
+                    run = self.get(run.name)
+                # ensure all logs are printed
                 file_handler.flush()
                 available_logs = local_storage.logger.get_logs()
-                printed = incremental_print(available_logs, printed, file_handler)
-                time.sleep(10)
-                run = self.get(run.name)
-            # ensure all logs are printed
-            file_handler.flush()
-            available_logs = local_storage.logger.get_logs()
-            incremental_print(available_logs, printed, file_handler)
-            self._print_run_summary(run)
-            # print error message when run is failed
-            if run.status == RunStatus.FAILED:
-                error_message = local_storage.load_exception()["message"]
+                incremental_print(available_logs, printed, file_handler)
+                self._print_run_summary(run)
+                # print error message when run is failed
+                if run.status == RunStatus.FAILED:
+                    error_message = local_storage.load_exception()["message"]
+                    print_red_error(error_message)
+            except KeyboardInterrupt:
+                error_message = "The output streaming for the run was interrupted, but the run is still executing."
+                print(error_message)
+            return run
+        except Exception as e:  # pylint: disable=broad-except
+            if raise_on_error:
+                raise e
+            else:
+                error_message = f"Got internal error when streaming run {name!r}: {str(e)}"
                 print_red_error(error_message)
-        except KeyboardInterrupt:
-            error_message = "The output streaming for the run was interrupted, but the run is still executing."
-            print(error_message)
-        return run
 
     @monitor_operation(activity_name="pf.runs.archive", activity_type=ActivityType.PUBLICAPI)
     def archive(self, name: Union[str, Run]) -> Run:
