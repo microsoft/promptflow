@@ -12,6 +12,7 @@ from typing import Union
 from promptflow._core.tool_meta_generator import _parse_tool_from_function, asdict_without_none, is_tool
 from promptflow._core.tools_manager import collect_package_tools
 from promptflow._sdk._constants import ICON, ICON_DARK, ICON_LIGHT
+from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow.contracts.multimedia import Image
 from promptflow.exceptions import UserErrorException
@@ -165,6 +166,7 @@ class ToolOperations:
         image_url = convert_multimedia_data_to_base64(icon_image, with_type=True)
         return image_url
 
+    @monitor_operation(activity_name="pf.tools.list", activity_type=ActivityType.PUBLICAPI)
     def list(
         self,
         flow: Union[str, PathLike] = None,
