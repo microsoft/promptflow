@@ -92,6 +92,11 @@ if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
 sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+# Copy 404 files.
+[string] $404Path = [System.IO.Path]::Combine($DocPath, "404.html")
+[string] $Raw404Path = [System.IO.Path]::Combine($DocPath, "raw404.html")
+Copy-Item -Path $404Path -Destination $OutPath -Force
+Copy-Item -Path $Raw404Path -Destination $OutPath -Force
 $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"
