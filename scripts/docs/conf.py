@@ -79,7 +79,7 @@ html_show_sourcelink = False
 json_url = "https://raw.githubusercontent.com/microsoft/promptflow/brynn/add-version-filter/scripts/docs/_static/switcher.json"
 
 # Define the version we use for matching in the version switcher.
-version_match = os.environ.get("READTHEDOCS_VERSION") or "Python"
+version_match = os.environ.get("DOC_VERSION") or "JavaScript"
 
 html_theme_options = {
     "github_url": "https://github.com/microsoft/promptflow",

@@ -45,7 +45,7 @@ window.onload = () => {
     };
 };
 
-if (window.location.pathname === "/promptflow/" || window.location.pathname === "/promptflow/index.html") {
+if (DOCUMENTATION_OPTIONS.pagename === "index") {
   // This is used to control homepage background
   let observer = new MutationObserver(function(mutations) {
     const dark = document.documentElement.dataset.theme == 'dark';
