@@ -13,6 +13,7 @@ import yaml
 
 from promptflow.exceptions import ErrorTarget
 
+from .._constants import FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
@@ -541,12 +542,6 @@ class NodeVariants:
         return NodeVariants(default_variant_id=data.get("default_variant_id", ""), variants=variants)
 
 
-class FlowLanguage(str, Enum):
-    """The enum of tool source type."""
-
-    Python = "python"
-
-
 @dataclass
 class Flow:
     """This class represents a flow.
@@ -576,7 +571,7 @@ class Flow:
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
-    program_language: FlowLanguage = FlowLanguage.Python
+    program_language: str = FlowLanguage.Python
 
     def serialize(self):
         """Serialize the flow to a dict.

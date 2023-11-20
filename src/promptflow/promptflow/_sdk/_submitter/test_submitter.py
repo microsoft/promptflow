@@ -20,7 +20,6 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.contracts.flow import Flow as ExecutableFlow
-from promptflow.contracts.flow import FlowLanguage
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -41,15 +40,6 @@ class TestSubmitter:
         from .._pf_client import PFClient
 
         self._client = client if client else PFClient()
-
-        # TODO: refactor this after we determine where to put tool metadata generation logic
-        if flow._dag.get("language", FlowLanguage.Python) == FlowLanguage.Python:
-            from promptflow.executor import FlowExecutor
-
-            self._executor_creation_func = FlowExecutor.create
-            self._get_connection_func = SubmitterHelper.resolve_connections
-        else:
-            raise UserErrorException(f"Unsupported language {flow.language}")
 
     @property
     def dataplane_flow(self):
@@ -173,9 +163,10 @@ class TestSubmitter:
         stream_output: bool = True,
     ):
         from promptflow._constants import LINE_NUMBER_KEY
+        from promptflow.executor import FlowExecutor
 
         if not connections:
-            connections = self._get_connection_func(flow=self.flow, client=self._client)
+            connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         credential_list = ConnectionManager(connections).get_secret_list()
 
         # resolve environment variables
@@ -189,7 +180,7 @@ class TestSubmitter:
             credential_list=credential_list,
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            flow_executor = self._executor_creation_func(
+            flow_executor = FlowExecutor.create(
                 self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
             )
             flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
