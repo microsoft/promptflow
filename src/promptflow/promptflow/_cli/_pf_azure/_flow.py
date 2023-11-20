@@ -21,6 +21,7 @@ from promptflow._cli._utils import (
     _output_result_list_with_format,
     _set_workspace_argument_for_subparsers,
     activate_action,
+    exception_handler,
 )
 from promptflow._sdk._constants import get_list_view_type
 
@@ -178,6 +179,7 @@ def _get_flow_operation(subscription_id, resource_group, workspace_name):
     return pf_client._flows
 
 
+@exception_handler("Create flow")
 def create_flow(args: argparse.Namespace):
     """Create a flow for promptflow."""
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
@@ -191,6 +193,7 @@ def create_flow(args: argparse.Namespace):
     )
 
 
+@exception_handler("Show flow")
 def show_flow(args: argparse.Namespace):
     """Get a flow for promptflow."""
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
