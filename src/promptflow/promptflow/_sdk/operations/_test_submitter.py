@@ -14,7 +14,7 @@ from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import Flow, FlowContext
-from promptflow._sdk.operations._flow_conext_resolver import FlowContextResolver
+from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
 from promptflow._utils.context_utils import _change_working_dir
