@@ -4,77 +4,117 @@
 This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
-In this document, we will walk you through the steps to share your flows in Prompt Flow Gallery. This needs to register your flow as a model with specific flow metadata in an organization registry. Once completed, the model will be shown as a flow example in Prompt Flow Gallery on the workspace portal page.
+In this document, we will walk you through the steps to share your flows in Prompt Flow Gallery. This needs to register your flow as a model with specific flow metadata in [azureml registry](https://ml.azure.com/registries/azureml/models?tid=72f988bf-86f1-41af-91ab-2d7cd011db47). Once completed, the model will be shown as a flow example in Prompt Flow Gallery on the workspace portal page.
 
-## Registering your flow in AzureML Registry
+## Passing CELA review of your flow
+
+As your flow needs to be registered in system registry and shared globally, it requires a CELA pass review. Please contact PM: chenjieting@microsoft.com to go through the CELA review process.
+
+## Preparing your flow for sharing
 
 ### Creating a `README.md` file for your flow
 
-To make the flow easily understandable, include a `README.md` file in the flow folder explaining how to use it. The README may contain the following sections:
-1. The purpose of the flow.
-2. The tools utilized in the flow.
-3. The prerequisites required to execute the flow.
-4. The knowledge that can be acquired from this flow.
-5. The execution process of the flow.
-6. Any additional information about your flow.
+To make the flow easily understandable, include a `README.md` file in the flow folder explaining how to use it. The README might contain the following sections:
+- The purpose of the flow.
+- The tools utilized in the flow.
+- The prerequisites required to execute the flow.
+- The knowledge that can be acquired from this flow.
+- Any additional information about your flow.
 
-See this [example README](https://github.com/microsoft/promptflow/blob/main/examples/flows/chat/chat-with-wikipedia/README.md) with sections addressing points 1 to 5. A well-written README improves discoverability and enables collaboration.
+Refer to [this example README](https://github.com/Azure/promptflow/blob/main/examples/ask_wikipedia/README.md) with sections addressing points 1 to 4. A well-written README improves discoverability and encourages collaboration.
 
-### Preparing flow metadata for gallery display
+### Uploading your flow to an azure blob container
 
-To registry the flow as a model in registry, we need to prepare a model yaml file with some flow metadata. Here, we will primarily focus on the properties related to the UI display of this flow. For more details on other model fields, please refer to [model yaml schema](https://learn.microsoft.com/en-us/azure/machine-learning/reference-yaml-model?view=azureml-api-2). Below is a `model.yml` template for the flow:
+1. Prepare an azure blob container (e.g.: models) with 'anonymous read access for containser and blobs' level, e.g.:
 
-```yaml
-$schema: https://azuremlschemas.azureedge.net/latest/model.schema.json
-name: <model_name>
-type: custom_model
-path: <the relative path from this model file to the flow folder>
-description: <model_description>
-version: <model_version>
-properties:
-  is-promptflow: true
-  azureml.promptflow.section: gallery
-  azureml.promptflow.type: <flow_type>
-  azureml.promptflow.name: <flow_name>
-  azureml.promptflow.description: <flow_description>
+![blob storage access](../../media/cloud/azureml/flow_sharing/blob_storage_access.png)
+
+2. Upload your flow to the azure blob container with version info in the path, e.g.:
+
+![flow path in azure blob](../../media/cloud/azureml/flow_sharing/flow_path_in_azure_blob.png)
+
+> [!Note] When you want to update your flow after it has been published, please create a new version folder (e.g.: v2) to hold the updated flow.
+
+### Preparing a PR to [azrueml-assets GitHub repo](https://github.com/Azure/azureml-assets/tree/main/assets/promptflow/models)
+
+Please refer [this PR](https://github.com/Azure/azureml-assets/pull/1673/files) to update an existing prompflow model or add a new promptflow model
+
+#### Add a new promptflow model:
+1. Create a folder under [this path](https://github.com/Azure/azureml-assets/tree/main/assets/promptflow/models), and in this foler it will contain below 4 files:
+
+![model folder in azure assets repo](../../media/cloud/azureml/flow_sharing/model_folder_in_azureml_assets_repo.png)
+
+2. Require changes to model.yaml:
+
+![model yaml](../../media/cloud/azureml/flow_sharing/model_yaml_in_azure_assets_repo.png)
+
+```yml
+container_name: the azure blob container name
+container_path: the path to your flow
+storage_name: the storage name
+```
+  
+3. Require changes to spec.yaml:
+
+![spec yaml](../../media/cloud/azureml/flow_sharing/spec_yaml_in_azure_assets_repo.png)
+
+```yml
+name: provide a name for your promptflow model
+azureml.promptflow.type: value can be `chat`, `standard` or `evaluate`. This property identifies the type of your flow, and UI will display flows with  `evaluate` value under the 'Evaluation' tab, and display flows with other values under the 'Flow' tab.
+azureml.promptflow.name: the name of the flow which will be shown as the flow name in the Flow Gallery.
+azureml.promptflow.description: the description of the flow which will be shown as flow description in the Flow Gallery.
+version: the current version for your promptflow model.
 ```
 
-Properties related to the UI display of this flow include:
-1. `is-promptflow`: value should always be `true`. This property differentiates it from other models, enabling promptflow service to filter it out.
-2. `azureml.promptflow.section`: value should always be `gallery`. This property indicates UI that this flow needs to be shown in the Flow Gallery.
-3. `azureml.promptflow.type`: value can be `chat`, `standard` or `evaluate`. This property identifies the type of your flow, and UI will display flows with  `evaluate` value under the 'Evaluation' tab, and display flows with other values under the 'Flow' tab.
-4. `azureml.promptflow.name`: the name of the flow which will be shown as the flow name in the Flow Gallery.
-5. `azureml.promptflow.description`: the description of the flow which will be shown as flow description in the Flow Gallery.
+4. Require change to description.md: need to change the model description, sample inputs and outputs part
 
-Take [this existing flow](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-wikipedia) as an example, the `model.yml` for it will look like below:
-```yaml
-$schema: https://azuremlschemas.azureedge.net/latest/model.schema.json
-name: chat-with-wikipedia-in-org
-type: custom_model
-path: chat_with_wikipedia
-description: promptflow flow registered as a custom model
-version: 1
-properties:
-  is-promptflow: true
-  azureml.promptflow.section: gallery
-  azureml.promptflow.type: chat
-  azureml.promptflow.name: Chat with Wikipedia in Org
-  azureml.promptflow.description: ChatGPT-based chatbot that leverages Wikipedia data to ground the responses.
-```
+![description md](../../media/cloud/azureml/flow_sharing/description_in_azureml_assets_repo.png)
 
-### Register the model in an organization registry
+5. Keep the asset.yaml as it is
 
- Run the command below to register the flow as a model to an organization registry. More details about [registry creation](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-manage-registries?view=azureml-api-2&tabs=studio#create-a-registry) and [model creation](https://learn.microsoft.com/en-us/cli/azure/ml/model?view=azure-cli-latest#az-ml-model-create):
-```
-az ml model create -f model.yml --registry-name <organization-registry-name>
-```
+6. When the PR is ready, please send it to [azureml-assets channel](https://teams.microsoft.com/l/channel/19%3aeb1edc86fc204c07bc767b7bd7c8b091%40thread.tacv2/System%2520Registry%2520Assets?groupId=9afd1b1e-79ba-4975-9d50-912f53962917&tenantId=72f988bf-86f1-41af-91ab-2d7cd011db47) to ask approve and merge
+
+#### Update an existing promptflow model:
+
+1. Change the container_path to include your new updated flow:
+
+![update container path](../../media/cloud/azureml/flow_sharing/update_container_path_in_azureml_assets.png)
+  
+2. Change the model version by increasing it by 1:
+
+![update model version](../../media/cloud/azureml/flow_sharing/update_model_version_in_azureml_assets.png)
+
+1. When the PR is ready, please send it to [azureml-assets channel](https://teams.microsoft.com/l/channel/19%3aeb1edc86fc204c07bc767b7bd7c8b091%40thread.tacv2/System%2520Registry%2520Assets?groupId=9afd1b1e-79ba-4975-9d50-912f53962917&tenantId=72f988bf-86f1-41af-91ab-2d7cd011db47) to ask approve and merge
+
+### Preparing a PR to [azrueml asset ADO repo](https://msdata.visualstudio.com/Vienna/_git/azureml-asset?version=GBmain)
+
+> [!Note] This step is only required when there is new promptflow models added, please skip this step when you only update existing promptflow models.
+- Please refer [this PR](https://msdata.visualstudio.com/Vienna/_git/azureml-asset/pullrequest/1201381?_a=files) to add the new added promptflow model names to azureml-dev.yml, azureml-staging.yml and azureml.yml.
+- Send the PR to [azureml-assets channel](https://teams.microsoft.com/l/channel/19%3aeb1edc86fc204c07bc767b7bd7c8b091%40thread.tacv2/System%2520Registry%2520Assets?groupId=9afd1b1e-79ba-4975-9d50-912f53962917&tenantId=72f988bf-86f1-41af-91ab-2d7cd011db47) to ask approve and merge
+
+## Registering your flow in AzureML Registry
+
+### Trigger [AzureML-Assets-Unified](https://dev.azure.com/msdata/Vienna/_build?definitionId=25490&_a=summary) to only build the new added models and the updated models
+1. Refer [this build](https://dev.azure.com/msdata/Vienna/_build/results?buildId=105308431&view=results)
+2. Pay attention to the pattern variable for this pipeline, use it to only build models that you want to release:
+
+![pattern value](../../media/cloud/azureml/flow_sharing/pattern_value_in_build_pipeline.png)
+
+### Trigger [AzureML-Assets-CD-Unified](https://dev.azure.com/msdata/Vienna/_release?definitionId=2346&view=mine&_a=releases) using the build from last step to release the updated models
+1. Refer [this release](https://dev.azure.com/msdata/Vienna/_releaseProgress?_a=release-pipeline-progress&releaseId=1197564)
+2. For the stage which needs ame approve, just ping your manager to get an approval.
+
+## Adding your promptflow model names into the promptflow gallery exampels allowlist
+> [!Note] This step is only required when there is new promptflow models added, please skip this step when you only update existing promptflow models.
+
+Please contact PM: chenjieting@microsoft.com to help added your new promptflow model names into the promptflow gallery examples allow list.
 
 ## Locate the flow in the Flow Gallery
 
-- Open a workspace in a region supported by the organization registry.
+- Open a workspace.
 - Click the `Create` button to open the Flow Gallery, and you can find the flow registered before:
 
-![organization examples in flow gallery](../../media/cloud/azureml/org_examples_in_flow_gallery.png)
+![organization examples in flow gallery](../../media/cloud/azureml/flow_sharing/org_examples_in_flow_gallery.png)
 
 1. `azureml.promptflow.type`: flows with  `evaluate` value will be displayed under the 'Evaluation' tab, while flows with other values will appear under the 'Flow' tab.
 2. `azureml.promptflow.name`: shown as flow name in the flow card.
