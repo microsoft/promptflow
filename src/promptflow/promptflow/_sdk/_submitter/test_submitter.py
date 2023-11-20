@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # this file is a middle layer between the local SDK and executor.
+import asyncio
 import contextlib
 import logging
 import re
@@ -411,3 +412,79 @@ class TestSubmitter:
     def _get_generator_outputs(outputs):
         outputs = outputs or {}
         return {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}
+
+
+class TestSubmitterViaProxy(TestSubmitter):
+    def __init__(self, flow: Flow, flow_context: FlowContext, client=None):
+        super().__init__(flow, flow_context, client)
+
+    def flow_test(
+        self,
+        inputs: Mapping[str, Any],
+        environment_variables: dict = None,
+        stream_log: bool = True,
+        allow_generator_output: bool = False,
+        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+        stream_output: bool = True,
+    ):
+
+        from promptflow._constants import LINE_NUMBER_KEY
+        from promptflow.batch._csharp_executor_proxy import CsharpExecutorProxy
+
+        if not connections:
+            connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
+                tools_meta=CsharpExecutorProxy.generate_tool_metadata(
+                    flow_dag=self.flow.dag,
+                    working_dir=self.flow.code,
+                )
+            )
+        credential_list = ConnectionManager(connections).get_secret_list()
+
+        # resolve environment variables
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
+        environment_variables = environment_variables if environment_variables else {}
+        SubmitterHelper.init_env(environment_variables=environment_variables)
+
+        with LoggerOperations(
+            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+            stream=stream_log,
+            credential_list=credential_list,
+        ):
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            flow_executor = CsharpExecutorProxy.create(
+                flow_file=self.flow.path,
+                working_dir=self.flow.code,
+                connections=connections,
+                storage=storage,
+                # raise_ex=False
+            )
+            # flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
+
+            loop = asyncio.get_event_loop()
+            line_result = loop.run_until_complete(
+                flow_executor.exec_line_async(
+                    inputs,
+                    index=0,
+                    # allow_generator_output=allow_generator_output
+                )
+            )
+            print(str(line_result))
+            line_result.output = persist_multimedia_data(
+                line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+            )
+            if line_result.aggregation_inputs:
+                # Convert inputs of aggregation to list type
+                flow_inputs = {k: [v] for k, v in inputs.items()}
+                aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+                aggregation_results = flow_executor.exec_aggregation_async(
+                    flow_inputs, aggregation_inputs=aggregation_inputs
+                )
+                line_result.node_run_infos.update(aggregation_results.node_run_infos)
+                line_result.run_info.metrics = aggregation_results.metrics
+            if isinstance(line_result.output, dict):
+                # Remove line_number from output
+                line_result.output.pop(LINE_NUMBER_KEY, None)
+                generator_outputs = self._get_generator_outputs(line_result.output)
+                if generator_outputs:
+                    logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+            return line_result

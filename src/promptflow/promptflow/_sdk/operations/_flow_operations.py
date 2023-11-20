@@ -127,6 +127,33 @@ class FlowOperations(TelemetryMixin):
         inputs = inputs or {}
         flow = load_flow(flow)
         flow.context.variant = variant
+        from promptflow._constants import FlowLanguage
+        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+
+        if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.Csharp:
+            with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
+                is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
+                flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
+                    node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
+                )
+
+                if node:
+                    return submitter.node_test(
+                        node_name=node,
+                        flow_inputs=flow_inputs,
+                        dependency_nodes_outputs=dependency_nodes_outputs,
+                        environment_variables=environment_variables,
+                        stream=True,
+                    )
+                else:
+                    return submitter.flow_test(
+                        inputs=flow_inputs,
+                        environment_variables=environment_variables,
+                        stream_log=stream_log,
+                        stream_output=stream_output,
+                        allow_generator_output=allow_generator_output and is_chat_flow,
+                    )
+
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
             flow_inputs, dependency_nodes_outputs = submitter.resolve_data(

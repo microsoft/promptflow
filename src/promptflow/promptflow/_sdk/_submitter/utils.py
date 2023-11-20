@@ -197,6 +197,10 @@ class SubmitterHelper:
             executable=executable, client=client, connections_to_ignore=connections_to_ignore
         )
 
+    @staticmethod
+    def resolve_connection_names_from_tool_meta(tools_meta: dict):
+        return []
+
     @classmethod
     def resolve_environment_variables(cls, environment_variables: dict, client=None):
         from .._pf_client import PFClient

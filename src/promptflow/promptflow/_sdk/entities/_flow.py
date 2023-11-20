@@ -127,7 +127,7 @@ class Flow(FlowBase):
         self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
         self._content_hash = kwargs.pop("content_hash", None)
-        self._dag = yaml.safe_load(self.path.read_text(encoding=DEFAULT_ENCODING))
+        self.dag = yaml.safe_load(self.path.read_text(encoding=DEFAULT_ENCODING))
         super().__init__(**kwargs)
 
     @property
