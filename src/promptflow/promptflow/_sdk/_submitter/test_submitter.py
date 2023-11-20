@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # this file is a middle layer between the local SDK and executor.
-import asyncio
 import contextlib
 import logging
 import re
@@ -456,19 +455,12 @@ class TestSubmitterViaProxy(TestSubmitter):
                 working_dir=self.flow.code,
                 connections=connections,
                 storage=storage,
-                # raise_ex=False
             )
-            # flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
 
-            loop = asyncio.get_event_loop()
-            line_result = loop.run_until_complete(
-                flow_executor.exec_line_async(
-                    inputs,
-                    index=0,
-                    # allow_generator_output=allow_generator_output
-                )
+            line_result = flow_executor.exec_line(
+                inputs,
+                index=0,
             )
-            print(str(line_result))
             line_result.output = persist_multimedia_data(
                 line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
             )
