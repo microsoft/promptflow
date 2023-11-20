@@ -40,7 +40,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
+from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
@@ -644,69 +644,78 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, run: Union[str, Run]) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream the logs of a run.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
+        :param raise_on_error: Raises an exception if an error is encountered. By default we raise.
+        :type raise_on_error: bool
         :return: The run object
         :rtype: ~promptflow.entities.Run
         """
-        run = self.get(run=run)
-        # TODO: maybe we need to make this configurable
-        file_handler = sys.stdout
-        # different from Azure ML job, flow job can run very fast, so it might not print anything;
-        # use below variable to track this behavior, and at least print something to the user.
         try:
-            printed = 0
-            stream_count = 0
-            start = time.time()
-            while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
+            run = self.get(run=run)
+            # TODO: maybe we need to make this configurable
+            file_handler = sys.stdout
+            # different from Azure ML job, flow job can run very fast, so it might not print anything;
+            # use below variable to track this behavior, and at least print something to the user.
+            try:
+                printed = 0
+                stream_count = 0
+                start = time.time()
+                while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
+                    file_handler.flush()
+                    stream_count += 1
+                    # print prompt every 3 times, in case there is no log printed
+                    if stream_count % 3 == 0:
+                        # print prompt every 3 times
+                        file_handler.write(f"(Run status is {run.status!r}, continue streaming...)\n")
+
+                    # if the run is not started for 5 minutes, print an error message and break the loop
+                    if run.status == RunStatus.NOT_STARTED:
+                        current = time.time()
+                        if current - start > 300:
+                            file_handler.write(
+                                f"The run {run.name!r} is in status 'NotStarted' for 5 minutes, streaming is stopped."
+                                "Please make sure you are using the latest runtime.\n"
+                            )
+                            break
+
+                    available_logs = self._get_log(flow_run_id=run.name)
+                    printed = incremental_print(available_logs, printed, file_handler)
+                    time.sleep(10)
+                    run = self.get(run=run.name)
+                # ensure all logs are printed
                 file_handler.flush()
-                stream_count += 1
-                # print prompt every 3 times, in case there is no log printed
-                if stream_count % 3 == 0:
-                    # print prompt every 3 times
-                    file_handler.write(f"(Run status is {run.status!r}, continue streaming...)\n")
-
-                # if the run is not started for 5 minutes, print an error message and break the loop
-                if run.status == RunStatus.NOT_STARTED:
-                    current = time.time()
-                    if current - start > 300:
-                        file_handler.write(
-                            f"The run {run.name!r} is in status 'NotStarted' for 5 minutes, streaming is stopped."
-                            "Please make sure you are using the latest runtime.\n"
-                        )
-                        break
-
                 available_logs = self._get_log(flow_run_id=run.name)
-                printed = incremental_print(available_logs, printed, file_handler)
-                time.sleep(10)
-                run = self.get(run=run.name)
-            # ensure all logs are printed
-            file_handler.flush()
-            available_logs = self._get_log(flow_run_id=run.name)
-            incremental_print(available_logs, printed, file_handler)
+                incremental_print(available_logs, printed, file_handler)
 
-            file_handler.write("======= Run Summary =======\n")
-            duration = None
-            if run._start_time and run._end_time:
-                duration = str(run._end_time - run._start_time)
-            file_handler.write(
-                f'Run name: "{run.name}"\n'
-                f'Run status: "{run.status}"\n'
-                f'Start time: "{run._start_time}"\n'
-                f'Duration: "{duration}"\n'
-                f'Run url: "{self._get_run_portal_url(run_id=run.name)}"'
-            )
-            # won't print error here, put it in run dict
-        except KeyboardInterrupt:
-            error_message = (
-                "The output streaming for the flow run was interrupted.\n"
-                "But the run is still executing on the cloud.\n"
-            )
-            print(error_message)
-        return run
+                file_handler.write("======= Run Summary =======\n")
+                duration = None
+                if run._start_time and run._end_time:
+                    duration = str(run._end_time - run._start_time)
+                file_handler.write(
+                    f'Run name: "{run.name}"\n'
+                    f'Run status: "{run.status}"\n'
+                    f'Start time: "{run._start_time}"\n'
+                    f'Duration: "{duration}"\n'
+                    f'Run url: "{self._get_run_portal_url(run_id=run.name)}"'
+                )
+                # won't print error here, put it in run dict
+            except KeyboardInterrupt:
+                error_message = (
+                    "The output streaming for the flow run was interrupted.\n"
+                    "But the run is still executing on the cloud.\n"
+                )
+                print(error_message)
+            return run
+        except Exception as e:  # pylint: disable=broad-except
+            if raise_on_error:
+                raise e
+            else:
+                error_message = f"Got internal error when streaming run: {str(e)}"
+                print_red_error(error_message)
 
     def _resolve_data_to_asset_id(self, run: Run):
         from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri

@@ -153,7 +153,7 @@ class RunOperations(TelemetryMixin):
             if raise_on_error:
                 raise e
             else:
-                error_message = f"Got internal error when streaming run {name!r}: {str(e)}"
+                error_message = f"Got internal error when streaming run: {str(e)}"
                 print_red_error(error_message)
 
     @monitor_operation(activity_name="pf.runs.archive", activity_type=ActivityType.PUBLICAPI)

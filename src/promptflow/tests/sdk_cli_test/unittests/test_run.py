@@ -11,7 +11,7 @@ import yaml
 from marshmallow import ValidationError
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, NODES
-from promptflow._sdk._errors import InvalidFlowError
+from promptflow._sdk._errors import InvalidFlowError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
@@ -203,3 +203,13 @@ class TestRun:
         # assert non english in memory
         outputs = local_storage.load_outputs()
         assert outputs == {"output": ["Hello 123 日本語", "World 123 日本語"]}
+
+    def test_stream_raise_on_error(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
+        name = str(uuid.uuid4())
+        # raise_on_error=True (by default), raise exception
+        with pytest.raises(RunNotFoundError):
+            pf.stream(run=name)
+        # raise_on_error=False, error message printed
+        pf.stream(run=name, raise_on_error=False)
+        out, _ = capfd.readouterr()
+        assert f"Got internal error when streaming run: Run name {name!r} cannot be found." in out

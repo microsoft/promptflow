@@ -1,6 +1,6 @@
 import pytest
 
-from promptflow._sdk._errors import RunOperationParameterError
+from promptflow._sdk._errors import InvalidRunError, RunOperationParameterError
 from promptflow.azure import PFClient
 
 
@@ -47,3 +47,14 @@ class TestPFClientAzure:
                 resource_group="fake_resource_group",
                 workspace_name="fake_workspace_name",
             )
+
+    def test_stream_raise_on_error(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
+        name = dict()  # use a dict to trigger exception
+        # raise_on_error=True (by default), raise exception
+        with pytest.raises(InvalidRunError):
+            pf.stream(run=name)
+        # raise_on_error=False, error message printed
+        pf.stream(run=name, raise_on_error=False)
+        out, _ = capfd.readouterr()
+        assert "Got internal error when streaming run" in out
+        assert "expected 'str' or 'Run' object but got <class 'dict'>." in out

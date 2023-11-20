@@ -942,13 +942,3 @@ class TestFlowRun:
             assert Path(input_image_path).is_absolute()
             output_image_path = details["outputs.output"][i]["data:image/png;path"]
             assert Path(output_image_path).is_absolute()
-
-    def test_stream_raise_on_error(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
-        name = str(uuid.uuid4())
-        # raise_on_error=True (by default), raise exception
-        with pytest.raises(RunNotFoundError):
-            pf.stream(run=name)
-        # raise_on_error=False, error message printed
-        pf.stream(run=name, raise_on_error=False)
-        out, _ = capfd.readouterr()
-        assert f"Got internal error when streaming run {name!r}: Run name {name!r} cannot be found." in out
