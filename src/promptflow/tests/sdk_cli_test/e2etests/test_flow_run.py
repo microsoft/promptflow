@@ -10,7 +10,13 @@ import pytest
 from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames, RunStatus
-from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError, RunExistsError, RunNotFoundError
+from promptflow._sdk._errors import (
+    ConnectionNotFoundError,
+    InvalidFlowError,
+    InvalidRunStatusError,
+    RunExistsError,
+    RunNotFoundError,
+)
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import _get_additional_includes
@@ -60,14 +66,14 @@ def create_run_against_run(client, run: Run) -> Run:
     )
 
 
-def assert_run_with_invalid_column_mapping(client: PFClient, run: Run, capfd: pytest.CaptureFixture) -> None:
+def assert_run_with_invalid_column_mapping(client: PFClient, run: Run) -> None:
     assert run.status == RunStatus.FAILED
 
     expected_error_message = "The input for batch run is incorrect. Couldn't find these mapping relations"
 
-    client.stream(run.name)
-    out, _ = capfd.readouterr()
-    assert expected_error_message in out
+    with pytest.raises(InvalidRunStatusError) as e:
+        client.stream(run.name)
+    assert expected_error_message in str(e)
 
     local_storage = LocalStorageOperations(run)
     assert os.path.exists(local_storage._exception_path)
@@ -342,7 +348,7 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=run_name)
 
-    def test_referenced_output_not_exist(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
+    def test_referenced_output_not_exist(self, pf: PFClient) -> None:
         # failed run won't generate output
         failed_run = pf.run(
             flow=f"{FLOWS_DIR}/failed_flow",
@@ -357,7 +363,7 @@ class TestFlowRun:
             flow=f"{FLOWS_DIR}/failed_flow",
             column_mapping={"text": "${run.outputs.text}"},
         )
-        assert_run_with_invalid_column_mapping(pf, run, capfd)
+        assert_run_with_invalid_column_mapping(pf, run)
 
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
@@ -665,12 +671,7 @@ class TestFlowRun:
         additional_includes = _get_additional_includes(snapshot_path / "flow.dag.yaml")
         assert not additional_includes
 
-    def test_input_mapping_source_not_found_error(
-        self,
-        azure_open_ai_connection: AzureOpenAIConnection,
-        pf: PFClient,
-        capfd: pytest.CaptureFixture,
-    ):
+    def test_input_mapping_source_not_found_error(self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient):
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -680,7 +681,7 @@ class TestFlowRun:
             column_mapping={"not_exist": "${data.not_exist_key}"},
             name=name,
         )
-        assert_run_with_invalid_column_mapping(pf, run, capfd)
+        assert_run_with_invalid_column_mapping(pf, run)
 
     def test_input_mapping_with_dict(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -942,3 +943,16 @@ class TestFlowRun:
             assert Path(input_image_path).is_absolute()
             output_image_path = details["outputs.output"][i]["data:image/png;path"]
             assert Path(output_image_path).is_absolute()
+
+    def test_stream_raise_on_error_false(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
+        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=data_path,
+            column_mapping={"not_exist": "${data.not_exist_key}"},
+            name=str(uuid.uuid4()),
+        )
+        # raise_on_error=False, will print error message in stdout
+        pf.stream(run.name, raise_on_error=False)
+        out, _ = capfd.readouterr()
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in out

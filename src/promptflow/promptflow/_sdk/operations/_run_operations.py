@@ -111,11 +111,13 @@ class RunOperations(TelemetryMixin):
         )
 
     @monitor_operation(activity_name="pf.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, name: Union[str, Run]) -> Run:
+    def stream(self, name: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
 
         :param name: Name of the run, or run object.
         :type name: Union[str, ~promptflow.sdk.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails.
+        :type raise_on_error: bool
         :return: Run object.
         :rtype: ~promptflow.entities.Run
         """
@@ -138,13 +140,17 @@ class RunOperations(TelemetryMixin):
             available_logs = local_storage.logger.get_logs()
             incremental_print(available_logs, printed, file_handler)
             self._print_run_summary(run)
-            # print error message when run is failed
-            if run.status == RunStatus.FAILED:
-                error_message = local_storage.load_exception()["message"]
-                print_red_error(error_message)
         except KeyboardInterrupt:
             error_message = "The output streaming for the run was interrupted, but the run is still executing."
             print(error_message)
+
+        if run.status == RunStatus.FAILED:
+            error_message = local_storage.load_exception().get("message", "Run fails with unknown error.")
+            if raise_on_error:
+                raise InvalidRunStatusError(error_message)
+            else:
+                print_red_error(error_message)
+
         return run
 
     @monitor_operation(activity_name="pf.runs.archive", activity_type=ActivityType.PUBLICAPI)
