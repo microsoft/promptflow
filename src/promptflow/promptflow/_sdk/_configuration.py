@@ -11,7 +11,7 @@ from typing import Optional, Union
 
 import pydash
 
-from promptflow._sdk._constants import LOGGER_NAME, ConnectionProvider, HOME_PROMPT_FLOW_DIR, SERVICE_CONFIG_FILE
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, LOGGER_NAME, SERVICE_CONFIG_FILE, ConnectionProvider
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml, read_write_by_user
 from promptflow.exceptions import ErrorTarget, ValidationException
@@ -36,6 +36,7 @@ class Configuration(object):
     EXTENSION_EU_USER = "extension.eu_user"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
+    RUN_OUTPUT_PATH = "run.output_path"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -191,6 +192,10 @@ class Configuration(object):
             user_id = str(uuid.uuid4())
             self.set_config(key=self.INSTALLATION_ID, value=user_id)
             return user_id
+
+    def get_run_output_path(self) -> Optional[str]:
+        """Get the run output path in local."""
+        return self.get_config(key=self.RUN_OUTPUT_PATH)
 
     def _to_dict(self):
         return self._config

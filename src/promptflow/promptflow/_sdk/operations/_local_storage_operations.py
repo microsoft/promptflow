@@ -23,7 +23,6 @@ from promptflow._sdk._constants import (
     LOGGER_NAME,
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
-    get_run_output_path,
 )
 from promptflow._sdk._errors import BulkRunException
 from promptflow._sdk._utils import generate_flow_tools_json
@@ -181,7 +180,7 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def __init__(self, run: Run, stream=False, run_mode=RunMode.Test):
         self._run = run
-        self.path = self._prepare_folder(get_run_output_path(self._run))
+        self.path = self._prepare_folder(self._run._output_path)
 
         self.logger = LoggerOperations(
             file_path=self.path / LocalStorageFilenames.LOG, stream=stream, run_mode=run_mode
