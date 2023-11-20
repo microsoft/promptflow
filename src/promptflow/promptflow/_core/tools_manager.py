@@ -6,6 +6,7 @@ import importlib
 import importlib.util
 import inspect
 import logging
+import time
 import traceback
 import types
 from functools import partial
@@ -216,6 +217,8 @@ def retrieve_tool_func_result(
 
 
 def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
+    received_request_time = time.time()*1000
+    module_logger.warning(f"Tools_manager: received dynamic_list request: '{received_request_time}'")
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
@@ -225,11 +228,16 @@ def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dic
         func_sig_params, func_input_params_dict, ws_triple_dict
     )
     try:
+        start_time = time.time()*1000
         result = func(**combined_func_input_params)
+        end_time = time.time()*1000
+        module_logger.warning(f"Tools_manager: tool func execute time: '{end_time - start_time}', start_time: '{start_time}', end_time: '{end_time}'")
     except Exception as e:
         raise DynamicListError(f"Error when calling function {func_path}: {e}")
     # validate response is of required format. Throw correct message if response is empty.
     validate_dynamic_list_func_response_type(result, func.__name__)
+    validation_end_time = time.time()*1000
+    module_logger.warning(f"Tools_manager: validation end time: '{validation_end_time}'")
 
     return result
 

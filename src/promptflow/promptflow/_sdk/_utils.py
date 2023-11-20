@@ -20,6 +20,7 @@ from enum import Enum
 from os import PathLike
 from pathlib import Path
 from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
+import time
 
 import keyring
 import pydash
@@ -664,6 +665,8 @@ def _gen_dynamic_list(function_config: Dict) -> List:
     :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
     :return: a list of tool input dynamic enums.
     """
+    received_dynamic_list = time.time()*1000
+    print(f"utils: received dynamic request time: {received_dynamic_list}")
     func_path = function_config.get("func_path", "")
     func_kwargs = function_config.get("func_kwargs", {})
     # May call azure control plane api in the custom function to list Azure resources.
@@ -671,7 +674,11 @@ def _gen_dynamic_list(function_config: Dict) -> List:
     # TODO: move this method to a common place.
     from promptflow._cli._utils import get_workspace_triad_from_local
 
+    start_time = time.time()*1000
     workspace_triad = get_workspace_triad_from_local()
+    end_time = time.time()*1000
+    print(f"utils: get workspace triad: '{end_time - start_time}', start_time: '{start_time}', end_time: '{end_time}'")
+    
     if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
         return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
     # if no workspace triple available, just skip.
