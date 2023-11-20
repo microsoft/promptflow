@@ -26,7 +26,7 @@ git clone https://github.com/microsoft/promptflow.git
 ### Create custom tool package
 Run below command under the root folder to create your tool project quickly:
 ```
-python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name>
+python <promptflow github repo>\scripts\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name>
 ```
 For example:
 ```
@@ -69,7 +69,7 @@ hello-world-proj/
 
     > [!Note] If you create a new tool, don't forget to also create the corresponding tool YAML. You can run below command under your tool project to auto generate your tool YAML. You may want to specify `-n` for `name` and `-d` for `description`, which would be displayed as the tool name and tooltip in prompt flow UI. 
     ```
-    python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description>
+    python <promptflow github repo>\scripts\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description>
     ```
     For example:
     ```

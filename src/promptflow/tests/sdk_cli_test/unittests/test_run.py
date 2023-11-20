@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import copy
 import uuid
 from pathlib import Path
 from unittest.mock import patch
@@ -121,46 +122,53 @@ class TestRun:
         with pytest.raises(FileNotFoundError):
             pf.run(flow="invalid_path", data="fake_data", batch_run="fake_run")
 
-    def test_overwrite_variant(self, temp_output_dir):
-        # Create a temporary flow file
-        tmp_path = Path(temp_output_dir)
-        flow_file = tmp_path / "flow.yaml"
-        flow_file.write_text(
-            """
-nodes:
-  - name: node1
-    use_variants: true
-    variant_id: default
-    inputs:
-      param1: value1
-      param2: value2
-node_variants:
-  node1:
-    variants:
-      variant1:
-        node:
-          inputs:
-            param1: value1_variant1
-            param2: value2_variant1
-        """
-        )
-
-        # Test if function raises FileNotFoundError
-        with pytest.raises(FileNotFoundError):
-            overwrite_variant(tmp_path / "invalid_path", "node1", "variant1")
+    def test_overwrite_variant(self):
+        flow_dag = {
+            "nodes": [
+                {
+                    "name": "node1",
+                    "use_variants": True,
+                    "variant_id": "default",
+                    "inputs": {
+                        "param1": "value1",
+                        "param2": "value2",
+                    },
+                },
+            ],
+            "node_variants": {
+                "node1": {
+                    "default_variant_id": "variant1",
+                    "variants": {
+                        "variant1": {
+                            "node": {
+                                "inputs": {
+                                    "param1": "value1_variant1",
+                                    "param2": "value2_variant1",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
 
         # Test if function raises InvalidFlowError
         with pytest.raises(InvalidFlowError):
-            overwrite_variant(flow_file, "node3", "variant1")
+            overwrite_variant(flow_dag, "node3", "variant1")
         with pytest.raises(InvalidFlowError):
-            overwrite_variant(flow_file, "node1", "variant3")
+            overwrite_variant(flow_dag, "node1", "variant3")
 
         # Test if function overwrites variant correctly
-        overwrite_variant(flow_file, "node1", "variant1")
-        with open(flow_file, "r") as f:
-            flow_dag = yaml.safe_load(f)
-        assert flow_dag["nodes"][0]["inputs"]["param1"] == "value1_variant1"
-        assert flow_dag["nodes"][0]["inputs"]["param2"] == "value2_variant1"
+        dag = copy.deepcopy(flow_dag)
+        overwrite_variant(dag, "node1", "variant1")
+        assert dag["nodes"][0]["inputs"]["param1"] == "value1_variant1"
+        assert dag["nodes"][0]["inputs"]["param2"] == "value2_variant1"
+
+        # test overwrite default variant
+        dag = copy.deepcopy(flow_dag)
+        overwrite_variant(dag)
+        assert dag["nodes"][0]["inputs"]["param1"] == "value1_variant1"
+        assert dag["nodes"][0]["inputs"]["param2"] == "value2_variant1"
 
     @patch("promptflow._sdk.operations._run_operations.RunOperations.update")
     def test_submit(self, mock_update):

@@ -36,7 +36,23 @@ if __name__ == "__main__":
         "--icon",
         "-i",
         type=str,
-        help="your tool's icon image path, if not provided, the system will use the default icon.",
+        help="your tool's icon image path, if you need to show different icons in dark and light mode, \n"
+        "please use `icon-light` and `icon-dark` parameters. \n"
+        "If these icon parameters are not provided, the system will use the default icon.",
+        required=False)
+    parser.add_argument(
+        "--icon-light",
+        type=str,
+        help="your tool's icon image path for light mode, \n"
+        "if you need to show the same icon in dark and light mode, please use `icon` parameter. \n"
+        "If these icon parameters are not provided, the system will use the default icon.",
+        required=False)
+    parser.add_argument(
+        "--icon-dark",
+        type=str,
+        help="your tool's icon image path for dark mode, \n"
+        "if you need to show the same icon in dark and light mode, please use `icon` parameter. \n"
+        "If these icon parameters are not provided, the system will use the default icon.",
         required=False)
     parser.add_argument(
         "--category",
@@ -54,8 +70,23 @@ if __name__ == "__main__":
 
     icon = ""
     if args.icon:
+        if args.icon_light or args.icon_dark:
+            raise ValueError("You cannot provide both `icon` and `icon-light` or `icon-dark`.")
         from convert_image_to_data_url import check_image_type_and_generate_data_url  # noqa: E402
         icon = check_image_type_and_generate_data_url(args.icon)
+    elif args.icon_light or args.icon_dark:
+        if args.icon_light:
+            from convert_image_to_data_url import check_image_type_and_generate_data_url  # noqa: E402
+            if isinstance(icon, dict):
+                icon["light"] = check_image_type_and_generate_data_url(args.icon_light)
+            else:
+                icon = {"light": check_image_type_and_generate_data_url(args.icon_light)}
+        if args.icon_dark:
+            from convert_image_to_data_url import check_image_type_and_generate_data_url  # noqa: E402
+            if isinstance(icon, dict):
+                icon["dark"] = check_image_type_and_generate_data_url(args.icon_dark)
+            else:
+                icon = {"dark": check_image_type_and_generate_data_url(args.icon_dark)}
 
     if args.tool_type == "custom_llm":
         tools_dict = generate_custom_llm_tools_in_module_as_dict(

@@ -1,17 +1,18 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+# this file is a middle layer between the local SDK and executor, it'll have some similar logic with cloud PFS.
+
 import contextlib
 import os
-import shutil
 import tempfile
 from os import PathLike
 from pathlib import Path
 
-import yaml
 from dotenv import load_dotenv
 from pydash import objects
 
 from promptflow._sdk._constants import (
-    DAG_FILE_NAME,
-    DEFAULT_ENCODING,
     DEFAULT_VAR_ID,
     INPUTS,
     NODE,
@@ -33,26 +34,14 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow.contracts.flow import Flow as ExecutableFlow
 
 
-def _load_flow_dag(flow_path: Path):
-    if flow_path.is_dir():
-        flow_path = flow_path / DAG_FILE_NAME
-    if not flow_path.exists():
-        raise FileNotFoundError(f"Flow file {flow_path} not found")
-
-    with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
-        flow_dag = yaml.safe_load(f)
-    return flow_path, flow_dag
-
-
-def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
-    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
-
+def overwrite_variant(flow_dag: dict, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
+    # need to overwrite default variant if tuning node and variant not specified.
     # check tuning_node & variant
     node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
-
     if tuning_node and tuning_node not in node_name_2_node:
         raise InvalidFlowError(f"Node {tuning_node} not found in flow")
     if tuning_node and variant:
@@ -83,21 +72,18 @@ def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = N
             updated_nodes.append({"name": node_name, **variant_cfg})
         flow_dag[NODES] = updated_nodes
     except KeyError as e:
-        raise KeyError("Failed to overwrite tuning node with variant") from e
-
-    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        yaml.safe_dump(flow_dag, f)
+        raise InvalidFlowError("Failed to overwrite tuning node with variant") from e
 
 
-def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathLike = None):
+def overwrite_connections(flow_dag: dict, connections: dict, working_dir: PathLike):
     if not connections:
         return
+
     if not isinstance(connections, dict):
         raise InvalidFlowError(f"Invalid connections overwrite format: {connections}, only list is supported.")
 
-    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
     # Load executable flow to check if connection is LLM connection
-    executable_flow = ExecutableFlow.from_yaml(flow_file=flow_path, working_dir=working_dir)
+    executable_flow = ExecutableFlow._from_dict(flow_dag=flow_dag, working_dir=Path(working_dir))
 
     node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
 
@@ -123,7 +109,9 @@ def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathL
                 if deploy_name:
                     node[INPUTS][ConnectionFields.DEPLOYMENT_NAME] = deploy_name
             except KeyError as e:
-                raise KeyError(f"Failed to overwrite llm node {node_name} with connections {connections}") from e
+                raise InvalidFlowError(
+                    f"Failed to overwrite llm node {node_name} with connections {connections}"
+                ) from e
         else:
             connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
             for c, v in connection_dict.items():
@@ -131,14 +119,11 @@ def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathL
                     raise InvalidFlowError(f"Connection with name {c} not found in node {node_name}'s inputs")
                 node[INPUTS][c] = v
 
-    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        yaml.safe_dump(flow_dag, f)
 
-
-def overwrite_flow(flow_path: Path, params_overrides: dict):
+def overwrite_flow(flow_dag: dict, params_overrides: dict):
     if not params_overrides:
         return
-    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
+
     # update flow dag & change nodes list to name: obj dict
     flow_dag[NODES] = {node["name"]: node for node in flow_dag[NODES]}
     # apply overrides on flow dag
@@ -147,15 +132,11 @@ def overwrite_flow(flow_path: Path, params_overrides: dict):
     # revert nodes to list
     flow_dag[NODES] = list(flow_dag[NODES].values())
 
-    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        yaml.safe_dump(flow_dag, f)
-
 
 def remove_additional_includes(flow_path: Path):
-    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
+    flow_path, flow_dag = load_flow_dag(flow_path=flow_path)
     flow_dag.pop("additional_includes", None)
-    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        yaml.safe_dump(flow_dag, f)
+    dump_flow_dag(flow_dag, flow_path)
 
 
 @contextlib.contextmanager
@@ -169,29 +150,28 @@ def variant_overwrite_context(
     drop_node_variants: bool = False,
 ):
     """Override variant and connections in the flow."""
-    # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
-    flow_dag_path, _ = _load_flow_dag(flow_path)
+    flow_dag_path, flow_dag = load_flow_dag(flow_path)
     flow_dir_path = flow_dag_path.parent
     if _get_additional_includes(flow_dag_path):
         # Merge the flow folder and additional includes to temp folder.
         with _merge_local_code_and_additional_includes(code_path=flow_path) as temp_dir:
             # always overwrite variant since we need to overwrite default variant if not specified.
-            overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
-            overwrite_connections(Path(temp_dir), connections)
-            overwrite_flow(Path(temp_dir), overrides)
-            remove_additional_includes(Path(temp_dir))
+            overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
+            overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
+            overwrite_flow(flow_dag, overrides)
+            flow_dag.pop("additional_includes", None)
+            dump_flow_dag(flow_dag, Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
         with tempfile.TemporaryDirectory() as temp_dir:
-            temp_dag_file = Path(temp_dir) / DAG_FILE_NAME
-            shutil.copy2(flow_dag_path.resolve().as_posix(), temp_dag_file)
-            overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
-            overwrite_connections(Path(temp_dir), connections, working_dir=flow_dir_path)
-            overwrite_flow(Path(temp_dir), overrides)
-            flow = Flow(code=flow_dir_path, path=temp_dag_file)
+            overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
+            overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
+            overwrite_flow(flow_dag, overrides)
+            flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
+            flow = Flow(code=flow_dir_path, path=flow_path)
             yield flow
 
 

@@ -9,8 +9,8 @@ from flask.testing import FlaskClient
 
 class PFSOperations:
 
-    CONNECTION_URL_PREFIX = "/connection/v1.0"
-    RUN_URL_PREFIX = "/run/v1.0"
+    CONNECTION_URL_PREFIX = "/v1.0/Connections"
+    RUN_URL_PREFIX = "/v1.0/Runs"
 
     def __init__(self, client: FlaskClient):
         self._client = client
@@ -23,10 +23,10 @@ class PFSOperations:
 
     # connection APIs
     def connection_operation_with_invalid_user(self):
-        return self._client.get(f"{self.CONNECTION_URL_PREFIX}/list", headers={"X-Remote-User": "invalid_user"})
+        return self._client.get(f"{self.CONNECTION_URL_PREFIX}/", headers={"X-Remote-User": "invalid_user"})
 
     def list_connections(self):
-        return self._client.get(f"{self.CONNECTION_URL_PREFIX}/list", headers=self.remote_user_header())
+        return self._client.get(f"{self.CONNECTION_URL_PREFIX}/", headers=self.remote_user_header())
 
     def get_connection(self, name: str):
         return self._client.get(f"{self.CONNECTION_URL_PREFIX}/{name}", headers=self.remote_user_header())
@@ -34,7 +34,7 @@ class PFSOperations:
     # run APIs
     def list_runs(self):
         # TODO: add query parameters
-        return self._client.get(f"{self.RUN_URL_PREFIX}/list", headers=self.remote_user_header())
+        return self._client.get(f"{self.RUN_URL_PREFIX}/", headers=self.remote_user_header())
 
     def get_run(self, name: str):
         return self._client.get(f"{self.RUN_URL_PREFIX}/{name}", headers=self.remote_user_header())

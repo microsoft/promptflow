@@ -323,6 +323,8 @@ class Node:
         if self.aggregation:
             data["aggregation"] = True
             data["reduce"] = True  # TODO: Remove this fallback.
+        if self.type:
+            data["type"] = self.type.value
         return data
 
     @staticmethod
@@ -657,21 +659,37 @@ class Flow:
         default_variant.node.name = node.name
         return default_variant.node
 
-    @staticmethod
-    def _resolve_working_dir(flow_file: Path, working_dir=None) -> Path:
+    @classmethod
+    def _resolve_working_dir(cls, flow_file: Path, working_dir=None) -> Path:
+        working_dir = cls._parse_working_dir(flow_file, working_dir)
+        cls._update_working_dir(working_dir)
+        return working_dir
+
+    @classmethod
+    def _parse_working_dir(cls, flow_file: Path, working_dir=None) -> Path:
         if working_dir is None:
             working_dir = Path(flow_file).resolve().parent
         working_dir = Path(working_dir).absolute()
-        sys.path.insert(0, str(working_dir))
         return working_dir
 
-    @staticmethod
-    def from_yaml(flow_file: Path, working_dir=None) -> "Flow":
+    @classmethod
+    def _update_working_dir(cls, working_dir: Path):
+        sys.path.insert(0, str(working_dir))
+
+    @classmethod
+    def from_yaml(cls, flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
-            flow = Flow.deserialize(yaml.safe_load(fin))
-            flow._set_tool_loader(working_dir)
+            flow_dag = yaml.safe_load(fin)
+        return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
+
+    @classmethod
+    def _from_dict(cls, flow_dag: dict, working_dir: Path) -> "Flow":
+        """Load flow from dict."""
+        cls._update_working_dir(working_dir)
+        flow = Flow.deserialize(flow_dag)
+        flow._set_tool_loader(working_dir)
         return flow
 
     def _set_tool_loader(self, working_dir):

@@ -1444,9 +1444,10 @@ class TestCli:
         assert package_tool_name in tools_dict["package"]
 
         # Invalid flow parameter
-        with pytest.raises(Exception) as e:
+        with pytest.raises(SystemExit):
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
-        assert "invalid_flow_folder does not exist" in e.value.args[0]
+        outerr = capsys.readouterr()
+        assert "invalid_flow_folder does not exist" in outerr.out
 
     def test_chat_flow_with_conditional(self, monkeypatch, capsys):
         chat_list = ["1", "2"]

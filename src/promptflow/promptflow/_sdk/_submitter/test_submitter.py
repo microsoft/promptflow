@@ -14,6 +14,7 @@ from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import Flow, FlowContext
+from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
@@ -62,7 +63,7 @@ class TestSubmitter:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
-        self.flow_context._resolve_connections()
+
         with variant_overwrite_context(
             flow_path=self._origin_flow.code,
             tuning_node=tuning_node,
@@ -81,7 +82,9 @@ class TestSubmitter:
                 self._tuning_node = None
                 self._node_variant = None
 
-    def resolve_data(self, node_name: str = None, inputs: dict = None, chat_history_name: str = None):
+    def resolve_data(
+        self, node_name: str = None, inputs: dict = None, chat_history_name: str = None, dataplane_flow=None
+    ):
         """
         Resolve input to flow/node test inputs.
         Raise user error when missing required inputs. And log warning when unknown inputs appeared.
@@ -97,12 +100,14 @@ class TestSubmitter:
         """
         from promptflow.contracts.flow import InputValueType
 
+        # TODO: only store dataplane flow in context resolver
+        dataplane_flow = dataplane_flow or self.dataplane_flow
         inputs = (inputs or {}).copy()
         flow_inputs, dependency_nodes_outputs, merged_inputs = {}, {}, {}
         missing_inputs = []
         # Using default value of inputs as flow input
         if node_name:
-            node = next(filter(lambda item: item.name == node_name, self.dataplane_flow.nodes), None)
+            node = next(filter(lambda item: item.name == node_name, dataplane_flow.nodes), None)
             if not node:
                 raise UserErrorException(f"Cannot find {node_name} in the flow.")
             for name, value in node.inputs.items():
@@ -124,7 +129,7 @@ class TestSubmitter:
                     elif name in inputs:
                         flow_input = inputs.pop(name)
                     else:
-                        flow_input = self.dataplane_flow.inputs[value.value].default
+                        flow_input = dataplane_flow.inputs[value.value].default
                         if flow_input is None:
                             missing_inputs.append(name)
                             continue
@@ -134,7 +139,7 @@ class TestSubmitter:
                     flow_inputs[name] = inputs.pop(name) if name in inputs else value.value
                     merged_inputs[name] = flow_inputs[name]
         else:
-            for name, value in self.dataplane_flow.inputs.items():
+            for name, value in dataplane_flow.inputs.items():
                 if name in inputs:
                     flow_inputs[name] = inputs.pop(name)
                     merged_inputs[name] = flow_inputs[name]
@@ -243,32 +248,16 @@ class TestSubmitter:
     def exec_with_inputs(self, inputs):
         # TODO: unify all exec_line calls here
         from promptflow._constants import LINE_NUMBER_KEY
-        from promptflow.executor.flow_executor import FlowExecutor
 
-        # validate connection objs
-        connection_obj_dict = {}
-        for key, connection_obj in self.flow_context.connection_objs.items():
-            scrubbed_secrets = connection_obj._get_scrubbed_secrets()
-            if scrubbed_secrets:
-                raise UserErrorException(
-                    f"Connection {connection_obj} contains scrubbed secrets with key {scrubbed_secrets.keys()}, "
-                    "please make sure connection has decrypted secrets to use in flow execution. "
-                )
-            connection_obj_dict[key] = connection_obj._to_execution_connection_dict()
-        connections = SubmitterHelper.resolve_connections(
-            flow=self.flow, client=self._client, connections_to_ignore=self.flow_context.connection_objs.keys()
-        )
-        # update connections with connection objs
-        connections.update(connection_obj_dict)
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(
             environment_variables=self.flow_context.environment_variables, client=self._client
         )
         SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
-        flow_executor = FlowExecutor.create(
-            flow_file=self.flow.path, connections=connections, working_dir=self.flow.code, raise_ex=True
-        )
-        flow_executor.enable_streaming_for_llm_flow(lambda: self.flow_context.streaming)
+        # cache executor here
+        flow_executor = FlowContextResolver.create(flow=self.flow)
+        # validate inputs
+        flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=flow_executor._flow)
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
         if isinstance(line_result.output, dict):
             # Remove line_number from output
