@@ -33,24 +33,6 @@ class FlowValidator:
         aggregation_nodes = set(node.name for node in flow.nodes if node.aggregation)
         for n in flow.nodes:
             inputs_list = [i for i in n.inputs.values()]
-            if n.skip:
-                if n.aggregation and (
-                    (
-                        n.skip.condition.value_type == InputValueType.NODE_REFERENCE
-                        and n.skip.condition.value not in aggregation_nodes
-                    )
-                    or (
-                        n.skip.return_value.value_type == InputValueType.NODE_REFERENCE
-                        and n.skip.return_value.value not in aggregation_nodes
-                    )
-                ):
-                    msg_format = (
-                        "Invalid node definitions found in the flow graph. Non-aggregation nodes cannot be "
-                        "referenced in the skip config of the aggregation node '{node_name}'. Please review "
-                        "and rectify the node reference."
-                    )
-                    raise InvalidNodeReference(message_format=msg_format, node_name=n.name)
-                inputs_list.extend([n.skip.condition, n.skip.return_value])
             if n.activate:
                 if (
                     n.aggregation

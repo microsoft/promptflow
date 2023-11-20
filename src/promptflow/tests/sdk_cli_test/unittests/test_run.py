@@ -15,9 +15,9 @@ from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
+from promptflow._sdk._submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._sdk.operations._run_submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")
