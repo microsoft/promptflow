@@ -14,6 +14,9 @@ on:
         default: ""
         required: false
         description: 'Version of promptflow to install (optional). Will build locally if not specified.'
+  pull_request:  ## delete pull request when it's ready
+    branches:
+      - main
 
 env:
   packageSetupType: promptflow_with_extra
@@ -73,11 +76,11 @@ jobs:
           if ($env:INPUT_VERSION) {
             $version=$env:INPUT_VERSION
           } else {
-            $year = [int](Get-Date -Format "yy")
-            $month = [int](Get-Date -Format "MM")
+            $prefix = 0
+            $yearmonth = [int](Get-Date -Format "yyMM")
             $dayhour = [int](Get-Date -Format "ddHH")
             $minutesecond = [int](Get-Date -Format "mmss")
-            $version="$year.$month.$dayhour.$minutesecond"
+            $version="$prefix.$yearmonth.$dayhour.$minutesecond"
           }
           echo "::set-output name=version::$version"
         env:
@@ -125,6 +128,21 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Check if version input is valid and upload JSON file
+        if: ${{ and(ne(github.event.inputs.version, ''), startsWith(github.event.inputs.version, '1.')) }}
+        run: |
+          $version = "${{ steps.get-version.outputs.version }}"
+          if ($version -like '1.*') {
+            $jsonContent = @{
+              "promptflow" = $version
+            } | ConvertTo-Json -Depth 100
+            $jsonContent | Out-File -FilePath latest_version.json -Encoding UTF8
+            Write-Output "Created latest_version.json with version: $version"
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "latest_version.json" --name "latest_version.json" --overwrite
+          } else {
+            Write-Output "Version input is either empty or does not start with '1.'"
+          }
 
       - name: Upload to Azure Storage
         run: |
