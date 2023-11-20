@@ -12,7 +12,8 @@ In general:
 - For `SDK`, you can refer to [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow.md) and check `promptflow.azure.PFClient.flows` for more flow operations.
 
 :::{admonition} Prerequisites
-[Prerequisites](./quick-start.md#prerequisites) are the same as [Quick start](./quick-start.md#prerequisites).
+- Prerequisites are the same as [Quick start](./quick-start.md#prerequisites).
+- Use the `az login` command in the command line to log in. This enables promptflow to access your credentials. 
 :::
 
 Let's take a look at the following topics:
@@ -106,6 +107,7 @@ And the flow source folder on file share is `Users/<alias>/promptflow/<flow-disp
 
 ![img](../../media/cloud/manage-flows/flow_create_2.png)
 
+Note that if the flow display name is not specified, the flow display name will default to the flow folder name + timestamp.
 
 ## List flows
 
