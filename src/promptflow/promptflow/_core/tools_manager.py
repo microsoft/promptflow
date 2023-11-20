@@ -220,13 +220,20 @@ def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dic
     received_request_time = time.time()*1000
     module_logger.warning(f"Tools_manager: received dynamic_list request: '{received_request_time}'")
     func = load_function_from_function_path(func_path)
+    load_module_time = time.time()*1000
+    module_logger.warning(f"Tools_manager: load func module time: '{load_module_time - received_request_time}', load_module_time: '{load_module_time}'")
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
+    get_func_sig_time = time.time()*1000
+    module_logger.warning(f"Tools_manager: get fun sig time: '{get_func_sig_time - load_module_time}', get_func_sig_time: '{get_func_sig_time}'")
     module_logger.warning(f"func_sig_params of func_path is: '{func_sig_params}'")
     module_logger.warning(f"func_input_params_dict is: '{func_input_params_dict}'")
     combined_func_input_params = append_workspace_triple_to_func_input_params(
         func_sig_params, func_input_params_dict, ws_triple_dict
     )
+    append_workspace_triple_time = time.time()*1000
+    module_logger.warning(f"Tools_manager: append workspace triple time: '{append_workspace_triple_time - get_func_sig_time}', append_workspace_triple_time: '{append_workspace_triple_time}'")
+
     try:
         start_time = time.time()*1000
         result = func(**combined_func_input_params)
