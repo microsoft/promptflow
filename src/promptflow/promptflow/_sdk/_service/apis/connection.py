@@ -14,12 +14,8 @@ from promptflow._sdk.operations._connection_operations import ConnectionOperatio
 
 api = Namespace("Connections", description="Connections Management")
 
-# Define base connection request parsing
-remote_parser = api.parser()
-remote_parser.add_argument("X-Remote-User", location="headers", required=True)
-
 # Define create or update connection request parsing
-create_or_update_parser = remote_parser.copy()
+create_or_update_parser = api.parser()
 create_or_update_parser.add_argument("connection_dict", type=str, location="args", required=True)
 
 # Response model of list connections
@@ -46,7 +42,7 @@ def handle_connection_not_found_exception(error):
 
 @api.route("/")
 class ConnectionList(Resource):
-    @api.doc(parser=remote_parser, description="List all connection")
+    @api.doc(description="List all connection")
     @api.marshal_with(list_connection_field, skip_none=True, as_list=True)
     @local_user_only
     def get(self):
@@ -63,7 +59,7 @@ class ConnectionList(Resource):
 @api.route("/<string:name>")
 @api.param("name", "The connection name.")
 class Connection(Resource):
-    @api.doc(parser=remote_parser, description="Get connection")
+    @api.doc(description="Get connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def get(self, name: str):
@@ -101,7 +97,7 @@ class Connection(Resource):
         connection = connection_op.create_or_update(connection)
         return jsonify(connection._to_dict())
 
-    @api.doc(parser=remote_parser, description="Delete connection")
+    @api.doc(description="Delete connection")
     @local_user_only
     def delete(self, name: str):
         connection_op = ConnectionOperations()
