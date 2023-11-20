@@ -5,11 +5,11 @@
 from dataclasses import dataclass
 from datetime import datetime
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Mapping
+from typing import Any, Dict, List, Mapping
 
 from promptflow._utils.exception_utils import RootErrorCode
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
-from promptflow.contracts.run_info import RunInfo, Status
+from promptflow.contracts.run_info import Status
 from promptflow.executor._result import AggregationResult, LineResult
 
 
@@ -67,8 +67,10 @@ class SystemMetrics:
     duration: float  # in seconds
 
     @staticmethod
-    def summary(start_time: datetime, end_time: datetime, node_run_infos: Iterable[RunInfo]):
-        openai_metrics = SystemMetrics._get_openai_metrics(node_run_infos)
+    def summary(
+        start_time: datetime, end_time: datetime, line_results: List[LineResult], aggr_results: AggregationResult
+    ):
+        openai_metrics = SystemMetrics._get_openai_metrics(line_results, aggr_results)
         return SystemMetrics(
             total_tokens=openai_metrics.get("total_tokens", 0),
             prompt_tokens=openai_metrics.get("prompt_tokens", 0),
@@ -77,7 +79,8 @@ class SystemMetrics:
         )
 
     @staticmethod
-    def _get_openai_metrics(node_run_infos: Iterable[RunInfo]):
+    def _get_openai_metrics(line_results: List[LineResult], aggr_results: AggregationResult):
+        node_run_infos = _get_node_run_infos(line_results, aggr_results)
         total_metrics = {}
         calculator = OpenAIMetricsCalculator()
         for run_info in node_run_infos:
@@ -110,32 +113,32 @@ class BatchResult:
         completed_lines = sum(line_result.run_info.status == Status.Completed for line_result in line_results)
         failed_lines = total_lines - completed_lines
 
-        node_run_infos = BatchResult._get_node_run_infos(line_results, aggr_result)
         return cls(
             status=Status.Completed,
             total_lines=total_lines,
             completed_lines=completed_lines,
             failed_lines=failed_lines,
-            node_status=BatchResult._get_node_status(node_run_infos),
+            node_status=BatchResult._get_node_status(line_results, aggr_result),
             start_time=start_time,
             end_time=end_time,
             metrics=aggr_result.metrics,
-            system_metrics=SystemMetrics.summary(start_time, end_time, node_run_infos),
+            system_metrics=SystemMetrics.summary(start_time, end_time, line_results, aggr_result),
             error_summary=ErrorSummary.summary(line_results),
         )
 
     @staticmethod
-    def _get_node_status(node_run_infos: Iterable[RunInfo]):
+    def _get_node_status(line_results: List[LineResult], aggr_results: AggregationResult):
+        node_run_infos = _get_node_run_infos(line_results, aggr_results)
         node_status = {}
         for node_run_info in node_run_infos:
             key = f"{node_run_info.node}.{node_run_info.status.value.lower()}"
             node_status[key] = node_status.get(key, 0) + 1
         return node_status
 
-    @staticmethod
-    def _get_node_run_infos(line_results: List[LineResult], aggr_results: AggregationResult):
-        line_node_run_infos = (
-            node_run_info for line_result in line_results for node_run_info in line_result.node_run_infos.values()
-        )
-        aggr_node_run_infos = (node_run_info for node_run_info in aggr_results.node_run_infos.values())
-        return chain(line_node_run_infos, aggr_node_run_infos)
+
+def _get_node_run_infos(line_results: List[LineResult], aggr_results: AggregationResult):
+    line_node_run_infos = (
+        node_run_info for line_result in line_results for node_run_info in line_result.node_run_infos.values()
+    )
+    aggr_node_run_infos = (node_run_info for node_run_info in aggr_results.node_run_infos.values())
+    return chain(line_node_run_infos, aggr_node_run_infos)
