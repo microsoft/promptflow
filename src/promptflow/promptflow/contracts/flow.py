@@ -323,7 +323,8 @@ class Node:
         if self.aggregation:
             data["aggregation"] = True
             data["reduce"] = True  # TODO: Remove this fallback.
-        data["type"] = self.type.value
+        if self.type:
+            data["type"] = self.type.value
         return data
 
     @staticmethod
