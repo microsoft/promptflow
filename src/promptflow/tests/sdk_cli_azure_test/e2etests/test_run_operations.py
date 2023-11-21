@@ -81,7 +81,7 @@ class TestFlowRun:
         assert run.status == RunStatus.COMPLETED
 
         eval_run = pf.run(
-            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            flow=f"{FLOWS_DIR}/eval-classification-accuracy",
             data=data_path,
             run=run,
             column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
@@ -89,11 +89,12 @@ class TestFlowRun:
             name=randstr("eval_run_name"),
         )
         assert isinstance(eval_run, Run)
-        pf.runs.stream(run=eval_run.name)
+        eval_run = pf.runs.stream(run=eval_run.name)
+        assert eval_run.status == RunStatus.COMPLETED
 
         # evaluation run without data
         eval_run = pf.run(
-            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            flow=f"{FLOWS_DIR}/eval-classification-accuracy",
             run=run,
             column_mapping={
                 # evaluation reference run.inputs
@@ -104,7 +105,8 @@ class TestFlowRun:
             name=randstr("eval_run_name_1"),
         )
         assert isinstance(eval_run, Run)
-        pf.runs.stream(run=eval_run.name)
+        eval_run = pf.runs.stream(run=eval_run.name)
+        assert eval_run.status == RunStatus.COMPLETED
 
     def test_run_with_connection_overwrite(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
