@@ -114,7 +114,7 @@ class RunSubmitter:
             # persist inputs, outputs and metrics
             local_storage.persist_result(batch_result)
             # exceptions
-            local_storage.dump_exception(exception=exception, bulk_results=batch_result)
+            local_storage.dump_exception(exception=exception, batch_result=batch_result)
             # system metrics: token related
             system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
 
