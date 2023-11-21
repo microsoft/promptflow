@@ -30,10 +30,8 @@ class InvalidConfigFile(ValidationException):
 class Configuration(object):
 
     CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
-    COLLECT_TELEMETRY = "cli.telemetry_enabled"
+    COLLECT_TELEMETRY = "telemetry.enabled"
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
-    EU_USER = "cli.eu_user"
-    EXTENSION_EU_USER = "extension.eu_user"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
     RUN_OUTPUT_PATH = "run.output_path"
@@ -176,12 +174,6 @@ class Configuration(object):
     def set_telemetry_consent(self, value):
         """Set the telemetry consent value and store in local."""
         self.set_config(key=self.COLLECT_TELEMETRY, value=value)
-
-    def is_eu_user(self) -> Optional[bool]:
-        """Check if user is from europe. Return None if not configured."""
-        if call_from_extension():
-            return self.get_config(key=self.EXTENSION_EU_USER)
-        return self.get_config(key=self.EU_USER)
 
     def get_or_set_installation_id(self):
         """Get user id if exists, otherwise set installation id and return it."""
