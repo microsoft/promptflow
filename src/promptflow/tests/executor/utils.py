@@ -64,6 +64,13 @@ def load_json(source: Union[str, Path]) -> dict:
     return loaded_data
 
 
+def load_jsonl(source: Union[str, Path]) -> list:
+    """Load jsonl file to list"""
+    with open(source, "r") as f:
+        loaded_data = [json.loads(line.strip()) for line in f]
+    return loaded_data
+
+
 def load_content(source: Union[str, Path]) -> str:
     """Load file content to string"""
     return Path(source).read_text()
