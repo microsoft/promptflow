@@ -90,7 +90,8 @@ class SystemMetrics:
         total_metrics = {}
         calculator = OpenAIMetricsCalculator()
         for run_info in node_run_infos:
-            for call in run_info.api_calls:
+            api_calls = run_info.api_calls or []
+            for call in api_calls:
                 metrics = calculator.get_openai_metrics_from_api_call(call)
                 calculator.merge_metrics_dict(total_metrics, metrics)
         return total_metrics
