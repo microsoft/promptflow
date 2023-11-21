@@ -480,3 +480,35 @@ class TestSubmitterViaProxy(TestSubmitter):
                 if generator_outputs:
                     logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
             return line_result
+
+    def exec_with_inputs(self, inputs):
+        # TODO: unify all exec_line calls here
+        from promptflow._constants import LINE_NUMBER_KEY
+        from promptflow.batch._csharp_executor_proxy import CsharpExecutorProxy
+
+        connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
+            tools_meta=CsharpExecutorProxy.generate_tool_metadata(
+                flow_dag=self.flow.dag,
+                working_dir=self.flow.code,
+            )
+        )
+        storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+        # resolve environment variables
+        SubmitterHelper.resolve_environment_variables(
+            environment_variables=self.flow_context.environment_variables, client=self._client
+        )
+        SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
+        # cache executor here
+        flow_executor = CsharpExecutorProxy.create(
+            flow_file=self.flow.path,
+            working_dir=self.flow.code,
+            connections=connections,
+            storage=storage,
+        )
+        # validate inputs
+        flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
+        line_result = flow_executor.exec_line(inputs, index=0)
+        if isinstance(line_result.output, dict):
+            # Remove line_number from output
+            line_result.output.pop(LINE_NUMBER_KEY, None)
+        return line_result

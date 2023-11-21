@@ -310,3 +310,16 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
             inputs=kwargs,
         )
         return result.output
+
+    def invoke(self, data: dict):
+        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+
+        # if args:
+        #     raise UserErrorException("Flow can only be called with keyword arguments.")
+
+        submitter = TestSubmitterViaProxy(flow=self, flow_context=self.context)
+
+        result = submitter.exec_with_inputs(
+            inputs=data,
+        )
+        return result.output

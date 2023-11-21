@@ -16,6 +16,7 @@ from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.exceptions import UserErrorException
+from promptflow._constants import FlowLanguage
 
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
@@ -232,36 +233,52 @@ class StreamlitFileGenerator(BaseGenerator):
             flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
         )
         self.is_chat_flow, self.chat_history_input_name, error_msg = FlowOperations._is_chat_flow(self.executable)
-        if not self.is_chat_flow:
+        if not self.is_chat_flow and self.executable.program_language != FlowLanguage.Csharp:
             raise UserErrorException(f"Only support chat flow in ui mode, {error_msg}.")
-        self._chat_input_name = next(
-            (flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None
-        )
-        self._chat_input = self.executable.inputs[self._chat_input_name]
-        if self._chat_input.type not in [ValueType.STRING.value, ValueType.LIST.value]:
-            raise UserErrorException(
-                f"Only support string or list type for chat input, but got {self._chat_input.type}."
+        if self.is_chat_flow:
+            self._chat_input_name = next(
+                (flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None
             )
+            self._chat_input = self.executable.inputs[self._chat_input_name]
+            if self._chat_input.type not in [ValueType.STRING.value, ValueType.LIST.value]:
+                raise UserErrorException(
+                    f"Only support string or list type for chat input, but got {self._chat_input.type}."
+                )
 
     @property
     def chat_input_default_value(self):
-        return self._chat_input.default
+        return self._chat_input.default if self.is_chat_flow else None
 
     @property
     def chat_input_value_type(self):
-        return self._chat_input.type
+        return self._chat_input.type if self.is_chat_flow else None
 
     @property
     def chat_input_name(self):
-        return self._chat_input_name
+        return self._chat_input_name if self.is_chat_flow else None
+
+    @property
+    def flow_inputs(self):
+        return {
+            flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
+        } if not self.is_chat_flow else None
 
     @property
     def flow_inputs_params(self):
-        return f"{self.chat_input_name}={self.chat_input_name}"
+        if self.is_chat_flow:
+            return f"{self.chat_input_name}={self.chat_input_name}"
+        else:
+            inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in self.flow_inputs.items()]
+            return ",".join(inputs_params)
+
+    @property
+    def label(self):
+        return "Chat" if self.is_chat_flow else "Run"
 
     @property
     def tpl_file(self):
-        return SERVE_TEMPLATE_PATH / "flow_test_main.py.jinja2"
+        return SERVE_TEMPLATE_PATH / "flow_test_main.py.jinja2" if  self.is_chat_flow \
+            else SERVE_TEMPLATE_PATH / "main_csharp.py.jinja2"
 
     @property
     def flow_path(self):
@@ -279,7 +296,8 @@ class StreamlitFileGenerator(BaseGenerator):
             "connection_provider",
             "chat_input_default_value",
             "chat_input_value_type",
-            "chat_input_name",
+            "flow_inputs",
+            "label",
         ]
 
     def generate_to_file(self, target):
