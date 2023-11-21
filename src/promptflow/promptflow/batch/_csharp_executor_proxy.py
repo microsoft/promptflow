@@ -14,6 +14,10 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
     def __init__(self, process: subprocess.Popen):
         self._process = process
 
+    @property
+    def api_endpoint(self) -> str:
+        return EXECUTOR_DOMAIN + str(EXECUTOR_PORT)
+
     @classmethod
     def create(
         cls,
@@ -38,10 +42,6 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self._process.kill()
-
-    @property
-    def api_endpoint(self) -> str:
-        return EXECUTOR_DOMAIN + str(EXECUTOR_PORT)
 
     async def exec_aggregation_async(
         self,
