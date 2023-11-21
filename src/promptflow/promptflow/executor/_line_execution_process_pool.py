@@ -35,13 +35,13 @@ from promptflow.storage import AbstractRunStorage
 
 def signal_handler(signum, frame):
     signame = signal.Signals(signum).name
-    logger.info("Execution stopping. Handling signal %s (%s)", signame, signum)
+    bulk_logger.info("Execution stopping. Handling signal %s (%s)", signame, signum)
     try:
         process = psutil.Process(os.getpid())
-        logger.info("Successfully terminated process with pid %s", process.pid)
+        bulk_logger.info("Successfully terminated process with pid %s", process.pid)
         process.terminate()
     except Exception:
-        logger.warning("Error when handling execution stop signal", exc_info=True)
+        bulk_logger.warning("Error when handling execution stop signal", exc_info=True)
     finally:
         sys.exit(1)
 
