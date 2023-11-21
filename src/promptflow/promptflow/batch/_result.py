@@ -28,7 +28,7 @@ class ErrorSummary:
     error_list: List[LineError]
 
     @staticmethod
-    def summary(line_results: List[LineResult]):
+    def create(line_results: List[LineResult]):
         failed_user_error_lines = 0
         failed_system_error_lines = 0
         error_list = []
@@ -67,7 +67,7 @@ class SystemMetrics:
     duration: float  # in seconds
 
     @staticmethod
-    def summary(
+    def create(
         start_time: datetime, end_time: datetime, line_results: List[LineResult], aggr_results: AggregationResult
     ):
         openai_metrics = SystemMetrics._get_openai_metrics(line_results, aggr_results)
@@ -106,7 +106,7 @@ class BatchResult:
     error_summary: ErrorSummary
 
     @classmethod
-    def summary(
+    def create(
         cls, start_time: datetime, end_time: datetime, line_results: List[LineResult], aggr_result: AggregationResult
     ) -> "BatchResult":
         total_lines = len(line_results)
@@ -122,8 +122,8 @@ class BatchResult:
             start_time=start_time,
             end_time=end_time,
             metrics=aggr_result.metrics,
-            system_metrics=SystemMetrics.summary(start_time, end_time, line_results, aggr_result),
-            error_summary=ErrorSummary.summary(line_results),
+            system_metrics=SystemMetrics.create(start_time, end_time, line_results, aggr_result),
+            error_summary=ErrorSummary.create(line_results),
         )
 
     @staticmethod

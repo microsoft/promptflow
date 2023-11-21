@@ -138,7 +138,7 @@ class BatchEngine:
 
         # summary some infos from line results and aggr results to batch result
         self._end_time = datetime.utcnow()
-        return BatchResult.summary(self._start_time, self._end_time, line_results, aggr_results)
+        return BatchResult.create(self._start_time, self._end_time, line_results, aggr_results)
 
     async def _exec_batch_internal(
         self,
