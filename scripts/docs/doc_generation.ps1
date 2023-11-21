@@ -91,7 +91,25 @@ if($WarningAsError){
 if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
-sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+$Env:DOC_VERSION = "Python"
+$PYTHON_DOC = [System.IO.Path]::Combine($TempDocPath, "python")
+$PYTHON_DOC_OUT = [System.IO.Path]::Combine($OutPath, "python")
+sphinx-build $PYTHON_DOC $PYTHON_DOC_OUT -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+$Env:DOC_VERSION = "C#"
+$CSHARP_DOC = [System.IO.Path]::Combine($TempDocPath, "csharp")
+$CSHARP_DOC_OUT = [System.IO.Path]::Combine($OutPath, "csharp")
+sphinx-build $CSHARP_DOC $CSHARP_DOC_OUT -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+$Env:DOC_VERSION = "Javascript"
+$JS_DOC = [System.IO.Path]::Combine($TempDocPath, "js")
+$JS_DOC_OUT = [System.IO.Path]::Combine($OutPath, "js")
+sphinx-build $JS_DOC $JS_DOC_OUT -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+# Copy 404 files.
+[string] $404Path = [System.IO.Path]::Combine($DocPath, "404.html")
+[string] $Raw404Path = [System.IO.Path]::Combine($DocPath, "404NotFound.html")
+[string] $IndexPath = [System.IO.Path]::Combine($DocPath, "index.html")
+Copy-Item -Path $404Path -Destination $OutPath -Force
+Copy-Item -Path $Raw404Path -Destination $OutPath -Force
+Copy-Item -Path $IndexPath -Destination $OutPath -Force
 $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"

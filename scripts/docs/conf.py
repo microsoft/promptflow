@@ -76,7 +76,7 @@ html_show_sourcelink = False
 
 # Define the json_url for our version switcher.
 # json_url = "https://raw.githubusercontent.com/microsoft/promptflow/main/scripts/docs/_static/switcher.json"
-json_url = "https://raw.githubusercontent.com/microsoft/promptflow/brynn/add-version-filter/scripts/docs/_static/switcher.json"
+json_url = "https://raw.githubusercontent.com/brynn-code/promptflow-page/main/switcher.json"
 
 # Define the version we use for matching in the version switcher.
 version_match = os.environ.get("DOC_VERSION") or "JavaScript"

@@ -1,0 +1,23 @@
+<html>
+<head>
+    <title>Page not found - Promptflow</title>
+    <script>
+        function checkPath() {
+            // Redirect url to default python version
+            // Example current path: /promptflow/how-to-guides/quick-start.html
+            const currentPath = window.location.pathname;
+            const raw404 = "https://microsoft.github.io/promptflow/404NotFound.html";
+            // No language prefer in the url, fall back to python
+            // Example path after fall back: /promptflow/python/how-to-guides/quick-start.html
+            if (currentPath.includes('/promptflow') && !currentPath.match(/promptflow\/(python|csharp|javascript)/gi)){
+                window.location.href = window.location.href.replace("/promptflow", "/promptflow/python");
+            } else if (window.location.href !== raw404){
+                window.location.href = raw404;
+            }
+        }
+    </script>
+</head>
+<body onload="checkPath()">
+</body>
+</html>
+```
