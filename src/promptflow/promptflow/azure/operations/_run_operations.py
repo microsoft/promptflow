@@ -23,6 +23,7 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 from azure.ai.ml.constants._common import AzureMLResourceType
+from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 
@@ -90,6 +91,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         flow_operations: FlowOperations,
         credential,
         service_caller: FlowServiceCaller,
+        workspace: Workspace,
         **kwargs: Dict,
     ):
         super().__init__(
@@ -99,8 +101,10 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             subscription_id=operation_scope.subscription_id,
             resource_group_name=operation_scope.resource_group_name,
         )
+        self._operation_scope = operation_scope
         self._all_operations = all_operations
         self._service_caller = service_caller
+        self._workspace = workspace
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
@@ -115,26 +119,26 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return self._all_operations.all_operations[AzureMLResourceType.DATASTORE]
 
     @cached_property
-    def _common_azure_url_pattern(self):
-        operation_scope = self._operation_scope
-        url = (
-            f"/subscriptions/{operation_scope.subscription_id}"
-            f"/resourceGroups/{operation_scope.resource_group_name}"
-            f"/providers/Microsoft.MachineLearningServices"
-            f"/workspaces/{operation_scope.workspace_name}"
-        )
-        return url
-
-    @cached_property
     def _run_history_endpoint_url(self):
         """Get the endpoint url for the workspace."""
         endpoint = self._service_caller._service_endpoint
-        return endpoint + "history/v1.0" + self._common_azure_url_pattern
+        return endpoint + "history/v1.0" + self._service_caller._common_azure_url_pattern
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
-        url = f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid={self._common_azure_url_pattern}"
-        return url
+        workspace_kind = str(self._workspace._kind).lower()
+        if workspace_kind == "default":
+            return (
+                f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
+        elif workspace_kind == "project":
+            return (
+                f"https://ai.azure.com/projectflows/bulkrun/run/{run_id}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
+        else:
+            raise RunOperationParameterError(f"Unsupported workspace kind: {workspace_kind!r}")
 
     def _get_input_portal_url_from_input_uri(self, input_uri):
         """Get the portal url for the data input."""
@@ -157,7 +161,10 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         elif input_uri.startswith("azureml:"):
             # named asset id
             name, version = input_uri.split(":")[1:]
-            return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
+            return (
+                f"https://ml.azure.com/data/{name}/{version}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
         else:
             logger.warning(error_msg)
             return None
@@ -176,8 +183,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             return None
         datastore, path = match.groups()
         return (
-            f"https://ml.azure.com/data/datastore/{datastore}/edit?wsid={self._common_azure_url_pattern}"
-            f"&activeFilePath={path}#browseTab"
+            f"https://ml.azure.com/data/datastore/{datastore}/"
+            f"edit?wsid={self._service_caller._common_azure_url_pattern}&activeFilePath={path}#browseTab"
         )
 
     def _get_portal_url_from_asset_id(self, asset_id, log_warning=False):
@@ -191,7 +198,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 logger.warning(error_msg)
             return None
         name, version = match.groups()
-        return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
+        return (
+            f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._service_caller._common_azure_url_pattern}"
+        )
 
     def _get_headers(self):
         token = self._credential.get_token("https://management.azure.com/.default").token

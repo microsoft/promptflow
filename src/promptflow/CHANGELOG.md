@@ -10,6 +10,8 @@
 
 ### Bugs Fixed
 
+- [SDK/CLI] Fix node test with dict node input will raise "Required input(s) missing".
+
 ### Improvements
 - Force 'az login' if using azureml connection provider in cli command.
 - Add env variable 'PF_NO_INTERACTIVE_LOGIN' to disable interactive login if using azureml connection provider in promptflow sdk.

@@ -39,14 +39,6 @@ class TestFlowValidator:
                 ),
             ),
             (
-                "nodes_cycle_with_skip",
-                (
-                    "Invalid node definitions found in the flow graph. Node circular dependency has been detected "
-                    "among the nodes in your flow. Kindly review the reference relationships for the nodes "
-                    "['first_node', 'second_node'] and resolve the circular reference issue in the flow."
-                ),
-            ),
-            (
                 "nodes_cycle_with_activate",
                 (
                     "Invalid node definitions found in the flow graph. Node circular dependency has been detected "
@@ -68,14 +60,6 @@ class TestFlowValidator:
                     "Invalid node definitions found in the flow graph. Non-aggregate node 'test_node' "
                     "cannot reference aggregate nodes {'calculate_accuracy'}. Please review and rectify "
                     "the node reference."
-                ),
-            ),
-            (
-                "aggregation_skip_reference_non_aggregation",
-                (
-                    "Invalid node definitions found in the flow graph. Non-aggregation nodes cannot be "
-                    "referenced in the skip config of the aggregation node 'calculate_accuracy'. Please "
-                    "review and rectify the node reference."
                 ),
             ),
             (

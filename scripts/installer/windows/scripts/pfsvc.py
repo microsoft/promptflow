@@ -9,7 +9,7 @@ import win32service  # Events
 import servicemanager  # Simple setup and logging
 
 
-class MyService:
+class PromptFlowService:
     """Silly little application stub"""
     def stop(self):
         """Stop the service"""
@@ -23,7 +23,7 @@ class MyService:
             servicemanager.LogInfoMsg("Service running...")
 
 
-class MyServiceFramework(win32serviceutil.ServiceFramework):
+class PromptFlowServiceFramework(win32serviceutil.ServiceFramework):
 
     _svc_name_ = 'PromptFlowService'
     _svc_display_name_ = 'Prompt Flow Service'
@@ -37,7 +37,7 @@ class MyServiceFramework(win32serviceutil.ServiceFramework):
     def SvcDoRun(self):
         """Start the service; does not return until stopped"""
         self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-        self.service_impl = MyService()
+        self.service_impl = PromptFlowService()
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
         # Run the service
         self.service_impl.run()
@@ -46,10 +46,10 @@ class MyServiceFramework(win32serviceutil.ServiceFramework):
 def init():
     if len(sys.argv) == 1:
         servicemanager.Initialize()
-        servicemanager.PrepareToHostSingle(MyServiceFramework)
+        servicemanager.PrepareToHostSingle(PromptFlowServiceFramework)
         servicemanager.StartServiceCtrlDispatcher()
     else:
-        win32serviceutil.HandleCommandLine(MyServiceFramework)
+        win32serviceutil.HandleCommandLine(PromptFlowServiceFramework)
 
 
 if __name__ == '__main__':

@@ -706,7 +706,9 @@ class TestFlowRun:
 
         mock_workspace = MagicMock()
         mock_workspace.discovery_url = "https://promptflow.azure-api.net/discovery/workspaces/fake_workspace_id"
-        service_caller = _FlowServiceCallerFactory.get_instance(workspace=mock_workspace, credential=MagicMock())
+        service_caller = _FlowServiceCallerFactory.get_instance(
+            workspace=mock_workspace, credential=MagicMock(), operation_scope=MagicMock()
+        )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
 

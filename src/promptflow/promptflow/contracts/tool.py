@@ -229,6 +229,7 @@ class ToolType(str, Enum):
 
     LLM = "llm"
     PYTHON = "python"
+    CSHARP = "csharp"
     PROMPT = "prompt"
     _ACTION = "action"
     CUSTOM_LLM = "custom_llm"
