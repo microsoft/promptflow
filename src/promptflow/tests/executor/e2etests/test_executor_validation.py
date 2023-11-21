@@ -1,5 +1,4 @@
 import json
-import sys
 from pathlib import Path
 from tempfile import mkdtemp
 
@@ -244,20 +243,10 @@ class TestValidation:
         output_dir = Path(mkdtemp())
         batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
 
-        if (
-            (sys.version_info.major == 3)
-            and (sys.version_info.minor >= 11)
-            and ((sys.platform == "linux") or (sys.platform == "darwin"))
-        ):
-            # Python >= 3.11 has a different error message on linux and macos
-            error_message_compare = error_message.replace("int", "ValueType.INT")
-            assert error_message_compare in str(
-                batch_result.line_results[0].run_info.error
-            ), f"Expected message {error_message_compare} but got {str(batch_result.line_results[0].run_info.error)}"
-        else:
-            assert error_message in str(
-                batch_results.line_results[0].run_info.error
-            ), f"Expected message {error_message} but got {str(batch_results.line_results[0].run_info.error)}"
+        assert error_message in str(
+            batch_results.line_results[0].run_info.error
+        ), f"Expected message {error_message} but got {str(batch_results.line_results[0].run_info.error)}"
+
         assert error_class in str(
             batch_results.line_results[0].run_info.error
         ), f"Expected message {error_class} but got {str(batch_results.line_results[0].run_info.error)}"

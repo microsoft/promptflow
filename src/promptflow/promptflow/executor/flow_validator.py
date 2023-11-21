@@ -171,7 +171,7 @@ class FlowValidator:
                 message_format=msg_format,
                 flow_input_info=flow_input_info,
                 input_value=input_value,
-                value_type=expected_type,
+                value_type=expected_type.value,
                 error_type_and_message=error_type_and_message,
             ) from e
         except Exception as e:
@@ -183,7 +183,7 @@ class FlowValidator:
                 "or adjust the input value in your input data."
             )
             raise InputTypeError(
-                message_format=msg_format, flow_input_info=flow_input_info, expected_type=expected_type
+                message_format=msg_format, flow_input_info=flow_input_info, expected_type=expected_type.value
             ) from e
 
     @staticmethod
