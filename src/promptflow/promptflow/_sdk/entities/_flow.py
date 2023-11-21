@@ -229,6 +229,10 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         return self._flow_dir.name
 
     @property
+    def display_name(self) -> str:
+        return self.dag.get("display_name", None)
+
+    @property
     def tools_meta_path(self) -> Path:
         target_path = self._flow_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
         target_path.parent.mkdir(parents=True, exist_ok=True)

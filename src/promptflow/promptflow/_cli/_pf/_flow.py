@@ -390,7 +390,7 @@ def test_flow(args):
             ]
             for script in script_path:
                 StreamlitFileGenerator(
-                    flow_name=flow.name,
+                    flow_name=flow.display_name if flow.display_name else flow.name,
                     flow_dag_path=flow.flow_dag_path,
                     connection_provider=pf_client._ensure_connection_provider(),
                 ).generate_to_file(script)
