@@ -7,7 +7,9 @@
 - Display node status in run visualize page graph view.
 - Add support for image input and output in prompt flow.
 - [SDK/CLI] SDK/CLI will collect telemetry by default, user can use `pf config set telemetry.enabled=false` to opt out.
-- Support `pf config set run.output_path=<output-path>` to customize default run output path.
+- Enable specifying the default output path for run.
+  - Use `pf config set run.output_path=<output-path>` to specify, and the run output path will be `<output-path>/.runs/<run-name>`.
+  - Introduce macro `${flow_directory}` for `run.output_path` in config, which will be replaced with corresponding flow directory.
 
 ### Bugs Fixed
 
