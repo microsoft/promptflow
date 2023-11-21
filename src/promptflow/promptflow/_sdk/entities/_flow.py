@@ -315,7 +315,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         )
         return result.output
 
-    def invoke(self, data: dict):
+    def invoke(self, inputs: dict):
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
 
         # if args:
@@ -324,6 +324,6 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         submitter = TestSubmitterViaProxy(flow=self, flow_context=self.context)
 
         result = submitter.exec_with_inputs(
-            inputs=data,
+            inputs=inputs,
         )
         return result.output
