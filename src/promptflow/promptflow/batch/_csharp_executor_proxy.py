@@ -49,7 +49,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        return AggregationResult()
+        return AggregationResult({}, {}, {})
 
     @classmethod
     def generate_tool_metadata(cls, flow_dag: dict, working_dir: Path) -> dict:
