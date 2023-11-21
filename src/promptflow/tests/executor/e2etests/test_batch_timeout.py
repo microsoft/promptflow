@@ -13,7 +13,6 @@ from promptflow.storage import AbstractRunStorage
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
-SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 ONE_LINE_OF_BULK_TEST_TIMEOUT = "one_line_of_bulktest_timeout"
 
 
