@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # this file is a middle layer between the local SDK and executor.
+import asyncio
 import contextlib
 import logging
 import re
@@ -428,11 +429,11 @@ class TestSubmitterViaProxy(TestSubmitter):
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY
-        from promptflow.batch._csharp_executor_proxy import CsharpExecutorProxy
+        from promptflow.batch import CSharpExecutorProxy
 
         if not connections:
             connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
-                tools_meta=CsharpExecutorProxy.generate_tool_metadata(
+                tools_meta=CSharpExecutorProxy.generate_tool_metadata(
                     flow_dag=self.flow.dag,
                     working_dir=self.flow.code,
                 )
@@ -450,17 +451,14 @@ class TestSubmitterViaProxy(TestSubmitter):
             credential_list=credential_list,
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            flow_executor = CsharpExecutorProxy.create(
+            flow_executor = CSharpExecutorProxy.create(
                 flow_file=self.flow.path,
                 working_dir=self.flow.code,
                 connections=connections,
                 storage=storage,
             )
 
-            line_result = flow_executor.exec_line(
-                inputs,
-                index=0,
-            )
+            line_result = asyncio.run(flow_executor.exec_line_async(inputs, index=0))
             line_result.output = persist_multimedia_data(
                 line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
             )
@@ -468,9 +466,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 # Convert inputs of aggregation to list type
                 flow_inputs = {k: [v] for k, v in inputs.items()}
                 aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                aggregation_results = flow_executor.exec_aggregation_async(
-                    flow_inputs, aggregation_inputs=aggregation_inputs
-                )
+                aggregation_results = asyncio.run(flow_executor.exec_aggregation_async(flow_inputs, aggregation_inputs))
                 line_result.node_run_infos.update(aggregation_results.node_run_infos)
                 line_result.run_info.metrics = aggregation_results.metrics
             if isinstance(line_result.output, dict):

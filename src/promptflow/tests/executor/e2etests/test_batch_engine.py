@@ -245,3 +245,13 @@ class TestBatch:
         with pytest.raises(error_class) as e:
             submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
         assert error_message in e.value.message
+
+    def test_csharp_batch_engine(self):
+        flow_file = Path("D:/PromptflowCS/src/PromptflowCSharp/RAGFlow/flow.dag.yaml")
+        working_dir = Path("D:/PromptflowCS/src/PromptflowCSharp/RAGFlow/")
+        batch_engine = BatchEngine(flow_file, working_dir)
+        input_dirs = {"data": "inputs.jsonl"}
+        inputs_mapping = {"question": "${data.question}", "context_limit_length": "${data.context_limit_length}"}
+        output_dir = Path(mkdtemp())
+        batch_result = batch_engine.run(input_dirs, inputs_mapping, output_dir)
+        assert batch_result.outputs

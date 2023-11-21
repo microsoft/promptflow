@@ -55,9 +55,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         index: Optional[int] = None,
         run_id: Optional[str] = None,
     ) -> LineResult:
+        url = self.api_endpoint + "/Execution"
+        payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         async with httpx.AsyncClient() as client:
-            url = self.api_endpoint + "/execution"
-            payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
         return LineResult.deserialize(response.json())
 

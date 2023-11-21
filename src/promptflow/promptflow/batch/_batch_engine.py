@@ -16,6 +16,7 @@ from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute, transpose
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
@@ -32,6 +33,7 @@ class BatchEngine:
 
     executor_proxy_classes: Mapping[str, AbstractExecutorProxy] = {
         "python": PythonExecutorProxy,
+        "csharp": CSharpExecutorProxy,
     }
 
     @classmethod
@@ -123,7 +125,7 @@ class BatchEngine:
         if isinstance(self._executor_proxy, PythonExecutorProxy):
             line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
         else:
-            line_results = asyncio.run(self._exec_batch_internal(batch_inputs, output_dir, run_id))
+            line_results = asyncio.run(self._exec_batch_internal(batch_inputs, run_id))
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         aggr_results = self._exec_aggregation_internal(batch_inputs, line_results, run_id)
         outputs = [
