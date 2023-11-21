@@ -58,21 +58,13 @@ jobs:
       uses: actions/checkout@v4
     - name: Display and Set Environment Variables
       run: |
-        if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
-          export pyVersion="3.9";
-        elif [ "macos-latest" == "${{ matrix.os }}" ]; then
-          export pyVersion="3.10";
-        else
-          echo "Unsupported OS: ${{ matrix.os }}";
-          exit 1;
-        fi
         env | sort >> $GITHUB_OUTPUT
       id: display_env
       shell: bash -el {0}
-    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
+    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
       uses: "./.github/actions/step_create_python_environment"
       with:
-        pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
+        pythonVersion: ${{ matrix.pythonVersion }}
     - name: Download Artifacts
       uses: actions/download-artifact@v3
       with:
@@ -84,7 +76,7 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}} # Will remove azure deps later
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
     - name: Azure login (non pull_request workflow)
@@ -121,7 +113,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
+        name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
         path: |
           ${{ env.testWorkingDirectory }}/*.xml
           ${{ env.testWorkingDirectory }}/htmlcov/
