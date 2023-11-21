@@ -49,6 +49,123 @@ jobs:
           ${{ github.workspace }}/src/promptflow/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
   promptflow_tests:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        testType: [sdk-cli]
+        pythonVersion: ['3.8']
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Display and Set Environment Variables
+      run:
+        env | sort >> $GITHUB_OUTPUT
+      shell: bash -el {0}
+    - name: Python Env Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
+      uses: "./.github/actions/step_create_python_environment"
+      with:
+        pythonVersion: ${{ matrix.pythonVersion }}
+    - name: Download Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: wheel
+        path: artifacts
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Generate Configs
+      uses: "./.github/actions/step_generate_configs"
+      with:
+        targetFolder: ${{ env.testWorkingDirectory }}
+    - name: Install pf
+      shell: pwsh
+      working-directory: artifacts
+      run: |
+        pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
+        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        pip freeze
+    - name: Run SDK CLI Test
+      if : ${{ matrix.testType == 'sdk-cli' }}
+      shell: pwsh
+      working-directory: ${{ env.testWorkingDirectory }}
+      env:
+        PROMPT_FLOW_TEST_MODE: "replay"
+      run: |
+        python "../../scripts/building/run_coverage_tests.py" `
+          -p promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
+          -l eastus `
+          -m "unittest or e2etest" `
+          -o "${{ github.workspace }}/test-results-sdk-cli.xml" `
+          --ignore-glob ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py
+    - name: Install pf executable
+      shell: pwsh
+      working-directory: artifacts
+      run: |
+        Set-PSDebug -Trace 1
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executable]" --force}}
+        pip freeze
+    - name: Run SDK CLI Executable Test
+      if : ${{ matrix.testType == 'sdk-cli' }}
+      shell: pwsh
+      working-directory: ${{ env.testWorkingDirectory }}
+      env:
+        PROMPT_FLOW_TEST_MODE: "live"
+      run: |
+        python "../../scripts/building/run_coverage_tests.py" `
+          -p promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py `
+          -l eastus `
+          -m "unittest or e2etest" `
+          -o "${{ github.workspace }}/test-results-sdk-cli-executable.xml"
+    - name: Install pf Azure
+      shell: pwsh
+      working-directory: artifacts
+      run: |
+        Set-PSDebug -Trace 1
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]" --force}}
+        pip freeze
+    - name: Run SDK CLI Azure Test
+      if : ${{ matrix.testType == 'sdk-cli' }}
+      shell: pwsh
+      working-directory: ${{ env.testWorkingDirectory }}
+      env:
+        PROMPT_FLOW_TEST_MODE: "live"
+      run: |
+        python "../../scripts/building/run_coverage_tests.py" `
+          -p promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test `
+          -l eastus `
+          -m "unittest or e2etest" `
+          -o "${{ github.workspace }}/test-results-sdk-cli-azure.xml"
+    - name: Run Executor Test
+      if : ${{ matrix.testType == 'executor' }}
+      shell: pwsh
+      working-directory: ${{ github.workspace }}
+      run: |
+        gci env:* | sort-object name
+        az account show
+        pip install langchain
+        pip install numexpr
+        python scripts/building/run_coverage_tests.py `
+          -p ${{ github.workspace }}/src/promptflow/promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests ${{ github.workspace }}/src/promptflow/tests/executor/unittests `
+          -l eastus `
+          -m "all" `
+          -o "${{ github.workspace }}/test-results-executor.xml"
+    - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+        path: ${{ github.workspace }}/*.xml
+  promptflow_tests_azure:
     needs: build
     strategy:
       fail-fast: false
@@ -166,7 +283,7 @@ jobs:
         path: ${{ github.workspace }}/*.xml
   publish-test-results:
     name: "Publish Tests Results"
-    needs: promptflow_tests
+    needs: [ promptflow_tests, promptflow_tests_azure ]
     runs-on: ubuntu-latest
     permissions:
       checks: write
