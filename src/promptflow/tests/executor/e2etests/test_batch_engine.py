@@ -8,13 +8,11 @@ from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._errors import EmptyInputsData
 from promptflow.batch._result import BatchResult
-from promptflow.contracts.run_info import FlowRunInfo
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
-from promptflow.storage import AbstractRunStorage
 
 from ..utils import (
+    MemoryRunStorage,
     get_flow_expected_metrics,
     get_flow_expected_status_summary,
     get_flow_folder,
@@ -27,20 +25,6 @@ from ..utils import (
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
-
-
-class MemoryRunStorage(AbstractRunStorage):
-    def __init__(self):
-        self._node_runs = {}
-        self._flow_runs = {}
-
-    def persist_flow_run(self, run_info: FlowRunInfo):
-        run_info.result = None
-        self._flow_runs[run_info.run_id] = run_info
-
-    def persist_node_run(self, run_info: NodeRunInfo):
-        run_info.result = None
-        self._node_runs[run_info.run_id] = run_info
 
 
 def submit_batch_run(

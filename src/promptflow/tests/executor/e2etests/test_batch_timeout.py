@@ -5,29 +5,12 @@ import pytest
 
 from promptflow.batch import BatchEngine
 from promptflow.batch._result import BatchResult, LineError
-from promptflow.contracts.run_info import FlowRunInfo
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
-from promptflow.storage import AbstractRunStorage
 
-from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
+from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 ONE_LINE_OF_BULK_TEST_TIMEOUT = "one_line_of_bulktest_timeout"
-
-
-class MemoryRunStorage(AbstractRunStorage):
-    def __init__(self):
-        self._node_runs = {}
-        self._flow_runs = {}
-
-    def persist_flow_run(self, run_info: FlowRunInfo):
-        run_info.result = None
-        self._flow_runs[run_info.run_id] = run_info
-
-    def persist_node_run(self, run_info: NodeRunInfo):
-        run_info.result = None
-        self._node_runs[run_info.run_id] = run_info
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")

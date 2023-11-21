@@ -2,6 +2,10 @@ import json
 from pathlib import Path
 from typing import Union
 
+from promptflow.contracts.run_info import FlowRunInfo
+from promptflow.contracts.run_info import RunInfo as NodeRunInfo
+from promptflow.storage import AbstractRunStorage
+
 TEST_ROOT = Path(__file__).parent.parent
 DATA_ROOT = TEST_ROOT / "test_configs/datas"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
@@ -84,3 +88,15 @@ def is_image_file(file_path: Path):
     image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff"]
     file_extension = file_path.suffix.lower()
     return file_extension in image_extensions
+
+
+class MemoryRunStorage(AbstractRunStorage):
+    def __init__(self):
+        self._node_runs = {}
+        self._flow_runs = {}
+
+    def persist_flow_run(self, run_info: FlowRunInfo):
+        self._flow_runs[run_info.run_id] = run_info
+
+    def persist_node_run(self, run_info: NodeRunInfo):
+        self._node_runs[run_info.run_id] = run_info

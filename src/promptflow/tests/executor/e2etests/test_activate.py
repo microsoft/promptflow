@@ -11,9 +11,9 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
-from promptflow.storage import AbstractRunStorage
 
 from ..utils import (
+    MemoryRunStorage,
     get_flow_expected_result,
     get_flow_expected_status_summary,
     get_flow_folder,
@@ -29,20 +29,6 @@ ACTIVATE_FLOW_TEST_CASES = [
     "all_depedencies_bypassed_with_activate_met",
     "activate_condition_always_met",
 ]
-
-
-class MemoryRunStorage(AbstractRunStorage):
-    def __init__(self):
-        self._node_runs = {}
-        self._flow_runs = {}
-
-    def persist_flow_run(self, run_info: FlowRunInfo):
-        run_info.result = None
-        self._flow_runs[run_info.run_id] = run_info
-
-    def persist_node_run(self, run_info: NodeRunInfo):
-        run_info.result = None
-        self._node_runs[run_info.run_id] = run_info
 
 
 @pytest.mark.usefixtures("dev_connections")
