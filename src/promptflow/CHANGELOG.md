@@ -6,6 +6,7 @@
 - Add `pfazure flow show/list` to show or list flows from Azure AI.
 - Display node status in run visualize page graph view.
 - Add support for image input and output in prompt flow.
+- Support `pf config set run.output_path=<output-path>` to customize default run output path.
 
 ### Bugs Fixed
 
