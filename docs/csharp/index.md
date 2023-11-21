@@ -12,3 +12,9 @@ how-to-guides/quick-start
 :maxdepth: 1
 how-to-guides/index
 ```
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+concepts/index
+```

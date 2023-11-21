@@ -57,6 +57,32 @@ function ProcessFiles {
     }
 }
 
+function BuildDoc {
+    param(
+        [string] $language,
+        [string] $folder
+    )
+    $LangDocSource = [System.IO.Path]::Combine($TempDocPath, $folder)
+    $LangDocOut = [System.IO.Path]::Combine($OutPath, $folder)
+    $SharedDocFolder = [System.IO.Path]::Combine($TempDocPath, "shared")
+    # Copy shared files to language specific folder
+    ROBOCOPY $SharedDocFolder $LangDocSource /S /NFL /NDL /XD
+    # Set env var for version switcher
+    $Env:DOC_VERSION = $language
+    sphinx-build $LangDocSource $LangDocOut -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+    $Env:DOC_VERSION = $null
+}
+
+function CopyExtraFiles {
+    # Copy 404 and index files.
+    $IncludeFiles = @("404.html", "404NotFound.html", "index.html")
+    foreach ($f in $IncludeFiles)
+    {
+        $full_path = [System.IO.Path]::Combine($DocPath, $f)
+        Copy-Item -Path $full_path -Destination $OutPath -Force
+    }
+}
+
 Write-Host "===============PreProcess Files==============="
 Write-Host "Copy doc to: $TempDocPath"
 ROBOCOPY $DocPath $TempDocPath /S /NFL /NDL /XD "*.git" [System.IO.Path]::Combine($DocPath, "_scripts\_build")
@@ -91,25 +117,11 @@ if($WarningAsError){
 if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
-$Env:DOC_VERSION = "Python"
-$PYTHON_DOC = [System.IO.Path]::Combine($TempDocPath, "python")
-$PYTHON_DOC_OUT = [System.IO.Path]::Combine($OutPath, "python")
-sphinx-build $PYTHON_DOC $PYTHON_DOC_OUT -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
-$Env:DOC_VERSION = "C#"
-$CSHARP_DOC = [System.IO.Path]::Combine($TempDocPath, "csharp")
-$CSHARP_DOC_OUT = [System.IO.Path]::Combine($OutPath, "csharp")
-sphinx-build $CSHARP_DOC $CSHARP_DOC_OUT -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
-$Env:DOC_VERSION = "Javascript"
-$JS_DOC = [System.IO.Path]::Combine($TempDocPath, "js")
-$JS_DOC_OUT = [System.IO.Path]::Combine($OutPath, "js")
-sphinx-build $JS_DOC $JS_DOC_OUT -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
-# Copy 404 files.
-[string] $404Path = [System.IO.Path]::Combine($DocPath, "404.html")
-[string] $Raw404Path = [System.IO.Path]::Combine($DocPath, "404NotFound.html")
-[string] $IndexPath = [System.IO.Path]::Combine($DocPath, "index.html")
-Copy-Item -Path $404Path -Destination $OutPath -Force
-Copy-Item -Path $Raw404Path -Destination $OutPath -Force
-Copy-Item -Path $IndexPath -Destination $OutPath -Force
+BuildDoc -language "Python" -folder "python"
+BuildDoc -language "C#" -folder "csharp"
+BuildDoc -language "Javascript" -folder "js"
+CopyExtraFiles
+
 $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"
