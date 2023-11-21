@@ -40,4 +40,4 @@ jobs:
         run: |
           pip install promptflow[azure]
           python update-runtime.py --path canary.json
-          # python update-runtime.py --path production.json
+          python update-runtime.py --path production.json
