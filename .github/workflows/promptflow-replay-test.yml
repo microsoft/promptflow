@@ -3,8 +3,7 @@ on:
   pull_request:
     paths:
       - src/promptflow/**
-      - scripts/building/run_coverage_tests.py
-      - scripts/building/utils.py
+      - scripts/building/**
       - .github/workflows/promptflow-replay-test.yml
   workflow_dispatch:
 env:
