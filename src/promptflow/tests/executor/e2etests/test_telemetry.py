@@ -1,5 +1,4 @@
 import json
-import pkg_resources
 import uuid
 from collections import namedtuple
 from pathlib import Path
@@ -32,10 +31,6 @@ def mock_stream_chat(**kwargs):
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
-    @pytest.mark.skipif(
-        pkg_resources.get_distribution("openai").version.startswith("1."),
-        reason="test needs to be upgraded to adapt to openai>=1.0.0",
-    )
     def test_executor_openai_telemetry(self, dev_connections):
         """This test validates telemetry info header is correctly injected to OpenAI API
         by mocking openai.ChatCompletion.create method. The mock method will return a generator
