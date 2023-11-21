@@ -118,6 +118,8 @@ class TestBatch:
         nlines = get_batch_inputs_line(flow_folder)
         assert batch_result.total_lines == nlines
         assert batch_result.completed_lines == nlines
+        assert batch_result.start_time < batch_result.end_time
+        assert batch_result.system_metrics.duration > 0
 
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert len(outputs) == nlines
@@ -192,6 +194,8 @@ class TestBatch:
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert len(outputs) == nlines
         assert batch_result.system_metrics.total_tokens > 0
+        assert batch_result.system_metrics.prompt_tokens > 0
+        assert batch_result.system_metrics.completion_tokens > 0
 
     def test_batch_with_default_input(self):
         mem_run_storage = MemoryRunStorage()
