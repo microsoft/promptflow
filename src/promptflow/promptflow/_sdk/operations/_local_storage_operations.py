@@ -289,9 +289,11 @@ class LocalStorageOperations(AbstractRunStorage):
         :param batch_result: Bulk run outputs. If exception not raised, store line run error messages.
         """
         # extract line run errors
-        errors = batch_result.error_summary.error_list if batch_result else []
         message = ""
-
+        errors = []
+        if batch_result:
+            for line_error in batch_result.error_summary.error_list:
+                errors.append(line_error.to_dict())
         if errors:
             try:
                 # use first line run error message as exception message if no exception raised

@@ -24,6 +24,12 @@ class LineError:
     line_number: int
     error: Mapping[str, Any]
 
+    def to_dict(self):
+        return {
+            "line_number": self.line_number,
+            "error": self.error,
+        }
+
 
 @dataclass
 class ErrorSummary:
