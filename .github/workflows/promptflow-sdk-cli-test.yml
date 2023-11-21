@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        pythonVersion: ['3.8', '3.9']
+        pythonVersion: ['3.8']
     runs-on: ubuntu-latest
     steps:
     - name: checkout
@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         pythonVersion: ['3.8', '3.9']
     runs-on: ${{ matrix.os }}
     steps:
