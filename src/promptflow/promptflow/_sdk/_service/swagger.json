@@ -32,6 +32,29 @@
                     "type": "string"
                 }
             ],
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Update connection",
+                "operationId": "put_connection",
+                "parameters": [
+                    {
+                        "name": "connection_dict",
+                        "in": "query",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
             "get": {
                 "responses": {
                     "200": {
@@ -51,6 +74,18 @@
                         "default": false
                     }
                 ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -77,38 +112,28 @@
                 "tags": [
                     "Connections"
                 ]
-            },
-            "put": {
+            }
+        },
+        "/Connections/{name}/listsecrets": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
                 "responses": {
                     "200": {
-                        "description": "Connection details",
+                        "description": "Connection details with secret",
                         "schema": {
                             "$ref": "#/definitions/ConnectionDict"
                         }
                     }
                 },
-                "description": "Update connection",
-                "operationId": "put_connection",
-                "parameters": [
-                    {
-                        "name": "connection_dict",
-                        "in": "query",
-                        "type": "string",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
+                "description": "Get connection with secret",
+                "operationId": "get_connection_with_secret",
                 "tags": [
                     "Connections"
                 ]
