@@ -14,7 +14,13 @@ from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import yaml
 
-from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError, ToolLoadError
+from promptflow._core._errors import (
+    InputTypeMismatch,
+    MissingRequiredInputs,
+    NotSupported,
+    PackageToolNotFoundError,
+    ToolLoadError,
+)
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
@@ -27,9 +33,9 @@ from promptflow._utils.connection_utils import (
     generate_custom_strong_type_connection_template,
 )
 from promptflow._utils.tool_utils import (
+    _DEPRECATED_TOOLS,
     DynamicListError,
     RetrieveToolFuncResultError,
-    _DEPRECATED_TOOLS,
     _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_tool_definition,
@@ -191,10 +197,7 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
 
 
 def retrieve_tool_func_result(
-    func_call_scenario: str,
-    func_path: str,
-    func_input_params_dict: Dict,
-    ws_triple_dict: Dict[str, str] = {}
+    func_call_scenario: str, func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}
 ):
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
@@ -277,9 +280,16 @@ class BuiltinsManager:
             if k not in init_inputs:
                 continue
             if v.value_type != InputValueType.LITERAL:
-                raise ValueError(
-                    f"Input {k!r} for tool '{tool_name}' only supports literal values for initialization,"
-                    + f" got {v.serialize()!r}"
+                raise InputTypeMismatch(
+                    message_format=(
+                        "The input for flow is incorrect. The tool '{tool_name}' requires a literal value for "
+                        "the input '{input_name}', however, a value '{input_value}' was provided which is not a "
+                        "literal value. Please provide a literal value for '{input_name}' to correct this issue."
+                    ),
+                    tool_name=tool_name,
+                    input_name=k,
+                    input_value=v.serialize(),
+                    target=ErrorTarget.EXECUTOR,
                 )
             init_inputs_values[k] = v.value
         missing_inputs = set(provider_class.get_required_initialize_inputs()) - set(init_inputs_values)
@@ -441,9 +451,7 @@ class ToolLoader:
         if node.source.tool in self._deprecated_tools:
             new_tool_id = self._deprecated_tools[node.source.tool]
             # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
-            module_logger.warning(
-                f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead."
-            )
+            module_logger.warning(f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead.")
             return Tool.deserialize(self._package_tools[new_tool_id])
 
         raise PackageToolNotFoundError(

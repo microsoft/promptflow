@@ -1,6 +1,6 @@
 from traceback import TracebackException
 
-from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERROR, last_frame_info, is_pf_core_frame
+from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERROR, is_pf_core_frame, last_frame_info
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 
@@ -25,6 +25,10 @@ class PackageToolNotFoundError(ValidationException):
 
 
 class MissingRequiredInputs(ValidationException):
+    pass
+
+
+class InputTypeMismatch(ValidationException):
     pass
 
 
@@ -136,4 +140,5 @@ class ProcessPoolError(SystemErrorException):
 
 class DuplicateToolMappingError(ValidationException):
     """Exception raised when multiple tools are linked to the same deprecated tool id."""
+
     pass
