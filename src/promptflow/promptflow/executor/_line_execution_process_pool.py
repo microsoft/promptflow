@@ -1,5 +1,7 @@
 import contextvars
 import math
+import sys
+import signal
 import multiprocessing
 import os
 import queue
@@ -10,6 +12,7 @@ from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 
 import psutil
+from psutil import NoSuchProcess
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.operation_context import OperationContext
@@ -29,6 +32,29 @@ from promptflow.executor._errors import LineExecutionTimeoutError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
+
+
+def signal_handler(signum, frame):
+    signame = signal.Signals(signum).name
+    logger.info("Execution stopping. Handling signal %s (%s)", signame, signum)
+    try:
+        process = psutil.Process(os.getpid())
+        children = process.children(recursive=True)
+        for child in children:
+            try:
+                child.terminate()
+                logger.info("Successfully terminated child process with pid %s", child.pid)
+            except NoSuchProcess:
+                logger.warning("Process %s already terminated and not found, skipping", process.pid)
+        logger.info("Successfully terminated process with pid %s", process.pid)
+        process.terminate()
+    except Exception:
+        logger.warning("Error when handling execution stop signal", exc_info=True)
+    finally:
+        sys.exit(1)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 
 class QueueRunStorage(AbstractRunStorage):
@@ -348,13 +374,21 @@ class LineExecutionProcessPool:
             ),
         ):
             try:
-                self._pool.starmap(
+                # The variable 'async_result' here is not the actual result of the batch run
+                # but an AsyncResult object that can be used to check if the execution are finished
+                # The actual results of the batch run are stored in 'result_list'
+                async_result = self._pool.starmap_async(
                     self._timeout_process_wrapper,
                     [
                         (run_start_time, self._inputs_queue, self._line_timeout_sec, result_list)
                         for _ in range(self._n_process)
                     ],
                 )
+                try:
+                    while not async_result.ready():
+                        async_result.wait(1)
+                except KeyboardInterrupt:
+                    raise
             except PromptflowException:
                 raise
             except Exception as e:
