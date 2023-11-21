@@ -39,7 +39,7 @@ jobs:
         setupType: promptflow_with_extra
         scriptPath: ${{ env.testWorkingDirectory }}
     - name: Upload Wheel
-      if: always() && matrix.pythonVersion == '3.9'
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: wheel
