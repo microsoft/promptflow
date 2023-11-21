@@ -48,6 +48,7 @@ jobs:
           ${{ github.workspace }}/src/promptflow/dist/*.whl
           ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
   sdk_cli_tests:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
