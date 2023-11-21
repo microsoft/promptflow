@@ -117,7 +117,7 @@ class TestExecutorActivate:
             assert output == expected_outputs
 
         # Validate the flow line results
-        flow_runs = {k: v for k, v in sorted(mem_run_storage._flow_runs.items(), key=lambda _, v: v.index)}
+        flow_runs = {k: v for k, v in sorted(mem_run_storage._flow_runs.items(), key=lambda item: item[1].index)}
         for i, (flow_run_id, flow_run_info) in enumerate(flow_runs.items()):
             self.assert_activate_flow_run_result(flow_run_info, expected_result[i])
             node_run_infos = {
