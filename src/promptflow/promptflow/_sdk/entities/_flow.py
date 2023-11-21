@@ -299,14 +299,31 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         :param kwargs: flow inputs with key word arguments.
         :return:
         """
-        from promptflow._sdk._submitter import TestSubmitter
+        from promptflow._sdk._submitter.utils import SubmitterHelper
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
-        submitter = TestSubmitter(flow=self, flow_context=self.context)
-
-        result = submitter.exec_with_inputs(
-            inputs=kwargs,
+        invoker = FlowContextResolver.resolve(flow=self)
+        # resolve environment variables
+        SubmitterHelper.resolve_environment_variables(
+            environment_variables=self.context.environment_variables,
+        )
+        SubmitterHelper.init_env(environment_variables=self.context.environment_variables)
+        # TODO: support environment variables in invoker?
+        result = invoker._invoke(
+            data=kwargs,
         )
         return result.output
+
+    def invoke(self, inputs: dict) -> "LineResult":
+        """Invoke a flow and get a LineResult object."""
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
+
+        invoker = FlowContextResolver.resolve(flow=self)
+
+        result = invoker._invoke(
+            data=inputs,
+        )
+        return result
