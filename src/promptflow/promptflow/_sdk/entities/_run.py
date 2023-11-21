@@ -139,10 +139,12 @@ class Run(YAMLTranslatableMixin):
         # init here to make sure those fields initialized in all branches.
         self.flow = flow
         self._use_remote_flow = is_remote_uri(flow)
-        if self._use_remote_flow:
-            self._flow_name = get_flow_name_from_remote_flow_pattern(flow)
         self._experiment_name = None
         self._lineage_id = None
+        if self._use_remote_flow:
+            self._flow_name = get_flow_name_from_remote_flow_pattern(flow)
+            self._experiment_name = self._flow_name
+            self._lineage_id = self._flow_name
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
             self.flow = Path(flow).resolve().absolute()
             flow_dir = self._get_flow_dir()
@@ -324,11 +326,7 @@ class Run(YAMLTranslatableMixin):
         }
 
         if self._run_source == RunInfoSources.LOCAL:
-            result["flow_name"] = (
-                Path(str(self.flow)).resolve().name
-                if not self._use_remote_flow
-                else get_flow_name_from_remote_flow_pattern(self.flow)
-            )
+            result["flow_name"] = Path(str(self.flow)).resolve().name if not self._use_remote_flow else self._flow_name
             local_storage = LocalStorageOperations(run=self)
             result[RunDataKeys.DATA] = (
                 local_storage._data_path.resolve().absolute().as_posix()
@@ -394,11 +392,7 @@ class Run(YAMLTranslatableMixin):
     def _generate_run_name(self) -> str:
         """Generate a run name with flow_name_variant_timestamp format."""
         try:
-            flow_name = (
-                self._get_flow_dir().name
-                if not self._use_remote_flow
-                else get_flow_name_from_remote_flow_pattern(self.flow)
-            )
+            flow_name = self._get_flow_dir().name if not self._use_remote_flow else self._flow_name
             variant = self.variant
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
@@ -410,13 +404,9 @@ class Run(YAMLTranslatableMixin):
             return str(uuid.uuid4())
 
     def _get_default_display_name(self) -> str:
-        display_name = self.display_name
+        display_name = self.display_name or self.name
         if not display_name:
-            display_name = (
-                self._get_flow_dir().name
-                if not self._use_remote_flow
-                else get_flow_name_from_remote_flow_pattern(self.flow)
-            )
+            display_name = self._get_flow_dir().name if not self._use_remote_flow else self._flow_name
         return display_name
 
     def _format_display_name(self) -> str:
@@ -453,8 +443,6 @@ class Run(YAMLTranslatableMixin):
         return RunSchema
 
     def _to_rest_object(self):
-        from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
-
         from promptflow.azure._restclient.flow.models import (
             BatchDataInput,
             RunDisplayNameGenerationType,
@@ -495,11 +483,8 @@ class Run(YAMLTranslatableMixin):
 
         if self._use_remote_flow:
             # upload via _check_and_upload_path
-            # submit with params FlowDefinitionDataStoreName and FlowDefinitionBlobPath
-            path_uri = AzureMLDatastorePathUri(str(self.flow))
+            # submit with params flow_definition_resource_id which will be resolved in pfazure run create operation
             return SubmitBulkRunRequest(
-                flow_definition_data_store_name=path_uri.datastore,
-                flow_definition_blob_path=path_uri.path,
                 run_id=self.name,
                 # will use user provided display name since PFS will have special logic to update it.
                 run_display_name=self._get_default_display_name(),

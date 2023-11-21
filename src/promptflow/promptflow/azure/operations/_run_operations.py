@@ -936,6 +936,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
         rest_obj.session_id = session_id
+        if run._use_remote_flow:
+            rest_obj.flow_definition_resource_id = self._resolve_flow_definition_resource_id(flow_name=run._flow_name)
 
         if runtime == "None":
             # HARD CODE for office scenario, use workspace default runtime when specified None
@@ -964,3 +966,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             raise RunRequestException(
                 f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
             )
+
+    def _resolve_flow_definition_resource_id(self, flow_name: str):
+        """Resolve the flow definition resource id."""
+        workspace_id = self._workspace._workspace_id
+        location = self._workspace.location
+        return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{flow_name}"
