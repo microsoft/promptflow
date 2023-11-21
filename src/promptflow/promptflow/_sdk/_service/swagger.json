@@ -32,29 +32,6 @@
                     "type": "string"
                 }
             ],
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Create connection",
-                "operationId": "post_connection",
-                "parameters": [
-                    {
-                        "name": "connection_dict",
-                        "in": "query",
-                        "type": "string",
-                        "required": true
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
             "put": {
                 "responses": {
                     "200": {
@@ -78,6 +55,21 @@
                     "Connections"
                 ]
             },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
             "delete": {
                 "responses": {
                     "200": {
@@ -90,7 +82,7 @@
                     "Connections"
                 ]
             },
-            "get": {
+            "post": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -99,16 +91,41 @@
                         }
                     }
                 },
-                "description": "Get connection",
-                "operationId": "get_connection",
+                "description": "Create connection",
+                "operationId": "post_connection",
                 "parameters": [
                     {
-                        "name": "with_secrets",
+                        "name": "connection_dict",
                         "in": "query",
-                        "type": "boolean",
-                        "default": false
+                        "type": "string",
+                        "required": true
                     }
                 ],
+                "tags": [
+                    "Connections"
+                ]
+            }
+        },
+        "/Connections/{name}/listsecrets": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details with secret",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection with secret",
+                "operationId": "get_connection_with_secret",
                 "tags": [
                     "Connections"
                 ]
