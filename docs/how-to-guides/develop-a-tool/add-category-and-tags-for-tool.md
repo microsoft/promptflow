@@ -18,7 +18,7 @@ This document is dedicated to guiding you through the process of categorizing an
 Run the command below in your tool project directory to automatically generate your tool YAML, use _-c_ or _--category_ to add category, and use _--tags_ to add tags for your tool:
 
 ```
-python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> --category <tool_category> --tags <tool_tags>
+python <promptflow github repo>\scripts\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> --category <tool_category> --tags <tool_tags>
 ```
 
 Here, we use [an existing tool](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/my_tool_1.yaml) as an example. If you wish to create your own tool, please refer to the [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package) guide. 

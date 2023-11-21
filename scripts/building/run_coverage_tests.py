@@ -69,7 +69,7 @@ if __name__ == "__main__":
     run_command(["pip", "list"])
     run_command(["pip", "show", "promptflow", "promptflow-sdk"])
 
-    pytest_command = ["pytest", "--junit-xml=test-results.xml"]
+    pytest_command = ["pytest", "--junitxml=test-results.xml"]
     pytest_command += test_paths_list
     if args.coverage_config:
         if args.p:

@@ -20,6 +20,7 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 from azure.ai.ml.constants._common import SHORT_URI_FORMAT
+from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
@@ -39,6 +40,7 @@ from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow._telemetry.activity import ActivityType, monitor_operation
+from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
@@ -50,7 +52,7 @@ from promptflow.exceptions import SystemErrorException
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
-class FlowOperations(_ScopeDependentOperations):
+class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     """FlowOperations that can manage flows.
 
     You should not instantiate this class directly. Instead, you should
@@ -67,42 +69,39 @@ class FlowOperations(_ScopeDependentOperations):
         all_operations: OperationsContainer,
         credential,
         service_caller: FlowServiceCaller,
+        workspace: Workspace,
         **kwargs: Dict,
     ):
-        super(FlowOperations, self).__init__(operation_scope, operation_config)
+        super().__init__(
+            operation_scope=operation_scope,
+            operation_config=operation_config,
+            workspace_name=operation_scope.workspace_name,
+            subscription_id=operation_scope.subscription_id,
+            resource_group_name=operation_scope.resource_group_name,
+        )
         self._all_operations = all_operations
         self._service_caller = service_caller
         self._credential = credential
+        self._workspace = workspace
 
     @cached_property
-    def _common_azure_url_pattern(self):
-        operation_scope = self._operation_scope
-        url = (
-            f"/subscriptions/{operation_scope.subscription_id}"
-            f"/resourceGroups/{operation_scope.resource_group_name}"
-            f"/providers/Microsoft.MachineLearningServices"
-            f"/workspaces/{operation_scope.workspace_name}"
-        )
-        return url
+    def _workspace_id(self):
+        return self._workspace._workspace_id
 
     @cached_property
     def _index_service_endpoint_url(self):
         """Get the endpoint url for the workspace."""
         endpoint = self._service_caller._service_endpoint
-        return endpoint + "index/v1.0" + self._common_azure_url_pattern
+        return endpoint + "index/v1.0" + self._service_caller._common_azure_url_pattern
 
-    def _get_flow_portal_url(self, flow_resource_id: str):
+    def _get_flow_portal_url_from_resource_id(self, flow_resource_id: str):
         """Get the portal url for the run."""
         match = self._FLOW_RESOURCE_PATTERN.match(flow_resource_id)
         if not match or len(match.groups()) != 2:
             logger.warning("Failed to parse flow resource id '%s'", flow_resource_id)
             return None
         experiment_id, flow_id = match.groups()
-        # TODO[2785705]: Handle the case when endpoint is other clouds
-        url = (
-            f"https://ml.azure.com/prompts/flow/{experiment_id}/{flow_id}/details?wsid={self._common_azure_url_pattern}"
-        )
-        return url
+        return self._get_flow_portal_url(experiment_id, flow_id)
 
     def _get_flow_portal_url_from_index_entity(self, entity: Dict):
         """Enrich the index entity with flow portal url."""
@@ -111,12 +110,27 @@ class FlowOperations(_ScopeDependentOperations):
         flow_id = entity["properties"].get("flowId", None)
 
         if experiment_id and flow_id:
-            # TODO[2785705]: Handle the case when endpoint is other clouds
-            result = (
-                f"https://ml.azure.com/prompts/flow/{experiment_id}/{flow_id}"
-                f"/details?wsid={self._common_azure_url_pattern}"
-            )
+            result = self._get_flow_portal_url(experiment_id, flow_id)
         return result
+
+    def _get_flow_portal_url(self, experiment_id, flow_id):
+        """Get the portal url for the run."""
+        # TODO[2785705]: Handle the case when endpoint is other clouds
+        workspace_kind = str(self._workspace._kind).lower()
+        # default refers to azure machine learning studio
+        if workspace_kind == "default":
+            return (
+                f"https://ml.azure.com/prompts/flow/{experiment_id}/{flow_id}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
+        # project refers to azure ai studio
+        elif workspace_kind == "project":
+            return (
+                f"https://ai.azure.com/projectflows/{flow_id}/{experiment_id}/"
+                f"details/Flow?wsid={self._service_caller._common_azure_url_pattern}"
+            )
+        else:
+            raise FlowOperationError(f"Workspace kind {workspace_kind!r} is not supported for promptflow operations.")
 
     @monitor_operation(activity_name="pfazure.flows.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, flow: Union[str, Path], display_name=None, type=None, **kwargs) -> Flow:
@@ -155,7 +169,7 @@ class FlowOperations(_ScopeDependentOperations):
             **kwargs,
         )
         result_flow = Flow._from_pf_service(rest_flow)
-        result_flow.flow_portal_url = self._get_flow_portal_url(rest_flow.flow_resource_id)
+        result_flow.flow_portal_url = self._get_flow_portal_url_from_resource_id(rest_flow.flow_resource_id)
         flow_dict = result_flow._to_dict()
         print(f"Flow created successfully:\n{json.dumps(flow_dict, indent=4)}")
 
@@ -282,9 +296,31 @@ class FlowOperations(_ScopeDependentOperations):
         )
         return rest_flow_result
 
-    def _get(self, flow_id):
-        # TODO: support load remote flow with meta
-        raise NotImplementedError("Not implemented yet")
+    def get(self, name: str) -> Flow:
+        """Get a flow from azure.
+
+        :param name: The name of the flow to get.
+        :type name: str
+        :return: The flow.
+        :rtype: ~promptflow.azure.entities.Flow
+        """
+        try:
+            rest_flow = self._service_caller.get_flow(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_id=name,
+                experiment_id=self._workspace_id,  # for flow operations, current experiment id is workspace id
+            )
+        except HttpResponseError as e:
+            if e.status_code == 404:
+                raise FlowOperationError(f"Flow {name!r} not found.") from e
+            else:
+                raise FlowOperationError(f"Failed to get flow {name!r} due to: {str(e)}.") from e
+
+        flow = Flow._from_pf_service(rest_flow)
+        flow.flow_portal_url = self._get_flow_portal_url_from_resource_id(rest_flow.flow_resource_id)
+        return flow
 
     @monitor_operation(activity_name="pfazure.flows.list", activity_type=ActivityType.PUBLICAPI)
     def list(

@@ -60,8 +60,7 @@ class AsyncNodesScheduler:
         nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
             for node in nodes_to_bypass:
-                node_outputs = dag_manager.get_bypassed_node_outputs(node)
-                context.bypass_node(node, node_outputs)
+                context.bypass_node(node)
             nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         # Create tasks for ready nodes
         return {self._create_node_task(node, dag_manager, context): node for node in dag_manager.pop_ready_nodes()}

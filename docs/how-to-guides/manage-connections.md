@@ -210,6 +210,8 @@ On the VS Code primary sidebar > prompt flow pane. You can find the connections 
 :::
 ::::
 
+
 ## Next steps
 - Reach more detail about [connection concepts](../../concepts/concept-connections.md).
 - Try the [connection samples](https://github.com/microsoft/promptflow/blob/main/examples/connections/connection.ipynb).
+- [Consume connections from Azure AI](../cloud/azureai/consume-connections-from-azure-ai.md).
