@@ -33,6 +33,10 @@ list_connection_field = api.model(
 # Response model of connection operation
 dict_field = api.schema_model("ConnectionDict", {"additionalProperties": True, "type": "object"})
 
+# Define get connection request parsing
+get_connection_parser = api.parser()
+get_connection_parser.add_argument("with_secrets", type=bool, default=False, location="args", required=False)
+
 
 @api.errorhandler(ConnectionNotFoundError)
 def handle_connection_not_found_exception(error):
@@ -59,16 +63,14 @@ class ConnectionList(Resource):
 @api.route("/<string:name>")
 @api.param("name", "The connection name.")
 class Connection(Resource):
-    @api.doc(description="Get connection")
+    @api.doc(parser=get_connection_parser, description="Get connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def get(self, name: str):
         connection_op = ConnectionOperations()
         # parse query parameters
-        with_secrets = request.args.get("with_secrets", default=False, type=bool)
-        raise_error = request.args.get("raise_error", default=True, type=bool)
-
-        connection = connection_op.get(name=name, with_secrets=with_secrets, raise_error=raise_error)
+        args = get_connection_parser.parse_args()
+        connection = connection_op.get(name=name, with_secrets=args.with_secrets, raise_error=True)
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)
 

@@ -32,21 +32,6 @@
                     "type": "string"
                 }
             ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Get connection",
-                "operationId": "get_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
             "post": {
                 "responses": {
                     "200": {
@@ -101,6 +86,29 @@
                 },
                 "description": "Delete connection",
                 "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "with_secrets",
+                        "in": "query",
+                        "type": "boolean",
+                        "default": false
+                    }
+                ],
                 "tags": [
                     "Connections"
                 ]
