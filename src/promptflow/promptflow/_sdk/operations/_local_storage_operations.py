@@ -307,6 +307,8 @@ class LocalStorageOperations(AbstractRunStorage):
         elif exception and isinstance(exception, UserErrorException):
             # SystemError will be raised above and users can see it, so we don't need to dump it.
             message = str(exception)
+        else:
+            return
 
         if not isinstance(exception, BulkRunException):
             # If other errors raised, pass it into PromptflowException
