@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import argparse
+import time
 from pathlib import Path
 
 import requests
@@ -65,6 +66,15 @@ def init_ml_client(
 def create_environment(ml_client: MLClient) -> str:
     environment = load_environment(source=ENVIRONMENT_YAML)
     env = ml_client.environments.create_or_update(environment)
+
+    # have observed delay between environment creation and asset id availability
+    while True:
+        try:
+            ml_client.environments.get(name=env.name, version=env.version)
+            break
+        except Exception:
+            time.sleep(10)
+
     # get workspace id from REST workspace object
     resource_group_name = ml_client._operation_scope.resource_group_name
     workspace_name = ml_client._operation_scope.workspace_name
