@@ -43,10 +43,6 @@ After the flow is created successfully, you can see the flow summary in the comm
 
 ![img](../../media/cloud/manage-flows/flow_create_0.png)
 
-On Azure portal, you can see the created flow in the flow list.
-
-![img](../../media/cloud/manage-flows/flow_create_1.png)
-
 
 :::
 
@@ -101,6 +97,15 @@ flow = pf.flows.create_or_update(
 :::
 
 ::::
+
+On Azure portal, you can see the created flow in the flow list.
+
+![img](../../media/cloud/manage-flows/flow_create_1.png)
+
+And the flow source folder on file share is `Users/<alias>/promptflow/<flow-display-name>`:
+
+![img](../../media/cloud/manage-flows/flow_create_2.png)
+
 
 ## List flows
 

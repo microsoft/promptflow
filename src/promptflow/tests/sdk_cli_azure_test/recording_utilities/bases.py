@@ -12,6 +12,7 @@ from vcr.request import Request
 
 from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING, SanitizedValues
 from .processors import (
+    AzureMLExperimentIDProcessor,
     AzureOpenAIConnectionProcessor,
     AzureResourceProcessor,
     AzureWorkspaceTriadProcessor,
@@ -128,6 +129,7 @@ class PFAzureIntegrationTestRecording:
 
     def _get_recording_processors(self) -> List[RecordingProcessor]:
         return [
+            AzureMLExperimentIDProcessor(),
             AzureOpenAIConnectionProcessor(),
             AzureResourceProcessor(),
             AzureWorkspaceTriadProcessor(),

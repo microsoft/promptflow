@@ -1,28 +1,45 @@
-name: promptflow-sdk-cli-azure-e2e-test
+# execute tests in src/promptflow/tests/sdk_cli_azure_test
+# when pull_request triggers, use replay test mode
+# otherwise (schedule/workflow_disptach), use live test mode
+
+name: sdk-cli-azure-test
+
 
 on:
   pull_request:
     paths:
       - src/promptflow/**
-      - scripts/**
-      - '**promptflow-sdk-cli-azure-e2e-test.yml'
+      - scripts/building/run_coverage_tests.py
+      - .github/workflows/promptflow-sdk-cli-azure-test.yml
+
+  schedule:
+    - cron: "30 20 * * *"  # 4:30 Beijing Time (GMT+8)
+
   workflow_dispatch:
+
 
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
-  PROMPT_FLOW_TEST_MODE: "replay"
+
 
 jobs:
-  sdk_cli_azure_e2e_test:
+  sdk_cli_azure_test:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+
     steps:
+      - name: set test mode
+        run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
+      
+      - name: check test mode from env
+        run: echo $PROMPT_FLOW_TEST_MODE
+
       - name: checkout
         uses: actions/checkout@v4
 
@@ -55,6 +72,18 @@ jobs:
         uses: SimenB/github-actions-cpu-cores@v1
         id: cpu-cores
 
+      - name: Azure login (non pull_request workflow)
+        if: github.event_name != 'pull_request'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: generate live test resources (non pull_request workflow)
+        if: github.event_name != 'pull_request'
+        uses: "./.github/actions/step_generate_configs"
+        with:
+          targetFolder: ${{ env.testWorkingDirectory }}
+
       - name: Run Test
         shell: pwsh
         working-directory: ${{ env.testWorkingDirectory }}
@@ -62,9 +91,9 @@ jobs:
           gci env:* | sort-object name
           python "../../scripts/building/run_coverage_tests.py" `
             -p promptflow `
-            -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test/e2etests `
+            -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test `
             -l eastus `
-            -m "e2etest" `
+            -m "unittest or e2etest" `
             -n ${{ steps.cpu-cores.outputs.count }} `
             --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
 
@@ -79,7 +108,7 @@ jobs:
 
   publish-test-results:
     name: "Publish Tests Results"
-    needs: sdk_cli_azure_e2e_test
+    needs: sdk_cli_azure_test
     runs-on: ubuntu-latest
     permissions: write-all
     if: always()

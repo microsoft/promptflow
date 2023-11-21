@@ -64,6 +64,7 @@ def mock_workspace_get(*args, **kwargs) -> Workspace:
         name=SanitizedValues.WORKSPACE_NAME,
         resource_group=SanitizedValues.RESOURCE_GROUP_NAME,
         discovery_url=SanitizedValues.DISCOVERY_URL,
+        workspace_id=SanitizedValues.WORKSPACE_ID,
     )
 
 
@@ -110,6 +111,16 @@ def sanitize_azure_workspace_triad(value: str) -> str:
             sanitized_ws = sanitized_ws.replace(split2, SanitizedValues.WORKSPACE_NAME)
 
     return sanitized_ws
+
+
+def sanitize_experiment_id(value: str) -> str:
+    value = re.sub(
+        r"(experimentId)=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        r"\1={}".format(SanitizedValues.WORKSPACE_ID),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
 
 
 def sanitize_upload_hash(value: str) -> str:

@@ -3,13 +3,12 @@
 # ---------------------------------------------------------
 import argparse
 import sys
-
 import waitress
 import yaml
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._service.app import create_app
-from promptflow._sdk._service.utils import get_random_port, is_port_in_use
+from promptflow._sdk._service.utils.utils import get_random_port, is_port_in_use
 from promptflow._sdk._utils import read_write_by_user
 from promptflow.exceptions import UserErrorException
 
@@ -24,10 +23,13 @@ def main():
     )
 
     parser.add_argument("-p", "--port", type=int, help="port of the promptflow service")
+
     args = parser.parse_args(command_args)
     port = args.port
+    app, _ = create_app()
 
     if port and is_port_in_use(port):
+        app.logger.warning(f"Service port {port} is used.")
         raise UserErrorException(f"Service port {port} is used.")
     if not port:
         (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
@@ -42,10 +44,11 @@ def main():
                 service_config["service"]["port"] = port
                 yaml.dump(service_config, f)
 
-    app = create_app()
     if is_port_in_use(port):
+        app.logger.warning(f"Service port {port} is used.")
         raise UserErrorException(f"Service port {port} is used.")
     # Set host to localhost, only allow request from localhost.
+    app.logger.info(f"Start Prompt Flow Service on http://localhost:{port}")
     waitress.serve(app, host="127.0.0.1", port=port)
 
 

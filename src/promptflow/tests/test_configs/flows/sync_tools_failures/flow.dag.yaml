@@ -1,0 +1,16 @@
+inputs:
+  text:
+    type: string
+    default: dummy_input
+outputs:
+  output_prompt:
+    type: string
+    reference: ${sync_fail.output}
+nodes:
+- name: sync_fail
+  type: python
+  source:
+    type: code
+    path: sync_fail.py
+  inputs:
+    s: ${inputs.text}
