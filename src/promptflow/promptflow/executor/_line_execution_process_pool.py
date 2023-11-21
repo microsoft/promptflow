@@ -12,7 +12,6 @@ from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 
 import psutil
-from psutil import NoSuchProcess
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.operation_context import OperationContext
@@ -39,22 +38,12 @@ def signal_handler(signum, frame):
     logger.info("Execution stopping. Handling signal %s (%s)", signame, signum)
     try:
         process = psutil.Process(os.getpid())
-        children = process.children(recursive=True)
-        for child in children:
-            try:
-                child.terminate()
-                logger.info("Successfully terminated child process with pid %s", child.pid)
-            except NoSuchProcess:
-                logger.warning("Process %s already terminated and not found, skipping", process.pid)
         logger.info("Successfully terminated process with pid %s", process.pid)
         process.terminate()
     except Exception:
         logger.warning("Error when handling execution stop signal", exc_info=True)
     finally:
         sys.exit(1)
-
-
-signal.signal(signal.SIGINT, signal_handler)
 
 
 class QueueRunStorage(AbstractRunStorage):
@@ -349,6 +338,7 @@ class LineExecutionProcessPool:
         return result
 
     def run(self, batch_inputs):
+        signal.signal(signal.SIGINT, signal_handler)
         for index, inputs in batch_inputs:
             self._inputs_queue.put(
                 (
@@ -385,7 +375,9 @@ class LineExecutionProcessPool:
                     ],
                 )
                 try:
+                    # Wait for batch run to complete or KeyboardInterrupt
                     while not async_result.ready():
+                        # Check every 1 second
                         async_result.wait(1)
                 except KeyboardInterrupt:
                     raise
@@ -468,6 +460,7 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
+    signal.signal(signal.SIGINT, signal_handler)
     logger.info(f"Process {os.getpid()} started.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
     if log_context_initialization_func:
