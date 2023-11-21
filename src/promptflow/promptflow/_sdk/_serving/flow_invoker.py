@@ -57,7 +57,7 @@ class FlowInvoker:
     ):
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
         self._executable_flow = executable_flow or self.flow_entity._init_executable()
-        self.connections = dict(connections) or {}
+        self.connections = connections or {}
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         # Pass dump_to path to dump flow result for extension.
         self._dump_to = kwargs.get("dump_to", None)
