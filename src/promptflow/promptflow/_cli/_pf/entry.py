@@ -17,6 +17,7 @@ from promptflow._cli._pf._connection import add_connection_parser, dispatch_conn
 from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands  # noqa: E402
 from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  # noqa: E402
+from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
 from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
@@ -95,6 +96,9 @@ def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
     if len(command_args) == 0:
+        # print privacy statement & welcome message like azure-cli
+        show_privacy_statement()
+        show_welcome_message()
         command_args.append("-h")
     setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
