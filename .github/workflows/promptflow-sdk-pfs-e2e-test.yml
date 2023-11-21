@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - src/promptflow/**
-      - scripts/**
+      - scripts/building/**
       - .github/workflows/promptflow-sdk-pfs-e2e-test.yml
 
   workflow_dispatch:
