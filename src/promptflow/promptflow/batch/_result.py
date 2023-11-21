@@ -96,6 +96,14 @@ class SystemMetrics:
                 calculator.merge_metrics_dict(total_metrics, metrics)
         return total_metrics
 
+    def to_dict(self):
+        return {
+            "total_tokens": self.total_tokens,
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "duration": self.duration,
+        }
+
 
 @dataclass
 class BatchResult:
