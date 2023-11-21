@@ -10,7 +10,12 @@ from pytest_mock import MockerFixture
 
 from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
-from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, FlowRunProperties, LocalStorageFilenames, RunStatus
+from promptflow._sdk._constants import (
+    FLOW_DIRECTORY_MACRO_IN_CONFIG,
+    FlowRunProperties,
+    LocalStorageFilenames,
+    RunStatus,
+)
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError, RunExistsError, RunNotFoundError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
@@ -948,26 +953,22 @@ class TestFlowRun:
         # mock to imitate user specify config run.output_path
         with mocker.patch(
             "promptflow._sdk._configuration.Configuration.get_run_output_path",
-            return_value=(Path.home() / "mock" / ".runs").resolve().as_posix(),
+            return_value=(Path.home() / "mock").resolve().as_posix(),
         ):
             run = create_run_against_multi_line_data_without_llm(pf)
             local_storage = LocalStorageOperations(run=run)
             expected_output_path_prefix = (Path.home() / "mock" / ".runs" / run.name).resolve().as_posix()
             assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
 
-    def test_specify_invalid_run_output_path(
-        self, pf: PFClient, mocker: MockerFixture, capfd: pytest.CaptureFixture
-    ) -> None:
+    def test_specify_run_output_path_with_macro(self, pf: PFClient, mocker: MockerFixture) -> None:
         # mock to imitate user specify invalid config run.output_path
         with mocker.patch(
             "promptflow._sdk._configuration.Configuration.get_run_output_path",
-            return_value="NOT_EXIST_DRIVER:/not_exist_foler",
+            return_value=f"{FLOW_DIRECTORY_MACRO_IN_CONFIG}/.promptflow",
         ):
-            run = create_run_against_multi_line_data_without_llm(pf)
-            local_storage = LocalStorageOperations(run=run)
-            # invalid run output path, will use default path
-            expected_output_path_prefix = (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / run.name).resolve().as_posix()
-            assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
-            # check warning message in stdout
-            out, _ = capfd.readouterr()
-            assert "Got unexpected error when parsing specified output path" in out
+            for _ in range(3):
+                run = create_run_against_multi_line_data_without_llm(pf)
+                local_storage = LocalStorageOperations(run=run)
+                expected_path_prefix = Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / ".runs" / run.name
+                expected_path_prefix = expected_path_prefix.resolve().as_posix()
+                assert local_storage.outputs_folder.as_posix().startswith(expected_path_prefix)

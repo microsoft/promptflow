@@ -223,7 +223,7 @@ class LocalStorageOperations(AbstractRunStorage):
         shutil.copytree(
             flow.code.as_posix(),
             self._snapshot_folder_path,
-            ignore=shutil.ignore_patterns("__pycache__"),
+            ignore=shutil.ignore_patterns("__pycache__", self._run._output_path.parent.name),
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one

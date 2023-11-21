@@ -15,6 +15,7 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_VARIANT,
+    FLOW_DIRECTORY_MACRO_IN_CONFIG,
     PARAMS_OVERRIDE_KEY,
     PROMPT_FLOW_DIR_NAME,
     RUN_MACRO,
@@ -538,7 +539,8 @@ class Run(YAMLTranslatableMixin):
             path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
         else:
             try:
-                path = Path(path)
+                path = Path(path.replace(FLOW_DIRECTORY_MACRO_IN_CONFIG, self.flow.resolve().as_posix()))
+                path = (path / ".runs").resolve()
                 path.mkdir(parents=True, exist_ok=True)
             except Exception:  # pylint: disable=broad-except
                 path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
