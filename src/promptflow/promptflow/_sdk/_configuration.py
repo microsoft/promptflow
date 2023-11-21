@@ -30,7 +30,7 @@ class InvalidConfigFile(ValidationException):
 class Configuration(object):
 
     CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
-    COLLECT_TELEMETRY = "cli.telemetry_enabled"
+    COLLECT_TELEMETRY = "telemetry_enabled"
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"

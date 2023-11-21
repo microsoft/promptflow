@@ -46,7 +46,7 @@ class WorkspaceTelemetryMixin(TelemetryMixin):
 def is_telemetry_enabled():
     """Check if telemetry is enabled. Telemetry is enabled by default.
     User can disable it by:
-    1. running `pf config set cli.telemetry_enabled=false` command.
+    1. running `pf config set telemetry_enabled=false` command.
     """
     config = Configuration.get_instance()
     telemetry_consent = config.get_telemetry_consent()
