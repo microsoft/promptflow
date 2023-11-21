@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Python",
+    "version": "python",
+    "url": "https://promptflow-reference.azurewebsites.net/_build/python/",
+    "preferred": true
+  },
+  {
+    "name": "JavaScript",
+    "version": "javascript",
+    "url": "https://promptflow-reference.azurewebsites.net/_build/javascript/"
+  },
+  {
+    "name": "C#",
+    "version": "csharp",
+    "url": "https://promptflow-reference.azurewebsites.net/_build/csharp/"
+  }
+]
