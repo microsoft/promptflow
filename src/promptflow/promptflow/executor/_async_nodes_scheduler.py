@@ -55,7 +55,7 @@ class AsyncNodesScheduler:
         self,
         dag_manager: DAGManager,
         context: FlowExecutionContext,
-    ) -> Dict[Task[Any], Node]:
+    ) -> Dict[Task, Node]:
         # Bypass nodes and update node run info until there are no nodes to bypass
         nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
@@ -70,7 +70,7 @@ class AsyncNodesScheduler:
         node: Node,
         dag_manager: DAGManager,
         context: FlowExecutionContext,
-    ) -> Task[Any]:
+    ) -> Task:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         task = context.invoke_tool_async(node, f, kwargs)
