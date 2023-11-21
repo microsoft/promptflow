@@ -14,9 +14,6 @@ on:
         default: ""
         required: false
         description: 'Version of promptflow to install (optional). Will build locally if not specified.'
-  pull_request:  ## delete pull request when it's ready
-    branches:
-      - main
 
 env:
   packageSetupType: promptflow_with_extra
