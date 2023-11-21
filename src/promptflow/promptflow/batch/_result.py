@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from itertools import chain
-from typing import Any, Dict, List, Mapping
+from typing import Any, List, Mapping
 
 from promptflow._utils.exception_utils import RootErrorCode
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
@@ -15,8 +15,14 @@ from promptflow.executor._result import AggregationResult, LineResult
 
 @dataclass
 class LineError:
+    """The error of a line in a batch run.
+
+    It contains the line number and the error dict of a failed line in the batch run.
+    The error dict is gengerated by ExceptionPresenter.to_dict().
+    """
+
     line_number: int
-    error: Dict[str, Any]
+    error: Mapping[str, Any]
 
 
 @dataclass
