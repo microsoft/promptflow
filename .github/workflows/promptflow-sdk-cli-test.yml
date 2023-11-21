@@ -7,7 +7,7 @@ on:
       - src/promptflow/**
       - scripts/building/run_coverage_tests.py
       - scripts/building/utils.py
-      - '**promptflow-sdk-cli-test.yml'
+      - .github/workflows/promptflow-sdk-cli-test.yml
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra
