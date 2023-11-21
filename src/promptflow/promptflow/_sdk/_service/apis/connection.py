@@ -64,11 +64,7 @@ class Connection(Resource):
     @local_user_only
     def get(self, name: str):
         connection_op = ConnectionOperations()
-        # parse query parameters
-        with_secrets = request.args.get("with_secrets", default=False, type=bool)
-        raise_error = request.args.get("raise_error", default=True, type=bool)
-
-        connection = connection_op.get(name=name, with_secrets=with_secrets, raise_error=raise_error)
+        connection = connection_op.get(name=name, raise_error=True)
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)
 
@@ -102,3 +98,15 @@ class Connection(Resource):
     def delete(self, name: str):
         connection_op = ConnectionOperations()
         connection_op.delete(name=name)
+
+
+@api.route("/<string:name>/listsecrets")
+class ConnectionWithSecret(Resource):
+    @api.doc(description="Get connection with secret")
+    @api.response(code=200, description="Connection details with secret", model=dict_field)
+    @local_user_only
+    def get(self, name: str):
+        connection_op = ConnectionOperations()
+        connection = connection_op.get(name=name, with_secrets=True, raise_error=True)
+        connection_dict = connection._to_dict()
+        return jsonify(connection_dict)
