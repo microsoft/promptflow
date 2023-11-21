@@ -277,8 +277,8 @@ class StreamlitFileGenerator(BaseGenerator):
 
     @property
     def tpl_file(self):
-        return SERVE_TEMPLATE_PATH / "flow_test_main.py.jinja2" if self.is_chat_flow \
-            else SERVE_TEMPLATE_PATH / "main_csharp.py.jinja2"
+        return SERVE_TEMPLATE_PATH / "flow_test_main.py.jinja2" if self.is_chat_flow else (
+                SERVE_TEMPLATE_PATH / "main_csharp.py.jinja2")
 
     @property
     def flow_path(self):
