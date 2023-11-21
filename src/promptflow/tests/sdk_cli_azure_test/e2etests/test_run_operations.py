@@ -106,6 +106,19 @@ class TestFlowRun:
         assert isinstance(eval_run, Run)
         pf.runs.stream(run=eval_run.name)
 
+    def test_run_bulk_with_remote_flow(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
+        name = randstr("name")
+        run = pf.run(
+            flow="azureml://flows/d94ced0e-088f-41d9-98ff-90d902591418",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"url": "${data.url}"},
+            variant="${summarize_text_content.variant_0}",
+            runtime=runtime,
+            name=name,
+        )
+        assert isinstance(run, Run)
+        assert run.name == name
+
     def test_run_with_connection_overwrite(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",

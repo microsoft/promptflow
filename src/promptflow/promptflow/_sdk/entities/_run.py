@@ -15,6 +15,7 @@ from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_VARIANT,
     PARAMS_OVERRIDE_KEY,
+    REMOTE_FLOW_PREFIX,
     RUN_MACRO,
     TIMESTAMP_MACRO,
     VARIANT_ID_MACRO,
@@ -29,7 +30,12 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
-from promptflow._sdk._utils import _sanitize_python_variable_name, parse_variant
+from promptflow._sdk._utils import (
+    _sanitize_python_variable_name,
+    get_flow_name_from_remote_flow_pattern,
+    is_remote_uri,
+    parse_variant,
+)
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -89,7 +95,7 @@ class Run(YAMLTranslatableMixin):
 
     def __init__(
         self,
-        flow: Path,
+        flow: Union[Path, str],
         name: Optional[str] = None,
         # input fields are optional since it's not stored in DB
         data: Optional[str] = None,
@@ -132,9 +138,12 @@ class Run(YAMLTranslatableMixin):
         self._creation_context = kwargs.get("creation_context", None)
         # init here to make sure those fields initialized in all branches.
         self.flow = flow
+        self._use_remote_flow = is_remote_uri(flow)
+        if self._use_remote_flow:
+            self._flow_name = get_flow_name_from_remote_flow_pattern(flow)
         self._experiment_name = None
         self._lineage_id = None
-        if self._run_source == RunInfoSources.LOCAL:
+        if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
             self.flow = Path(flow).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
@@ -167,7 +176,7 @@ class Run(YAMLTranslatableMixin):
         if self._run_source == RunInfoSources.LOCAL:
             # show posix path to avoid windows path escaping
             result = {
-                FlowRunProperties.FLOW_PATH: Path(self.flow).as_posix(),
+                FlowRunProperties.FLOW_PATH: Path(self.flow).as_posix() if not self._use_remote_flow else self.flow,
                 FlowRunProperties.OUTPUT_PATH: Path(get_run_output_path(self)).as_posix(),
             }
             if self.run:
@@ -315,7 +324,11 @@ class Run(YAMLTranslatableMixin):
         }
 
         if self._run_source == RunInfoSources.LOCAL:
-            result["flow_name"] = Path(str(self.flow)).resolve().name
+            result["flow_name"] = (
+                Path(str(self.flow)).resolve().name
+                if not self._use_remote_flow
+                else get_flow_name_from_remote_flow_pattern(self.flow)
+            )
             local_storage = LocalStorageOperations(run=self)
             result[RunDataKeys.DATA] = (
                 local_storage._data_path.resolve().absolute().as_posix()
@@ -381,7 +394,11 @@ class Run(YAMLTranslatableMixin):
     def _generate_run_name(self) -> str:
         """Generate a run name with flow_name_variant_timestamp format."""
         try:
-            flow_name = self._get_flow_dir().name
+            flow_name = (
+                self._get_flow_dir().name
+                if not self._use_remote_flow
+                else get_flow_name_from_remote_flow_pattern(self.flow)
+            )
             variant = self.variant
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
@@ -395,7 +412,11 @@ class Run(YAMLTranslatableMixin):
     def _get_default_display_name(self) -> str:
         display_name = self.display_name
         if not display_name:
-            display_name = self._get_flow_dir().name
+            display_name = (
+                self._get_flow_dir().name
+                if not self._use_remote_flow
+                else get_flow_name_from_remote_flow_pattern(self.flow)
+            )
         return display_name
 
     def _format_display_name(self) -> str:
@@ -420,10 +441,12 @@ class Run(YAMLTranslatableMixin):
         return display_name
 
     def _get_flow_dir(self) -> Path:
-        flow = Path(self.flow)
-        if flow.is_dir():
-            return flow
-        return flow.parent
+        if not self._use_remote_flow:
+            flow = Path(self.flow)
+            if flow.is_dir():
+                return flow
+            return flow.parent
+        raise UserErrorException("Cannot get flow directory for remote flow.")
 
     @classmethod
     def _get_schema_cls(self):
@@ -470,7 +493,7 @@ class Run(YAMLTranslatableMixin):
                         )
                     inputs_mapping[k] = val
 
-        if str(self.flow).startswith("azureml://"):
+        if self._use_remote_flow:
             # upload via _check_and_upload_path
             # submit with params FlowDefinitionDataStoreName and FlowDefinitionBlobPath
             path_uri = AzureMLDatastorePathUri(str(self.flow))
@@ -531,3 +554,27 @@ class Run(YAMLTranslatableMixin):
         elif isinstance(run, str):
             return run
         raise InvalidRunError(f"Invalid run {run!r}, expected 'str' or 'Run' object but got {type(run)!r}.")
+
+    def _validate_for_run_create_operation(self):
+        """Validate run object for create operation."""
+        # check flow value
+        if Path(self.flow).is_dir():
+            # local flow
+            pass
+        elif isinstance(self.flow, str) and self.flow.startswith(REMOTE_FLOW_PREFIX):
+            # remote flow
+            pass
+        else:
+            raise ValueError(
+                f"Invalid flow value: {self.flow!r}. Expecting a local flow folder path or a remote flow pattern "
+                f"like '{REMOTE_FLOW_PREFIX}<flow-name>'"
+            )
+
+        if is_remote_uri(self.data):
+            # Pass through ARM id or remote url, the error will happen in runtime if format is not correct currently.
+            pass
+        else:
+            if self.data and not Path(self.data).exists():
+                raise FileNotFoundError(f"data path {self.data} does not exist")
+        if not self.run and not self.data:
+            raise ValueError("at least one of data or run must be provided")

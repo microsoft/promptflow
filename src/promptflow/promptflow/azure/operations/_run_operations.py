@@ -41,7 +41,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
+from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
@@ -56,7 +56,7 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -221,6 +221,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         """
         stream = kwargs.pop("stream", False)
         reset = kwargs.pop("reset_runtime", False)
+
+        # validate the run object
+        run._validate_for_run_create_operation()
 
         rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"), reset=reset)
 
@@ -755,6 +758,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return test_data
 
     def _resolve_flow(self, run: Run):
+        if run._use_remote_flow:
+            return run.flow
         flow = load_flow(run.flow)
         # ignore .promptflow/dag.tools.json only for run submission scenario
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
@@ -903,7 +908,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _resolve_runtime(self, run, flow_path, runtime, reset=None):
         runtime = run._runtime or runtime
-        session_id = self._get_session_id(flow=flow_path)
+        # for remote flow case, use flow name as session id
+        # for local flow case, use flow path to calculate session id
+        session_id = run._flow_name if run._use_remote_flow else self._get_session_id(flow=flow_path)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime(run=run, session_id=session_id, reset=reset)

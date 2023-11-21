@@ -72,6 +72,7 @@ VIS_PORTAL_URL_TMPL = (
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
     "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
+REMOTE_FLOW_PREFIX = "azureml://flows/"
 
 
 class CustomStrongTypeConnectionConfigs:

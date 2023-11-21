@@ -10,8 +10,8 @@ import multiprocessing
 import os
 import platform
 import re
-import stat
 import shutil
+import stat
 import sys
 import tempfile
 import zipfile
@@ -20,6 +20,7 @@ from enum import Enum
 from os import PathLike
 from pathlib import Path
 from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
+from urllib.parse import urlparse
 
 import keyring
 import pydash
@@ -50,6 +51,7 @@ from promptflow._sdk._constants import (
     NODES,
     PROMPT_FLOW_DIR_NAME,
     REFRESH_CONNECTIONS_DIR_LOCK_PATH,
+    REMOTE_FLOW_PREFIX,
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
@@ -538,7 +540,7 @@ def print_pf_version():
     print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
     print()
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
-    print('Python ({}) {}'.format(platform.system(), sys.version))
+    print("Python ({}) {}".format(platform.system(), sys.version))
 
 
 class PromptflowIgnoreFile(IgnoreFile):
@@ -961,3 +963,35 @@ def is_from_cli():
     from promptflow._core.operation_context import OperationContext
 
     return CLI_UA in OperationContext.get_instance().get_user_agent()
+
+
+def is_url(value: Union[PathLike, str]) -> bool:
+    try:
+        result = urlparse(str(value))
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
+
+def is_remote_uri(obj) -> bool:
+    # return True if it's supported remote uri
+    if isinstance(obj, str):
+        if obj.startswith("azureml:"):
+            # azureml: started, azureml:name:version, azureml://xxx
+            return True
+        elif is_url(obj):
+            return True
+    return False
+
+
+def get_flow_name_from_remote_flow_pattern(flow: object) -> str:
+    # Check if the input matches the correct pattern
+    if not isinstance(flow, str) or not flow.startswith(REMOTE_FLOW_PREFIX):
+        raise ValueError(
+            f"Invalid remote flow pattern, got {flow!r} while expecting a string like'{REMOTE_FLOW_PREFIX}<flow-name>'."
+        )
+
+    # Extract the flow ID from the input string
+    flow_name = flow.replace(REMOTE_FLOW_PREFIX, "")
+
+    return flow_name

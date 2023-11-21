@@ -36,7 +36,7 @@ class RemotePathStr(fields.Str):
     }
 
     def _validate(self, value):
-        from promptflow.azure._utils.gerneral import is_remote_uri
+        from promptflow._sdk._utils import is_remote_uri
 
         # inherited validations like required, allow_none, etc.
         super(RemotePathStr, self)._validate(value)
@@ -61,7 +61,7 @@ class RunSchema(YamlFileSchema):
     properties = fields.Dict(keys=fields.Str(), values=fields.Str(allow_none=True))
     # endregion: common fields
 
-    flow = LocalPathField(required=True)
+    flow = UnionField([LocalPathField(required=True), fields.Str(required=True)])
     # inputs field
     data = UnionField([LocalPathField(), RemotePathStr()])
     column_mapping = fields.Dict(keys=fields.Str)
