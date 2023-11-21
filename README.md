@@ -168,7 +168,7 @@ use of the software operates as your consent to these practices.
 
 Telemetry collection is on by default.
 
-To opt out, please run `pf config set cli.telemetry_enabled=false` to turn it off.
+To opt out, please run `pf config set telemetry.enabled=false` to turn it off.
 
 ## License
 
