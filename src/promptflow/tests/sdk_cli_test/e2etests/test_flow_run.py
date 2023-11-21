@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from pytest_mock import MockerFixture
 
 from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -942,3 +943,14 @@ class TestFlowRun:
             assert Path(input_image_path).is_absolute()
             output_image_path = details["outputs.output"][i]["data:image/png;path"]
             assert Path(output_image_path).is_absolute()
+
+    def test_specify_run_output_path(self, pf: PFClient, mocker: MockerFixture) -> None:
+        # mock to imitate user specify config run.output_path
+        with mocker.patch(
+            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            return_value=(Path.home() / "mock" / ".runs").resolve().as_posix(),
+        ):
+            run = create_run_against_multi_line_data_without_llm(pf)
+            local_storage = LocalStorageOperations(run=run)
+            expected_output_path_prefix = (Path.home() / "mock" / ".runs" / run.name).resolve().as_posix()
+            assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
