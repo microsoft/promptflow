@@ -17,9 +17,6 @@ jobs:
   build:
     strategy:
       fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        pythonVersion: ['3.9']
     runs-on: ubuntu-latest
     steps:
     - name: checkout
@@ -29,10 +26,10 @@ jobs:
         env | sort >> $GITHUB_OUTPUT
       id: display_env
       shell: bash -el {0}
-    - name: Python Setup - ubuntu-latest - Python Version ${{ matrix.pythonVersion }}
+    - name: Python Setup - ubuntu-latest - Python Version 3.9
       uses: "./.github/actions/step_create_python_environment"
       with:
-        pythonVersion: ${{ matrix.pythonVersion }}
+        pythonVersion: 3.9
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
@@ -137,9 +134,7 @@ jobs:
 
     steps:
     - name: checkout
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha || github.ref }}
+      uses: actions/checkout@v4
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
