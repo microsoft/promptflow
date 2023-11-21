@@ -127,6 +127,7 @@ class Flow(FlowBase):
         self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
         self._content_hash = kwargs.pop("content_hash", None)
+        self.dag = yaml.safe_load(self.path.read_text(encoding=DEFAULT_ENCODING))
         super().__init__(**kwargs)
 
     @property
@@ -179,7 +180,7 @@ class Flow(FlowBase):
         raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
-        from promptflow._sdk.operations._run_submitter import variant_overwrite_context
+        from promptflow._sdk._submitter import variant_overwrite_context
 
         # TODO: check if there is potential bug here
         # this is a little wired:
@@ -298,7 +299,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         :param kwargs: flow inputs with key word arguments.
         :return:
         """
-        from promptflow._sdk.operations._test_submitter import TestSubmitter
+        from promptflow._sdk._submitter import TestSubmitter
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")

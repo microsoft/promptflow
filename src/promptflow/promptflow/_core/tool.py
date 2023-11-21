@@ -18,6 +18,7 @@ STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
 class ToolType(str, Enum):
     LLM = "llm"
     PYTHON = "python"
+    CSHARP = "csharp"
     PROMPT = "prompt"
     _ACTION = "action"
     CUSTOM_LLM = "custom_llm"

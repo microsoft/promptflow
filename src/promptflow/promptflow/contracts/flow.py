@@ -13,10 +13,11 @@ import yaml
 
 from promptflow.exceptions import ErrorTarget
 
+from .._constants import FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import FailedToImportModule, NodeConditionConflict
+from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -227,39 +228,6 @@ class ActivateCondition:
 
 
 @dataclass
-class SkipCondition:
-    """This class represents the skip condition of a node.
-
-    :param condition: The condition of the skip condition.
-    :type condition: ~promptflow.contracts.flow.InputAssignment
-    :param condition_value: The value of the condition.
-    :type condition_value: Any
-    :param return_value: The return value when skip condition is met.
-    :type return_value: ~promptflow.contracts.flow.InputAssignment
-    """
-
-    condition: InputAssignment
-    condition_value: Any
-    return_value: InputAssignment
-
-    @staticmethod
-    def deserialize(data: dict) -> "SkipCondition":
-        """Deserialize the skip condition from a dict.
-
-        :param data: The dict to be deserialized.
-        :type data: dict
-        :return: The skip condition constructed from the dict.
-        :rtype: ~promptflow.contracts.flow.SkipCondition
-        """
-        result = SkipCondition(
-            condition=InputAssignment.deserialize(data["when"]),
-            condition_value=data["is"],
-            return_value=InputAssignment.deserialize(data["return"]),
-        )
-        return result
-
-
-@dataclass
 class Node:
     """This class represents a node in a flow.
 
@@ -289,8 +257,6 @@ class Node:
     :type source: ~promptflow.contracts.flow.ToolSource
     :param type: The tool type of the node.
     :type type: ~promptflow.contracts.tool.ToolType
-    :param skip: The skip condition of the node.
-    :type skip: ~promptflow.contracts.flow.SkipCondition
     :param activate: The activate condition of the node.
     :type activate: ~promptflow.contracts.flow.ActivateCondition
     """
@@ -308,7 +274,6 @@ class Node:
     use_variants: bool = False
     source: Optional[ToolSource] = None
     type: Optional[ToolType] = None
-    skip: Optional[SkipCondition] = None
     activate: Optional[ActivateCondition] = None
 
     def serialize(self):
@@ -353,13 +318,8 @@ class Node:
             node.source = ToolSource.deserialize(data["source"])
         if "type" in data:
             node.type = ToolType(data["type"])
-        if "skip" in data:
-            node.skip = SkipCondition.deserialize(data["skip"])
         if "activate" in data:
             node.activate = ActivateCondition.deserialize(data["activate"])
-        if node.skip and node.activate:
-            raise NodeConditionConflict(f"Node {node.name!r} can't have both skip and activate condition.")
-
         return node
 
 
@@ -570,7 +530,7 @@ class Flow:
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
-    program_language: str = "python"
+    program_language: str = FlowLanguage.Python
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -630,7 +590,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
-            program_language=data.get("language", "python"),
+            program_language=data.get("language", FlowLanguage.Python),
         )
 
     def _apply_default_node_variants(self: "Flow"):
