@@ -20,7 +20,7 @@ class PFSRuntimeHelper:
         subscription_id = ml_client._operation_scope.subscription_id
         resource_group_name = ml_client._operation_scope.resource_group_name
         workspace_name = ml_client._operation_scope.workspace_name
-        location = ml_client.workspaces.get(name=workspace_name).location
+        location = ml_client.workspaces.get().location
         self._request_url_prefix = (
             f"https://{location}.api.azureml.ms/flow/api/subscriptions/{subscription_id}"
             f"/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices"
