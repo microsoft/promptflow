@@ -127,3 +127,9 @@ ml_client.jobs.create_or_update(pipeline_with_flow)
 :::
 
 ::::
+
+## Difference across flow in prompt flow and pipeline job
+
+In prompt flow, flow runs on [runtime](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/concept-runtime), which is designed for prompt flow and easy to customize; while in pipeline job, flow runs on different types of compute, and usually compute cluster.
+
+Given above, if your flow has logic relying on identity or environment variable, please be aware of this difference as you might run into some unexpected error(s) when the flow runs in pipeline job, and you might need some extra configurations to make it work.
