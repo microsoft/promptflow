@@ -43,6 +43,14 @@
                 },
                 "description": "Get connection",
                 "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "with_secrets",
+                        "in": "query",
+                        "type": "boolean",
+                        "default": false
+                    }
+                ],
                 "tags": [
                     "Connections"
                 ]
@@ -110,11 +118,34 @@
             "get": {
                 "responses": {
                     "200": {
-                        "description": "Success"
+                        "description": "Success",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/RunDict"
+                            }
+                        }
                     }
                 },
                 "description": "List all runs",
                 "operationId": "get_run_list",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/submit": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Submit run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Submit run",
+                "operationId": "post_run_submit",
                 "tags": [
                     "Runs"
                 ]
@@ -132,37 +163,52 @@
             "get": {
                 "responses": {
                     "200": {
-                        "description": "Success"
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
                     }
                 },
+                "description": "Get run",
                 "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]
-            }
-        },
-        "/Runs/{name}/detail": {
-            "parameters": [
-                {
-                    "name": "name",
-                    "in": "path",
-                    "required": true,
-                    "type": "string"
-                }
-            ],
-            "get": {
+            },
+            "put": {
                 "responses": {
                     "200": {
-                        "description": "Success"
+                        "description": "Update run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
                     }
                 },
-                "operationId": "get_detail",
+                "description": "Update run",
+                "operationId": "put_run",
+                "parameters": [
+                    {
+                        "name": "display_name",
+                        "in": "query",
+                        "type": "string"
+                    },
+                    {
+                        "name": "description",
+                        "in": "query",
+                        "type": "string"
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "type": "string"
+                    }
+                ],
                 "tags": [
                     "Runs"
                 ]
             }
         },
-        "/Runs/{name}/metadata": {
+        "/Runs/{name}/childRuns": {
             "parameters": [
                 {
                     "name": "name",
@@ -174,10 +220,51 @@
             "get": {
                 "responses": {
                     "200": {
-                        "description": "Success"
+                        "description": "Success",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/RunDict"
+                            }
+                        }
                     }
                 },
-                "operationId": "get_meta_data",
+                "description": "Get child runs",
+                "operationId": "get_flow_child_runs",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/nodeRuns/{node_name}": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "node_name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/RunDict"
+                            }
+                        }
+                    }
+                },
+                "description": "Get node runs info",
+                "operationId": "get_flow_node_runs",
                 "tags": [
                     "Runs"
                 ]
@@ -232,6 +319,10 @@
             "type": "object"
         },
         "ConnectionDict": {
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "RunDict": {
             "additionalProperties": true,
             "type": "object"
         }
