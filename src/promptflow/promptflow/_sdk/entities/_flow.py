@@ -51,8 +51,6 @@ class FlowContext:
     :type connections: Optional[Dict[str, Dict]]
     :param variant: Variant of the flow.
     :type variant: Optional[str]
-    :param environment_variables: Environment variables for the flow.
-    :type environment_variables: Optional[Dict[str, str]]
     :param variant: Overrides of the flow.
     :type variant: Optional[Dict[str, Dict]]
     :param streaming: Whether the flow's output need to be return in streaming mode.
@@ -64,13 +62,11 @@ class FlowContext:
         *,
         connections=None,
         variant=None,
-        environment_variables=None,
         overrides=None,
         streaming=None,
     ):
         self.connections, self._connection_objs = connections or {}, {}
         self.variant = variant
-        self.environment_variables = environment_variables or {}
         self.overrides = overrides or {}
         self.streaming = streaming
         # TODO: introduce connection provider support
@@ -99,8 +95,6 @@ class FlowContext:
             "variant": self.variant,
             "overrides": self.overrides,
             "streaming": self.streaming,
-            # TODO: not hash env vars since they resolve in execution time
-            "environment_variables": self.environment_variables,
         }
 
     def __eq__(self, other):
@@ -299,19 +293,13 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         :param kwargs: flow inputs with key word arguments.
         :return:
         """
-        from promptflow._sdk._submitter.utils import SubmitterHelper
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
         invoker = FlowContextResolver.resolve(flow=self)
-        # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(
-            environment_variables=self.context.environment_variables,
-        )
-        SubmitterHelper.init_env(environment_variables=self.context.environment_variables)
-        # TODO: support environment variables in invoker?
+
         result = invoker._invoke(
             data=kwargs,
         )
