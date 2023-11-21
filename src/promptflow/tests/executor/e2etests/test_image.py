@@ -12,7 +12,7 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._result import BatchResult, LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
-from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file
+from ..utils import get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file
 
 SIMPLE_IMAGE_FLOW = "python_tool_with_simple_image"
 SAMPLE_IMAGE_FLOW_WITH_DEFAULT = "python_tool_with_simple_image_with_default"
@@ -21,20 +21,21 @@ COMPOSITE_IMAGE_FLOW = "python_tool_with_composite_image"
 CHAT_FLOW_WITH_IMAGE = "chat_flow_with_image"
 EVAL_FLOW_WITH_SIMPLE_IMAGE = "eval_flow_with_simple_image"
 EVAL_FLOW_WITH_COMPOSITE_IMAGE = "eval_flow_with_composite_image"
+NESTED_API_CALLS_FLOW = "python_tool_with_image_nested_api_calls"
 
 IMAGE_URL = (
-    "https://github.com/microsoft/promptflow/blob/93776a0631abf991896ab07d294f62082d5df3f3/src"
-    "/promptflow/tests/test_configs/datas/test_image.jpg?raw=true"
+    "https://raw.githubusercontent.com/microsoft/promptflow/main/src/promptflow/tests/test_configs/datas/logo.jpg"
 )
 
 
 def get_test_cases_for_simple_input(flow_folder):
-    image = _create_image_from_file(FLOW_ROOT / flow_folder / "logo.jpg")
+    working_dir = get_flow_folder(flow_folder)
+    image = _create_image_from_file(working_dir / "logo.jpg")
     inputs = [
-        {"data:image/jpg;path": str(FLOW_ROOT / flow_folder / "logo.jpg")},
+        {"data:image/jpg;path": str(working_dir / "logo.jpg")},
         {"data:image/jpg;base64": image.to_base64()},
         {"data:image/jpg;url": IMAGE_URL},
-        str(FLOW_ROOT / flow_folder / "logo.jpg"),
+        str(working_dir / "logo.jpg"),
         image.to_base64(),
         IMAGE_URL,
     ]
@@ -42,12 +43,13 @@ def get_test_cases_for_simple_input(flow_folder):
 
 
 def get_test_cases_for_composite_input(flow_folder):
-    image_1 = _create_image_from_file(FLOW_ROOT / flow_folder / "logo.jpg")
-    image_2 = _create_image_from_file(FLOW_ROOT / flow_folder / "logo_2.png")
+    working_dir = get_flow_folder(flow_folder)
+    image_1 = _create_image_from_file(working_dir / "logo.jpg")
+    image_2 = _create_image_from_file(working_dir / "logo_2.png")
     inputs = [
         [
-            {"data:image/jpg;path": str(FLOW_ROOT / flow_folder / "logo.jpg")},
-            {"data:image/png;path": str(FLOW_ROOT / flow_folder / "logo_2.png")},
+            {"data:image/jpg;path": str(working_dir / "logo.jpg")},
+            {"data:image/png;path": str(working_dir / "logo_2.png")},
         ],
         [{"data:image/jpg;base64": image_1.to_base64()}, {"data:image/png;base64": image_2.to_base64()}],
         [{"data:image/jpg;url": IMAGE_URL}, {"data:image/png;url": IMAGE_URL}],
@@ -58,12 +60,8 @@ def get_test_cases_for_composite_input(flow_folder):
     ]
 
 
-def get_test_cases_for_chat_flow():
-    return [(CHAT_FLOW_WITH_IMAGE, {})]
-
-
 def get_test_cases_for_node_run():
-    image = {"data:image/jpg;path": str(FLOW_ROOT / SIMPLE_IMAGE_FLOW / "logo.jpg")}
+    image = {"data:image/jpg;path": str(get_flow_folder(SIMPLE_IMAGE_FLOW) / "logo.jpg")}
     simple_image_input = {"image": image}
     image_list = [{"data:image/jpg;path": "logo.jpg"}, {"data:image/png;path": "logo_2.png"}]
     image_dict = {
@@ -125,7 +123,7 @@ class TestExecutorWithImage:
         "flow_folder, inputs",
         get_test_cases_for_simple_input(SIMPLE_IMAGE_FLOW)
         + get_test_cases_for_composite_input(COMPOSITE_IMAGE_FLOW)
-        + get_test_cases_for_chat_flow(),
+        + [(CHAT_FLOW_WITH_IMAGE, {}), (NESTED_API_CALLS_FLOW, {})],
     )
     def test_executor_exec_line_with_image(self, flow_folder, inputs, dev_connections):
         working_dir = get_flow_folder(flow_folder)
@@ -171,7 +169,7 @@ class TestExecutorWithImage:
                 {
                     "python_node": {
                         "data:image/jpg;path": str(
-                            FLOW_ROOT / SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW / "logo.jpg"
+                            get_flow_folder(SIMPLE_IMAGE_WITH_INVALID_DEFAULT_VALUE_FLOW) / "logo.jpg"
                         )
                     }
                 },

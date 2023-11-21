@@ -55,9 +55,7 @@ class TestFlowNodesScheduler:
         dag_manager.pop_bypassable_nodes.side_effect = ([node1], [])
         self.scheduler._dag_manager = dag_manager
         self.scheduler._execute_nodes(executor)
-        self.scheduler._context.bypass_node.assert_called_once_with(
-            node1, dag_manager.get_bypassed_node_outputs.return_value
-        )
+        self.scheduler._context.bypass_node.assert_called_once_with(node1)
 
     def test_submit_nodes(self):
         executor = MagicMock()

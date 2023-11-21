@@ -20,3 +20,10 @@ DEFAULT_ENCODING = "utf-8"
 # Constants related to execution
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
+
+
+class FlowLanguage:
+    """The enum of tool source type."""
+
+    Python = "python"
+    Csharp = "csharp"

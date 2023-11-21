@@ -58,7 +58,10 @@ class PFClient:
         )
         workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
         self._service_caller = _FlowServiceCallerFactory.get_instance(
-            workspace=workspace, credential=self._ml_client._credential, **kwargs
+            workspace=workspace,
+            credential=self._ml_client._credential,
+            operation_scope=self._ml_client._operation_scope,
+            **kwargs,
         )
         self._flows = FlowOperations(
             operation_scope=self._ml_client._operation_scope,
@@ -66,6 +69,7 @@ class PFClient:
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
             service_caller=self._service_caller,
+            workspace=workspace,
             **kwargs,
         )
         self._runs = RunOperations(
@@ -75,6 +79,7 @@ class PFClient:
             credential=self._ml_client._credential,
             flow_operations=self._flows,
             service_caller=self._service_caller,
+            workspace=workspace,
             **kwargs,
         )
         self._connections = ConnectionOperations(

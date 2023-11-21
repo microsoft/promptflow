@@ -3,11 +3,23 @@ name: Build and Package MSI
 on:
   workflow_dispatch:
     inputs:
-      UploadAsLatest:
+      uploadAsLatest:
         type: string
         default: "False"
         required: false
         description: 'Also upload the msi installer to storage account as latest'
+
+      version:
+        type: string
+        default: ""
+        required: false
+        description: 'Version of promptflow to install (optional). Will build locally if not specified.'
+
+env:
+  packageSetupType: promptflow_with_extra
+  testWorkingDirectory: src/promptflow
+  PYTHONPATH: ${{ github.workspace }}/src/promptflow
+  IS_IN_CI_PIPELINE: "true"
 
 jobs:
   build_msi_installer:
@@ -17,7 +29,8 @@ jobs:
     steps:
       - name: Check input parameters
         run: |
-          echo "UploadAsLatest: ${{ inputs.UploadAsLatest }}"
+          echo "uploadAsLatest: ${{ inputs.uploadAsLatest }}"
+          echo "version: ${{ inputs.version }}"
 
       - name: Checkout Repo
         uses: actions/checkout@v3
@@ -35,23 +48,40 @@ jobs:
           Expand-Archive -Path 'wix-archive.zip' -DestinationPath 'wix'
           Remove-Item -Path 'wix-archive.zip'
 
+      - name: Python Setup
+        uses: "./.github/actions/step_create_python_environment"
 
-      - name: Install Python and dependencies
-        uses: actions/setup-python@v4
+      - name: Setup and Install dev promptflow
+        if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
+        uses: "./.github/actions/step_sdk_setup_win"
         with:
-          python-version: 3.9
+          setupType: promptflow_with_extra
+          scriptPath: ${{ env.testWorkingDirectory }}
 
-      - name: Install promptflow dependencies
+      - name: Install stable promptflow
+        if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
-          python -m pip install --upgrade pip
-          pip install promptflow[azure,executable] promptflow-tools
+          pip install promptflow[azure,executable]==$env:INPUT_VERSION promptflow-tools
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
 
       - name: Get promptflow version
         id: get-version
+        # Convert string to int since the version tuple used in "version_info" can't start with 0.
         run: |
-          $version=$(python -c "import promptflow; print(promptflow.__version__)")
+          if ($env:INPUT_VERSION) {
+            $version=$env:INPUT_VERSION
+          } else {
+            $year = [int](Get-Date -Format "yy")
+            $month = [int](Get-Date -Format "MM")
+            $dayhour = [int](Get-Date -Format "ddHH")
+            $minutesecond = [int](Get-Date -Format "mmss")
+            $version="$year.$month.$dayhour.$minutesecond"
+          }
           echo "::set-output name=version::$version"
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
 
       - name: Build Pyinstaller project
@@ -61,7 +91,14 @@ jobs:
           $text = Get-Content "version_info.txt" -Raw
           
           $versionString = '${{ steps.get-version.outputs.version }}'
-          $versionArray = $versionString.Split('.') + 0
+          $versionArray = $versionString.Split('.')
+          if ($versionArray.Count -ge 4) {
+              $versionArray = $versionArray[0..3]
+          } else {
+              $remainingLength = 4 - $versionArray.Count
+              $zerosToAppend = @(0) * $remainingLength
+              $versionArray += $zerosToAppend
+          }
           $versionTuple = [string]::Join(', ', $versionArray)
           $text = $text -replace '\$\((env\.FILE_VERSION)\)', $versionTuple
           
@@ -100,4 +137,6 @@ jobs:
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
           }
           }
+        env:
+          INPUT_UPLOADASLATEST: ${{ github.event.inputs.uploadAsLatest }}
         shell: pwsh

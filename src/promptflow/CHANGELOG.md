@@ -3,10 +3,13 @@
 ## 1.1.0 (Upcoming)
 
 ### Features Added
-- Add `pfazure flow list` to list flows from Azure AI.
+- Add `pfazure flow show/list` to show or list flows from Azure AI.
 - Display node status in run visualize page graph view.
+- Add support for image input and output in prompt flow.
 
 ### Bugs Fixed
+
+- [SDK/CLI] Fix node test with dict node input will raise "Required input(s) missing".
 
 ### Improvements
 - Force 'az login' if using azureml connection provider in cli command.
