@@ -31,6 +31,7 @@ WELCOME_MESSAGE = r"""
 Welcome to the cool prompt flow CLI!
 
 Use `pf --version` to display the current version.
+Here are the base commands:
 """
 
 
@@ -40,3 +41,7 @@ def show_privacy_statement():
     if not ran_before:
         print(PRIVACY_STATEMENT)
         config.set_config("first_run", True)
+
+
+def show_welcome_message():
+    print(WELCOME_MESSAGE)
