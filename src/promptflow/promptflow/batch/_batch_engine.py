@@ -105,24 +105,27 @@ class BatchEngine:
         :return: The result of this batch run
         :rtype: ~promptflow.batch._result.BatchResult
         """
-        self._start_time = datetime.utcnow()
-        # Add property on operation context to indicate batch run source, which is used to differentiate the input
-        # source of a batch run. The batch run source can be either "Data" or "Run".
-        # If the input source is "Data", it means the input data is provided by the user.
-        # If the input source is "Run", it means the input data is provided by a previous run.
-        OperationContext.get_instance().batch_run_source = (
-            BatchRunSource.Run.name if "run.outputs" in input_dirs else BatchRunSource.Data.name
-        )
-        # resolve input data from input dirs and apply inputs mapping
-        batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
-        batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
-        # run flow in batch mode
-        output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
-        with _change_working_dir(self._working_dir):
-            batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
-        # destroy executor proxy
-        self._executor_proxy.destroy()
-        return batch_result
+
+        try:
+            self._start_time = datetime.utcnow()
+            # Add property on operation context to indicate batch run source, which is used to differentiate the input
+            # source of a batch run. The batch run source can be either "Data" or "Run".
+            # If the input source is "Data", it means the input data is provided by the user.
+            # If the input source is "Run", it means the input data is provided by a previous run.
+            OperationContext.get_instance().batch_run_source = (
+                BatchRunSource.Run.name if "run.outputs" in input_dirs else BatchRunSource.Data.name
+            )
+            # resolve input data from input dirs and apply inputs mapping
+            batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
+            batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+            # run flow in batch mode
+            output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
+            with _change_working_dir(self._working_dir):
+                batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
+            return batch_result
+        finally:
+            # destroy executor proxy
+            self._executor_proxy.destroy()
 
     def _exec_batch(
         self,
