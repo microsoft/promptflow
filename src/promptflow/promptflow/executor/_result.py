@@ -3,11 +3,9 @@
 # ---------------------------------------------------------
 
 from dataclasses import dataclass
-from itertools import chain
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, Mapping
 
-from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
-from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
+from promptflow.contracts.run_info import FlowRunInfo, RunInfo
 
 
 @dataclass
@@ -47,59 +45,3 @@ class AggregationResult:
             metrics=data.get("metrics", None),
             node_run_infos={k: RunInfo.deserialize(v) for k, v in data.get("node_run_infos", {}).items()},
         )
-
-
-@dataclass
-class BatchResult:
-    """The result of a bulk run."""
-
-    outputs: List[Mapping[str, Any]]
-    metrics: Mapping[str, Any]
-    line_results: List[LineResult]
-    aggr_results: AggregationResult
-
-    def _get_line_run_infos(self):
-        return (
-            node_run_info for line_result in self.line_results for node_run_info in line_result.node_run_infos.values()
-        )
-
-    def _get_aggr_run_infos(self):
-        return (node_run_info for node_run_info in self.aggr_results.node_run_infos.values())
-
-    def get_status_summary(self):
-        line_run_infos = self._get_line_run_infos()
-        aggr_run_infos = self._get_aggr_run_infos()
-        status_summary = {}
-        line_status = {}
-        for run_info in line_run_infos:
-            if run_info.index not in line_status.keys():
-                line_status[run_info.index] = True
-
-            line_status[run_info.index] = line_status[run_info.index] and run_info.status in (
-                Status.Completed,
-                Status.Bypassed,
-            )
-
-            node_name = run_info.node
-            # Only consider Completed, Bypassed and Failed status, because the UX only support three status.
-            if run_info.status in (Status.Completed, Status.Bypassed, Status.Failed):
-                node_status_key = f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"
-                status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
-
-        for run_info in aggr_run_infos:
-            node_name = run_info.node
-            status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
-
-        status_summary["__pf__.lines.completed"] = sum(line_status.values())
-        status_summary["__pf__.lines.failed"] = len(line_status) - status_summary["__pf__.lines.completed"]
-        return status_summary
-
-    def get_openai_metrics(self):
-        node_run_infos = chain(self._get_line_run_infos(), self._get_aggr_run_infos())
-        total_metrics = {}
-        calculator = OpenAIMetricsCalculator()
-        for run_info in node_run_infos:
-            for call in run_info.api_calls:
-                metrics = calculator.get_openai_metrics_from_api_call(call)
-                calculator.merge_metrics_dict(total_metrics, metrics)
-        return total_metrics

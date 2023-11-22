@@ -5,14 +5,14 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, is_multimedia_dict
-from promptflow.batch import BatchEngine
+from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
+from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.executor import FlowExecutor
-from promptflow.executor._result import BatchResult, LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
-from ..utils import get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file
+from ..utils import get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file, load_jsonl
 
 SIMPLE_IMAGE_FLOW = "python_tool_with_simple_image"
 SAMPLE_IMAGE_FLOW_WITH_DEFAULT = "python_tool_with_simple_image_with_default"
@@ -257,24 +257,17 @@ class TestExecutorWithImage:
         )
 
         assert isinstance(batch_result, BatchResult)
+        assert batch_result.completed_lines == expected_outputs_number
         assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
 
-        assert len(batch_result.outputs) == expected_outputs_number
-        for i, output in enumerate(batch_result.outputs):
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == expected_outputs_number
+        for i, output in enumerate(outputs):
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
             result = output[output_key][0] if isinstance(output[output_key], list) else output[output_key]
             assert all(MIME_PATTERN.search(key) for key in result), f"image is not in {i}th output {output}"
-
-        for i, line_result in enumerate(batch_result.line_results):
-            assert isinstance(line_result, LineResult)
-            assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
-
-        if has_aggregation_node:
-            for _, node_run_info in batch_result.aggr_results.node_run_infos.items():
-                assert node_run_info.status == Status.Completed
-                assert_contain_image_reference(node_run_info)
 
     @pytest.mark.parametrize(
         "flow_folder, inputs",
