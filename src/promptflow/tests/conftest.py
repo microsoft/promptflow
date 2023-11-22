@@ -45,6 +45,11 @@ class TestMode:
 ENVIRON_TEST_MODE = "PROMPT_FLOW_TEST_MODE"
 
 
+@pytest.fixture(scope="session", autouse=True)
+def modify_work_directory():
+    os.chdir(Path(__file__).parent.parent.absolute())
+
+
 @pytest.fixture(autouse=True, scope="session")
 def mock_build_info():
     """Mock BUILD_INFO environment variable in pytest.

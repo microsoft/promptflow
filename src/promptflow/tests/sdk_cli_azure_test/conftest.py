@@ -15,8 +15,6 @@ import pytest
 from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockerFixture
 
-from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
-from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
 from promptflow.azure._ml import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT, Data, MLClient
 
@@ -65,14 +63,12 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
     if is_replay():
         yield get_pf_client_for_replay()
     else:
-        # enable telemetry for CI
-        with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
-            yield PFClient(
-                credential=get_cred(),
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-            )
+        yield PFClient(
+            credential=get_cred(),
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+        )
 
 
 @pytest.fixture()
