@@ -255,7 +255,6 @@ class TestLineExecutionProcessPool:
         ) as pool:
             with pytest.raises(UserErrorException) as e:
                 pool.run(zip(range(nlines), bulk_inputs))
-                print(f"eee:{e.value}")
             assert e.value.message == test_error_msg
             assert e.value.target == ErrorTarget.AZURE_RUN_STORAGE
             assert e.value.error_codes[0] == "UserError"
