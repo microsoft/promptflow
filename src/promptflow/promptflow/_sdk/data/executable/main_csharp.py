@@ -12,6 +12,7 @@ from utils import dict_iter_render_message, parse_list_from_html, parse_image_co
 
 invoker = None
 
+
 def start():
     def clear_chat() -> None:
         st.session_state.messages = []
