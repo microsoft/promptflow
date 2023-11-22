@@ -3,26 +3,17 @@
 # ---------------------------------------------------------
 
 import re
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import UnexpectedError
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow._utils.utils import resolve_dir_to_absolute
 from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
-
-
-class InputSource(Enum):
-    """The source of the input."""
-
-    UserProvided = "UserProvided"
-    PreviousRun = "PreviousRun"
 
 
 class BatchInputsProcessor:
@@ -269,10 +260,6 @@ def apply_inputs_mapping(
     """
     result = {}
     notfound_mapping_relations = []
-    # Add property on operation context, which is used to differentiate the input source of a run.
-    # Set input source to user provided by default.
-    operation_context = OperationContext.get_instance()
-    operation_context.input_source = InputSource.UserProvided.name
     for map_to_key, map_value in inputs_mapping.items():
         # Ignore reserved key configuration from input mapping.
         if map_to_key == LINE_NUMBER_KEY:
@@ -280,9 +267,6 @@ def apply_inputs_mapping(
         if not isinstance(map_value, str):  # All non-string values are literal values.
             result[map_to_key] = map_value
             continue
-        # If map_value is a previous run output, set input source to previous run.
-        if map_value.startswith("${run.outputs"):
-            operation_context.input_source = InputSource.PreviousRun.name
         match = re.search(r"^\${([^{}]+)}$", map_value)
         if match is not None:
             pattern = match.group(1)
