@@ -380,7 +380,8 @@ class LineExecutionProcessPool:
                         # Check every 1 second
                         async_result.wait(1)
                     #  If the remote call raised an exception then that exception will be reraised by get().
-                    #  Related link: https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.AsyncResult
+                    #  Related link:
+                    #  https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.AsyncResult
                     async_result.get()
                 except KeyboardInterrupt:
                     raise
