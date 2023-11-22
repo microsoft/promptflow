@@ -117,12 +117,12 @@ class ToolResolver:
                     )
                     raise NodeInputValidationError(message=msg) from e
                 except Exception as e:
-                    msg = f"Input '{k}' for node '{node.name}' of value {v.value} is not type {value_type}."
+                    msg = f"Input '{k}' for node '{node.name}' of value {v.value} is not type {value_type.value}."
                     raise NodeInputValidationError(message=msg) from e
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.
                 raise ValueTypeUnresolved(
-                    f"Unresolved input type {value_type!r}, please check if it is supported in current version.",
+                    f"Unresolved input type {value_type.value!r}, please check if it is supported in current version.",
                     target=ErrorTarget.EXECUTOR,
                 )
         updated_node = copy.deepcopy(node)
