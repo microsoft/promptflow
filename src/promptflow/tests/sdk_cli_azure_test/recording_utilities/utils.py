@@ -64,6 +64,7 @@ def mock_workspace_get(*args, **kwargs) -> Workspace:
         name=SanitizedValues.WORKSPACE_NAME,
         resource_group=SanitizedValues.RESOURCE_GROUP_NAME,
         discovery_url=SanitizedValues.DISCOVERY_URL,
+        workspace_id=SanitizedValues.WORKSPACE_ID,
     )
 
 
@@ -112,6 +113,16 @@ def sanitize_azure_workspace_triad(value: str) -> str:
     return sanitized_ws
 
 
+def sanitize_experiment_id(value: str) -> str:
+    value = re.sub(
+        r"(experimentId)=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        r"\1={}".format(SanitizedValues.WORKSPACE_ID),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
 def sanitize_upload_hash(value: str) -> str:
     value = re.sub(
         r"(az-ml-artifacts)/([0-9a-f]{32})",
@@ -122,6 +133,22 @@ def sanitize_upload_hash(value: str) -> str:
     value = re.sub(
         r"(LocalUpload)/([0-9a-f]{32})",
         r"\1/{}".format(SanitizedValues.UPLOAD_HASH),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
+def sanitize_username(value: str) -> str:
+    value = re.sub(
+        r"/(Users%2F)([^%?]+)(%2F|\?)",
+        r"/\1{}\3".format(SanitizedValues.USERNAME),
+        value,
+        flags=re.IGNORECASE,
+    )
+    value = re.sub(
+        r"(Users/)([^/]+)(/)",
+        r"\1{}\3".format(SanitizedValues.USERNAME),
         value,
         flags=re.IGNORECASE,
     )

@@ -1,5 +1,7 @@
 import contextvars
 import math
+import sys
+import signal
 import multiprocessing
 import os
 import queue
@@ -11,6 +13,7 @@ from multiprocessing.pool import ThreadPool
 
 import psutil
 
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
@@ -29,7 +32,18 @@ from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
-LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
+
+def signal_handler(signum, frame):
+    signame = signal.Signals(signum).name
+    bulk_logger.info("Execution stopping. Handling signal %s (%s)", signame, signum)
+    try:
+        process = psutil.Process(os.getpid())
+        bulk_logger.info("Successfully terminated process with pid %s", process.pid)
+        process.terminate()
+    except Exception:
+        bulk_logger.warning("Error when handling execution stop signal", exc_info=True)
+    finally:
+        sys.exit(1)
 
 
 class QueueRunStorage(AbstractRunStorage):
@@ -324,6 +338,7 @@ class LineExecutionProcessPool:
         return result
 
     def run(self, batch_inputs):
+        signal.signal(signal.SIGINT, signal_handler)
         for index, inputs in batch_inputs:
             self._inputs_queue.put(
                 (
@@ -349,13 +364,23 @@ class LineExecutionProcessPool:
             ),
         ):
             try:
-                self._pool.starmap(
+                # The variable 'async_result' here is not the actual result of the batch run
+                # but an AsyncResult object that can be used to check if the execution are finished
+                # The actual results of the batch run are stored in 'result_list'
+                async_result = self._pool.starmap_async(
                     self._timeout_process_wrapper,
                     [
                         (run_start_time, self._inputs_queue, self._line_timeout_sec, result_list)
                         for _ in range(self._n_process)
                     ],
                 )
+                try:
+                    # Wait for batch run to complete or KeyboardInterrupt
+                    while not async_result.ready():
+                        # Check every 1 second
+                        async_result.wait(1)
+                except KeyboardInterrupt:
+                    raise
             except PromptflowException:
                 raise
             except Exception as e:
@@ -435,6 +460,7 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
+    signal.signal(signal.SIGINT, signal_handler)
     logger.info(f"Process {os.getpid()} started.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
     if log_context_initialization_func:

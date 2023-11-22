@@ -1,7 +1,8 @@
 import pytest
 
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo, Status
-from promptflow.executor._result import AggregationResult, BulkResult, LineResult
+from promptflow.contracts.run_info import RunInfo as NodeRunInfo
+from promptflow.contracts.run_info import Status
+from promptflow.executor._result import AggregationResult, BatchResult, LineResult
 
 
 def get_api_call(type, name, inputs={}, output={}, children=None):
@@ -9,7 +10,7 @@ def get_api_call(type, name, inputs={}, output={}, children=None):
 
 
 @pytest.mark.unittest
-class TestBulkResult:
+class TestBatchResult:
     def get_node_run_infos(self, node_dict, index=None):
         return {
             k: NodeRunInfo(
@@ -41,15 +42,13 @@ class TestBulkResult:
         ]
 
     def get_bulk_result(self, line_dict, aggr_dict):
-        return BulkResult(
+        return BatchResult(
             outputs=[],
             metrics={},
             line_results=self.get_line_results(line_dict=line_dict),
             aggr_results=AggregationResult(
-                output={},
-                metrics={},
-                node_run_infos=self.get_node_run_infos(node_dict=aggr_dict)
-            )
+                output={}, metrics={}, node_run_infos=self.get_node_run_infos(node_dict=aggr_dict)
+            ),
         )
 
     def test_get_status_summary(self):
@@ -63,8 +62,8 @@ class TestBulkResult:
 
         status_summary = bulk_result.get_status_summary()
         assert status_summary == {
-            '__pf__.lines.completed': 2,
-            '__pf__.lines.failed': 1,
+            "__pf__.lines.completed": 2,
+            "__pf__.lines.failed": 1,
             "__pf__.nodes.node_0.completed": 3,
             "__pf__.nodes.node_1.completed": 2,
             "__pf__.nodes.node_1.failed": 1,
@@ -81,27 +80,32 @@ class TestBulkResult:
         bulk_result = self.get_bulk_result(line_dict=line_dict, aggr_dict=aggr_dict)
 
         api_call_1 = get_api_call(
-            "LLM", "Completion",
+            "LLM",
+            "Completion",
             inputs={"prompt": "Please tell me a joke.", "api_type": "azure", "engine": "text-davinci-003"},
-            output={"choices": [{"text": "text"}]}
+            output={"choices": [{"text": "text"}]},
         )
         api_call_2 = get_api_call(
-            "LLM", "Completion",
+            "LLM",
+            "Completion",
             inputs={
                 "prompt": ["Please tell me a joke.", "Please tell me a joke about fruit."],
-                "api_type": "azure", "engine": "text-davinci-003"
+                "api_type": "azure",
+                "engine": "text-davinci-003",
             },
-            output=[{"choices": [{"text": "text"}]}, {"choices": [{"text": "text"}]}]
+            output=[{"choices": [{"text": "text"}]}, {"choices": [{"text": "text"}]}],
         )
         api_call = get_api_call("Chain", "Chain", children=[api_call_1, api_call_2])
         bulk_result.line_results[0].node_run_infos["node_0"].api_calls = [api_call]
         api_call = get_api_call(
-            "LLM", "ChatCompletion",
+            "LLM",
+            "ChatCompletion",
             inputs={
                 "messages": [{"system": "You are a helpful assistant.", "user": "Please tell me a joke."}],
-                "api_type": "openai", "model": "gpt-35-turbo"
+                "api_type": "openai",
+                "model": "gpt-35-turbo",
             },
-            output={"choices": [{"message": {"content": "content"}}]}
+            output={"choices": [{"message": {"content": "content"}}]},
         )
         bulk_result.aggr_results.node_run_infos["aggr_0"].api_calls = [api_call]
         metrics = bulk_result.get_openai_metrics()
@@ -119,8 +123,8 @@ class TestBulkResult:
             get_api_call("LLM", "Invalid"),
             get_api_call("LLM", "Completion"),
             get_api_call("LLM", "Completion", inputs={"api_type": "azure"}),
-            get_api_call("LLM", "ChatCompletion", inputs={"api_type": "azure", "engine": "invalid"})
-        ]
+            get_api_call("LLM", "ChatCompletion", inputs={"api_type": "azure", "engine": "invalid"}),
+        ],
     )
     def test_invalid_api_calls(self, api_call):
         line_dict = {0: {"node_0": Status.Completed}}

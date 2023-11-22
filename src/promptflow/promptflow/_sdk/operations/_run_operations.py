@@ -90,7 +90,7 @@ class RunOperations(TelemetryMixin):
         # TODO: change to async
         stream = kwargs.pop("stream", False)
         try:
-            from promptflow._sdk.operations._run_submitter import RunSubmitter
+            from promptflow._sdk._submitter import RunSubmitter
 
             created_run = RunSubmitter(run_operations=self).submit(run=run, **kwargs)
             if stream:

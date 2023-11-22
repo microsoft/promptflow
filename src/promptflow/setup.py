@@ -21,9 +21,10 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
     changelog = f.read()
 
 REQUIRES = [
-    "psutil",  # Get process information when bulk run
-    "openai",  # promptflow.core.api_injector
+    "psutil",  # get process information when bulk run
+    "openai",  # promptflow._core.openai_injector
     "flask>=2.2.3,<3.0.0",  # Serving endpoint requirements
+    "flask-restx>=1.2.0,<1.3.0",  # Serving endpoint requirements
     "dataset>=1.6.0,<2.0.0",  # promptflow.storage
     "sqlalchemy>=1.4.48,<2.0.0",  # sqlite requirements
     # note that pandas 1.5.3 is the only version to test in ci before promptflow 0.1.0b7 is released
