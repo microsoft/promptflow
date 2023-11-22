@@ -67,7 +67,7 @@ class TestConnection:
                     "name": "my_open_ai_connection",
                     "api_key": "<to-be-replaced>",
                     "organization": "org",
-                    "base_url": "custom_api_base",
+                    "base_url": "custom_base_url",
                 },
                 {
                     "module": "promptflow.connections",
