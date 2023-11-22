@@ -226,43 +226,30 @@ class FlowMetaYamlGenerator(BaseGenerator):
 
 
 class StreamlitFileReplicator:
-    def __init__(self, flow_name, flow_dag_path, connection_provider):
+    def __init__(self, flow_name, flow_dag_path):
         self.flow_name = flow_name
         self.flow_dag_path = Path(flow_dag_path)
-        self.connection_provider = connection_provider
         self.executable = ExecutableFlow.from_yaml(
             flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
         )
         self.is_chat_flow, self.chat_history_input_name, error_msg = FlowOperations._is_chat_flow(self.executable)
-        if not self.is_chat_flow and self.executable.program_language != FlowLanguage.Csharp:
-            raise UserErrorException(f"Only support chat flow in ui mode, {error_msg}.")
-        if self.is_chat_flow:
-            self._chat_input_name = next(
-                (flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None
-            )
-            self._chat_input = self.executable.inputs[self._chat_input_name]
-            if self._chat_input.type not in [ValueType.STRING.value, ValueType.LIST.value]:
-                raise UserErrorException(
-                    f"Only support string or list type for chat input, but got {self._chat_input.type}."
-                )
-
-    @property
-    def chat_input_default_value(self):
-        return self._chat_input.default if self.is_chat_flow else None
-
-    @property
-    def chat_input_value_type(self):
-        return self._chat_input.type if self.is_chat_flow else None
-
-    @property
-    def chat_input_name(self):
-        return self._chat_input_name if self.is_chat_flow else None
 
     @property
     def flow_inputs(self):
-        return {
-            flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
-        } if not self.is_chat_flow else None
+        if self.is_chat_flow:
+            results = {}
+            for flow_input, value in self.executable.inputs.items():
+                if value.is_chat_input:
+                    if value.type.value not in [ValueType.STRING.value, ValueType.LIST.value]:
+                        raise UserErrorException(
+                            f"Only support string or list type for chat input, but got {value.type.value}."
+                        )
+                    results.update({flow_input: (value.default, value.type.value)})
+        else:
+            results = {
+                flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
+            }
+        return results
 
     @property
     def label(self):
@@ -270,8 +257,7 @@ class StreamlitFileReplicator:
 
     @property
     def py_file(self):
-        return SERVE_TEMPLATE_PATH / "flow_test_main.py" if self.is_chat_flow else (
-                SERVE_TEMPLATE_PATH / "main_csharp.py")
+        return SERVE_TEMPLATE_PATH / "main.py"
 
     @property
     def flow_path(self):
@@ -281,13 +267,9 @@ class StreamlitFileReplicator:
     def entry_template_keys(self):
         return [
             "flow_name",
-            "chat_input_name",
             "flow_path",
             "is_chat_flow",
             "chat_history_input_name",
-            "connection_provider",
-            "chat_input_default_value",
-            "chat_input_value_type",
             "flow_inputs",
             "label",
         ]

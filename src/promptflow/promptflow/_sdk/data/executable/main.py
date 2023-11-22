@@ -8,7 +8,7 @@ from copy import copy
 
 from promptflow import load_flow
 
-from utils import dict_iter_render_message, parse_list_from_html, parse_image_content
+from utils import dict_iter_render_message, parse_list_from_html, parse_image_content, render_single_dict_message
 
 invoker = None
 
@@ -19,7 +19,10 @@ def start():
 
     def render_message(role, message_items):
         with st.chat_message(role):
-            dict_iter_render_message(message_items)
+            if is_chat_flow:
+                render_single_dict_message(message_items)
+            else:
+                dict_iter_render_message(message_items)
 
     def show_conversation() -> None:
         if "messages" not in st.session_state:
@@ -45,11 +48,16 @@ def start():
             response = run_flow({chat_history_input_name: get_chat_history_from_session(), **kwargs})
         else:
             response = run_flow(kwargs)
-        st.session_state.messages.append(("assistant", response.output))
+
+        # Get base64 for multi modal object
+        resolved_outputs = invoker._convert_multimedia_data_to_base64(response)
+        st.session_state.messages.append(("assistant", resolved_outputs))
         session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
+        if is_chat_flow:
+            invoker._dump_invoke_result(response, dump_path=Path(flow_path).parent, dump_file_prefix="chat")
         with container:
-            render_message("assistant", response.output)
+            render_message("assistant", resolved_outputs)
 
     def run_flow(data: dict) -> dict:
         global invoker

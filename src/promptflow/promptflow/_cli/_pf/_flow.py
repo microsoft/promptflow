@@ -392,7 +392,6 @@ def test_flow(args):
                 StreamlitFileReplicator(
                     flow_name=flow.display_name if flow.display_name else flow.name,
                     flow_dag_path=flow.flow_dag_path,
-                    connection_provider=pf_client._ensure_connection_provider(),
                 ).generate_to_file(script)
             main_script_path = os.path.join(temp_dir, "main.py")
             pf_client.flows._chat_with_ui(script=main_script_path)
