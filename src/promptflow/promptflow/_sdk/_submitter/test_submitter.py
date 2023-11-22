@@ -467,15 +467,7 @@ class TestSubmitterViaProxy(TestSubmitter):
             stream=stream_log,
             credential_list=credential_list,
         ):
-            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            flow_executor = CsharpExecutorProxy.create(
-                flow_file=self.flow.path,
-                working_dir=self.flow.code,
-                connections=connections,
-                storage=storage,
-            )
-
-            line_result = flow_executor.exec_line(
+            line_result = self._executor.exec_line(
                 inputs,
                 index=0,
             )
@@ -486,7 +478,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 # Convert inputs of aggregation to list type
                 flow_inputs = {k: [v] for k, v in inputs.items()}
                 aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                aggregation_results = flow_executor.exec_aggregation_async(
+                aggregation_results = self._executor.exec_aggregation_async(
                     flow_inputs, aggregation_inputs=aggregation_inputs
                 )
                 line_result.node_run_infos.update(aggregation_results.node_run_infos)
