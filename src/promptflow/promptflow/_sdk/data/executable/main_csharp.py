@@ -45,11 +45,11 @@ def start():
             response = run_flow({chat_history_input_name: get_chat_history_from_session(), **kwargs})
         else:
             response = run_flow(kwargs)
-        st.session_state.messages.append(("assistant", response))
-        session_state_history.update({"outputs": response})
+        st.session_state.messages.append(("assistant", response.output))
+        session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
         with container:
-            render_message("assistant", response)
+            render_message("assistant", response.output)
 
     def run_flow(data: dict) -> dict:
         global invoker

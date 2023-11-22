@@ -7,7 +7,7 @@ from PIL import Image
 import streamlit as st
 from streamlit_quill import st_quill
 
-from promptflow._sdk._serving.flow_invoker import FlowInvoker
+from promptflow import load_flow
 
 from utils import render_single_dict_message, parse_list_from_html
 
@@ -48,7 +48,7 @@ def start():
         st.session_state.messages.append(("assistant", resolved_outputs))
         session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
-        invoker._dump_invoke_result(response)
+        invoker._dump_invoke_result(response, dump_path=Path(flow_path).parent, dump_file_prefix="chat")
         with container:
             render_message("assistant", resolved_outputs)
 
@@ -56,13 +56,12 @@ def start():
         global invoker
         if not invoker:
             flow = Path(flow_path)
-            dump_path = Path(flow_path).parent
             if flow.is_dir():
                 os.chdir(flow)
             else:
                 os.chdir(flow.parent)
-            invoker = FlowInvoker(flow, connection_provider=connection_provider, dump_to=dump_path)
-        result = invoker._invoke(data)
+            invoker = load_flow(flow)
+        result = invoker.invoke(data)
         return result
 
     image = Image.open(Path(__file__).parent / "logo.png")

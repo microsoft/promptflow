@@ -1,10 +1,13 @@
 import asyncio
 import uuid
+from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import UnexpectedError
+from promptflow._core.operation_context import OperationContext
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -17,14 +20,20 @@ from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute,
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
+from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import PromptflowException
-from promptflow.executor._result import AggregationResult, BatchResult, LineResult
+from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
+
+
+class BatchRunSource(Enum):
+    Data = "Data"
+    Run = "Run"
 
 
 class BatchEngine:
@@ -93,8 +102,16 @@ class BatchEngine:
         :param raise_on_line_failure: Whether to raise exception when a line fails.
         :type raise_on_line_failure: Optional[bool]
         :return: The result of this batch run
-        :rtype: ~promptflow.executor._result.BatchResult
+        :rtype: ~promptflow.batch._result.BatchResult
         """
+        self._start_time = datetime.utcnow()
+        # Add property on operation context to indicate batch run source, which is used to differentiate the input
+        # source of a batch run. The batch run source can be either "Data" or "Run".
+        # If the input source is "Data", it means the input data is provided by the user.
+        # If the input source is "Run", it means the input data is provided by a previous run.
+        OperationContext.get_instance().batch_run_source = (
+            BatchRunSource.Run.name if "run.outputs" in input_dirs else BatchRunSource.Data.name
+        )
         # resolve input data from input dirs and apply inputs mapping
         batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
         batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
@@ -102,8 +119,6 @@ class BatchEngine:
         output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
         with _change_working_dir(self._working_dir):
             batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
-        # persist outputs to output dir
-        self._persist_outputs(batch_result.outputs, output_dir)
         # destroy executor proxy
         self._executor_proxy.destroy()
         return batch_result
@@ -115,7 +130,7 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
-        # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
+        # apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         batch_inputs = [
             apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
         ]
@@ -126,17 +141,18 @@ class BatchEngine:
             line_results = asyncio.run(self._exec_batch_internal(batch_inputs, output_dir, run_id))
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         aggr_results = self._exec_aggregation_internal(batch_inputs, line_results, run_id)
+
+        # persist outputs to output dir
         outputs = [
             {LINE_NUMBER_KEY: r.run_info.index, **r.output}
             for r in line_results
             if r.run_info.status == Status.Completed
         ]
-        return BatchResult(
-            outputs=outputs,
-            metrics=aggr_results.metrics,
-            line_results=line_results,
-            aggr_results=aggr_results,
-        )
+        self._persist_outputs(outputs, output_dir)
+
+        # summary some infos from line results and aggr results to batch result
+        self._end_time = datetime.utcnow()
+        return BatchResult.create(self._start_time, self._end_time, line_results, aggr_results)
 
     async def _exec_batch_internal(
         self,

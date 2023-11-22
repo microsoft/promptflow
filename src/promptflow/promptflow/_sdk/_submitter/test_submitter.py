@@ -14,7 +14,6 @@ from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import Flow, FlowContext
-from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
@@ -242,25 +241,6 @@ class TestSubmitter:
                 output_sub_dir=".promptflow/intermediate",
             )
             return result
-
-    def exec_with_inputs(self, inputs):
-        # TODO: unify all exec_line calls here
-        from promptflow._constants import LINE_NUMBER_KEY
-
-        # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(
-            environment_variables=self.flow_context.environment_variables, client=self._client
-        )
-        SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
-        # cache executor here
-        flow_executor = FlowContextResolver.create(flow=self.flow)
-        # validate inputs
-        flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=flow_executor._flow)
-        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=self.flow_context.streaming)
-        if isinstance(line_result.output, dict):
-            # Remove line_number from output
-            line_result.output.pop(LINE_NUMBER_KEY, None)
-        return line_result
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
         """
@@ -494,11 +474,7 @@ class TestSubmitterViaProxy(TestSubmitter):
     def exec_with_inputs(self, inputs):
         # TODO: unify all exec_line calls here
         from promptflow._constants import LINE_NUMBER_KEY
-        # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(
-            environment_variables=self.flow_context.environment_variables, client=self._client
-        )
-        SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
+
         # validate inputs
         flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
         line_result = self._executor.exec_line(inputs, index=0)

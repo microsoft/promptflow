@@ -61,6 +61,9 @@ class CsharpExecutorProxy(AbstractExecutorProxy):
 
         csharp_inputs = Dictionary[String, Object]()
         for key, value in inputs.items():
+            ## csharp chat flow does not support chat_history input for now
+            if key == "chat_history":
+                continue
             csharp_inputs[key] = value
         task = self._executor.ExecuteAsync(csharp_inputs)
         task_result = task.Result

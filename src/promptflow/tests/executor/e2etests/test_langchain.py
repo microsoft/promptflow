@@ -4,8 +4,7 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow.batch import BatchEngine
-from promptflow.contracts.run_info import Status
-from promptflow.executor._result import BatchResult, LineResult
+from promptflow.batch._result import BatchResult
 
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
 
@@ -29,11 +28,5 @@ class TestLangchain:
         output_dir = Path(mkdtemp())
         batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
         assert isinstance(batch_results, BatchResult)
-        for _, line_result in enumerate(batch_results.line_results):
-            assert isinstance(line_result, LineResult)
-            assert line_result.run_info.status == Status.Completed
-        openai_metrics = batch_results.get_openai_metrics()
-        assert "completion_tokens" in openai_metrics
-        assert "prompt_tokens" in openai_metrics
-        assert "total_tokens" in openai_metrics
-        assert openai_metrics["total_tokens"] > 0
+        assert batch_results.total_lines == batch_results.completed_lines
+        assert batch_results.system_metrics.total_tokens > 0
