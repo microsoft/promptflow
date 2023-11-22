@@ -1,7 +1,6 @@
 import asyncio
 import uuid
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -29,11 +28,6 @@ from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
-
-
-class BatchRunSource(Enum):
-    Data = "Data"
-    Run = "Run"
 
 
 class BatchEngine:
