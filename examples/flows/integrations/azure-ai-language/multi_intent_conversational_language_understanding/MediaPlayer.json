@@ -1,0 +1,172 @@
+{
+    "projectFileVersion": "2022-10-01-preview",
+    "stringIndexType": "Utf16CodeUnit",
+    "metadata": {
+        "projectKind": "Conversation",
+        "settings": {
+            "confidenceThreshold": 0,
+            "normalizeCasing": false
+        },
+        "projectName": "MediaPlayer",
+        "multilingual": false,
+        "description": "",
+        "language": "en-us"
+    },
+    "assets": {
+        "projectKind": "Conversation",
+        "intents": [
+            {
+                "category": "None"
+            },
+            {
+                "category": "PlayMedia"
+            },
+            {
+                "category": "UpdateVolume"
+            }
+        ],
+        "entities": [],
+        "utterances": [
+            {
+                "text": "Put the volume at maximum.",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Mute the audio.",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Decrease the sound.",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Can you adjust the volume to a comfortable level?",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Volume up to 80%.",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Set the volume to 50%.",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Make it quieter.",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Lower the volume.",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Turn up the sound.",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Increase the volume.",
+                "language": "en-us",
+                "intent": "UpdateVolume",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Play the next episode of my podcast.",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Play a random podcast.",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Start playing the song \"Shape of You\" by Ed Sheeran.",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Play the latest album by Guns n Roses.",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Play some classical music.",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Can you play a relaxing playlist?",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Shuffle my playlist.",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Play track number 5.",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Play my favorite song.",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            },
+            {
+                "text": "Play Eric Clapton.",
+                "language": "en-us",
+                "intent": "PlayMedia",
+                "entities": [],
+                "dataset": "Train"
+            }
+        ]
+    }
+}

@@ -9,7 +9,7 @@ on:
     - cron: "28 19 * * *" # Every day starting at 3:28 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_flowinpipeline_pipeline.yml ]
+    paths: [ examples/**, .github/workflows/samples_flowinpipeline_pipeline.yml, '!examples/flows/integrations/**' ]
   workflow_dispatch:
 
 env:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Generate config.json for canary workspace (scheduled runs only)
         if: github.event_name == 'schedule'
         run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json

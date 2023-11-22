@@ -9,7 +9,7 @@ on:
     - cron: "48 20 * * *" # Every day starting at 4:48 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_azure_app_service.yml ]
+    paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_azure_app_service.yml, '!examples/flows/integrations/**' ]
   workflow_dispatch:
 
 env:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Python 3.9 environment
         uses: actions/setup-python@v4
         with:

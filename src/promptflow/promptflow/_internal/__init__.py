@@ -70,6 +70,7 @@ from promptflow._utils.exception_utils import (
     RootErrorCode,
     infer_error_code_from_class,
 )
+from promptflow._utils.execution_utils import handle_line_failures
 from promptflow._utils.feature_utils import Feature, FeatureState, get_feature_list
 from promptflow._utils.logger_utils import (
     DATETIME_FORMAT,

@@ -9,7 +9,7 @@ on:
     - cron: "59 21 * * *" # Every day starting at 5:59 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_distribute_flow_as_executable_app.yml ]
+    paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_distribute_flow_as_executable_app.yml, '!examples/flows/integrations/**' ]
   workflow_dispatch:
 
 env:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Python 3.9 environment
         uses: actions/setup-python@v4
         with:

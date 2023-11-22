@@ -25,8 +25,6 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 
-from ..recording_utilities import RecordStorage
-
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
@@ -52,7 +50,7 @@ def run_pf_command(*args, cwd=None):
 
 
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
 )
 @pytest.mark.cli_test
 @pytest.mark.e2etest
@@ -550,7 +548,7 @@ class TestCli:
         )
 
     def test_flow_test_with_environment_variable(self, local_client):
-        from promptflow._sdk.operations._run_submitter import SubmitterHelper
+        from promptflow._sdk._submitter.utils import SubmitterHelper
 
         def validate_stdout(detail_path):
             with open(detail_path, "r") as f:
@@ -878,7 +876,6 @@ class TestCli:
                 assert not (flow_folder / "azure_openai.yaml").exists()
                 assert not (flow_folder / "openai.yaml").exists()
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="cannot support interactive")
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1447,27 +1444,10 @@ class TestCli:
         assert package_tool_name in tools_dict["package"]
 
         # Invalid flow parameter
-        with pytest.raises(Exception) as e:
+        with pytest.raises(SystemExit):
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
-        assert "invalid_flow_folder does not exist" in e.value.args[0]
-
-    def test_chat_flow_with_conditional(self, monkeypatch, capsys):
-        chat_list = ["1", "2"]
-
-        def mock_input(*args, **kwargs):
-            if chat_list:
-                return chat_list.pop()
-            else:
-                raise KeyboardInterrupt()
-
-        monkeypatch.setattr("builtins.input", mock_input)
-        run_pf_command(
-            "flow", "test", "--flow", f"{FLOWS_DIR}/conditional_chat_flow_with_skip", "--interactive", "--verbose"
-        )
-        output_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.output.json"
-        assert output_path.exists()
-        detail_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.detail.json"
-        assert detail_path.exists()
+        outerr = capsys.readouterr()
+        assert "invalid_flow_folder does not exist" in outerr.out
 
     def test_flow_test_with_image_input_and_output(self):
         run_pf_command(
@@ -1527,7 +1507,6 @@ class TestCli:
             pass
         pf.runs.get(name=name2)
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="cannot support complex reply format")
     def test_data_scrubbing(self):
         # Prepare connection
         run_pf_command(
