@@ -168,6 +168,7 @@ def monitor_operation(
             logger = get_telemetry_logger()
 
             custom_dimensions.update(extract_telemetry_info(self))
+
             with log_activity(logger, activity_name, activity_type, custom_dimensions):
                 return f(self, *args, **kwargs)
 
