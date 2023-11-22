@@ -247,8 +247,8 @@ class TestBatch:
         assert error_message in e.value.message
 
     def test_csharp_batch_engine(self):
-        flow_file = Path("D:/PromptflowCS/src/PromptflowCSharp/RAGFlow/flow.dag.yaml")
-        working_dir = Path("D:/PromptflowCS/src/PromptflowCSharp/RAGFlow/")
+        flow_file = Path("flow.dag.yaml")
+        working_dir = Path("D:/RAGFlow/bin/Release/net6.0")
         batch_engine = BatchEngine(flow_file, working_dir)
         input_dirs = {"data": "inputs.jsonl"}
         inputs_mapping = {"question": "${data.question}", "context_limit_length": "${data.context_limit_length}"}

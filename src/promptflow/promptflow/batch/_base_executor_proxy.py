@@ -4,6 +4,7 @@ from typing import Any, Mapping, Optional
 import httpx
 
 from promptflow._constants import LINE_TIMEOUT_SEC
+from promptflow.exceptions import PromptflowException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -59,7 +60,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        return LineResult.deserialize(response.json())
+        response = self.process_http_response(response)
+        return LineResult.deserialize(response)
 
     async def exec_aggregation_async(
         self,
@@ -71,4 +73,13 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             url = self.api_endpoint + "/aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        return AggregationResult.deserialize(response.json())
+        response = self.process_http_response(response)
+        return AggregationResult.deserialize(response)
+
+    def process_http_response(self, response: httpx.Response):
+        status_code = response.status_code
+        if status_code == 200:
+            return response.json()
+        else:
+            # TODO: add more error handling
+            raise PromptflowException(f"Error when calling executor API, response: {response}")

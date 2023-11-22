@@ -7,7 +7,8 @@ from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_DOMAIN = "http://localhost:"
-EXECUTOR_PORT = 8080
+EXECUTOR_PORT = "12306"
+SERVICE_DLL = "Promptflow.Service.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
@@ -16,7 +17,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
 
     @property
     def api_endpoint(self) -> str:
-        return EXECUTOR_DOMAIN + str(EXECUTOR_PORT)
+        return EXECUTOR_DOMAIN + EXECUTOR_PORT
 
     @classmethod
     def create(
@@ -28,9 +29,9 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         storage: Optional[AbstractRunStorage] = None,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
-        assembly_folder = working_dir / "bin/Debug/net6.0"
-        dll_path = "D:/PromptflowCS/src/PromptflowCSharp/Promptflow.Service/bin/Debug/net6.0/Promptflow.Service.dll"
-        command = f'dotnet {dll_path} -p {EXECUTOR_PORT} -y {flow_file} -a {assembly_folder} -c "" -l ""'
+        service_dll_path = Path(working_dir / SERVICE_DLL).as_posix()
+        flow_file = flow_file.as_posix() if flow_file.is_absolute() else Path(working_dir / flow_file).as_posix()
+        command = f'dotnet {service_dll_path} -p {EXECUTOR_PORT} -y {flow_file} -a {working_dir.as_posix()} -c "" -l ""'
         process = subprocess.Popen(command, shell=True)
         return cls(process)
 
