@@ -225,7 +225,7 @@ class FlowMetaYamlGenerator(BaseGenerator):
         return ["flow_name"]
 
 
-class StreamlitFileGenerator(BaseGenerator):
+class StreamlitFileReplicator:
     def __init__(self, flow_name, flow_dag_path, connection_provider):
         self.flow_name = flow_name
         self.flow_dag_path = Path(flow_dag_path)
@@ -269,7 +269,7 @@ class StreamlitFileGenerator(BaseGenerator):
         return "Chat" if self.is_chat_flow else "Run"
 
     @property
-    def tpl_file(self):
+    def py_file(self):
         return SERVE_TEMPLATE_PATH / "flow_test_main.py" if self.is_chat_flow else (
                 SERVE_TEMPLATE_PATH / "main_csharp.py")
 
@@ -295,7 +295,7 @@ class StreamlitFileGenerator(BaseGenerator):
     def generate_to_file(self, target):
         if Path(target).name == "main.py":
             target = Path(target).resolve()
-            shutil.copy(self.tpl_file, target)
+            shutil.copy(self.py_file, target)
             config_content = {key: getattr(self, key) for key in self.entry_template_keys}
             with open(target.parent / "config.json", "w") as file:
                 json.dump(config_content, file, indent=4)
