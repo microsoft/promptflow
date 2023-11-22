@@ -124,30 +124,47 @@ class OperationContext(Dict):
         else:
             self.user_agent = user_agent
 
-    def infer_batch_input_source_from_input_mapping(self, input_mapping: Mapping[str, str]):
+    def infer_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
 
-        This method checks each value in the input mapping. If any value starts with "${run.outputs",
-        it indicates that the input is coming from the output of a previous run. In this case,
-        the method sets the `batch_input_source` attribute of the OperationContext instance to "Run".
+        This method examines the provided `inputs_mapping` to determine the source of the inputs for a batch operation.
+        The `inputs_mapping` is a dictionary where keys represent the input names and the values represent the sources
+        of these inputs. The source of an input can be direct data or the output of a previous run.
 
-        If none of the values in the input mapping start with "${run.outputs", it indicates that
-        the input is not coming from a previous run. In this case, the method sets the `batch_input_source`
-        attribute of the OperationContext instance to "Data".
+        If any value in the `inputs_mapping` starts with "${run.outputs", it is considered as an input coming from the
+        output of a previous run. In this scenario, the `batch_input_source` attribute of the OperationContext instance
+        is set to "Run" to indicate that the batch inputs are sourced from a previous run's outputs.
 
-        If the input_mapping is None, the method does nothing and returns.
+        Conversely, if none of the values start with "${run.outputs", the inputs are considered as not coming from a
+        previous run and the `batch_input_source` attribute is set to "Data".
+
+        It is important to note that the `inputs_mapping` is fully controlled by the external caller and can reference
+        both inputs and outputs of previous runs. However, only references to run outputs are used to set the
+        `batch_input_source` to "Run".
+
+        If the `inputs_mapping` is None or empty, the method does nothing and returns without setting the
+        `batch_input_source`.
+
+        Example of `inputs_mapping` where input is sourced from a previous run's output:
+            {'input1': '${run.outputs.some_output}', 'input2': 'direct_data'}
+        Here, 'input1' is sourced from the output of a previous run, while 'input2' is sourced directly from data.
+        The `batch_input_source` would be set to "Run" in this case.
+
+        Example of `inputs_mapping` where input is sourced directly from data:
+            {'input1': 'data_source1', 'input2': 'data_source2'}
+        Since no values start with "${run.outputs", the `batch_input_source` would be set to "Data".
 
         Args:
-            input_mapping (Mapping[str, str]): A mapping from input names to their sources. The sources
-            can be either data or the output of a previous run. If a source starts with "${run.outputs",
-            it is considered to be the output of a previous run.
+            inputs_mapping (Mapping[str, str]): A mapping from input names to their sources, where the sources
+            can be either direct data or the output of a previous run. The mapping is fully controlled by the
+            external caller.
 
         Returns:
             None
         """
-        if input_mapping is None:
+        if inputs_mapping is None or not inputs_mapping:
             return
-        if any(value.startswith("${run.outputs") for value in input_mapping.values()):
+        if any(value.startswith("${run.outputs") for value in inputs_mapping.values()):
             self.batch_input_source = "Run"
         else:
             self.batch_input_source = "Data"

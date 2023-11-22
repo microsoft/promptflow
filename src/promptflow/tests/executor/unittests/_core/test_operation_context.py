@@ -100,22 +100,28 @@ class TestOperationContext:
         context2 = OperationContext.get_instance()
         assert context1 is context2
 
-    def test_infer_batch_input_source_from_input_mapping_run(self):
+    def test_infer_batch_input_source_from_inputs_mapping_run(self):
         input_mapping = {"input1": "${run.outputs.output1}", "input2": "${run.outputs.output2}"}
         context = OperationContext()
-        context.infer_batch_input_source_from_input_mapping(input_mapping)
+        context.infer_batch_input_source_from_inputs_mapping(input_mapping)
         assert context.batch_input_source == "Run"
 
-    def test_infer_batch_input_source_from_input_mapping_data(self):
+    def test_infer_batch_input_source_from_inputs_mapping_data(self):
         input_mapping = {"url": "${data.url}"}
         context = OperationContext()
-        context.infer_batch_input_source_from_input_mapping(input_mapping)
+        context.infer_batch_input_source_from_inputs_mapping(input_mapping)
         assert context.batch_input_source == "Data"
 
-    def test_infer_batch_input_source_from_input_mapping_none(self):
+    def test_infer_batch_input_source_from_inputs_mapping_none(self):
         input_mapping = None
         context = OperationContext()
-        context.infer_batch_input_source_from_input_mapping(input_mapping)
+        context.infer_batch_input_source_from_inputs_mapping(input_mapping)
+        assert not hasattr(context, "batch_input_source")
+
+    def test_infer_batch_input_source_from_inputs_mapping_empty(self):
+        input_mapping = {}
+        context = OperationContext()
+        context.infer_batch_input_source_from_inputs_mapping(input_mapping)
         assert not hasattr(context, "batch_input_source")
 
     def test_different_thread_have_different_instance(self):
