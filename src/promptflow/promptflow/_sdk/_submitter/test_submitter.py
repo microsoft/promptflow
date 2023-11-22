@@ -23,6 +23,7 @@ from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.batch._csharp_executor_proxy import CsharpExecutorProxy
 
 from .utils import SubmitterHelper, variant_overwrite_context
 
@@ -416,6 +417,24 @@ class TestSubmitter:
 class TestSubmitterViaProxy(TestSubmitter):
     def __init__(self, flow: Flow, flow_context: FlowContext, client=None):
         super().__init__(flow, flow_context, client)
+        self._init_executor()
+
+    def _init_executor(self):
+        logger.info("Promptflow Proxy executor starts initializing...")
+        connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
+            tools_meta=CsharpExecutorProxy.generate_tool_metadata(
+                flow_dag=self.flow.dag,
+                working_dir=self.flow.code,
+            )
+        )
+        storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+        self._executor = CsharpExecutorProxy.create(
+            flow_file=self.flow.path,
+            working_dir=self.flow.code,
+            connections=connections,
+            storage=storage,
+        )
+        logger.info("Promptflow executor initiated successfully.")
 
     def flow_test(
         self,
@@ -428,7 +447,6 @@ class TestSubmitterViaProxy(TestSubmitter):
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY
-        from promptflow.batch._csharp_executor_proxy import CsharpExecutorProxy
 
         if not connections:
             connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
@@ -484,30 +502,14 @@ class TestSubmitterViaProxy(TestSubmitter):
     def exec_with_inputs(self, inputs):
         # TODO: unify all exec_line calls here
         from promptflow._constants import LINE_NUMBER_KEY
-        from promptflow.batch._csharp_executor_proxy import CsharpExecutorProxy
-
-        connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
-            tools_meta=CsharpExecutorProxy.generate_tool_metadata(
-                flow_dag=self.flow.dag,
-                working_dir=self.flow.code,
-            )
-        )
-        storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(
             environment_variables=self.flow_context.environment_variables, client=self._client
         )
         SubmitterHelper.init_env(environment_variables=self.flow_context.environment_variables)
-        # cache executor here
-        flow_executor = CsharpExecutorProxy.create(
-            flow_file=self.flow.path,
-            working_dir=self.flow.code,
-            connections=connections,
-            storage=storage,
-        )
         # validate inputs
         flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-        line_result = flow_executor.exec_line(inputs, index=0)
+        line_result = self._executor.exec_line(inputs, index=0)
         if isinstance(line_result.output, dict):
             # Remove line_number from output
             line_result.output.pop(LINE_NUMBER_KEY, None)

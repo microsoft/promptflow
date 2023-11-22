@@ -219,6 +219,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
         self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
         self._executable = None
+        self.submitter = None
 
     @property
     def flow_dag_path(self) -> Path:
@@ -317,13 +318,10 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def invoke(self, inputs: dict):
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        if self.submitter is None:
+            self.submitter = TestSubmitterViaProxy(flow=self, flow_context=self.context)
 
-        # if args:
-        #     raise UserErrorException("Flow can only be called with keyword arguments.")
-
-        submitter = TestSubmitterViaProxy(flow=self, flow_context=self.context)
-
-        result = submitter.exec_with_inputs(
+        result = self.submitter.exec_with_inputs(
             inputs=inputs,
         )
         return result.output

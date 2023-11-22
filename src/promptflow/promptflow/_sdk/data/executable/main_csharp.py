@@ -10,6 +10,7 @@ from promptflow import load_flow
 
 from utils import dict_iter_render_message, parse_list_from_html, parse_image_content
 
+invoker = None
 
 def start():
     def clear_chat() -> None:
@@ -50,15 +51,17 @@ def start():
             render_message("assistant", response)
 
     def run_flow(data: dict) -> dict:
-        if flow_path:
-            flow = Path(flow_path)
-        else:
-            flow = Path(__file__).parent / "flow"
-        if flow.is_dir():
-            os.chdir(flow)
-        else:
-            os.chdir(flow.parent)
-        invoker = load_flow(flow)
+        global invoker
+        if not invoker:
+            if flow_path:
+                flow = Path(flow_path)
+            else:
+                flow = Path(__file__).parent / "flow"
+            if flow.is_dir():
+                os.chdir(flow)
+            else:
+                os.chdir(flow.parent)
+            invoker = load_flow(flow)
         result = invoker.invoke(data)
         return result
 
