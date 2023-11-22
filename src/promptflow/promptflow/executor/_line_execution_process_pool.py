@@ -379,6 +379,7 @@ class LineExecutionProcessPool:
                     while not async_result.ready():
                         # Check every 1 second
                         async_result.wait(1)
+                    #  Raise exceptions if they are raised.
                     async_result.get()
                 except KeyboardInterrupt:
                     raise
