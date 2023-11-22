@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import inspect
+import json
 import logging
 import shutil
 from abc import ABC, abstractmethod
@@ -263,13 +264,6 @@ class StreamlitFileGenerator(BaseGenerator):
             flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
         } if not self.is_chat_flow else None
 
-    @property
-    def flow_inputs_params(self):
-        if self.is_chat_flow:
-            return f"{self.chat_input_name}={self.chat_input_name}"
-        else:
-            inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in self.flow_inputs.items()]
-            return ",".join(inputs_params)
 
     @property
     def label(self):
@@ -277,8 +271,8 @@ class StreamlitFileGenerator(BaseGenerator):
 
     @property
     def tpl_file(self):
-        return SERVE_TEMPLATE_PATH / "flow_test_main.py.jinja2" if self.is_chat_flow else (
-                SERVE_TEMPLATE_PATH / "main_csharp.py.jinja2")
+        return SERVE_TEMPLATE_PATH / "flow_test_main.py" if self.is_chat_flow else (
+                SERVE_TEMPLATE_PATH / "main_csharp.py")
 
     @property
     def flow_path(self):
@@ -289,7 +283,6 @@ class StreamlitFileGenerator(BaseGenerator):
         return [
             "flow_name",
             "chat_input_name",
-            "flow_inputs_params",
             "flow_path",
             "is_chat_flow",
             "chat_history_input_name",
@@ -302,7 +295,11 @@ class StreamlitFileGenerator(BaseGenerator):
 
     def generate_to_file(self, target):
         if Path(target).name == "main.py":
-            super().generate_to_file(target=target)
+            target = Path(target).resolve()
+            shutil.copy(self.tpl_file, target)
+            config_content = {key: getattr(self, key) for key in self.entry_template_keys}
+            with open(target.parent / "config.json", "w") as file:
+                json.dump(config_content, file, indent=4)
         else:
             shutil.copy(SERVE_TEMPLATE_PATH / Path(target).name, target)
 
