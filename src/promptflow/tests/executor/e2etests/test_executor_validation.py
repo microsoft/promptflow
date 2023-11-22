@@ -11,7 +11,6 @@ from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch import BatchEngine
 from promptflow.contracts._errors import FailedToImportModule
-from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -244,12 +243,12 @@ class TestValidation:
         batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
 
         assert error_message in str(
-            batch_results.line_results[0].run_info.error
-        ), f"Expected message {error_message} but got {str(batch_results.line_results[0].run_info.error)}"
+            batch_results.error_summary.error_list[0].error
+        ), f"Expected message {error_message} but got {str(batch_results.error_summary.error_list[0].error)}"
 
         assert error_class in str(
-            batch_results.line_results[0].run_info.error
-        ), f"Expected message {error_class} but got {str(batch_results.line_results[0].run_info.error)}"
+            batch_results.error_summary.error_list[0].error
+        ), f"Expected message {error_class} but got {str(batch_results.error_summary.error_list[0].error)}"
 
     @pytest.mark.parametrize(
         "path_root, flow_folder, node_name, line_input, error_class, error_msg",
@@ -373,12 +372,12 @@ class TestValidation:
         inputs_mapping = {"num": "${data.num}"}
 
         if error_class is None:
-            result = batch_engine.run(
+            batch_result = batch_engine.run(
                 input_dirs, inputs_mapping, output_dir, raise_on_line_failure=raise_on_line_failure
             )
-            assert len(result.line_results) == 1
-            assert result.line_results[0].run_info.status == Status.Completed
-            assert result.line_results[0].run_info.error is None
+            assert batch_result.total_lines == 1
+            assert batch_result.completed_lines == 1
+            assert batch_result.error_summary.error_list == []
         else:
             if raise_on_line_failure:
                 with pytest.raises(error_class):
@@ -386,8 +385,9 @@ class TestValidation:
                         input_dirs, inputs_mapping, output_dir, raise_on_line_failure=raise_on_line_failure
                     )
             else:
-                result = batch_engine.run(
+                batch_result = batch_engine.run(
                     input_dirs, inputs_mapping, output_dir, raise_on_line_failure=raise_on_line_failure
                 )
-                assert result.line_results[0].run_info.status == Status.Failed
-                assert error_class.__name__ in json.dumps(result.line_results[0].run_info.error)
+                assert batch_result.total_lines == 1
+                assert batch_result.failed_lines == 1
+                assert error_class.__name__ in json.dumps(batch_result.error_summary.error_list[0].error)

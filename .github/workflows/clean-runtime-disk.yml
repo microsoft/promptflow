@@ -5,6 +5,7 @@ on:
     paths:
       - scripts/runtime_mgmt/clean-disk-flow/**
       - scripts/runtime_mgmt/create-clean-run.py
+      - .github/workflows/clean-runtime-disk.yml
 
   schedule:
     - cron: "30 20 * * *"  # 4:30 Beijing Time (GMT+8)

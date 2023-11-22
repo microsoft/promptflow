@@ -10,7 +10,6 @@ from promptflow._sdk._constants import NODES
 from promptflow._sdk._utils import get_local_connections_from_executable, parse_variant
 from promptflow._sdk.entities import FlowContext
 from promptflow._sdk.entities._flow import Flow
-from promptflow._sdk.operations._run_submitter import overwrite_connections, overwrite_flow, overwrite_variant
 from promptflow._utils.flow_utils import load_flow_dag
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.flow import Node
@@ -60,6 +59,8 @@ class FlowContextResolver:
         else:
             tuning_node, variant = parse_variant(flow_context.variant)
 
+        from promptflow._sdk._submitter import overwrite_variant
+
         overwrite_variant(
             flow_dag=self.flow_dag,
             tuning_node=tuning_node,
@@ -69,6 +70,8 @@ class FlowContextResolver:
 
     def _resolve_connections(self, flow_context: FlowContext) -> "FlowContextResolver":
         """Resolve connections of the flow and store in-memory."""
+        from promptflow._sdk._submitter import overwrite_connections
+
         overwrite_connections(
             flow_dag=self.flow_dag,
             connections=flow_context.connections,
@@ -78,6 +81,8 @@ class FlowContextResolver:
 
     def _resolve_overrides(self, flow_context: FlowContext) -> "FlowContextResolver":
         """Resolve overrides of the flow and store in-memory."""
+        from promptflow._sdk._submitter import overwrite_flow
+
         overwrite_flow(
             flow_dag=self.flow_dag,
             params_overrides=flow_context.overrides,

@@ -52,11 +52,6 @@ class TestExecutorLogs:
             assert logs["stderr"] is None and logs["stdout"] is None, f"Logs for node {node_run_id} is cleared."
         self.assert_flow_result(flow_result, content)
 
-        # Test node logs in bulk run
-        batch_results = self.submit_bulk_run(folder_name)
-        for line_result in batch_results.line_results:
-            self.assert_flow_result(line_result, line_result.run_info.inputs["text"])
-
         # Test node logs in single node run
         content = "single_node_text"
         node_run_info = FlowExecutor.load_and_exec_node(
