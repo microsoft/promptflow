@@ -19,10 +19,10 @@ from promptflow._sdk._errors import (
 )
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
+from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 

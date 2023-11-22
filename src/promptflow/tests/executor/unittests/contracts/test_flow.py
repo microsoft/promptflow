@@ -1,10 +1,9 @@
 from pathlib import Path
 
 import pytest
-import yaml
 
 from promptflow._sdk.entities._connection import AzureContentSafetyConnection
-from promptflow.contracts._errors import FailedToImportModule, NodeConditionConflict
+from promptflow.contracts._errors import FailedToImportModule
 from promptflow.contracts.flow import (
     Flow,
     FlowInputAssignment,
@@ -20,7 +19,7 @@ from promptflow.contracts.flow import (
 )
 from promptflow.contracts.tool import Tool, ToolType, ValueType
 
-from ...utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_yaml_file
+from ...utils import get_flow_package_tool_definition, get_yaml_file
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent.parent / "package_tools"
 
@@ -65,15 +64,6 @@ class TestFlowContract:
         connection_names = flow.get_connection_input_names_for_node(flow.nodes[0].name)
         assert connection_names == ["connection", "connection_2"]
         assert flow.get_connection_input_names_for_node("not_exist") == []
-
-    def test_node_condition_conflict(self):
-        flow_folder = "node_condition_conflict"
-        flow_yaml = get_yaml_file(flow_folder, root=WRONG_FLOW_ROOT)
-        with pytest.raises(NodeConditionConflict) as e:
-            with open(flow_yaml, "r") as fin:
-                Flow.deserialize(yaml.safe_load(fin))
-        error_message = "Node 'test_node' can't have both skip and activate condition."
-        assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
 
 @pytest.mark.unittest
