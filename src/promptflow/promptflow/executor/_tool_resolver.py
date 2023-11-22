@@ -122,7 +122,7 @@ class ToolResolver:
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.
                 raise ValueTypeUnresolved(
-                    f"Unresolved input type {value_type.value!r}, please check if it is supported in current version.",
+                    f"Unresolved input type {value_type!r}, please check if it is supported in current version.",
                     target=ErrorTarget.EXECUTOR,
                 )
         updated_node = copy.deepcopy(node)
