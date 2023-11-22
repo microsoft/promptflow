@@ -117,10 +117,7 @@ def start():
                 st.rerun()
 
 if __name__ == "__main__":
-    current_path = os.path.abspath(__file__)
-    parent_path = os.path.dirname(current_path)
-
-    with open(os.path.join(parent_path, 'config.json'), 'r') as f:
+    with open(Path(__file__).parent / "config.json", 'r') as f:
         config = json.load(f)
         chat_history_input_name = config["chat_history_input_name"]
         flow_path = config["flow_path"]

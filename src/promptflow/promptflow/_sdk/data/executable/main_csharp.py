@@ -4,13 +4,11 @@ from pathlib import Path
 from PIL import Image
 import streamlit as st
 from streamlit_quill import st_quill
+from copy import copy
 
 from promptflow import load_flow
 
 from utils import dict_iter_render_message, parse_list_from_html, parse_image_content
-
-
-{% set indent_level = 4 %}
 
 def start():
     def clear_chat() -> None:
@@ -42,11 +40,10 @@ def start():
         with container:
             render_message("user", kwargs)
         # Force append chat history to kwargs
-{% if is_chat_flow %}
-{{ ' ' * indent_level * 2 }}response = run_flow({'{{chat_history_input_name}}': get_chat_history_from_session(), **kwargs})
-{% else %}
-{{ ' ' * indent_level * 2 }}response = run_flow(kwargs)
-{% endif %}
+        if is_chat_flow:
+            response = run_flow({chat_history_input_name: get_chat_history_from_session(), **kwargs})
+        else:
+            response = run_flow(kwargs)
         st.session_state.messages.append(("assistant", response))
         session_state_history.update({"outputs": response})
         st.session_state.history.append(session_state_history)
@@ -55,13 +52,12 @@ def start():
 
 
     def run_flow(data: dict) -> dict:
-{% if flow_path %}
-{{ ' ' * indent_level * 2 }}flow = Path('{{flow_path}}')
-{{ ' ' * indent_level * 2 }}dump_path = Path('{{flow_path}}').parent
-{% else %}
-{{ ' ' * indent_level * 2 }}flow = Path(__file__).parent / "flow"
-{{ ' ' * indent_level * 2 }}dump_path = flow.parent
-{% endif %}
+        if flow_path:
+            flow = Path(flow_path)
+            dump_path = Path(flow_path).parent
+        else:
+            flow = Path(__file__).parent / "flow"
+            dump_path = flow.parent
         if flow.is_dir():
             os.chdir(flow)
         else:
@@ -73,7 +69,7 @@ def start():
     image = Image.open(Path(__file__).parent / "logo.png")
     st.set_page_config(
         layout="wide",
-        page_title="{{flow_name}} - Promptflow App",
+        page_title=f"{flow_name} - Promptflow App",
         page_icon=image,
         menu_items={
             'About': """
@@ -85,7 +81,7 @@ def start():
     )
     # Set primary button color here since button color of the same form need to be identical in streamlit, but we only need Run/Chat button to be blue.
     st.config.set_option("theme.primaryColor", "#0F6CBD")
-    st.title("{{flow_name}}")
+    st.title(flow_name)
     st.divider()
     st.chat_message("assistant").write("Hello, please input following flow inputs.")
     container = st.container()
@@ -103,33 +99,33 @@ def start():
                 if secret_input != "":
                     os.environ[environment_variable] = secret_input
 
-{% for flow_input, (default_value, value_type) in flow_inputs.items() %}
-{% if value_type == "list" %}
-{{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
-{% elif value_type == "image" %}
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
-{% elif value_type == "string" %}
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
-{% else %}
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder={{default_value}})
-{% endif %}
-{% endfor %}
+        flow_inputs_params = {}
+        for flow_input, (default_value, value_type) in flow_inputs.items():
+            if value_type == "list":
+                st.text(flow_input)
+                input= st_quill(html=True, toolbar=["image"], key=flow_input, placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
+            elif value_type == "image":
+                input = st.file_uploader(label=flow_input)
+            elif value_type == "string":
+                input = st.text_input(label=flow_input, placeholder=default_value)
+            else:
+                input= st.text_input(label=flow_input, placeholder=default_value)
+            flow_inputs_params.update({flow_input: copy(input)})
 
         cols = st.columns(7)
-        submit_bt = cols[0].form_submit_button(label='{{label}}', type='primary')
+        submit_bt = cols[0].form_submit_button(label=label, type='primary')
         clear_bt = cols[1].form_submit_button(label='Clear')
 
         if submit_bt:
             with st.spinner("Loading..."):
-{% for flow_input, (default_value, value_type) in flow_inputs.items() %}
-{% if value_type == "list" %}
-{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_list_from_html({{flow_input}})
-{% elif value_type == "image" %}
-{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_image_content({{flow_input}}, {{flow_input}}.type if {{flow_input}} else None)
-{% endif %}
-{% endfor %}
-                submit({{flow_inputs_params}})
+                for flow_input, (default_value, value_type) in flow_inputs.items():
+                    if value_type == "list":
+                        input = parse_list_from_html(flow_inputs_params[flow_input])
+                        flow_inputs_params.update({flow_input: copy(input)})
+                    elif value_type == "image":
+                        input = parse_image_content(flow_inputs_params[flow_input], flow_inputs_params[flow_input].type if flow_inputs_params[flow_input] else None)
+                        flow_inputs_params.update({flow_input: copy(input)})
+                submit(**flow_inputs_params)
 
         if clear_bt:
             with st.spinner("Cleaning..."):
@@ -137,4 +133,13 @@ def start():
                 st.rerun()
 
 if __name__ == "__main__":
+    with open(Path(__file__).parent / "config.json", 'r') as f:
+        config = json.load(f)
+        is_chat_flow = config["is_chat_flow"]
+        chat_history_input_name = config["chat_history_input_name"]
+        flow_path = config["flow_path"]
+        flow_name = config["flow_name"]
+        flow_inputs= config["flow_inputs"]
+        label = config["label"]
+
     start()
