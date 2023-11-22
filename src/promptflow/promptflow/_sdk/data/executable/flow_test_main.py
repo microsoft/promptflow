@@ -9,9 +9,10 @@ from streamlit_quill import st_quill
 
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
-from utils import render_single_dict_message, parse_list_from_html, parse_image_content
+from utils import render_single_dict_message, parse_list_from_html
 
 invoker = None
+
 
 def start():
     def clear_chat() -> None:
@@ -29,12 +30,10 @@ def start():
             for role, message_items in st.session_state.messages:
                 render_message(role, message_items)
 
-
     def get_chat_history_from_session():
         if "history" in st.session_state:
             return st.session_state.history
         return []
-
 
     def submit(**kwargs) -> None:
         st.session_state.messages.append(("user", kwargs))
@@ -52,7 +51,6 @@ def start():
         invoker._dump_invoke_result(response)
         with container:
             render_message("assistant", resolved_outputs)
-
 
     def run_flow(data: dict) -> dict:
         global invoker
@@ -80,7 +78,8 @@ def start():
             """
         }
     )
-    # Set primary button color here since button color of the same form need to be identical in streamlit, but we only need Run/Chat button to be blue.
+    # Set primary button color here since button color of the same form need to be identical in streamlit, but we
+    # only need Run/Chat button to be blue.
     st.config.set_option("theme.primaryColor", "#0F6CBD")
     st.title(flow_name)
     st.divider()
@@ -93,12 +92,13 @@ def start():
         flow_inputs_params = {}
         if chat_input_value_type == "list":
             st.text(chat_input_name)
-            input = st_quill(html=True, toolbar=["image"], key=chat_input_name, placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
+            input = st_quill(html=True, toolbar=["image"], key=chat_input_name,
+                             placeholder='Please enter the list values and use the image icon to upload a picture. '
+                                         'Make sure to format each list item correctly with line breaks')
             flow_inputs_params.update({chat_input_name: copy(input)})
         elif chat_input_value_type == "string":
             input = st.text_input(label=chat_input_name, placeholder=chat_input_default_value)
             flow_inputs_params.update({chat_input_name: copy(input)})
-
 
         cols = st.columns(7)
         submit_bt = cols[0].form_submit_button(label='Chat', type='primary')
@@ -115,6 +115,7 @@ def start():
             with st.spinner("Cleaning..."):
                 clear_chat()
                 st.rerun()
+
 
 if __name__ == "__main__":
     with open(Path(__file__).parent / "config.json", 'r') as f:

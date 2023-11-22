@@ -264,7 +264,6 @@ class StreamlitFileGenerator(BaseGenerator):
             flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
         } if not self.is_chat_flow else None
 
-
     @property
     def label(self):
         return "Chat" if self.is_chat_flow else "Run"
