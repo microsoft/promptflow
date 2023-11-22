@@ -115,14 +115,16 @@ class TestOperationContext:
     def test_infer_batch_input_source_from_inputs_mapping_none(self):
         input_mapping = None
         context = OperationContext()
-        context.infer_batch_input_source_from_inputs_mapping(input_mapping)
         assert not hasattr(context, "batch_input_source")
+        context.infer_batch_input_source_from_inputs_mapping(input_mapping)
+        assert context.batch_input_source == "Data"
 
     def test_infer_batch_input_source_from_inputs_mapping_empty(self):
         input_mapping = {}
         context = OperationContext()
-        context.infer_batch_input_source_from_inputs_mapping(input_mapping)
         assert not hasattr(context, "batch_input_source")
+        context.infer_batch_input_source_from_inputs_mapping(input_mapping)
+        assert context.batch_input_source == "Data"
 
     def test_different_thread_have_different_instance(self):
         # create a list to store the OperationContext instances from each thread

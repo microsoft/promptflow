@@ -127,47 +127,41 @@ class OperationContext(Dict):
     def infer_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
 
-        This method examines the provided `inputs_mapping` to determine the source of the inputs for a batch operation.
-        The `inputs_mapping` is a dictionary where keys represent the input names and the values represent the sources
-        of these inputs. The source of an input can be direct data or the output of a previous run.
+        This method analyzes the `inputs_mapping` to ascertain the origin of the inputs for a batch operation.
+        The `inputs_mapping` should be a dictionary with keys representing input names and values specifying the sources
+        of these inputs. Inputs can originate from direct data or from the outputs of a previous run.
 
-        If any value in the `inputs_mapping` starts with "${run.outputs", it is considered as an input coming from the
-        output of a previous run. In this scenario, the `batch_input_source` attribute of the OperationContext instance
-        is set to "Run" to indicate that the batch inputs are sourced from a previous run's outputs.
+        The `inputs_mapping` is dictated entirely by the external caller. For more details on column mapping, refer to
+        https://aka.ms/pf/column-mapping. The mapping can include references to both the inputs and outputs of previous
+        runs, using a reserved source name 'run' to indicate such references. However, this method specifically checks
+        for references to outputs of previous runs, which are denoted by values starting with "${run.outputs". When such
+        a reference is found, the `batch_input_source` attribute of the OperationContext instance is set to "Run" to
+        reflect that the batch operation is utilizing outputs from a prior run.
 
-        Conversely, if none of the values start with "${run.outputs", the inputs are considered as not coming from a
-        previous run and the `batch_input_source` attribute is set to "Data".
+        If no values in the `inputs_mapping` start with "${run.outputs", it is inferred that the inputs do not derive
+        from a previous run, and the `batch_input_source` is set to "Data".
 
-        It is important to note that the `inputs_mapping` is fully controlled by the external caller and can reference
-        both inputs and outputs of previous runs. However, only references to run outputs are used to set the
-        `batch_input_source` to "Run".
+        Examples of `inputs_mapping`:
+            - Referencing a previous run's output:
+                {'input1': '${run.outputs.some_output}', 'input2': 'direct_data'}
+              In this case, 'input1' is sourced from a prior run's output, and 'input2' is from direct data.
+              The `batch_input_source` would be set to "Run".
 
-        If the `inputs_mapping` is None or empty, the method does nothing and returns without setting the
-        `batch_input_source`.
-
-        Example of `inputs_mapping` where input is sourced from a previous run's output:
-            {'input1': '${run.outputs.some_output}', 'input2': 'direct_data'}
-        Here, 'input1' is sourced from the output of a previous run, while 'input2' is sourced directly from data.
-        The `batch_input_source` would be set to "Run" in this case.
-
-        Example of `inputs_mapping` where input is sourced directly from data:
-            {'input1': 'data_source1', 'input2': 'data_source2'}
-        Since no values start with "${run.outputs", the `batch_input_source` would be set to "Data".
+            - Sourcing directly from data:
+                {'input1': 'data_source1', 'input2': 'data_source2'}
+              Since no values start with "${run.outputs", the `batch_input_source` is set to "Data".
 
         Args:
-            inputs_mapping (Mapping[str, str]): A mapping from input names to their sources, where the sources
-            can be either direct data or the output of a previous run. The mapping is fully controlled by the
-            external caller.
+            inputs_mapping (Mapping[str, str]): A dictionary mapping input names to their sources, where the sources
+            can be either direct data or outputs from a previous run. The structure and content of this mapping are
+            entirely under the control of the external caller.
 
         Returns:
             None
         """
-        if inputs_mapping is None or not inputs_mapping:
-            return
-        if any(value.startswith("${run.outputs") for value in inputs_mapping.values()):
+        self.batch_input_source = "Data"
+        if inputs_mapping and any(value.startswith("${run.outputs") for value in inputs_mapping.values()):
             self.batch_input_source = "Run"
-        else:
-            self.batch_input_source = "Data"
 
     def get_context_dict(self):
         """Get the context dictionary.
