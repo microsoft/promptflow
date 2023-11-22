@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 from contextvars import ContextVar
-from typing import Dict
+from typing import Dict, Mapping
 
 from promptflow._version import VERSION
 
@@ -123,6 +123,34 @@ class OperationContext(Dict):
                 self.user_agent = f"{self.user_agent} {user_agent}"
         else:
             self.user_agent = user_agent
+
+    def infer_batch_input_source_from_input_mapping(self, input_mapping: Mapping[str, str]):
+        """Infer the batch input source from the input mapping and set it in the OperationContext instance.
+
+        This method checks each value in the input mapping. If any value starts with "${run.outputs",
+        it indicates that the input is coming from the output of a previous run. In this case,
+        the method sets the `batch_input_source` attribute of the OperationContext instance to "Run".
+
+        If none of the values in the input mapping start with "${run.outputs", it indicates that
+        the input is not coming from a previous run. In this case, the method sets the `batch_input_source`
+        attribute of the OperationContext instance to "Data".
+
+        If the input_mapping is None, the method does nothing and returns.
+
+        Args:
+            input_mapping (Mapping[str, str]): A mapping from input names to their sources. The sources
+            can be either data or the output of a previous run. If a source starts with "${run.outputs",
+            it is considered to be the output of a previous run.
+
+        Returns:
+            None
+        """
+        if input_mapping is None:
+            return
+        if any(value.startswith("${run.outputs") for value in input_mapping.values()):
+            self.batch_input_source = "Run"
+        else:
+            self.batch_input_source = "Data"
 
     def get_context_dict(self):
         """Get the context dictionary.
