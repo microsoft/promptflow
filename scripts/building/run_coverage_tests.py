@@ -114,6 +114,7 @@ if __name__ == "__main__":
 
     # pytest --junit-xml=test-results.xml --cov=azure.ai.ml --cov-report=html --cov-report=xml -ra ./tests/*/unittests/
     error_code, _ = run_command(pytest_command, throw_on_retcode=False)
+    # https://docs.pytest.org/en/7.1.x/reference/exit-codes.html
     if error_code == 1:
         print_red("Tests were collected and run but some of the tests failed.")
     elif error_code == 2:
