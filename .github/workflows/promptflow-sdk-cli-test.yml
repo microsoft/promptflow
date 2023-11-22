@@ -104,6 +104,7 @@ jobs:
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
           -l eastus `
           -m "unittest or e2etest" `
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
           -o "${{ github.workspace }}/test-results-sdk-cli.xml" `
           --ignore-glob ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py
     - name: Install pf executable
