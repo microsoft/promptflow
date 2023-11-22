@@ -15,7 +15,7 @@ from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_VARIANT,
     PARAMS_OVERRIDE_KEY,
-    REMOTE_FLOW_PREFIX,
+    REMOTE_URI_PREFIX,
     RUN_MACRO,
     TIMESTAMP_MACRO,
     VARIANT_ID_MACRO,
@@ -546,13 +546,13 @@ class Run(YAMLTranslatableMixin):
         if Path(self.flow).is_dir():
             # local flow
             pass
-        elif isinstance(self.flow, str) and self.flow.startswith(REMOTE_FLOW_PREFIX):
+        elif isinstance(self.flow, str) and self.flow.startswith(REMOTE_URI_PREFIX):
             # remote flow
             pass
         else:
             raise ValueError(
                 f"Invalid flow value: {self.flow!r}. Expecting a local flow folder path or a remote flow pattern "
-                f"like '{REMOTE_FLOW_PREFIX}<flow-name>'"
+                f"like '{REMOTE_URI_PREFIX}<flow-name>'"
             )
 
         if is_remote_uri(self.data):

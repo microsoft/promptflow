@@ -51,7 +51,7 @@ from promptflow._sdk._constants import (
     NODES,
     PROMPT_FLOW_DIR_NAME,
     REFRESH_CONNECTIONS_DIR_LOCK_PATH,
-    REMOTE_FLOW_PREFIX,
+    REMOTE_URI_PREFIX,
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
@@ -976,7 +976,7 @@ def is_url(value: Union[PathLike, str]) -> bool:
 def is_remote_uri(obj) -> bool:
     # return True if it's supported remote uri
     if isinstance(obj, str):
-        if obj.startswith("azureml:"):
+        if obj.startswith(REMOTE_URI_PREFIX):
             # azureml: started, azureml:name:version, azureml://xxx
             return True
         elif is_url(obj):
@@ -986,12 +986,12 @@ def is_remote_uri(obj) -> bool:
 
 def get_flow_name_from_remote_flow_pattern(flow: object) -> str:
     # Check if the input matches the correct pattern
-    if not isinstance(flow, str) or not flow.startswith(REMOTE_FLOW_PREFIX):
+    if not isinstance(flow, str) or not flow.startswith(REMOTE_URI_PREFIX):
         raise ValueError(
-            f"Invalid remote flow pattern, got {flow!r} while expecting a string like'{REMOTE_FLOW_PREFIX}<flow-name>'."
+            f"Invalid remote flow pattern, got {flow!r} while expecting a string like'{REMOTE_URI_PREFIX}<flow-name>'."
         )
 
     # Extract the flow ID from the input string
-    flow_name = flow.replace(REMOTE_FLOW_PREFIX, "")
+    flow_name = flow.replace(REMOTE_URI_PREFIX, "")
 
     return flow_name
