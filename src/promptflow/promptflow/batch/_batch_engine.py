@@ -102,7 +102,10 @@ class BatchEngine:
         :return: The result of this batch run
         :rtype: ~promptflow.executor._result.BatchResult
         """
-        # set operation context batch run source property
+        # Add property on operation context to indicate batch run source, which is used to differentiate the input
+        # source of a batch run. The batch run source can be either "Data" or "Run".
+        # If the input source is "Data", it means the input data is provided by the user.
+        # If the input source is "Run", it means the input data is provided by a previous run.
         OperationContext.get_instance().batch_run_source = (
             BatchRunSource.Run.name if "run.outputs" in input_dirs else BatchRunSource.Data.name
         )
