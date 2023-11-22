@@ -103,8 +103,8 @@ def start():
             if value_type == "list":
                 st.text(flow_input)
                 input = st_quill(html=True, toolbar=["image"], key=flow_input,
-                                placeholder='Please enter the list values and use the image icon to upload a picture. '
-                                            'Make sure to format each list item correctly with line breaks')
+                                 placeholder='Please enter the list values and use the image icon to upload a picture. '
+                                             'Make sure to format each list item correctly with line breaks')
             elif value_type == "image":
                 input = st.file_uploader(label=flow_input)
             elif value_type == "string":
