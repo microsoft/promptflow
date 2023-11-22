@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -29,11 +30,10 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         storage: Optional[AbstractRunStorage] = None,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
-        service_dll_path = Path(working_dir / SERVICE_DLL).as_posix()
-        flow_file = flow_file.as_posix() if flow_file.is_absolute() else Path(working_dir / flow_file).as_posix()
-        command = f'dotnet {service_dll_path} -p {EXECUTOR_PORT} -y {flow_file} -a {working_dir.as_posix()} -c "" -l ""'
-        process = subprocess.Popen(command, shell=True)
-        return cls(process)
+        with _change_working_dir(working_dir):
+            command = f'dotnet {SERVICE_DLL} -p {EXECUTOR_PORT} -y {flow_file.as_posix()} -a "." -c "" -l ""'
+            process = subprocess.Popen(command, shell=True)
+            return cls(process)
 
     def destroy(self):
         """Destroy the executor"""
