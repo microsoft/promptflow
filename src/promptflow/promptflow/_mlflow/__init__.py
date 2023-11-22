@@ -11,4 +11,3 @@ from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._sdk._submitter import remove_additional_includes
 from promptflow._sdk._utils import _merge_local_code_and_additional_includes
 from promptflow._sdk.entities._flow import Flow
-from promptflow.contracts.tool import ValueType
