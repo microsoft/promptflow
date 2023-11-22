@@ -112,7 +112,8 @@ class Flow(FlowBase):
 
     def __init__(
         self,
-        code: str,
+        code: Union[str, PathLike],
+        dag: dict,
         **kwargs,
     ):
         self._code = Path(code)
@@ -121,7 +122,7 @@ class Flow(FlowBase):
         self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
         self._content_hash = kwargs.pop("content_hash", None)
-        self.dag = yaml.safe_load(self.path.read_text(encoding=DEFAULT_ENCODING))
+        self.dag = dag
         super().__init__(**kwargs)
 
     @property
@@ -168,8 +169,9 @@ class Flow(FlowBase):
             # read flow file to get hash
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
+                flow_dag = yaml.safe_load(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
-            return cls(code=flow_path.parent.absolute().as_posix(), **kwargs)
+            return cls(code=flow_path.parent.absolute().as_posix(), dag=flow_dag, **kwargs)
 
         raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 

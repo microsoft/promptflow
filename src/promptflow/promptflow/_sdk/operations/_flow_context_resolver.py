@@ -11,7 +11,6 @@ from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities import FlowContext
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.flow_utils import load_flow_dag
-from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.flow import Node
 from promptflow.exceptions import UserErrorException
 
@@ -105,13 +104,11 @@ class FlowContextResolver:
     def _create_invoker(self, flow: Flow, flow_context: FlowContext) -> "FlowInvoker":
         from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
-        executable_flow = ExecutableFlow._from_dict(flow_dag=self.flow_dag, working_dir=self.working_dir)
-
         connections = self._resolve_connection_objs(flow_context=flow_context)
-
+        # use updated flow dag to create new flow object for invoker
+        resolved_flow = Flow(code=self.working_dir, dag=self.flow_dag)
         invoker = FlowInvoker(
-            flow=flow,
-            executable_flow=executable_flow,
+            flow=resolved_flow,
             connections=connections,
             streaming=flow_context.streaming,
         )

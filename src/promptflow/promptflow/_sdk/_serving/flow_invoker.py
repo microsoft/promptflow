@@ -40,8 +40,6 @@ class FlowInvoker:
     :type connection_provider: [str, Callable], optional
     :param streaming: The function or bool to determine enable streaming or not, defaults to lambda: False
     :type streaming: Union[Callable[[], bool], bool], optional
-    :param executable_flow: The executable flow, defaults to None
-    :type executable_flow: ~promptflow.contracts.flow.Flow, optional
     :param connections: Pre-resolved connections used when executing, defaults to None
     :type connections: dict, optional
     """
@@ -51,12 +49,13 @@ class FlowInvoker:
         flow: [str, Flow],
         connection_provider: [str, Callable] = None,
         streaming: Union[Callable[[], bool], bool] = False,
-        executable_flow: ExecutableFlow = None,
         connections: dict = None,
         **kwargs,
     ):
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
-        self._executable_flow = executable_flow or self.flow_entity._init_executable()
+        self._executable_flow = ExecutableFlow._from_dict(
+            flow_dag=self.flow_entity.dag, working_dir=self.flow_entity.code
+        )
         self.connections = connections or {}
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         # Pass dump_to path to dump flow result for extension.
