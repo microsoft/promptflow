@@ -100,7 +100,7 @@ class BatchEngine:
         """
         self._start_time = datetime.utcnow()
         # infer batch input source from input mapping
-        OperationContext.get_instance().infer_batch_input_source_from_input_mapping(inputs_mapping)
+        OperationContext.get_instance().infer_batch_input_source_from_inputs_mapping(inputs_mapping)
         # resolve input data from input dirs and apply inputs mapping
         batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
         batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
