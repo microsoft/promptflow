@@ -1,6 +1,7 @@
 from pathlib import Path
 from tempfile import mkdtemp
 
+import pkg_resources
 import pytest
 
 from promptflow.batch import BatchEngine
