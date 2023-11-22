@@ -171,7 +171,7 @@ def variant_overwrite_context(
             overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
             overwrite_flow(flow_dag, overrides)
             flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
-            flow = Flow(code=flow_dir_path, path=flow_path)
+            flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
             yield flow
 
 
