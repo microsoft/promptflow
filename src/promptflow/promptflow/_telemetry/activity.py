@@ -6,6 +6,7 @@ import functools
 import uuid
 from datetime import datetime
 
+from promptflow._core.operation_context import OperationContext
 from promptflow._telemetry.telemetry import TelemetryMixin
 
 
@@ -51,13 +52,15 @@ def log_activity(
     :type custom_dimensions: dict
     :return: None
     """
+    custom_dimensions = custom_dimensions or {}
+    context = OperationContext.get_instance()
+    request_id = custom_dimensions.get('request_id', context.get('request_id', str(uuid.uuid4())))
     activity_info = {
         # TODO(2699383): use same request id with service caller
-        "request_id": str(uuid.uuid4()),
+        "request_id": request_id,
         "activity_name": activity_name,
         "activity_type": activity_type,
     }
-    custom_dimensions = custom_dimensions or {}
     activity_info.update(custom_dimensions)
 
     start_time = datetime.utcnow()
@@ -84,12 +87,44 @@ def log_activity(
                 logger.error(message, extra={"custom_dimensions": activity_info})
             else:
                 logger.info(message, extra={"custom_dimensions": activity_info})
+            context['last_log_activity_info'] = activity_info
         except Exception:  # pylint: disable=broad-except
             # skip if logger failed to log
             pass  # pylint: disable=lost-exception
         # raise the exception to align with the behavior of the with statement
         if exception:
             raise exception
+
+
+def add_telemetry_log(
+    activity_name,
+    activity_type=ActivityType.INTERNALCALL,
+    message='',
+    custom_dimensions=None,
+    level='info'
+):
+    from promptflow._telemetry.telemetry import get_telemetry_logger
+
+    logger = get_telemetry_logger()
+    custom_dimensions = custom_dimensions or {}
+    context = OperationContext.get_instance()
+    request_id = custom_dimensions.get('request_id', context.get('request_id', str(uuid.uuid4())))
+    activity_info = {
+        "request_id": request_id,
+        "activity_name": activity_name,
+        "activity_type": activity_type,
+    }
+    activity_info.update(custom_dimensions)
+    if level.lower() == 'info':
+        logger.info(message, extra={"custom_dimensions": activity_info})
+    elif level.lower() == 'error':
+        logger.error(message, extra={"custom_dimensions": activity_info})
+    elif level.lower() == 'debug':
+        logger.debug(message, extra={"custom_dimensions": activity_info})
+    elif level.lower() == 'warning':
+        logger.warning(message, extra={"custom_dimensions": activity_info})
+    else:
+        raise f'log level error, support: info, error, debug, warning, but get {level}.'
 
 
 def extract_telemetry_info(self):
@@ -133,7 +168,6 @@ def monitor_operation(
             logger = get_telemetry_logger()
 
             custom_dimensions.update(extract_telemetry_info(self))
-
             with log_activity(logger, activity_name, activity_type, custom_dimensions):
                 return f(self, *args, **kwargs)
 

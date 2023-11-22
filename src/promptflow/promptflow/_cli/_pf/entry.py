@@ -4,6 +4,8 @@
 # pylint: disable=wrong-import-position
 import time
 
+from promptflow._telemetry.activity import add_telemetry_log, ActivityType, ActivityCompletionStatus
+
 # Log the start time
 start_time = time.perf_counter()
 
@@ -49,6 +51,7 @@ def entry(argv):
     args = parser.parse_args(argv)
     # Log the init finish time
     init_finish_time = time.perf_counter()
+    completion_status = ActivityCompletionStatus.SUCCESS
     try:
         # --verbose, enable info logging
         if hasattr(args, "verbose") and args.verbose:
@@ -71,13 +74,16 @@ def entry(argv):
         elif args.action == "tool":
             dispatch_tool_commands(args)
     except KeyboardInterrupt as ex:
+        completion_status = ActivityCompletionStatus.FAILURE
         logger.debug("Keyboard interrupt is captured.")
         raise ex
     except SystemExit as ex:  # some code directly call sys.exit, this is to make sure command metadata is logged
+        completion_status = ActivityCompletionStatus.FAILURE
         exit_code = ex.code if ex.code is not None else 1
         logger.debug(f"Code directly call sys.exit with code {exit_code}")
         raise ex
     except Exception as ex:
+        completion_status = ActivityCompletionStatus.FAILURE
         logger.debug(f"Command {args} execute failed. {str(ex)}")
         raise ex
     finally:
@@ -89,6 +95,16 @@ def entry(argv):
             init_finish_time - start_time,
             invoke_finish_time - init_finish_time,
         )
+        activity_name = f"pf.{args.action}s.{args.sub_action}.e2e"
+        message = f"{activity_name}.complete"
+        custom_dimensions = {
+            'duration_ms': round((init_finish_time - start_time) * 1000, 2),
+            'completion_status': completion_status
+        }
+        add_telemetry_log(activity_name=activity_name,
+                          activity_type=ActivityType.PUBLICAPI,
+                          message=message,
+                          custom_dimensions=custom_dimensions)
 
 
 def main():
