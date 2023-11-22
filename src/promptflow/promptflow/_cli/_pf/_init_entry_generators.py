@@ -17,7 +17,6 @@ from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.exceptions import UserErrorException
-from promptflow._constants import FlowLanguage
 
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
