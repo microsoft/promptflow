@@ -7,6 +7,8 @@ from streamlit_quill import st_quill
 from copy import copy
 
 from promptflow import load_flow
+from promptflow._sdk._utils import dump_flow_result
+from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 
 from utils import dict_iter_render_message, parse_list_from_html, parse_image_content, render_single_dict_message
 
@@ -50,12 +52,19 @@ def start():
             response = run_flow(kwargs)
 
         # Get base64 for multi modal object
-        resolved_outputs = invoker._convert_multimedia_data_to_base64(response)
+        resolved_outputs = {
+            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True)
+            for k, v in response.output.items()
+        }
         st.session_state.messages.append(("assistant", resolved_outputs))
         session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
         if is_chat_flow:
-            invoker._dump_invoke_result(response, dump_path=Path(flow_path).parent, dump_file_prefix="chat")
+            dump_path = Path(flow_path).parent
+            response.output = persist_multimedia_data(
+                response.output, base_dir=dump_path, sub_dir=Path(".promptflow/output")
+            )
+            dump_flow_result(flow_folder=dump_path, flow_result=response, prefix="chat")
         with container:
             render_message("assistant", resolved_outputs)
 

@@ -22,9 +22,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from .._utils import dump_flow_result
 from ..._utils.flow_utils import resolve_flow_path
-from ..._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from .._constants import DAG_FILE_NAME
 from ._connection import _Connection
 from ._validation import SchemaValidatableMixin
@@ -313,20 +311,6 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
             data=kwargs,
         )
         return result.output
-
-    def _convert_multimedia_data_to_base64(self, invoke_result):
-        resolved_outputs = {
-            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True)
-            for k, v in invoke_result.output.items()
-        }
-        return resolved_outputs
-
-    def _dump_invoke_result(self, invoke_result, dump_path=None, dump_file_prefix=None):
-        if dump_path:
-            invoke_result.output = persist_multimedia_data(
-                invoke_result.output, base_dir=dump_path, sub_dir=Path(".promptflow/output")
-            )
-            dump_flow_result(flow_folder=dump_path, flow_result=invoke_result, prefix=dump_file_prefix)
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""

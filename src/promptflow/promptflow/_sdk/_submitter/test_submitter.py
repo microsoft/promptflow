@@ -482,7 +482,6 @@ class TestSubmitterViaProxy(TestSubmitter):
             return line_result
 
     def exec_with_inputs(self, inputs):
-        # TODO: unify all exec_line calls here
         from promptflow._constants import LINE_NUMBER_KEY
 
         # validate inputs
