@@ -314,7 +314,7 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
                 "The type '{tool_type}' is currently unsupported. "
                 "Please choose from available types: {supported_tool_types} and try again."
             ),
-            tool_type=tool_type,
+            tool_type=tool_type.value,
             supported_tool_types=",".join([ToolType.PYTHON, ToolType.LLM, ToolType.PROMPT]),
         )
 
