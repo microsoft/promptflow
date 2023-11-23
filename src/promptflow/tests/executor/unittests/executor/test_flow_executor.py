@@ -185,7 +185,7 @@ class TestGetAvailableMaxWorkerCount:
             mock_mem.return_value.available = available_memory * 1024 * 1024
             with patch("psutil.Process") as mock_process:
                 mock_process.return_value.memory_info.return_value.rss = process_memory * 1024 * 1024
-                with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
+                with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
                     mock_logger.warning.return_value = None
                     max_worker_count = get_available_max_worker_count()
                     assert max_worker_count == expected_max_worker_count
