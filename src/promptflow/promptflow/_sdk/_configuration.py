@@ -11,7 +11,13 @@ from typing import Optional, Union
 
 import pydash
 
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, LOGGER_NAME, SERVICE_CONFIG_FILE, ConnectionProvider
+from promptflow._sdk._constants import (
+    FLOW_DIRECTORY_MACRO_IN_CONFIG,
+    HOME_PROMPT_FLOW_DIR,
+    LOGGER_NAME,
+    SERVICE_CONFIG_FILE,
+    ConnectionProvider,
+)
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml, read_write_by_user
 from promptflow.exceptions import ErrorTarget, ValidationException
@@ -24,6 +30,10 @@ class ConfigFileNotFound(ValidationException):
 
 
 class InvalidConfigFile(ValidationException):
+    pass
+
+
+class InvalidConfigValue(ValidationException):
     pass
 
 
@@ -65,6 +75,7 @@ class Configuration(object):
 
     def set_config(self, key, value):
         """Store config in file to avoid concurrent write."""
+        self._validate(key, value)
         pydash.set_(self._config, key, value)
         with open(self.CONFIG_PATH, "w") as f:
             f.write(dump_yaml(self._config))
@@ -191,3 +202,14 @@ class Configuration(object):
 
     def _to_dict(self):
         return self._config
+
+    @staticmethod
+    def _validate(key: str, value: str) -> None:
+        if key == Configuration.RUN_OUTPUT_PATH:
+            if value.rstrip("/").endswith(FLOW_DIRECTORY_MACRO_IN_CONFIG):
+                raise InvalidConfigValue(
+                    "Cannot specify flow directory as run output path; "
+                    "if you want to specify run output path under flow directory, "
+                    "please use its child folder."
+                )
+        return
