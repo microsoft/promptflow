@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
+from promptflow._core.operation_context import OperationContext
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -100,6 +101,8 @@ class BatchEngine:
 
         try:
             self._start_time = datetime.utcnow()
+            # set batch input source from input mapping
+            OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
             # resolve input data from input dirs and apply inputs mapping
             batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
             batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
