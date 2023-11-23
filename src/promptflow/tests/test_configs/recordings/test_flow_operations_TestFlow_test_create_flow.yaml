@@ -5,12 +5,12 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
@@ -23,7 +23,7 @@ interactions:
       cache-control:
       - no-cache
       content-length:
-      - '3548'
+      - '3630'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -32,14 +32,14 @@ interactions:
       - no-cache
       strict-transport-security:
       - max-age=31536000; includeSubDomains
-      transfer-encoding:
-      - chunked
       vary:
-      - Accept-Encoding,Accept-Encoding
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.037'
+      - '0.028'
     status:
       code: 200
       message: OK
@@ -49,12 +49,12 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -84,14 +84,14 @@ interactions:
       - no-cache
       strict-transport-security:
       - max-age=31536000; includeSubDomains
-      transfer-encoding:
-      - chunked
       vary:
-      - Accept-Encoding,Accept-Encoding
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.619'
+      - '0.662'
     status:
       code: 200
       message: OK
@@ -101,12 +101,12 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceworkingdirectory
   response:
@@ -136,14 +136,14 @@ interactions:
       - no-cache
       strict-transport-security:
       - max-age=31536000; includeSubDomains
-      transfer-encoding:
-      - chunked
       vary:
-      - Accept-Encoding,Accept-Encoding
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.121'
+      - '0.082'
     status:
       code: 200
       message: OK
@@ -153,14 +153,14 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceworkingdirectory/listSecrets
   response:
@@ -179,14 +179,12 @@ interactions:
       - no-cache
       strict-transport-security:
       - max-age=31536000; includeSubDomains
-      transfer-encoding:
-      - chunked
-      vary:
-      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.255'
+      - '0.158'
     status:
       code: 200
       message: OK
@@ -196,15 +194,15 @@ interactions:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
       - '0'
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:22 GMT
+      - Thu, 23 Nov 2023 08:20:29 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -220,7 +218,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:d7a5b4f9-d01a-0079-0cad-17f1a8000000\nTime:2023-11-15T10:22:23.8434708Z</Message></Error>"
+        specified resource already exists.\nRequestId:6fa668e3-301a-0085-26e5-1d2051000000\nTime:2023-11-23T08:20:30.6346398Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -241,15 +239,15 @@ interactions:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
       - '0'
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:24 GMT
+      - Thu, 23 Nov 2023 08:20:31 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -265,7 +263,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:d4c43fcd-d01a-001b-41ad-17338f000000\nTime:2023-11-15T10:22:26.0823086Z</Message></Error>"
+        specified resource already exists.\nRequestId:a34336cc-d01a-00b2-35e5-1df2fd000000\nTime:2023-11-23T08:20:32.7384942Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -286,15 +284,15 @@ interactions:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
       - '0'
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:26 GMT
+      - Thu, 23 Nov 2023 08:20:32 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -310,7 +308,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:750737a4-d01a-00b2-26ad-17f2fd000000\nTime:2023-11-15T10:22:27.2676740Z</Message></Error>"
+        specified resource already exists.\nRequestId:94135507-c01a-0081-7fe5-1dad56000000\nTime:2023-11-23T08:20:33.8147350Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -331,15 +329,15 @@ interactions:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
       - '0'
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:27 GMT
+      - Thu, 23 Nov 2023 08:20:33 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -355,7 +353,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceAlreadyExists</Code><Message>The
-        specified resource already exists.\nRequestId:6d9f6e7c-801a-0109-40ad-17b652000000\nTime:2023-11-15T10:22:28.4611971Z</Message></Error>"
+        specified resource already exists.\nRequestId:b8786548-201a-000f-0ce5-1d7be0000000\nTime:2023-11-23T08:20:34.8949120Z</Message></Error>"
     headers:
       content-length:
       - '228'
@@ -376,13 +374,13 @@ interactions:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:28 GMT
+      - Thu, 23 Nov 2023 08:20:34 GMT
       x-ms-version:
       - '2023-08-03'
     method: GET
@@ -390,7 +388,7 @@ interactions:
   response:
     body:
       string: "\uFEFF<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>ResourceNotFound</Code><Message>The
-        specified resource does not exist.\nRequestId:6d9f6e7f-801a-0109-41ad-17b652000000\nTime:2023-11-15T10:22:28.6364280Z</Message></Error>"
+        specified resource does not exist.\nRequestId:b878654b-201a-000f-0de5-1d7be0000000\nTime:2023-11-23T08:20:35.0651636Z</Message></Error>"
     headers:
       content-length:
       - '223'
@@ -411,15 +409,15 @@ interactions:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
       - '0'
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:28 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -439,21 +437,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 15 Nov 2023 10:22:28 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Directory
       x-ms-file-change-time:
-      - '2023-11-15T10:22:28.8088414Z'
+      - '2023-11-23T08:20:35.2357350Z'
       x-ms-file-creation-time:
-      - '2023-11-15T10:22:28.8088414Z'
+      - '2023-11-23T08:20:35.2357350Z'
       x-ms-file-id:
-      - '16140946531019653120'
+      - '11529217958056296448'
       x-ms-file-last-write-time:
-      - '2023-11-15T10:22:28.8088414Z'
+      - '2023-11-23T08:20:35.2357350Z'
       x-ms-file-parent-id:
-      - '13835172894117724160'
+      - '16141029853385195520'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -467,17 +465,17 @@ interactions:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
       - '0'
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-content-length:
-      - '14'
+      - '101'
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:28 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -491,7 +489,7 @@ interactions:
       x-ms-version:
       - '2023-08-03'
     method: PUT
-    uri: https://fake_account_name.file.core.windows.net/fake-file-share-name/Users/unknown_user/promptflow/flow_display_name/.gitattributes
+    uri: https://fake_account_name.file.core.windows.net/fake-file-share-name/Users/unknown_user/promptflow/flow_display_name/divide_num.py
   response:
     body:
       string: ''
@@ -499,21 +497,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 15 Nov 2023 10:22:28 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2023-11-15T10:22:28.9930322Z'
+      - '2023-11-23T08:20:35.4129559Z'
       x-ms-file-creation-time:
-      - '2023-11-15T10:22:28.9930322Z'
+      - '2023-11-23T08:20:35.4129559Z'
       x-ms-file-id:
-      - '10376339007985418240'
+      - '16140903976483684352'
       x-ms-file-last-write-time:
-      - '2023-11-15T10:22:28.9930322Z'
+      - '2023-11-23T08:20:35.4129559Z'
       x-ms-file-parent-id:
-      - '16140946531019653120'
+      - '11529217958056296448'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -522,34 +520,33 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: '* text eol=lf
-
-      '
+    body: "from promptflow import tool\r\n\r\n\r\n@tool\r\ndef divide_num(num: int)
+      -> int:\r\n    return (int)(num / 2)\r\n"
     headers:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
-      - '14'
+      - '101'
       Content-MD5:
-      - nYmkCopuDuFj82431amzZw==
+      - dM7AIioYN5TJjB/egZH3TQ==
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:29 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       x-ms-range:
-      - bytes=0-13
+      - bytes=0-100
       x-ms-version:
       - '2023-08-03'
       x-ms-write:
       - update
     method: PUT
-    uri: https://fake_account_name.file.core.windows.net/fake-file-share-name/Users/unknown_user/promptflow/flow_display_name/.gitattributes?comp=range
+    uri: https://fake_account_name.file.core.windows.net/fake-file-share-name/Users/unknown_user/promptflow/flow_display_name/divide_num.py?comp=range
   response:
     body:
       string: ''
@@ -557,13 +554,13 @@ interactions:
       content-length:
       - '0'
       content-md5:
-      - nYmkCopuDuFj82431amzZw==
+      - dM7AIioYN5TJjB/egZH3TQ==
       last-modified:
-      - Wed, 15 Nov 2023 10:22:29 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2023-11-15T10:22:29.1712482Z'
+      - '2023-11-23T08:20:35.5881861Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -577,138 +574,17 @@ interactions:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
       - '0'
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-content-length:
-      - '1040'
+      - '244'
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:29 GMT
-      x-ms-file-attributes:
-      - none
-      x-ms-file-creation-time:
-      - now
-      x-ms-file-last-write-time:
-      - now
-      x-ms-file-permission:
-      - Inherit
-      x-ms-type:
-      - file
-      x-ms-version:
-      - '2023-08-03'
-    method: PUT
-    uri: https://fake_account_name.file.core.windows.net/fake-file-share-name/Users/unknown_user/promptflow/flow_display_name/fetch_text_content_from_url.py
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      last-modified:
-      - Wed, 15 Nov 2023 10:22:29 GMT
-      server:
-      - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-file-attributes:
-      - Archive
-      x-ms-file-change-time:
-      - '2023-11-15T10:22:29.3484692Z'
-      x-ms-file-creation-time:
-      - '2023-11-15T10:22:29.3484692Z'
-      x-ms-file-id:
-      - '14988025026412806144'
-      x-ms-file-last-write-time:
-      - '2023-11-15T10:22:29.3484692Z'
-      x-ms-file-parent-id:
-      - '16140946531019653120'
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-08-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: "import bs4\nimport requests\n\nfrom promptflow import tool\n\n\n@tool\ndef
-      fetch_text_content_from_url(url: str):\n    # Send a request to the URL\n    try:\n
-      \       # time.sleep(130)\n        headers = {\n            \"User-Agent\":
-      \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
-      Gecko) \"\n            \"Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35\"\n
-      \       }\n        response = requests.get(url, headers=headers)\n        if
-      response.status_code == 200:\n            # Parse the HTML content using BeautifulSoup\n
-      \           soup = bs4.BeautifulSoup(response.text, \"html.parser\")\n            soup.prettify()\n
-      \           return soup.get_text()[:2000]\n        else:\n            msg =
-      (\n                f\"Get url failed with status code {response.status_code}.\\nURL:
-      {url}\\nResponse: \"\n                f\"{response.text[:100]}\"\n            )\n
-      \           print(msg)\n            return \"No available content\"\n    except
-      Exception as e:\n        print(\"Get url failed with error: {}\".format(e))\n
-      \       return \"No available content\"\n"
-    headers:
-      Accept:
-      - application/xml
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '1040'
-      Content-MD5:
-      - j7+N6tqiR54AYXimiIeL/g==
-      Content-Type:
-      - application/octet-stream
-      User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
-      x-ms-date:
-      - Wed, 15 Nov 2023 10:22:29 GMT
-      x-ms-range:
-      - bytes=0-1039
-      x-ms-version:
-      - '2023-08-03'
-      x-ms-write:
-      - update
-    method: PUT
-    uri: https://fake_account_name.file.core.windows.net/fake-file-share-name/Users/unknown_user/promptflow/flow_display_name/fetch_text_content_from_url.py?comp=range
-  response:
-    body:
-      string: ''
-    headers:
-      content-length:
-      - '0'
-      content-md5:
-      - j7+N6tqiR54AYXimiIeL/g==
-      last-modified:
-      - Wed, 15 Nov 2023 10:22:29 GMT
-      server:
-      - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
-      x-ms-file-last-write-time:
-      - '2023-11-15T10:22:29.5266846Z'
-      x-ms-request-server-encrypted:
-      - 'true'
-      x-ms-version:
-      - '2023-08-03'
-    status:
-      code: 201
-      message: Created
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/xml
-      Accept-Encoding:
-      - gzip, deflate
-      Connection:
-      - keep-alive
-      Content-Length:
-      - '0'
-      User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
-      x-ms-content-length:
-      - '524'
-      x-ms-date:
-      - Wed, 15 Nov 2023 10:22:29 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       x-ms-file-attributes:
       - none
       x-ms-file-creation-time:
@@ -730,21 +606,21 @@ interactions:
       content-length:
       - '0'
       last-modified:
-      - Wed, 15 Nov 2023 10:22:29 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2023-11-15T10:22:29.7009186Z'
+      - '2023-11-23T08:20:35.7644115Z'
       x-ms-file-creation-time:
-      - '2023-11-15T10:22:29.7009186Z'
+      - '2023-11-23T08:20:35.7644115Z'
       x-ms-file-id:
-      - '12682182017199112192'
+      - '10376296453449449472'
       x-ms-file-last-write-time:
-      - '2023-11-15T10:22:29.7009186Z'
+      - '2023-11-23T08:20:35.7644115Z'
       x-ms-file-parent-id:
-      - '16140946531019653120'
+      - '11529217958056296448'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -753,31 +629,29 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: "id: web_classification\ninputs:\n  url:\n    default: https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h\n
-      \   is_chat_input: false\n    type: string\nnodes:\n  - inputs:\n      url:
-      ${inputs.url}\n    name: fetch_text_content_from_url\n    reduce: false\n    source:\n
-      \     path: fetch_text_content_from_url.py\n      type: code\n    type: python\noutputs:\n
-      \ text:\n    evaluation_only: false\n    is_chat_output: false\n    reference:
-      ${fetch_text_content_from_url.output}\n    type: string\n"
+    body: "inputs:\r\n  num:\r\n    type: int\r\noutputs:\r\n  content:\r\n    type:
+      string\r\n    reference: ${divide_num.output}\r\nnodes:\r\n- name: divide_num\r\n
+      \ type: python\r\n  source:\r\n    type: code\r\n    path: divide_num.py\r\n
+      \ inputs:\r\n    num: ${inputs.num}\r\n\r\n\r\n"
     headers:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
-      - '524'
+      - '244'
       Content-MD5:
-      - +NM2ONSkO/AgcZRNa2xL1A==
+      - HRzbTNB6eEv2Fxc/vEJnlQ==
       Content-Type:
       - application/octet-stream
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:29 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       x-ms-range:
-      - bytes=0-523
+      - bytes=0-243
       x-ms-version:
       - '2023-08-03'
       x-ms-write:
@@ -791,13 +665,13 @@ interactions:
       content-length:
       - '0'
       content-md5:
-      - +NM2ONSkO/AgcZRNa2xL1A==
+      - HRzbTNB6eEv2Fxc/vEJnlQ==
       last-modified:
-      - Wed, 15 Nov 2023 10:22:29 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-last-write-time:
-      - '2023-11-15T10:22:29.8841130Z'
+      - '2023-11-23T08:20:35.9406367Z'
       x-ms-request-server-encrypted:
       - 'true'
       x-ms-version:
@@ -806,40 +680,148 @@ interactions:
       code: 201
       message: Created
 - request:
-    body: '{"flowName": "flow_display_name", "description": "test flow", "tags": {"owner":
-      "sdk"}, "flowDefinitionFilePath": "Users/unknown_user/promptflow/flow_display_name/flow.dag.yaml",
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      x-ms-content-length:
+      - '10'
+      x-ms-date:
+      - Thu, 23 Nov 2023 08:20:36 GMT
+      x-ms-file-attributes:
+      - none
+      x-ms-file-creation-time:
+      - now
+      x-ms-file-last-write-time:
+      - now
+      x-ms-file-permission:
+      - Inherit
+      x-ms-type:
+      - file
+      x-ms-version:
+      - '2023-08-03'
+    method: PUT
+    uri: https://fake_account_name.file.core.windows.net/fake-file-share-name/Users/unknown_user/promptflow/flow_display_name/inputs.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      last-modified:
+      - Thu, 23 Nov 2023 08:20:36 GMT
+      server:
+      - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-file-attributes:
+      - Archive
+      x-ms-file-change-time:
+      - '2023-11-23T08:20:36.1148713Z'
+      x-ms-file-creation-time:
+      - '2023-11-23T08:20:36.1148713Z'
+      x-ms-file-id:
+      - '14987982471876837376'
+      x-ms-file-last-write-time:
+      - '2023-11-23T08:20:36.1148713Z'
+      x-ms-file-parent-id:
+      - '11529217958056296448'
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"num": 3}'
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '10'
+      Content-MD5:
+      - /M3XvKYOuI0euBRCQBbnmA==
+      Content-Type:
+      - application/octet-stream
+      User-Agent:
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Thu, 23 Nov 2023 08:20:36 GMT
+      x-ms-range:
+      - bytes=0-9
+      x-ms-version:
+      - '2023-08-03'
+      x-ms-write:
+      - update
+    method: PUT
+    uri: https://fake_account_name.file.core.windows.net/fake-file-share-name/Users/unknown_user/promptflow/flow_display_name/inputs.jsonl?comp=range
+  response:
+    body:
+      string: ''
+    headers:
+      content-length:
+      - '0'
+      content-md5:
+      - /M3XvKYOuI0euBRCQBbnmA==
+      last-modified:
+      - Thu, 23 Nov 2023 08:20:36 GMT
+      server:
+      - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
+      x-ms-file-last-write-time:
+      - '2023-11-23T08:20:36.2910982Z'
+      x-ms-request-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 201
+      message: Created
+- request:
+    body: '{"flowName": "flow_display_name", "description": "test flow description",
+      "tags": {"owner": "sdk-test"}, "flowDefinitionFilePath": "Users/unknown_user/promptflow/flow_display_name/flow.dag.yaml",
       "flowType": "default"}'
     headers:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       Content-Length:
-      - '239'
+      - '247'
       Content-Type:
       - application/json
       User-Agent:
       - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
-        Python/3.10.13 (Windows-10-10.0.22631-SP0)
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/Flows
   response:
     body:
-      string: '{"eTag": {}, "flowId": "517fae22-48da-47b4-bc4d-4556e0c4be23", "flowName":
-        "flow_display_name", "description": "test flow", "tags": {"owner": "sdk"},
-        "flowType": "Default", "experimentId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5",
-        "createdDate": "2023-11-15T10:22:32.768039Z", "lastModifiedDate": "2023-11-15T10:22:32.7680391Z",
-        "owner": {"userObjectId": "dccfa7b6-87c6-4f1e-af43-555f876e37a7", "userTenantId":
-        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang"}, "flowResourceId":
-        "azureml://locations/eastus/workspaces/00000/flows/517fae22-48da-47b4-bc4d-4556e0c4be23",
+      string: '{"eTag": {}, "flowId": "b3b65d67-9b57-44db-a533-7c4f84c93422", "flowName":
+        "flow_display_name", "description": "test flow description", "tags": {"owner":
+        "sdk-test"}, "flowType": "Default", "experimentId": "00000000-0000-0000-0000-000000000000",
+        "createdDate": "2023-11-23T08:20:39.5661579Z", "lastModifiedDate": "2023-11-23T08:20:39.5661579Z",
+        "owner": {"userObjectId": "c05e0746-e125-4cb3-9213-a8b535eacd79", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Honglin Du"}, "flowResourceId":
+        "azureml://locations/eastus/workspaces/00000/flows/b3b65d67-9b57-44db-a533-7c4f84c93422",
         "isArchived": false, "flowDefinitionFilePath": "Users/unknown_user/promptflow/flow_display_name/flow.dag.yaml"}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '736'
+      - '742'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -851,7 +833,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.813'
+      - '1.268'
     status:
       code: 200
       message: OK
@@ -861,13 +843,13 @@ interactions:
       Accept:
       - application/xml
       Accept-Encoding:
-      - gzip, deflate
+      - gzip, deflate, br
       Connection:
       - keep-alive
       User-Agent:
-      - azsdk-python-storage-file-share/12.14.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      - azsdk-python-storage-file-share/12.14.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 15 Nov 2023 10:22:32 GMT
+      - Thu, 23 Nov 2023 08:20:39 GMT
       x-ms-version:
       - '2023-08-03'
     method: HEAD
@@ -877,25 +859,25 @@ interactions:
       string: ''
     headers:
       content-length:
-      - '524'
+      - '244'
       content-type:
       - application/octet-stream
       last-modified:
-      - Wed, 15 Nov 2023 10:22:29 GMT
+      - Thu, 23 Nov 2023 08:20:35 GMT
       server:
       - Windows-Azure-File/1.0 Microsoft-HTTPAPI/2.0
       x-ms-file-attributes:
       - Archive
       x-ms-file-change-time:
-      - '2023-11-15T10:22:29.8841130Z'
+      - '2023-11-23T08:20:35.9406367Z'
       x-ms-file-creation-time:
-      - '2023-11-15T10:22:29.7009186Z'
+      - '2023-11-23T08:20:35.7644115Z'
       x-ms-file-id:
-      - '12682182017199112192'
+      - '10376296453449449472'
       x-ms-file-last-write-time:
-      - '2023-11-15T10:22:29.8841130Z'
+      - '2023-11-23T08:20:35.9406367Z'
       x-ms-file-parent-id:
-      - '16140946531019653120'
+      - '11529217958056296448'
       x-ms-type:
       - File
       x-ms-version:

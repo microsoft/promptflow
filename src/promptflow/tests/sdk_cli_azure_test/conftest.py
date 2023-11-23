@@ -21,6 +21,8 @@ from pytest_mock import MockerFixture
 from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
 from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
+from promptflow.azure._constants import FlowType
+from promptflow.azure._entities._flow import Flow
 
 from ._azure_utils import get_cred
 from .recording_utilities import (
@@ -128,7 +130,7 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
     return app.test_client()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def vcr_recording(request: pytest.FixtureRequest, tenant_id: str) -> PFAzureIntegrationTestRecording:
     """Fixture to record or replay network traffic.
 
@@ -226,3 +228,25 @@ def mock_get_user_identity_info(mocker: MockerFixture) -> None:
             return_value=(SanitizedValues.USER_OBJECT_ID, SanitizedValues.TENANT_ID),
         )
     yield
+
+
+@pytest.fixture
+def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
+    """Create a flow for test."""
+    flow_display_name = randstr("flow_display_name")
+    flow_source = FLOWS_DIR + "/simple_flow_with_python_tool/"
+    description = "test flow description"
+    tags = {"owner": "sdk-test"}
+    result = pf.flows.create_or_update(
+        flow=flow_source, display_name=flow_display_name, type=FlowType.STANDARD, description=description, tags=tags
+    )
+    remote_flow_dag_path = result.path
+
+    # make sure the flow is created successfully
+    assert pf.flows._storage_client._check_file_share_file_exist(remote_flow_dag_path) is True
+    assert result.display_name == flow_display_name
+    assert result.type == FlowType.STANDARD
+    assert result.tags == tags
+    assert result.path.endswith(f"/promptflow/{flow_display_name}/flow.dag.yaml")
+
+    yield result

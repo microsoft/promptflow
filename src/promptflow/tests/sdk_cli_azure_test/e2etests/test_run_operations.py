@@ -18,6 +18,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
+from promptflow.azure._entities._flow import Flow
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 from promptflow.azure.operations import RunOperations
 
@@ -106,13 +107,14 @@ class TestFlowRun:
         assert isinstance(eval_run, Run)
         pf.runs.stream(run=eval_run.name)
 
-    def test_run_bulk_with_remote_flow(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
+    def test_run_bulk_with_remote_flow(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str], created_flow: Flow
+    ):
         name = randstr("name")
         run = pf.run(
-            flow="azureml:d94ced0e-088f-41d9-98ff-90d902591418",
-            data=f"{DATAS_DIR}/webClassification1.jsonl",
-            column_mapping={"url": "${data.url}"},
-            variant="${summarize_text_content.variant_0}",
+            flow=f"azureml:{created_flow.name}",
+            data=f"{FLOWS_DIR}/simple_flow_with_python_tool/inputs.jsonl",
+            column_mapping={"num": "${data.num}"},
             runtime=runtime,
             name=name,
         )

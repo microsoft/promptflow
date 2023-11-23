@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import json
 from pathlib import Path
-from typing import Callable
 
 import pytest
 
@@ -47,19 +46,17 @@ def create_flow(pf: PFClient, display_name) -> Flow:
     "vcr_recording",
 )
 class TestFlow:
-    def test_create_flow(self, pf: PFClient, randstr: Callable[[str], str]):
-        flow_display_name = randstr("flow_display_name")
-        create_flow(pf, flow_display_name)
+    def test_create_flow(self, created_flow: Flow):
+        # most of the assertions are in the fixture itself
+        assert isinstance(created_flow, Flow)
 
-    def test_get_flow(self, pf: PFClient, randstr: Callable[[str], str]):
-        flow_display_name = randstr("flow_display_name")
-        flow = create_flow(pf, flow_display_name)
-        result = pf.flows.get(name=flow.name)
+    def test_get_flow(self, pf: PFClient, created_flow: Flow):
+        result = pf.flows.get(name=created_flow.name)
 
         # assert created flow is the same as the one retrieved
         attributes = vars(result)
         for attr in attributes:
-            assert getattr(result, attr) == getattr(flow, attr), f"Assertion failed for attribute: {attr!r}"
+            assert getattr(result, attr) == getattr(created_flow, attr), f"Assertion failed for attribute: {attr!r}"
 
     @pytest.mark.skipif(
         condition=not is_live(),
