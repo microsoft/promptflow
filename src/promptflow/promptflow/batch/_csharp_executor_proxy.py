@@ -55,6 +55,10 @@ class CsharpExecutorProxy(AbstractExecutorProxy):
             return None
         output = {}
         for key in csharp_dict.Keys:
+            # Todo: remove this when csharp chat_history is ready. Csharp chat_history is a csharp object for now
+            #  and can't be dumped
+            if key == "chat_history":
+                continue
             output[key] = csharp_dict[key]
         return output
 
