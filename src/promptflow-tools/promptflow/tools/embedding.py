@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Union
 
-import openai
+from openai import AzureOpenAI, OpenAI
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
@@ -21,19 +21,26 @@ class EmbeddingModel(str, Enum):
 @handle_openai_error()
 def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input: str, deployment_name: str = "",
               model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002):
-    connection_dict = dict(connection)
     if isinstance(connection, AzureOpenAIConnection):
-        return openai.Embedding.create(
+        client = AzureOpenAI(
+            api_key=connection.api_key,
+            api_version=connection.api_version,
+            azure_endpoint=connection.api_base
+        )
+        return client.embeddings.create(
             input=input,
-            engine=deployment_name,
-            headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
-            **connection_dict,
+            model=deployment_name,
+            extra_headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"}
         )["data"][0]["embedding"]
     elif isinstance(connection, OpenAIConnection):
-        return openai.Embedding.create(
+        client = OpenAI(
+            api_key=connection.api_key,
+            organization=connection.organization,
+            base_url=connection.base_url
+        )
+        return client.embeddings.create(
             input=input,
-            model=model,
-            **connection_dict,
+            model=model
         )["data"][0]["embedding"]
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}' for embedding api. " \

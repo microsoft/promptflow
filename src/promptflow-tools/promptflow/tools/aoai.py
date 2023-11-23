@@ -27,8 +27,8 @@ class AzureOpenAI(ToolProvider):
         )
 
     def calculate_cache_string_for_completion(
-            self,
-            **kwargs,
+        self,
+        **kwargs,
     ) -> str:
         d = dict(self.connection)
         d.pop("api_key")
