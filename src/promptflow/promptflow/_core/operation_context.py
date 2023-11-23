@@ -125,7 +125,7 @@ class OperationContext(Dict):
             self.user_agent = user_agent
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
-        """Set the batch input source from the input mapping and set it in the OperationContext instance.
+        """Infer the batch input source from the input mapping and set it in the OperationContext instance.
 
         This method analyzes the `inputs_mapping` to ascertain the origin of the inputs for a batch operation.
         The `inputs_mapping` should be a dictionary with keys representing input names and values specifying the sources
@@ -159,11 +159,12 @@ class OperationContext(Dict):
         Returns:
             None
         """
-        self.batch_input_source = "Data"
         if inputs_mapping and any(
             isinstance(value, str) and value.startswith("${run.outputs") for value in inputs_mapping.values()
         ):
             self.batch_input_source = "Run"
+        else:
+            self.batch_input_source = "Data"
 
     def get_context_dict(self):
         """Get the context dictionary.
