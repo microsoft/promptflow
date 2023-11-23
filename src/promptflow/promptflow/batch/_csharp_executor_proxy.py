@@ -2,22 +2,24 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+import portpicker
+
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_DOMAIN = "http://localhost:"
-EXECUTOR_PORT = "12306"
 SERVICE_DLL = "Promptflow.DotnetService.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
-    def __init__(self, process: subprocess.Popen):
+    def __init__(self, process: subprocess.Popen, port: str):
         self._process = process
+        self._port = port
 
     @property
     def api_endpoint(self) -> str:
-        return EXECUTOR_DOMAIN + EXECUTOR_PORT
+        return EXECUTOR_DOMAIN + self._port
 
     @classmethod
     def create(
@@ -30,9 +32,10 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         **kwargs,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
-        command = ["dotnet", SERVICE_DLL, "-p", EXECUTOR_PORT, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]
+        port = str(portpicker.pick_unused_port())
+        command = ["dotnet", SERVICE_DLL, "-p", port, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]
         process = subprocess.Popen(command)
-        return cls(process)
+        return cls(process, port)
 
     def destroy(self):
         """Destroy the executor"""

@@ -24,3 +24,4 @@ twine==4.0.0
 vcrpy==5.1.0  # record and replay http requests for pfazure tests
 wheel
 httpx
+portpicker
