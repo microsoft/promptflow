@@ -1,8 +1,7 @@
+import socket
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional
-
-import portpicker
 
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
@@ -32,7 +31,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         **kwargs,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
-        port = str(portpicker.pick_unused_port())
+        port = cls.find_available_port()
         command = ["dotnet", EXECUTOR_SERVICE_DLL, "-p", port, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]
         process = subprocess.Popen(command)
         return cls(process, port)
@@ -57,3 +56,10 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
     @classmethod
     def generate_tool_metadata(cls, flow_dag: dict, working_dir: Path) -> dict:
         return {}
+
+    @classmethod
+    def find_available_port(cls) -> str:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("localhost", 0))
+            _, port = s.getsockname()
+            return str(port)
