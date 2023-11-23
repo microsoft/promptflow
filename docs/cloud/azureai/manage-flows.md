@@ -12,7 +12,8 @@ In general:
 - For `SDK`, you can refer to [Promptflow Python Library Reference](../../reference/python-library-reference/promptflow.md) and check `promptflow.azure.PFClient.flows` for more flow operations.
 
 :::{admonition} Prerequisites
-[Prerequisites](./quick-start.md#prerequisites) are the same as [Quick start](./quick-start.md#prerequisites).
+- Refer to the prerequisites in [Quick start](./quick-start.md#prerequisites).
+- Use the `az login` command in the command line to log in. This enables promptflow to access your credentials. 
 :::
 
 Let's take a look at the following topics:
@@ -42,10 +43,6 @@ pfazure flow create --flow <path-to-flow-folder> --set display-name=<display-nam
 After the flow is created successfully, you can see the flow summary in the command line.
 
 ![img](../../media/cloud/manage-flows/flow_create_0.png)
-
-On Azure portal, you can see the created flow in the flow list.
-
-![img](../../media/cloud/manage-flows/flow_create_1.png)
 
 
 :::
@@ -101,6 +98,16 @@ flow = pf.flows.create_or_update(
 :::
 
 ::::
+
+On Azure portal, you can see the created flow in the flow list.
+
+![img](../../media/cloud/manage-flows/flow_create_1.png)
+
+And the flow source folder on file share is `Users/<alias>/promptflow/<flow-display-name>`:
+
+![img](../../media/cloud/manage-flows/flow_create_2.png)
+
+Note that if the flow display name is not specified, it will default to the flow folder name + timestamp. (e.g. `web-classification-11-13-2023-14-19-10`)
 
 ## List flows
 

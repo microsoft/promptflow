@@ -15,7 +15,7 @@ def add_config_set(subparsers):
     Examples:
 
     # Config connection provider to azure workspace for current user:
-    pf config set connection.provider="azureml:/subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
+    pf config set connection.provider="azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
     """  # noqa: E501
     activate_action(
         name="set",

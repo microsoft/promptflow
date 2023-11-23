@@ -4,23 +4,38 @@ from pathlib import Path
 from unittest.mock import mock_open
 
 from promptflow._utils.multimedia_utils import (
+    _create_image_from_base64,
     _create_image_from_file,
+    _process_multimedia_dict_recursively,
+    _process_recursively,
     convert_multimedia_data_to_base64,
     create_image,
     load_multimedia_data,
     persist_multimedia_data,
+    resolve_multimedia_data_recursively,
 )
 from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.flow import FlowInputDefinition
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import ValueType
 
 from ...utils import DATA_ROOT
 
-TEST_IMAGE_PATH = DATA_ROOT / "test_image.jpg"
+TEST_IMAGE_PATH = DATA_ROOT / "logo.jpg"
 
 
 @pytest.mark.unittest
 class TestMultimediaUtils:
+    @pytest.mark.parametrize("image_path", ["logo.jpg", "logo.png", "logo.webp", "logo.gif"])
+    def test_create_image_from_base64(self, image_path):
+        image = _create_image_from_file(DATA_ROOT / image_path)
+        base64_str = image.to_base64()
+        image_from_base64 = _create_image_from_base64(base64_str)
+        assert str(image) == str(image_from_base64)
+        format = image_path.split('.')[-1]
+        mime_type = f"image/{format}" if format != "jpg" else "image/jpeg"
+        assert mime_type == image_from_base64._mime_type
+
     def test_create_image_with_dict(self, mocker):
         ## From path
         image_dict = {"data:image/jpg;path": TEST_IMAGE_PATH}
@@ -139,4 +154,53 @@ class TestMultimediaUtils:
             "image": [image, image],
             "images": [[image, image], [image]],
             "object": [{"image": image, "other_data": "other_data"}, {"other_data": "other_data"}]
+        }
+
+    def test_resolve_multimedia_data_recursively(self):
+        image_dict = {"data:image/jpg;path": "logo.jpg"}
+        value = {
+            "image": image_dict,
+            "images": [image_dict, image_dict],
+            "object": {"image": image_dict, "other_data": "other_data"}
+        }
+        input_dir = TEST_IMAGE_PATH
+        updated_value = resolve_multimedia_data_recursively(input_dir, value)
+        updated_image_dict = {"data:image/jpg;path": str(DATA_ROOT / "logo.jpg")}
+        assert updated_value == {
+            "image": updated_image_dict,
+            "images": [updated_image_dict, updated_image_dict],
+            "object": {"image": updated_image_dict, "other_data": "other_data"}
+        }
+
+    def test_process_recursively(self):
+        image = _create_image_from_file(TEST_IMAGE_PATH)
+        value = {
+            "image": image,
+            "images": [image, image],
+            "object": {"image": image, "other_data": "other_data"}
+        }
+        process_funcs = {Image: lambda x: str(x)}
+        updated_value = _process_recursively(value, process_funcs)
+        image_str = str(image)
+        assert updated_value == {
+            "image": image_str,
+            "images": [image_str, image_str],
+            "object": {"image": image_str, "other_data": "other_data"}
+        }
+
+    def test_process_multimedia_dict_recursively(self):
+        def process_func(image_dict):
+            return "image_placeholder"
+
+        image_dict = {"data:image/jpg;path": "logo.jpg"}
+        value = {
+            "image": image_dict,
+            "images": [image_dict, image_dict],
+            "object": {"image": image_dict, "other_data": "other_data"}
+        }
+        updated_value = _process_multimedia_dict_recursively(value, process_func)
+        assert updated_value == {
+            "image": "image_placeholder",
+            "images": ["image_placeholder", "image_placeholder"],
+            "object": {"image": "image_placeholder", "other_data": "other_data"}
         }

@@ -3,13 +3,13 @@
 # ---------------------------------------------------------
 
 import functools
-import inspect
 import importlib
+import inspect
 import logging
 from abc import ABC
+from dataclasses import InitVar, dataclass, field
 from enum import Enum
-from typing import Callable, Optional, List, Dict, Union, get_args, get_origin
-from dataclasses import dataclass, InitVar, field
+from typing import Callable, Dict, List, Optional, Union, get_args, get_origin
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
@@ -19,6 +19,7 @@ STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
 class ToolType(str, Enum):
     LLM = "llm"
     PYTHON = "python"
+    CSHARP = "csharp"
     PROMPT = "prompt"
     _ACTION = "action"
     CUSTOM_LLM = "custom_llm"
@@ -69,20 +70,41 @@ def tool(
 
     def tool_decorator(func: Callable) -> Callable:
         from promptflow.exceptions import UserErrorException
+
         if inspect.iscoroutinefunction(func):
+
             @functools.wraps(func)
-            async def new_f_async(*args, **kwargs):
-                """TODO: Add tracing support for async tools."""
-                return await func(*args, **kwargs)
-            new_f = new_f_async
+            async def decorated_tool(*args, **kwargs):
+                from .tracer import Tracer
+
+                if Tracer.active_instance() is None:
+                    return await func(*args, **kwargs)
+                try:
+                    Tracer.push_tool(func, args, kwargs)
+                    output = await func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+
+            new_f = decorated_tool
         else:
+
             @functools.wraps(func)
-            def new_f(*args, **kwargs):
-                tool_invoker = ToolInvoker.active_instance()
-                # If there is no active tool invoker for tracing or other purposes, just call the function.
-                if tool_invoker is None:
-                    return func(*args, **kwargs)
-                return tool_invoker.invoke_tool(func, *args, **kwargs)
+            def decorated_tool(*args, **kwargs):
+                from .tracer import Tracer
+
+                if Tracer.active_instance() is None:
+                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                try:
+                    Tracer.push_tool(func, args, kwargs)
+                    output = func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+
+            new_f = decorated_tool
 
         if type is not None and type not in [k.value for k in ToolType]:
             raise UserErrorException(f"Tool type {type} is not supported yet.")
@@ -165,8 +187,8 @@ class DynamicList:
     func_kwargs: List = field(init=False)
 
     def __post_init__(self, function, input_mapping):
-        from promptflow.exceptions import UserErrorException
         from promptflow.contracts.tool import ValueType
+        from promptflow.exceptions import UserErrorException
 
         # Validate function exist
         if isinstance(function, str):
@@ -177,7 +199,8 @@ class DynamicList:
             func_path = f"{function.__module__}.{function.__name__}"
         else:
             raise UserErrorException(
-                "Function has invalid type, please provide callable or function name for function.")
+                "Function has invalid type, please provide callable or function name for function."
+            )
         self.func_path = func_path
         self._func_obj = func
         self._input_mapping = input_mapping or {}

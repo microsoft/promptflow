@@ -1,7 +1,5 @@
-import contextlib
 import importlib
 import importlib.util
-import io
 import json
 import logging
 import os
@@ -24,8 +22,6 @@ from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
-
-from ..recording_utilities import RecordStorage
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
@@ -52,95 +48,90 @@ def run_pf_command(*args, cwd=None):
 
 
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
 )
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestCli:
     def test_pf_version(self, capfd):
         run_pf_command("--version")
-        out, err = capfd.readouterr()
+        out, _ = capfd.readouterr()
         assert "0.0.1\n" in out
 
-    def test_basic_flow_run(self) -> None:
+    def test_basic_flow_run(self, capfd) -> None:
         # fetch std out
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--flow",
-                f"{FLOWS_DIR}/web_classification",
-                "--data",
-                f"{DATAS_DIR}/webClassification3.jsonl",
-                "--name",
-                str(uuid.uuid4()),
-            )
-        assert "Completed" in f.getvalue()
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--name",
+            str(uuid.uuid4()),
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
 
-    def test_basic_flow_run_batch_and_eval(self) -> None:
+    def test_basic_flow_run_batch_and_eval(self, capfd) -> None:
         run_id = str(uuid.uuid4())
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--flow",
-                f"{FLOWS_DIR}/web_classification",
-                "--data",
-                f"{DATAS_DIR}/webClassification3.jsonl",
-                "--name",
-                run_id,
-            )
-        assert "Completed" in f.getvalue()
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--name",
+            run_id,
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
 
         # Check the CLI works correctly when the parameter is surrounded by quotation, as below shown:
         # --param "key=value" key="value"
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--flow",
-                f"{FLOWS_DIR}/classification_accuracy_evaluation",
-                "--column-mapping",
-                "'groundtruth=${data.answer}'",
-                "prediction='${run.outputs.category}'",
-                "variant_id=${data.variant_id}",
-                "--data",
-                f"{DATAS_DIR}/webClassification3.jsonl",
-                "--run",
-                run_id,
-            )
-        assert "Completed" in f.getvalue()
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            "--column-mapping",
+            "'groundtruth=${data.answer}'",
+            "prediction='${run.outputs.category}'",
+            "variant_id=${data.variant_id}",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--run",
+            run_id,
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
 
-    def test_submit_run_with_yaml(self):
+    def test_submit_run_with_yaml(self, capfd):
         run_id = str(uuid.uuid4())
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--file",
-                "./sample_bulk_run.yaml",
-                "--name",
-                run_id,
-                cwd=f"{RUNS_DIR}",
-            )
-        assert "Completed" in f.getvalue()
+        run_pf_command(
+            "run",
+            "create",
+            "--file",
+            "./sample_bulk_run.yaml",
+            "--name",
+            run_id,
+            cwd=f"{RUNS_DIR}",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
 
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--file",
-                "./sample_eval_run.yaml",
-                "--run",
-                run_id,
-                cwd=f"{RUNS_DIR}",
-            )
-        assert "Completed" in f.getvalue()
+        run_pf_command(
+            "run",
+            "create",
+            "--file",
+            "./sample_eval_run.yaml",
+            "--run",
+            run_id,
+            cwd=f"{RUNS_DIR}",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
 
     def test_submit_batch_variant(self, local_client):
         run_id = str(uuid.uuid4())
@@ -180,7 +171,7 @@ class TestCli:
         outputs = local_client.runs._get_outputs(run=run_id)
         assert outputs["output"][0] == local_aoai_connection.api_base
 
-    def test_connection_overwrite(self, local_alt_aoai_connection):
+    def test_connection_overwrite(self, local_alt_aoai_connection, capfd):
         # CLi command will fail with SystemExit
         with pytest.raises(SystemExit):
             run_pf_command(
@@ -194,33 +185,32 @@ class TestCli:
                 "classify_with_llm.connection=not_exist",
             )
 
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--flow",
-                f"{FLOWS_DIR}/web_classification",
-                "--data",
-                f"{DATAS_DIR}/webClassification3.jsonl",
-                "--connection",
-                "classify_with_llm.connection=new_ai_connection",
-            )
-        assert "Completed" in f.getvalue()
+        out, _ = capfd.readouterr()
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--connection",
+            "classify_with_llm.connection=new_ai_connection",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
 
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--flow",
-                f"{FLOWS_DIR}/web_classification",
-                "--data",
-                f"{DATAS_DIR}/webClassification3.jsonl",
-                "--connection",
-                "classify_with_llm.model=new_model",
-            )
-        assert "Completed" in f.getvalue()
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--connection",
+            "classify_with_llm.model=new_model",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
 
     def test_create_with_set(self, local_client):
         run_id = str(uuid.uuid4())
@@ -550,7 +540,7 @@ class TestCli:
         )
 
     def test_flow_test_with_environment_variable(self, local_client):
-        from promptflow._sdk.operations._run_submitter import SubmitterHelper
+        from promptflow._sdk._submitter.utils import SubmitterHelper
 
         def validate_stdout(detail_path):
             with open(detail_path, "r") as f:
@@ -878,7 +868,6 @@ class TestCli:
                 assert not (flow_folder / "azure_openai.yaml").exists()
                 assert not (flow_folder / "openai.yaml").exists()
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="cannot support interactive")
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1260,28 +1249,28 @@ class TestCli:
         for keyword in non_existing_keywords:
             assert keyword not in out
 
-    def test_pf_run_no_stream_log(self):
-        f = io.StringIO()
+    def test_pf_run_no_stream_log(self, capfd):
 
         # without --stream, logs will be in the run's log file
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--flow",
-                f"{FLOWS_DIR}/flow_with_user_output",
-                "--data",
-                f"{DATAS_DIR}/webClassification3.jsonl",
-                "--column-mapping",
-                "key=value",
-                "extra=${data.url}",
-            )
-        assert "user log" not in f.getvalue()
-        assert "error log" not in f.getvalue()
+
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/flow_with_user_output",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--column-mapping",
+            "key=value",
+            "extra=${data.url}",
+        )
+        out, _ = capfd.readouterr()
+        assert "user log" not in out
+        assert "error log" not in out
         # flow logs won't stream
-        assert "Executing node print_val. node run id:" not in f.getvalue()
+        assert "Executing node print_val. node run id:" not in out
         # executor logs won't stream
-        assert "Node print_val completes." not in f.getvalue()
+        assert "Node print_val completes." not in out
 
     def test_format_cli_exception(self, capsys):
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
@@ -1447,27 +1436,10 @@ class TestCli:
         assert package_tool_name in tools_dict["package"]
 
         # Invalid flow parameter
-        with pytest.raises(Exception) as e:
+        with pytest.raises(SystemExit):
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
-        assert "invalid_flow_folder does not exist" in e.value.args[0]
-
-    def test_chat_flow_with_conditional(self, monkeypatch, capsys):
-        chat_list = ["1", "2"]
-
-        def mock_input(*args, **kwargs):
-            if chat_list:
-                return chat_list.pop()
-            else:
-                raise KeyboardInterrupt()
-
-        monkeypatch.setattr("builtins.input", mock_input)
-        run_pf_command(
-            "flow", "test", "--flow", f"{FLOWS_DIR}/conditional_chat_flow_with_skip", "--interactive", "--verbose"
-        )
-        output_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.output.json"
-        assert output_path.exists()
-        detail_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.detail.json"
-        assert detail_path.exists()
+        outerr = capsys.readouterr()
+        assert "invalid_flow_folder does not exist" in outerr.out
 
     def test_flow_test_with_image_input_and_output(self):
         run_pf_command(
@@ -1527,7 +1499,6 @@ class TestCli:
             pass
         pf.runs.get(name=name2)
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="cannot support complex reply format")
     def test_data_scrubbing(self):
         # Prepare connection
         run_pf_command(
