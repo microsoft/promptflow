@@ -6,6 +6,8 @@
 - Add `pfazure flow show/list` to show or list flows from Azure AI.
 - Display node status in run visualize page graph view.
 - Add support for image input and output in prompt flow.
+- [SDK/CLI] SDK/CLI will collect telemetry by default, user can use `pf config set telemetry.enabled=false` to opt out.
+- Add `raise_on_error` for stream run API, by default we raise for failed run.
 
 ### Bugs Fixed
 

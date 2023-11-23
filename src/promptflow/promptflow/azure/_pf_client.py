@@ -248,16 +248,18 @@ class PFClient:
         )
         return self.runs.create_or_update(run=run, **kwargs)
 
-    def stream(self, run: Union[str, Run]) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
 
         :param run: Run object or name of the run.
         :type run: Union[str, ~promptflow.sdk.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails or canceled.
+        :type raise_on_error: bool
         :return: flow run info.
         """
         if isinstance(run, Run):
             run = run.name
-        return self.runs.stream(run)
+        return self.runs.stream(run, raise_on_error)
 
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
