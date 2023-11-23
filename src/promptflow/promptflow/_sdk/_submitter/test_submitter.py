@@ -460,4 +460,4 @@ class TestSubmitterViaProxy(TestSubmitter):
                         logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
                 return line_result
             finally:
-                CSharpExecutorProxy.destroy()
+                flow_executor.destroy()
