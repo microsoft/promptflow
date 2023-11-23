@@ -107,7 +107,8 @@ class OperationContext(Dict):
                 yield self.get("user_agent")
             yield f"promptflow/{VERSION}"
 
-        return " ".join(parts())
+        # strip to avoid leading or trailing spaces, which may cause error when sending request
+        return " ".join(parts()).strip()
 
     def append_user_agent(self, user_agent: str):
         """Append the user agent string.

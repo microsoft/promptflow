@@ -12,6 +12,7 @@ from azure.core.credentials import TokenCredential
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
+from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
 from promptflow.azure._utils.gerneral import is_remote_uri
@@ -48,7 +49,9 @@ class PFClient:
         **kwargs,
     ):
         self._validate_config_information(subscription_id, resource_group_name, workspace_name, kwargs)
-        self._add_user_agent(kwargs)
+        # append SDK ua to context
+        user_agent = setup_user_agent_to_operation_context(USER_AGENT)
+        kwargs.setdefault("user_agent", user_agent)
         self._ml_client = kwargs.pop("ml_client", None) or MLClient(
             credential=credential,
             subscription_id=subscription_id,
@@ -312,8 +315,3 @@ class PFClient:
         :type run: Union[str, ~promptflow.sdk.entities.Run]
         """
         self.runs.visualize(runs)
-
-    def _add_user_agent(self, kwargs) -> None:
-        user_agent = kwargs.pop("user_agent", None)
-        user_agent = f"{user_agent} {USER_AGENT}" if user_agent else USER_AGENT
-        kwargs.setdefault("user_agent", user_agent)

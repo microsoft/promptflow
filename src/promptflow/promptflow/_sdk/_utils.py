@@ -10,8 +10,8 @@ import multiprocessing
 import os
 import platform
 import re
-import stat
 import shutil
+import stat
 import sys
 import tempfile
 import zipfile
@@ -538,7 +538,7 @@ def print_pf_version():
     print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
     print()
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
-    print('Python ({}) {}'.format(platform.system(), sys.version))
+    print("Python ({}) {}".format(platform.system(), sys.version))
 
 
 class PromptflowIgnoreFile(IgnoreFile):
@@ -787,14 +787,16 @@ def update_user_agent_from_env_var():
         OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
 
 
-def setup_user_agent_to_operation_context(user_agent):
+def setup_user_agent_to_operation_context(user_agent=None):
     """Setup user agent to OperationContext"""
     from promptflow._core.operation_context import OperationContext
 
     update_user_agent_from_env_var()
     # Append user agent
     context = OperationContext.get_instance()
-    context.append_user_agent(user_agent)
+    # skip append if empty
+    if user_agent:
+        context.append_user_agent(user_agent)
     return context.get_user_agent()
 
 
