@@ -115,6 +115,7 @@ def add_telemetry_log(
         "activity_type": activity_type,
     }
     activity_info.update(custom_dimensions)
+    context['request_id'] = request_id
     if level.lower() == 'info':
         logger.info(message, extra={"custom_dimensions": activity_info})
     elif level.lower() == 'error':

@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 # pylint: disable=wrong-import-position
 import time
+import uuid
 
 from promptflow._telemetry.activity import add_telemetry_log, ActivityType, ActivityCompletionStatus
 
@@ -51,7 +52,6 @@ def entry(argv):
     args = parser.parse_args(argv)
     # Log the init finish time
     init_finish_time = time.perf_counter()
-    completion_status = ActivityCompletionStatus.SUCCESS
     try:
         # --verbose, enable info logging
         if hasattr(args, "verbose") and args.verbose:
@@ -61,6 +61,14 @@ def entry(argv):
         if hasattr(args, "debug") and args.debug:
             for handler in logging.getLogger(LOGGER_NAME).handlers:
                 handler.setLevel(logging.DEBUG)
+
+        activity_name = f"pf.{args.action}.{args.sub_action}.cli"
+        message = f"{activity_name}.start"
+        add_telemetry_log(activity_name=activity_name,
+                          activity_type=ActivityType.PUBLICAPI,
+                          message=message,
+                          custom_dimensions={"request_id": str(uuid.uuid4())})
+        completion_status = ActivityCompletionStatus.SUCCESS
         if args.version:
             print_pf_version()
         elif args.action == "flow":
@@ -95,7 +103,6 @@ def entry(argv):
             init_finish_time - start_time,
             invoke_finish_time - init_finish_time,
         )
-        activity_name = f"pf.{args.action}s.{args.sub_action}.e2e"
         message = f"{activity_name}.complete"
         custom_dimensions = {
             'duration_ms': round((init_finish_time - start_time) * 1000, 2),
