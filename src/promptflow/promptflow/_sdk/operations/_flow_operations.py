@@ -27,6 +27,7 @@ from promptflow._sdk._utils import (
     generate_random_string,
     parse_variant,
 )
+from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import TelemetryMixin
@@ -609,18 +610,18 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow = load_flow(source=flow)
+        flow_entity: ProtectedFlow = load_flow(source=flow)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
-        validation_result = flow._validate()
+        validation_result = flow_entity._validate()
 
         source_path_mapping = {}
         flow_tools, tools_errors = self._generate_tools_meta(
-            flow=flow.flow_dag_path,
+            flow=flow_entity.flow_dag_path,
             source_path_mapping=source_path_mapping,
         )
 
-        flow.tools_meta_path.write_text(
+        flow_entity.tools_meta_path.write_text(
             data=json.dumps(flow_tools, indent=4),
             encoding=DEFAULT_ENCODING,
         )
@@ -634,9 +635,9 @@ class FlowOperations(TelemetryMixin):
                     )
 
         # flow in control plane is read-only, so resolve location makes sense even in SDK experience
-        validation_result.resolve_location_for_diagnostics(flow.flow_dag_path)
+        validation_result.resolve_location_for_diagnostics(flow_entity.flow_dag_path.as_posix())
 
-        flow._try_raise(
+        flow_entity._try_raise(
             validation_result,
             raise_error=raise_error,
         )
