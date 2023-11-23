@@ -245,10 +245,10 @@ class TestBatch:
     def test_csharp_batch_engine(self):
         mem_run_storage = MemoryRunStorage()
         flow_file = Path("flow.dag.yaml")
-        working_dir = Path("D:/RAGFlow/bin/Release/net6.0")
+        working_dir = Path("D:/BuiltFlows/Basic/bin/Release/net6.0")
         batch_engine = BatchEngine(flow_file, working_dir, storage=mem_run_storage)
         input_dirs = {"data": "inputs.jsonl"}
-        inputs_mapping = {"question": "${data.question}", "context_limit_length": "${data.context_limit_length}"}
+        inputs_mapping = {"question": "${data.question}"}
         output_dir = Path(mkdtemp())
         batch_result = batch_engine.run(input_dirs, inputs_mapping, output_dir)
-        assert batch_result.outputs
+        assert batch_result.completed_lines == 3
