@@ -1537,3 +1537,22 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert "**data_scrubbed**" in log_content
+
+    def test_config_set_pure_flow_directory_macro(self, capfd: pytest.CaptureFixture) -> None:
+        run_pf_command(
+            "config",
+            "set",
+            "run.output_path='${flow_directory}'",
+        )
+        out, _ = capfd.readouterr()
+        expected_error_message = (
+            "Invalid config value '${flow_directory}' for 'run.output_path': "
+            "Cannot specify flow directory as run output path; "
+            "if you want to specify run output path under flow directory, please use its child folder."
+        )
+        assert expected_error_message in out
+
+        from promptflow._sdk._configuration import Configuration
+
+        config = Configuration.get_instance()
+        assert config.get_run_output_path() is None
