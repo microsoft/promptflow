@@ -6,6 +6,7 @@
 import datetime
 from pathlib import Path
 
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import parse_variant
@@ -14,7 +15,7 @@ from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow.batch import BatchEngine
+from promptflow.batch import BatchEngine, CSharpExecutorProxy
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
@@ -70,6 +71,7 @@ class RunSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
+        BatchEngine.register_executor(FlowLanguage.CSharp, CSharpExecutorProxy)
         batch_engine = BatchEngine(flow.path, flow.code, connections=connections, storage=local_storage)
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
