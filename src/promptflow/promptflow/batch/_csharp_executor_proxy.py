@@ -8,7 +8,7 @@ from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_DOMAIN = "http://localhost:"
 EXECUTOR_PORT = "12306"
-SERVICE_DLL = "Promptflow.Service.dll"
+SERVICE_DLL = "Promptflow.DotnetService.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
