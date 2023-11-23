@@ -499,7 +499,7 @@ class TestFlowRun:
         assert run.tags == tags
 
     def test_run_display_name(self, pf):
-        # use folder name if not specify display_name
+        # use run name if not specify display_name
         run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
@@ -507,7 +507,7 @@ class TestFlowRun:
                 environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
             )
         )
-        assert run.display_name == "print_env_var"
+        assert run.display_name.startswith("print_env_var_variant_0")
 
         # will respect if specified in run
         base_run = pf.runs.create_or_update(

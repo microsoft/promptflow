@@ -127,7 +127,7 @@ class TestFlowRun:
         name = randstr("name")
         run = pf.run(
             flow=f"azureml:{created_flow.name}",
-            data=f"{FLOWS_DIR}/simple_flow_with_python_tool/inputs.jsonl",
+            data=f"{FLOWS_DIR}/simple_hello_world/inputs.jsonl",
             column_mapping={"num": "${data.num}"},
             runtime=runtime,
             name=name,

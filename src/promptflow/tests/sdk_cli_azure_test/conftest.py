@@ -230,7 +230,7 @@ def mock_get_user_identity_info(mocker: MockerFixture) -> None:
 def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
-    flow_source = FLOWS_DIR + "/simple_flow_with_python_tool/"
+    flow_source = FLOWS_DIR + "/simple_hello_world/"
     description = "test flow description"
     tags = {"owner": "sdk-test"}
     result = pf.flows.create_or_update(
