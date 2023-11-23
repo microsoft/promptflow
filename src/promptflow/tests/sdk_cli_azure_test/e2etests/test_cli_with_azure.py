@@ -11,6 +11,7 @@ import pytest
 from azure.ai.ml.entities import Data
 
 from promptflow._cli._pf_azure.entry import main
+from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
@@ -150,6 +151,9 @@ class TestCliWithAzure:
         assert run.properties["azureml.promptflow.runtime_name"] == runtime
 
     def test_azure_cli_ua(self, pf):
+        # clear user agent before test
+        context = OperationContext().get_instance()
+        context.user_agent = ""
         with environment_variable_overwrite("USER_AGENT", ""):
             with pytest.raises(SystemExit):
                 run_pf_command(

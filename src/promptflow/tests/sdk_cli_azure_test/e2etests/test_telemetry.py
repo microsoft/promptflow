@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pydash
 import pytest
 
+from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension, setup_user_agent_to_operation_context
 from promptflow._telemetry.activity import ActivityType, log_activity
@@ -158,6 +159,9 @@ class TestTelemetry:
         logger.info = MagicMock()
         logger.info.side_effect = assert_ua
 
+        # clear user agent before test
+        context = OperationContext().get_instance()
+        context.user_agent = ""
         # get telemetry logger from SDK should not have extension ua
         # start a clean local SDK client
         with environment_variable_overwrite("USER_AGENT", ""):

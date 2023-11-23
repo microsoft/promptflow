@@ -17,6 +17,7 @@ import pytest
 import yaml
 
 from promptflow._cli._pf.entry import main
+from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
@@ -1541,6 +1542,9 @@ class TestCli:
         assert "**data_scrubbed**" in log_content
 
     def test_cli_ua(self, pf):
+        # clear user agent before test
+        context = OperationContext().get_instance()
+        context.user_agent = ""
         with environment_variable_overwrite("USER_AGENT", ""):
             with pytest.raises(SystemExit):
                 run_pf_command(
