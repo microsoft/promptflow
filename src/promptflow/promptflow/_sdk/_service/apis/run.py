@@ -73,17 +73,17 @@ class RunSubmit(Resource):
                 json.dump(run_dict, f)
             cmd = f"pf run create --file {run_file}"
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            stdout, _ = process.communicate()
+            stdout, stderr = process.communicate()
             if process.returncode == 0:
                 if run_name:
                     run_op = RunOperations()
                     run = run_op.get(name=run_name)
                     return jsonify(run._to_dict())
                 else:
-                    run_dict = json.loads("".join(stdout.decode("utf-8").splitlines()[1:]))
+                    run_dict = json.loads("".join(stdout.decode("utf-8")))
                     return jsonify(run_dict)
             else:
-                raise Exception(f"Create batch run failed: {stdout}")
+                raise Exception(f"Create batch run failed: {stderr}")
 
 
 @api.route("/<string:name>")
