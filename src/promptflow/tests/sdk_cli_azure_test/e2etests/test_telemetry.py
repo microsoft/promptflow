@@ -14,7 +14,6 @@ from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_e
 from promptflow._utils.utils import environment_variable_overwrite
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
 
 
 @contextlib.contextmanager
@@ -45,8 +44,18 @@ def extension_consent_config_overwrite(val):
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=True)
 
 
-@pytest.mark.skipif(condition=not is_live(), reason="telemetry tests, only run in live mode.")
+def parse_ua_to_dict(ua):
+    ua_dict = {}
+    ua_list = ua.split(" ")
+    for item in ua_list:
+        if item:
+            key, value = item.split("/")
+            ua_dict[key] = value
+    return ua_dict
+
+
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
+@pytest.mark.usefixtures("single_worker_thread_pool", "vcr_recording")
 @pytest.mark.e2etest
 class TestTelemetry:
     def test_logging_handler(self):
@@ -142,3 +151,31 @@ class TestTelemetry:
         another_handler = next((h for h in another_logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
         assert logger is another_logger
         assert handler is another_handler
+
+    def test_sdk_telemetry_ua(self, pf):
+        from promptflow import PFClient
+        from promptflow.azure import PFClient as PFAzureClient
+
+        # get telemetry logger from SDK should not have extension ua
+        # start a clean local SDK client
+        with environment_variable_overwrite("USER_AGENT", ""):
+            PFClient()
+            logger = get_telemetry_logger()
+            handler = next((h for h in logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
+            ua = handler._custom_dimensions["user_agent"]
+            ua_dict = parse_ua_to_dict(ua)
+            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+
+        # start a clean Azure SDK client
+        with environment_variable_overwrite("USER_AGENT", ""):
+            PFAzureClient(
+                ml_client=pf._ml_client,
+                subscription_id=pf._ml_client.subscription_id,
+                resource_group_name=pf._ml_client.resource_group_name,
+                workspace_name=pf._ml_client.workspace_name,
+            )
+            logger = get_telemetry_logger()
+            handler = next((h for h in logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
+            ua = handler._custom_dimensions["user_agent"]
+            ua_dict = parse_ua_to_dict(ua)
+            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
