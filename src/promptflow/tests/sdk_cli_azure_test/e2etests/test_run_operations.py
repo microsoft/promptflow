@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from promptflow._sdk._constants import RunStatus
-from promptflow._sdk._errors import InvalidRunError, RunNotFoundError
+from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -77,7 +77,7 @@ class TestFlowRun:
         assert run.status == RunStatus.COMPLETED
 
         eval_run = pf.run(
-            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            flow=f"{FLOWS_DIR}/eval-classification-accuracy",
             data=data_path,
             run=run,
             column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
@@ -85,11 +85,24 @@ class TestFlowRun:
             name=randstr("eval_run_name"),
         )
         assert isinstance(eval_run, Run)
-        pf.runs.stream(run=eval_run.name)
+        eval_run = pf.runs.stream(run=eval_run.name)
+        assert eval_run.status == RunStatus.COMPLETED
 
-        # evaluation run without data
+    def test_basic_evaluation_without_data(self, pf, runtime: str, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=f"{DATAS_DIR}/webClassification3.jsonl",
+            column_mapping={"url": "${data.url}"},
+            variant="${summarize_text_content.variant_0}",
+            runtime=runtime,
+            name=randstr("batch_run_name"),
+        )
+        assert isinstance(run, Run)
+        run = pf.runs.stream(run=run.name)
+        assert run.status == RunStatus.COMPLETED
+
         eval_run = pf.run(
-            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            flow=f"{FLOWS_DIR}/eval-classification-accuracy",
             run=run,
             column_mapping={
                 # evaluation reference run.inputs
@@ -97,10 +110,11 @@ class TestFlowRun:
                 "prediction": "${run.outputs.category}",
             },
             runtime=runtime,
-            name=randstr("eval_run_name_1"),
+            name=randstr("eval_run_name"),
         )
         assert isinstance(eval_run, Run)
-        pf.runs.stream(run=eval_run.name)
+        eval_run = pf.runs.stream(run=eval_run.name)
+        assert eval_run.status == RunStatus.COMPLETED
 
     def test_run_with_connection_overwrite(self, pf, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
@@ -279,13 +293,14 @@ class TestFlowRun:
         run = pf.runs.stream(run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74")
         assert run.status == RunStatus.COMPLETED
 
-    def test_stream_failed_run_logs(self, pf, capfd):
-        run = pf.runs.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
+    def test_stream_failed_run_logs(self, pf, capfd: pytest.CaptureFixture):
+        # (default) raise_on_error=True
+        with pytest.raises(InvalidRunStatusError):
+            pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
+        # raise_on_error=False
+        pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950", raise_on_error=False)
         out, _ = capfd.readouterr()
-        print(out)
-        assert run.status == "Failed"
-        # error info will store in run dict
-        assert "error" in run._to_dict()
+        assert "Input 'question' in line 0 is not provided for flow 'Simple_mock_answer'." in out
 
     @pytest.mark.skipif(
         condition=not is_live(),

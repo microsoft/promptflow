@@ -33,13 +33,13 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
 from promptflow._utils.multimedia_utils import get_file_reference_encoder
+from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.executor._result import BatchResult
 from promptflow.storage import AbstractRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -282,53 +282,41 @@ class LocalStorageOperations(AbstractRunStorage):
         with open(self._metrics_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(metrics, f, ensure_ascii=False)
 
-    def dump_exception(self, exception: Exception, bulk_results: BatchResult) -> None:
+    def dump_exception(self, exception: Exception, batch_result: BatchResult) -> None:
         """Dump exception to local storage.
 
         :param exception: Exception raised during bulk run.
-        :param bulk_results: Bulk run outputs. If exception not raised, store line run error messages.
+        :param batch_result: Bulk run outputs. If exception not raised, store line run error messages.
         """
         # extract line run errors
-        errors, line_runs = [], []
-        if bulk_results:
+        message = ""
+        errors = []
+        if batch_result:
+            for line_error in batch_result.error_summary.error_list:
+                errors.append(line_error.to_dict())
+        if errors:
             try:
-                for line_result in bulk_results.line_results:
-                    if line_result.run_info.error is not None:
-                        errors.append(
-                            {
-                                "line number": line_result.run_info.index,
-                                "error": line_result.run_info.error,
-                            }
-                        )
-                    line_runs.append(line_result)
-            except Exception:
-                pass
-
-            # won't dump exception if errors not found in bulk_results
-            if not errors:
-                return
-
-        # SystemError will be raised above and users can see it, so we don't need to dump it.
-        if exception is None or not isinstance(exception, UserErrorException):
-            # use first line run error message as exception message if no exception raised
-            error = errors[0]
-            try:
+                # use first line run error message as exception message if no exception raised
+                error = errors[0]
                 message = error["error"]["message"]
             except Exception:
                 message = (
                     "Failed to extract error message from line runs. "
                     f"Please check {self._outputs_path} for more info."
                 )
-        else:
+        elif exception and isinstance(exception, UserErrorException):
+            # SystemError will be raised above and users can see it, so we don't need to dump it.
             message = str(exception)
+        else:
+            return
 
         if not isinstance(exception, BulkRunException):
             # If other errors raised, pass it into PromptflowException
             exception = BulkRunException(
                 message=message,
                 error=exception,
-                failed_lines=len(errors) if errors else "unknown",
-                total_lines=len(line_runs) if line_runs else "unknown",
+                failed_lines=batch_result.failed_lines if batch_result else "unknown",
+                total_lines=batch_result.total_lines if batch_result else "unknown",
                 line_errors={"errors": errors},
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
