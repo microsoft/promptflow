@@ -80,16 +80,6 @@ class TestHandleOpenAIError:
         assert raw_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
-    def test_non_retriable_connection_error(self, azure_open_ai_connection, mocker: MockerFixture):
-        dummyEx = APIConnectionError(message="Something went wrong", request=httpx.get('https://www.example.com'))
-        mock_method = mocker.patch("openai.resources.Completions.create", side_effect=dummyEx)
-        error_codes = "UserError/OpenAIError/APIConnectionError"
-        with pytest.raises(WrappedOpenAIError) as exc_info:
-            completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="text-ada-001")
-        assert to_openai_error_message(dummyEx) == exc_info.value.message
-        assert mock_method.call_count == 1
-        assert exc_info.value.error_codes == error_codes.split("/")
-
     @pytest.mark.parametrize(
         "dummyExceptionList",
         [
@@ -97,8 +87,6 @@ class TestHandleOpenAIError:
                     [
                         RateLimitError("Something went wrong", response=httpx.get('https://www.example.com'),
                                        body=None),
-                        APIConnectionError(message="Something went wrong",
-                                           request=httpx.Request('GET', 'https://www.example.com')),
                         APITimeoutError(request=httpx.Request('GET', 'https://www.example.com'))
                     ]
             ),
@@ -137,6 +125,8 @@ class TestHandleOpenAIError:
                                             body=None),
                         BadRequestError("Something went wrong", response=httpx.get('https://www.example.com'),
                                         body=None),
+                        APIConnectionError(message="Something went wrong",
+                                           request=httpx.Request('GET', 'https://www.example.com')),
                     ]
             ),
         ],

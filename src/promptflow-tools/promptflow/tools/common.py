@@ -6,7 +6,7 @@ import time
 from typing import List, Mapping
 
 from jinja2 import Template
-from openai import APIError, RateLimitError, APIConnectionError
+from openai import APIError, RateLimitError, APITimeoutError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat
@@ -197,7 +197,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                 except (SystemErrorException, UserErrorException) as e:
                     # Throw inner wrapped exception directly
                     raise e
-                except (RateLimitError, APIConnectionError) as e:
+                except (RateLimitError, APITimeoutError) as e:
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
@@ -213,7 +213,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                     time.sleep(retry_after_seconds)
                 except APIError as e:
                     # For other non-retriable errors from APIError,
-                    # For example, AuthenticationError, BadRequestError, PermissionDeniedError
+                    # For example, AuthenticationError, BadRequestError, PermissionDeniedError, APIConnectionError
                     # Mark UserError for all the non-retriable OpenAIError
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
                     raise WrappedOpenAIError(e)
