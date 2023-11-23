@@ -964,3 +964,20 @@ class TestFlowRun:
         pf.stream(run.name, raise_on_error=False)
         out, _ = capfd.readouterr()
         assert "Run is canceled." in out
+
+    @pytest.mark.skip(reason="C# executor is not ready")
+    def test_csharp_flow(self, pf):
+        image_flow_path = "D:/csharp_flow/flow.dag.yaml"
+        data_path = "D:/inputs.jsonl"
+
+        result = pf.run(
+            flow=image_flow_path,
+            data=data_path,
+            column_mapping={
+                "question": "${data.question}",
+            },
+        )
+        run = pf.runs.get(name=result.name)
+        assert run.status == "Completed", run.name
+        # no error when processing lines
+        assert "error" not in run._to_dict(), run.name
