@@ -23,7 +23,7 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
 REQUIRES = [
     "psutil",  # get process information when bulk run
     "openai>=0.27.8,<0.28.0",  # promptflow.core.api_injector
-    "flask>=2.2.3,<3.0.0",  # Serving endpoint requirements
+    "flask>=2.2.3,<4.0.0",  # Serving endpoint requirements
     "flask-restx>=1.2.0,<1.3.0",  # Serving endpoint requirements
     "dataset>=1.6.0,<2.0.0",  # promptflow.storage
     "sqlalchemy>=1.4.48,<2.0.0",  # sqlite requirements
@@ -46,7 +46,7 @@ REQUIRES = [
     "strictyaml>=1.5.0,<2.0.0",  # used to identify exact location of validation error
     "waitress>=2.1.2,<3.0.0",  # used to serve local service
     "opencensus-ext-azure<2.0.0",  # configure opencensus to send telemetry to azure monitor
-    "ruamel.yaml>=0.17.35,<0.19.0",  # used to generate connection templates with preserved comments
+    "ruamel.yaml>=0.17.35,<1.0.0",  # used to generate connection templates with preserved comments
     "pyarrow>=9.0.0,<15.0.0",  # used to read parquet file with pandas.read_parquet
     "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
