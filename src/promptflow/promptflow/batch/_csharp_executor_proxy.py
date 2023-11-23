@@ -29,8 +29,8 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         storage: Optional[AbstractRunStorage] = None,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
-        command = f'dotnet {SERVICE_DLL} -p {EXECUTOR_PORT} -y {flow_file} -a "." -c "" -l ""'
-        process = subprocess.Popen(command, shell=True)
+        command = ["dotnet", SERVICE_DLL, "-p", EXECUTOR_PORT, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]
+        process = subprocess.Popen(command)
         return cls(process)
 
     def destroy(self):
