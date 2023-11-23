@@ -12,6 +12,9 @@ from azure.ai.ml.entities import Data
 
 from promptflow._cli._pf_azure.entry import main
 from promptflow._sdk.entities import Run
+from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler
+from promptflow._telemetry.telemetry import get_telemetry_logger
+from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -146,3 +149,19 @@ class TestCliWithAzure:
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
         assert run.properties["azureml.promptflow.runtime_name"] == runtime
+
+    def test_azure_cli_ua(self, pf):
+        with environment_variable_overwrite("USER_AGENT", ""):
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "run",
+                    "show",
+                    "--name",
+                    "not_exist",
+                    pf=pf,
+                )
+            logger = get_telemetry_logger()
+            handler = next((h for h in logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
+            ua = handler._custom_dimensions["user_agent"]
+            ua_dict = parse_ua_to_dict(ua)
+            assert ua_dict.keys() == {"promptflow-sdk", "promptflow", "promptflow-cli"}

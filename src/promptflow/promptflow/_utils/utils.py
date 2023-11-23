@@ -157,6 +157,7 @@ def log_progress(
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
     from promptflow._core import tool
+
     tool_file = tool.__file__
     core_folder = os.path.dirname(tool_file)
 
@@ -235,3 +236,14 @@ def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path
         base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
         path = base_dir / sub_dir
     return path
+
+
+def parse_ua_to_dict(ua):
+    """Parse string user agent to dict with name as ua name and value as ua version."""
+    ua_dict = {}
+    ua_list = ua.split(" ")
+    for item in ua_list:
+        if item:
+            key, value = item.split("/")
+            ua_dict[key] = value
+    return ua_dict
