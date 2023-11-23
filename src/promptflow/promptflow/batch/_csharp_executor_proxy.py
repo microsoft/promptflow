@@ -6,7 +6,7 @@ from typing import Any, Mapping, Optional
 
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
-from promptflow.contracts.run_info import FlowRunInfo, Status
+from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -49,43 +49,67 @@ class CsharpExecutorProxy(AbstractExecutorProxy):
         """Destroy the executor"""
         pass
 
+    @classmethod
+    def _dict_from_csharp(cls, csharp_dict):
+        if csharp_dict is None:
+            return None
+        output = {}
+        for key in csharp_dict.Keys:
+            output[key] = csharp_dict[key]
+        return output
+
+    @classmethod
+    def _datetime_from_csharp(cls, csharp_datetime):
+        return datetime.datetime(
+            csharp_datetime.Year,
+            csharp_datetime.Month,
+            csharp_datetime.Day,
+            csharp_datetime.Hour,
+            csharp_datetime.Minute,
+            csharp_datetime.Second,
+            # seems that microsecond is not supported in all versions of DotNet?
+            # csharp_datetime.Microsecond,
+        )
+
     def exec_line(
         self,
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
     ) -> LineResult:
-        start_time = datetime.datetime.now()
         from System import Object, String
         from System.Collections.Generic import Dictionary
 
+        from Promptflow.Contracts.JsonSchema import ExecuteFlowRequest
+
+        csharp_request = ExecuteFlowRequest()
         csharp_inputs = Dictionary[String, Object]()
         for key, value in inputs.items():
             csharp_inputs[key] = value
-        task = self._executor.ExecuteAsync(csharp_inputs)
+        csharp_request.Inputs = csharp_inputs
+        csharp_request.LineNumber = index
+        csharp_request.RunId = run_id
+        task = self._executor.ExecuteAsync(csharp_request)
         task_result = task.Result
 
-        output = {}
-        for key in task_result.Keys:
-            output[key] = task_result[key]
         return LineResult(
-            output=output,
-            aggregation_inputs={},
+            output=self._dict_from_csharp(task_result.Output),
+            aggregation_inputs=self._dict_from_csharp(task_result.AggregationInputs),
             node_run_infos={},
             run_info=FlowRunInfo(
-                run_id="test",
-                status=Status.Completed,
-                error={},
-                inputs=inputs,
-                output=output,
-                metrics={},
-                request=None,
-                parent_run_id="test",
-                root_run_id="test",
-                source_run_id="test",
-                flow_id="test",
-                start_time=start_time,
-                end_time=datetime.datetime.now(),
+                run_id=task_result.RunInfo.RunId,
+                status=task_result.RunInfo.Status,
+                error=task_result.RunInfo.Error,
+                inputs=self._dict_from_csharp(task_result.RunInfo.Inputs),
+                output=self._dict_from_csharp(task_result.RunInfo.Output),
+                metrics=self._dict_from_csharp(task_result.RunInfo.Metrics),
+                request=task_result.RunInfo.Request,
+                parent_run_id=task_result.RunInfo.ParentRunId,
+                root_run_id=task_result.RunInfo.RootRunId,
+                source_run_id=task_result.RunInfo.SourceRunId,
+                flow_id=task_result.RunInfo.FlowId,
+                start_time=self._datetime_from_csharp(task_result.RunInfo.StartTime),
+                end_time=self._datetime_from_csharp(task_result.RunInfo.EndTime),
             ),
         )
 
