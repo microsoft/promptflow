@@ -531,7 +531,7 @@ class FlowOperations(TelemetryMixin):
         :return: no return
         :rtype: None
         """
-        output_dir = Path(output)
+        output_dir = Path(output).absolute()
         output_dir.mkdir(parents=True, exist_ok=True)
 
         flow = load_flow(flow)

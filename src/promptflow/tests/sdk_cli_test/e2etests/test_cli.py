@@ -1105,34 +1105,39 @@ class TestCli:
 
     def test_flow_build(self):
         source = f"{FLOWS_DIR}/web_classification_with_additional_include/flow.dag.yaml"
-
+        output_path = "dist"
         def get_node_settings(_flow_dag_path: Path):
             flow_dag = yaml.safe_load(_flow_dag_path.read_text())
             target_node = next(filter(lambda x: x["name"] == "summarize_text_content", flow_dag["nodes"]))
             target_node.pop("name")
             return target_node
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        try:
             run_pf_command(
                 "flow",
                 "build",
                 "--source",
                 source,
                 "--output",
-                temp_dir,
+                output_path,
                 "--format",
                 "docker",
                 "--variant",
                 "${summarize_text_content.variant_0}",
             )
 
-            new_flow_dag_path = Path(temp_dir, "flow", "flow.dag.yaml")
+            new_flow_dag_path = Path(output_path, "flow", "flow.dag.yaml")
             flow_dag = yaml.safe_load(Path(source).read_text())
             assert (
                 get_node_settings(new_flow_dag_path)
                 == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
             )
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
+
+            connection_path = Path(output_path, "connections", "azure_open_ai_connection.yaml")
+            assert connection_path.exists()
+        finally:
+            shutil.rmtree(output_path, ignore_errors=True)
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
