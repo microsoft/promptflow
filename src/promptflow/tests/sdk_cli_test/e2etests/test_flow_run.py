@@ -837,7 +837,13 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
         )
         inputs = pf.runs._get_inputs(run=run)
-        assert inputs == {"line_number": [0], "question": ["input value from default"]}
+        assert inputs == {
+            "line_number": [0],
+            "input_bool": [False],
+            "input_dict": [{}],
+            "input_list": [[]],
+            "input_str": ["input value from default"],
+        }
 
         # inputs should be persisted when data value are used
         run = pf.run(
