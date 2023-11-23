@@ -31,7 +31,7 @@ def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input:
             input=input,
             model=deployment_name,
             extra_headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"}
-        )["data"][0]["embedding"]
+        ).data[0].embedding
     elif isinstance(connection, OpenAIConnection):
         client = OpenAI(
             api_key=connection.api_key,
@@ -41,7 +41,7 @@ def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input:
         return client.embeddings.create(
             input=input,
             model=model
-        )["data"][0]["embedding"]
+        ).data[0].embedding
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}' for embedding api. " \
                         f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
