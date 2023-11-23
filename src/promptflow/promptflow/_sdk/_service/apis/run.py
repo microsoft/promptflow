@@ -71,6 +71,7 @@ class RunSubmit(Resource):
         if not run_name:
             run = RunEntity(**run_dict)
             run_name = run._generate_run_name()
+            run_dict["name"] = run_name
         with tempfile.TemporaryDirectory() as temp_dir:
             run_file = Path(temp_dir) / "batch_run.json"
             with open(run_file, "w") as f:
