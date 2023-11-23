@@ -3,15 +3,17 @@
 # ---------------------------------------------------------
 import contextlib
 import time
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import pydash
 import pytest
 
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._utils import call_from_extension
+from promptflow._sdk._utils import call_from_extension, setup_user_agent_to_operation_context
+from promptflow._telemetry.activity import ActivityType, log_activity
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
-from promptflow._utils.utils import environment_variable_overwrite
+from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -42,16 +44,6 @@ def extension_consent_config_overwrite(val):
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=original_consent)
         else:
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=True)
-
-
-def parse_ua_to_dict(ua):
-    ua_dict = {}
-    ua_list = ua.split(" ")
-    for item in ua_list:
-        if item:
-            key, value = item.split("/")
-            ua_dict[key] = value
-    return ua_dict
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -156,15 +148,28 @@ class TestTelemetry:
         from promptflow import PFClient
         from promptflow.azure import PFClient as PFAzureClient
 
+        # log activity will pick correct ua
+        def assert_ua(*args, **kwargs):
+            ua = pydash.get(kwargs, "extra.custom_dimensions.user_agent", None)
+            ua_dict = parse_ua_to_dict(ua)
+            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+
+        logger = MagicMock()
+        logger.info = MagicMock()
+        logger.info.side_effect = assert_ua
+
         # get telemetry logger from SDK should not have extension ua
         # start a clean local SDK client
         with environment_variable_overwrite("USER_AGENT", ""):
             PFClient()
-            logger = get_telemetry_logger()
-            handler = next((h for h in logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
-            ua = handler._custom_dimensions["user_agent"]
-            ua_dict = parse_ua_to_dict(ua)
+            user_agent = setup_user_agent_to_operation_context()
+            ua_dict = parse_ua_to_dict(user_agent)
             assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+
+            # Call log_activity
+            with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
+                # Perform some activity
+                pass
 
         # start a clean Azure SDK client
         with environment_variable_overwrite("USER_AGENT", ""):
@@ -174,8 +179,11 @@ class TestTelemetry:
                 resource_group_name=pf._ml_client.resource_group_name,
                 workspace_name=pf._ml_client.workspace_name,
             )
-            logger = get_telemetry_logger()
-            handler = next((h for h in logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
-            ua = handler._custom_dimensions["user_agent"]
-            ua_dict = parse_ua_to_dict(ua)
+            user_agent = setup_user_agent_to_operation_context()
+            ua_dict = parse_ua_to_dict(user_agent)
             assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+
+            # Call log_activity
+            with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
+                # Perform some activity
+                pass
