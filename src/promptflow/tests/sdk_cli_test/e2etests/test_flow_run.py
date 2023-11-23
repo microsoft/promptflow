@@ -974,17 +974,18 @@ class TestFlowRun:
 
     def test_specify_run_output_path(self, pf: PFClient, mocker: MockerFixture) -> None:
         # mock to imitate user specify config run.output_path
+        specified_run_output_path = (Path.home() / PROMPT_FLOW_DIR_NAME / ".mock").resolve().as_posix()
         with mocker.patch(
             "promptflow._sdk._configuration.Configuration.get_run_output_path",
-            return_value=(Path.home() / "mock").resolve().as_posix(),
+            return_value=specified_run_output_path,
         ):
             run = create_run_against_multi_line_data_without_llm(pf)
             local_storage = LocalStorageOperations(run=run)
-            expected_output_path_prefix = (Path.home() / "mock" / run.name).resolve().as_posix()
+            expected_output_path_prefix = (Path(specified_run_output_path) / run.name).resolve().as_posix()
             assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
 
     def test_override_run_output_path_in_pf_client(self) -> None:
-        specified_run_output_path = (Path.home() / "another_mock").resolve().as_posix()
+        specified_run_output_path = (Path.home() / PROMPT_FLOW_DIR_NAME / ".another_mock").resolve().as_posix()
         pf = PFClient(config={"run.output_path": specified_run_output_path})
         run = create_run_against_multi_line_data_without_llm(pf)
         local_storage = LocalStorageOperations(run=run)
