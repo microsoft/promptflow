@@ -380,5 +380,5 @@ In this case, the system will use "../tmp/prepare_examples.py" as the entry file
 
 > Tips:
 > The additional includes feature can significantly streamline your workflow by eliminating the need to manually handle these references.
-> 1. To get a hands-on experience with this feature, practice with our sample [flow-with-additional-includes](../../../examples/flows/standard/flow-with-additional-includes/).
+> 1. To get a hands-on experience with this feature, practice with our sample [flow-with-additional-includes](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/flow-with-additional-includes).
 > 1. You can learn more about [How the flow 'additional includes' can streamline the transition of to the cloud](../../cloud/azureai/quick-start.md#run-snapshot-of-the-flow-with-additional-includes).
