@@ -65,6 +65,7 @@ class RunSubmitter:
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
         if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.CSharp:
+            BatchEngine.register_executor(FlowLanguage.CSharp, CSharpExecutorProxy)
             connections = []
         else:
             with _change_working_dir(flow.code):
@@ -74,7 +75,6 @@ class RunSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
-        BatchEngine.register_executor(FlowLanguage.CSharp, CSharpExecutorProxy)
         batch_engine = BatchEngine(flow.path, flow.code, connections=connections, storage=local_storage)
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
