@@ -14,7 +14,7 @@ from typing import Dict, Iterable, List, Tuple, Union
 
 import yaml
 
-from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, LOCAL_MGMT_DB_PATH
+from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._utils import (
@@ -651,6 +651,7 @@ class FlowOperations(TelemetryMixin):
         *,
         source_name: str = None,
         source_path_mapping: Dict[str, List[str]] = None,
+        timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
     ) -> Tuple[dict, dict]:
         """Generate flow tools meta for a specific flow or a specific node in the flow.
 
@@ -667,6 +668,8 @@ class FlowOperations(TelemetryMixin):
         :param source_path_mapping: If passed in None, do nothing; if passed in a dict, will record all reference yaml
                                     paths for each source in the dict passed in.
         :type source_path_mapping: Dict[str, List[str]]
+        :param timeout: timeout for generating tools meta
+        :type timeout: int
         :return: dict of tools meta and dict of tools errors
         :rtype: Tuple[dict, dict]
         """
@@ -681,6 +684,7 @@ class FlowOperations(TelemetryMixin):
                 target_source=source_name,
                 used_packages_only=True,
                 source_path_mapping=source_path_mapping,
+                timeout=timeout,
             )
 
         flow_tools_meta = flow_tools.pop("code", {})

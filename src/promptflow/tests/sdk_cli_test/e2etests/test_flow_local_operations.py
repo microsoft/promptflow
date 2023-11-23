@@ -406,6 +406,22 @@ class TestFlowLocalOperations:
         }
         assert tools_error == {}
 
+    def test_flow_generate_tools_meta_timeout(self, pf) -> None:
+        source = f"{FLOWS_DIR}/web_classification_invalid"
+
+        for tools_meta, tools_error in [
+            pf.flows._generate_tools_meta(source, timeout=1),
+            #  There is no built-in method to forcefully stop a running thread in Python
+            #  because abruptly stopping a thread can cause issues like resource leaks,
+            #  deadlocks, or inconsistent states.
+            # Caller (VSCode extension) will handle the timeout error.
+            # pf.flows._generate_tools_meta(source, source_name="convert_to_dict.py", timeout=1),
+        ]:
+            assert tools_meta == {"code": {}, "package": {}}
+            assert tools_error
+            for error in tools_error.values():
+                assert "timeout" in error
+
     def test_flow_generate_tools_meta_with_pkg_tool_with_custom_strong_type_connection(self, pf) -> None:
         source = f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection"
 

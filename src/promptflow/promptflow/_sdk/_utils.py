@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 import collections
 import hashlib
 import json
@@ -589,20 +588,42 @@ def _generate_tool_meta(
     timeout: int,
     *,
     include_errors_in_output: bool = False,
+    load_in_subprocess: bool = True,
 ) -> Dict[str, dict]:
+    """Generate tool meta from files.
+
+    :param flow_directory: flow directory
+    :param tools: tool list
+    :param raise_error: whether raise error when generate meta failed
+    :param timeout: timeout for generate meta
+    :param include_errors_in_output: whether include errors in output
+    :param load_in_subprocess: whether load tool meta with subprocess to prevent system path disturb. Default is True.
+        If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
+    :return: tool meta dict
+    """
     logger = LoggerFactory.get_logger(LOGGER_NAME)
-    # use multi process generate to avoid system path disturb
-    manager = multiprocessing.Manager()
-    tools_dict = manager.dict()
-    exception_dict = manager.dict()
-    p = multiprocessing.Process(
-        target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
-    )
-    p.start()
-    p.join(timeout=timeout)
-    if p.is_alive():
-        p.terminate()
-        p.join()
+    if load_in_subprocess:
+        # use multiprocess generate to avoid system path disturb
+        manager = multiprocessing.Manager()
+        tools_dict = manager.dict()
+        exception_dict = manager.dict()
+        p = multiprocessing.Process(
+            target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
+        )
+        p.start()
+        p.join(timeout=timeout)
+        if p.is_alive():
+            logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
+            p.terminate()
+            p.join()
+    else:
+        tools_dict, exception_dict = {}, {}
+
+        #  There is no built-in method to forcefully stop a running thread/coroutine in Python
+        #  because abruptly stopping a thread can cause issues like resource leaks,
+        #  deadlocks, or inconsistent states.
+        #  Caller needs to handle the timeout outside current process.
+        _generate_meta_from_files(tools, flow_directory, tools_dict, exception_dict)
     res = {source: tool for source, tool in tools_dict.items()}
 
     for source in res:
@@ -775,7 +796,8 @@ def generate_flow_tools_json(
     :param raise_error: whether to raise the error, default value is True.
     :param timeout: timeout for generation, default value is 60 seconds.
     :param include_errors_in_output: whether to include error messages in output, default value is False.
-    :param target_source: the source name to filter result, default value is None.
+    :param target_source: the source name to filter result, default value is None. Note that we will update system path
+        in coroutine if target_source is provided given it's expected to be from a specific cli call.
     :param used_packages_only: whether to only include used packages, default value is False.
     :param source_path_mapping: if specified, record yaml paths for each source.
     """
@@ -803,12 +825,14 @@ def generate_flow_tools_json(
             raise_error=raise_error,
             timeout=timeout,
             include_errors_in_output=include_errors_in_output,
+            # we don't need to protect system path according to the target usage when target_source is specified
+            load_in_subprocess=target_source is None,
         ),
+        # specified source may only appear in code tools
+        "package": {}
+        if target_source is not None
+        else _generate_package_tools(keys=list(used_packages) if used_packages_only else None),
     }
-
-    # specified source may only appear in code tools
-    if target_source is None:
-        flow_tools["package"] = _generate_package_tools(keys=list(used_packages) if used_packages_only else None)
 
     if dump:
         # dump as flow.tools.json
