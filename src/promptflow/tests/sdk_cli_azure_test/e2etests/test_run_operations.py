@@ -13,7 +13,7 @@ import pytest
 from azure.ai.ml.entities import Data
 
 from promptflow._sdk._constants import RunStatus
-from promptflow._sdk._errors import InvalidRunError, RunNotFoundError
+from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -297,13 +297,14 @@ class TestFlowRun:
         run = pf.runs.stream(run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74")
         assert run.status == RunStatus.COMPLETED
 
-    def test_stream_failed_run_logs(self, pf: PFClient, capfd):
-        run = pf.runs.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
+    def test_stream_failed_run_logs(self, pf: PFClient, capfd: pytest.CaptureFixture):
+        # (default) raise_on_error=True
+        with pytest.raises(InvalidRunStatusError):
+            pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
+        # raise_on_error=False
+        pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950", raise_on_error=False)
         out, _ = capfd.readouterr()
-        print(out)
-        assert run.status == "Failed"
-        # error info will store in run dict
-        assert "error" in run._to_dict()
+        assert "Input 'question' in line 0 is not provided for flow 'Simple_mock_answer'." in out
 
     @pytest.mark.skipif(
         condition=not is_live(),

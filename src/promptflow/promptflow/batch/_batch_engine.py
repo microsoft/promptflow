@@ -1,7 +1,6 @@
 import asyncio
 import uuid
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -29,11 +28,6 @@ from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
-
-
-class BatchRunSource(Enum):
-    Data = "Data"
-    Run = "Run"
 
 
 class BatchEngine:
@@ -105,13 +99,8 @@ class BatchEngine:
         :rtype: ~promptflow.batch._result.BatchResult
         """
         self._start_time = datetime.utcnow()
-        # Add property on operation context to indicate batch run source, which is used to differentiate the input
-        # source of a batch run. The batch run source can be either "Data" or "Run".
-        # If the input source is "Data", it means the input data is provided by the user.
-        # If the input source is "Run", it means the input data is provided by a previous run.
-        OperationContext.get_instance().batch_run_source = (
-            BatchRunSource.Run.name if "run.outputs" in input_dirs else BatchRunSource.Data.name
-        )
+        # set batch input source from input mapping
+        OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
         # resolve input data from input dirs and apply inputs mapping
         batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
         batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)

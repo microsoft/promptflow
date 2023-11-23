@@ -788,7 +788,11 @@ def update_user_agent_from_env_var():
 
 
 def setup_user_agent_to_operation_context(user_agent=None):
-    """Setup user agent to OperationContext"""
+    """Setup user agent to OperationContext.
+    For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
+    For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
+    For calls from SDK, ua will be like: promptflow-sdk/
+    """
     from promptflow._core.operation_context import OperationContext
 
     update_user_agent_from_env_var()
