@@ -200,7 +200,7 @@ class TestLineExecutionProcessPool:
         assert use_fork is False
 
     def test_process_set_environment_variable_failed(self, dev_connections):
-        with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
+        with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
             mock_logger.warning.return_value = None
             os.environ["PF_BATCH_METHOD"] = "test"
             line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
