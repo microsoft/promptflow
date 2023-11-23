@@ -13,7 +13,7 @@ __all__ = [
     "AbstractExecutorProxy",
     "APIBasedExecutorProxy",
     "BatchEngine",
-    "BatchResult",
     "CSharpExecutorProxy",
     "PythonExecutorProxy",
+    "BatchResult",
 ]
