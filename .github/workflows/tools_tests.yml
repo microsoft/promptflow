@@ -1,6 +1,6 @@
 name: tools_tests
 on:
-  pull_request_target:
+  pull_request:
     paths:
       - src/promptflow-tools/**
       - '**tools_tests.yml'
