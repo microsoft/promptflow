@@ -21,9 +21,11 @@ import yaml
 from promptflow._cli._pf.entry import main
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
@@ -1545,3 +1547,16 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert "**data_scrubbed**" in log_content
+
+    def test_cli_ua(self, pf):
+        with environment_variable_overwrite("USER_AGENT", ""):
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "run",
+                    "show",
+                    "--name",
+                    "not_exist",
+                )
+        user_agent = setup_user_agent_to_operation_context()
+        ua_dict = parse_ua_to_dict(user_agent)
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow"}

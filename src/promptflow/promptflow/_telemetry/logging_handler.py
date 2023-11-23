@@ -17,17 +17,14 @@ def get_appinsights_log_handler():
     """
     Enable the OpenCensus logging handler for specified logger and instrumentation key to send info to AppInsights.
     """
-    from promptflow._sdk._utils import setup_user_agent_to_operation_context
     from promptflow._telemetry.telemetry import is_telemetry_enabled
 
     try:
 
         config = Configuration.get_instance()
         instrumentation_key = INSTRUMENTATION_KEY
-        user_agent = setup_user_agent_to_operation_context()
         custom_properties = {
             "python_version": platform.python_version(),
-            "user_agent": user_agent,
             "installation_id": config.get_or_set_installation_id(),
         }
 

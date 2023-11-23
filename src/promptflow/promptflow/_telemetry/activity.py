@@ -51,11 +51,16 @@ def log_activity(
     :type custom_dimensions: dict
     :return: None
     """
+    from promptflow._sdk._utils import setup_user_agent_to_operation_context
+
+    user_agent = setup_user_agent_to_operation_context()
+
     activity_info = {
         # TODO(2699383): use same request id with service caller
         "request_id": str(uuid.uuid4()),
         "activity_name": activity_name,
         "activity_type": activity_type,
+        "user_agent": user_agent,
     }
     custom_dimensions = custom_dimensions or {}
     activity_info.update(custom_dimensions)

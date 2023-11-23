@@ -11,9 +11,8 @@ import pytest
 from azure.ai.ml.entities import Data
 
 from promptflow._cli._pf_azure.entry import main
+from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
-from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler
-from promptflow._telemetry.telemetry import get_telemetry_logger
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow.azure import PFClient
 
@@ -160,8 +159,6 @@ class TestCliWithAzure:
                     "not_exist",
                     pf=pf,
                 )
-            logger = get_telemetry_logger()
-            handler = next((h for h in logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
-            ua = handler._custom_dimensions["user_agent"]
-            ua_dict = parse_ua_to_dict(ua)
+            user_agent = setup_user_agent_to_operation_context()
+            ua_dict = parse_ua_to_dict(user_agent)
             assert ua_dict.keys() == {"promptflow-sdk", "promptflow", "promptflow-cli"}
