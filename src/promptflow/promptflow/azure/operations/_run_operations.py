@@ -759,7 +759,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _resolve_flow(self, run: Run):
         if run._use_remote_flow:
-            return run.flow
+            return self._resolve_flow_definition_resource_id(flow_name=run._flow_name)
         flow = load_flow(run.flow)
         # ignore .promptflow/dag.tools.json only for run submission scenario
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
@@ -936,8 +936,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
         rest_obj.session_id = session_id
-        if run._use_remote_flow:
-            rest_obj.flow_definition_resource_id = self._resolve_flow_definition_resource_id(flow_name=run._flow_name)
 
         if runtime == "None":
             # HARD CODE for office scenario, use workspace default runtime when specified None

@@ -96,9 +96,3 @@ class FlowOperationError(PromptflowException):
     """Exception raised when flow operation failed."""
 
     pass
-
-
-class FlowNotFoundError(PromptflowException):
-    """Exception raised when flow not found."""
-
-    pass

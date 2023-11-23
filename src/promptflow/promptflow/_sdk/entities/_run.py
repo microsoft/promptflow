@@ -14,6 +14,7 @@ from dateutil import parser as date_parser
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_VARIANT,
+    FLOW_RESOURCE_ID_PREFIX,
     PARAMS_OVERRIDE_KEY,
     REMOTE_URI_PREFIX,
     RUN_MACRO,
@@ -482,9 +483,15 @@ class Run(YAMLTranslatableMixin):
                     inputs_mapping[k] = val
 
         if self._use_remote_flow:
-            # upload via _check_and_upload_path
             # submit with params flow_definition_resource_id which will be resolved in pfazure run create operation
+            # the flow resource id looks like: "azureml://locations/<region>/workspaces/<ws-name>/flows/<flow-name>"
+            if not isinstance(self.flow, str) or not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX):
+                raise ValueError(
+                    f"Invalid flow value when transforming to rest object: {self.flow!r}. "
+                    f"Expecting a flow definition resource id starts with '{FLOW_RESOURCE_ID_PREFIX}'"
+                )
             return SubmitBulkRunRequest(
+                flow_definition_resource_id=self.flow,
                 run_id=self.name,
                 # will use user provided display name since PFS will have special logic to update it.
                 run_display_name=self._get_default_display_name(),
