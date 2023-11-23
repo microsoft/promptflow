@@ -15,10 +15,10 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
 class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
-        self._connection_dict = dict(connection)
         self._client = OpenAIClient(
-            api_key=self._connection_dict["api_key"],
-            organization=self._connection_dict["organization"]
+            api_key=connection.api_key,
+            organization=connection.organization,
+            base_url=connection.base_url
         )
 
     @tool(streaming_option_parameter="stream")

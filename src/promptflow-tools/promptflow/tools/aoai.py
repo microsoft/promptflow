@@ -19,11 +19,11 @@ from promptflow.contracts.types import PromptTemplate
 class AzureOpenAI(ToolProvider):
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
-        self._connection_dict = dict(connection)
+        self.connection = connection
         self._client = AzureOpenAIClient(
-            api_key=self._connection_dict["api_key"],
-            api_version=self._connection_dict["api_version"],
-            azure_endpoint=self._connection_dict["api_base"]
+            api_key=connection.api_key,
+            api_version=connection.api_version,
+            azure_endpoint=connection.api_base
         )
 
     def calculate_cache_string_for_completion(
