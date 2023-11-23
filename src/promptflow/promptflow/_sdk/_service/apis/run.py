@@ -20,9 +20,9 @@ api = Namespace("Runs", description="Runs Management")
 
 # Define update run request parsing
 update_run_parser = api.parser()
-update_run_parser.add_argument("display_name", type=str, location="args", required=False)
-update_run_parser.add_argument("description", type=str, location="args", required=False)
-update_run_parser.add_argument("tags", type=str, location="args", required=False)
+update_run_parser.add_argument("display_name", type=str, location="form", required=False)
+update_run_parser.add_argument("description", type=str, location="form", required=False)
+update_run_parser.add_argument("tags", type=str, location="form", required=False)
 
 # Define visualize request parsing
 visualize_parser = api.parser()

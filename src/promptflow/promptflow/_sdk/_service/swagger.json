@@ -32,6 +32,21 @@
                     "type": "string"
                 }
             ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
             "post": {
                 "responses": {
                     "200": {
@@ -78,21 +93,6 @@
                         }
                     }
                 ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Get connection",
-                "operationId": "get_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -188,6 +188,21 @@
                     "type": "string"
                 }
             ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -202,35 +217,24 @@
                 "parameters": [
                     {
                         "name": "display_name",
-                        "in": "query",
+                        "in": "formData",
                         "type": "string"
                     },
                     {
                         "name": "description",
-                        "in": "query",
+                        "in": "formData",
                         "type": "string"
                     },
                     {
                         "name": "tags",
-                        "in": "query",
+                        "in": "formData",
                         "type": "string"
                     }
                 ],
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
                 "tags": [
                     "Runs"
                 ]
@@ -500,7 +504,7 @@
         "RunList": {
             "type": "array",
             "items": {
-                "type": "RunDict"
+                "$ref": "#/definitions/RunDict"
             }
         },
         "RunDict": {
