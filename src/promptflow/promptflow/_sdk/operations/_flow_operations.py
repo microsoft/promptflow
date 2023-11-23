@@ -644,6 +644,7 @@ class FlowOperations(TelemetryMixin):
 
         return validation_result
 
+    @monitor_operation(activity_name="pf.flows._generate_tools_meta", activity_type=ActivityType.INTERNALCALL)
     def _generate_tools_meta(
         self,
         flow: Union[str, PathLike],
@@ -664,12 +665,12 @@ class FlowOperations(TelemetryMixin):
         :param source_name: source name to generate tools meta. If not specified, generate tools meta for all sources.
         :type source_name: str
         :param source_path_mapping: If passed in None, do nothing; if passed in a dict, will record all reference yaml
-                                    paths for each source.
+                                    paths for each source in the dict passed in.
         :type source_path_mapping: Dict[str, List[str]]
         :return: dict of tools meta and dict of tools errors
         :rtype: Tuple[dict, dict]
         """
-        flow = load_flow(source=flow)
+        flow: ProtectedFlow = load_flow(source=flow)
 
         with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(

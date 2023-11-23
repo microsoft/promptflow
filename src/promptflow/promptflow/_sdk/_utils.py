@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from enum import Enum
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
+from typing import IO, Any, AnyStr, Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import keyring
@@ -695,6 +695,68 @@ def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
     return collect_package_tools(keys=keys)
 
 
+def _update_involved_tools_and_packages(
+    _node,
+    _node_path,
+    *,
+    tools: List,
+    used_packages: Set,
+    source_path_mapping: Dict[str, List[str]],
+):
+    source, tool_type = pydash.get(_node, "source.path", None), _node.get("type", None)
+
+    used_packages.add(pydash.get(_node, "source.tool", None))
+
+    if source is None or tool_type is None:
+        return
+
+    # for custom LLM tool, its source points to the used prompt template so handle it as prompt tool
+    if tool_type == ToolType.CUSTOM_LLM:
+        tool_type = ToolType.PROMPT
+
+    if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
+        return
+    pair = (source, tool_type.lower())
+    if pair not in tools:
+        tools.append(pair)
+
+    source_path_mapping[source].append(f"{_node_path}.source.path")
+
+
+def _get_involved_code_and_package(
+    data: dict,
+) -> Tuple[List[Tuple[str, str]], Set[str], Dict[str, List[str]]]:
+    tools = []  # List[Tuple[source_file, tool_type]]
+    used_packages = set()
+    source_path_mapping = collections.defaultdict(list)
+
+    for node_i, node in enumerate(data[NODES]):
+        _update_involved_tools_and_packages(
+            node,
+            f"{NODES}.{node_i}",
+            tools=tools,
+            used_packages=used_packages,
+            source_path_mapping=source_path_mapping,
+        )
+
+        # understand DAG to parse variants
+        # TODO: should we allow source to appear both in node and node variants?
+        if node.get(USE_VARIANTS) is True:
+            node_variants = data[NODE_VARIANTS][node["name"]]
+            for variant_id in node_variants[VARIANTS]:
+                node_with_variant = node_variants[VARIANTS][variant_id][NODE]
+                _update_involved_tools_and_packages(
+                    node_with_variant,
+                    f"{NODE_VARIANTS}.{node['name']}.{VARIANTS}.{variant_id}.{NODE}",
+                    tools=tools,
+                    used_packages=used_packages,
+                    source_path_mapping=source_path_mapping,
+                )
+    if None in used_packages:
+        used_packages.remove(None)
+    return tools, used_packages, source_path_mapping
+
+
 def generate_flow_tools_json(
     flow_directory: Union[str, Path],
     dump: bool = True,
@@ -721,48 +783,20 @@ def generate_flow_tools_json(
     # parse flow DAG
     with open(flow_directory / DAG_FILE_NAME, "r", encoding=DEFAULT_ENCODING) as f:
         data = yaml.safe_load(f)
-    tools = []  # List[Tuple[source_file, tool_type]]
-    used_packages = set()
 
-    def process_node(_node, _node_path):
-        source, tool_type = pydash.get(_node, "source.path", None), _node.get("type", None)
-        if target_source and source != target_source:
-            return
-        used_packages.add(pydash.get(_node, "source.tool", None))
+    tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 
-        if source is None or tool_type is None:
-            return
+    # update passed in source_path_mapping if specified
+    if source_path_mapping is not None:
+        source_path_mapping.update(_source_path_mapping)
 
-        if tool_type == ToolType.CUSTOM_LLM:
-            tool_type = ToolType.PROMPT
-
-        if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
-            return
-        tools.append((source, tool_type.lower()))
-        if source_path_mapping is not None:
-            if source not in source_path_mapping:
-                source_path_mapping[source] = []
-
-            source_path_mapping[source].append(f"{_node_path}.source.path")
-
-    for node_i, node in enumerate(data[NODES]):
-        process_node(node, f"{NODES}.{node_i}")
-
-        # understand DAG to parse variants
-        # TODO: should we allow source to appear both in node and node variants?
-        if node.get(USE_VARIANTS) is True:
-            node_variants = data[NODE_VARIANTS][node["name"]]
-            for variant_id in node_variants[VARIANTS]:
-                current_node = node_variants[VARIANTS][variant_id][NODE]
-                process_node(current_node, f"{NODE_VARIANTS}.{node['name']}.{VARIANTS}.{variant_id}.{NODE}")
-
-    if None in used_packages:
-        used_packages.remove(None)
+    # filter tools by target_source if specified
+    if target_source is not None:
+        tools = list(filter(lambda x: x[0] == target_source, tools))
 
     # generate content
     # TODO: remove type in tools (input) and code (output)
     flow_tools = {
-        "package": _generate_package_tools(keys=list(used_packages) if used_packages_only else None),
         "code": _generate_tool_meta(
             flow_directory,
             tools,
@@ -771,6 +805,10 @@ def generate_flow_tools_json(
             include_errors_in_output=include_errors_in_output,
         ),
     }
+
+    # specified source may only appear in code tools
+    if target_source is None:
+        flow_tools["package"] = _generate_package_tools(keys=list(used_packages) if used_packages_only else None)
 
     if dump:
         # dump as flow.tools.json
