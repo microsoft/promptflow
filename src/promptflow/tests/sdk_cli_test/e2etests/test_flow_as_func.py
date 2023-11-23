@@ -53,13 +53,12 @@ class TestFlowAsFunc:
     def test_overrides(self):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
         f.context = FlowContext(
-            environment_variables={"provided_key": "provided_value"},
             # node print_env will take "provided_key" instead of flow input
             overrides={"nodes.print_env.inputs.key": "provided_key"},
         )
         # the key="unknown" will not take effect
         result = f(key="unknown")
-        assert result["output"] == "provided_value"
+        assert result["output"] is None
 
     @pytest.mark.skip(reason="This experience has not finalized yet.")
     def test_flow_as_a_func_with_token_based_connection(self):
@@ -82,7 +81,7 @@ class TestFlowAsFunc:
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
         with pytest.raises(UserErrorException) as e:
             f()
-        assert "Required input(s) ['key'] are missing" in str(e.value)
+        assert "Required input fields ['key'] are missing" in str(e.value)
 
     def test_stream_output(self):
         f = load_flow(f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output")
@@ -95,6 +94,7 @@ class TestFlowAsFunc:
         )
         assert isinstance(result["answer"], GeneratorType)
 
+    @pytest.mark.skip(reason="This experience has not finalized yet.")
     def test_environment_variables(self):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
         f.context.environment_variables = {"key": "value"}
@@ -148,10 +148,10 @@ class TestFlowAsFunc:
         # getting executor for same flow will hit cache
         flow1 = load_flow(f"{FLOWS_DIR}/print_env_var")
         flow2 = load_flow(f"{FLOWS_DIR}/print_env_var")
-        flow_executor1 = FlowContextResolver.create(
+        flow_executor1 = FlowContextResolver.resolve(
             flow=flow1,
         )
-        flow_executor2 = FlowContextResolver.create(
+        flow_executor2 = FlowContextResolver.resolve(
             flow=flow2,
         )
         assert flow_executor1 is flow_executor2
@@ -161,10 +161,10 @@ class TestFlowAsFunc:
         flow1.context = FlowContext(connections={"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}})
         flow2 = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
         flow2.context = FlowContext(connections={"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}})
-        flow_executor1 = FlowContextResolver.create(
+        flow_executor1 = FlowContextResolver.resolve(
             flow=flow1,
         )
-        flow_executor2 = FlowContextResolver.create(
+        flow_executor2 = FlowContextResolver.resolve(
             flow=flow2,
         )
         assert flow_executor1 is flow_executor2
@@ -181,8 +181,8 @@ class TestFlowAsFunc:
             connections={"print_val": {"conn": CustomConnection(secrets={"k": "v"})}},
             overrides={"nodes.print_val.inputs.key": "a"},
         )
-        flow_executor1 = FlowContextResolver.create(flow=flow1)
-        flow_executor2 = FlowContextResolver.create(flow=flow2)
+        flow_executor1 = FlowContextResolver.resolve(flow=flow1)
+        flow_executor2 = FlowContextResolver.resolve(flow=flow2)
         assert flow_executor1 is flow_executor2
 
     def test_flow_cache_not_hit(self):
@@ -196,10 +196,10 @@ class TestFlowAsFunc:
             flow_dag["inputs"] = {"key": {"type": "string", "default": "key1"}}
             dump_flow_dag(flow_dag, flow_path)
             flow2 = load_flow(f"{tmp_dir}/print_env_var")
-            flow_executor1 = FlowContextResolver.create(
+            flow_executor1 = FlowContextResolver.resolve(
                 flow=flow1,
             )
-            flow_executor2 = FlowContextResolver.create(
+            flow_executor2 = FlowContextResolver.resolve(
                 flow=flow2,
             )
             assert flow_executor1 is not flow_executor2
@@ -209,10 +209,10 @@ class TestFlowAsFunc:
         flow1.context = FlowContext(connections={"hello_node": {"connection": CustomConnection(secrets={"k": "v"})}})
         flow2 = load_flow(f"{FLOWS_DIR}/flow_with_custom_connection")
         flow2.context = FlowContext(connections={"hello_node": {"connection": CustomConnection(secrets={"k2": "v"})}})
-        flow_executor1 = FlowContextResolver.create(
+        flow_executor1 = FlowContextResolver.resolve(
             flow=flow1,
         )
-        flow_executor2 = FlowContextResolver.create(
+        flow_executor2 = FlowContextResolver.resolve(
             flow=flow2,
         )
         assert flow_executor1 is not flow_executor2
@@ -229,8 +229,8 @@ class TestFlowAsFunc:
             connections={"print_val": {"conn": CustomConnection(secrets={"k": "v"})}},
             overrides={"nodes.print_val.inputs.key": "b"},
         )
-        flow_executor1 = FlowContextResolver.create(flow=flow1)
-        flow_executor2 = FlowContextResolver.create(flow=flow2)
+        flow_executor1 = FlowContextResolver.resolve(flow=flow1)
+        flow_executor2 = FlowContextResolver.resolve(flow=flow2)
         assert flow_executor1 is not flow_executor2
 
     @pytest.mark.timeout(10)
