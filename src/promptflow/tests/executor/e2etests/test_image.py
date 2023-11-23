@@ -86,34 +86,32 @@ def get_test_cases_for_node_run():
     ]
 
 
-def assert_contain_image_reference(value):
-    if isinstance(value, FlowRunInfo) or isinstance(value, RunInfo):
-        assert_contain_image_reference(value.api_calls)
-        assert_contain_image_reference(value.inputs)
-        assert_contain_image_reference(value.output)
+def contain_image_reference(value):
+    if isinstance(value, (FlowRunInfo, RunInfo)):
+        assert contain_image_reference(value.api_calls)
+        assert contain_image_reference(value.inputs)
+        assert contain_image_reference(value.output)
+        return True
     assert not isinstance(value, Image)
     if isinstance(value, list):
-        for item in value:
-            assert_contain_image_reference(item)
-    elif isinstance(value, dict):
+        return any(contain_image_reference(item) for item in value)
+    if isinstance(value, dict):
         if is_multimedia_dict(value):
             v = list(value.values())[0]
             assert isinstance(v, str)
-        else:
-            for _, v in value.items():
-                assert_contain_image_reference(v)
+            return True
+        return any(contain_image_reference(v) for v in value.values())
+    return False
 
 
-def assert_contain_image_object(value):
+def contain_image_object(value):
     if isinstance(value, list):
-        for item in value:
-            assert_contain_image_object(item)
+        return any(contain_image_object(item) for item in value)
     elif isinstance(value, dict):
         assert not is_multimedia_dict(value)
-        for _, v in value.items():
-            assert_contain_image_object(v)
+        return any(contain_image_object(v) for v in value.values())
     else:
-        assert isinstance(value, Image)
+        return isinstance(value, Image)
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -132,12 +130,14 @@ class TestExecutorWithImage:
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
         flow_result = executor.exec_line(inputs)
         assert isinstance(flow_result.output, dict)
-        assert_contain_image_object(flow_result.output)
+        assert contain_image_object(flow_result.output)
+        # Assert output also contains plain text.
+        assert any(isinstance(v, str) for v in flow_result.output)
         assert flow_result.run_info.status == Status.Completed
-        assert_contain_image_reference(flow_result.run_info)
+        assert contain_image_reference(flow_result.run_info)
         for _, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
-            assert_contain_image_reference(node_run_info)
+            assert contain_image_reference(node_run_info)
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs", get_test_cases_for_node_run()
@@ -157,7 +157,7 @@ class TestExecutorWithImage:
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
-        assert_contain_image_reference(run_info)
+        assert contain_image_reference(run_info)
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
@@ -191,7 +191,7 @@ class TestExecutorWithImage:
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
-        assert_contain_image_reference(run_info)
+        assert contain_image_reference(run_info)
 
     @pytest.mark.parametrize(
         "flow_folder, input_dirs, inputs_mapping, output_key, expected_outputs_number, has_aggregation_node",
@@ -285,4 +285,4 @@ class TestExecutorWithImage:
         aggregation_results = executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
         for _, node_run_info in aggregation_results.node_run_infos.items():
             assert node_run_info.status == Status.Completed
-            assert_contain_image_reference(node_run_info)
+            assert contain_image_reference(node_run_info)
