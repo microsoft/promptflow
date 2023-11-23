@@ -430,29 +430,34 @@ class TestSubmitterViaProxy(TestSubmitter):
             stream=stream_log,
             credential_list=credential_list,
         ):
-            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            flow_executor = CSharpExecutorProxy.create(
-                flow_file=self.flow.path,
-                working_dir=self.flow.code,
-                connections=connections,
-                storage=storage,
-            )
+            try:
+                storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+                flow_executor = CSharpExecutorProxy.create(
+                    flow_file=self.flow.path,
+                    working_dir=self.flow.code,
+                    connections=connections,
+                    storage=storage,
+                )
 
-            line_result = asyncio.run(flow_executor.exec_line_async(inputs, index=0))
-            line_result.output = persist_multimedia_data(
-                line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
-            )
-            if line_result.aggregation_inputs:
-                # Convert inputs of aggregation to list type
-                flow_inputs = {k: [v] for k, v in inputs.items()}
-                aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                aggregation_results = asyncio.run(flow_executor.exec_aggregation_async(flow_inputs, aggregation_inputs))
-                line_result.node_run_infos.update(aggregation_results.node_run_infos)
-                line_result.run_info.metrics = aggregation_results.metrics
-            if isinstance(line_result.output, dict):
-                # Remove line_number from output
-                line_result.output.pop(LINE_NUMBER_KEY, None)
-                generator_outputs = self._get_generator_outputs(line_result.output)
-                if generator_outputs:
-                    logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-            return line_result
+                line_result = asyncio.run(flow_executor.exec_line_async(inputs, index=0))
+                line_result.output = persist_multimedia_data(
+                    line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+                )
+                if line_result.aggregation_inputs:
+                    # Convert inputs of aggregation to list type
+                    flow_inputs = {k: [v] for k, v in inputs.items()}
+                    aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+                    aggregation_results = asyncio.run(
+                        flow_executor.exec_aggregation_async(flow_inputs, aggregation_inputs)
+                    )
+                    line_result.node_run_infos.update(aggregation_results.node_run_infos)
+                    line_result.run_info.metrics = aggregation_results.metrics
+                if isinstance(line_result.output, dict):
+                    # Remove line_number from output
+                    line_result.output.pop(LINE_NUMBER_KEY, None)
+                    generator_outputs = self._get_generator_outputs(line_result.output)
+                    if generator_outputs:
+                        logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+                return line_result
+            finally:
+                CSharpExecutorProxy.destroy()
