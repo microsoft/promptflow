@@ -67,7 +67,8 @@ class CsharpExecutorProxy(AbstractExecutorProxy):
             csharp_datetime.Hour,
             csharp_datetime.Minute,
             csharp_datetime.Second,
-            csharp_datetime.Microsecond,
+            # seems that microsecond is not supported in all versions of DotNet?
+            # csharp_datetime.Microsecond,
         )
 
     def exec_line(
@@ -80,12 +81,14 @@ class CsharpExecutorProxy(AbstractExecutorProxy):
         from System.Collections.Generic import Dictionary
 
         from Promptflow.Contracts.JsonSchema import ExecuteFlowRequest
+        from Promptflow import FlowBase
 
         csharp_request = ExecuteFlowRequest()
         csharp_inputs = Dictionary[String, Object]()
         for key, value in inputs.items():
             ## csharp chat flow does not support chat_history input for now
             if key == "chat_history":
+                csharp_inputs[key] = FlowBase.ChatHistory()
                 continue
             csharp_inputs[key] = value
         csharp_request.Inputs = csharp_inputs
