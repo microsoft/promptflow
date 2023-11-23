@@ -4,6 +4,7 @@
 
 import datetime
 import json
+import logging
 import uuid
 from os import PathLike
 from pathlib import Path
@@ -16,6 +17,7 @@ from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_VARIANT,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
+    LOGGER_NAME,
     PARAMS_OVERRIDE_KEY,
     PROMPT_FLOW_DIR_NAME,
     RUN_MACRO,
@@ -31,7 +33,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
-from promptflow._sdk._utils import _sanitize_python_variable_name, parse_variant, print_yellow_warning
+from promptflow._sdk._utils import _sanitize_python_variable_name, parse_variant
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -555,5 +557,5 @@ class Run(YAMLTranslatableMixin):
                     f"{config.get_run_output_path()!r}; "
                     f"will use default output path: {path!r} instead."
                 )
-                print_yellow_warning(warning_message)
+                logging.getLogger(LOGGER_NAME).warning(warning_message)
         return (path / str(self.name)).resolve()

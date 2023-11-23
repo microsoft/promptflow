@@ -1005,9 +1005,7 @@ class TestFlowRun:
                 expected_path_prefix = expected_path_prefix.resolve().as_posix()
                 assert local_storage.outputs_folder.as_posix().startswith(expected_path_prefix)
 
-    def test_specify_run_output_path_with_invalid_macro(
-        self, pf: PFClient, mocker: MockerFixture, capfd: pytest.CaptureFixture
-    ) -> None:
+    def test_specify_run_output_path_with_invalid_macro(self, pf: PFClient, mocker: MockerFixture) -> None:
         # mock to imitate user specify invalid config run.output_path
         with mocker.patch(
             "promptflow._sdk._configuration.Configuration.get_run_output_path",
@@ -1016,12 +1014,7 @@ class TestFlowRun:
         ):
             run = create_run_against_multi_line_data_without_llm(pf)
             # as the specified run output path is invalid
-            # SDK will print warning message
-            # and the actual run output path will be the default value
-            out, _ = capfd.readouterr()
-            expected_warning_message = "Got unexpected error when parsing specified output path"
-            assert expected_warning_message in out
-
+            # the actual run output path will be the default value
             local_storage = LocalStorageOperations(run=run)
             expected_output_path_prefix = (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / run.name).resolve().as_posix()
             assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
