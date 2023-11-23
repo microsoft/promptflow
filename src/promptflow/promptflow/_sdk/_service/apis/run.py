@@ -12,6 +12,7 @@ from flask_restx import Namespace, Resource, fields
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
 from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow.contracts._run_management import RunMetadata
@@ -66,22 +67,21 @@ class RunSubmit(Resource):
     @api.doc(body=dict_field, description="Submit run")
     def post(self):
         run_dict = request.get_json(force=True)
-        run_name = run_dict.get("name", "")
+        run_name = run_dict.get("name", None)
+        if not run_name:
+            run = RunEntity(**run_dict)
+            run_name = run._generate_run_name()
         with tempfile.TemporaryDirectory() as temp_dir:
             run_file = Path(temp_dir) / "batch_run.json"
             with open(run_file, "w") as f:
                 json.dump(run_dict, f)
             cmd = f"pf run create --file {run_file}"
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            stdout, stderr = process.communicate()
+            _, stderr = process.communicate()
             if process.returncode == 0:
-                if run_name:
-                    run_op = RunOperations()
-                    run = run_op.get(name=run_name)
-                    return jsonify(run._to_dict())
-                else:
-                    run_dict = json.loads("".join(stdout.decode("utf-8")))
-                    return jsonify(run_dict)
+                run_op = RunOperations()
+                run = run_op.get(name=run_name)
+                return jsonify(run._to_dict())
             else:
                 raise Exception(f"Create batch run failed: {stderr}")
 
