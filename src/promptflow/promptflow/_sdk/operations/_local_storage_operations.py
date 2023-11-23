@@ -25,7 +25,7 @@ from promptflow._sdk._constants import (
     LocalStorageFilenames,
 )
 from promptflow._sdk._errors import BulkRunException
-from promptflow._sdk._utils import generate_flow_tools_json
+from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
@@ -220,14 +220,13 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
+        patterns = [pattern for pattern in PromptflowIgnoreFile.IGNORE_FILE]
+        # ignore current output parent folder to avoid potential recursive copy
+        patterns.append(self._run._output_path.parent.name)
         shutil.copytree(
             flow.code.as_posix(),
             self._snapshot_folder_path,
-            ignore=shutil.ignore_patterns(
-                "__pycache__",
-                # ignore current output parent folder to avoid potential recursive copy
-                self._run._output_path.parent.name,
-            ),
+            ignore=shutil.ignore_patterns(*patterns),
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one
