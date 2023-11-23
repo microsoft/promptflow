@@ -27,6 +27,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        **kwargs,
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
         command = ["dotnet", SERVICE_DLL, "-p", EXECUTOR_PORT, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]

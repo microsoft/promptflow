@@ -18,6 +18,7 @@ class AbstractExecutorProxy:
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        **kwargs,
     ) -> "AbstractExecutorProxy":
         """Create a new executor"""
         raise NotImplementedError()
