@@ -218,7 +218,6 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
         self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
         self._executable = None
-        self._submitter = None
 
     @property
     def flow_dag_path(self) -> Path:
@@ -338,17 +337,15 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
             self._executable = self._init_executable()
 
         if self._executable.program_language == FlowLanguage.Csharp:
-            if self._submitter is None:
-                self._submitter = TestSubmitterViaProxy(flow=self, flow_context=self.context)
-
-            result = self._submitter.exec_with_inputs(
-                inputs=inputs,
-            )
+            with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
+                result = submitter.exec_with_inputs(
+                    inputs=inputs,
+                )
+                return result
         else:
 
             invoker = FlowContextResolver.resolve(flow=self)
-
             result = invoker._invoke(
                 data=inputs,
             )
-        return result
+            return result

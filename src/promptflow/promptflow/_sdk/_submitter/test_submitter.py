@@ -397,24 +397,26 @@ class TestSubmitter:
 class TestSubmitterViaProxy(TestSubmitter):
     def __init__(self, flow: Flow, flow_context: FlowContext, client=None):
         super().__init__(flow, flow_context, client)
-        self._init_executor()
 
-    def _init_executor(self):
-        logger.info("Promptflow Proxy executor starts initializing...")
-        connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
-            tools_meta=CsharpExecutorProxy.generate_tool_metadata(
-                flow_dag=self.flow.dag,
-                working_dir=self.flow.code,
+    @contextlib.contextmanager
+    def init(self):
+        with super().init():
+            logger.info("Promptflow proxy executor starts initializing...")
+            connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
+                tools_meta=CsharpExecutorProxy.generate_tool_metadata(
+                    flow_dag=self.flow.dag,
+                    working_dir=self.flow.code,
+                )
             )
-        )
-        storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-        self._executor = CsharpExecutorProxy.create(
-            flow_file=self.flow.path,
-            working_dir=self.flow.code,
-            connections=connections,
-            storage=storage,
-        )
-        logger.info("Promptflow executor initiated successfully.")
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            self._executor = CsharpExecutorProxy.create(
+                flow_file=self.flow.path,
+                working_dir=self.flow.code,
+                connections=connections,
+                storage=storage,
+            )
+            logger.info("Promptflow proxy executor initiated successfully.")
+            yield self
 
     def flow_test(
         self,
@@ -447,7 +449,15 @@ class TestSubmitterViaProxy(TestSubmitter):
             stream=stream_log,
             credential_list=credential_list,
         ):
-            line_result = self._executor.exec_line(
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            flow_executor = CsharpExecutorProxy.create(
+                flow_file=self.flow.path,
+                working_dir=self.flow.code,
+                connections=connections,
+                storage=storage,
+            )
+
+            line_result = flow_executor.exec_line(
                 inputs,
                 index=0,
             )
@@ -458,7 +468,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 # Convert inputs of aggregation to list type
                 flow_inputs = {k: [v] for k, v in inputs.items()}
                 aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                aggregation_results = self._executor.exec_aggregation_async(
+                aggregation_results = flow_executor.exec_aggregation_async(
                     flow_inputs, aggregation_inputs=aggregation_inputs
                 )
                 line_result.node_run_infos.update(aggregation_results.node_run_infos)
