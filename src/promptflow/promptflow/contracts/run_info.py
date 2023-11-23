@@ -103,9 +103,6 @@ class RunInfo:
     @staticmethod
     def deserialize(data: dict) -> "RunInfo":
         """Deserialize the RunInfo from a dict."""
-        # TODO: should use utc time, use parser to workaround
-        start_time = parser.parse(data.get("start_time"))
-        end_time = parser.parse(data.get("end_time"))
         run_info = RunInfo(
             node=data.get("node"),
             flow_run_id=data.get("flow_run_id"),
@@ -116,8 +113,8 @@ class RunInfo:
             metrics=data.get("metrics", None),
             error=data.get("error", None),
             parent_run_id=data.get("parent_run_id", None),
-            start_time=start_time,
-            end_time=end_time,
+            start_time=parser.parse(data.get("start_time")),
+            end_time=parser.parse(data.get("end_time")),
             index=data.get("index", None),
             api_calls=data.get("api_calls", None),
             variant_id=data.get("variant_id", ""),
@@ -206,9 +203,6 @@ class FlowRunInfo:
     @staticmethod
     def deserialize(data: dict) -> "FlowRunInfo":
         """Deserialize the FlowRunInfo from a dict."""
-        # TODO: should use utc time, use parser to workaround
-        start_time = parser.parse(data.get("start_time"))
-        end_time = parser.parse(data.get("end_time"))
         flow_run_info = FlowRunInfo(
             run_id=data.get("run_id"),
             status=Status(data.get("status")),
@@ -221,8 +215,8 @@ class FlowRunInfo:
             root_run_id=data.get("root_run_id", None),
             source_run_id=data.get("source_run_id", None),
             flow_id=data.get("flow_id"),
-            start_time=start_time,
-            end_time=end_time,
+            start_time=parser.parse(data.get("start_time")),
+            end_time=parser.parse(data.get("end_time")),
             index=data.get("index", None),
             api_calls=data.get("api_calls", None),
             variant_id=data.get("variant_id", ""),
