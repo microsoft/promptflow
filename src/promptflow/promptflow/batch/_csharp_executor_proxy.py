@@ -36,7 +36,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         command = ["dotnet", SERVICE_DLL, "-p", port, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]
         process = subprocess.Popen(command)
 
-        waiting_timeout = 3
+        waiting_timeout = 10
         start_time = datetime.now()
         while (datetime.now() - start_time).seconds < waiting_timeout:
             if check_health(port):
