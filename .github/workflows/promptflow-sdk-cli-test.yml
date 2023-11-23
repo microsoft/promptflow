@@ -78,6 +78,7 @@ jobs:
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}} # Will remove azure deps later
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        pip install -U flask ruamel.yaml
         pip freeze
     - name: Azure login (non pull_request workflow)
       if: github.event_name != 'pull_request'
