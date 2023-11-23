@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
-from promptflow._sdk._configuration import ConfigFileNotFound, Configuration, InvalidConfigFile
+from promptflow._sdk._configuration import ConfigFileNotFound, Configuration, InvalidConfigFile, InvalidConfigValue
+from promptflow._sdk._constants import FLOW_DIRECTORY_MACRO_IN_CONFIG
 from promptflow._utils.context_utils import _change_working_dir
 
 CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
@@ -60,3 +61,13 @@ class TestConfig:
         with pytest.raises(InvalidConfigFile):
             with _change_working_dir(target_folder):
                 conf.get_connection_provider()
+
+    def test_set_invalid_run_output_path(self, config: Configuration) -> None:
+        with pytest.raises(InvalidConfigValue) as e:
+            config.set_config(key=Configuration.RUN_OUTPUT_PATH, value=FLOW_DIRECTORY_MACRO_IN_CONFIG)
+        expected_error_message = (
+            "Cannot specify flow directory as run output path; "
+            "if you want to specify run output path under flow directory, "
+            "please use its child folder."
+        )
+        assert expected_error_message in str(e)
