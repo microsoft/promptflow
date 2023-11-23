@@ -39,26 +39,26 @@ class AzureOpenAI(ToolProvider):
     @handle_openai_error()
     @enable_cache(calculate_cache_string_for_completion)
     def completion(
-            self,
-            prompt: PromptTemplate,
-            # for AOAI, deployment name is customized by user, not model name.
-            deployment_name: str,
-            suffix: str = None,
-            max_tokens: int = 16,
-            temperature: float = 1.0,
-            top_p: float = 1.0,
-            n: int = 1,
-            # stream is a hidden to the end user, it is only supposed to be set by the executor.
-            stream: bool = False,
-            logprobs: int = None,
-            echo: bool = False,
-            stop: list = None,
-            presence_penalty: float = 0,
-            frequency_penalty: float = 0,
-            best_of: int = 1,
-            logit_bias: dict = {},
-            user: str = "",
-            **kwargs,
+        self,
+        prompt: PromptTemplate,
+        # for AOAI, deployment name is customized by user, not model name.
+        deployment_name: str,
+        suffix: str = None,
+        max_tokens: int = 16,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+        n: int = 1,
+        # stream is a hidden to the end user, it is only supposed to be set by the executor.
+        stream: bool = False,
+        logprobs: int = None,
+        echo: bool = False,
+        stop: list = None,
+        presence_penalty: float = 0,
+        frequency_penalty: float = 0,
+        best_of: int = 1,
+        logit_bias: dict = {},
+        user: str = "",
+        **kwargs,
     ) -> str:
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
         # TODO: remove below type conversion after client can pass json rather than string.
@@ -105,25 +105,25 @@ class AzureOpenAI(ToolProvider):
     @tool
     @handle_openai_error()
     def chat(
-            self,
-            prompt: PromptTemplate,
-            # for AOAI, deployment name is customized by user, not model name.
-            deployment_name: str,
-            temperature: float = 1.0,
-            top_p: float = 1.0,
-            n: int = 1,
-            # stream is a hidden to the end user, it is only supposed to be set by the executor.
-            stream: bool = False,
-            stop: list = None,
-            max_tokens: int = None,
-            presence_penalty: float = 0,
-            frequency_penalty: float = 0,
-            logit_bias: dict = {},
-            user: str = "",
-            # function_call can be of type str or dict.
-            function_call: object = None,
-            functions: list = None,
-            **kwargs,
+        self,
+        prompt: PromptTemplate,
+        # for AOAI, deployment name is customized by user, not model name.
+        deployment_name: str,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+        n: int = 1,
+        # stream is a hidden to the end user, it is only supposed to be set by the executor.
+        stream: bool = False,
+        stop: list = None,
+        max_tokens: int = None,
+        presence_penalty: float = 0,
+        frequency_penalty: float = 0,
+        logit_bias: dict = {},
+        user: str = "",
+        # function_call can be of type str or dict.
+        function_call: object = None,
+        functions: list = None,
+        **kwargs,
     ) -> [str, dict]:
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
         chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
@@ -159,24 +159,24 @@ register_apis(AzureOpenAI)
 
 @tool
 def completion(
-        connection: AzureOpenAIConnection,
-        prompt: PromptTemplate,
-        deployment_name: str,
-        suffix: str = None,
-        max_tokens: int = 16,
-        temperature: float = 1.0,
-        top_p: float = 1,
-        n: int = 1,
-        stream: bool = False,
-        logprobs: int = None,
-        echo: bool = False,
-        stop: list = None,
-        presence_penalty: float = 0,
-        frequency_penalty: float = 0,
-        best_of: int = 1,
-        logit_bias: dict = {},
-        user: str = "",
-        **kwargs,
+    connection: AzureOpenAIConnection,
+    prompt: PromptTemplate,
+    deployment_name: str,
+    suffix: str = None,
+    max_tokens: int = 16,
+    temperature: float = 1.0,
+    top_p: float = 1,
+    n: int = 1,
+    stream: bool = False,
+    logprobs: int = None,
+    echo: bool = False,
+    stop: list = None,
+    presence_penalty: float = 0,
+    frequency_penalty: float = 0,
+    best_of: int = 1,
+    logit_bias: dict = {},
+    user: str = "",
+    **kwargs,
 ) -> str:
     return AzureOpenAI(connection).completion(
         prompt=prompt,
@@ -201,22 +201,22 @@ def completion(
 
 @tool
 def chat(
-        connection: AzureOpenAIConnection,
-        prompt: PromptTemplate,
-        deployment_name: str,
-        temperature: float = 1,
-        top_p: float = 1,
-        n: int = 1,
-        stream: bool = False,
-        stop: list = None,
-        max_tokens: int = None,
-        presence_penalty: float = 0,
-        frequency_penalty: float = 0,
-        logit_bias: dict = {},
-        user: str = "",
-        function_call: object = None,
-        functions: list = None,
-        **kwargs,
+    connection: AzureOpenAIConnection,
+    prompt: PromptTemplate,
+    deployment_name: str,
+    temperature: float = 1,
+    top_p: float = 1,
+    n: int = 1,
+    stream: bool = False,
+    stop: list = None,
+    max_tokens: int = None,
+    presence_penalty: float = 0,
+    frequency_penalty: float = 0,
+    logit_bias: dict = {},
+    user: str = "",
+    function_call: object = None,
+    functions: list = None,
+    **kwargs,
 ) -> str:
     # chat model is not available in azure openai, so need to set the environment variable.
     return AzureOpenAI(connection).chat(

@@ -39,25 +39,25 @@ class OpenAI(ToolProvider):
     @tool
     @handle_openai_error()
     def completion(
-            self,
-            prompt: PromptTemplate,
-            model: Engine = Engine.TEXT_DAVINCI_003,
-            suffix: str = None,
-            max_tokens: int = 16,
-            temperature: float = 1.0,
-            top_p: float = 1.0,
-            n: int = 1,
-            # stream is a hidden to the end user, it is only supposed to be set by the executor.
-            stream: bool = False,
-            logprobs: int = None,
-            echo: bool = False,
-            stop: list = None,
-            presence_penalty: float = 0,
-            frequency_penalty: float = 0,
-            best_of: int = 1,
-            logit_bias: dict = {},
-            user: str = "",
-            **kwargs,
+        self,
+        prompt: PromptTemplate,
+        model: Engine = Engine.TEXT_DAVINCI_003,
+        suffix: str = None,
+        max_tokens: int = 16,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+        n: int = 1,
+        # stream is a hidden to the end user, it is only supposed to be set by the executor.
+        stream: bool = False,
+        logprobs: int = None,
+        echo: bool = False,
+        stop: list = None,
+        presence_penalty: float = 0,
+        frequency_penalty: float = 0,
+        best_of: int = 1,
+        logit_bias: dict = {},
+        user: str = "",
+        **kwargs,
     ) -> str:
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
         # TODO: remove below type conversion after client can pass json rather than string.
@@ -100,24 +100,24 @@ class OpenAI(ToolProvider):
     @tool
     @handle_openai_error()
     def chat(
-            self,
-            prompt: PromptTemplate,
-            model: str = "gpt-3.5-turbo",
-            temperature: float = 1.0,
-            top_p: float = 1.0,
-            n: int = 1,
-            # stream is a hidden to the end user, it is only supposed to be set by the executor.
-            stream: bool = False,
-            stop: list = None,
-            max_tokens: int = None,
-            presence_penalty: float = 0,
-            frequency_penalty: float = 0,
-            logit_bias: dict = {},
-            user: str = "",
-            # function_call can be of type str or dict.
-            function_call: object = None,
-            functions: list = None,
-            **kwargs,
+        self,
+        prompt: PromptTemplate,
+        model: str = "gpt-3.5-turbo",
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+        n: int = 1,
+        # stream is a hidden to the end user, it is only supposed to be set by the executor.
+        stream: bool = False,
+        stop: list = None,
+        max_tokens: int = None,
+        presence_penalty: float = 0,
+        frequency_penalty: float = 0,
+        logit_bias: dict = {},
+        user: str = "",
+        # function_call can be of type str or dict.
+        function_call: object = None,
+        functions: list = None,
+        **kwargs
     ) -> [str, dict]:
         chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
         messages = parse_chat(chat_str)
@@ -152,24 +152,24 @@ register_apis(OpenAI)
 
 @tool
 def completion(
-        connection: OpenAIConnection,
-        prompt: PromptTemplate,
-        model: Engine = Engine.TEXT_DAVINCI_003,
-        suffix: str = None,
-        max_tokens: int = 16,
-        temperature: float = 1.0,
-        top_p: float = 1,
-        n: int = 1,
-        stream: bool = False,
-        logprobs: int = None,
-        echo: bool = False,
-        stop: list = None,
-        presence_penalty: float = 0,
-        frequency_penalty: float = 0,
-        best_of: int = 1,
-        logit_bias: dict = {},
-        user: str = "",
-        **kwargs,
+    connection: OpenAIConnection,
+    prompt: PromptTemplate,
+    model: Engine = Engine.TEXT_DAVINCI_003,
+    suffix: str = None,
+    max_tokens: int = 16,
+    temperature: float = 1.0,
+    top_p: float = 1,
+    n: int = 1,
+    stream: bool = False,
+    logprobs: int = None,
+    echo: bool = False,
+    stop: list = None,
+    presence_penalty: float = 0,
+    frequency_penalty: float = 0,
+    best_of: int = 1,
+    logit_bias: dict = {},
+    user: str = "",
+    **kwargs
 ) -> [str, dict]:
     return OpenAI(connection).completion(
         prompt=prompt,
@@ -194,22 +194,22 @@ def completion(
 
 @tool
 def chat(
-        connection: OpenAIConnection,
-        prompt: PromptTemplate,
-        model: str = "gpt-3.5-turbo",
-        temperature: float = 1,
-        top_p: float = 1,
-        n: int = 1,
-        stream: bool = False,
-        stop: list = None,
-        max_tokens: int = None,
-        presence_penalty: float = 0,
-        frequency_penalty: float = 0,
-        logit_bias: dict = {},
-        user: str = "",
-        function_call: object = None,
-        functions: list = None,
-        **kwargs,
+    connection: OpenAIConnection,
+    prompt: PromptTemplate,
+    model: str = "gpt-3.5-turbo",
+    temperature: float = 1,
+    top_p: float = 1,
+    n: int = 1,
+    stream: bool = False,
+    stop: list = None,
+    max_tokens: int = None,
+    presence_penalty: float = 0,
+    frequency_penalty: float = 0,
+    logit_bias: dict = {},
+    user: str = "",
+    function_call: object = None,
+    functions: list = None,
+    **kwargs
 ) -> [str, dict]:
     return OpenAI(connection).chat(
         prompt=prompt,
