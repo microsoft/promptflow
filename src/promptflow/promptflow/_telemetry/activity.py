@@ -62,6 +62,7 @@ def log_activity(
         "activity_type": activity_type,
     }
     activity_info.update(custom_dimensions)
+    context['request_id'] = request_id
 
     start_time = datetime.utcnow()
     completion_status = ActivityCompletionStatus.SUCCESS
@@ -87,7 +88,6 @@ def log_activity(
                 logger.error(message, extra={"custom_dimensions": activity_info})
             else:
                 logger.info(message, extra={"custom_dimensions": activity_info})
-            context['last_log_activity_info'] = activity_info
         except Exception:  # pylint: disable=broad-except
             # skip if logger failed to log
             pass  # pylint: disable=lost-exception
