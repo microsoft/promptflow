@@ -507,7 +507,8 @@ class TestFlowRun:
                 environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
             )
         )
-        assert run.display_name == "print_env_var"
+        assert run.display_name == run.name
+        assert "print_env_var" in run.display_name
 
         # will respect if specified in run
         base_run = pf.runs.create_or_update(
