@@ -1,18 +1,15 @@
 import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-import httpx
 import portpicker
 
-from promptflow._utils.logger_utils import logger
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
-LOCAL_DOMAIN = "http://localhost:"
-SERVICE_DLL = "Promptflow.DotnetService.dll"
+EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
+EXECUTOR_SERVICE_DLL = "Promptflow.DotnetService.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
@@ -22,7 +19,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
 
     @property
     def api_endpoint(self) -> str:
-        return LOCAL_DOMAIN + self._port
+        return EXECUTOR_SERVICE_DOMAIN + self._port
 
     @classmethod
     def create(
@@ -36,15 +33,9 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
         port = str(portpicker.pick_unused_port())
-        command = ["dotnet", SERVICE_DLL, "-p", port, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]
+        command = ["dotnet", EXECUTOR_SERVICE_DLL, "-p", port, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]
         process = subprocess.Popen(command)
-
-        waiting_timeout = 10
-        start_time = datetime.now()
-        while (datetime.now() - start_time).seconds < waiting_timeout:
-            if cls.check_health(port):
-                return cls(process, port)
-        raise RuntimeError("Failed to start C# service")
+        return cls(process, port)
 
     def destroy(self):
         """Destroy the executor"""
@@ -62,21 +53,6 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         return AggregationResult({}, {}, {})
-
-    @classmethod
-    def check_health(port):
-        unhealthy_message = "The executor service is currently not in a healthy state. "
-        try:
-            health_url = f"{LOCAL_DOMAIN}{port}/health"
-            with httpx.Client() as client:
-                response = client.get(health_url)
-            if response.status_code != 200:
-                logger.warning(f"{unhealthy_message}Response: {response.status_code} - {response.text}")
-                return False
-            return True
-        except Exception as e:
-            logger.warning(f"{unhealthy_message}Error: {str(e)}")
-            return False
 
     @classmethod
     def generate_tool_metadata(cls, flow_dag: dict, working_dir: Path) -> dict:

@@ -1,12 +1,16 @@
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
 import httpx
 
 from promptflow._constants import LINE_TIMEOUT_SEC
-from promptflow.exceptions import PromptflowException
+from promptflow._utils.logger_utils import logger
+from promptflow.exceptions import PromptflowException, SystemErrorException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
+
+EXECUTOR_UNHEALTHY_MESSAGE = "The executor service is currently not in a healthy state"
 
 
 class AbstractExecutorProxy:
@@ -57,6 +61,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         index: Optional[int] = None,
         run_id: Optional[str] = None,
     ) -> LineResult:
+        # ensure service health
+        await self.ensure_executor_health()
+        # call execution api to get line results
         url = self.api_endpoint + "/Execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         async with httpx.AsyncClient() as client:
@@ -70,8 +77,11 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
+        # ensure service health
+        await self.ensure_executor_health()
+        # call aggregation api to get aggregation result
         async with httpx.AsyncClient() as client:
-            url = self.api_endpoint + "/aggregation"
+            url = self.api_endpoint + "/Aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
         response = self.process_http_response(response)
@@ -84,3 +94,24 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         else:
             # TODO: add more error handling
             raise PromptflowException(f"Error when calling executor API, response: {response}")
+
+    async def ensure_executor_health(self):
+        waiting_health_timeout = 5
+        start_time = datetime.now()
+        while (datetime.now() - start_time).seconds < waiting_health_timeout:
+            if await self.check_health():
+                return
+        raise SystemErrorException(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
+
+    async def check_health(self):
+        try:
+            health_url = self.api_endpoint + "/health"
+            async with httpx.AsyncClient() as client:
+                response = await client.get(health_url)
+            if response.status_code != 200:
+                logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Response: {response.status_code} - {response.text}")
+                return False
+            return True
+        except Exception as e:
+            logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
+            return False
