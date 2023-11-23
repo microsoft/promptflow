@@ -144,7 +144,9 @@ class Run(YAMLTranslatableMixin):
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
             self._lineage_id = get_flow_lineage_id(flow_dir=flow_dir)
-            self._output_path = Path(kwargs.get("output_path", self._generate_output_path()))
+            self._output_path = Path(
+                kwargs.get("output_path", self._generate_output_path(config=kwargs.get("config", None)))
+            )
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = kwargs.get("experiment_name", None)
@@ -532,8 +534,8 @@ class Run(YAMLTranslatableMixin):
             return run
         raise InvalidRunError(f"Invalid run {run!r}, expected 'str' or 'Run' object but got {type(run)!r}.")
 
-    def _generate_output_path(self) -> Path:
-        config = Configuration.get_instance()
+    def _generate_output_path(self, config: Optional[Configuration]) -> Path:
+        config = config or Configuration.get_instance()
         path = config.get_run_output_path()
         if path is None:
             path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
