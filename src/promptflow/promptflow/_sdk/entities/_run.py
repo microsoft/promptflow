@@ -539,8 +539,12 @@ class Run(YAMLTranslatableMixin):
             path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
         else:
             try:
-                path = Path(path.replace(FLOW_DIRECTORY_MACRO_IN_CONFIG, self.flow.resolve().as_posix()))
-                path = (path / ".runs").resolve()
+                flow_posix_path = self.flow.resolve().as_posix()
+                path = Path(path.replace(FLOW_DIRECTORY_MACRO_IN_CONFIG, self.flow.resolve().as_posix())).resolve()
+                # in case user manually modifies ~/.promptflow/pf.yaml
+                # fall back to default run output path
+                if path.as_posix() == flow_posix_path:
+                    raise Exception(f"{FLOW_DIRECTORY_MACRO_IN_CONFIG!r} is not a valid value.")
                 path.mkdir(parents=True, exist_ok=True)
             except Exception:  # pylint: disable=broad-except
                 path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
