@@ -8,8 +8,6 @@ from promptflow.exceptions import PromptflowException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
-LOCAL_DOMAIN = "http://localhost:"
-
 
 class AbstractExecutorProxy:
     @classmethod
@@ -86,12 +84,3 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         else:
             # TODO: add more error handling
             raise PromptflowException(f"Error when calling executor API, response: {response}")
-
-
-def check_health(port):
-    try:
-        with httpx.Client() as client:
-            response = client.get(LOCAL_DOMAIN + port + "/health")
-        return response.status_code == 200
-    except Exception:
-        return False

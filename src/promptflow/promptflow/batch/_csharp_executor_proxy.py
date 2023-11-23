@@ -3,12 +3,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+import httpx
 import portpicker
 
-from promptflow.batch._base_executor_proxy import LOCAL_DOMAIN, APIBasedExecutorProxy, check_health
+from promptflow._utils.logger_utils import logger
+from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
+LOCAL_DOMAIN = "http://localhost:"
 SERVICE_DLL = "Promptflow.DotnetService.dll"
 
 
@@ -39,7 +42,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         waiting_timeout = 10
         start_time = datetime.now()
         while (datetime.now() - start_time).seconds < waiting_timeout:
-            if check_health(port):
+            if cls.check_health(port):
                 return cls(process, port)
         raise RuntimeError("Failed to start C# service")
 
@@ -59,6 +62,22 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         return AggregationResult({}, {}, {})
+
+    @classmethod
+    def check_health(port):
+        unhealthy_message = "The executor service is currently not in a healthy state. "
+        try:
+            health_url = f"{LOCAL_DOMAIN}{port}/health"
+            with httpx.Client() as client:
+                response = client.get(health_url)
+
+            if response.status_code != 200:
+                logger.warning(f"{unhealthy_message}Response: {response.status_code} - {response.text}")
+                return False
+            return True
+        except Exception as e:
+            logger.warning(f"{unhealthy_message}Error: {str(e)}")
+            return False
 
     @classmethod
     def generate_tool_metadata(cls, flow_dag: dict, working_dir: Path) -> dict:
