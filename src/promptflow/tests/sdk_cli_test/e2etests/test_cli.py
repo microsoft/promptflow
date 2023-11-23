@@ -1,5 +1,7 @@
+import contextlib
 import importlib
 import importlib.util
+import io
 import json
 import logging
 import os
@@ -55,83 +57,88 @@ def run_pf_command(*args, cwd=None):
 class TestCli:
     def test_pf_version(self, capfd):
         run_pf_command("--version")
-        out, _ = capfd.readouterr()
+        out, err = capfd.readouterr()
         assert "0.0.1\n" in out
 
-    def test_basic_flow_run(self, capfd) -> None:
+    def test_basic_flow_run(self) -> None:
         # fetch std out
-        run_pf_command(
-            "run",
-            "create",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification",
-            "--data",
-            f"{DATAS_DIR}/webClassification3.jsonl",
-            "--name",
-            str(uuid.uuid4()),
-        )
-        out, _ = capfd.readouterr()
-        assert "Completed" in out
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--name",
+                str(uuid.uuid4()),
+            )
+        assert "Completed" in f.getvalue()
 
-    def test_basic_flow_run_batch_and_eval(self, capfd) -> None:
+    def test_basic_flow_run_batch_and_eval(self) -> None:
         run_id = str(uuid.uuid4())
-        run_pf_command(
-            "run",
-            "create",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification",
-            "--data",
-            f"{DATAS_DIR}/webClassification3.jsonl",
-            "--name",
-            run_id,
-        )
-        out, _ = capfd.readouterr()
-        assert "Completed" in out
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--name",
+                run_id,
+            )
+        assert "Completed" in f.getvalue()
 
         # Check the CLI works correctly when the parameter is surrounded by quotation, as below shown:
         # --param "key=value" key="value"
-        run_pf_command(
-            "run",
-            "create",
-            "--flow",
-            f"{FLOWS_DIR}/classification_accuracy_evaluation",
-            "--column-mapping",
-            "'groundtruth=${data.answer}'",
-            "prediction='${run.outputs.category}'",
-            "variant_id=${data.variant_id}",
-            "--data",
-            f"{DATAS_DIR}/webClassification3.jsonl",
-            "--run",
-            run_id,
-        )
-        out, _ = capfd.readouterr()
-        assert "Completed" in out
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/classification_accuracy_evaluation",
+                "--column-mapping",
+                "'groundtruth=${data.answer}'",
+                "prediction='${run.outputs.category}'",
+                "variant_id=${data.variant_id}",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--run",
+                run_id,
+            )
+        assert "Completed" in f.getvalue()
 
-    def test_submit_run_with_yaml(self, capfd):
+    def test_submit_run_with_yaml(self):
         run_id = str(uuid.uuid4())
-        run_pf_command(
-            "run",
-            "create",
-            "--file",
-            "./sample_bulk_run.yaml",
-            "--name",
-            run_id,
-            cwd=f"{RUNS_DIR}",
-        )
-        out, _ = capfd.readouterr()
-        assert "Completed" in out
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--file",
+                "./sample_bulk_run.yaml",
+                "--name",
+                run_id,
+                cwd=f"{RUNS_DIR}",
+            )
+        assert "Completed" in f.getvalue()
 
-        run_pf_command(
-            "run",
-            "create",
-            "--file",
-            "./sample_eval_run.yaml",
-            "--run",
-            run_id,
-            cwd=f"{RUNS_DIR}",
-        )
-        out, _ = capfd.readouterr()
-        assert "Completed" in out
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--file",
+                "./sample_eval_run.yaml",
+                "--run",
+                run_id,
+                cwd=f"{RUNS_DIR}",
+            )
+        assert "Completed" in f.getvalue()
 
     def test_submit_batch_variant(self, local_client):
         run_id = str(uuid.uuid4())
@@ -171,7 +178,7 @@ class TestCli:
         outputs = local_client.runs._get_outputs(run=run_id)
         assert outputs["output"][0] == local_aoai_connection.api_base
 
-    def test_connection_overwrite(self, local_alt_aoai_connection, capfd):
+    def test_connection_overwrite(self, local_alt_aoai_connection):
         # CLi command will fail with SystemExit
         with pytest.raises(SystemExit):
             run_pf_command(
@@ -185,32 +192,33 @@ class TestCli:
                 "classify_with_llm.connection=not_exist",
             )
 
-        out, _ = capfd.readouterr()
-        run_pf_command(
-            "run",
-            "create",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification",
-            "--data",
-            f"{DATAS_DIR}/webClassification3.jsonl",
-            "--connection",
-            "classify_with_llm.connection=new_ai_connection",
-        )
-        out, _ = capfd.readouterr()
-        assert "Completed" in out
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--connection",
+                "classify_with_llm.connection=new_ai_connection",
+            )
+        assert "Completed" in f.getvalue()
 
-        run_pf_command(
-            "run",
-            "create",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification",
-            "--data",
-            f"{DATAS_DIR}/webClassification3.jsonl",
-            "--connection",
-            "classify_with_llm.model=new_model",
-        )
-        out, _ = capfd.readouterr()
-        assert "Completed" in out
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--connection",
+                "classify_with_llm.model=new_model",
+            )
+        assert "Completed" in f.getvalue()
 
     def test_create_with_set(self, local_client):
         run_id = str(uuid.uuid4())
@@ -1249,28 +1257,28 @@ class TestCli:
         for keyword in non_existing_keywords:
             assert keyword not in out
 
-    def test_pf_run_no_stream_log(self, capfd):
+    def test_pf_run_no_stream_log(self):
+        f = io.StringIO()
 
         # without --stream, logs will be in the run's log file
-
-        run_pf_command(
-            "run",
-            "create",
-            "--flow",
-            f"{FLOWS_DIR}/flow_with_user_output",
-            "--data",
-            f"{DATAS_DIR}/webClassification3.jsonl",
-            "--column-mapping",
-            "key=value",
-            "extra=${data.url}",
-        )
-        out, _ = capfd.readouterr()
-        assert "user log" not in out
-        assert "error log" not in out
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/flow_with_user_output",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--column-mapping",
+                "key=value",
+                "extra=${data.url}",
+            )
+        assert "user log" not in f.getvalue()
+        assert "error log" not in f.getvalue()
         # flow logs won't stream
-        assert "Executing node print_val. node run id:" not in out
+        assert "Executing node print_val. node run id:" not in f.getvalue()
         # executor logs won't stream
-        assert "Node print_val completes." not in out
+        assert "Node print_val completes." not in f.getvalue()
 
     def test_format_cli_exception(self, capsys):
         from promptflow._sdk.operations._connection_operations import ConnectionOperations

@@ -7,7 +7,9 @@ import pytest
 
 from promptflow._sdk._configuration import ConfigFileNotFound, Configuration, InvalidConfigFile
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow.azure._ml import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
+
+AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
+RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
 CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
 

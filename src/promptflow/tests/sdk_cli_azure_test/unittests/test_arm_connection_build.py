@@ -1,12 +1,13 @@
 import copy
 
 import pytest
-from azure.ai.ml._restclient.v2023_06_01_preview.models import WorkspaceConnectionPropertiesV2BasicResource
-
-from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
 
 def build_from_data_and_assert(data, expected):
+    from azure.ai.ml._restclient.v2023_06_01_preview.models import WorkspaceConnectionPropertiesV2BasicResource
+
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+
     data = copy.deepcopy(data)
     obj = WorkspaceConnectionPropertiesV2BasicResource.deserialize(data)
     assert ArmConnectionOperations.build_connection_dict_from_rest_object("mock", obj) == expected

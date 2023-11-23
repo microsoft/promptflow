@@ -6,7 +6,9 @@ import pytest
 
 from promptflow import PFClient
 from promptflow._sdk._configuration import Configuration
-from promptflow.azure._ml import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
+
+AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
+RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
 
 @pytest.fixture

@@ -19,6 +19,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
+from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -28,21 +29,6 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
 
 load_dotenv()
-
-
-class SanitizedValues:
-    SUBSCRIPTION_ID = "00000000-0000-0000-0000-000000000000"
-    RESOURCE_GROUP_NAME = "00000"
-    WORKSPACE_NAME = "00000"
-
-
-class TestMode:
-    LIVE = "live"
-    RECORD = "record"
-    REPLAY = "replay"
-
-
-ENVIRON_TEST_MODE = "PROMPT_FLOW_TEST_MODE"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -187,7 +173,7 @@ def mock_module_with_list_func(mock_list_func):
 # below fixtures are used for pfazure and global config tests
 @pytest.fixture
 def subscription_id() -> str:
-    if os.getenv(ENVIRON_TEST_MODE, TestMode.LIVE) == TestMode.REPLAY:
+    if is_replay():
         return SanitizedValues.SUBSCRIPTION_ID
     else:
         return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
@@ -195,7 +181,7 @@ def subscription_id() -> str:
 
 @pytest.fixture
 def resource_group_name() -> str:
-    if os.getenv(ENVIRON_TEST_MODE, TestMode.LIVE) == TestMode.REPLAY:
+    if is_replay():
         return SanitizedValues.RESOURCE_GROUP_NAME
     else:
         return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
@@ -203,7 +189,7 @@ def resource_group_name() -> str:
 
 @pytest.fixture
 def workspace_name() -> str:
-    if os.getenv(ENVIRON_TEST_MODE, TestMode.LIVE) == TestMode.REPLAY:
+    if is_replay():
         return SanitizedValues.WORKSPACE_NAME
     else:
         return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
