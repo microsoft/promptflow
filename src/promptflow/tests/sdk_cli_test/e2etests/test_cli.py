@@ -1106,6 +1106,7 @@ class TestCli:
     def test_flow_build(self):
         source = f"{FLOWS_DIR}/web_classification_with_additional_include/flow.dag.yaml"
         output_path = "dist"
+
         def get_node_settings(_flow_dag_path: Path):
             flow_dag = yaml.safe_load(_flow_dag_path.read_text())
             target_node = next(filter(lambda x: x["name"] == "summarize_text_content", flow_dag["nodes"]))
