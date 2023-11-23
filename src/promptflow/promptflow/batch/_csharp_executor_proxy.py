@@ -70,7 +70,6 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             health_url = f"{LOCAL_DOMAIN}{port}/health"
             with httpx.Client() as client:
                 response = client.get(health_url)
-
             if response.status_code != 200:
                 logger.warning(f"{unhealthy_message}Response: {response.status_code} - {response.text}")
                 return False
