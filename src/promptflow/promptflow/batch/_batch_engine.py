@@ -18,6 +18,7 @@ from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute, transpose
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -35,6 +36,7 @@ class BatchEngine:
 
     executor_proxy_classes: Mapping[str, AbstractExecutorProxy] = {
         FlowLanguage.Python: PythonExecutorProxy,
+        FlowLanguage.CSharp: CSharpExecutorProxy,
     }
 
     @classmethod

@@ -965,6 +965,7 @@ class TestFlowRun:
         out, _ = capfd.readouterr()
         assert "Run is canceled." in out
 
+    # Will remove this test before PR is merged
     @pytest.mark.skip(reason="C# executor is not ready")
     def test_csharp_flow(self, pf):
         image_flow_path = "D:/csharp_flow/flow.dag.yaml"

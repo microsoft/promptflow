@@ -15,7 +15,6 @@ from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow.batch import BatchEngine, CSharpExecutorProxy
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
@@ -65,7 +64,6 @@ class RunSubmitter:
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
         if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.CSharp:
-            BatchEngine.register_executor(FlowLanguage.CSharp, CSharpExecutorProxy)
             connections = []
         else:
             with _change_working_dir(flow.code):

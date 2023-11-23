@@ -242,6 +242,7 @@ class TestBatch:
             submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
         assert error_message in e.value.message
 
+    # Will remove this test before PR is merged
     @pytest.mark.skip(reason="C# executor is not ready yet")
     def test_csharp_batch_engine(self):
         from promptflow._constants import FlowLanguage
