@@ -9,7 +9,6 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     name: Tool Test
-    timeout-minutes: 30
 
     steps:
       - name: Check for dockerenv file
