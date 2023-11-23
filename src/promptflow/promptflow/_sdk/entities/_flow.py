@@ -323,7 +323,8 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         return resolved_outputs
 
     def _dump_invoke_result(self, invoke_result, dump_path=None, dump_file_prefix=None):
-        if dump_path:
+        # Csharp chat_history is a Cshapr object and can't be dumped
+        if dump_path and self._executable.program_language != FlowLanguage.Csharp:
             invoke_result.output = persist_multimedia_data(
                 invoke_result.output, base_dir=dump_path, sub_dir=Path(".promptflow/output")
             )
