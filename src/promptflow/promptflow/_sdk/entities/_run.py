@@ -152,6 +152,7 @@ class Run(YAMLTranslatableMixin):
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
             self._lineage_id = get_flow_lineage_id(flow_dir=flow_dir)
+            self._flow_name = flow_dir.name
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = kwargs.get("experiment_name", None)
@@ -327,7 +328,7 @@ class Run(YAMLTranslatableMixin):
         }
 
         if self._run_source == RunInfoSources.LOCAL:
-            result["flow_name"] = Path(str(self.flow)).resolve().name if not self._use_remote_flow else self._flow_name
+            result["flow_name"] = self._flow_name
             local_storage = LocalStorageOperations(run=self)
             result[RunDataKeys.DATA] = (
                 local_storage._data_path.resolve().absolute().as_posix()
@@ -393,7 +394,7 @@ class Run(YAMLTranslatableMixin):
     def _generate_run_name(self) -> str:
         """Generate a run name with flow_name_variant_timestamp format."""
         try:
-            flow_name = self._get_flow_dir().name if not self._use_remote_flow else self._flow_name
+            flow_name = self._flow_name
             variant = self.variant
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
@@ -407,7 +408,7 @@ class Run(YAMLTranslatableMixin):
     def _get_default_display_name(self) -> str:
         display_name = self.display_name or self.name
         if not display_name:
-            display_name = self._get_flow_dir().name if not self._use_remote_flow else self._flow_name
+            display_name = self._flow_name
         return display_name
 
     def _format_display_name(self) -> str:
@@ -557,7 +558,7 @@ class Run(YAMLTranslatableMixin):
             # remote flow
             pass
         else:
-            raise ValueError(
+            raise UserErrorException(
                 f"Invalid flow value: {self.flow!r}. Expecting a local flow folder path or a remote flow pattern "
                 f"like '{REMOTE_URI_PREFIX}<flow-name>'"
             )
@@ -567,6 +568,6 @@ class Run(YAMLTranslatableMixin):
             pass
         else:
             if self.data and not Path(self.data).exists():
-                raise FileNotFoundError(f"data path {self.data} does not exist")
+                raise UserErrorException(f"data path {self.data} does not exist")
         if not self.run and not self.data:
-            raise ValueError("at least one of data or run must be provided")
+            raise UserErrorException("at least one of data or run must be provided")
