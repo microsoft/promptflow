@@ -277,7 +277,7 @@ class FlowValidator:
                         message_format=msg_format,
                         input_name=k,
                         node_name=node.name,
-                        expected_type=flow.inputs[v.value].type,
+                        expected_type=flow.inputs[v.value].type.value,
                     ) from e
         return updated_inputs
 
