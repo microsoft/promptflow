@@ -1,14 +1,14 @@
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
 import portpicker
 
-from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
+from promptflow.batch._base_executor_proxy import LOCAL_DOMAIN, APIBasedExecutorProxy, check_health
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
-EXECUTOR_DOMAIN = "http://localhost:"
 SERVICE_DLL = "Promptflow.DotnetService.dll"
 
 
@@ -19,7 +19,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
 
     @property
     def api_endpoint(self) -> str:
-        return EXECUTOR_DOMAIN + self._port
+        return LOCAL_DOMAIN + self._port
 
     @classmethod
     def create(
@@ -35,7 +35,13 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         port = str(portpicker.pick_unused_port())
         command = ["dotnet", SERVICE_DLL, "-p", port, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]
         process = subprocess.Popen(command)
-        return cls(process, port)
+
+        waiting_timeout = 3
+        start_time = datetime.now()
+        while (datetime.now() - start_time).seconds < waiting_timeout:
+            if check_health(port):
+                return cls(process, port)
+        raise RuntimeError("Failed to start C# service")
 
     def destroy(self):
         """Destroy the executor"""
