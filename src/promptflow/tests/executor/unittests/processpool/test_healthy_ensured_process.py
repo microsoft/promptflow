@@ -64,7 +64,7 @@ class TestHealthyEnsuredProcess:
         )
         assert formatted_message == expected_log_message
 
-    @patch('promptflow.executor._line_execution_process_pool.logger.info', autospec=True)
+    @patch('promptflow.executor._line_execution_process_pool.bulk_logger.info', autospec=True)
     def test_format_completed_process(self, mock_logger_info):
         context = get_multiprocessing_context("spawn")
         healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func, context)
