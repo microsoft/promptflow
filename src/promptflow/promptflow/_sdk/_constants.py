@@ -75,6 +75,7 @@ VIS_PORTAL_URL_TMPL = (
 REMOTE_URI_PREFIX = "azureml:"
 REGISTRY_URI_PREFIX = "azureml://registries/"
 FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
+FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -213,11 +214,6 @@ MAX_SHOW_DETAILS_RESULTS = 100  # show details
 class CLIListOutputFormat:
     JSON = "json"
     TABLE = "table"
-
-
-def get_run_output_path(run) -> Path:
-    # store the run outputs to user's local dir
-    return (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / str(run.name)).resolve()
 
 
 class LocalStorageFilenames:

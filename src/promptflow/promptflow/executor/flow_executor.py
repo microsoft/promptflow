@@ -582,7 +582,7 @@ class FlowExecutor:
             one_input_value = list(aggregation_inputs.values())[0]
             aggregation_lines = len(one_input_value)
         for key, value in inputs.items():
-            if key not in aggregated_flow_inputs and (value and value.default):
+            if key not in aggregated_flow_inputs and (value and value.default is not None):
                 aggregated_flow_inputs[key] = [value.default] * aggregation_lines
         return aggregated_flow_inputs
 

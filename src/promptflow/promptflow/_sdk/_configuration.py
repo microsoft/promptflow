@@ -11,7 +11,13 @@ from typing import Optional, Union
 
 import pydash
 
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, LOGGER_NAME, SERVICE_CONFIG_FILE, ConnectionProvider
+from promptflow._sdk._constants import (
+    FLOW_DIRECTORY_MACRO_IN_CONFIG,
+    HOME_PROMPT_FLOW_DIR,
+    LOGGER_NAME,
+    SERVICE_CONFIG_FILE,
+    ConnectionProvider,
+)
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml, read_write_by_user
 from promptflow.exceptions import ErrorTarget, ValidationException
@@ -27,6 +33,10 @@ class InvalidConfigFile(ValidationException):
     pass
 
 
+class InvalidConfigValue(ValidationException):
+    pass
+
+
 class Configuration(object):
 
     CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
@@ -34,6 +44,7 @@ class Configuration(object):
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
+    RUN_OUTPUT_PATH = "run.output_path"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -49,6 +60,7 @@ class Configuration(object):
         # Allow config override by kwargs
         overrides = overrides or {}
         for key, value in overrides.items():
+            self._validate(key, value)
             pydash.set_(self._config, key, value)
 
     @property
@@ -64,6 +76,7 @@ class Configuration(object):
 
     def set_config(self, key, value):
         """Store config in file to avoid concurrent write."""
+        self._validate(key, value)
         pydash.set_(self._config, key, value)
         with open(self.CONFIG_PATH, "w") as f:
             f.write(dump_yaml(self._config))
@@ -184,5 +197,20 @@ class Configuration(object):
             self.set_config(key=self.INSTALLATION_ID, value=user_id)
             return user_id
 
+    def get_run_output_path(self) -> Optional[str]:
+        """Get the run output path in local."""
+        return self.get_config(key=self.RUN_OUTPUT_PATH)
+
     def _to_dict(self):
         return self._config
+
+    @staticmethod
+    def _validate(key: str, value: str) -> None:
+        if key == Configuration.RUN_OUTPUT_PATH:
+            if value.rstrip("/").endswith(FLOW_DIRECTORY_MACRO_IN_CONFIG):
+                raise InvalidConfigValue(
+                    "Cannot specify flow directory as run output path; "
+                    "if you want to specify run output path under flow directory, "
+                    "please use its child folder, e.g. '${flow_directory}/.runs'."
+                )
+        return

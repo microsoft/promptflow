@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.027'
+      - '0.055'
     status:
       code: 200
       message: OK
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.084'
+      - '0.642'
     status:
       code: 200
       message: OK
@@ -143,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.092'
+      - '0.077'
     status:
       code: 200
       message: OK
@@ -184,7 +184,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.112'
+      - '0.116'
     status:
       code: 200
       message: OK
@@ -200,7 +200,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.18.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Fri, 24 Nov 2023 07:24:04 GMT
+      - Fri, 24 Nov 2023 07:33:30 GMT
       x-ms-version:
       - '2023-08-03'
     method: HEAD
@@ -250,7 +250,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.18.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Fri, 24 Nov 2023 07:24:05 GMT
+      - Fri, 24 Nov 2023 07:33:31 GMT
       x-ms-version:
       - '2023-08-03'
     method: HEAD
@@ -310,7 +310,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '10.624'
+      - '8.466'
     status:
       code: 200
       message: OK
@@ -334,21 +334,21 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1700810653, "rootRunId": "name", "createdUtc":
-        "2023-11-24T07:24:13.4640102+00:00", "createdBy": {"userObjectId": "c05e0746-e125-4cb3-9213-a8b535eacd79",
+      string: '{"runMetadata": {"runNumber": 1700811219, "rootRunId": "name", "createdUtc":
+        "2023-11-24T07:33:39.1442842+00:00", "createdBy": {"userObjectId": "c05e0746-e125-4cb3-9213-a8b535eacd79",
         "userPuId": "10032000324F7449", "userIdp": null, "userAltSecId": null, "userIss":
         "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
         "00000000-0000-0000-0000-000000000000", "userName": "Honglin Du", "upn": null},
         "userId": "c05e0746-e125-4cb3-9213-a8b535eacd79", "token": null, "tokenExpiryTimeUtc":
         null, "error": null, "warnings": null, "revision": 2, "statusRevision": 1,
-        "runUuid": "f27c1d20-a89c-4fe2-94f1-21462da8e63d", "parentRunUuid": null,
-        "rootRunUuid": "f27c1d20-a89c-4fe2-94f1-21462da8e63d", "lastStartTimeUtc":
+        "runUuid": "16b9ff70-e91a-4f2d-8c92-0568614f0e01", "parentRunUuid": null,
+        "rootRunUuid": "16b9ff70-e91a-4f2d-8c92-0568614f0e01", "lastStartTimeUtc":
         null, "currentComputeTime": "00:00:00", "computeDuration": null, "effectiveStartTimeUtc":
         null, "lastModifiedBy": {"userObjectId": "c05e0746-e125-4cb3-9213-a8b535eacd79",
         "userPuId": "10032000324F7449", "userIdp": null, "userAltSecId": null, "userIss":
         "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
         "00000000-0000-0000-0000-000000000000", "userName": "Honglin Du", "upn": null},
-        "lastModifiedUtc": "2023-11-24T07:24:13.4640102+00:00", "duration": null,
+        "lastModifiedUtc": "2023-11-24T07:33:39.1442842+00:00", "duration": null,
         "cancelationReason": null, "currentAttemptId": 1, "runId": "name", "parentRunId":
         null, "experimentId": "e57eb79e-3e83-45f1-810c-ee22c20b2ebd", "status": "Preparing",
         "startTimeUtc": null, "endTimeUtc": null, "scheduleId": null, "displayName":
@@ -361,7 +361,7 @@ interactions:
         "simple_hello_world", "azureml.promptflow.flow_definition_resource_id": "azureml://registries/promptflow-preview/models/simple_hello_world/versions/202311241",
         "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/79f088fae0e502653c43146c9682f425/simple_hello_world.jsonl",
         "azureml.promptflow.inputs_mapping": "{\"name\":\"${data.name}\"}", "azureml.promptflow.snapshot_id":
-        "c2443f9a-0b57-47a2-8279-34dbc88b4380", "_azureml.evaluation_run": "promptflow.BatchRun"},
+        "d95a02a4-da55-4b8a-9afc-45711a3939fb", "_azureml.evaluation_run": "promptflow.BatchRun"},
         "parameters": {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
         [], "tags": {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
         [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
@@ -403,7 +403,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.042'
+      - '0.031'
     status:
       code: 200
       message: OK
