@@ -382,7 +382,7 @@ class TestToolUtils:
             ),
         ],
     )
-    def test_validate_tool_func_result(slef, func_call_scenario, result, err_msg):
+    def test_validate_tool_func_result(self, func_call_scenario, result, err_msg):
         error_message = (
             f"Unable to retreive tool func result due to '{err_msg}'. \nPlease contact the tool author/support team "
             f"for troubleshooting assistance."
