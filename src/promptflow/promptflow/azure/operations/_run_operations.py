@@ -39,9 +39,9 @@ from promptflow._sdk._constants import (
     RunHistoryKeys,
     RunStatus,
 )
-from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
+from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
+from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
@@ -56,7 +56,7 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -653,11 +653,13 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, run: Union[str, Run]) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream the logs of a run.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails or canceled.
+        :type raise_on_error: bool
         :return: The run object
         :rtype: ~promptflow.entities.Run
         """
@@ -708,13 +710,26 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 f'Duration: "{duration}"\n'
                 f'Run url: "{self._get_run_portal_url(run_id=run.name)}"'
             )
-            # won't print error here, put it in run dict
         except KeyboardInterrupt:
             error_message = (
                 "The output streaming for the flow run was interrupted.\n"
                 "But the run is still executing on the cloud.\n"
             )
             print(error_message)
+
+        if run.status == RunStatus.FAILED or run.status == RunStatus.CANCELED:
+            if run.status == RunStatus.FAILED:
+                try:
+                    error_message = run._error["error"]["message"]
+                except Exception:  # pylint: disable=broad-except
+                    error_message = "Run fails with unknown error."
+            else:
+                error_message = "Run is canceled."
+            if raise_on_error:
+                raise InvalidRunStatusError(error_message)
+            else:
+                print_red_error(error_message)
+
         return run
 
     def _resolve_data_to_asset_id(self, run: Run):

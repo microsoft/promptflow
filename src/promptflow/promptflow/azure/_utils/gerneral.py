@@ -2,10 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from os import PathLike
-from typing import Union
-from urllib.parse import urlparse
-
 import jwt
 
 
@@ -22,22 +18,3 @@ def get_user_alias_from_credential(credential):
     except Exception:
         # use oid when failed to get upn, e.g. service principal
         return decode_json["oid"]
-
-
-def is_url(value: Union[PathLike, str]) -> bool:
-    try:
-        result = urlparse(str(value))
-        return all([result.scheme, result.netloc])
-    except ValueError:
-        return False
-
-
-def is_remote_uri(obj) -> bool:
-    # return True if it's supported remote uri
-    if isinstance(obj, str):
-        if obj.startswith("azureml:"):
-            # azureml: started, azureml:name:version, azureml://xxx
-            return True
-        elif is_url(obj):
-            return True
-    return False

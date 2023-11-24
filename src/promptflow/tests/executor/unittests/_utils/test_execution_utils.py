@@ -38,6 +38,27 @@ class TestFlowExecutor:
                 {"input_from_default": "input_value", "another_key": "input_value"},
                 {"input_from_default": "input_value", "another_key": "input_value"},
             ),
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.BOOL, default=False),
+                },
+                {},
+                {"input_from_default": False},
+            ),
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.LIST, default=[]),
+                },
+                {},
+                {"input_from_default": []},
+            ),
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.OBJECT, default={}),
+                },
+                {},
+                {"input_from_default": {}},
+            ),
         ],
     )
     def test_apply_default_value_for_input(self, flow_inputs, inputs, expected_inputs):

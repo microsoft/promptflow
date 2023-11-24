@@ -9,8 +9,6 @@ import pytest
 
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk._errors import FlowOperationError
-from promptflow.azure import PFClient
-from promptflow.azure._entities._flow import Flow
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 from ..recording_utilities import is_live
@@ -20,7 +18,7 @@ flow_test_dir = tests_root_dir / "test_configs/flows"
 data_dir = tests_root_dir / "test_configs/datas"
 
 
-def create_flow(pf: PFClient, display_name) -> Flow:
+def create_flow(pf, display_name):
     flow_display_name = display_name
     flow_source = flow_test_dir / "simple_fetch_url/"
     description = "test flow"
@@ -47,11 +45,11 @@ def create_flow(pf: PFClient, display_name) -> Flow:
     "vcr_recording",
 )
 class TestFlow:
-    def test_create_flow(self, pf: PFClient, randstr: Callable[[str], str]):
+    def test_create_flow(self, pf, randstr: Callable[[str], str]):
         flow_display_name = randstr("flow_display_name")
         create_flow(pf, flow_display_name)
 
-    def test_get_flow(self, pf: PFClient, randstr: Callable[[str], str]):
+    def test_get_flow(self, pf, randstr: Callable[[str], str]):
         flow_display_name = randstr("flow_display_name")
         flow = create_flow(pf, flow_display_name)
         result = pf.flows.get(name=flow.name)
@@ -73,13 +71,13 @@ class TestFlow:
         assert output.keys() == {"category", "evidence"}
 
     @pytest.mark.usefixtures("mock_get_user_identity_info")
-    def test_list_flows(self, pf: PFClient):
+    def test_list_flows(self, pf):
         flows = pf.flows.list(max_results=3)
         for flow in flows:
             print(json.dumps(flow._to_dict(), indent=4))
         assert len(flows) == 3
 
-    def test_list_flows_invalid_cases(self, pf: PFClient):
+    def test_list_flows_invalid_cases(self, pf):
         with pytest.raises(FlowOperationError, match="'max_results' must be a positive integer"):
             pf.flows.list(max_results=0)
 

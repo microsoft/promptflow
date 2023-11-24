@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import json
 
 from flask import jsonify, request
 from flask_restx import Namespace, Resource, fields
@@ -13,10 +12,6 @@ from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
 api = Namespace("Connections", description="Connections Management")
-
-# Define create or update connection request parsing
-create_or_update_parser = api.parser()
-create_or_update_parser.add_argument("connection_dict", type=str, location="args", required=True)
 
 # Response model of list connections
 list_connection_field = api.model(
@@ -68,25 +63,24 @@ class Connection(Resource):
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)
 
-    @api.doc(parser=create_or_update_parser, description="Create connection")
+    @api.doc(body=dict_field, description="Create connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def post(self, name: str):
         connection_op = ConnectionOperations()
-        args = create_or_update_parser.parse_args()
-        connection_data = json.loads(args["connection_dict"])
+        connection_data = request.get_json(force=True)
         connection_data["name"] = name
         connection = _Connection._load(data=connection_data)
         connection = connection_op.create_or_update(connection)
         return jsonify(connection._to_dict())
 
-    @api.doc(parser=create_or_update_parser, description="Update connection")
+    @api.doc(body=dict_field, description="Update connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def put(self, name: str):
         connection_op = ConnectionOperations()
-        args = create_or_update_parser.parse_args()
-        params_override = [{k: v} for k, v in json.loads(args["connection_dict"]).items()]
+        connection_dict = request.get_json(force=True)
+        params_override = [{k: v} for k, v in connection_dict.items()]
         existing_connection = connection_op.get(name)
         connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
         connection._secrets = existing_connection._secrets

@@ -10,8 +10,8 @@ import multiprocessing
 import os
 import platform
 import re
-import stat
 import shutil
+import stat
 import sys
 import tempfile
 import zipfile
@@ -20,6 +20,7 @@ from enum import Enum
 from os import PathLike
 from pathlib import Path
 from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
+from urllib.parse import urlparse
 
 import keyring
 import pydash
@@ -538,7 +539,7 @@ def print_pf_version():
     print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
     print()
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
-    print('Python ({}) {}'.format(platform.system(), sys.version))
+    print("Python ({}) {}".format(platform.system(), sys.version))
 
 
 class PromptflowIgnoreFile(IgnoreFile):
@@ -961,3 +962,22 @@ def is_from_cli():
     from promptflow._core.operation_context import OperationContext
 
     return CLI_UA in OperationContext.get_instance().get_user_agent()
+
+
+def is_url(value: Union[PathLike, str]) -> bool:
+    try:
+        result = urlparse(str(value))
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
+
+def is_remote_uri(obj) -> bool:
+    # return True if it's supported remote uri
+    if isinstance(obj, str):
+        if obj.startswith("azureml:"):
+            # azureml: started, azureml:name:version, azureml://xxx
+            return True
+        elif is_url(obj):
+            return True
+    return False
