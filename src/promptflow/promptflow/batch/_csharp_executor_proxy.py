@@ -33,6 +33,8 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
+        # TODO: connection_provider_url is not required for local,
+        # will remove it after C# executor marks it as optional
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
