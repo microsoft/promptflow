@@ -51,9 +51,9 @@ def log_activity(
     :type custom_dimensions: dict
     :return: None
     """
-    from promptflow._sdk._utils import setup_user_agent_to_operation_context
+    from promptflow._core.operation_context import OperationContext
 
-    user_agent = setup_user_agent_to_operation_context()
+    user_agent = OperationContext.get_instance().get_user_agent()
 
     activity_info = {
         # TODO(2699383): use same request id with service caller
