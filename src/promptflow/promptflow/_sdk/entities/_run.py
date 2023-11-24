@@ -147,12 +147,12 @@ class Run(YAMLTranslatableMixin):
         self._use_remote_flow = is_remote_uri(flow)
         self._experiment_name = None
         self._lineage_id = None
-        # default run name: flow directory name + timestamp
-        self.name = name or self._generate_run_name()
         if self._use_remote_flow:
             self._flow_name = parse_remote_flow_pattern(flow)
             self._experiment_name = self._flow_name
             self._lineage_id = self._flow_name
+        # default run name: flow directory name + timestamp
+        self.name = name or self._generate_run_name()
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
             self.flow = Path(flow).resolve().absolute()
             flow_dir = self._get_flow_dir()
@@ -399,7 +399,7 @@ class Run(YAMLTranslatableMixin):
     def _generate_run_name(self) -> str:
         """Generate a run name with flow_name_variant_timestamp format."""
         try:
-            flow_name = self._flow_name
+            flow_name = self._get_flow_dir().name if not self._use_remote_flow else self._flow_name
             variant = self.variant
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
