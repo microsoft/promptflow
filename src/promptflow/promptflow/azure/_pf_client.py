@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import os
 from os import PathLike
-from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from azure.ai.ml import MLClient
@@ -14,7 +13,6 @@ from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
 from promptflow._sdk.entities import Run
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
-from promptflow.azure._utils.gerneral import is_remote_uri
 from promptflow.azure.operations import RunOperations
 from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
@@ -236,17 +234,6 @@ class PFClient:
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
-        if not os.path.exists(flow):
-            raise FileNotFoundError(f"flow path {flow} does not exist")
-        if is_remote_uri(data):
-            # Pass through ARM id or remote url, the error will happen in runtime if format is not correct currently.
-            pass
-        else:
-            if data and not os.path.exists(data):
-                raise FileNotFoundError(f"data path {data} does not exist")
-        if not run and not data:
-            raise ValueError("at least one of data or run must be provided")
-
         run = Run(
             name=name,
             display_name=display_name,
@@ -255,22 +242,24 @@ class PFClient:
             column_mapping=column_mapping,
             run=run,
             variant=variant,
-            flow=Path(flow),
+            flow=flow,
             connections=connections,
             environment_variables=environment_variables,
         )
         return self.runs.create_or_update(run=run, **kwargs)
 
-    def stream(self, run: Union[str, Run]) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
 
         :param run: Run object or name of the run.
         :type run: Union[str, ~promptflow.sdk.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails or canceled.
+        :type raise_on_error: bool
         :return: flow run info.
         """
         if isinstance(run, Run):
             run = run.name
-        return self.runs.stream(run)
+        return self.runs.stream(run, raise_on_error)
 
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False

@@ -32,7 +32,7 @@ class TestLineExecutionProcessPool:
             inputs = self.get_bulk_inputs(flow_folder)
             return inputs[0]
         return {
-            "url": "https://www.apple.com/shop/buy-iphone/iphone-14",
+            "url": "https://www.microsoft.com/en-us/windows/",
             "text": "some_text",
         }
 
@@ -200,7 +200,7 @@ class TestLineExecutionProcessPool:
         assert use_fork is False
 
     def test_process_set_environment_variable_failed(self, dev_connections):
-        with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
+        with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
             mock_logger.warning.return_value = None
             os.environ["PF_BATCH_METHOD"] = "test"
             line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
@@ -224,3 +224,37 @@ class TestLineExecutionProcessPool:
         # Not set start method
         context = get_multiprocessing_context()
         assert context.get_start_method() == multiprocessing.get_start_method()
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    def test_process_pool_run_with_exception(self, flow_folder, dev_connections, mocker: MockFixture):
+        # mock process pool run execution raise error
+        test_error_msg = "Test user error"
+        mocker.patch(
+            "promptflow.executor._line_execution_process_pool.LineExecutionProcessPool." "_timeout_process_wrapper",
+            side_effect=UserErrorException(message=test_error_msg, target=ErrorTarget.AZURE_RUN_STORAGE),
+        )
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+        )
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs()
+        nlines = len(bulk_inputs)
+        with LineExecutionProcessPool(
+            executor,
+            nlines,
+            run_id,
+            "",
+            False,
+            None,
+        ) as pool:
+            with pytest.raises(UserErrorException) as e:
+                pool.run(zip(range(nlines), bulk_inputs))
+            assert e.value.message == test_error_msg
+            assert e.value.target == ErrorTarget.AZURE_RUN_STORAGE
+            assert e.value.error_codes[0] == "UserError"

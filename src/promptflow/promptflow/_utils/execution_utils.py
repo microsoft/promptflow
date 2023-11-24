@@ -11,7 +11,7 @@ from promptflow.contracts.run_info import FlowRunInfo, Status
 def apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
-        if key not in updated_inputs and (value and value.default):
+        if key not in updated_inputs and (value and value.default is not None):
             updated_inputs[key] = value.default
     return updated_inputs
 
