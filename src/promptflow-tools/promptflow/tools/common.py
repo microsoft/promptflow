@@ -265,18 +265,6 @@ def process_function_call(function_call):
     return param
 
 
-def convert_function_call_message_to_dict(obj):
-    if isinstance(obj, (str, int, float, bool, type(None))):
-        return obj
-    elif isinstance(obj, list):
-        return [convert_function_call_message_to_dict(v) for v in obj]
-    elif isinstance(obj, dict):
-        return {k: convert_function_call_message_to_dict(v) for k, v in obj.items()}
-    else:
-        # assume it's a class
-        return {k: convert_function_call_message_to_dict(v) for k, v in obj.__dict__.items() if not k.startswith('_')}
-
-
 def post_process_chat_api_response(completion, stream, functions):
     if stream:
         if functions is not None:
@@ -295,7 +283,7 @@ def post_process_chat_api_response(completion, stream, functions):
         # When calling function, function_call response will be returned as a field in message, so we need return
         # message directly. Otherwise, we only return content.
         if functions is not None:
-            return convert_function_call_message_to_dict(completion.choices[0].message)
+            return completion.model_dump()["choices"][0]["message"]
         else:
             # chat api may return message with no content.
             return getattr(completion.choices[0].message, "content", "")
