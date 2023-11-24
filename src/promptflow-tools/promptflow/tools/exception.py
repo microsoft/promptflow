@@ -1,5 +1,3 @@
-from openai import OpenAIError
-
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 openai_error_code_ref_message = "Error reference: https://platform.openai.com/docs/guides/error-codes/api-errors"
