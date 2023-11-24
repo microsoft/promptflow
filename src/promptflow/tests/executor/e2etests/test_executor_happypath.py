@@ -1,3 +1,4 @@
+import multiprocessing
 from types import GeneratorType
 
 import pytest
@@ -105,6 +106,19 @@ class TestExecutor:
         assert isinstance(run_info.api_calls, list)
         assert run_info.node == node_name
         assert run_info.system_metrics["duration"] >= 0
+
+    def test_executor_exec_node_with_llm_node(self, dev_connections):
+        # Run the test in a new process to ensure the openai api is injected correctly for the single node run
+        queue = multiprocessing.Queue()
+        process = multiprocessing.Process(
+            target=target_func,
+            args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True)
+        )
+        process.start()
+        process.join()
+
+        if not queue.empty():
+            raise queue.get()
 
     def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
@@ -225,3 +239,20 @@ class TestExecutor:
         flow_result = executor.exec_line({"input": "World"})
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.output["output"] == "Hello World"
+
+
+def target_func(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
+    try:
+        result = FlowExecutor.load_and_exec_node(
+            flow_file=get_yaml_file(flow_file),
+            node_name=node_name,
+            flow_inputs=flow_inputs,
+            dependency_nodes_outputs=dependency_nodes_outputs,
+            connections=connections,
+            raise_ex=raise_ex
+        )
+        assert len(result.api_calls) == 1
+        # Assert llm single node run contains openai traces
+        assert result.api_calls[0]["children"]
+    except Exception as ex:
+        queue.put(ex)
