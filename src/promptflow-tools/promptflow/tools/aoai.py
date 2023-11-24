@@ -7,7 +7,7 @@ except Exception:
         "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
 
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
-    validate_functions, process_function_call, post_process_chat_api_response
+    validate_functions, process_function_call, post_process_chat_api_response, connection_mapping
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -20,11 +20,8 @@ class AzureOpenAI(ToolProvider):
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
         self.connection = connection
-        self._client = AzureOpenAIClient(
-            api_key=connection.api_key,
-            api_version=connection.api_version,
-            azure_endpoint=connection.api_base
-        )
+        self._connection_dict = connection_mapping(self.connection)
+        self._client = AzureOpenAIClient(**self._connection_dict)
 
     def calculate_cache_string_for_completion(
         self,
@@ -93,7 +90,8 @@ class AzureOpenAI(ToolProvider):
             def generator():
                 for chunk in response:
                     if chunk.choices:
-                        yield chunk.choices[0].text or ""
+                        yield chunk.choices[0].text if hasattr(chunk.choices[0], 'text') and \
+                               chunk.choices[0].text is not None else ""
 
             # We must return the generator object, not using yield directly here.
             # Otherwise, the function itself will become a generator, despite whether stream is True or False.

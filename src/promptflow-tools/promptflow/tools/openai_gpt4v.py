@@ -9,17 +9,14 @@ from promptflow.contracts.types import PromptTemplate
 from promptflow._internal import ToolProvider, tool
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, post_process_chat_api_response, preprocess_template_string, \
-    find_referenced_image_set, convert_to_chat_list
+    find_referenced_image_set, convert_to_chat_list, connection_mapping
 
 
 class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
-        self._client = OpenAIClient(
-            api_key=connection.api_key,
-            organization=connection.organization,
-            base_url=connection.api_base
-        )
+        self._connection_dict = connection_mapping(connection)
+        self._client = OpenAIClient(**self._connection_dict)
 
     @tool(streaming_option_parameter="stream")
     @handle_openai_error()

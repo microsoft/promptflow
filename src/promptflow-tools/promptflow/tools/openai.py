@@ -7,7 +7,8 @@ except Exception:
         "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
 
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
-    parse_chat, to_bool, validate_functions, process_function_call, post_process_chat_api_response
+    parse_chat, to_bool, validate_functions, process_function_call, \
+    post_process_chat_api_response, connection_mapping
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -30,11 +31,8 @@ class Engine(str, Enum):
 class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
-        self._client = OpenAIClient(
-            api_key=connection.api_key,
-            organization=connection.organization,
-            base_url=connection.api_base
-        )
+        self._connection_dict = connection_mapping(connection)
+        self._client = OpenAIClient(**self._connection_dict)
 
     @tool
     @handle_openai_error()
@@ -88,7 +86,7 @@ class OpenAI(ToolProvider):
             def generator():
                 for chunk in response:
                     if chunk.choices:
-                        yield chunk.choices[0].text or ""
+                        yield getattr(chunk.choices[0], "text", "")
 
             # We must return the generator object, not using yield directly here.
             # Otherwise, the function itself will become a generator, despite whether stream is True or False.

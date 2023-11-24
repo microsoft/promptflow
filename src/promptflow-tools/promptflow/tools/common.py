@@ -9,7 +9,8 @@ from jinja2 import Template
 from openai import APIConnectionError, APIStatusError, APIError, RateLimitError, APITimeoutError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
-    ChatAPIFunctionRoleInvalidFormat
+    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
@@ -299,7 +300,9 @@ def post_process_chat_api_response(completion, stream, functions):
         def generator():
             for chunk in completion:
                 if chunk.choices:
-                    yield chunk.choices[0].delta.content or ""
+                    yield chunk.choices[0].delta.content \
+                        if hasattr(chunk.choices[0].delta, 'content') and \
+                           chunk.choices[0].delta.content is not None else ""
 
         # We must return the generator object, not using yield directly here.
         # Otherwise, the function itself will become a generator, despite whether stream is True or False.
@@ -359,3 +362,22 @@ def find_referenced_image_set(kwargs: dict):
     except ImportError:
         pass
     return referenced_images
+
+
+def connection_mapping(connection):
+    if isinstance(connection, AzureOpenAIConnection):
+        return {
+            "api_key": connection.api_key,
+            "api_version": connection.api_version,
+            "azure_endpoint": connection.api_base
+        }
+    elif isinstance(connection, OpenAIConnection):
+        return {
+            "api_key": connection.api_key,
+            "organization": connection.organization,
+            "base_url": connection.api_base
+        }
+    else:
+        error_message = f"Not Support connection type '{type(connection).__name__}'. " \
+                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
+        raise InvalidConnectionType(message=error_message)
