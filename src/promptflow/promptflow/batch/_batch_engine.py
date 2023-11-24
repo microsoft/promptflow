@@ -137,7 +137,7 @@ class BatchEngine:
         else:
             line_results = asyncio.run(self._exec_batch_internal(batch_inputs, run_id))
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-        aggr_results = self._exec_aggregation_internal(batch_inputs, line_results, run_id)
+        aggr_results = asyncio.run(self._exec_aggregation_internal(batch_inputs, line_results, run_id))
 
         # persist outputs to output dir
         outputs = [
@@ -169,7 +169,7 @@ class BatchEngine:
             log_progress(self._start_time, bulk_logger, len(line_results), total_lines)
         return line_results
 
-    def _exec_aggregation_internal(
+    async def _exec_aggregation_internal(
         self,
         batch_inputs: List[dict],
         line_results: List[LineResult],
@@ -197,8 +197,8 @@ class BatchEngine:
         )
         succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
-            aggr_results = asyncio.run(
-                self._executor_proxy.exec_aggregation_async(succeeded_inputs, succeeded_aggregation_inputs, run_id)
+            aggr_results = await self._executor_proxy.exec_aggregation_async(
+                succeeded_inputs, succeeded_aggregation_inputs, run_id
             )
             bulk_logger.info("Finish executing aggregation nodes.")
             return aggr_results
