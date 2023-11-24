@@ -32,7 +32,20 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
     ) -> "CSharpExecutorProxy":
         """Create a new executor"""
         port = cls.find_available_port()
-        command = ["dotnet", EXECUTOR_SERVICE_DLL, "-p", port, "-y", flow_file, "-a", ".", "-c", "", "-l", ""]
+        command = [
+            "dotnet",
+            EXECUTOR_SERVICE_DLL,
+            "-p",
+            port,
+            "--yaml_path",
+            flow_file,
+            "--assembly_folder",
+            ".",
+            "--connection_provider_url",
+            "",
+            "--log_path",
+            "",
+        ]
         process = subprocess.Popen(command)
         return cls(process, port)
 
