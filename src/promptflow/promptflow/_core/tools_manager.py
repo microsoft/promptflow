@@ -185,7 +185,7 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
                     "Please choose from the available types: {supported_types}. "
                     "If you need further assistance, kindly contact support."
                 ),
-                tool_type=tool_type.value,
+                tool_type=tool_type.value if hasattr(tool_type, "value") else tool_type,
                 supported_types=",".join([ToolType.PYTHON, ToolType.PROMPT, ToolType.LLM]),
             )
 
