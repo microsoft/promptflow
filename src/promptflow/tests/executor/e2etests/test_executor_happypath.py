@@ -109,9 +109,10 @@ class TestExecutor:
 
     def test_executor_exec_node_with_llm_node(self, dev_connections):
         # Run the test in a new process to ensure the openai api is injected correctly for the single node run
-        queue = multiprocessing.Queue()
-        process = multiprocessing.Process(
-            target=target_func,
+        context = multiprocessing.get_context("spawn")
+        queue = context.Queue()
+        process = context.Process(
+            target=exec_node_within_process,
             args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True)
         )
         process.start()
@@ -241,7 +242,7 @@ class TestExecutor:
         assert flow_result.output["output"] == "Hello World"
 
 
-def target_func(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
+def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
     try:
         result = FlowExecutor.load_and_exec_node(
             flow_file=get_yaml_file(flow_file),
