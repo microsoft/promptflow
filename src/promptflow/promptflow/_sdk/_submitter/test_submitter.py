@@ -23,7 +23,7 @@ from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow.batch._csharp_executor_proxy import CsharpExecutorProxy
+from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 
 from .utils import SubmitterHelper, variant_overwrite_context
 
@@ -399,25 +399,6 @@ class TestSubmitterViaProxy(TestSubmitter):
     def __init__(self, flow: Flow, flow_context: FlowContext, client=None):
         super().__init__(flow, flow_context, client)
 
-    @contextlib.contextmanager
-    def init(self):
-        with super().init():
-            logger.info("Promptflow proxy executor starts initializing...")
-            connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
-                tools_meta=CsharpExecutorProxy.generate_tool_metadata(
-                    flow_dag=self.flow.dag,
-                    working_dir=self.flow.code,
-                )
-            )
-            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            self._executor = CsharpExecutorProxy.create(
-                flow_file=self.flow.path,
-                working_dir=self.flow.code,
-                connections=connections,
-                storage=storage,
-            )
-            logger.info("Promptflow proxy executor initiated successfully.")
-            yield self
 
     def flow_test(
         self,
@@ -430,7 +411,6 @@ class TestSubmitterViaProxy(TestSubmitter):
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY
-        from promptflow.batch import CSharpExecutorProxy
 
         if not connections:
             connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
@@ -488,10 +468,27 @@ class TestSubmitterViaProxy(TestSubmitter):
     def exec_with_inputs(self, inputs):
         from promptflow._constants import LINE_NUMBER_KEY
 
-        # validate inputs
-        flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-        line_result = self._executor.exec_line(inputs, index=0)
-        if isinstance(line_result.output, dict):
-            # Remove line_number from output
-            line_result.output.pop(LINE_NUMBER_KEY, None)
-        return line_result
+        try:
+            connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
+                tools_meta=CSharpExecutorProxy.generate_tool_metadata(
+                    flow_dag=self.flow.dag,
+                    working_dir=self.flow.code,
+                )
+            )
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            flow_executor = CSharpExecutorProxy.create(
+                flow_file=self.flow.path,
+                working_dir=self.flow.code,
+                connections=connections,
+                storage=storage,
+            )
+            # validate inputs
+            flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
+            line_result = asyncio.run(flow_executor.exec_line_async(inputs, index=0))
+            # line_result = flow_executor.exec_line(inputs, index=0)
+            if isinstance(line_result.output, dict):
+                # Remove line_number from output
+                line_result.output.pop(LINE_NUMBER_KEY, None)
+            return line_result
+        finally:
+            flow_executor.destroy()

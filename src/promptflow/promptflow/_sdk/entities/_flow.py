@@ -320,7 +320,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         if not self._executable:
             self._executable = self._init_executable()
 
-        if self._executable.program_language == FlowLanguage.Csharp:
+        if self._executable.program_language == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
                 result = submitter.exec_with_inputs(
                     inputs=inputs,
