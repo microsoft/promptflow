@@ -38,7 +38,6 @@ jobs:
         setupType: promptflow_with_extra
         scriptPath: ${{ env.testWorkingDirectory }}
     - name: Upload Wheel
-      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: wheel
@@ -58,7 +57,7 @@ jobs:
     - name: set test mode
       shell: pwsh
       run: |
-        if ("${{ github.event_name }}" == "pull_request" -and "${{ matrix.os }}" != "windows-latest")) {
+        if ("${{ github.event_name }}" == "pull_request" -and "${{ matrix.os }}" != "windows-latest") {
           echo "PROMPT_FLOW_TEST_MODE=replay"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
         } else {
           echo "PROMPT_FLOW_TEST_MODE=live"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
