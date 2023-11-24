@@ -64,7 +64,7 @@ class RunOperations(TelemetryMixin):
         )
 
     @monitor_operation(activity_name="pf.runs.get", activity_type=ActivityType.PUBLICAPI)
-    def get(self, name: str) -> Run:
+    def get(self, name: str, **kwargs) -> Run:
         """Get a run entity.
 
         :param name: Name of the run.
@@ -94,7 +94,7 @@ class RunOperations(TelemetryMixin):
 
             created_run = RunSubmitter(run_operations=self).submit(run=run, **kwargs)
             if stream:
-                self.stream(created_run)
+                self.stream(created_run, inner_call=True, **kwargs)
             return created_run
         except RunExistsError:
             raise RunExistsError(f"Run {run.name!r} already exists.")
@@ -111,7 +111,7 @@ class RunOperations(TelemetryMixin):
         )
 
     @monitor_operation(activity_name="pf.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, name: Union[str, Run], raise_on_error: bool = True) -> Run:
+    def stream(self, name: Union[str, Run], raise_on_error: bool = True, **kwargs) -> Run:
         """Stream run logs to the console.
 
         :param name: Name of the run, or run object.
@@ -122,19 +122,19 @@ class RunOperations(TelemetryMixin):
         :rtype: ~promptflow.entities.Run
         """
         name = Run._validate_and_return_run_name(name)
-        run = self.get(name=name)
+        run = self.get(name=name, inner_call=True, **kwargs)
         local_storage = LocalStorageOperations(run=run)
 
         file_handler = sys.stdout
         try:
             printed = 0
-            run = self.get(run.name)
+            run = self.get(run.name, inner_call=True, **kwargs)
             while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
                 file_handler.flush()
                 available_logs = local_storage.logger.get_logs()
                 printed = incremental_print(available_logs, printed, file_handler)
                 time.sleep(10)
-                run = self.get(run.name)
+                run = self.get(run.name, inner_call=True, **kwargs)
             # ensure all logs are printed
             file_handler.flush()
             available_logs = local_storage.logger.get_logs()
@@ -157,7 +157,7 @@ class RunOperations(TelemetryMixin):
         return run
 
     @monitor_operation(activity_name="pf.runs.archive", activity_type=ActivityType.PUBLICAPI)
-    def archive(self, name: Union[str, Run]) -> Run:
+    def archive(self, name: Union[str, Run], **kwargs) -> Run:
         """Archive a run.
 
         :param name: Name of the run.
@@ -167,10 +167,10 @@ class RunOperations(TelemetryMixin):
         """
         name = Run._validate_and_return_run_name(name)
         ORMRun.get(name).archive()
-        return self.get(name)
+        return self.get(name, inner_call=True, **kwargs)
 
     @monitor_operation(activity_name="pf.runs.restore", activity_type=ActivityType.PUBLICAPI)
-    def restore(self, name: Union[str, Run]) -> Run:
+    def restore(self, name: Union[str, Run], **kwargs) -> Run:
         """Restore a run.
 
         :param name: Name of the run.
@@ -180,7 +180,7 @@ class RunOperations(TelemetryMixin):
         """
         name = Run._validate_and_return_run_name(name)
         ORMRun.get(name).restore()
-        return self.get(name)
+        return self.get(name, inner_call=True, **kwargs)
 
     @monitor_operation(activity_name="pf.runs.update", activity_type=ActivityType.PUBLICAPI)
     def update(
@@ -204,11 +204,11 @@ class RunOperations(TelemetryMixin):
         name = Run._validate_and_return_run_name(name)
         # the kwargs is to support update run status scenario but keep it private
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
-        return self.get(name)
+        return self.get(name, inner_call=True, **kwargs)
 
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
-        self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
+        self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False, **kwargs
     ) -> "DataFrame":
         """Get the details from the run.
 
@@ -236,7 +236,7 @@ class RunOperations(TelemetryMixin):
             raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
 
         name = Run._validate_and_return_run_name(name)
-        run = self.get(name=name)
+        run = self.get(name=name, inner_call=True, **kwargs)
         local_storage = LocalStorageOperations(run=run)
         inputs, outputs = local_storage.load_inputs_and_outputs()
         inputs = inputs.to_dict("list")
@@ -255,7 +255,7 @@ class RunOperations(TelemetryMixin):
         return df
 
     @monitor_operation(activity_name="pf.runs.get_metrics", activity_type=ActivityType.PUBLICAPI)
-    def get_metrics(self, name: Union[str, Run]) -> Dict[str, Any]:
+    def get_metrics(self, name: Union[str, Run], **kwargs) -> Dict[str, Any]:
         """Get run metrics.
 
         :param name: name of the run.
@@ -264,12 +264,12 @@ class RunOperations(TelemetryMixin):
         :rtype: Dict[str, Any]
         """
         name = Run._validate_and_return_run_name(name)
-        run = self.get(name=name)
+        run = self.get(name=name, inner_call=True, **kwargs)
         run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
         return local_storage.load_metrics()
 
-    def _visualize(self, runs: List[Run], html_path: Optional[str] = None) -> None:
+    def _visualize(self, runs: List[Run], html_path: Optional[str] = None, **kwargs) -> None:
         details, metadatas = [], []
         for run in runs:
             # check run status first
@@ -287,7 +287,7 @@ class RunOperations(TelemetryMixin):
                 output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,
-                metrics=self.get_metrics(name=run.name),
+                metrics=self.get_metrics(name=run.name, inner_call=True, **kwargs),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
             )
@@ -311,33 +311,33 @@ class RunOperations(TelemetryMixin):
         validated_runs = []
         for run in runs:
             run_name = Run._validate_and_return_run_name(run)
-            validated_runs.append(self.get(name=run_name))
+            validated_runs.append(self.get(name=run_name, inner_call=True, **kwargs))
 
         html_path = kwargs.pop("html_path", None)
         try:
-            self._visualize(validated_runs, html_path=html_path)
+            self._visualize(validated_runs, html_path=html_path, **kwargs)
         except InvalidRunStatusError as e:
             error_message = f"Cannot visualize non-completed run. {str(e)}"
             logger.error(error_message)
 
-    def _get_outputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
+    def _get_outputs(self, run: Union[str, Run], **kwargs) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
-        local_storage = self._get_local_storage(run)
+        local_storage = self._get_local_storage(run, **kwargs)
         return local_storage.load_outputs()
 
-    def _get_inputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
+    def _get_inputs(self, run: Union[str, Run], **kwargs) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
-        local_storage = self._get_local_storage(run)
+        local_storage = self._get_local_storage(run, **kwargs)
         return local_storage.load_inputs()
 
-    def _get_outputs_path(self, run: Union[str, Run]) -> str:
+    def _get_outputs_path(self, run: Union[str, Run], **kwargs) -> str:
         """Get the outputs file path of the run."""
-        local_storage = self._get_local_storage(run)
+        local_storage = self._get_local_storage(run, **kwargs)
         return local_storage._outputs_path if local_storage.load_outputs() else None
 
-    def _get_data_path(self, run: Union[str, Run]) -> str:
+    def _get_data_path(self, run: Union[str, Run], **kwargs) -> str:
         """Get the outputs file path of the run."""
-        local_storage = self._get_local_storage(run)
+        local_storage = self._get_local_storage(run, **kwargs)
         # TODO: what if the data is deleted?
         if not local_storage._data_path or not os.path.exists(local_storage._data_path):
             raise UserErrorException(
@@ -346,8 +346,8 @@ class RunOperations(TelemetryMixin):
             )
         return local_storage._data_path
 
-    def _get_local_storage(self, run: Union[str, Run]) -> LocalStorageOperations:
+    def _get_local_storage(self, run: Union[str, Run], **kwargs) -> LocalStorageOperations:
         """Get the local storage of the run."""
         if isinstance(run, str):
-            run = self.get(name=run)
+            run = self.get(name=run, inner_call=True, **kwargs)
         return LocalStorageOperations(run)

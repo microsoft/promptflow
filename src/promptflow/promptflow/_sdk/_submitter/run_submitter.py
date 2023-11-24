@@ -59,9 +59,9 @@ class RunSubmitter:
         with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
             local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
             with local_storage.logger:
-                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage, **kwargs)
 
-    def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
+    def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations, **kwargs) -> dict:
         run_id = run.name
         with _change_working_dir(flow.code):
             connections = SubmitterHelper.resolve_connections(flow=flow)
@@ -123,6 +123,8 @@ class RunSubmitter:
                 status=status,
                 end_time=datetime.datetime.now(),
                 system_metrics=system_metrics,
+                inner_call=True,
+                **kwargs,
             )
 
     def _resolve_input_dirs(self, run: Run):
