@@ -152,6 +152,16 @@ class TestFlowRun:
         assert isinstance(run, Run)
         assert run.name == name
 
+        # test invalid registry flow
+        with pytest.raises(UserErrorException, match="Invalid remote flow pattern, got"):
+            pf.run(
+                flow="azureml://registries/no-flow",
+                data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+                column_mapping={"name": "${data.name}"},
+                runtime=runtime,
+                name=name,
+            )
+
     def test_run_with_connection_overwrite(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
