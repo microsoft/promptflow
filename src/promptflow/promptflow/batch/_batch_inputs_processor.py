@@ -97,7 +97,7 @@ class BatchInputsProcessor:
         # For input has default value, we don't try to read data from default mapping.
         # Default value is in higher priority than default mapping.
         for key, value in self._flow_inputs.items():
-            if value and value.default:
+            if value and value.default is not None:
                 del result_mapping[key]
         result_mapping.update(inputs_mapping)
         return result_mapping

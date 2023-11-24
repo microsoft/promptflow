@@ -57,6 +57,17 @@ class TestFlowExecutor:
             ),
             (
                 {
+                    "input_from_default": FlowInputDefinition(type=ValueType.BOOL, default=False),
+                },
+                {"another_key": ["input_value", "input_value"]},
+                {},
+                {
+                    "input_from_default": [False, False],
+                    "another_key": ["input_value", "input_value"],
+                },
+            ),
+            (
+                {
                     "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
                 },
                 {},

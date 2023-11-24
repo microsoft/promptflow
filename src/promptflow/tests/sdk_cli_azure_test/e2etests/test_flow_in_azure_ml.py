@@ -4,8 +4,6 @@ from pathlib import Path
 import pydash
 import pytest
 import yaml
-from azure.ai.ml import load_component
-from azure.ai.ml.entities import Component
 
 from promptflow.connections import AzureOpenAIConnection
 
@@ -42,7 +40,7 @@ def normalize_arm_id(origin_value: str):
     return None
 
 
-def update_saved_spec(component: Component, saved_spec_path: str):
+def update_saved_spec(component, saved_spec_path: str):
     yaml_text = component._to_yaml()
     saved_spec_path = Path(saved_spec_path)
 
@@ -107,6 +105,7 @@ class TestFlowInAzureML:
         request,
     ) -> None:
         # keep the simplest test here, more tests are in azure-ai-ml
+        from azure.ai.ml import load_component
 
         flows_dir = "./tests/test_configs/flows"
 

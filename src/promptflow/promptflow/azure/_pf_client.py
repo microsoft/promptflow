@@ -12,9 +12,9 @@ from azure.core.credentials import TokenCredential
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
+from promptflow._sdk._utils import is_remote_uri
 from promptflow._sdk.entities import Run
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
-from promptflow.azure._utils.gerneral import is_remote_uri
 from promptflow.azure.operations import RunOperations
 from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
