@@ -233,8 +233,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if in_jupyter_notebook():
             print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
         if stream:
-            self.stream(run=run.name)
-        return self.get(run=run.name)
+            self.stream(run=run.name, inner_call=True, **kwargs)
+        return self.get(run=run.name, inner_call=True, **kwargs)
 
     @monitor_operation(activity_name="pfazure.runs.list", activity_type=ActivityType.PUBLICAPI)
     def list(
@@ -316,7 +316,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :rtype: dict
         """
         run = Run._validate_and_return_run_name(run)
-        self._check_cloud_run_completed(run_name=run)
+        self._check_cloud_run_completed(run_name=run, **kwargs)
         metrics = self._get_metrics_from_metric_service(run)
         return metrics
 
@@ -350,7 +350,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
 
         run = Run._validate_and_return_run_name(run)
-        self._check_cloud_run_completed(run_name=run)
+        self._check_cloud_run_completed(run_name=run, **kwargs)
         child_runs = self._get_flow_runs_pagination(run, max_results=max_results)
         inputs, outputs = self._get_inputs_outputs_from_child_runs(child_runs)
 
@@ -390,9 +390,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             df = df.set_index(f"outputs.{LINE_NUMBER}")
         return df
 
-    def _check_cloud_run_completed(self, run_name: str) -> bool:
+    def _check_cloud_run_completed(self, run_name: str, **kwargs) -> bool:
         """Check if the cloud run is completed."""
-        run = self.get(run=run_name)
+        run = self.get(run=run_name, inner_call=True, **kwargs)
         run._check_run_status_is_completed()
 
     def _get_flow_runs_pagination(self, name: str, max_results: int) -> List[dict]:
@@ -557,7 +557,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             )
 
     @monitor_operation(activity_name="pfazure.runs.archive", activity_type=ActivityType.PUBLICAPI)
-    def archive(self, run: Union[str, Run]) -> Run:
+    def archive(self, run: Union[str, Run], **kwargs) -> Run:
         """Archive a run.
 
         :param run: The run name or run object
@@ -570,10 +570,10 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         payload = {
             RunHistoryKeys.HIDDEN: True,
         }
-        return self._modify_run_in_run_history(run_id=run, payload=payload)
+        return self._modify_run_in_run_history(run_id=run, payload=payload, **kwargs)
 
     @monitor_operation(activity_name="pfazure.runs.restore", activity_type=ActivityType.PUBLICAPI)
-    def restore(self, run: Union[str, Run]) -> Run:
+    def restore(self, run: Union[str, Run], **kwargs) -> Run:
         """Restore a run.
 
         :param run: The run name or run object
@@ -585,7 +585,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         payload = {
             RunHistoryKeys.HIDDEN: False,
         }
-        return self._modify_run_in_run_history(run_id=run, payload=payload)
+        return self._modify_run_in_run_history(run_id=run, payload=payload, **kwargs)
 
     def _get_log(self, flow_run_id: str) -> str:
         return self._service_caller.caller.bulk_runs.get_flow_run_log_content(
@@ -603,6 +603,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         display_name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
+        **kwargs,
     ) -> Optional[Run]:
         """Update a run. May update the display name, description or tags.
 
@@ -650,10 +651,10 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         elif tags is not None:
             logger.warning(f"Tags type must be 'Dict[str, str]', got non-dict or non-string key/value in tags: {tags}.")
 
-        return self._modify_run_in_run_history(run_id=run, payload=payload)
+        return self._modify_run_in_run_history(run_id=run, payload=payload, **kwargs)
 
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True, **kwargs) -> Run:
         """Stream the logs of a run.
 
         :param run: The run name or run object
@@ -663,7 +664,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :return: The run object
         :rtype: ~promptflow.entities.Run
         """
-        run = self.get(run=run)
+        run = self.get(run=run, inner_call=True, **kwargs)
         # TODO: maybe we need to make this configurable
         file_handler = sys.stdout
         # different from Azure ML job, flow job can run very fast, so it might not print anything;
@@ -693,7 +694,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 available_logs = self._get_log(flow_run_id=run.name)
                 printed = incremental_print(available_logs, printed, file_handler)
                 time.sleep(10)
-                run = self.get(run=run.name)
+                run = self.get(run=run.name, inner_call=True, **kwargs)
             # ensure all logs are printed
             file_handler.flush()
             available_logs = self._get_log(flow_run_id=run.name)
@@ -957,7 +958,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             payload[key] = value
         return payload
 
-    def _modify_run_in_run_history(self, run_id: str, payload: dict) -> Run:
+    def _modify_run_in_run_history(self, run_id: str, payload: dict, **kwargs) -> Run:
         """Modify run info in run history."""
         headers = self._get_headers()
         url = self._run_history_endpoint_url + f"/runs/{run_id}/modify"
@@ -967,7 +968,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if response.status_code == 200:
             # the modify api returns different data format compared with get api, so we use get api here to
             # return standard Run object
-            return self.get(run=run_id)
+            return self.get(run=run_id, inner_call=True, **kwargs)
         else:
             raise RunRequestException(
                 f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
