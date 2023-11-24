@@ -21,7 +21,7 @@ tests_root_dir = Path(__file__).parent.parent.parent
 
 
 def load_flow(source):
-    from promptflow._sdk._load_functions import load_flow
+    from promptflow.azure._load_functions import load_flow
 
     return load_flow(source=source)
 
