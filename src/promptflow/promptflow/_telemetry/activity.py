@@ -17,8 +17,6 @@ class ActivityType(object):
 
     PUBLICAPI = "PublicApi"  # incoming public API call (default)
     INTERNALCALL = "InternalCall"  # internal (function) call
-    CLIENTPROXY = "ClientProxy"  # an outgoing service API call
-    INNERCALL = "InnerCall"  # an inner public API call
 
 
 class ActivityCompletionStatus(object):
@@ -130,16 +128,18 @@ def monitor_operation(
             from promptflow._telemetry.telemetry import get_telemetry_logger
 
             logger = get_telemetry_logger()
-            # update activity type if it's an inner call
-            _activity_type = ActivityType.INNERCALL if kwargs.get("inner_call", False) else activity_type
             # TODO(2699383): use same request id with service caller
             # by pass request id from kwargs
             request_id = kwargs.get("request_id", uuid.uuid4())
             custom_dimensions["request_id"] = request_id
 
+            # check if it's first SDK call
+            first_sdk_call = kwargs.get("first_call", False)
+            custom_dimensions["first_sdk_call"] = first_sdk_call
+
             custom_dimensions.update(extract_telemetry_info(self))
 
-            with log_activity(logger, activity_name, _activity_type, custom_dimensions):
+            with log_activity(logger, activity_name, activity_type, custom_dimensions):
                 return f(self, *args, **kwargs)
 
         return wrapper
