@@ -13,12 +13,12 @@ from azure.ai.ml.entities import Data
 from promptflow._cli._pf_azure.entry import main
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+from ..recording_utilities import is_live
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -151,7 +151,8 @@ class TestCliWithAzure:
         assert isinstance(run, Run)
         assert run.properties["azureml.promptflow.runtime_name"] == runtime
 
-    def test_azure_cli_ua(self, pf):
+    @pytest.mark.skipif(condition=not is_live(), reason="This test requires an actual PFClient")
+    def test_azure_cli_ua(self, pf: PFClient):
         # clear user agent before test
         context = OperationContext().get_instance()
         context.user_agent = ""
@@ -164,6 +165,6 @@ class TestCliWithAzure:
                     "not_exist",
                     pf=pf,
                 )
-            user_agent = setup_user_agent_to_operation_context()
+            user_agent = context.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
             assert ua_dict.keys() == {"promptflow-sdk", "promptflow", "promptflow-cli"}

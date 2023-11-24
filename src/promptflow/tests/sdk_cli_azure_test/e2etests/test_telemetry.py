@@ -11,7 +11,7 @@ import pytest
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._utils import call_from_extension, setup_user_agent_to_operation_context
+from promptflow._sdk._utils import call_from_extension
 from promptflow._telemetry.activity import ActivityType, log_activity
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
@@ -167,7 +167,7 @@ class TestTelemetry:
         # start a clean local SDK client
         with environment_variable_overwrite(PF_USER_AGENT, ""):
             PFClient()
-            user_agent = setup_user_agent_to_operation_context()
+            user_agent = context.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
             assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
 
@@ -184,7 +184,7 @@ class TestTelemetry:
                 resource_group_name=pf._ml_client.resource_group_name,
                 workspace_name=pf._ml_client.workspace_name,
             )
-            user_agent = setup_user_agent_to_operation_context()
+            user_agent = context.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
             assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
 
