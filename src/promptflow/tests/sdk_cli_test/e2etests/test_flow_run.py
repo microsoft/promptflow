@@ -630,9 +630,7 @@ class TestFlowRun:
         )
         pf.visualize([run1, run2])
 
-    def test_incomplete_run_visualize(
-        self, azure_open_ai_connection: AzureOpenAIConnection, pf, capfd: pytest.CaptureFixture
-    ) -> None:
+    def test_incomplete_run_visualize(self, azure_open_ai_connection: AzureOpenAIConnection, pf, capfd) -> None:
         failed_run = pf.run(
             flow=f"{FLOWS_DIR}/failed_flow",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
@@ -645,7 +643,7 @@ class TestFlowRun:
         )
 
         # patch logger.error to print, so that we can capture the error message using capfd
-        from promptflow.azure.operations import _run_operations
+        from promptflow._sdk.operations import _run_operations
 
         _run_operations.logger.error = print
 
