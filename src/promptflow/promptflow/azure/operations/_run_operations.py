@@ -32,6 +32,7 @@ from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
+    REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
     ListViewType,
@@ -221,6 +222,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         """
         stream = kwargs.pop("stream", False)
         reset = kwargs.pop("reset_runtime", False)
+
+        # validate the run object
+        run._validate_for_run_create_operation()
 
         rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"), reset=reset)
 
@@ -770,6 +774,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return test_data
 
     def _resolve_flow(self, run: Run):
+        if run._use_remote_flow:
+            return self._resolve_flow_definition_resource_id(run=run)
         flow = load_flow(run.flow)
         # ignore .promptflow/dag.tools.json only for run submission scenario
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
@@ -918,7 +924,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _resolve_runtime(self, run, flow_path, runtime, reset=None):
         runtime = run._runtime or runtime
-        session_id = self._get_session_id(flow=flow_path)
+        # for remote flow case, use flow name as session id
+        # for local flow case, use flow path to calculate session id
+        session_id = run._flow_name if run._use_remote_flow else self._get_session_id(flow=flow_path)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime(run=run, session_id=session_id, reset=reset)
@@ -972,3 +980,14 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             raise RunRequestException(
                 f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
             )
+
+    def _resolve_flow_definition_resource_id(self, run: Run):
+        """Resolve the flow definition resource id."""
+        # for registry flow pattern, the flow uri can be passed as flow definition resource id directly
+        if run.flow.startswith(REGISTRY_URI_PREFIX):
+            return run.flow
+
+        # for workspace flow pattern, generate the flow definition resource id
+        workspace_id = self._workspace._workspace_id
+        location = self._workspace.location
+        return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{run._flow_name}"
