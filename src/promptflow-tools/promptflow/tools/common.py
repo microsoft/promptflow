@@ -6,7 +6,7 @@ import time
 from typing import List, Mapping
 
 from jinja2 import Template
-from openai import APIConnectionError, APIStatusError, APIError, RateLimitError
+from openai import APIConnectionError, APIStatusError, APIError, RateLimitError, APITimeoutError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat
@@ -201,10 +201,11 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
-                    if isinstance(e, APIConnectionError) and "connection aborted" not in str(e).lower():
+                    if isinstance(e, APIConnectionError) and not isinstance(e, APITimeoutError) \
+                            and "connection aborted" not in str(e).lower():
                         raise WrappedOpenAIError(e)
                     # 503 is ServiceUnavailableError
-                    if isinstance(e, APIStatusError) and not isinstance(e, RateLimitError) and e.status_code is not 503:
+                    if isinstance(e, APIStatusError) and not isinstance(e, RateLimitError) and e.status_code != 503:
                         raise WrappedOpenAIError(e)
                     if isinstance(e, RateLimitError) and getattr(e, "type", None) == "insufficient_quota":
                         # Exit retry if this is quota insufficient error
@@ -214,7 +215,12 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         # Exit retry if max retry reached
                         print(f"{type(e).__name__} reached max retry. Exit retry with user error.", file=sys.stderr)
                         raise ExceedMaxRetryTimes(e)
-                    retry_after_in_header = e.response.headers.get("retry-after", None)
+
+                    if hasattr(e, 'response') and e.response is not None:
+                        retry_after_in_header = e.response.headers.get("retry-after", None)
+                    else:
+                        retry_after_in_header = None
+
                     if not retry_after_in_header:
                         retry_after_seconds = delay * (2 ** i)
                         msg = (

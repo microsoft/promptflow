@@ -87,7 +87,7 @@ class TestHandleOpenAIError:
                 [
                     RateLimitError("Something went wrong", response=httpx.get('https://www.example.com'),
                                    body=None),
-                    # APITimeoutError(request=httpx.Request('GET', 'https://www.example.com'))
+                    APITimeoutError(request=httpx.Request('GET', 'https://www.example.com'))
                 ]
             ),
         ],
