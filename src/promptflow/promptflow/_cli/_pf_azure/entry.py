@@ -64,6 +64,7 @@ def run_command(args):
             invoke_finish_time - init_finish_time,
         )
 
+
 def entry(argv):
     """
     Control plane CLI tools for promptflow cloud version.
