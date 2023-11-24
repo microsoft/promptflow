@@ -1,5 +1,6 @@
 import contextlib
 import io
+import os
 import sys
 import tempfile
 import timeit
@@ -15,6 +16,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
+    os.environ["TELEMETRY_AGENT"] = "perf_monitor/1.0"
     sys.argv = list(cmd)
     output = io.StringIO()
     st = timeit.default_timer()

@@ -1,4 +1,5 @@
 import multiprocessing
+import os
 import sys
 import timeit
 from unittest import mock
@@ -11,6 +12,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 
 def run_cli_command(cmd, time_limit=3600):
+    os.environ["TELEMETRY_AGENT"] = "perf_monitor/1.0"
     with mock.patch.object(RunOperations, "create_or_update") as create_or_update_fun, \
             mock.patch.object(RunOperations, "update") as update_fun, \
             mock.patch.object(RunOperations, "get") as get_fun, \

@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import os
 from contextvars import ContextVar
 from typing import Dict
 
@@ -103,11 +103,16 @@ class OperationContext(Dict):
         """
 
         def parts():
-            if "user_agent" in self:
-                yield self.get("user_agent")
-            yield f"promptflow/{VERSION}"
+            agent = self.get("user_agent", '')
+            yield agent
+            promptflow_agent = f"promptflow/{VERSION}"
+            yield promptflow_agent if promptflow_agent not in agent else ''
+            user_agent = os.environ.get("USER_AGENT", '').strip()
+            yield user_agent if user_agent not in agent else ''
+            telemetry_agent = os.environ.get("TELEMETRY_AGENT", '').strip()
+            yield telemetry_agent if telemetry_agent not in agent else ''
 
-        return " ".join(parts())
+        return " ".join(parts()).strip()
 
     def append_user_agent(self, user_agent: str):
         """Append the user agent string.
@@ -118,11 +123,10 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        if "user_agent" in self:
-            if user_agent not in self.user_agent:
-                self.user_agent = f"{self.user_agent} {user_agent}"
-        else:
-            self.user_agent = user_agent
+        agent = self.get("user_agent", '')
+        user_agent = user_agent.strip()
+        if user_agent not in agent:
+            self.user_agent = f"{agent} {user_agent}".strip()
 
     def get_context_dict(self):
         """Get the context dictionary.

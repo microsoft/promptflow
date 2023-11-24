@@ -5,7 +5,8 @@
 import time
 import uuid
 
-from promptflow._telemetry.activity import add_telemetry_log, ActivityType, ActivityCompletionStatus
+from promptflow._telemetry.activity import ActivityType, log_activity
+from promptflow._telemetry.telemetry import get_telemetry_logger
 
 # Log the start time
 start_time = time.perf_counter()
@@ -50,68 +51,52 @@ def entry(argv):
     add_tool_parser(subparsers)
 
     args = parser.parse_args(argv)
-    # Log the init finish time
-    init_finish_time = time.perf_counter()
-    try:
-        # --verbose, enable info logging
-        if hasattr(args, "verbose") and args.verbose:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
-                handler.setLevel(logging.INFO)
-        # --debug, enable debug logging
-        if hasattr(args, "debug") and args.debug:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
-                handler.setLevel(logging.DEBUG)
+    logger = get_telemetry_logger()
+    activity_name = f"pf.{args.action}.{args.sub_action}"
+    with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
+        # Log the init finish time
+        init_finish_time = time.perf_counter()
+        try:
+            # --verbose, enable info logging
+            if hasattr(args, "verbose") and args.verbose:
+                for handler in logging.getLogger(LOGGER_NAME).handlers:
+                    handler.setLevel(logging.INFO)
+            # --debug, enable debug logging
+            if hasattr(args, "debug") and args.debug:
+                for handler in logging.getLogger(LOGGER_NAME).handlers:
+                    handler.setLevel(logging.DEBUG)
 
-        activity_name = f"pf.{args.action}.{args.sub_action}.cli"
-        message = f"{activity_name}.start"
-        add_telemetry_log(activity_name=activity_name,
-                          activity_type=ActivityType.PUBLICAPI,
-                          message=message,
-                          custom_dimensions={"request_id": str(uuid.uuid4())})
-        completion_status = ActivityCompletionStatus.SUCCESS
-        if args.version:
-            print_pf_version()
-        elif args.action == "flow":
-            dispatch_flow_commands(args)
-        elif args.action == "connection":
-            dispatch_connection_commands(args)
-        elif args.action == "run":
-            dispatch_run_commands(args)
-        elif args.action == "config":
-            dispatch_config_commands(args)
-        elif args.action == "tool":
-            dispatch_tool_commands(args)
-    except KeyboardInterrupt as ex:
-        completion_status = ActivityCompletionStatus.FAILURE
-        logger.debug("Keyboard interrupt is captured.")
-        raise ex
-    except SystemExit as ex:  # some code directly call sys.exit, this is to make sure command metadata is logged
-        completion_status = ActivityCompletionStatus.FAILURE
-        exit_code = ex.code if ex.code is not None else 1
-        logger.debug(f"Code directly call sys.exit with code {exit_code}")
-        raise ex
-    except Exception as ex:
-        completion_status = ActivityCompletionStatus.FAILURE
-        logger.debug(f"Command {args} execute failed. {str(ex)}")
-        raise ex
-    finally:
-        # Log the invoke finish time
-        invoke_finish_time = time.perf_counter()
-        logger.info(
-            "Command ran in %.3f seconds (init: %.3f, invoke: %.3f)",
-            invoke_finish_time - start_time,
-            init_finish_time - start_time,
-            invoke_finish_time - init_finish_time,
-        )
-        message = f"{activity_name}.complete"
-        custom_dimensions = {
-            'duration_ms': round((init_finish_time - start_time) * 1000, 2),
-            'completion_status': completion_status
-        }
-        add_telemetry_log(activity_name=activity_name,
-                          activity_type=ActivityType.PUBLICAPI,
-                          message=message,
-                          custom_dimensions=custom_dimensions)
+            if args.version:
+                print_pf_version()
+            elif args.action == "flow":
+                dispatch_flow_commands(args)
+            elif args.action == "connection":
+                dispatch_connection_commands(args)
+            elif args.action == "run":
+                dispatch_run_commands(args)
+            elif args.action == "config":
+                dispatch_config_commands(args)
+            elif args.action == "tool":
+                dispatch_tool_commands(args)
+        except KeyboardInterrupt as ex:
+            logger.debug("Keyboard interrupt is captured.")
+            raise ex
+        except SystemExit as ex:  # some code directly call sys.exit, this is to make sure command metadata is logged
+            exit_code = ex.code if ex.code is not None else 1
+            logger.debug(f"Code directly call sys.exit with code {exit_code}")
+            raise ex
+        except Exception as ex:
+            logger.debug(f"Command {args} execute failed. {str(ex)}")
+            raise ex
+        finally:
+            # Log the invoke finish time
+            invoke_finish_time = time.perf_counter()
+            logger.info(
+                "Command ran in %.3f seconds (init: %.3f, invoke: %.3f)",
+                invoke_finish_time - start_time,
+                init_finish_time - start_time,
+                invoke_finish_time - init_finish_time,
+            )
 
 
 def main():

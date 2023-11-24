@@ -55,11 +55,13 @@ def log_activity(
     custom_dimensions = custom_dimensions or {}
     context = OperationContext.get_instance()
     request_id = custom_dimensions.get('request_id', context.get('request_id', str(uuid.uuid4())))
+    user_agent = context.get_user_agent()
     activity_info = {
         # TODO(2699383): use same request id with service caller
         "request_id": request_id,
         "activity_name": activity_name,
         "activity_type": activity_type,
+        "user_agent": user_agent
     }
     activity_info.update(custom_dimensions)
     context['request_id'] = request_id
@@ -94,38 +96,6 @@ def log_activity(
         # raise the exception to align with the behavior of the with statement
         if exception:
             raise exception
-
-
-def add_telemetry_log(
-    activity_name,
-    activity_type=ActivityType.INTERNALCALL,
-    message='',
-    custom_dimensions=None,
-    level='info'
-):
-    from promptflow._telemetry.telemetry import get_telemetry_logger
-
-    logger = get_telemetry_logger()
-    custom_dimensions = custom_dimensions or {}
-    context = OperationContext.get_instance()
-    request_id = custom_dimensions.get('request_id', context.get('request_id', str(uuid.uuid4())))
-    activity_info = {
-        "request_id": request_id,
-        "activity_name": activity_name,
-        "activity_type": activity_type,
-    }
-    activity_info.update(custom_dimensions)
-    context['request_id'] = request_id
-    if level.lower() == 'info':
-        logger.info(message, extra={"custom_dimensions": activity_info})
-    elif level.lower() == 'error':
-        logger.error(message, extra={"custom_dimensions": activity_info})
-    elif level.lower() == 'debug':
-        logger.debug(message, extra={"custom_dimensions": activity_info})
-    elif level.lower() == 'warning':
-        logger.warning(message, extra={"custom_dimensions": activity_info})
-    else:
-        raise f'log level error, support: info, error, debug, warning, but get {level}.'
 
 
 def extract_telemetry_info(self):
