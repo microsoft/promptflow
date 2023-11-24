@@ -7,9 +7,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+from .._utils.logger_utils import LoggerFactory
 from ._configuration import Configuration
-from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
-from ._logger_factory import LoggerFactory
+from ._constants import MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._user_agent import USER_AGENT
 from ._utils import setup_user_agent_to_operation_context
 from .entities import Run
@@ -19,7 +19,7 @@ from .operations._flow_operations import FlowOperations
 from .operations._local_azure_connection_operations import LocalAzureConnectionOperations
 from .operations._tool_operations import ToolOperations
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+logger = LoggerFactory.get_logger(name=__name__, verbosity=logging.WARNING)
 
 
 def _create_run(run: Run, **kwargs):

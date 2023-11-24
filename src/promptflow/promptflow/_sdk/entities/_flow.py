@@ -4,7 +4,6 @@
 
 import abc
 import json
-import logging
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Tuple, Union
@@ -22,11 +21,12 @@ from promptflow._sdk._constants import (
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from ..._utils.flow_utils import resolve_flow_path
+from ..._utils.logger_utils import LoggerFactory
 from .._constants import DAG_FILE_NAME
 from ._connection import _Connection
 from ._validation import SchemaValidatableMixin
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class FlowBase(abc.ABC):

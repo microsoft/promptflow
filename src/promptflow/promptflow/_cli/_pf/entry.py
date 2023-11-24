@@ -20,8 +20,8 @@ from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  #
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
-from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
 from promptflow._sdk._utils import print_pf_version, setup_user_agent_to_operation_context  # noqa: E402
+from promptflow._utils.logger_utils import LoggerFactory  # noqa: E402
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)

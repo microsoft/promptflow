@@ -12,8 +12,8 @@ from typing import Optional, Union
 import pydash
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, LOGGER_NAME, SERVICE_CONFIG_FILE, ConnectionProvider
-from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml, read_write_by_user
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)

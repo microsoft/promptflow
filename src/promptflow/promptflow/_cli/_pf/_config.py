@@ -1,13 +1,13 @@
 import argparse
 import json
-import logging
 
 from promptflow._cli._params import add_param_set_positional, logging_params
 from promptflow._cli._utils import activate_action, list_of_dict_to_dict
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._utils.logger_utils import LoggerFactory
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 def add_config_set(subparsers):

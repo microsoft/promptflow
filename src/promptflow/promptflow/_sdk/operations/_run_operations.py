@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import copy
-import logging
 import os.path
 import sys
 import time
@@ -26,12 +25,13 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts._run_management import RunMetadata, RunVisualization
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class RunOperations(TelemetryMixin):

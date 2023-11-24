@@ -24,9 +24,10 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.storage._run_storage import DefaultRunStorage
 
+from ..._utils.logger_utils import LoggerFactory
 from .utils import SubmitterHelper, variant_overwrite_context
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class TestSubmitter:

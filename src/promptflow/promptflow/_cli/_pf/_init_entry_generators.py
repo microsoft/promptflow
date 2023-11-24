@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import inspect
-import logging
 import shutil
 from abc import ABC, abstractmethod
 from ast import literal_eval
@@ -14,10 +13,11 @@ from jinja2 import Environment, Template, meta
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.exceptions import UserErrorException
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
 CHAT_FLOW_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "chat_flow" / "template"
 TOOL_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "package_tool"

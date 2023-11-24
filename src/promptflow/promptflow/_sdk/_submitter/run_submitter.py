@@ -7,7 +7,6 @@ import datetime
 from pathlib import Path
 
 from promptflow._sdk._constants import FlowRunProperties
-from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
@@ -19,6 +18,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 
+from ..._utils.logger_utils import LoggerFactory
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)

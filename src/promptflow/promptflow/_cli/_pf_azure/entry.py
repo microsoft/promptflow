@@ -15,8 +15,8 @@ import sys  # noqa: E402
 from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
-from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
 from promptflow._sdk._utils import print_pf_version  # noqa: E402
+from promptflow._utils.logger_utils import LoggerFactory  # noqa: E402
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
