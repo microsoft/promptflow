@@ -74,7 +74,13 @@ class RunSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
-        batch_engine = BatchEngine(flow.path, flow.code, connections=connections, storage=local_storage)
+        batch_engine = BatchEngine(
+            flow.path,
+            flow.code,
+            connections=connections,
+            storage=local_storage,
+            log_path=local_storage.logger.file_path,
+        )
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
