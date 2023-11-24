@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: disable=wrong-import-position
+import json
 import time
 
 # Log the start time
@@ -15,7 +16,7 @@ import sys  # noqa: E402
 from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
-from promptflow._sdk._utils import print_pf_version  # noqa: E402
+from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version  # noqa: E402
 from promptflow._utils.logger_utils import LoggerFactory  # noqa: E402
 
 # configure logger for CLI
@@ -81,6 +82,9 @@ def entry(argv):
 def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
+    if len(command_args) == 1 and command_args[0] == "version":
+        version_dict = {"promptflow": get_promptflow_sdk_version()}
+        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
     if len(command_args) == 0:
         command_args.append("-h")
     entry(command_args)

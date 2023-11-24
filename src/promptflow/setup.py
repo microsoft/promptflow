@@ -22,6 +22,7 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
 
 REQUIRES = [
     "psutil",  # get process information when bulk run
+    "httpx>=0.25.1",  # used to send http requests asynchronously
     "openai>=0.27.8,<0.28.0",  # promptflow.core.api_injector
     "flask>=2.2.3,<3.0.0",  # Serving endpoint requirements
     "flask-restx>=1.2.0,<1.3.0",  # Serving endpoint requirements
@@ -32,7 +33,7 @@ REQUIRES = [
     "pandas>=1.5.3,<3.0.0",  # load data requirements
     "python-dotenv>=1.0.0,<2.0.0",  # control plane sdk requirements, to load .env file
     "keyring>=24.2.0,<25.0.0",  # control plane sdk requirements, to access system keyring service
-    "pydash>=6.0.0,<7.0.0",  # control plane sdk requirements, to support parameter overrides in schema.
+    "pydash>=6.0.0,<8.0.0",  # control plane sdk requirements, to support parameter overrides in schema.
     # vulnerability: https://github.com/advisories/GHSA-5cpq-8wj7-hf2v
     "cryptography>=41.0.3,<42.0.0",  # control plane sdk requirements to support connection encryption
     "colorama>=0.4.6,<0.5.0",  # producing colored terminal text for testing chat flow

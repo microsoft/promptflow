@@ -6,6 +6,7 @@
 import datetime
 from pathlib import Path
 
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
@@ -63,36 +64,42 @@ class RunSubmitter:
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
-        with _change_working_dir(flow.code):
-            connections = SubmitterHelper.resolve_connections(flow=flow)
+        if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.CSharp:
+            connections = []
+        else:
+            with _change_working_dir(flow.code):
+                connections = SubmitterHelper.resolve_connections(flow=flow)
         column_mapping = run.column_mapping
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
-        batch_engine = BatchEngine(flow.path, flow.code, connections=connections, storage=local_storage)
+        batch_engine = BatchEngine(
+            flow.path,
+            flow.code,
+            connections=connections,
+            storage=local_storage,
+            log_path=local_storage.logger.file_path,
+        )
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
-        bulk_result = None
+        batch_result = None
         status = Status.Failed.value
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
-            bulk_result = batch_engine.run(
+            batch_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
                 output_dir=local_storage.outputs_folder,
                 run_id=run_id,
             )
-            # Filter the failed line result
-            failed_line_result = [
-                result for result in bulk_result.line_results if result.run_info.status == Status.Failed
-            ]
-            if failed_line_result:
+
+            if batch_result.failed_lines > 0:
                 # Log warning message when there are failed line run in bulk run.
-                error_log = f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
+                error_log = f"{batch_result.failed_lines} out of {batch_result.total_lines} runs failed in batch run."
                 if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
                     error_log = (
                         error_log
@@ -115,11 +122,11 @@ class RunSubmitter:
             # snapshot: flow directory
             local_storage.dump_snapshot(flow)
             # persist inputs, outputs and metrics
-            local_storage.persist_result(bulk_result)
+            local_storage.persist_result(batch_result)
             # exceptions
-            local_storage.dump_exception(exception=exception, bulk_results=bulk_result)
+            local_storage.dump_exception(exception=exception, batch_result=batch_result)
             # system metrics: token related
-            system_metrics = {} if bulk_result is None else bulk_result.get_openai_metrics()
+            system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
 
             self.run_operations.update(
                 name=run.name,

@@ -471,6 +471,10 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                     )
                 )
             logger = LoggerFactory.get_logger(LOGGER_NAME)
+
+            ignore_files = code._ignore_file._get_ignore_list()
+            for file_path in ignore_files:
+                logger.debug(f"will ignore file: {file_path}...")
             for file_path, _ in upload_paths:
                 logger.debug(f"will upload file: {file_path}...")
 

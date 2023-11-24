@@ -289,6 +289,10 @@ class FlowExecutor:
         :param raise_ex: Whether to raise exceptions or not. Default is False.
         :type raise_ex: Optional[bool]
         """
+        # Inject OpenAI API to make sure traces and headers injection works and
+        # update OpenAI API configs from environment variables.
+        inject_openai_api()
+
         OperationContext.get_instance().run_mode = RunMode.SingleNode.name
         dependency_nodes_outputs = dependency_nodes_outputs or {}
 
@@ -582,7 +586,7 @@ class FlowExecutor:
             one_input_value = list(aggregation_inputs.values())[0]
             aggregation_lines = len(one_input_value)
         for key, value in inputs.items():
-            if key not in aggregated_flow_inputs and (value and value.default):
+            if key not in aggregated_flow_inputs and (value and value.default is not None):
                 aggregated_flow_inputs[key] = [value.default] * aggregation_lines
         return aggregated_flow_inputs
 

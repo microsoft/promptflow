@@ -32,6 +32,7 @@ from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
+    REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
     ListViewType,
@@ -39,8 +40,8 @@ from promptflow._sdk._constants import (
     RunHistoryKeys,
     RunStatus,
 )
-from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
+from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
+from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
@@ -56,7 +57,7 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -221,6 +222,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         """
         stream = kwargs.pop("stream", False)
         reset = kwargs.pop("reset_runtime", False)
+
+        # validate the run object
+        run._validate_for_run_create_operation()
 
         rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"), reset=reset)
 
@@ -653,11 +657,13 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, run: Union[str, Run]) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream the logs of a run.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails or canceled.
+        :type raise_on_error: bool
         :return: The run object
         :rtype: ~promptflow.entities.Run
         """
@@ -708,13 +714,26 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 f'Duration: "{duration}"\n'
                 f'Run url: "{self._get_run_portal_url(run_id=run.name)}"'
             )
-            # won't print error here, put it in run dict
         except KeyboardInterrupt:
             error_message = (
                 "The output streaming for the flow run was interrupted.\n"
                 "But the run is still executing on the cloud.\n"
             )
             print(error_message)
+
+        if run.status == RunStatus.FAILED or run.status == RunStatus.CANCELED:
+            if run.status == RunStatus.FAILED:
+                try:
+                    error_message = run._error["error"]["message"]
+                except Exception:  # pylint: disable=broad-except
+                    error_message = "Run fails with unknown error."
+            else:
+                error_message = "Run is canceled."
+            if raise_on_error:
+                raise InvalidRunStatusError(error_message)
+            else:
+                print_red_error(error_message)
+
         return run
 
     def _resolve_data_to_asset_id(self, run: Run):
@@ -755,6 +774,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return test_data
 
     def _resolve_flow(self, run: Run):
+        if run._use_remote_flow:
+            return self._resolve_flow_definition_resource_id(run=run)
         flow = load_flow(run.flow)
         # ignore .promptflow/dag.tools.json only for run submission scenario
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
@@ -903,7 +924,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _resolve_runtime(self, run, flow_path, runtime, reset=None):
         runtime = run._runtime or runtime
-        session_id = self._get_session_id(flow=flow_path)
+        # for remote flow case, use flow name as session id
+        # for local flow case, use flow path to calculate session id
+        session_id = run._flow_name if run._use_remote_flow else self._get_session_id(flow=flow_path)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime(run=run, session_id=session_id, reset=reset)
@@ -957,3 +980,14 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             raise RunRequestException(
                 f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
             )
+
+    def _resolve_flow_definition_resource_id(self, run: Run):
+        """Resolve the flow definition resource id."""
+        # for registry flow pattern, the flow uri can be passed as flow definition resource id directly
+        if run.flow.startswith(REGISTRY_URI_PREFIX):
+            return run.flow
+
+        # for workspace flow pattern, generate the flow definition resource id
+        workspace_id = self._workspace._workspace_id
+        location = self._workspace.location
+        return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{run._flow_name}"

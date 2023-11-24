@@ -3,8 +3,9 @@ import json
 
 from promptflow._cli._params import add_param_set_positional, logging_params
 from promptflow._cli._utils import activate_action, list_of_dict_to_dict
-from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._configuration import Configuration, InvalidConfigValue
 from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._utils import print_red_error
 from promptflow._utils.logger_utils import LoggerFactory
 
 logger = LoggerFactory.get_logger(LOGGER_NAME)
@@ -67,8 +68,12 @@ def set_config(args):
     params_override = list_of_dict_to_dict(args.params_override)
     for k, v in params_override.items():
         logger.debug("Setting config %s to %s", k, v)
-        Configuration.get_instance().set_config(k, v)
-    print(f"Set config {args.params_override} successfully.")
+        try:
+            Configuration.get_instance().set_config(k, v)
+            print(f"Set config {args.params_override} successfully.")
+        except InvalidConfigValue as e:
+            error_message = f"Invalid config value {v!r} for {k!r}: {str(e)}"
+            print_red_error(error_message)
 
 
 def show_config():

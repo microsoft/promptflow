@@ -22,6 +22,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -38,6 +39,8 @@ class FlowInvoker:
     :type connection_provider: [str, Callable], optional
     :param streaming: The function or bool to determine enable streaming or not, defaults to lambda: False
     :type streaming: Union[Callable[[], bool], bool], optional
+    :param connections: Pre-resolved connections used when executing, defaults to None
+    :type connections: dict, optional
     """
 
     def __init__(
@@ -45,9 +48,14 @@ class FlowInvoker:
         flow: [str, Flow],
         connection_provider: [str, Callable] = None,
         streaming: Union[Callable[[], bool], bool] = False,
+        connections: dict = None,
         **kwargs,
     ):
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
+        self._executable_flow = ExecutableFlow._from_dict(
+            flow_dag=self.flow_entity.dag, working_dir=self.flow_entity.code
+        )
+        self.connections = connections or {}
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         # Pass dump_to path to dump flow result for extension.
         self._dump_to = kwargs.get("dump_to", None)
@@ -58,16 +66,17 @@ class FlowInvoker:
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
     def _init_connections(self, connection_provider):
-        executable = self.flow_entity._init_executable()
-        self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(executable)
+        self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(self._executable_flow)
         connection_provider = "local" if connection_provider is None else connection_provider
         if isinstance(connection_provider, str):
             logger.info(f"Getting connections from pf client with provider {connection_provider}...")
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
-            self.connections = get_local_connections_from_executable(
-                executable=self.flow_entity._init_executable(),
+            connections = get_local_connections_from_executable(
+                executable=self._executable_flow,
                 client=PFClient(config={"connection.provider": connection_provider}),
+                connections_to_ignore=list(self.connections.keys()),
             )
+            self.connections.update(connections)
         elif isinstance(connection_provider, Callable):
             logger.info("Getting connections from custom connection provider...")
             connection_list = connection_provider()
@@ -79,6 +88,7 @@ class FlowInvoker:
                 raise UnexpectedConnectionProviderReturn(
                     f"All items returned by {connection_provider} should be connection type, got {connection_list}."
                 )
+            # TODO(2824058): support connection provider when executing function
             self.connections = {item.name: item.to_execution_connection_dict() for item in connection_list}
         else:
             raise UnsupportedConnectionProvider(connection_provider)
@@ -93,8 +103,8 @@ class FlowInvoker:
         storage = None
         if self._dump_to:
             storage = DefaultRunStorage(base_dir=self._dump_to, sub_dir=Path(".promptflow/intermediate"))
-        self.executor = FlowExecutor.create(
-            flow_file=self.flow_entity.path,
+        self.executor = FlowExecutor._create_from_flow(
+            flow=self._executable_flow,
             working_dir=self.flow_entity.code,
             connections=self.connections,
             raise_ex=True,
