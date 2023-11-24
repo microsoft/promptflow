@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.context_utils import _change_working_dir
@@ -14,10 +14,11 @@ from promptflow._utils.execution_utils import (
     get_aggregation_inputs_properties,
     handle_line_failures,
 )
-from promptflow._utils.logger_utils import logger
-from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute, transpose
+from promptflow._utils.logger_utils import bulk_logger
+from promptflow._utils.utils import dump_list_to_jsonl, log_progress, resolve_dir_to_absolute, transpose
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
+from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -34,7 +35,8 @@ class BatchEngine:
     """This class is used to execute flows in batch mode"""
 
     executor_proxy_classes: Mapping[str, AbstractExecutorProxy] = {
-        "python": PythonExecutorProxy,
+        FlowLanguage.Python: PythonExecutorProxy,
+        FlowLanguage.CSharp: CSharpExecutorProxy,
     }
 
     @classmethod
@@ -59,16 +61,16 @@ class BatchEngine:
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        **kwargs,
     ):
-        self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        self._flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+        self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
         FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
         executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
         with _change_working_dir(self._working_dir):
             self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
-                flow_file, working_dir, connections=connections, storage=storage
+                flow_file, self._working_dir, connections=connections, storage=storage, **kwargs
             )
         self._storage = storage
 
@@ -98,19 +100,25 @@ class BatchEngine:
         :return: The result of this batch run
         :rtype: ~promptflow.batch._result.BatchResult
         """
-        self._start_time = datetime.utcnow()
-        # set batch input source from input mapping
-        OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
-        # resolve input data from input dirs and apply inputs mapping
-        batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
-        batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
-        # run flow in batch mode
-        output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
-        with _change_working_dir(self._working_dir):
-            batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
-        # destroy executor proxy
-        self._executor_proxy.destroy()
-        return batch_result
+
+        try:
+            self._start_time = datetime.utcnow()
+            # set batch input source from input mapping
+            OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
+            # resolve input data from input dirs and apply inputs mapping
+            batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
+            batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+            # run flow in batch mode
+            output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
+            with _change_working_dir(self._working_dir):
+                batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
+            return batch_result
+        except Exception as e:
+            bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
+            raise e
+        finally:
+            # destroy executor proxy
+            self._executor_proxy.destroy()
 
     def _exec_batch(
         self,
@@ -127,9 +135,9 @@ class BatchEngine:
         if isinstance(self._executor_proxy, PythonExecutorProxy):
             line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
         else:
-            line_results = asyncio.run(self._exec_batch_internal(batch_inputs, output_dir, run_id))
+            line_results = asyncio.run(self._exec_batch_internal(batch_inputs, run_id))
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-        aggr_results = self._exec_aggregation_internal(batch_inputs, line_results, run_id)
+        aggr_results = asyncio.run(self._exec_aggregation_internal(batch_inputs, line_results, run_id))
 
         # persist outputs to output dir
         outputs = [
@@ -149,15 +157,20 @@ class BatchEngine:
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
         line_results = []
+        total_lines = len(batch_inputs)
+        # TODO: concurrent calls to exec_line instead of for loop
         for i, each_line_input in enumerate(batch_inputs):
+            # TODO: catch line run failed to avoid one line break others
             line_result = await self._executor_proxy.exec_line_async(each_line_input, i, run_id=run_id)
             for node_run in line_result.node_run_infos.values():
                 self._storage.persist_node_run(node_run)
             self._storage.persist_flow_run(line_result.run_info)
             line_results.append(line_result)
+            # log the progress of the batch run
+            log_progress(self._start_time, bulk_logger, len(line_results), total_lines)
         return line_results
 
-    def _exec_aggregation_internal(
+    async def _exec_aggregation_internal(
         self,
         batch_inputs: List[dict],
         line_results: List[LineResult],
@@ -167,7 +180,7 @@ class BatchEngine:
         if not aggregation_nodes:
             return AggregationResult({}, {}, {})
 
-        logger.info("Executing aggregation nodes...")
+        bulk_logger.info("Executing aggregation nodes...")
 
         run_infos = [r.run_info for r in line_results]
         succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
@@ -185,10 +198,10 @@ class BatchEngine:
         )
         succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
-            aggr_results = asyncio.run(
-                self._executor_proxy.exec_aggregation_async(succeeded_inputs, succeeded_aggregation_inputs, run_id)
+            aggr_results = await self._executor_proxy.exec_aggregation_async(
+                succeeded_inputs, succeeded_aggregation_inputs, run_id
             )
-            logger.info("Finish executing aggregation nodes.")
+            bulk_logger.info("Finish executing aggregation nodes.")
             return aggr_results
         except PromptflowException as e:
             # For PromptflowException, we already do classification, so throw directly.

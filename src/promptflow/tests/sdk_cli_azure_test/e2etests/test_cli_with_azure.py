@@ -8,9 +8,7 @@ import uuid
 from typing import Callable
 
 import pytest
-from azure.ai.ml.entities import Data
 
-from promptflow._cli._pf_azure.entry import main
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk.entities import Run
@@ -27,6 +25,8 @@ RUNS_DIR = "./tests/test_configs/runs"
 
 # TODO: move this to a shared utility module
 def run_pf_command(*args, pf, runtime=None, cwd=None):
+    from promptflow._cli._pf_azure.entry import main
+
     origin_argv, origin_cwd = sys.argv, os.path.abspath(os.curdir)
     try:
         sys.argv = (
@@ -60,7 +60,7 @@ def run_pf_command(*args, pf, runtime=None, cwd=None):
     "vcr_recording",
 )
 class TestCliWithAzure:
-    def test_basic_flow_run_bulk_without_env(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]) -> None:
+    def test_basic_flow_run_bulk_without_env(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
         name = randstr("name")
         run_pf_command(
             "run",
@@ -96,7 +96,7 @@ class TestCliWithAzure:
         assert isinstance(run, Run)
 
     def test_run_with_remote_data(
-        self, pf: PFClient, runtime: str, remote_web_classification_data: Data, randstr: Callable[[str], str]
+        self, pf, runtime: str, remote_web_classification_data, randstr: Callable[[str], str]
     ) -> None:
         # run with arm id
         name = randstr("name1")
@@ -134,7 +134,7 @@ class TestCliWithAzure:
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
 
-    def test_run_file_with_set(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]) -> None:
+    def test_run_file_with_set(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
         name = randstr("name")
         run_pf_command(
             "run",
