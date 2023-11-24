@@ -104,7 +104,6 @@ def main():
     command_args = sys.argv[1:]
     if len(command_args) == 0:
         command_args.append("-h")
-    setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 
 
