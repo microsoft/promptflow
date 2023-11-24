@@ -73,6 +73,8 @@ class BatchEngine:
                 flow_file, self._working_dir, connections=connections, storage=storage, **kwargs
             )
         self._storage = storage
+        # set it to True when the batch run is cancelled
+        self._canceled_signal = False
 
     def run(
         self,
@@ -117,8 +119,20 @@ class BatchEngine:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
             raise e
         finally:
-            # destroy executor proxy
-            self._executor_proxy.destroy()
+            # destroy executor proxy if the batch run is not cancelled
+            if not self._canceled_signal:
+                self._executor_proxy.destroy()
+
+    def cancel(self):
+        """Cancel the batch run"""
+        self._canceled_signal = True
+        # TODO: Get the line results and aggr result of completed lines
+        line_results = []
+        aggr_result = AggregationResult({}, {}, {})
+        # destroy executor proxy
+        self._executor_proxy.destroy()
+        self._end_time = datetime.utcnow()
+        return BatchResult.create(self._start_time, self._end_time, line_results, aggr_result, status=Status.Canceled)
 
     def _exec_batch(
         self,
