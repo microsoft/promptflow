@@ -395,7 +395,7 @@ class Run(YAMLTranslatableMixin):
     def _get_default_display_name(self) -> str:
         display_name = self.display_name
         if not display_name:
-            display_name = self._get_flow_dir().name
+            display_name = self.name
         return display_name
 
     def _format_display_name(self) -> str:
