@@ -771,8 +771,11 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _resolve_flow(self, run: Run):
         flow = load_flow(run.flow)
-        # ignore .promptflow/dag.tools.json only for run submission scenario
-        self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
+        self._flow_operations._resolve_arm_id_or_upload_dependencies(
+            flow=flow,
+            # ignore .promptflow/dag.tools.json only for run submission scenario in python
+            ignore_tools_json=flow._flow_dict.get("language", None) != "csharp",
+        )
         return flow.path
 
     def _get_session_id(self, flow):
