@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from promptflow._cli._pf.entry import main
 import multiprocessing
+from promptflow._core.operation_context import OperationContext
 
 FLOWS_DIR = "./tests/test_configs/flows"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
@@ -24,6 +25,8 @@ def run_cli_command(cmd, time_limit=3600, result_queue=None):
         main()
     ed = timeit.default_timer()
     print(f"{cmd}, \n Total time: {ed - st}s")
+    context = OperationContext.get_instance()
+    print("request id: ", context.get("request_id"))
     assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
     res_value = output.getvalue()
     if result_queue:
