@@ -7,8 +7,6 @@ from unittest.mock import patch
 
 import pytest
 
-from promptflow.azure import PFClient
-
 tests_root_dir = Path(__file__).parent.parent.parent
 flow_test_dir = tests_root_dir / "test_configs/flows"
 data_dir = tests_root_dir / "test_configs/datas"
@@ -16,7 +14,7 @@ data_dir = tests_root_dir / "test_configs/datas"
 
 @pytest.mark.unittest
 class TestRunOperations:
-    def test_input_output_portal_url_parser(self, pf: PFClient):
+    def test_input_output_portal_url_parser(self, pf):
         runs_op = pf.runs
         common_azure_url_pattern = runs_op._service_caller._common_azure_url_pattern
 
