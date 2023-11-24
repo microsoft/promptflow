@@ -21,6 +21,7 @@ from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 from promptflow.azure.operations import RunOperations
+from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 from ..recording_utilities import is_live
@@ -195,7 +196,7 @@ class TestFlowRun:
     # TODO: confirm whether this test is a end-to-end test
     def test_run_bulk_not_exist(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         test_data = f"{DATAS_DIR}/webClassification1.jsonl"
-        with pytest.raises(FileNotFoundError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 # data with file:/// prefix is not supported, should raise not exist error
@@ -420,6 +421,7 @@ class TestFlowRun:
         mock_run = MagicMock()
         mock_run._runtime = "fake_runtime"
         mock_run._to_rest_object.return_value = SubmitBulkRunRequest()
+        mock_run._use_remote_flow = False
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
@@ -540,7 +542,7 @@ class TestFlowRun:
             )
 
     def test_run_data_not_provided(self, pf: PFClient, randstr: Callable[[str], str]):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 name=randstr("name"),
