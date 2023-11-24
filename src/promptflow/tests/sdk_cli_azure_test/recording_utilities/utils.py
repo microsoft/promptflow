@@ -7,12 +7,8 @@ import re
 from dataclasses import dataclass
 from typing import Dict
 
-from azure.ai.ml import MLClient
-from azure.ai.ml.entities import Workspace
 from azure.core.credentials import AccessToken
 from vcr.request import Request
-
-from promptflow.azure import PFClient
 
 from .constants import ENVIRON_TEST_MODE, SanitizedValues, TestMode
 
@@ -59,7 +55,9 @@ def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
     return MockDatastore(name="workspaceblobstore")
 
 
-def mock_workspace_get(*args, **kwargs) -> Workspace:
+def mock_workspace_get(*args, **kwargs):
+    from azure.ai.ml.entities import Workspace
+
     return Workspace(
         name=SanitizedValues.WORKSPACE_NAME,
         resource_group=SanitizedValues.RESOURCE_GROUP_NAME,
@@ -68,7 +66,11 @@ def mock_workspace_get(*args, **kwargs) -> Workspace:
     )
 
 
-def get_pf_client_for_replay() -> PFClient:
+def get_pf_client_for_replay():
+    from azure.ai.ml import MLClient
+
+    from promptflow.azure import PFClient
+
     ml_client = MLClient(
         credential=FakeTokenCredential(),
         subscription_id=SanitizedValues.SUBSCRIPTION_ID,
