@@ -41,7 +41,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, print_red_error
+from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
@@ -56,7 +56,7 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
