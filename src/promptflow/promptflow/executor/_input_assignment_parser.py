@@ -59,7 +59,7 @@ def parse_value(i: InputAssignment, nodes_outputs: dict, flow_inputs: dict):
             "The type '{input_type}' is currently unsupported. "
             "Please choose from available types: {supported_output_type} and try again."
         ),
-        input_type=i.value_type.value,
+        input_type=i.value_type.value if hasattr(i.value_type.value, "value") else i.value_type,
         supported_output_type=[value_type.value for value_type in InputValueType],
     )
 
