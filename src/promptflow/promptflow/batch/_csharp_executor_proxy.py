@@ -73,6 +73,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
 
     @classmethod
     def find_available_port(cls) -> str:
+        """Find an available port on localhost"""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind(("localhost", 0))
             _, port = s.getsockname()
