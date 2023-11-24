@@ -13,13 +13,7 @@ import pydash
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, LOGGER_NAME, SERVICE_CONFIG_FILE, ConnectionProvider
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import (
-    call_from_extension,
-    dump_yaml,
-    load_yaml,
-    read_write_by_user,
-    traverse_up_path_and_find_file,
-)
+from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml, read_write_by_user
 from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -98,6 +92,9 @@ class Configuration(object):
         :return: The workspace arm id for an existing Azure ML Workspace.
         :rtype: ~str
         """
+        from azure.ai.ml import MLClient
+        from azure.ai.ml._file_utils.file_utils import traverse_up_path_and_find_file
+        from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
         path = Path(".") if path is None else Path(path)
         if path.is_file():
@@ -141,9 +138,6 @@ class Configuration(object):
                     no_personal_data_message=msg.format("[path]"),
                     target=ErrorTarget.CONTROL_PLANE_SDK,
                 )
-
-        from azure.ai.ml import MLClient
-        from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
         subscription_id, resource_group, workspace_name = MLClient._get_workspace_info(found_path)
         if not (subscription_id and resource_group and workspace_name):
