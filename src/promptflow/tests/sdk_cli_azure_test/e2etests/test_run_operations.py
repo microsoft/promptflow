@@ -580,7 +580,7 @@ class TestFlowRun:
             )
 
     def test_run_data_not_provided(self, pf, randstr: Callable[[str], str]):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 name=randstr("name"),
