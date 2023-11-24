@@ -72,6 +72,9 @@ VIS_PORTAL_URL_TMPL = (
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
     "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
+REMOTE_URI_PREFIX = "azureml:"
+REGISTRY_URI_PREFIX = "azureml://registries/"
+FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
 FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
 

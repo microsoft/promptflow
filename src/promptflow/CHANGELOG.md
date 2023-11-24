@@ -13,6 +13,9 @@
   - Use `pf config set run.output_path=<output-path>` to specify, and the run output path will be `<output-path>/<run-name>`.
   - Introduce macro `${flow_directory}` for `run.output_path` in config, which will be replaced with corresponding flow directory.
   - The flow directory cannot be set as run output path, which means `pf config set run.output_path='${flow_directory}'` is invalid; but you can use child folder, e.g. `pf config set run.output_path='${flow_directory}/.runs'`.
+- Support pfazure run create with remote flow.
+  - For remote workspace flow: `pfazure run create --flow azureml:<flow-name>`
+  - For remote registry flow: `pfazure run create --flow azureml://registries/<registry-name>/models/<flow-name>/versions/<flow-version>`
 
 ### Bugs Fixed
 
@@ -24,6 +27,7 @@
 - Add env variable 'PF_NO_INTERACTIVE_LOGIN' to disable interactive login if using azureml connection provider in promptflow sdk.
 - Improved CLI invoke time.
 - Bump `pydash` upper bound to 8.0.0.
+- Bump `SQLAlchemy` upper bound to 3.0.0.
 
 ## 1.0.0 (2023.11.09)
 

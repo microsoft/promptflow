@@ -140,13 +140,13 @@ def log_progress(
     logger: logging.Logger,
     count: int,
     total_count: int,
-    formatter="{count} / {total_count} finished.",
+    formatter="Finished {count} / {total_count} lines.",
 ):
     # Calculate log_interval to determine when to log progress.
     # If total_count is less than 100, log every 10% of total_count; otherwise, log every 10 lines.
     log_interval = min(10, max(int(total_count / 10), 1))
     if count > 0 and (count % log_interval == 0 or count == total_count):
-        average_execution_time = round((datetime.now().timestamp() - run_start_time.timestamp()) / count, 2)
+        average_execution_time = round((datetime.utcnow().timestamp() - run_start_time.timestamp()) / count, 2)
         estimated_execution_time = round(average_execution_time * (total_count - count), 2)
         logger.info(formatter.format(count=count, total_count=total_count))
         logger.info(
@@ -157,6 +157,7 @@ def log_progress(
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
     from promptflow._core import tool
+
     tool_file = tool.__file__
     core_folder = os.path.dirname(tool_file)
 
