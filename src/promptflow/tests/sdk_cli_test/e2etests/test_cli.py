@@ -1548,7 +1548,8 @@ class TestCli:
         expected_error_message = (
             "Invalid config value '${flow_directory}' for 'run.output_path': "
             "Cannot specify flow directory as run output path; "
-            "if you want to specify run output path under flow directory, please use its child folder."
+            "if you want to specify run output path under flow directory, "
+            "please use its child folder, e.g. '${flow_directory}/.runs'."
         )
         assert expected_error_message in out
 

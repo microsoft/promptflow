@@ -66,7 +66,7 @@ class TestConfig:
         expected_error_message = (
             "Cannot specify flow directory as run output path; "
             "if you want to specify run output path under flow directory, "
-            "please use its child folder."
+            "please use its child folder, e.g. '${flow_directory}/.runs'."
         )
         # directly set
         with pytest.raises(InvalidConfigValue) as e:
