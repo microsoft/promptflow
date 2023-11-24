@@ -82,6 +82,8 @@ def remote_workspace_resource_id(subscription_id: str, resource_group_name: str,
 
 @pytest.fixture()
 def pf(remote_client):
+    # do not add annotation here, because PFClient will trigger promptflow.azure imports and break the isolation
+    # between azure and non-azure tests
     yield remote_client
 
 
