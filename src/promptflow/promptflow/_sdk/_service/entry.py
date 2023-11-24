@@ -20,7 +20,7 @@ def main():
     if "USER_AGENT" in os.environ:
         user_agent = f"{os.environ['USER_AGENT']} local_pfs/{VERSION}"
     else:
-        user_agent = "local_pfs/{VERSION}"
+        user_agent = f"local_pfs/{VERSION}"
     os.environ["USER_AGENT"] = user_agent
     command_args = sys.argv[1:]
 
