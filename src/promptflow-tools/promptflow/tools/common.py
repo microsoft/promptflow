@@ -6,7 +6,7 @@ import time
 from typing import List, Mapping
 
 from jinja2 import Template
-from openai import APIConnectionError, APIStatusError, APIError, RateLimitError, APITimeoutError
+from openai import APIConnectionError, APIStatusError, APIError, RateLimitError, APITimeoutError, InternalServerError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType
@@ -205,9 +205,11 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                     if isinstance(e, APIConnectionError) and not isinstance(e, APITimeoutError) \
                             and "connection aborted" not in str(e).lower():
                         raise WrappedOpenAIError(e)
-                    # 503 is ServiceUnavailableError
-                    if isinstance(e, APIStatusError) and not isinstance(e, RateLimitError) and e.status_code != 503:
-                        raise WrappedOpenAIError(e)
+                    # Retry InternalServerError(>=500), RateLimitError(429), UnprocessableEntityError(422)
+                    if isinstance(e, APIStatusError):
+                        status_code = e.response.status_code
+                        if status_code < 500 and status_code not in [429, 422]:
+                            raise WrappedOpenAIError(e)
                     if isinstance(e, RateLimitError) and getattr(e, "type", None) == "insufficient_quota":
                         # Exit retry if this is quota insufficient error
                         print(f"{type(e).__name__} with insufficient quota. Throw user error.", file=sys.stderr)

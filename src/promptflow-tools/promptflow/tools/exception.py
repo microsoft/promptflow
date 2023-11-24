@@ -1,3 +1,5 @@
+from openai import APIError
+
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 openai_error_code_ref_message = "Error reference: https://platform.openai.com/docs/guides/error-codes/api-errors"
@@ -34,7 +36,7 @@ def to_openai_error_message(e: Exception) -> str:
 class WrappedOpenAIError(UserErrorException):
     """Refine error messages on top of native openai errors."""
 
-    def __init__(self, ex: OpenAIError, **kwargs):
+    def __init__(self, ex: APIError, **kwargs):
         super().__init__(target=ErrorTarget.TOOL, **kwargs)
         self._ex = ex
 

@@ -6,7 +6,7 @@ from openai import (
     RateLimitError,
     AuthenticationError,
     BadRequestError,
-    APITimeoutError
+    APITimeoutError, InternalServerError, UnprocessableEntityError
 )
 from promptflow.tools.aoai import chat, completion
 from promptflow.tools.common import handle_openai_error
@@ -85,9 +85,22 @@ class TestHandleOpenAIError:
         [
             (
                 [
-                    RateLimitError("Something went wrong", response=httpx.get('https://www.example.com'),
+                    RateLimitError("Something went wrong",
+                                   response=httpx.Response(429, request=
+                                   httpx.Request('GET', 'https://www.example.com')),
                                    body=None),
-                    APITimeoutError(request=httpx.Request('GET', 'https://www.example.com'))
+                    APITimeoutError(request=httpx.Request('GET', 'https://www.example.com')),
+                    APIConnectionError(
+                        message="('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))",
+                        request=httpx.Request('GET', 'https://www.example.com')),
+                    InternalServerError("Something went wrong",
+                                        response=httpx.Response(503, request=
+                                        httpx.Request('GET', 'https://www.example.com')),
+                                        body=None),
+                    UnprocessableEntityError("Something went wrong",
+                                             response=httpx.Response(422, request=
+                                             httpx.Request('GET', 'https://www.example.com')),
+                                             body=None),
                 ]
             ),
         ],
@@ -120,14 +133,62 @@ class TestHandleOpenAIError:
         "dummyExceptionList",
         [
             (
-                    [
-                        AuthenticationError("Something went wrong", response=httpx.get('https://www.example.com'),
-                                            body=None),
-                        BadRequestError("Something went wrong", response=httpx.get('https://www.example.com'),
+                [
+                    RateLimitError("Something went wrong",
+                                   response=httpx.Response(429, request=
+                                   httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
+                                   body=None),
+                    InternalServerError("Something went wrong",
+                                        response=httpx.Response(
+                                            503, request=httpx.Request('GET', 'https://www.example.com'),
+                                            headers={"retry-after": "0.3"}), body=None),
+                    UnprocessableEntityError("Something went wrong",
+                                             response=httpx.Response(
+                                                 422, request=httpx.Request('GET', 'https://www.example.com'),
+                                                 headers={"retry-after": "0.3"}), body=None)
+                ]
+            ),
+        ],
+    )
+    def test_retriable_openai_error_handle_with_header(
+            self, mocker: MockerFixture, dummyExceptionList
+    ):
+        for dummyEx in dummyExceptionList:
+            # Patch the test_method to throw the desired exception
+            patched_test_method = mocker.patch("promptflow.tools.aoai.completion", side_effect=dummyEx)
+
+            # Apply the retry decorator to the patched test_method
+            max_retry = 2
+            delay = 0.2
+            header_delay = 0.3
+            decorated_test_method = handle_openai_error(tries=max_retry, delay=delay)(patched_test_method)
+            mock_sleep = mocker.patch("time.sleep")  # Create a separate mock for time.sleep
+
+            with pytest.raises(UserErrorException) as exc_info:
+                decorated_test_method()
+
+            assert patched_test_method.call_count == max_retry + 1
+            assert "Exceed max retry times. " + to_openai_error_message(dummyEx) == exc_info.value.message
+            error_codes = "UserError/OpenAIError/" + type(dummyEx).__name__
+            assert exc_info.value.error_codes == error_codes.split("/")
+            expected_calls = [
+                mocker.call(header_delay),
+                mocker.call(header_delay * 2),
+            ]
+            mock_sleep.assert_has_calls(expected_calls)
+
+    @pytest.mark.parametrize(
+        "dummyExceptionList",
+        [
+            (
+                [
+                    AuthenticationError("Something went wrong", response=httpx.get('https://www.example.com'),
                                         body=None),
-                        APIConnectionError(message="Something went wrong",
-                                           request=httpx.Request('GET', 'https://www.example.com')),
-                    ]
+                    BadRequestError("Something went wrong", response=httpx.get('https://www.example.com'),
+                                    body=None),
+                    APIConnectionError(message="Something went wrong",
+                                       request=httpx.Request('GET', 'https://www.example.com')),
+                ]
             ),
         ],
     )
@@ -146,10 +207,11 @@ class TestHandleOpenAIError:
     def test_unexpected_error_handle(self, azure_open_ai_connection, mocker: MockerFixture):
         dummyEx = Exception("Something went wrong")
         chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
-        mock_method = mocker.patch("openai.resources.Completions.create", side_effect=dummyEx)
+        mock_method = mocker.patch("openai.resources.chat.Completions.create", side_effect=dummyEx)
         error_codes = "UserError/LLMError"
+
         with pytest.raises(LLMError) as exc_info:
-            completion(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
+            chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
         assert to_openai_error_message(dummyEx) != exc_info.value.args[0]
         assert "OpenAI API hits exception: Exception: Something went wrong" == exc_info.value.message
         assert mock_method.call_count == 1
