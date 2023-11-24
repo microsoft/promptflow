@@ -12,7 +12,7 @@
 - Enable specifying the default output path for run.
   - Use `pf config set run.output_path=<output-path>` to specify, and the run output path will be `<output-path>/<run-name>`.
   - Introduce macro `${flow_directory}` for `run.output_path` in config, which will be replaced with corresponding flow directory.
-  - The flow directory cannot be set as run output path, which means `pf config set run.output_path='${flow_directory}'` is invalid; but you can use child folder, e.g. `pf config set run.output_path='${flow_directory}/.promptflow'`.
+  - The flow directory cannot be set as run output path, which means `pf config set run.output_path='${flow_directory}'` is invalid; but you can use child folder, e.g. `pf config set run.output_path='${flow_directory}/.runs'`.
 
 ### Bugs Fixed
 
