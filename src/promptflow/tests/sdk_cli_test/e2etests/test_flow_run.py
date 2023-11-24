@@ -1025,21 +1025,3 @@ class TestFlowRun:
             local_storage = LocalStorageOperations(run=run)
             expected_output_path_prefix = (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / run.name).resolve().as_posix()
             assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
-
-    # Will remove this test before PR is merged
-    @pytest.mark.skip(reason="C# executor is not ready")
-    def test_csharp_flow(self, pf):
-        image_flow_path = "D:/csharp_flow/flow.dag.yaml"
-        data_path = "D:/inputs.jsonl"
-
-        result = pf.run(
-            flow=image_flow_path,
-            data=data_path,
-            column_mapping={
-                "question": "${data.question}",
-            },
-        )
-        run = pf.runs.get(name=result.name)
-        assert run.status == "Completed", run.name
-        # no error when processing lines
-        assert "error" not in run._to_dict(), run.name

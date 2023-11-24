@@ -241,21 +241,3 @@ class TestBatch:
         with pytest.raises(error_class) as e:
             submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
         assert error_message in e.value.message
-
-    # Will remove this test before PR is merged
-    @pytest.mark.skip(reason="C# executor is not ready yet")
-    def test_csharp_batch_engine(self):
-        from promptflow._constants import FlowLanguage
-        from promptflow.batch import CSharpExecutorProxy
-
-        mem_run_storage = MemoryRunStorage()
-        flow_file = Path("flow.dag.yaml")
-        working_dir = Path("D:/csharp_flow")
-        # working_dir = Path("/home/peiwengao/csharp_flow/net6.0") for linux
-        BatchEngine.register_executor(FlowLanguage.CSharp, CSharpExecutorProxy)
-        batch_engine = BatchEngine(flow_file, working_dir, storage=mem_run_storage)
-        input_dirs = {"data": "inputs.jsonl"}
-        inputs_mapping = {"question": "${data.question}"}
-        output_dir = Path(mkdtemp())
-        batch_result = batch_engine.run(input_dirs, inputs_mapping, output_dir)
-        assert batch_result.completed_lines == 3
