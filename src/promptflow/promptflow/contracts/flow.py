@@ -12,11 +12,12 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from promptflow.exceptions import ErrorTarget
-from .._sdk._constants import DEFAULT_ENCODING
 
+from .._constants import FlowLanguage
+from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import FailedToImportModule, NodeConditionConflict
+from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,17 @@ FLOW_INPUT_PREFIXES = [FLOW_INPUT_PREFIX, "inputs."]  # Use a list for backward 
 
 @dataclass
 class InputAssignment:
-    """This class represents the assignment of an input value."""
+    """This class represents the assignment of an input value.
+
+    :param value: The value of the input assignment.
+    :type value: Any
+    :param value_type: The type of the input assignment.
+    :type value_type: ~promptflow.contracts.flow.InputValueType
+    :param section: The section of the input assignment, usually the output.
+    :type section: str
+    :param property: The property of the input assignment that exists in the section.
+    :type property: str
+    """
 
     value: Any
     value_type: InputValueType = InputValueType.LITERAL
@@ -62,7 +73,7 @@ class InputAssignment:
         :param value: The string to be deserialized.
         :type value: str
         :return: The input assignment constructed from the string.
-        :rtype: InputAssignment
+        :rtype: ~promptflow.contracts.flow.InputAssignment
         """
         literal_value = InputAssignment(value, InputValueType.LITERAL)
         if isinstance(value, str) and value.startswith("$") and len(value) > 2:
@@ -80,7 +91,7 @@ class InputAssignment:
         :param value: The string to be deserialized.
         :type value: str
         :return: The input assignment of reference types.
-        :rtype: InputAssignment
+        :rtype: ~promptflow.contracts.flow.InputAssignment
         """
         if FlowInputAssignment.is_flow_input(value):
             return FlowInputAssignment.deserialize(value)
@@ -93,7 +104,7 @@ class InputAssignment:
         :param data: The string to be deserialized.
         :type data: str
         :return: Input assignment of node reference type.
-        :rtype: InputAssignment
+        :rtype: ~promptflow.contracts.flow.InputAssignment
         """
         value_type = InputValueType.NODE_REFERENCE
         if "." not in data:
@@ -107,7 +118,11 @@ class InputAssignment:
 
 @dataclass
 class FlowInputAssignment(InputAssignment):
-    """This class represents the assignment of a flow input value."""
+    """This class represents the assignment of a flow input value.
+
+    :param prefix: The prefix of the flow input.
+    :type prefix: str
+    """
 
     prefix: str = FLOW_INPUT_PREFIX
 
@@ -132,7 +147,7 @@ class FlowInputAssignment(InputAssignment):
         :param value: The string to be deserialized.
         :type value: str
         :return: The flow input assignment constructed from the string.
-        :rtype: FlowInputAssignment
+        :rtype: ~promptflow.contracts.flow.FlowInputAssignment
         """
         for prefix in FLOW_INPUT_PREFIXES:
             if value.startswith(prefix):
@@ -152,7 +167,15 @@ class ToolSourceType(str, Enum):
 
 @dataclass
 class ToolSource:
-    """This class represents the source of a tool."""
+    """This class represents the source of a tool.
+
+    :param type: The type of the tool source.
+    :type type: ~promptflow.contracts.flow.ToolSourceType
+    :param tool: The tool of the tool source.
+    :type tool: str
+    :param path: The path of the tool source.
+    :type path: str
+    """
 
     type: ToolSourceType = ToolSourceType.Code
     tool: Optional[str] = None
@@ -165,7 +188,7 @@ class ToolSource:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The tool source constructed from the dict.
-        :rtype: ToolSource
+        :rtype: ~promptflow.contracts.flow.ToolSource
         """
         result = ToolSource(data.get("type", ToolSourceType.Code.value))
         if "tool" in data:
@@ -177,7 +200,13 @@ class ToolSource:
 
 @dataclass
 class ActivateCondition:
-    """This class represents the activate condition of a node."""
+    """This class represents the activate condition of a node.
+
+    :param condition: The condition of the activate condition.
+    :type condition: ~promptflow.contracts.flow.InputAssignment
+    :param condition_value: The value of the condition.
+    :type condition_value: Any
+    """
 
     condition: InputAssignment
     condition_value: Any
@@ -189,7 +218,7 @@ class ActivateCondition:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The activate condition constructed from the dict.
-        :rtype: ActivateCondition
+        :rtype: ~promptflow.contracts.flow.ActivateCondition
         """
         result = ActivateCondition(
             condition=InputAssignment.deserialize(data["when"]),
@@ -199,33 +228,38 @@ class ActivateCondition:
 
 
 @dataclass
-class SkipCondition:
-    """This class represents the skip condition of a node."""
-
-    condition: InputAssignment
-    condition_value: Any
-    return_value: InputAssignment
-
-    @staticmethod
-    def deserialize(data: dict) -> "SkipCondition":
-        """Deserialize the skip condition from a dict.
-
-        :param data: The dict to be deserialized.
-        :type data: dict
-        :return: The skip condition constructed from the dict.
-        :rtype: SkipCondition
-        """
-        result = SkipCondition(
-            condition=InputAssignment.deserialize(data["when"]),
-            condition_value=data["is"],
-            return_value=InputAssignment.deserialize(data["return"]),
-        )
-        return result
-
-
-@dataclass
 class Node:
-    """This class represents a node in a flow."""
+    """This class represents a node in a flow.
+
+    :param name: The name of the node.
+    :type name: str
+    :param tool: The tool of the node.
+    :type tool: str
+    :param inputs: The inputs of the node.
+    :type inputs: Dict[str, InputAssignment]
+    :param comment: The comment of the node.
+    :type comment: str
+    :param api: The api of the node.
+    :type api: str
+    :param provider: The provider of the node.
+    :type provider: str
+    :param module: The module of the node.
+    :type module: str
+    :param connection: The connection of the node.
+    :type connection: str
+    :param aggregation: Whether the node is an aggregation node.
+    :type aggregation: bool
+    :param enable_cache: Whether the node enable cache.
+    :type enable_cache: bool
+    :param use_variants: Whether the node use variants.
+    :type use_variants: bool
+    :param source: The source of the node.
+    :type source: ~promptflow.contracts.flow.ToolSource
+    :param type: The tool type of the node.
+    :type type: ~promptflow.contracts.tool.ToolType
+    :param activate: The activate condition of the node.
+    :type activate: ~promptflow.contracts.flow.ActivateCondition
+    """
 
     name: str
     tool: str
@@ -240,7 +274,6 @@ class Node:
     use_variants: bool = False
     source: Optional[ToolSource] = None
     type: Optional[ToolType] = None
-    skip: Optional[SkipCondition] = None
     activate: Optional[ActivateCondition] = None
 
     def serialize(self):
@@ -255,6 +288,8 @@ class Node:
         if self.aggregation:
             data["aggregation"] = True
             data["reduce"] = True  # TODO: Remove this fallback.
+        if self.type:
+            data["type"] = self.type.value
         return data
 
     @staticmethod
@@ -264,7 +299,7 @@ class Node:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The node constructed from the dict.
-        :rtype: Node
+        :rtype: ~promptflow.contracts.flow.Node
         """
         node = Node(
             name=data.get("name"),
@@ -283,19 +318,28 @@ class Node:
             node.source = ToolSource.deserialize(data["source"])
         if "type" in data:
             node.type = ToolType(data["type"])
-        if "skip" in data:
-            node.skip = SkipCondition.deserialize(data["skip"])
         if "activate" in data:
             node.activate = ActivateCondition.deserialize(data["activate"])
-        if node.skip and node.activate:
-            raise NodeConditionConflict(f"Node {node.name!r} can't have both skip and activate condition.")
-
         return node
 
 
 @dataclass
 class FlowInputDefinition:
-    """This class represents the definition of a flow input."""
+    """This class represents the definition of a flow input.
+
+    :param type: The type of the flow input.
+    :type type: ~promptflow.contracts.tool.ValueType
+    :param default: The default value of the flow input.
+    :type default: str
+    :param description: The description of the flow input.
+    :type description: str
+    :param enum: The enum of the flow input.
+    :type enum: List[str]
+    :param is_chat_input: Whether the flow input is a chat input.
+    :type is_chat_input: bool
+    :param is_chat_history: Whether the flow input is a chat history.
+    :type is_chat_history: bool
+    """
 
     type: ValueType
     default: str = None
@@ -305,6 +349,11 @@ class FlowInputDefinition:
     is_chat_history: bool = None
 
     def serialize(self):
+        """Serialize the flow input definition to a dict.
+
+        :return: The dict of the flow input definition.
+        :rtype: dict
+        """
         data = {}
         data["type"] = self.type.value
         if self.default:
@@ -326,7 +375,7 @@ class FlowInputDefinition:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The flow input definition constructed from the dict.
-        :rtype: FlowInputDefinition
+        :rtype: ~promptflow.contracts.flow.FlowInputDefinition
         """
         return FlowInputDefinition(
             ValueType(data["type"]),
@@ -340,7 +389,19 @@ class FlowInputDefinition:
 
 @dataclass
 class FlowOutputDefinition:
-    """This class represents the definition of a flow output."""
+    """This class represents the definition of a flow output.
+
+    :param type: The type of the flow output.
+    :type type: ~promptflow.contracts.tool.ValueType
+    :param reference: The reference of the flow output.
+    :type reference: ~promptflow.contracts.flow.InputAssignment
+    :param description: The description of the flow output.
+    :type description: str
+    :param evaluation_only: Whether the flow output is for evaluation only.
+    :type evaluation_only: bool
+    :param is_chat_output: Whether the flow output is a chat output.
+    :type is_chat_output: bool
+    """
 
     type: ValueType
     reference: InputAssignment
@@ -349,7 +410,11 @@ class FlowOutputDefinition:
     is_chat_output: bool = False
 
     def serialize(self):
-        """Serialize the flow output definition to a dict."""
+        """Serialize the flow output definition to a dict.
+
+        :return: The dict of the flow output definition.
+        :rtype: dict
+        """
         data = {}
         data["type"] = self.type.value
         if self.reference:
@@ -369,7 +434,7 @@ class FlowOutputDefinition:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The flow output definition constructed from the dict.
-        :rtype: FlowOutputDefinition
+        :rtype: ~promptflow.contracts.flow.FlowOutputDefinition
         """
         return FlowOutputDefinition(
             ValueType(data["type"]),
@@ -382,7 +447,13 @@ class FlowOutputDefinition:
 
 @dataclass
 class NodeVariant:
-    """This class represents a node variant."""
+    """This class represents a node variant.
+
+    :param node: The node of the node variant.
+    :type node: ~promptflow.contracts.flow.Node
+    :param description: The description of the node variant.
+    :type description: str
+    """
 
     node: Node
     description: str = ""
@@ -394,7 +465,7 @@ class NodeVariant:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The node variant constructed from the dict.
-        :rtype: NodeVariant
+        :rtype: ~promptflow.contracts.flow.NodeVariant
         """
         return NodeVariant(
             Node.deserialize(data["node"]),
@@ -404,7 +475,13 @@ class NodeVariant:
 
 @dataclass
 class NodeVariants:
-    """This class represents the variants of a node."""
+    """This class represents the variants of a node.
+
+    :param default_variant_id: The default variant id of the node.
+    :type default_variant_id: str
+    :param variants: The variants of the node.
+    :type variants: Dict[str, NodeVariant]
+    """
 
     default_variant_id: str  # The default variant id of the node
     variants: Dict[str, NodeVariant]  # The variants of the node
@@ -416,7 +493,7 @@ class NodeVariants:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The node variants constructed from the dict.
-        :rtype: NodeVariants
+        :rtype: ~promptflow.contracts.flow.NodeVariants
         """
         variants = {}
         for variant_id, node in data["variants"].items():
@@ -426,7 +503,25 @@ class NodeVariants:
 
 @dataclass
 class Flow:
-    """This class represents a flow."""
+    """This class represents a flow.
+
+    :param id: The id of the flow.
+    :type id: str
+    :param name: The name of the flow.
+    :type name: str
+    :param nodes: The nodes of the flow.
+    :type nodes: List[Node]
+    :param inputs: The inputs of the flow.
+    :type inputs: Dict[str, FlowInputDefinition]
+    :param outputs: The outputs of the flow.
+    :type outputs: Dict[str, FlowOutputDefinition]
+    :param tools: The tools of the flow.
+    :type tools: List[Tool]
+    :param node_variants: The node variants of the flow.
+    :type node_variants: Dict[str, NodeVariants]
+    :param program_language: The program language of the flow.
+    :type program_language: str
+    """
 
     id: str
     name: str
@@ -435,9 +530,14 @@ class Flow:
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
+    program_language: str = FlowLanguage.Python
 
     def serialize(self):
-        """Serialize the flow to a dict."""
+        """Serialize the flow to a dict.
+
+        :return: The dict of the flow.
+        :rtype: dict
+        """
         data = {
             "id": self.id,
             "name": self.name,
@@ -445,6 +545,7 @@ class Flow:
             "inputs": {name: i.serialize() for name, i in self.inputs.items()},
             "outputs": {name: o.serialize() for name, o in self.outputs.items()},
             "tools": [serialize(t) for t in self.tools],
+            "language": self.program_language,
         }
         return data
 
@@ -473,7 +574,7 @@ class Flow:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The flow constructed from the dict.
-        :rtype: Flow
+        :rtype: ~promptflow.contracts.flow.Flow
         """
         tools = [Tool.deserialize(t) for t in data.get("tools") or []]
         nodes = [Node.deserialize(n) for n in data.get("nodes") or []]
@@ -489,6 +590,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
+            program_language=data.get("language", FlowLanguage.Python),
         )
 
     def _apply_default_node_variants(self: "Flow"):
@@ -511,21 +613,37 @@ class Flow:
         default_variant.node.name = node.name
         return default_variant.node
 
-    @staticmethod
-    def _resolve_working_dir(flow_file: Path, working_dir=None) -> Path:
+    @classmethod
+    def _resolve_working_dir(cls, flow_file: Path, working_dir=None) -> Path:
+        working_dir = cls._parse_working_dir(flow_file, working_dir)
+        cls._update_working_dir(working_dir)
+        return working_dir
+
+    @classmethod
+    def _parse_working_dir(cls, flow_file: Path, working_dir=None) -> Path:
         if working_dir is None:
             working_dir = Path(flow_file).resolve().parent
         working_dir = Path(working_dir).absolute()
-        sys.path.insert(0, str(working_dir))
         return working_dir
 
-    @staticmethod
-    def from_yaml(flow_file: Path, working_dir=None) -> "Flow":
+    @classmethod
+    def _update_working_dir(cls, working_dir: Path):
+        sys.path.insert(0, str(working_dir))
+
+    @classmethod
+    def from_yaml(cls, flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
-            flow = Flow.deserialize(yaml.safe_load(fin))
-            flow._set_tool_loader(working_dir)
+            flow_dag = yaml.safe_load(fin)
+        return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
+
+    @classmethod
+    def _from_dict(cls, flow_dag: dict, working_dir: Path) -> "Flow":
+        """Load flow from dict."""
+        cls._update_working_dir(working_dir)
+        flow = Flow.deserialize(flow_dag)
+        flow._set_tool_loader(working_dir)
         return flow
 
     def _set_tool_loader(self, working_dir):

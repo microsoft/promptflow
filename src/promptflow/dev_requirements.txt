@@ -1,24 +1,26 @@
-pre-commit
-nox
-mock
-pytest-cov
+azure-identity
+azure-keyvault
+beautifulsoup4==4.12.2
 coverage==6.0.1
+keyrings.alt  # this is possibly insecure, do not add this to setup.py
+mock
+nox
+portalocker~=1.2
+pre-commit
+promptflow-tools
+pydash
+PyJWT==2.8.0  # parse token to get tenant id during sanitization
+pytest
+pytest-cov
 pytest-forked
-pytest-xdist
-pytest-timeout
 pytest-mock
 pytest-nunit
-pytest
-pydash
+pytest-sugar
+pytest-timeout
+pytest-xdist
+setuptools
+setuptools_rust
+twine==4.0.0
+vcrpy==5.1.0  # record and replay http requests for pfazure tests
 wheel
-azure-mgmt-storage==21.0.0
-# Note: This is possibly-insecure, do not add this to setup.
-keyrings.alt
-
-promptflow-tools
-
-beautifulsoup4==4.12.2
-# record and replay http requests for pfazure tests
-vcrpy==5.1.0
-# parse token to get tenant id during sanitization
-PyJWT==2.8.0
+httpx

@@ -8,7 +8,9 @@ import os
 import sys
 import time
 import uuid
-from functools import wraps
+from functools import wraps, cached_property
+
+import pydash
 
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
@@ -88,7 +90,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
     DEFAULT_BASE_REGION = 'westus2'
     AML_USE_ARM_TOKEN = 'AML_USE_ARM_TOKEN'
 
-    def __init__(self, workspace, credential, base_url=None, region=None, **kwargs):
+    def __init__(self, workspace, credential, operation_scope, base_url=None, region=None, **kwargs):
         """Initializes DesignerServiceCaller."""
         if 'get_instance' != sys._getframe().f_back.f_code.co_name:
             raise UserErrorException(
@@ -105,7 +107,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
             base_url = os.environ.get(self.FLOW_CLUSTER_ADDRESS, default=base_url)
 
         self._workspace = workspace
-
+        self._operation_scope = operation_scope
         self._service_endpoint = base_url
         self._credential = credential
         retry_policy = RetryPolicy()
@@ -144,6 +146,25 @@ class FlowServiceCaller(RequestTelemetryMixin):
             )
 
         headers["aml-user-token"] = aml_token
+
+    def _get_user_identity_info(self):
+        import jwt
+
+        token = self._credential.get_token("https://management.azure.com/.default")
+        decoded_token = jwt.decode(token.token, options={"verify_signature": False})
+        user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
+        return user_object_id, user_tenant_id
+
+    @cached_property
+    def _common_azure_url_pattern(self):
+        operation_scope = self._operation_scope
+        pattern = (
+            f"/subscriptions/{operation_scope.subscription_id}"
+            f"/resourceGroups/{operation_scope.resource_group_name}"
+            f"/providers/Microsoft.MachineLearningServices"
+            f"/workspaces/{operation_scope.workspace_name}"
+        )
+        return pattern
 
     @_request_wrapper()
     def create_flow(
@@ -531,7 +552,14 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 logger.debug(f"Waiting for session {action}, current status: {status}")
 
         if status == "Succeeded":
-            logger.info(f"Session {action} finished with status {status}.")
+            error_msg = pydash.get(response, "error.message", None)
+            if error_msg:
+                logger.warning(
+                    f"Session {action} finished with status {status}. "
+                    f"But there are warnings when installing the packages: {error_msg}."
+                )
+            else:
+                logger.info(f"Session {action} finished with status {status}.")
         else:
             # refine response error message
             try:

@@ -12,7 +12,6 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
-import pkg_resources
 import yaml
 
 from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError, ToolLoadError
@@ -29,11 +28,15 @@ from promptflow._utils.connection_utils import (
 )
 from promptflow._utils.tool_utils import (
     DynamicListError,
+    RetrieveToolFuncResultError,
+    _DEPRECATED_TOOLS,
+    _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_tool_definition,
     get_prompt_param_name_from_func,
     load_function_from_function_path,
     validate_dynamic_list_func_response_type,
+    validate_tool_func_result,
 )
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
@@ -55,6 +58,9 @@ def collect_tools_from_directory(base_dir) -> dict:
 
 def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools from all installed packages."""
+    # lazy load to improve performance for scenarios that don't need to load package tools
+    import pkg_resources
+
     all_package_tools = {}
     if keys is not None:
         keys = set(keys)
@@ -65,7 +71,11 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
             for identifier, tool in package_tools.items():
                 #  Only load required tools to avoid unnecessary loading when keys is provided
                 if isinstance(keys, set) and identifier not in keys:
-                    continue
+                    # Support to collect new tool id if node source tool is a deprecated tool.
+                    deprecated_tool_ids = tool.get(_DEPRECATED_TOOLS, [])
+                    if not set(deprecated_tool_ids).intersection(keys):
+                        continue
+
                 m = tool["module"]
                 importlib.import_module(m)  # Import the module to make sure it is valid
                 tool["package"] = entry_point.dist.project_name
@@ -82,6 +92,9 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
 def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools and custom strong type connections from all installed packages."""
+    # lazy load to improve performance for scenarios that don't need to load package tools
+    import pkg_resources
+
     all_package_tools = {}
     all_package_connection_specs = {}
     all_package_connection_templates = {}
@@ -177,14 +190,37 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
             )
 
 
+def retrieve_tool_func_result(
+    func_call_scenario: str,
+    func_path: str,
+    func_input_params_dict: Dict,
+    ws_triple_dict: Dict[str, str] = {}
+):
+    func = load_function_from_function_path(func_path)
+    # get param names from func signature.
+    func_sig_params = inspect.signature(func).parameters
+    module_logger.warning(f"func_sig_params of func_path is: '{func_sig_params}'")
+    module_logger.warning(f"func_input_params_dict is: '{func_input_params_dict}'")
+    # Append workspace triple to func input params if func signature has kwargs param.
+    # Or append ws_triple_dict params that are in func signature.
+    combined_func_input_params = append_workspace_triple_to_func_input_params(
+        func_sig_params, func_input_params_dict, ws_triple_dict
+    )
+    try:
+        result = func(**combined_func_input_params)
+    except Exception as e:
+        raise RetrieveToolFuncResultError(f"Error when calling function {func_path}: {e}")
+
+    validate_tool_func_result(func_call_scenario, result)
+    return result
+
+
 def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
     func_sig_params = inspect.signature(func).parameters
-    # Validate if func input params are all in func signature params.
-    for input_param in func_input_params_dict:
-        if input_param not in func_sig_params:
-            raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
+    module_logger.warning(f"func_sig_params of func_path is: '{func_sig_params}'")
+    module_logger.warning(f"func_input_params_dict is: '{func_input_params_dict}'")
     combined_func_input_params = append_workspace_triple_to_func_input_params(
         func_sig_params, func_input_params_dict, ws_triple_dict
     )
@@ -375,6 +411,8 @@ class ToolLoader:
     def __init__(self, working_dir: str, package_tool_keys: Optional[List[str]] = None) -> None:
         self._working_dir = working_dir
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
+        # Used to handle backward compatibility of tool ID changes.
+        self._deprecated_tools = _find_deprecated_tools(self._package_tools)
 
     # TODO: Replace NotImplementedError with NotSupported in the future.
     def load_tool_for_node(self, node: Node) -> Tool:
@@ -397,6 +435,17 @@ class ToolLoader:
     def load_tool_for_package_node(self, node: Node) -> Tool:
         if node.source.tool in self._package_tools:
             return Tool.deserialize(self._package_tools[node.source.tool])
+
+        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
+        # If found, load the tool with the new tool ID for backward compatibility.
+        if node.source.tool in self._deprecated_tools:
+            new_tool_id = self._deprecated_tools[node.source.tool]
+            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
+            module_logger.warning(
+                f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead."
+            )
+            return Tool.deserialize(self._package_tools[new_tool_id])
+
         raise PackageToolNotFoundError(
             f"Package tool '{node.source.tool}' is not found in the current environment. "
             f"All available package tools are: {list(self._package_tools.keys())}.",

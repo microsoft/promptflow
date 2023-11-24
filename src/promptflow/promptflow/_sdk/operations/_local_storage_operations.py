@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import datetime
 import json
 import logging
@@ -11,7 +12,6 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
-import pandas as pd
 import yaml
 from filelock import FileLock
 
@@ -23,24 +23,22 @@ from promptflow._sdk._constants import (
     LOGGER_NAME,
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
-    get_run_output_path,
 )
 from promptflow._sdk._errors import BulkRunException
-from promptflow._sdk._utils import generate_flow_tools_json
+from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
 from promptflow._utils.multimedia_utils import get_file_reference_encoder
+from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.executor._result import LineResult
-from promptflow.executor.flow_executor import BulkResult
 from promptflow.storage import AbstractRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -137,13 +135,13 @@ class NodeRunRecord:
             lock.acquire()
             try:
                 with open(path, mode="w", encoding=DEFAULT_ENCODING) as f:
-                    json.dump(asdict(self), f)
+                    json.dump(asdict(self), f, ensure_ascii=False)
             finally:
                 lock.release()
         else:
             # for normal nodes in other line runs, directly write
             with open(path, mode="w", encoding=DEFAULT_ENCODING) as f:
-                json.dump(asdict(self), f)
+                json.dump(asdict(self), f, ensure_ascii=False)
 
 
 @dataclass
@@ -172,7 +170,7 @@ class LineRunRecord:
 
     def dump(self, path: Path) -> None:
         with open(path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(asdict(self), f)
+            json.dump(asdict(self), f, ensure_ascii=False)
 
 
 class LocalStorageOperations(AbstractRunStorage):
@@ -182,7 +180,7 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def __init__(self, run: Run, stream=False, run_mode=RunMode.Test):
         self._run = run
-        self.path = self._prepare_folder(get_run_output_path(self._run))
+        self.path = self._prepare_folder(self._run._output_path)
 
         self.logger = LoggerOperations(
             file_path=self.path / LocalStorageFilenames.LOG, stream=stream, run_mode=run_mode
@@ -193,7 +191,10 @@ class LocalStorageOperations(AbstractRunStorage):
         self._flow_tools_json_path = (
             self._snapshot_folder_path / PROMPT_FLOW_DIR_NAME / LocalStorageFilenames.FLOW_TOOLS_JSON
         )
-        self._inputs_path = self._snapshot_folder_path / LocalStorageFilenames.INPUTS
+        self._inputs_path = self.path / LocalStorageFilenames.INPUTS  # keep this for other usages
+        # below inputs and outputs are dumped by SDK
+        self._sdk_inputs_path = self._inputs_path
+        self._sdk_output_path = self.path / LocalStorageFilenames.OUTPUTS
         # metrics
         self._metrics_path = self.path / LocalStorageFilenames.METRICS
         # legacy files: detail.json and outputs.jsonl(not the one in flow_outputs folder)
@@ -203,7 +204,7 @@ class LocalStorageOperations(AbstractRunStorage):
         # for normal node run records, store per node per line;
         # for reduce node run records, store centralized in 000000000.jsonl per node
         self.outputs_folder = self._prepare_folder(self.path / "flow_outputs")
-        self._outputs_path = self.outputs_folder / "output.jsonl"
+        self._outputs_path = self.outputs_folder / "output.jsonl"  # dumped by executor
         self._node_infos_folder = self._prepare_folder(self.path / "node_artifacts")
         self._run_infos_folder = self._prepare_folder(self.path / "flow_artifacts")
         self._data_path = Path(run.data) if run.data is not None else None
@@ -215,14 +216,17 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def _dump_meta_file(self) -> None:
         with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, f)
+            json.dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, f, ensure_ascii=False)
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
+        patterns = [pattern for pattern in PromptflowIgnoreFile.IGNORE_FILE]
+        # ignore current output parent folder to avoid potential recursive copy
+        patterns.append(self._run._output_path.parent.name)
         shutil.copytree(
             flow.code.as_posix(),
             self._snapshot_folder_path,
-            ignore=shutil.ignore_patterns("__pycache__"),
+            ignore=shutil.ignore_patterns(*patterns),
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one
@@ -246,103 +250,81 @@ class LocalStorageOperations(AbstractRunStorage):
             flow_dag = yaml.safe_load(f)
         return flow_dag["inputs"], flow_dag["outputs"]
 
-    def dump_inputs(self, line_results: List[LineResult]) -> None:
-        inputs = []
-        for line_result in line_results:
-            try:
-                inputs.append(line_result.run_info.inputs)
-            except Exception:
-                # ignore when single line doesn't have inputs
-                pass
-        df = pd.DataFrame(inputs)
-        with open(self._inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            # policy: http://policheck.azurewebsites.net/Pages/TermInfo.aspx?LCID=9&TermID=203588
-            df.to_json(f, "records", lines=True)
-
     def load_inputs(self) -> RunInputs:
-        with open(self._inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+        import pandas as pd
+
+        with open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             df = pd.read_json(f, orient="records", lines=True)
             return df.to_dict("list")
 
-    def dump_outputs(self, outputs: RunOutputs) -> None:
-        df = pd.DataFrame(outputs)
-        with open(self._outputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            df.to_json(f, "records", lines=True)
-
     def load_outputs(self) -> RunOutputs:
+        import pandas as pd
+
         # for legacy run, simply read the output file and return as list of dict
         if not self._outputs_path.is_file():
             with open(self._legacy_outputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 df = pd.read_json(f, orient="records", lines=True)
                 return df.to_dict("list")
 
-        # get total number of line runs from inputs
-        num_line_runs = len(list(self.load_inputs().values())[0])
         with open(self._outputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             df = pd.read_json(f, orient="records", lines=True)
-            # if all line runs are failed, no need to fill
             if len(df) > 0:
-                df = self._outputs_padding(df, num_line_runs)
-                df.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                 df = df.set_index(LINE_NUMBER)
             return df.to_dict("list")
+
+    def dump_inputs_and_outputs(self) -> None:
+        inputs, outputs = self._collect_io_from_debug_info()
+        with open(self._sdk_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            inputs.to_json(f, orient="records", lines=True, force_ascii=False)
+        with open(self._sdk_output_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            outputs.to_json(f, orient="records", lines=True, force_ascii=False)
 
     def dump_metrics(self, metrics: Optional[RunMetrics]) -> None:
         metrics = metrics or dict()
         with open(self._metrics_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(metrics, f)
+            json.dump(metrics, f, ensure_ascii=False)
 
-    def dump_exception(self, exception: Exception, bulk_results: BulkResult) -> None:
+    def dump_exception(self, exception: Exception, batch_result: BatchResult) -> None:
         """Dump exception to local storage.
 
         :param exception: Exception raised during bulk run.
-        :param bulk_results: Bulk run outputs. If exception not raised, store line run error messages.
+        :param batch_result: Bulk run outputs. If exception not raised, store line run error messages.
         """
         # extract line run errors
-        errors, line_runs = [], []
-        if bulk_results:
+        message = ""
+        errors = []
+        if batch_result:
+            for line_error in batch_result.error_summary.error_list:
+                errors.append(line_error.to_dict())
+        if errors:
             try:
-                for line_result in bulk_results.line_results:
-                    if line_result.run_info.error is not None:
-                        errors.append(
-                            {
-                                "line number": line_result.run_info.index,
-                                "error": line_result.run_info.error,
-                            }
-                        )
-                    line_runs.append(line_result)
-            except Exception:
-                pass
-
-            # won't dump exception if errors not found in bulk_results
-            if not errors:
-                return
-
-        # SystemError will be raised above and users can see it, so we don't need to dump it.
-        if exception is None or not isinstance(exception, UserErrorException):
-            # use first line run error message as exception message if no exception raised
-            error = errors[0]
-            try:
+                # use first line run error message as exception message if no exception raised
+                error = errors[0]
                 message = error["error"]["message"]
             except Exception:
                 message = (
                     "Failed to extract error message from line runs. "
                     f"Please check {self._outputs_path} for more info."
                 )
-        else:
+        elif exception and isinstance(exception, UserErrorException):
+            # SystemError will be raised above and users can see it, so we don't need to dump it.
             message = str(exception)
+        else:
+            return
 
         if not isinstance(exception, BulkRunException):
             # If other errors raised, pass it into PromptflowException
             exception = BulkRunException(
                 message=message,
                 error=exception,
-                failed_lines=len(errors) if errors else "unknown",
-                total_lines=len(line_runs) if line_runs else "unknown",
+                failed_lines=batch_result.failed_lines if batch_result else "unknown",
+                total_lines=batch_result.total_lines if batch_result else "unknown",
                 line_errors={"errors": errors},
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(PromptflowExceptionPresenter.create(exception).to_dict(include_debug_info=True), f)
+            json.dump(
+                PromptflowExceptionPresenter.create(exception).to_dict(include_debug_info=True), f, ensure_ascii=False
+            )
 
     def load_exception(self) -> Dict:
         try:
@@ -407,13 +389,12 @@ class LocalStorageOperations(AbstractRunStorage):
         )
         line_run_record.dump(self._run_infos_folder / filename)
 
-    def persist_result(self, result: Optional[BulkResult]) -> None:
+    def persist_result(self, result: Optional[BatchResult]) -> None:
         """Persist metrics from return of executor."""
         if result is None:
             return
-        # The executor will persist outputs to output directory, so only dump metrics here for the time being.
+        self.dump_inputs_and_outputs()
         self.dump_metrics(result.metrics)
-        self.dump_inputs(result.line_results)
 
     def _persist_run_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path: Path):
         if run_info.inputs:
@@ -436,15 +417,53 @@ class LocalStorageOperations(AbstractRunStorage):
         return path
 
     @staticmethod
-    def _outputs_padding(df: pd.DataFrame, expected_rows: int) -> pd.DataFrame:
+    def _outputs_padding(df: "DataFrame", inputs_line_numbers: List[int]) -> "DataFrame":
+        import pandas as pd
+
+        if len(df) == len(inputs_line_numbers):
+            return df
         missing_lines = []
         lines_set = set(df[LINE_NUMBER].values)
-        for i in range(expected_rows):
+        for i in inputs_line_numbers:
             if i not in lines_set:
                 missing_lines.append({LINE_NUMBER: i})
-        if len(missing_lines) == 0:
-            return df
         df_to_append = pd.DataFrame(missing_lines)
         res = pd.concat([df, df_to_append], ignore_index=True)
         res = res.sort_values(by=LINE_NUMBER, ascending=True)
         return res
+
+    def load_inputs_and_outputs(self) -> Tuple["DataFrame", "DataFrame"]:
+        import pandas as pd
+
+        if not self._sdk_inputs_path.is_file() or not self._sdk_output_path.is_file():
+            inputs, outputs = self._collect_io_from_debug_info()
+        else:
+            with open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+                inputs = pd.read_json(f, orient="records", lines=True)
+            with open(self._sdk_output_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+                outputs = pd.read_json(f, orient="records", lines=True)
+                # if all line runs are failed, no need to fill
+                if len(outputs) > 0:
+                    outputs = self._outputs_padding(outputs, inputs["line_number"].tolist())
+                    outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
+                    outputs = outputs.set_index(LINE_NUMBER)
+        return inputs, outputs
+
+    def _collect_io_from_debug_info(self) -> Tuple["DataFrame", "DataFrame"]:
+        import pandas as pd
+
+        inputs, outputs = [], []
+        for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
+            if line_run_record_file.suffix.lower() != ".jsonl":
+                continue
+            with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
+                data = json.load(f)
+                line_number: int = data[LINE_NUMBER]
+                line_run_info: dict = data["run_info"]
+                current_inputs = line_run_info.get("inputs")
+                current_outputs = line_run_info.get("output")
+                inputs.append(copy.deepcopy(current_inputs))
+                if current_outputs is not None:
+                    current_outputs[LINE_NUMBER] = line_number
+                    outputs.append(copy.deepcopy(current_outputs))
+        return pd.DataFrame(inputs), pd.DataFrame(outputs)

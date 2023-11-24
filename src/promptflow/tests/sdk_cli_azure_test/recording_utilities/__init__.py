@@ -3,11 +3,14 @@
 # ---------------------------------------------------------
 
 from .bases import PFAzureIntegrationTestRecording
-from .utils import get_pf_client_for_playback, is_live, is_live_and_not_recording
+from .constants import SanitizedValues
+from .utils import get_pf_client_for_replay, is_live, is_record, is_replay
 
 __all__ = [
     "PFAzureIntegrationTestRecording",
-    "get_pf_client_for_playback",
+    "SanitizedValues",
+    "get_pf_client_for_replay",
     "is_live",
-    "is_live_and_not_recording",
+    "is_record",
+    "is_replay",
 ]

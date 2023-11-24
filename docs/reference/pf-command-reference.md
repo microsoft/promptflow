@@ -6,11 +6,13 @@ This is an experimental feature, and may change at any time. Learn [more](../how
 
 Manage prompt flow resources with the prompt flow CLI.
 
-| Command | Description |
-| --- | --- |
-| [pf flow](#pf-flow) | Manage flows. |
-| [pf connection](#pf-connection) | Manage connections. |
-| [pf run](#pf-run) | Manage runs. |
+| Command                         | Description                     |
+|---------------------------------|---------------------------------|
+| [pf flow](#pf-flow)             | Manage flows.                   |
+| [pf connection](#pf-connection) | Manage connections.             |
+| [pf run](#pf-run)               | Manage runs.                    |
+| [pf tool](#pf-tool)             | Init or list tools.             |
+| [pf config](#pf-config)         | Manage config for current user. |
 
 ## pf flow
 
@@ -489,7 +491,7 @@ Local path to the data file.
 
 `--column-mapping`
 
-Inputs column mapping, use `${data.xx}` to refer to data file columns, use `${run.inputs.xx}` and `${run.outputs.xx}` to refer to run inputs/outputs columns.
+Inputs column mapping, use `${data.xx}` to refer to data columns, use `${run.inputs.xx}` to refer to referenced run's data columns, and `${run.outputs.xx}` to refer to run outputs columns.
 
 `--run`
 
@@ -767,3 +769,46 @@ pf tool list --flow <path-to-flow-direcotry>
 `--flow`
 
 The flow directory.
+
+
+
+## pf config
+
+Manage config for current user.
+
+| Command                           | Description                                |
+|-----------------------------------|--------------------------------------------|
+| [pf config set](#pf-config-set)   | Set prompt flow configs for current user.  |
+| [pf config show](#pf-config-show) | Show prompt flow configs for current user. |
+
+### pf config set
+
+Set prompt flow configs for current user, configs will be stored at ~/.promptflow/pf.yaml.
+
+```bash
+pf config set
+```
+
+#### Examples
+
+Config connection provider to azure workspace for current user.
+
+```bash
+pf config set connection.provider="azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
+```
+
+### pf config show
+
+Show prompt flow configs for current user.
+
+```bash
+pf config show
+```
+
+#### Examples
+
+Show prompt flow for current user.
+
+```bash
+pf config show
+```

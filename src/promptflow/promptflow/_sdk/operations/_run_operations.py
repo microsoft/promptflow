@@ -4,12 +4,11 @@
 
 import copy
 import logging
+import os.path
 import sys
 import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
-
-import pandas as pd
 
 from promptflow._sdk._constants import (
     LOGGER_NAME,
@@ -21,13 +20,14 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
-from promptflow._sdk._utils import incremental_print, safe_parse_object_list
+from promptflow._sdk._utils import incremental_print, print_red_error, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow.contracts._run_management import RunMetadata, RunVisualization
+from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
@@ -90,7 +90,7 @@ class RunOperations(TelemetryMixin):
         # TODO: change to async
         stream = kwargs.pop("stream", False)
         try:
-            from promptflow._sdk.operations._run_submitter import RunSubmitter
+            from promptflow._sdk._submitter import RunSubmitter
 
             created_run = RunSubmitter(run_operations=self).submit(run=run, **kwargs)
             if stream:
@@ -111,11 +111,13 @@ class RunOperations(TelemetryMixin):
         )
 
     @monitor_operation(activity_name="pf.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, name: Union[str, Run]) -> Run:
+    def stream(self, name: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
 
         :param name: Name of the run, or run object.
         :type name: Union[str, ~promptflow.sdk.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails or canceled.
+        :type raise_on_error: bool
         :return: Run object.
         :rtype: ~promptflow.entities.Run
         """
@@ -138,10 +140,20 @@ class RunOperations(TelemetryMixin):
             available_logs = local_storage.logger.get_logs()
             incremental_print(available_logs, printed, file_handler)
             self._print_run_summary(run)
-            # won't print error here, put it in run dict
         except KeyboardInterrupt:
             error_message = "The output streaming for the run was interrupted, but the run is still executing."
             print(error_message)
+
+        if run.status == RunStatus.FAILED or run.status == RunStatus.CANCELED:
+            if run.status == RunStatus.FAILED:
+                error_message = local_storage.load_exception().get("message", "Run fails with unknown error.")
+            else:
+                error_message = "Run is canceled."
+            if raise_on_error:
+                raise InvalidRunStatusError(error_message)
+            else:
+                print_red_error(error_message)
+
         return run
 
     @monitor_operation(activity_name="pf.runs.archive", activity_type=ActivityType.PUBLICAPI)
@@ -197,7 +209,7 @@ class RunOperations(TelemetryMixin):
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
-    ) -> pd.DataFrame:
+    ) -> "DataFrame":
         """Get the details from the run.
 
         .. note::
@@ -214,6 +226,8 @@ class RunOperations(TelemetryMixin):
         :return: The details data frame.
         :rtype: pandas.DataFrame
         """
+        from pandas import DataFrame
+
         # if all_results is True, set max_results to sys.maxsize
         if all_results:
             max_results = sys.maxsize
@@ -223,10 +237,10 @@ class RunOperations(TelemetryMixin):
 
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name)
-        run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
-        inputs = local_storage.load_inputs()
-        outputs = local_storage.load_outputs()
+        inputs, outputs = local_storage.load_inputs_and_outputs()
+        inputs = inputs.to_dict("list")
+        outputs = outputs.to_dict("list")
         data = {}
         columns = []
         for k in inputs:
@@ -237,7 +251,7 @@ class RunOperations(TelemetryMixin):
             new_k = f"outputs.{k}"
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
-        df = pd.DataFrame(data).head(max_results).reindex(columns=columns)
+        df = DataFrame(data).head(max_results).reindex(columns=columns)
         return df
 
     @monitor_operation(activity_name="pf.runs.get_metrics", activity_type=ActivityType.PUBLICAPI)
@@ -321,10 +335,16 @@ class RunOperations(TelemetryMixin):
         local_storage = self._get_local_storage(run)
         return local_storage._outputs_path if local_storage.load_outputs() else None
 
-    def _get_inputs_path(self, run: Union[str, Run]) -> str:
+    def _get_data_path(self, run: Union[str, Run]) -> str:
         """Get the outputs file path of the run."""
         local_storage = self._get_local_storage(run)
-        return local_storage._inputs_path if local_storage.load_inputs() else None
+        # TODO: what if the data is deleted?
+        if not local_storage._data_path or not os.path.exists(local_storage._data_path):
+            raise UserErrorException(
+                f"Data path {local_storage._data_path} for run {run.name} does not exist. "
+                "Please make sure it exists and not deleted."
+            )
+        return local_storage._data_path
 
     def _get_local_storage(self, run: Union[str, Run]) -> LocalStorageOperations:
         """Get the local storage of the run."""

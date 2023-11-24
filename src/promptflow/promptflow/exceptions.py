@@ -31,15 +31,13 @@ class PromptflowException(Exception):
     :param message: A message describing the error. This is the error message the user will see.
     :type message: str
     :param target: The name of the element that caused the exception to be thrown.
-    :type target: ErrorTarget
+    :type target: ~promptflow.exceptions.ErrorTarget
     :param error: The original exception if any.
     :type error: Exception
     """
 
     def __init__(
         self,
-        # We must keep the message as the first argument,
-        # since some places are using it as positional argument for now.
         message="",
         message_format="",
         target: ErrorTarget = ErrorTarget.UNKNOWN,
@@ -80,8 +78,6 @@ class PromptflowException(Exception):
         parameters = {}
         for argument in required_arguments:
             if argument not in self._kwargs:
-                # Set a default value for the missing argument to avoid KeyError.
-                # For long term solution, use CI to guarantee the message_format and message_parameters are in sync.
                 parameters[argument] = f"<{argument}>"
             else:
                 parameters[argument] = self._kwargs[argument]
@@ -97,7 +93,7 @@ class PromptflowException(Exception):
         """The error target.
 
         :return: The error target.
-        :rtype: ErrorTarget
+        :rtype: ~promptflow.exceptions.ErrorTarget
         """
         return self._target
 
@@ -181,11 +177,9 @@ class PromptflowException(Exception):
                 return
 
             for _, field_name, _, _ in string.Formatter().parse(message_format):
-                # Last one field_name is always None, filter it out to avoid exception.
                 if field_name is not None:
                     yield field_name
 
-        # Use set to remove duplicates
         return set(iter_field_name())
 
     def __str__(self):

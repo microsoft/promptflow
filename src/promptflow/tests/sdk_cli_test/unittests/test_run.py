@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import copy
 import uuid
 from pathlib import Path
 from unittest.mock import patch
@@ -14,9 +15,9 @@ from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
+from promptflow._sdk._submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._sdk.operations._run_submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")
@@ -121,46 +122,53 @@ class TestRun:
         with pytest.raises(FileNotFoundError):
             pf.run(flow="invalid_path", data="fake_data", batch_run="fake_run")
 
-    def test_overwrite_variant(self, temp_output_dir):
-        # Create a temporary flow file
-        tmp_path = Path(temp_output_dir)
-        flow_file = tmp_path / "flow.yaml"
-        flow_file.write_text(
-            """
-nodes:
-  - name: node1
-    use_variants: true
-    variant_id: default
-    inputs:
-      param1: value1
-      param2: value2
-node_variants:
-  node1:
-    variants:
-      variant1:
-        node:
-          inputs:
-            param1: value1_variant1
-            param2: value2_variant1
-        """
-        )
-
-        # Test if function raises FileNotFoundError
-        with pytest.raises(FileNotFoundError):
-            overwrite_variant(tmp_path / "invalid_path", "node1", "variant1")
+    def test_overwrite_variant(self):
+        flow_dag = {
+            "nodes": [
+                {
+                    "name": "node1",
+                    "use_variants": True,
+                    "variant_id": "default",
+                    "inputs": {
+                        "param1": "value1",
+                        "param2": "value2",
+                    },
+                },
+            ],
+            "node_variants": {
+                "node1": {
+                    "default_variant_id": "variant1",
+                    "variants": {
+                        "variant1": {
+                            "node": {
+                                "inputs": {
+                                    "param1": "value1_variant1",
+                                    "param2": "value2_variant1",
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
 
         # Test if function raises InvalidFlowError
         with pytest.raises(InvalidFlowError):
-            overwrite_variant(flow_file, "node3", "variant1")
+            overwrite_variant(flow_dag, "node3", "variant1")
         with pytest.raises(InvalidFlowError):
-            overwrite_variant(flow_file, "node1", "variant3")
+            overwrite_variant(flow_dag, "node1", "variant3")
 
         # Test if function overwrites variant correctly
-        overwrite_variant(flow_file, "node1", "variant1")
-        with open(flow_file, "r") as f:
-            flow_dag = yaml.safe_load(f)
-        assert flow_dag["nodes"][0]["inputs"]["param1"] == "value1_variant1"
-        assert flow_dag["nodes"][0]["inputs"]["param2"] == "value2_variant1"
+        dag = copy.deepcopy(flow_dag)
+        overwrite_variant(dag, "node1", "variant1")
+        assert dag["nodes"][0]["inputs"]["param1"] == "value1_variant1"
+        assert dag["nodes"][0]["inputs"]["param2"] == "value2_variant1"
+
+        # test overwrite default variant
+        dag = copy.deepcopy(flow_dag)
+        overwrite_variant(dag)
+        assert dag["nodes"][0]["inputs"]["param1"] == "value1_variant1"
+        assert dag["nodes"][0]["inputs"]["param2"] == "value2_variant1"
 
     @patch("promptflow._sdk.operations._run_operations.RunOperations.update")
     def test_submit(self, mock_update):
@@ -184,5 +192,14 @@ node_variants:
         data = f"{FLOWS_DIR}/flow_with_non_english_input/data.jsonl"
         run = pf.run(flow=flow_path, data=data, column_mapping={"text": "${data.text}"})
         local_storage = LocalStorageOperations(run=run)
+        # assert non english in output.jsonl
+        output_jsonl_path = local_storage._outputs_path
+        with open(output_jsonl_path, "r", encoding="utf-8") as f:
+            outputs_text = f.readlines()
+            assert outputs_text == [
+                '{"line_number": 0, "output": "Hello 123 日本語"}\n',
+                '{"line_number": 1, "output": "World 123 日本語"}\n',
+            ]
+        # assert non english in memory
         outputs = local_storage.load_outputs()
         assert outputs == {"output": ["Hello 123 日本語", "World 123 日本語"]}

@@ -12,7 +12,7 @@
 [![CONTRIBUTING](https://img.shields.io/badge/Contributing-8A2BE2)](https://github.com/microsoft/promptflow/blob/main/CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
-> Welcome to join us to make Prompt flow better by
+> Welcome to join us to make prompt flow better by
 > participating [discussions](https://github.com/microsoft/promptflow/discussions),
 > opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
 > submitting [PRs](https://github.com/microsoft/promptflow/pulls).
@@ -34,6 +34,12 @@ With prompt flow, you will be able to:
 ------
 
 ## Installation
+
+To get started quickly, you can use a pre-built development environment. **Click the button below** to open the repo in GitHub Codespaces, and then continue the readme!
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/promptflow?quickstart=1)
+
+If you want to get started in your local environment, first install the packages:
 
 Ensure you have a python environment, `python=3.9` is recommended.
 
@@ -77,15 +83,19 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
+**Core value: ensuring "High Quality” from prototype to production**
+
+Explore our [**15-minute tutorial**](examples/tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md) that guides you through prompt tuning ➡ batch testing ➡ evaluation, all designed to ensure high quality ready for production.
+
+Next Step! Continue with the **Tutorial**  👇 section to delve deeper into prompt flow.
 
 ## Tutorial 🏃‍♂️
 
-Prompt Flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
+Prompt flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
 
 ### Develop your own LLM apps
 
-#### VS Code Extension<img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="25"/>
+#### VS Code Extension
 
 We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI.
 
@@ -95,7 +105,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 #### Deep delve into flow development
 
-[Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
+[Getting started with prompt flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
 
 ### Learn from use cases
 
@@ -106,7 +116,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 If you're interested in contributing, please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
-Next Step! Continue with the **Contributing**  👇 section to to contribute to Prompt flow.
+Next Step! Continue with the **Contributing**  👇 section to to contribute to prompt flow.
 
 ## Contributing
 
@@ -156,11 +166,9 @@ use of the software operates as your consent to these practices.
 
 ### Telemetry Configuration
 
-Telemetry collection is off by default.
+Telemetry collection is on by default.
 
-To opt in, please run `pf config set cli.telemetry_enabled=true` to turn it on.
-
-For Europe user, please run `pf config set cli.eu_user=true` to make sure telemetry is sent to Europe server.
+To opt out, please run `pf config set telemetry.enabled=false` to turn it off.
 
 ## License
 

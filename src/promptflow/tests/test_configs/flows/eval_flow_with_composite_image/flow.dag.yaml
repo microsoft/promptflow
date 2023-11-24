@@ -1,0 +1,48 @@
+inputs:
+  image_list:
+    type: list
+    default:
+    - data:image/jpg;path: logo.jpg
+    - data:image/png;path: logo_2.png
+  image_dict:
+    type: object
+    default:
+      image_1:
+        data:image/jpg;path: logo.jpg
+      image_2:
+        data:image/png;path: logo_2.png
+outputs:
+  output:
+    type: list
+    reference: ${python_node.output}
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: passthrough_list.py
+  inputs:
+    image_list: ${inputs.image_list}
+    image_dict: ${inputs.image_dict}
+- name: aggregate_1
+  type: python
+  source:
+    type: code
+    path: merge_images.py
+  inputs:
+    image_list: ${python_node.output}
+    image_dict:
+    - image_1:
+        data:image/jpg;path: logo.jpg
+      image_2:
+        data:image/png;path: logo_2.png
+  aggregation: true
+- name: aggregate_2
+  type: python
+  source:
+    type: code
+    path: merge_images.py
+  inputs:
+    image_list: ${python_node.output}
+    image_dict: ${inputs.image_dict}
+  aggregation: true

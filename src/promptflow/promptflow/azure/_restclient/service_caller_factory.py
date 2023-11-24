@@ -12,7 +12,7 @@ class _FlowServiceCallerFactory:
     _instance_lock = Lock()
 
     @classmethod
-    def get_instance(cls, workspace, credential, region=None, **kwargs) -> FlowServiceCaller:
+    def get_instance(cls, workspace, credential, operation_scope, region=None, **kwargs) -> FlowServiceCaller:
         """Get instance of flow service caller.
 
         :param workspace: workspace
@@ -22,6 +22,6 @@ class _FlowServiceCallerFactory:
         if cache_id not in cache:
             with _FlowServiceCallerFactory._instance_lock:
                 if cache_id not in cache:
-                    cache[cache_id] = FlowServiceCaller(workspace, credential=credential, region=region, **kwargs)
+                    cache[cache_id] = FlowServiceCaller(workspace, credential=credential, operation_scope=operation_scope, region=region, **kwargs)
 
         return cache[cache_id]

@@ -8,7 +8,114 @@ Manage prompt flow resources on Azure with the prompt flow CLI.
 
 | Command | Description |
 | --- | --- |
+| [pfazure flow](#pfazure-flow) | Manage flows. |
 | [pfazure run](#pfazure-run) | Manage runs. |
+
+
+## pfazure flow
+
+Manage flows.
+
+| Command | Description |
+| --- | --- |
+| [pfazure flow create](#pfazure-flow-create) | Create a flow. |
+| [pfazure flow list](#pfazure-flow-list) | List flows in a workspace. |
+
+
+### pfazure flow create
+
+Create a flow in Azure AI from a local flow folder.
+
+```bash
+pfazure flow create [--flow]
+                    [--set]
+                    [--subscription]
+                    [--resource-group]
+                    [--workspace-name]
+```
+
+#### Parameters
+
+`--flow`
+
+Local path to the flow directory.
+
+`--set`
+
+Update an object by specifying a property path and value to set.
+- `display-name`: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
+- `type`: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
+- `description`: Flow description. e.g. "--set description=\<description\>."
+- `tags`: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
+
+`--subscription`
+
+Subscription id, required when there is no default value from `az configure`.
+
+`--resource-group -g`
+
+Resource group name, required when there is no default value from `az configure`.
+
+`--workspace-name -w`
+
+Workspace name, required when there is no default value from `az configure`.
+
+
+### pfazure flow list
+
+List remote flows on Azure AI.
+
+```bash
+pfazure flow list [--max-results]
+                  [--include-others]
+                  [--type]
+                  [--output]
+                  [--archived-only]
+                  [--include-archived]
+                  [--subscription]
+                  [--resource-group]
+                  [--workspace-name]
+                  [--output]
+```
+
+#### Parameters
+
+`--max-results -r`
+
+Max number of results to return. Default is 50, upper bound is 100.
+
+`--include-others`
+
+Include flows created by other owners. By default only flows created by the current user are returned.
+
+`--type`
+
+Filter flows by type. Available types are: "standard", "evaluation", "chat".
+
+`--archived-only`
+
+List archived flows only.
+
+`--include-archived`
+
+List archived flows and active flows.
+
+`--output -o`
+
+Output format. Allowed values: `json`, `table`. Default: `json`.
+
+`--subscription`
+
+Subscription id, required when there is no default value from `az configure`.
+
+`--resource-group -g`
+
+Resource group name, required when there is no default value from `az configure`.
+
+`--workspace-name -w`
+
+Workspace name, required when there is no default value from `az configure`.
+
 
 ## pfazure run
 
@@ -23,6 +130,9 @@ Manage prompt flow runs.
 | [pfazure run show-details](#pfazure-run-show-details) | Show a run details. |
 | [pfazure run show-metrics](#pfazure-run-show-metrics) | Show run metrics. |
 | [pfazure run visualize](#pfazure-run-visualize) | Visualize a run. |
+| [pfazure run archive](#pfazure-run-archive) | Archive a run. |
+| [pfazure run restore](#pfazure-run-restore) | Restore a run. |
+| [pfazure run update](#pfazure-run-update) | Update a run. |
 
 ### pfazure run create
 
@@ -60,7 +170,7 @@ Local path to the data file or remote data. e.g. azureml:name:version.
 
 `--column-mapping`
 
-Inputs column mapping, use `${data.xx}` to refer to data file columns, use `${run.inputs.xx}` and `${run.outputs.xx}` to refer to run inputs/outputs columns.
+Inputs column mapping, use `${data.xx}` to refer to data columns, use `${run.inputs.xx}` to refer to referenced run's data columns, and `${run.outputs.xx}` to refer to run outputs columns.
 
 `--run`
 
@@ -393,3 +503,4 @@ Resource group name, required when there is no default value from `az configure`
 `--workspace-name -w`
 
 Workspace name, required when there is no default value from `az configure`.
+

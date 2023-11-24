@@ -1,4 +1,10 @@
-inputs: {}
+inputs:
+  website_name:
+    type: string
+    default: Microsoft
+  user_name:
+    type: string
+    default: ""
 outputs:
   output:
     type: string
@@ -12,3 +18,5 @@ nodes:
     path: prompt_template.jinja2
   inputs:
     connection: basic_custom_connection
+    website_name: ${inputs.website_name}
+    user_name: ${inputs.user_name}

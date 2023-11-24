@@ -8,10 +8,10 @@ This readme file will not be included in above doc site. It keeps a guide for pr
 Below is a table of important doc pages.
 | Category              | Article             |
 |----------------|----------------|
-|Quick start|[Get started with prompt flow](./how-to-guides/quick-start.md)|
+|Quick start|[Getting started with prompt flow](./how-to-guides/quick-start.md)|
 |Concepts|[Flows](./concepts/concept-flows.md)<br> [Tools](./concepts/concept-tools.md)<br> [Connections](./concepts/concept-connections.md)<br> [Variants](./concepts/concept-variants.md)<br> |
 |How-to guides|[How to initialize and test a flow](./how-to-guides/init-and-test-a-flow.md) <br>[How to run and evaluate a flow](./how-to-guides/run-and-evaluate-a-flow/index.md)<br> [How to tune prompts using variants](./how-to-guides/tune-prompts-with-variants.md)<br>[How to deploy a flow](./how-to-guides/deploy-a-flow/index.md)<br>[How to create and use your own tool package](./how-to-guides/develop-a-tool/create-and-use-tool-package.md)|
-|Tools reference|[LLM tool](./tools-reference/llm-tool.md)<br> [Prompt tool](./tools-reference/prompt-tool.md)<br> [Python tool](./tools-reference/python-tool.md)<br> [SERP API tool](./tools-reference/serp-api-tool.md)<br> [Embedding tool](./tools-reference/embedding_tool.md)||
+|Tools reference|[LLM tool](./reference/tools-reference/llm-tool.md)<br> [Prompt tool](./reference/tools-reference/prompt-tool.md)<br> [Python tool](./reference/tools-reference/python-tool.md)<br> [Embedding tool](./reference/tools-reference/embedding_tool.md)<br>[SERP API tool](./reference/tools-reference/serp-api-tool.md) ||
 
 
 ## Writing tips
@@ -27,14 +27,8 @@ Below is a table of important doc pages.
 
 
 **Local build**: We suggest using local build at the beginning, as it's fast and efficiency. 
-```powershell
-cd .\scripts\docs
 
-.\doc_generation.ps1 # Install requirements and build doc
-# .\doc_generation.ps1 -SkipInstall # Skip install dependencies and build doc
-
-start .\_build\index.html # See the homepage in your browser
-```
+Please refer to [How to build doc site locally](./dev/documentation_guidelines.md#how-to-build-doc-site-locally).
 
 
 ## FAQ

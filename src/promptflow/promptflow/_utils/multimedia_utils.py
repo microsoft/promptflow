@@ -1,5 +1,5 @@
 import base64
-import imghdr
+import filetype
 import os
 import re
 import uuid
@@ -72,8 +72,9 @@ def _create_image_from_file(f: Path, mime_type: str = None):
 def _create_image_from_base64(base64_str: str, mime_type: str = None):
     image_bytes = base64.b64decode(base64_str)
     if not mime_type:
-        format = imghdr.what(None, image_bytes)
-        mime_type = f"image/{format}" if format else "image/*"
+        mime_type = filetype.guess_mime(image_bytes)
+        if not mime_type.startswith("image/"):
+            mime_type = "image/*"
     return Image(image_bytes, mime_type=mime_type)
 
 
@@ -81,9 +82,10 @@ def _create_image_from_url(url: str, mime_type: str = None):
     response = requests.get(url)
     if response.status_code == 200:
         if not mime_type:
-            format = imghdr.what(None, response.content)
-            mime_type = f"image/{format}" if format else "image/*"
-        return Image(response.content, mime_type=mime_type)
+            mime_type = filetype.guess_mime(response.content)
+            if not mime_type.startswith("image/"):
+                mime_type = "image/*"
+        return Image(response.content, mime_type=mime_type, source_url=url)
     else:
         raise InvalidImageInput(
             message_format=f"Error while fetching image from URL: {url}. "
@@ -98,7 +100,13 @@ def _create_image_from_dict(image_dict: dict):
         if resource == "path":
             return _create_image_from_file(Path(v), mime_type=f"image/{format}")
         elif resource == "base64":
-            return _create_image_from_base64(v, mime_type=f"image/{format}")
+            if _is_base64(v):
+                return _create_image_from_base64(v, mime_type=f"image/{format}")
+            else:
+                raise InvalidImageInput(
+                    message_format=f"Invalid base64 image: {v}.",
+                    target=ErrorTarget.EXECUTOR,
+                )
         elif resource == "url":
             return _create_image_from_url(v, mime_type=f"image/{format}")
         else:
@@ -145,9 +153,9 @@ def _save_image_to_file(
 ):
     ext = _get_extension_from_mime_type(image._mime_type)
     file_name = f"{file_name}.{ext}" if ext else file_name
-    image_path = str(relative_path / file_name) if relative_path else file_name
+    image_path = (relative_path / file_name).as_posix() if relative_path else file_name
     if use_absolute_path:
-        image_path = str(Path(folder_path / image_path).resolve())
+        image_path = Path(folder_path / image_path).resolve().as_posix()
     image_reference = {f"data:{image._mime_type};path": image_path}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)
@@ -178,24 +186,24 @@ def default_json_encoder(obj):
 def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
-    return recursive_process(value, process_funcs=serialization_funcs)
+    return _process_recursively(value, process_funcs=serialization_funcs)
 
 
-def convert_multimedia_data_to_base64(value: Any, with_type=False):
-    to_base64_funcs = {PFBytes: partial(PFBytes.to_base64, **{"with_type": with_type})}
-    return recursive_process(value, process_funcs=to_base64_funcs)
+def convert_multimedia_data_to_base64(value: Any, with_type=False, dict_type=False):
+    to_base64_funcs = {PFBytes: partial(PFBytes.to_base64, **{"with_type": with_type, "dict_type": dict_type})}
+    return _process_recursively(value, process_funcs=to_base64_funcs)
 
 
 # TODO: Move this function to a more general place and integrate serialization to this function.
-def recursive_process(value: Any, process_funcs: Dict[type, Callable] = None) -> dict:
+def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None) -> dict:
     if process_funcs:
         for cls, f in process_funcs.items():
             if isinstance(value, cls):
                 return f(value)
     if isinstance(value, list):
-        return [recursive_process(v, process_funcs) for v in value]
+        return [_process_recursively(v, process_funcs) for v in value]
     if isinstance(value, dict):
-        return {k: recursive_process(v, process_funcs) for k, v in value.items()}
+        return {k: _process_recursively(v, process_funcs) for k, v in value.items()}
     return value
 
 
@@ -203,38 +211,40 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
         if value.type == ValueType.IMAGE:
-            updated_inputs[key] = create_image(updated_inputs[key])
+            if isinstance(updated_inputs[key], list):
+                # For aggregation node, the image input is a list.
+                updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
+            else:
+                updated_inputs[key] = create_image(updated_inputs[key])
         elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
             updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
     return updated_inputs
 
 
 def load_multimedia_data_recursively(value: Any):
-    if isinstance(value, list):
-        return [load_multimedia_data_recursively(item) for item in value]
-    elif isinstance(value, dict):
-        if is_multimedia_dict(value):
-            return _create_image_from_dict(value)
-        else:
-            return {k: load_multimedia_data_recursively(v) for k, v in value.items()}
-    else:
-        return value
+    return _process_multimedia_dict_recursively(value, _create_image_from_dict)
 
 
 def resolve_multimedia_data_recursively(input_dir: Path, value: Any):
+    process_func = partial(resolve_image_path, **{"input_dir": input_dir})
+    return _process_multimedia_dict_recursively(value, process_func)
+
+
+def _process_multimedia_dict_recursively(value: Any, process_func: Callable) -> dict:
     if isinstance(value, list):
-        return [resolve_multimedia_data_recursively(input_dir, item) for item in value]
+        return [_process_multimedia_dict_recursively(item, process_func) for item in value]
     elif isinstance(value, dict):
         if is_multimedia_dict(value):
-            return resolve_image_path(input_dir, value)
+            return process_func(**{"image_dict": value})
         else:
-            return {k: resolve_multimedia_data_recursively(input_dir, v) for k, v in value.items()}
+            return {k: _process_multimedia_dict_recursively(v, process_func) for k, v in value.items()}
     else:
         return value
 
 
 def resolve_image_path(input_dir: Path, image_dict: dict):
     """Resolve image path to absolute path in image dict"""
+
     input_dir = input_dir.parent if input_dir.is_file() else input_dir
     if is_multimedia_dict(image_dict):
         for key in image_dict:

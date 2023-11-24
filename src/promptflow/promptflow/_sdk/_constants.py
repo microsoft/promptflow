@@ -19,6 +19,9 @@ FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_DIR_NAME = ".promptflow"
 HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
+SERVICE_CONFIG_FILE = "pf.yaml"
+PF_SERVICE_PORT_FILE = "pfs.port"
+PF_SERVICE_LOG_FILE = "pfs.log"
 
 if not HOME_PROMPT_FLOW_DIR.is_dir():
     HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)
@@ -63,12 +66,13 @@ VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
 VIS_LIB_CDN_LINK_TMPL = (
     "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
 )
-VIS_LIB_VERSION = "0.0.31"
+VIS_LIB_VERSION = "0.0.32"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
     "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
+FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -209,11 +213,6 @@ class CLIListOutputFormat:
     TABLE = "table"
 
 
-def get_run_output_path(run) -> Path:
-    # store the run outputs to user's local dir
-    return (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / str(run.name)).resolve()
-
-
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
     DAG = DAG_FILE_NAME
@@ -304,3 +303,29 @@ class RunHistoryKeys:
 class ConnectionProvider(str, Enum):
     LOCAL = "local"
     AZUREML = "azureml"
+
+
+class FlowType:
+    STANDARD = "standard"
+    EVALUATION = "evaluation"
+    CHAT = "chat"
+
+    @staticmethod
+    def get_all_values():
+        values = [value for key, value in vars(FlowType).items() if isinstance(value, str) and key.isupper()]
+        return values
+
+
+CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE = {
+    FlowType.STANDARD: "default",
+    FlowType.EVALUATION: "evaluation",
+    FlowType.CHAT: "chat",
+}
+
+SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE = {value: key for key, value in CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE.items()}
+
+
+class AzureFlowSource:
+    LOCAL = "local"
+    PF_SERVICE = "pf_service"
+    INDEX = "index"
