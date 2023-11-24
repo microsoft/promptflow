@@ -27,6 +27,7 @@
 - Add env variable 'PF_NO_INTERACTIVE_LOGIN' to disable interactive login if using azureml connection provider in promptflow sdk.
 - Improved CLI invoke time.
 - Bump `pydash` upper bound to 8.0.0.
+- Bump `SQLAlchemy` upper bound to 3.0.0.
 
 ## 1.0.0 (2023.11.09)
 
