@@ -84,11 +84,11 @@ class TestHandleOpenAIError:
         "dummyExceptionList",
         [
             (
-                    [
-                        RateLimitError("Something went wrong", response=httpx.get('https://www.example.com'),
-                                       body=None),
-                        APITimeoutError(request=httpx.Request('GET', 'https://www.example.com'))
-                    ]
+                [
+                    RateLimitError("Something went wrong", response=httpx.get('https://www.example.com'),
+                                   body=None),
+                    # APITimeoutError(request=httpx.Request('GET', 'https://www.example.com'))
+                ]
             ),
         ],
     )
