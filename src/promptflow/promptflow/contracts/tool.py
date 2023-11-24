@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 from promptflow._constants import CONNECTION_NAME_PROPERTY
 
 from .multimedia import Image
-from .types import FilePath, PromptTemplate, Secret
+from .types import AssistantOverride, FilePath, PromptTemplate, Secret
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Enum")
@@ -39,6 +39,7 @@ class ValueType(str, Enum):
     OBJECT = "object"
     FILE_PATH = "file_path"
     IMAGE = "image"
+    ASSISTANT_OVERRIDE = "assistant_override"
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":
@@ -133,6 +134,12 @@ class ValueType(str, Enum):
                 except Exception:
                     #  Ignore the exception since it might really be a string
                     pass
+        if self == ValueType.ASSISTANT_OVERRIDE:
+            if isinstance(v, dict):
+                try:
+                    return AssistantOverride(v)
+                except Exception:
+                    raise ValueError(f"Invalid list value {v!r}")
         # TODO: parse other types
         return v
 

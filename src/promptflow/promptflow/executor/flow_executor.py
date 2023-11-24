@@ -3,10 +3,12 @@
 # ---------------------------------------------------------
 import asyncio
 import copy
+import docutils.nodes
 import functools
 import inspect
 import os
 import uuid
+from docutils.core import publish_doctree
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
@@ -23,7 +25,7 @@ from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolInvoker
-from promptflow._core.tools_manager import ToolsManager
+from promptflow._core.tools_manager import ToolLoader, ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -33,9 +35,10 @@ from promptflow._utils.execution_utils import (
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
-from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
+from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node, ToolSource
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
@@ -93,6 +96,7 @@ class FlowExecutor:
         working_dir=None,
         line_timeout_sec=LINE_TIMEOUT_SEC,
         flow_file=None,
+        tool_resolver: ToolResolver = None,
     ):
         """Initialize a FlowExecutor object.
 
@@ -142,6 +146,7 @@ class FlowExecutor:
         self._working_dir = working_dir
         self._line_timeout_sec = line_timeout_sec
         self._flow_file = flow_file
+        self._tool_resolver = tool_resolver
         try:
             self._tools_manager = ToolsManager(loaded_tools)
             tool_to_meta = {tool.name: tool for tool in flow.tools}
@@ -257,6 +262,7 @@ class FlowExecutor:
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
             flow_file=flow_file,
+            tool_resolver=tool_resolver,
         )
 
     @classmethod
@@ -795,6 +801,7 @@ class FlowExecutor:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             inputs = load_multimedia_data(self._flow.inputs, inputs)
+            inputs = self.load_assistant_tools(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
@@ -817,6 +824,59 @@ class FlowExecutor:
         node_run_infos = run_tracker.collect_child_node_runs(line_run_id)
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)
+
+    def load_assistant_tools(self, inputs: Dict[str, FlowInputDefinition], line_inputs: dict):
+        updated_inputs = dict(line_inputs or {})
+        for key, value in inputs.items():
+            if value.type == ValueType.ASSISTANT_OVERRIDE:
+                updated_tools = []
+                for tool in updated_inputs[key].tools:
+                    if tool["type"] != "promptflow_tool":
+                        continue
+                    node = Node(name="assistant_node", tool="assistant_tool", inputs={}, source=ToolSource(path=tool["source"]["path"]))
+                    resolved_tool = self._tool_resolver._resolve_script_node(node)
+                    description = self.get_structred_description(resolved_tool.callable.__name__, resolved_tool.definition.description)
+                    updated_tools.append({resolved_tool.definition.function: {"callable": resolved_tool.callable, "description": description}})
+                updated_inputs[key].set_resolved_tools(updated_tools)
+        return updated_inputs
+
+    def get_structred_description(self, func_name: str, docstring: str):
+        doctree = publish_doctree(docstring)
+        params = {}
+
+        for field in doctree.traverse(docutils.nodes.field):
+            field_name = field[0].astext()
+            field_body = field[1].astext()
+
+            if field_name.startswith("param"):
+                param_name = field_name.split(' ')[1]
+                if param_name not in params:
+                    params[param_name] = {}
+                params[param_name]["description"] = field_body
+            if field_name.startswith("type"):
+                param_name = field_name.split(' ')[1]
+                if param_name not in params:
+                    params[param_name] = {}
+                params[param_name]["type"] = self._convert_type(field_body)
+
+        return {
+            "type": "function",
+            "function": {
+                "name": func_name,
+                "description": doctree[0].astext(),
+                "parameters": {
+                    "type": "object",
+                    "properties": params,
+                    "required": list(params.keys())
+                }
+            }
+        }
+
+    def _convert_type(self, type: str):
+        if type == "str":
+            return "string"
+        if type == "int":
+            return "number"
 
     def _extract_outputs(self, nodes_outputs, bypassed_nodes, flow_inputs):
         outputs = {}
