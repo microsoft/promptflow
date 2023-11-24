@@ -425,8 +425,9 @@ class TestSubmitterViaProxy(TestSubmitter):
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
+        log_path = self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log"
         with LoggerOperations(
-            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+            file_path=log_path,
             stream=stream_log,
             credential_list=credential_list,
         ):
@@ -437,6 +438,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                     working_dir=self.flow.code,
                     connections=connections,
                     storage=storage,
+                    log_path=log_path,
                 )
 
                 line_result = asyncio.run(flow_executor.exec_line_async(inputs, index=0))
