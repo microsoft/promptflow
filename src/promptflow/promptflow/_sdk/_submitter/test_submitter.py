@@ -399,7 +399,6 @@ class TestSubmitterViaProxy(TestSubmitter):
     def __init__(self, flow: Flow, flow_context: FlowContext, client=None):
         super().__init__(flow, flow_context, client)
 
-
     def flow_test(
         self,
         inputs: Mapping[str, Any],
