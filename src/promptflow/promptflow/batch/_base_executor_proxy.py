@@ -101,6 +101,14 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             raise PromptflowException(f"Error when calling executor API, response: {response}")
 
     async def ensure_executor_health(self):
+        """Ensure the executor service is healthy before calling the API to get the results
+
+        During testing, we observed that the executor service started quickly on Windows.
+        However, there is a noticeable delay in booting on Linux.
+
+        So we set a specific waiting period. If the executor service fails to return to normal
+        within the allocated timeout, an exception is thrown to indicate a potential problem.
+        """
         waiting_health_timeout = 5
         start_time = datetime.utcnow()
         while (datetime.utcnow() - start_time).seconds < waiting_health_timeout:
