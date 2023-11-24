@@ -15,7 +15,7 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
 )
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute, transpose
+from promptflow._utils.utils import dump_list_to_jsonl, log_progress, resolve_dir_to_absolute, transpose
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
@@ -157,12 +157,16 @@ class BatchEngine:
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
         line_results = []
+        total_lines = len(batch_inputs)
+        # TODO: concurrent calls to exec_line instead of for loop
         for i, each_line_input in enumerate(batch_inputs):
             line_result = await self._executor_proxy.exec_line_async(each_line_input, i, run_id=run_id)
             for node_run in line_result.node_run_infos.values():
                 self._storage.persist_node_run(node_run)
             self._storage.persist_flow_run(line_result.run_info)
             line_results.append(line_result)
+            # log the progress of the batch run
+            log_progress(self._start_time, bulk_logger, len(line_results), total_lines)
         return line_results
 
     def _exec_aggregation_internal(
