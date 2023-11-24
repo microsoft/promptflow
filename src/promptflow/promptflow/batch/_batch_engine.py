@@ -160,6 +160,7 @@ class BatchEngine:
         total_lines = len(batch_inputs)
         # TODO: concurrent calls to exec_line instead of for loop
         for i, each_line_input in enumerate(batch_inputs):
+            # TODO: catch line run failed to avoid one line break others
             line_result = await self._executor_proxy.exec_line_async(each_line_input, i, run_id=run_id)
             for node_run in line_result.node_run_infos.values():
                 self._storage.persist_node_run(node_run)
