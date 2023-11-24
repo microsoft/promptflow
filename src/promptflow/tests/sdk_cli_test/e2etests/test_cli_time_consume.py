@@ -10,6 +10,7 @@ import pytest
 from promptflow._cli._pf.entry import main
 import multiprocessing
 from promptflow._core.operation_context import OperationContext
+from promptflow._sdk._constants import USER_AGENT
 
 FLOWS_DIR = "./tests/test_configs/flows"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
@@ -17,7 +18,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
-    os.environ["TELEMETRY_AGENT"] = "perf_monitor/1.0"
+    os.environ[USER_AGENT] = "perf_monitor/1.0"
     sys.argv = list(cmd)
     output = io.StringIO()
     st = timeit.default_timer()
