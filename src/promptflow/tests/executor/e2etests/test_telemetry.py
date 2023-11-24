@@ -9,11 +9,11 @@ from unittest.mock import patch
 import pytest
 
 from promptflow._core.operation_context import OperationContext
-from promptflow.batch import BatchEngine
+from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 
-from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
+from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 Completion = namedtuple("Completion", ["choices"])
 Delta = namedtuple("Delta", ["content"])
@@ -70,9 +70,10 @@ class TestExecutorTelemetry:
             input_dirs = {"data": get_flow_inputs_file(flow_folder)}
             inputs_mapping = {"question": "${data.question}", "chat_history": "${data.chat_history}"}
             output_dir = Path(mkdtemp())
-            batch_result = batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
+            batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
 
-            for line in batch_result.outputs:
+            outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+            for line in outputs:
                 headers = json.loads(line.get("answer", ""))
                 assert "promptflow/" in headers.get("x-ms-useragent")
                 assert headers.get("ms-azure-ai-promptflow-scenario") == "test"

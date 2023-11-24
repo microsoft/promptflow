@@ -17,7 +17,7 @@ from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
-from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
+from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow._core._errors import ProcessPoolError
@@ -124,11 +124,11 @@ class HealthyEnsuredProcess:
         process_name = self.process.name if self.process else None
         process_pid = self.process.pid if self.process else None
         if is_completed:
-            logger.info(
+            bulk_logger.info(
                 f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed."
             )
         else:
-            logger.info(
+            bulk_logger.info(
                 f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution."
             )
 
@@ -153,11 +153,11 @@ class LineExecutionProcessPool:
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
         sys_start_methods = multiprocessing.get_all_start_methods()
         if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
-            logger.warning(
+            bulk_logger.warning(
                 f"Failed to set start method to '{multiprocessing_start_method}', "
                 f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
             )
-            logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
+            bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
             multiprocessing_start_method = None
         self.context = get_multiprocessing_context(multiprocessing_start_method)
         use_fork = self.context.get_start_method() == "fork"
@@ -254,7 +254,7 @@ class LineExecutionProcessPool:
             self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number, True)
             # Handling the timeout of a line execution process.
             if not completed:
-                logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
+                bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
                 ex = LineExecutionTimeoutError(line_number, timeout_time)
                 result = self._generate_line_result_for_exception(
                     inputs, run_id, line_number, self._flow_id, start_time, ex
@@ -311,7 +311,7 @@ class LineExecutionProcessPool:
         return _process_recursively(value, process_funcs=serialization_funcs)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
-        logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
+        bulk_logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
         run_info = FlowRunInfo(
             run_id=f"{run_id}_{line_number}",
             status=Status.Failed,
@@ -379,12 +379,17 @@ class LineExecutionProcessPool:
                     while not async_result.ready():
                         # Check every 1 second
                         async_result.wait(1)
+                    # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling
+                    # The exceptions raised will be re-raised by the get() method.
+                    # Related link:
+                    # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.pool.AsyncResult
+                    async_result.get()
                 except KeyboardInterrupt:
                     raise
             except PromptflowException:
                 raise
             except Exception as e:
-                logger.error(f"Process {os.getpid()} failed with exception: {e}")
+                bulk_logger.error(f"Process {os.getpid()} failed with exception: {e}")
                 raise ProcessPoolError(
                     message_format=f"Process {os.getpid()} failed with exception: {e}",
                     target=ErrorTarget.EXECUTOR,
@@ -436,7 +441,7 @@ def _exec_line(
             line_result.output = {}
         return line_result
     except Exception as e:
-        logger.error(f"Line {index}, Process {os.getpid()} failed with exception: {e}")
+        bulk_logger.error(f"Line {index}, Process {os.getpid()} failed with exception: {e}")
         flow_id = executor._flow_id
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         # If line execution failed before start, there is no flow information in the run_tracker.
@@ -461,10 +466,10 @@ def _process_wrapper(
     operation_contexts_dict: dict,
 ):
     signal.signal(signal.SIGINT, signal_handler)
-    logger.info(f"Process {os.getpid()} started.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
     if log_context_initialization_func:
         with log_context_initialization_func():
+            bulk_logger.info(f"Process {os.getpid()} started.")
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
     else:
         exec_line_for_queue(executor_creation_func, input_queue, output_queue)
@@ -554,9 +559,9 @@ def get_available_max_worker_count():
         # 1. Let the main process not consume memory because it does not actually invoke
         # 2. When the degree of parallelism is 1, main process executes the task directly and not
         #  create the child process
-        logger.warning(f"Available max worker count {available_max_worker_count} is less than 1, set it to 1.")
+        bulk_logger.warning(f"Available max worker count {available_max_worker_count} is less than 1, set it to 1.")
         available_max_worker_count = 1
-    logger.info(
+    bulk_logger.info(
         f"""Process {pid} uses {process_memory},
         total memory {total_memory}, total memory in use: {total_memory_in_use},
         available memory: {available_memory}, available max worker count: {available_max_worker_count}"""
@@ -567,7 +572,7 @@ def get_available_max_worker_count():
 def get_multiprocessing_context(multiprocessing_start_method=None):
     if multiprocessing_start_method is not None:
         context = multiprocessing.get_context(multiprocessing_start_method)
-        logger.info(f"Set start method to {multiprocessing_start_method}.")
+        bulk_logger.info(f"Set start method to {multiprocessing_start_method}.")
         return context
     else:
         context = multiprocessing.get_context()
