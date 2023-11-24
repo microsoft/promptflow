@@ -26,6 +26,7 @@ jobs:
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
           pip install google-search-results==2.4.1
+          pip install -r ./src/promptflow/dev_requirements.txt
           pip install openai>=1.0.0
       - name: Generate configs
         run: |
