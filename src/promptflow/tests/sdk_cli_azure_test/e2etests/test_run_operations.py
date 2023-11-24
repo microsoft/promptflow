@@ -149,7 +149,7 @@ class TestFlowRun:
         assert "${timestamp}" not in run.display_name
         assert isinstance(run, Run)
 
-    def test_default_run_display_name(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
+    def test_default_run_display_name(self, pf, runtime: str, randstr: Callable[[str], str]):
         run = load_run(
             source=f"{RUNS_DIR}/run_with_env.yaml",
             params_override=[{"runtime": runtime}],
