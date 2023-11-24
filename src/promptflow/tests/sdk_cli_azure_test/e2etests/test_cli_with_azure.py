@@ -11,6 +11,7 @@ import pytest
 from azure.ai.ml.entities import Data
 
 from promptflow._cli._pf_azure.entry import main
+from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
@@ -154,7 +155,7 @@ class TestCliWithAzure:
         # clear user agent before test
         context = OperationContext().get_instance()
         context.user_agent = ""
-        with environment_variable_overwrite("USER_AGENT", ""):
+        with environment_variable_overwrite(PF_USER_AGENT, ""):
             with pytest.raises(SystemExit):
                 run_pf_command(
                     "run",

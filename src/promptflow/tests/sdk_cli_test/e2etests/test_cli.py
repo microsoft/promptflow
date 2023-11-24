@@ -17,6 +17,7 @@ import pytest
 import yaml
 
 from promptflow._cli._pf.entry import main
+from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
@@ -1545,7 +1546,7 @@ class TestCli:
         # clear user agent before test
         context = OperationContext().get_instance()
         context.user_agent = ""
-        with environment_variable_overwrite("USER_AGENT", ""):
+        with environment_variable_overwrite(PF_USER_AGENT, ""):
             with pytest.raises(SystemExit):
                 run_pf_command(
                     "run",

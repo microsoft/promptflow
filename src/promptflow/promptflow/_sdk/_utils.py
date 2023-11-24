@@ -32,7 +32,7 @@ from marshmallow import ValidationError
 from ruamel.yaml import YAML
 
 import promptflow
-from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN
+from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
@@ -782,9 +782,13 @@ def update_user_agent_from_env_var():
     """Update user agent from env var to OperationContext"""
     from promptflow._core.operation_context import OperationContext
 
-    if "USER_AGENT" in os.environ:
+    if USER_AGENT in os.environ:
         # Append vscode or other user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
+        OperationContext.get_instance().append_user_agent(os.environ[USER_AGENT])
+
+    if PF_USER_AGENT in os.environ:
+        # Append promptflow user agent from env
+        OperationContext.get_instance().append_user_agent(os.environ[PF_USER_AGENT])
 
 
 def setup_user_agent_to_operation_context(user_agent=None):

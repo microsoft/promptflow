@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pydash
 import pytest
 
+from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension, setup_user_agent_to_operation_context
@@ -67,7 +68,7 @@ class TestTelemetry:
         from promptflow._core.operation_context import OperationContext
 
         assert call_from_extension() is False
-        with environment_variable_overwrite("USER_AGENT", "prompt-flow-extension/1.0.0"):
+        with environment_variable_overwrite(PF_USER_AGENT, "prompt-flow-extension/1.0.0"):
             assert call_from_extension() is True
         # remove extension ua in context
         context = OperationContext().get_instance()
@@ -124,7 +125,7 @@ class TestTelemetry:
             assert handler._is_telemetry_enabled is False
 
         with extension_consent_config_overwrite(False):
-            with environment_variable_overwrite("USER_AGENT", "prompt-flow-extension/1.0.0"):
+            with environment_variable_overwrite(PF_USER_AGENT, "prompt-flow-extension/1.0.0"):
                 logger = get_telemetry_logger()
                 handler = logger.handlers[0]
                 assert isinstance(handler, PromptFlowSDKLogHandler)
@@ -164,7 +165,7 @@ class TestTelemetry:
         context.user_agent = ""
         # get telemetry logger from SDK should not have extension ua
         # start a clean local SDK client
-        with environment_variable_overwrite("USER_AGENT", ""):
+        with environment_variable_overwrite(PF_USER_AGENT, ""):
             PFClient()
             user_agent = setup_user_agent_to_operation_context()
             ua_dict = parse_ua_to_dict(user_agent)
@@ -176,7 +177,7 @@ class TestTelemetry:
                 pass
 
         # start a clean Azure SDK client
-        with environment_variable_overwrite("USER_AGENT", ""):
+        with environment_variable_overwrite(PF_USER_AGENT, ""):
             PFAzureClient(
                 ml_client=pf._ml_client,
                 subscription_id=pf._ml_client.subscription_id,
