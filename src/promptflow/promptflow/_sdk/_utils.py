@@ -623,6 +623,10 @@ def _generate_tool_meta(
         #  because abruptly stopping a thread can cause issues like resource leaks,
         #  deadlocks, or inconsistent states.
         #  Caller needs to handle the timeout outside current process.
+        logger.warning(
+            "Generate meta in current process and timeout won't take effect. "
+            "Please handle timeout manually outside current process."
+        )
         _generate_meta_from_files(tools, flow_directory, tools_dict, exception_dict)
     res = {source: tool for source, tool in tools_dict.items()}
 

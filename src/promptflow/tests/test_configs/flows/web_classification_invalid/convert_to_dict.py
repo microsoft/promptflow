@@ -5,7 +5,7 @@ from promptflow import tool
 
 
 # use this to test the timeout
-time.sleep(1.5)
+time.sleep(2)
 
 
 @tool
