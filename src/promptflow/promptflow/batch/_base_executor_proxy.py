@@ -102,8 +102,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
 
     async def ensure_executor_health(self):
         waiting_health_timeout = 5
-        start_time = datetime.now()
-        while (datetime.now() - start_time).seconds < waiting_health_timeout:
+        start_time = datetime.utcnow()
+        while (datetime.utcnow() - start_time).seconds < waiting_health_timeout:
             if await self.check_health():
                 return
         raise SystemErrorException(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
