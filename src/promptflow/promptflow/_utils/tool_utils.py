@@ -249,7 +249,7 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
 def validate_tool_func_result(func_call_scenario: str, result):
     if func_call_scenario not in ToolFuncCallScenario.__members__.values():
         raise RetrieveToolFuncResultValidationError(
-                f"ToolFuncCallScenario {func_call_scenario} invalid. "
+                f"Invalid tool func call scenario: {func_call_scenario}. "
                 f"Available scenarios are {ToolFuncCallScenario.__members__.values()}"
         )
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:

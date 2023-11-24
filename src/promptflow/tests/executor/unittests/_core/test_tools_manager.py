@@ -334,7 +334,7 @@ class TestToolsManager:
                         "index": "index_1"
                     })
                 },
-                f"ToolFuncCallScenario dummy_senario invalid. "
+                f"Invalid tool func call scenario: dummy_senario. "
                 f"Available scenarios are {ToolFuncCallScenario.__members__.values()}"
             ),
             (
