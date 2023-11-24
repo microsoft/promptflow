@@ -23,6 +23,7 @@ setuptools_rust
 twine==4.0.0
 vcrpy==5.1.0  # record and replay http requests for pfazure tests
 wheel
+httpx
 
 # Version Pin
 ruamel.yaml>=0.18.5
