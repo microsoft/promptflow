@@ -126,13 +126,6 @@ class BatchEngine:
     def cancel(self):
         """Cancel the batch run"""
         self._canceled_signal = True
-        # TODO: Get the line results and aggr result of completed lines
-        line_results = []
-        aggr_result = AggregationResult({}, {}, {})
-        # destroy executor proxy
-        self._executor_proxy.destroy()
-        self._end_time = datetime.utcnow()
-        return BatchResult.create(self._start_time, self._end_time, line_results, aggr_result, status=Status.Canceled)
 
     def _exec_batch(
         self,
