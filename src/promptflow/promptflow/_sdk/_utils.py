@@ -791,7 +791,6 @@ def setup_user_agent_to_operation_context(user_agent):
     """Setup user agent to OperationContext"""
     from promptflow._core.operation_context import OperationContext
 
-    update_user_agent_from_env_var()
     # Append user agent
     context = OperationContext.get_instance()
     context.append_user_agent(user_agent)
@@ -802,7 +801,6 @@ def call_from_extension() -> bool:
     """Return true if current request is from extension."""
     from promptflow._core.operation_context import OperationContext
 
-    update_user_agent_from_env_var()
     context = OperationContext().get_instance()
     return EXTENSION_UA in context.get_user_agent()
 

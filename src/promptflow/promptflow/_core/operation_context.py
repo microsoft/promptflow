@@ -5,6 +5,7 @@ import os
 from contextvars import ContextVar
 from typing import Dict
 
+from promptflow._sdk._constants import USER_AGENT
 from promptflow._version import VERSION
 
 
@@ -107,10 +108,8 @@ class OperationContext(Dict):
             yield agent
             promptflow_agent = f"promptflow/{VERSION}"
             yield promptflow_agent if promptflow_agent not in agent else ''
-            user_agent = os.environ.get("USER_AGENT", '').strip()
+            user_agent = os.environ.get(USER_AGENT, '').strip()
             yield user_agent if user_agent not in agent else ''
-            telemetry_agent = os.environ.get("TELEMETRY_AGENT", '').strip()
-            yield telemetry_agent if telemetry_agent not in agent else ''
 
         return " ".join(parts()).strip()
 
