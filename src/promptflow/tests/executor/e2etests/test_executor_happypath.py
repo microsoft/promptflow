@@ -2,29 +2,14 @@ from types import GeneratorType
 
 import pytest
 
-from promptflow.contracts.run_info import FlowRunInfo
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
-from promptflow.storage import AbstractRunStorage
 
 from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
-
-
-class MemoryRunStorage(AbstractRunStorage):
-    def __init__(self):
-        self._node_runs = {}
-        self._flow_runs = {}
-
-    def persist_flow_run(self, run_info: FlowRunInfo):
-        self._flow_runs[run_info.run_id] = run_info
-
-    def persist_node_run(self, run_info: NodeRunInfo):
-        self._node_runs[run_info.run_id] = run_info
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
@@ -118,27 +103,6 @@ class TestExecutor:
         assert run_info.output is not None
         assert run_info.status == Status.Completed
         assert isinstance(run_info.api_calls, list)
-        assert run_info.node == node_name
-        assert run_info.system_metrics["duration"] >= 0
-
-    @pytest.mark.parametrize(
-        "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
-        [
-            ("web_classification_with_exception", "convert_to_dict", {}, {"classify_with_llm": {}}),
-        ],
-    )
-    def test_executor_exec_node_fail(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs):
-        yaml_file = get_yaml_file(flow_folder)
-        run_info = FlowExecutor.load_and_exec_node(
-            yaml_file,
-            node_name,
-            flow_inputs=flow_inputs,
-            dependency_nodes_outputs=dependency_nodes_outputs,
-        )
-        assert run_info.output is None
-        assert run_info.status == Status.Failed
-        assert isinstance(run_info.api_calls, list)
-        assert len(run_info.api_calls) == 1
         assert run_info.node == node_name
         assert run_info.system_metrics["duration"] >= 0
 

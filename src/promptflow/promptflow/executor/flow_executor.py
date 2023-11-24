@@ -197,8 +197,32 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+        return cls._create_from_flow(
+            flow_file=flow_file,
+            flow=flow,
+            connections=connections,
+            working_dir=working_dir,
+            storage=storage,
+            raise_ex=raise_ex,
+            node_override=node_override,
+            line_timeout_sec=line_timeout_sec,
+        )
+
+    @classmethod
+    def _create_from_flow(
+        cls,
+        flow: Flow,
+        connections: dict,
+        working_dir: Optional[Path],
+        *,
+        flow_file: Optional[Path] = None,
+        storage: Optional[AbstractRunStorage] = None,
+        raise_ex: bool = True,
+        node_override: Optional[Dict[str, Dict[str, Any]]] = None,
+        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+    ):
+        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
@@ -337,7 +361,12 @@ class FlowExecutor:
             )
 
             try:
-                context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
+                if inspect.iscoroutinefunction(resolved_node.callable):
+                    asyncio.run(
+                        context.invoke_tool_async(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs),
+                    )
+                else:
+                    context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
             except Exception:
                 if raise_ex:  # Only raise exception when raise_ex is True
                     raise
@@ -553,7 +582,7 @@ class FlowExecutor:
             one_input_value = list(aggregation_inputs.values())[0]
             aggregation_lines = len(one_input_value)
         for key, value in inputs.items():
-            if key not in aggregated_flow_inputs and (value and value.default):
+            if key not in aggregated_flow_inputs and (value and value.default is not None):
                 aggregated_flow_inputs[key] = [value.default] * aggregation_lines
         return aggregated_flow_inputs
 

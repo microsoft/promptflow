@@ -4,6 +4,7 @@
 
 import datetime
 import json
+import logging
 import uuid
 from os import PathLike
 from pathlib import Path
@@ -11,10 +12,14 @@ from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser as date_parser
 
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_VARIANT,
+    FLOW_DIRECTORY_MACRO_IN_CONFIG,
+    LOGGER_NAME,
     PARAMS_OVERRIDE_KEY,
+    PROMPT_FLOW_DIR_NAME,
     RUN_MACRO,
     TIMESTAMP_MACRO,
     VARIANT_ID_MACRO,
@@ -25,7 +30,6 @@ from promptflow._sdk._constants import (
     RunInfoSources,
     RunStatus,
     RunTypes,
-    get_run_output_path,
 )
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
@@ -134,12 +138,17 @@ class Run(YAMLTranslatableMixin):
         self.flow = flow
         self._experiment_name = None
         self._lineage_id = None
+        # default run name: flow directory name + timestamp
+        self.name = name or self._generate_run_name()
         if self._run_source == RunInfoSources.LOCAL:
             self.flow = Path(flow).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
             self._lineage_id = get_flow_lineage_id(flow_dir=flow_dir)
+            self._output_path = Path(
+                kwargs.get("output_path", self._generate_output_path(config=kwargs.get("config", None)))
+            )
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = kwargs.get("experiment_name", None)
@@ -151,8 +160,6 @@ class Run(YAMLTranslatableMixin):
             self._output_portal_url = kwargs.get("output_portal_url", None)
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
-        # default run name: flow directory name + timestamp
-        self.name = name or self._generate_run_name()
 
     @property
     def created_on(self) -> str:
@@ -168,7 +175,7 @@ class Run(YAMLTranslatableMixin):
             # show posix path to avoid windows path escaping
             result = {
                 FlowRunProperties.FLOW_PATH: Path(self.flow).as_posix(),
-                FlowRunProperties.OUTPUT_PATH: Path(get_run_output_path(self)).as_posix(),
+                FlowRunProperties.OUTPUT_PATH: self._output_path.as_posix(),
             }
             if self.run:
                 run_name = self.run.name if isinstance(self.run, Run) else self.run
@@ -187,6 +194,7 @@ class Run(YAMLTranslatableMixin):
         return Run(
             name=str(obj.name),
             flow=Path(properties_json[FlowRunProperties.FLOW_PATH]),
+            output_path=properties_json[FlowRunProperties.OUTPUT_PATH],
             run=properties_json.get(FlowRunProperties.RUN, None),
             variant=properties_json.get(FlowRunProperties.NODE_VARIANT, None),
             display_name=obj.display_name,
@@ -296,10 +304,6 @@ class Run(YAMLTranslatableMixin):
         """Dump current run entity to local DB."""
         self._to_orm_object().dump()
 
-    @property
-    def _output_path(self) -> Path:
-        return Path(self.properties[FlowRunProperties.OUTPUT_PATH])
-
     def _to_dict(self):
         from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
@@ -322,7 +326,7 @@ class Run(YAMLTranslatableMixin):
                 if local_storage._data_path is not None
                 else None
             )
-            result[RunDataKeys.OUTPUT] = local_storage._outputs_path.as_posix()
+            result[RunDataKeys.OUTPUT] = local_storage.outputs_folder.as_posix()
             if self.run:
                 run_name = self.run.name if isinstance(self.run, Run) else self.run
                 result[RunDataKeys.RUN] = properties.pop(FlowRunProperties.RUN, run_name)
@@ -395,7 +399,7 @@ class Run(YAMLTranslatableMixin):
     def _get_default_display_name(self) -> str:
         display_name = self.display_name
         if not display_name:
-            display_name = self._get_flow_dir().name
+            display_name = self.name
         return display_name
 
     def _format_display_name(self) -> str:
@@ -531,3 +535,27 @@ class Run(YAMLTranslatableMixin):
         elif isinstance(run, str):
             return run
         raise InvalidRunError(f"Invalid run {run!r}, expected 'str' or 'Run' object but got {type(run)!r}.")
+
+    def _generate_output_path(self, config: Optional[Configuration]) -> Path:
+        config = config or Configuration.get_instance()
+        path = config.get_run_output_path()
+        if path is None:
+            path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
+        else:
+            try:
+                flow_posix_path = self.flow.resolve().as_posix()
+                path = Path(path.replace(FLOW_DIRECTORY_MACRO_IN_CONFIG, self.flow.resolve().as_posix())).resolve()
+                # in case user manually modifies ~/.promptflow/pf.yaml
+                # fall back to default run output path
+                if path.as_posix() == flow_posix_path:
+                    raise Exception(f"{FLOW_DIRECTORY_MACRO_IN_CONFIG!r} is not a valid value.")
+                path.mkdir(parents=True, exist_ok=True)
+            except Exception:  # pylint: disable=broad-except
+                path = Path.home() / PROMPT_FLOW_DIR_NAME / ".runs"
+                warning_message = (
+                    "Got unexpected error when parsing specified output path: "
+                    f"{config.get_run_output_path()!r}; "
+                    f"will use default output path: {path!r} instead."
+                )
+                logging.getLogger(LOGGER_NAME).warning(warning_message)
+        return (path / str(self.name)).resolve()

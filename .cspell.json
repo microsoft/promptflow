@@ -75,7 +75,9 @@
     "cref",
     "msal",
     "pfbytes",
-    "Apim"
+    "Apim",
+    "junit",
+    "nunit"
   ],
   "ignoreWords": [
     "openmpi",
@@ -147,7 +149,9 @@
     "vcrpy",
     "uionly",
     "llmops",
-    "Abhishek"
+    "Abhishek",
+    "restx",
+    "coreclr"
   ],
   "flagWords": [
     "Prompt Flow"

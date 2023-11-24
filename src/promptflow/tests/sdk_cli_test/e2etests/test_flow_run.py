@@ -6,17 +6,30 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from pytest_mock import MockerFixture
 
 from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
-from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames, RunStatus
-from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError, RunExistsError, RunNotFoundError
+from promptflow._sdk._constants import (
+    FLOW_DIRECTORY_MACRO_IN_CONFIG,
+    PROMPT_FLOW_DIR_NAME,
+    FlowRunProperties,
+    LocalStorageFilenames,
+    RunStatus,
+)
+from promptflow._sdk._errors import (
+    ConnectionNotFoundError,
+    InvalidFlowError,
+    InvalidRunStatusError,
+    RunExistsError,
+    RunNotFoundError,
+)
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
+from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 
@@ -60,20 +73,17 @@ def create_run_against_run(client, run: Run) -> Run:
     )
 
 
-def assert_run_with_invalid_column_mapping(client: PFClient, run: Run, capfd: pytest.CaptureFixture) -> None:
+def assert_run_with_invalid_column_mapping(client: PFClient, run: Run) -> None:
     assert run.status == RunStatus.FAILED
 
-    expected_error_message = "The input for batch run is incorrect. Couldn't find these mapping relations"
-
-    client.stream(run.name)
-    out, _ = capfd.readouterr()
-    assert expected_error_message in out
+    with pytest.raises(InvalidRunStatusError):
+        client.stream(run.name)
 
     local_storage = LocalStorageOperations(run)
     assert os.path.exists(local_storage._exception_path)
 
     exception = local_storage.load_exception()
-    assert expected_error_message in exception["message"]
+    assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
     assert exception["code"] == "BulkRunException"
 
 
@@ -342,7 +352,7 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=run_name)
 
-    def test_referenced_output_not_exist(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
+    def test_referenced_output_not_exist(self, pf: PFClient) -> None:
         # failed run won't generate output
         failed_run = pf.run(
             flow=f"{FLOWS_DIR}/failed_flow",
@@ -357,7 +367,7 @@ class TestFlowRun:
             flow=f"{FLOWS_DIR}/failed_flow",
             column_mapping={"text": "${run.outputs.text}"},
         )
-        assert_run_with_invalid_column_mapping(pf, run, capfd)
+        assert_run_with_invalid_column_mapping(pf, run)
 
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
@@ -504,7 +514,8 @@ class TestFlowRun:
                 environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
             )
         )
-        assert run.display_name == "print_env_var"
+        assert run.display_name == run.name
+        assert "print_env_var" in run.display_name
 
         # will respect if specified in run
         base_run = pf.runs.create_or_update(
@@ -665,12 +676,7 @@ class TestFlowRun:
         additional_includes = _get_additional_includes(snapshot_path / "flow.dag.yaml")
         assert not additional_includes
 
-    def test_input_mapping_source_not_found_error(
-        self,
-        azure_open_ai_connection: AzureOpenAIConnection,
-        pf: PFClient,
-        capfd: pytest.CaptureFixture,
-    ):
+    def test_input_mapping_source_not_found_error(self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient):
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -680,7 +686,7 @@ class TestFlowRun:
             column_mapping={"not_exist": "${data.not_exist_key}"},
             name=name,
         )
-        assert_run_with_invalid_column_mapping(pf, run, capfd)
+        assert_run_with_invalid_column_mapping(pf, run)
 
     def test_input_mapping_with_dict(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -839,7 +845,13 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
         )
         inputs = pf.runs._get_inputs(run=run)
-        assert inputs == {"line_number": [0], "question": ["input value from default"]}
+        assert inputs == {
+            "line_number": [0],
+            "input_bool": [False],
+            "input_dict": [{}],
+            "input_list": [[]],
+            "input_str": ["input value from default"],
+        }
 
         # inputs should be persisted when data value are used
         run = pf.run(
@@ -942,3 +954,74 @@ class TestFlowRun:
             assert Path(input_image_path).is_absolute()
             output_image_path = details["outputs.output"][i]["data:image/png;path"]
             assert Path(output_image_path).is_absolute()
+
+    def test_stream_raise_on_error_false(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
+        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=data_path,
+            column_mapping={"not_exist": "${data.not_exist_key}"},
+            name=str(uuid.uuid4()),
+        )
+        # raise_on_error=False, will print error message in stdout
+        pf.stream(run.name, raise_on_error=False)
+        out, _ = capfd.readouterr()
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in out
+
+    def test_stream_canceled_run(self, pf: PFClient, capfd: pytest.CaptureFixture) -> None:
+        run = create_run_against_multi_line_data_without_llm(pf)
+        pf.runs.update(name=run.name, status=RunStatus.CANCELED)
+        # (default) raise_on_error=True
+        with pytest.raises(InvalidRunStatusError):
+            pf.stream(run.name)
+        # raise_on_error=False
+        pf.stream(run.name, raise_on_error=False)
+        out, _ = capfd.readouterr()
+        assert "Run is canceled." in out
+
+    def test_specify_run_output_path(self, pf: PFClient, mocker: MockerFixture) -> None:
+        # mock to imitate user specify config run.output_path
+        specified_run_output_path = (Path.home() / PROMPT_FLOW_DIR_NAME / ".mock").resolve().as_posix()
+        with mocker.patch(
+            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            return_value=specified_run_output_path,
+        ):
+            run = create_run_against_multi_line_data_without_llm(pf)
+            local_storage = LocalStorageOperations(run=run)
+            expected_output_path_prefix = (Path(specified_run_output_path) / run.name).resolve().as_posix()
+            assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
+
+    def test_override_run_output_path_in_pf_client(self) -> None:
+        specified_run_output_path = (Path.home() / PROMPT_FLOW_DIR_NAME / ".another_mock").resolve().as_posix()
+        pf = PFClient(config={"run.output_path": specified_run_output_path})
+        run = create_run_against_multi_line_data_without_llm(pf)
+        local_storage = LocalStorageOperations(run=run)
+        expected_output_path_prefix = (Path(specified_run_output_path) / run.name).resolve().as_posix()
+        assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
+
+    def test_specify_run_output_path_with_macro(self, pf: PFClient, mocker: MockerFixture) -> None:
+        # mock to imitate user specify invalid config run.output_path
+        with mocker.patch(
+            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            return_value=f"{FLOW_DIRECTORY_MACRO_IN_CONFIG}/.promptflow",
+        ):
+            for _ in range(3):
+                run = create_run_against_multi_line_data_without_llm(pf)
+                local_storage = LocalStorageOperations(run=run)
+                expected_path_prefix = Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / run.name
+                expected_path_prefix = expected_path_prefix.resolve().as_posix()
+                assert local_storage.outputs_folder.as_posix().startswith(expected_path_prefix)
+
+    def test_specify_run_output_path_with_invalid_macro(self, pf: PFClient, mocker: MockerFixture) -> None:
+        # mock to imitate user specify invalid config run.output_path
+        with mocker.patch(
+            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            # this case will happen when user manually modifies ~/.promptflow/pf.yaml
+            return_value=f"{FLOW_DIRECTORY_MACRO_IN_CONFIG}",
+        ):
+            run = create_run_against_multi_line_data_without_llm(pf)
+            # as the specified run output path is invalid
+            # the actual run output path will be the default value
+            local_storage = LocalStorageOperations(run=run)
+            expected_output_path_prefix = (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / run.name).resolve().as_posix()
+            assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)

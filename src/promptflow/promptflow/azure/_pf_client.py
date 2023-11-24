@@ -58,7 +58,10 @@ class PFClient:
         )
         workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
         self._service_caller = _FlowServiceCallerFactory.get_instance(
-            workspace=workspace, credential=self._ml_client._credential, **kwargs
+            workspace=workspace,
+            credential=self._ml_client._credential,
+            operation_scope=self._ml_client._operation_scope,
+            **kwargs,
         )
         self._flows = FlowOperations(
             operation_scope=self._ml_client._operation_scope,
@@ -66,6 +69,7 @@ class PFClient:
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
             service_caller=self._service_caller,
+            workspace=workspace,
             **kwargs,
         )
         self._runs = RunOperations(
@@ -75,6 +79,7 @@ class PFClient:
             credential=self._ml_client._credential,
             flow_operations=self._flows,
             service_caller=self._service_caller,
+            workspace=workspace,
             **kwargs,
         )
         self._connections = ConnectionOperations(
@@ -256,16 +261,18 @@ class PFClient:
         )
         return self.runs.create_or_update(run=run, **kwargs)
 
-    def stream(self, run: Union[str, Run]) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
 
         :param run: Run object or name of the run.
         :type run: Union[str, ~promptflow.sdk.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails or canceled.
+        :type raise_on_error: bool
         :return: flow run info.
         """
         if isinstance(run, Run):
             run = run.name
-        return self.runs.stream(run)
+        return self.runs.stream(run, raise_on_error)
 
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
