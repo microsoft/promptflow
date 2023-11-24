@@ -185,7 +185,7 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
+    def resolve_connections(flow: Flow, client=None, connections_to_ignore=None, **kwargs) -> dict:
         from .._pf_client import PFClient
 
         client = client or PFClient()
@@ -194,7 +194,7 @@ class SubmitterHelper:
         executable.name = str(Path(flow.code).stem)
 
         return get_local_connections_from_executable(
-            executable=executable, client=client, connections_to_ignore=connections_to_ignore
+            executable=executable, client=client, connections_to_ignore=connections_to_ignore, **kwargs
         )
 
     @staticmethod
@@ -202,22 +202,22 @@ class SubmitterHelper:
         return []
 
     @classmethod
-    def resolve_environment_variables(cls, environment_variables: dict, client=None):
+    def resolve_environment_variables(cls, environment_variables: dict, client=None, **kwargs):
         from .._pf_client import PFClient
 
         client = client or PFClient()
         if not environment_variables:
             return None
         connection_names = get_used_connection_names_from_dict(environment_variables)
-        connections = cls.resolve_connection_names(connection_names=connection_names, client=client)
+        connections = cls.resolve_connection_names(connection_names=connection_names, client=client, **kwargs)
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 
     @staticmethod
-    def resolve_connection_names(connection_names, client, raise_error=False):
+    def resolve_connection_names(connection_names, client, raise_error=False, **kwargs):
         result = {}
         for n in connection_names:
             try:
-                conn = client.connections.get(name=n, with_secrets=True)
+                conn = client.connections.get(name=n, with_secrets=True, inner_call=True, **kwargs)
                 result[n] = conn._to_execution_connection_dict()
             except Exception as e:
                 if raise_error:

@@ -144,6 +144,7 @@ class FlowOperations(TelemetryMixin):
                         dependency_nodes_outputs=dependency_nodes_outputs,
                         environment_variables=environment_variables,
                         stream=True,
+                        **kwargs,
                     )
                 else:
                     return submitter.flow_test(
@@ -152,6 +153,7 @@ class FlowOperations(TelemetryMixin):
                         stream_log=stream_log,
                         stream_output=stream_output,
                         allow_generator_output=allow_generator_output and is_chat_flow,
+                        **kwargs,
                     )
 
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
@@ -175,6 +177,7 @@ class FlowOperations(TelemetryMixin):
                     stream_log=stream_log,
                     stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
+                    **kwargs,
                 )
 
     @staticmethod
@@ -246,6 +249,7 @@ class FlowOperations(TelemetryMixin):
                 chat_history_name=chat_history_input_name,
                 environment_variables=environment_variables,
                 show_step_output=kwargs.get("show_step_output", False),
+                **kwargs,
             )
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
@@ -345,7 +349,7 @@ class FlowOperations(TelemetryMixin):
         local_client = PFClient()
         connection_paths, env_var_names = [], {}
         for connection_name in connection_names:
-            connection = local_client.connections.get(name=connection_name, with_secrets=True)
+            connection = local_client.connections.get(name=connection_name, with_secrets=True, inner_call=True)
             connection_var_name = self._refine_connection_name(connection_name)
             connection_paths.append(output_dir / f"{connection_var_name}.yaml")
             for env_var_name in self._dump_connection(
@@ -361,12 +365,7 @@ class FlowOperations(TelemetryMixin):
 
         return connection_paths, list(env_var_names.keys())
 
-    def _export_flow_connections(
-        self,
-        flow_dag_path: Path,
-        *,
-        output_dir: Path,
-    ):
+    def _export_flow_connections(self, flow_dag_path: Path, *, output_dir: Path, **kwargs):
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
         executable = ExecutableFlow.from_yaml(
@@ -375,8 +374,7 @@ class FlowOperations(TelemetryMixin):
 
         with _change_working_dir(flow_dag_path.parent):
             return self._migrate_connections(
-                connection_names=executable.get_connection_names(),
-                output_dir=output_dir,
+                connection_names=executable.get_connection_names(), output_dir=output_dir, **kwargs
             )
 
     def _build_flow(
@@ -562,8 +560,7 @@ class FlowOperations(TelemetryMixin):
 
         # use new flow dag path below as origin one may miss additional includes
         connection_paths, env_var_names = self._export_flow_connections(
-            flow_dag_path=new_flow_dag_path,
-            output_dir=output_dir / "connections",
+            flow_dag_path=new_flow_dag_path, output_dir=output_dir / "connections", **kwargs
         )
 
         if format == "docker":

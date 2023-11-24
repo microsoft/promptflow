@@ -10,8 +10,8 @@ import multiprocessing
 import os
 import platform
 import re
-import stat
 import shutil
+import stat
 import sys
 import tempfile
 import zipfile
@@ -538,7 +538,7 @@ def print_pf_version():
     print("promptflow\t\t\t {}".format(get_promptflow_sdk_version()))
     print()
     print("Executable '{}'".format(os.path.abspath(sys.executable)))
-    print('Python ({}) {}'.format(platform.system(), sys.version))
+    print("Python ({}) {}".format(platform.system(), sys.version))
 
 
 class PromptflowIgnoreFile(IgnoreFile):
@@ -834,7 +834,7 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(executable, client, connections_to_ignore: List[str] = None):
+def get_local_connections_from_executable(executable, client, connections_to_ignore: List[str] = None, **kwargs):
     """Get local connections from executable.
 
     executable: The executable flow object.
@@ -847,7 +847,7 @@ def get_local_connections_from_executable(executable, client, connections_to_ign
     result = {}
     for n in connection_names:
         if n not in connections_to_ignore:
-            conn = client.connections.get(name=n, with_secrets=True)
+            conn = client.connections.get(name=n, with_secrets=True, inner_call=True, **kwargs)
             result[n] = conn._to_execution_connection_dict()
     return result
 

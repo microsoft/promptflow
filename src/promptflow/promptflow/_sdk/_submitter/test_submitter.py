@@ -166,16 +166,19 @@ class TestSubmitter:
         allow_generator_output: bool = False,
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
+        **kwargs,
     ):
         from promptflow._constants import LINE_NUMBER_KEY
         from promptflow.executor import FlowExecutor
 
         if not connections:
-            connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
+            connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client, **kwargs)
         credential_list = ConnectionManager(connections).get_secret_list()
 
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
+        SubmitterHelper.resolve_environment_variables(
+            environment_variables=environment_variables, client=self._client, **kwargs
+        )
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
@@ -215,14 +218,17 @@ class TestSubmitter:
         dependency_nodes_outputs: Mapping[str, Any],
         environment_variables: dict = None,
         stream: bool = True,
+        **kwargs,
     ):
         from promptflow.executor import FlowExecutor
 
-        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client, **kwargs)
         credential_list = ConnectionManager(connections).get_secret_list()
 
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
+        SubmitterHelper.resolve_environment_variables(
+            environment_variables=environment_variables, client=self._client, **kwargs
+        )
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
@@ -241,7 +247,9 @@ class TestSubmitter:
             )
             return result
 
-    def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
+    def _chat_flow(
+        self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False, **kwargs
+    ):
         """
         Interact with Chat Flow. Do the following:
             1. Combine chat_history and user input as the input for each round of the chat flow.
@@ -335,7 +343,7 @@ class TestSubmitter:
         )
 
         # Pass connections to avoid duplicate calculation (especially http call)
-        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client, **kwargs)
         while True:
             try:
                 print(f"{Fore.GREEN}User: ", end="")
@@ -358,6 +366,7 @@ class TestSubmitter:
                 allow_generator_output=True,
                 connections=connections,
                 stream_output=True,
+                **kwargs,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             show_node_log_and_output(flow_result.node_run_infos, show_step_output)
@@ -405,6 +414,7 @@ class TestSubmitterViaProxy(TestSubmitter):
         allow_generator_output: bool = False,
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
+        **kwargs,
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY
@@ -420,7 +430,9 @@ class TestSubmitterViaProxy(TestSubmitter):
         credential_list = ConnectionManager(connections).get_secret_list()
 
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
+        SubmitterHelper.resolve_environment_variables(
+            environment_variables=environment_variables, client=self._client, **kwargs
+        )
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
