@@ -53,6 +53,11 @@ class AbstractExecutorProxy:
 class APIBasedExecutorProxy(AbstractExecutorProxy):
     @property
     def api_endpoint(self) -> str:
+        """The basic API endpoint of the executor service.
+
+        The executor proxy calls the executor service to get the
+        line results and aggregation result through this endpoint.
+        """
         raise NotImplementedError()
 
     async def exec_line_async(
