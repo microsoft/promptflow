@@ -14,7 +14,7 @@ from promptflow._utils.execution_utils import (
     get_aggregation_inputs_properties,
     handle_line_failures,
 )
-from promptflow._utils.logger_utils import logger
+from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import dump_list_to_jsonl, resolve_dir_to_absolute, transpose
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
@@ -113,6 +113,9 @@ class BatchEngine:
             with _change_working_dir(self._working_dir):
                 batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
             return batch_result
+        except Exception as e:
+            bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
+            raise e
         finally:
             # destroy executor proxy
             self._executor_proxy.destroy()
@@ -172,7 +175,7 @@ class BatchEngine:
         if not aggregation_nodes:
             return AggregationResult({}, {}, {})
 
-        logger.info("Executing aggregation nodes...")
+        bulk_logger.info("Executing aggregation nodes...")
 
         run_infos = [r.run_info for r in line_results]
         succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
@@ -193,7 +196,7 @@ class BatchEngine:
             aggr_results = asyncio.run(
                 self._executor_proxy.exec_aggregation_async(succeeded_inputs, succeeded_aggregation_inputs, run_id)
             )
-            logger.info("Finish executing aggregation nodes.")
+            bulk_logger.info("Finish executing aggregation nodes.")
             return aggr_results
         except PromptflowException as e:
             # For PromptflowException, we already do classification, so throw directly.
