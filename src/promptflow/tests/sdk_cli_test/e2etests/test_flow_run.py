@@ -6,10 +6,17 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+from pytest_mock import MockerFixture
 
 from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
-from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames, RunStatus
+from promptflow._sdk._constants import (
+    FLOW_DIRECTORY_MACRO_IN_CONFIG,
+    PROMPT_FLOW_DIR_NAME,
+    FlowRunProperties,
+    LocalStorageFilenames,
+    RunStatus,
+)
 from promptflow._sdk._errors import (
     ConnectionNotFoundError,
     InvalidFlowError,
@@ -838,7 +845,13 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
         )
         inputs = pf.runs._get_inputs(run=run)
-        assert inputs == {"line_number": [0], "question": ["input value from default"]}
+        assert inputs == {
+            "line_number": [0],
+            "input_bool": [False],
+            "input_dict": [{}],
+            "input_list": [[]],
+            "input_str": ["input value from default"],
+        }
 
         # inputs should be persisted when data value are used
         run = pf.run(
@@ -965,3 +978,50 @@ class TestFlowRun:
         pf.stream(run.name, raise_on_error=False)
         out, _ = capfd.readouterr()
         assert "Run is canceled." in out
+
+    def test_specify_run_output_path(self, pf: PFClient, mocker: MockerFixture) -> None:
+        # mock to imitate user specify config run.output_path
+        specified_run_output_path = (Path.home() / PROMPT_FLOW_DIR_NAME / ".mock").resolve().as_posix()
+        with mocker.patch(
+            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            return_value=specified_run_output_path,
+        ):
+            run = create_run_against_multi_line_data_without_llm(pf)
+            local_storage = LocalStorageOperations(run=run)
+            expected_output_path_prefix = (Path(specified_run_output_path) / run.name).resolve().as_posix()
+            assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
+
+    def test_override_run_output_path_in_pf_client(self) -> None:
+        specified_run_output_path = (Path.home() / PROMPT_FLOW_DIR_NAME / ".another_mock").resolve().as_posix()
+        pf = PFClient(config={"run.output_path": specified_run_output_path})
+        run = create_run_against_multi_line_data_without_llm(pf)
+        local_storage = LocalStorageOperations(run=run)
+        expected_output_path_prefix = (Path(specified_run_output_path) / run.name).resolve().as_posix()
+        assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
+
+    def test_specify_run_output_path_with_macro(self, pf: PFClient, mocker: MockerFixture) -> None:
+        # mock to imitate user specify invalid config run.output_path
+        with mocker.patch(
+            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            return_value=f"{FLOW_DIRECTORY_MACRO_IN_CONFIG}/.promptflow",
+        ):
+            for _ in range(3):
+                run = create_run_against_multi_line_data_without_llm(pf)
+                local_storage = LocalStorageOperations(run=run)
+                expected_path_prefix = Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / run.name
+                expected_path_prefix = expected_path_prefix.resolve().as_posix()
+                assert local_storage.outputs_folder.as_posix().startswith(expected_path_prefix)
+
+    def test_specify_run_output_path_with_invalid_macro(self, pf: PFClient, mocker: MockerFixture) -> None:
+        # mock to imitate user specify invalid config run.output_path
+        with mocker.patch(
+            "promptflow._sdk._configuration.Configuration.get_run_output_path",
+            # this case will happen when user manually modifies ~/.promptflow/pf.yaml
+            return_value=f"{FLOW_DIRECTORY_MACRO_IN_CONFIG}",
+        ):
+            run = create_run_against_multi_line_data_without_llm(pf)
+            # as the specified run output path is invalid
+            # the actual run output path will be the default value
+            local_storage = LocalStorageOperations(run=run)
+            expected_output_path_prefix = (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / run.name).resolve().as_posix()
+            assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
