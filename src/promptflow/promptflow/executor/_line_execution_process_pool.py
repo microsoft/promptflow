@@ -1,10 +1,10 @@
 import contextvars
 import math
-import sys
-import signal
 import multiprocessing
 import os
 import queue
+import signal
+import sys
 from datetime import datetime
 from functools import partial
 from logging import INFO
@@ -14,19 +14,19 @@ from multiprocessing.pool import ThreadPool
 import psutil
 
 from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._core._errors import ProcessPoolError
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
-from promptflow.exceptions import ErrorTarget, PromptflowException
-from promptflow._core._errors import ProcessPoolError
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
+from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._errors import LineExecutionTimeoutError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
@@ -231,7 +231,7 @@ class LineExecutionProcessPool:
             inputs, line_number, run_id = args[:3]
             self._processing_idx[line_number] = healthy_ensured_process.format_current_process(line_number)
 
-            start_time = datetime.now()
+            start_time = datetime.utcnow()
             completed = False
 
             while datetime.now().timestamp() - start_time.timestamp() <= timeout_time:
@@ -271,7 +271,6 @@ class LineExecutionProcessPool:
                 logger=bulk_logger,
                 count=len(result_list),
                 total_count=self._nlines,
-                formatter="Finished {count} / {total_count} lines.",
             )
 
     def _process_multimedia(self, result: LineResult) -> LineResult:
@@ -351,7 +350,7 @@ class LineExecutionProcessPool:
             )
 
         result_list = []
-        run_start_time = datetime.now()
+        run_start_time = datetime.utcnow()
 
         with RepeatLogTimer(
             interval_seconds=self._log_interval,

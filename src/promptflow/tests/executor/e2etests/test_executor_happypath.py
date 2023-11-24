@@ -20,7 +20,7 @@ class TestExecutor:
             inputs = self.get_bulk_inputs(flow_folder)
             return inputs[0]
         return {
-            "url": "https://www.apple.com/shop/buy-iphone/iphone-14",
+            "url": "https://www.microsoft.com/en-us/windows/",
             "text": "some_text",
         }
 
