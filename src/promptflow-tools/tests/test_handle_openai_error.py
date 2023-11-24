@@ -85,22 +85,16 @@ class TestHandleOpenAIError:
         [
             (
                 [
-                    RateLimitError("Something went wrong",
-                                   response=httpx.Response(429, request=
-                                   httpx.Request('GET', 'https://www.example.com')),
-                                   body=None),
+                    RateLimitError("Something went wrong", response=httpx.Response(
+                        429, request=httpx.Request('GET', 'https://www.example.com')), body=None),
                     APITimeoutError(request=httpx.Request('GET', 'https://www.example.com')),
                     APIConnectionError(
                         message="('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))",
                         request=httpx.Request('GET', 'https://www.example.com')),
-                    InternalServerError("Something went wrong",
-                                        response=httpx.Response(503, request=
-                                        httpx.Request('GET', 'https://www.example.com')),
-                                        body=None),
-                    UnprocessableEntityError("Something went wrong",
-                                             response=httpx.Response(422, request=
-                                             httpx.Request('GET', 'https://www.example.com')),
-                                             body=None),
+                    InternalServerError("Something went wrong", response=httpx.Response(
+                        503, request=httpx.Request('GET', 'https://www.example.com')), body=None),
+                    UnprocessableEntityError("Something went wrong", response=httpx.Response(
+                        422, request=httpx.Request('GET', 'https://www.example.com')), body=None)
                 ]
             ),
         ],
@@ -134,18 +128,15 @@ class TestHandleOpenAIError:
         [
             (
                 [
-                    RateLimitError("Something went wrong",
-                                   response=httpx.Response(429, request=
-                                   httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
+                    RateLimitError("Something went wrong", response=httpx.Response(
+                        429, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
                                    body=None),
-                    InternalServerError("Something went wrong",
-                                        response=httpx.Response(
-                                            503, request=httpx.Request('GET', 'https://www.example.com'),
-                                            headers={"retry-after": "0.3"}), body=None),
-                    UnprocessableEntityError("Something went wrong",
-                                             response=httpx.Response(
-                                                 422, request=httpx.Request('GET', 'https://www.example.com'),
-                                                 headers={"retry-after": "0.3"}), body=None)
+                    InternalServerError("Something went wrong", response=httpx.Response(
+                        503, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
+                                        body=None),
+                    UnprocessableEntityError("Something went wrong", response=httpx.Response(
+                        422, request=httpx.Request('GET', 'https://www.example.com'), headers={"retry-after": "0.3"}),
+                                             body=None)
                 ]
             ),
         ],
