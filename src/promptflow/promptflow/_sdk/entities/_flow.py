@@ -51,8 +51,6 @@ class FlowContext:
     :type connections: Optional[Dict[str, Dict]]
     :param variant: Variant of the flow.
     :type variant: Optional[str]
-    :param environment_variables: Environment variables for the flow.
-    :type environment_variables: Optional[Dict[str, str]]
     :param variant: Overrides of the flow.
     :type variant: Optional[Dict[str, Dict]]
     :param streaming: Whether the flow's output need to be return in streaming mode.
@@ -64,13 +62,11 @@ class FlowContext:
         *,
         connections=None,
         variant=None,
-        environment_variables=None,
         overrides=None,
         streaming=None,
     ):
         self.connections, self._connection_objs = connections or {}, {}
         self.variant = variant
-        self.environment_variables = environment_variables or {}
         self.overrides = overrides or {}
         self.streaming = streaming
         # TODO: introduce connection provider support
@@ -99,8 +95,6 @@ class FlowContext:
             "variant": self.variant,
             "overrides": self.overrides,
             "streaming": self.streaming,
-            # TODO: not hash env vars since they resolve in execution time
-            "environment_variables": self.environment_variables,
         }
 
     def __eq__(self, other):
@@ -118,7 +112,8 @@ class Flow(FlowBase):
 
     def __init__(
         self,
-        code: str,
+        code: Union[str, PathLike],
+        dag: dict,
         **kwargs,
     ):
         self._code = Path(code)
@@ -127,6 +122,7 @@ class Flow(FlowBase):
         self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
         self._content_hash = kwargs.pop("content_hash", None)
+        self.dag = dag
         super().__init__(**kwargs)
 
     @property
@@ -173,13 +169,14 @@ class Flow(FlowBase):
             # read flow file to get hash
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
+                flow_dag = yaml.safe_load(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
-            return cls(code=flow_path.parent.absolute().as_posix(), **kwargs)
+            return cls(code=flow_path.parent.absolute().as_posix(), dag=flow_dag, **kwargs)
 
         raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
-        from promptflow._sdk.operations._run_submitter import variant_overwrite_context
+        from promptflow._sdk._submitter import variant_overwrite_context
 
         # TODO: check if there is potential bug here
         # this is a little wired:
@@ -298,14 +295,25 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         :param kwargs: flow inputs with key word arguments.
         :return:
         """
-        from promptflow._sdk.operations._test_submitter import TestSubmitter
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
-        submitter = TestSubmitter(flow=self, flow_context=self.context)
+        invoker = FlowContextResolver.resolve(flow=self)
 
-        result = submitter.exec_with_inputs(
-            inputs=kwargs,
+        result = invoker._invoke(
+            data=kwargs,
         )
         return result.output
+
+    def invoke(self, inputs: dict) -> "LineResult":
+        """Invoke a flow and get a LineResult object."""
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
+
+        invoker = FlowContextResolver.resolve(flow=self)
+
+        result = invoker._invoke(
+            data=inputs,
+        )
+        return result

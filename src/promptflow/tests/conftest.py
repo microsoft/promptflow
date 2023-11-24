@@ -31,6 +31,11 @@ from promptflow.connections import AzureOpenAIConnection
 load_dotenv()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def modify_work_directory():
+    os.chdir(Path(__file__).parent.parent.absolute())
+
+
 @pytest.fixture(autouse=True, scope="session")
 def mock_build_info():
     """Mock BUILD_INFO environment variable in pytest.

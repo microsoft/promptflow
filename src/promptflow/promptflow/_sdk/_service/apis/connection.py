@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import json
 
 from flask import jsonify, request
 from flask_restx import Namespace, Resource, fields
@@ -13,14 +12,6 @@ from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
 api = Namespace("Connections", description="Connections Management")
-
-# Define base connection request parsing
-remote_parser = api.parser()
-remote_parser.add_argument("X-Remote-User", location="headers", required=True)
-
-# Define create or update connection request parsing
-create_or_update_parser = remote_parser.copy()
-create_or_update_parser.add_argument("connection_dict", type=str, location="args", required=True)
 
 # Response model of list connections
 list_connection_field = api.model(
@@ -46,7 +37,7 @@ def handle_connection_not_found_exception(error):
 
 @api.route("/")
 class ConnectionList(Resource):
-    @api.doc(parser=remote_parser, description="List all connection")
+    @api.doc(description="List all connection")
     @api.marshal_with(list_connection_field, skip_none=True, as_list=True)
     @local_user_only
     def get(self):
@@ -63,46 +54,53 @@ class ConnectionList(Resource):
 @api.route("/<string:name>")
 @api.param("name", "The connection name.")
 class Connection(Resource):
-    @api.doc(parser=remote_parser, description="Get connection")
+    @api.doc(description="Get connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def get(self, name: str):
         connection_op = ConnectionOperations()
-        # parse query parameters
-        with_secrets = request.args.get("with_secrets", default=False, type=bool)
-        raise_error = request.args.get("raise_error", default=True, type=bool)
-
-        connection = connection_op.get(name=name, with_secrets=with_secrets, raise_error=raise_error)
+        connection = connection_op.get(name=name, raise_error=True)
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)
 
-    @api.doc(parser=create_or_update_parser, description="Create connection")
+    @api.doc(body=dict_field, description="Create connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def post(self, name: str):
         connection_op = ConnectionOperations()
-        args = create_or_update_parser.parse_args()
-        connection_data = json.loads(args["connection_dict"])
+        connection_data = request.get_json(force=True)
         connection_data["name"] = name
         connection = _Connection._load(data=connection_data)
         connection = connection_op.create_or_update(connection)
         return jsonify(connection._to_dict())
 
-    @api.doc(parser=create_or_update_parser, description="Update connection")
+    @api.doc(body=dict_field, description="Update connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def put(self, name: str):
         connection_op = ConnectionOperations()
-        args = create_or_update_parser.parse_args()
-        params_override = [{k: v} for k, v in json.loads(args["connection_dict"]).items()]
+        connection_dict = request.get_json(force=True)
+        params_override = [{k: v} for k, v in connection_dict.items()]
         existing_connection = connection_op.get(name)
         connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
         connection._secrets = existing_connection._secrets
         connection = connection_op.create_or_update(connection)
         return jsonify(connection._to_dict())
 
-    @api.doc(parser=remote_parser, description="Delete connection")
+    @api.doc(description="Delete connection")
     @local_user_only
     def delete(self, name: str):
         connection_op = ConnectionOperations()
         connection_op.delete(name=name)
+
+
+@api.route("/<string:name>/listsecrets")
+class ConnectionWithSecret(Resource):
+    @api.doc(description="Get connection with secret")
+    @api.response(code=200, description="Connection details with secret", model=dict_field)
+    @local_user_only
+    def get(self, name: str):
+        connection_op = ConnectionOperations()
+        connection = connection_op.get(name=name, with_secrets=True, raise_error=True)
+        connection_dict = connection._to_dict()
+        return jsonify(connection_dict)
