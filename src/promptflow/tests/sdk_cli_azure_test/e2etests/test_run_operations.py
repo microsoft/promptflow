@@ -125,11 +125,27 @@ class TestFlowRun:
     def test_run_bulk_with_remote_flow(
         self, pf: PFClient, runtime: str, randstr: Callable[[str], str], created_flow: Flow
     ):
+        """Test run bulk with remote workspace flow."""
         name = randstr("name")
         run = pf.run(
             flow=f"azureml:{created_flow.name}",
             data=f"{DATAS_DIR}/simple_hello_world.jsonl",
-            column_mapping={"num": "${data.num}"},
+            column_mapping={"name": "${data.name}"},
+            runtime=runtime,
+            name=name,
+        )
+        assert isinstance(run, Run)
+        assert run.name == name
+
+    def test_run_bulk_with_registry_flow(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str], registry_name: str
+    ):
+        """Test run bulk with remote registry flow."""
+        name = randstr("name")
+        run = pf.run(
+            flow=f"azureml://registries/{registry_name}/models/simple_hello_world/versions/202311241",
+            data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+            column_mapping={"name": "${data.name}"},
             runtime=runtime,
             name=name,
         )

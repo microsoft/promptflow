@@ -63,8 +63,10 @@ Example:
 pfazure run create -f <yaml-filename>
 # Create a run from flow directory and reference a run:
 pfazure run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream
-# Create a run from remote flow
+# Create a run from existing workspace flow
 pfazure run create --flow azureml:<flow-name> --data <path-to-data-file> --column-mapping <key-value-pair>
+# Create a run from existing registry flow
+pfazure run create --flow azureml://registries/<registry-name>/models/<flow-name>/versions/<version> --data <path-to-data-file> --column-mapping <key-value-pair>
 """  # noqa: E501
 
     def add_param_data(parser):

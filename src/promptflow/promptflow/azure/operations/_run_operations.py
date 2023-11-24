@@ -32,6 +32,7 @@ from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
+    REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
     ListViewType,
@@ -774,7 +775,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _resolve_flow(self, run: Run):
         if run._use_remote_flow:
-            return self._resolve_flow_definition_resource_id(flow_name=run._flow_name)
+            return self._resolve_flow_definition_resource_id(run=run)
         flow = load_flow(run.flow)
         # ignore .promptflow/dag.tools.json only for run submission scenario
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
@@ -980,8 +981,13 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
             )
 
-    def _resolve_flow_definition_resource_id(self, flow_name: str):
+    def _resolve_flow_definition_resource_id(self, run: Run):
         """Resolve the flow definition resource id."""
+        # for registry flow pattern, the flow uri can be passed as flow definition resource id directly
+        if run.flow.startswith(REGISTRY_URI_PREFIX):
+            return run.flow
+
+        # for workspace flow pattern, generate the flow definition resource id
         workspace_id = self._workspace._workspace_id
         location = self._workspace.location
-        return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{flow_name}"
+        return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{run._flow_name}"

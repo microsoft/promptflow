@@ -16,6 +16,7 @@ from promptflow._sdk._constants import (
     DEFAULT_VARIANT,
     FLOW_RESOURCE_ID_PREFIX,
     PARAMS_OVERRIDE_KEY,
+    REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     RUN_MACRO,
     TIMESTAMP_MACRO,
@@ -33,8 +34,8 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import (
     _sanitize_python_variable_name,
-    get_flow_name_from_remote_flow_pattern,
     is_remote_uri,
+    parse_remote_flow_pattern,
     parse_variant,
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
@@ -143,7 +144,7 @@ class Run(YAMLTranslatableMixin):
         self._experiment_name = None
         self._lineage_id = None
         if self._use_remote_flow:
-            self._flow_name = get_flow_name_from_remote_flow_pattern(flow)
+            self._flow_name = parse_remote_flow_pattern(flow)
             self._experiment_name = self._flow_name
             self._lineage_id = self._flow_name
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
@@ -484,10 +485,13 @@ class Run(YAMLTranslatableMixin):
         if self._use_remote_flow:
             # submit with params flow_definition_resource_id which will be resolved in pfazure run create operation
             # the flow resource id looks like: "azureml://locations/<region>/workspaces/<ws-name>/flows/<flow-name>"
-            if not isinstance(self.flow, str) or not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX):
+            if not isinstance(self.flow, str) or (
+                not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX) and not self.flow.startswith(REGISTRY_URI_PREFIX)
+            ):
                 raise ValueError(
                     f"Invalid flow value when transforming to rest object: {self.flow!r}. "
-                    f"Expecting a flow definition resource id starts with '{FLOW_RESOURCE_ID_PREFIX}'"
+                    f"Expecting a flow definition resource id starts with '{FLOW_RESOURCE_ID_PREFIX}' "
+                    f"or a flow registry uri starts with '{REGISTRY_URI_PREFIX}'"
                 )
             return SubmitBulkRunRequest(
                 flow_definition_resource_id=self.flow,

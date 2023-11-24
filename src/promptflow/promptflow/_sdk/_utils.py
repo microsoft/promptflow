@@ -51,6 +51,7 @@ from promptflow._sdk._constants import (
     NODES,
     PROMPT_FLOW_DIR_NAME,
     REFRESH_CONNECTIONS_DIR_LOCK_PATH,
+    REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     USE_VARIANTS,
     VARIANTS,
@@ -66,6 +67,7 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.tool import ToolType
+from promptflow.exceptions import UserErrorException
 
 
 def snake_to_camel(name):
@@ -984,14 +986,29 @@ def is_remote_uri(obj) -> bool:
     return False
 
 
-def get_flow_name_from_remote_flow_pattern(flow: object) -> str:
+def parse_remote_flow_pattern(flow: object) -> str:
     # Check if the input matches the correct pattern
+    flow_name = None
+    error_message = (
+        f"Invalid remote flow pattern, got {flow!r} while expecting "
+        f"a remote workspace flow like '{REMOTE_URI_PREFIX}<flow-name>', or a remote registry flow like "
+        f"'{REMOTE_URI_PREFIX}//registries/<registry-name>/models/<flow-name>/versions/<version>'"
+    )
     if not isinstance(flow, str) or not flow.startswith(REMOTE_URI_PREFIX):
-        raise ValueError(
-            f"Invalid remote flow pattern, got {flow!r} while expecting a string like'{REMOTE_URI_PREFIX}<flow-name>'."
-        )
+        raise UserErrorException(error_message)
 
-    # Extract the flow ID from the input string
-    flow_name = flow.replace(REMOTE_URI_PREFIX, "")
-
+    # check for registry flow pattern
+    if flow.startswith(REGISTRY_URI_PREFIX):
+        pattern = r"azureml://registries/.*?/models/(?P<name>.*?)/versions/(?P<version>.*?)$"
+        match = re.match(pattern, flow)
+        if not match or len(match.groups()) != 2:
+            raise UserErrorException(error_message)
+        flow_name, _ = match.groups()
+    # check for workspace flow pattern
+    elif flow.startswith(REMOTE_URI_PREFIX):
+        pattern = r"azureml:(?P<name>.*?)$"
+        match = re.match(pattern, flow)
+        if not match or len(match.groups()) != 1:
+            raise UserErrorException(error_message)
+        flow_name = match.groups()[0]
     return flow_name
