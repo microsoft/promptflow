@@ -122,6 +122,7 @@ class PFClient:
             flow=Path(flow),
             connections=connections,
             environment_variables=environment_variables,
+            config=Configuration(overrides=self._config),
         )
         return self.runs.create_or_update(run=run, **kwargs)
 

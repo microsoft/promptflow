@@ -9,7 +9,10 @@
 - [SDK/CLI] SDK/CLI will collect telemetry by default, user can use `pf config set telemetry.enabled=false` to opt out.
 - Add `raise_on_error` for stream run API, by default we raise for failed run.
 - Flow as function: consume a flow like a function with parameters mapped to flow inputs.
-- Bump version constraint for ruamel.yaml and flask
+- Enable specifying the default output path for run.
+  - Use `pf config set run.output_path=<output-path>` to specify, and the run output path will be `<output-path>/<run-name>`.
+  - Introduce macro `${flow_directory}` for `run.output_path` in config, which will be replaced with corresponding flow directory.
+  - The flow directory cannot be set as run output path, which means `pf config set run.output_path='${flow_directory}'` is invalid; but you can use child folder, e.g. `pf config set run.output_path='${flow_directory}/.runs'`.
 
 ### Bugs Fixed
 
@@ -20,6 +23,8 @@
 - Force 'az login' if using azureml connection provider in cli command.
 - Add env variable 'PF_NO_INTERACTIVE_LOGIN' to disable interactive login if using azureml connection provider in promptflow sdk.
 - Improved CLI invoke time.
+- Bump `pydash` upper bound to 8.0.0.
+- Bump version upper bound for `ruamel.yaml` and `flask``
 
 ## 1.0.0 (2023.11.09)
 
