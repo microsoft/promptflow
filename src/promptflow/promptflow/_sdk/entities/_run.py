@@ -54,7 +54,7 @@ class Run(YAMLTranslatableMixin):
     :param flow: Path of the flow directory.
     :type flow: Path
     :param name: Name of the run.
-    :type name: Optional[str]
+    :type name: str
     :param data: Input data for the run. Local path or remote uri(starts with azureml: or public URL) are supported. Note: remote uri is only supported for cloud run. # noqa: E501
     :type data: Optional[str]
     :param variant: Variant of the run.
@@ -393,9 +393,7 @@ class Run(YAMLTranslatableMixin):
             return str(uuid.uuid4())
 
     def _get_default_display_name(self) -> str:
-        display_name = self.display_name
-        if not display_name:
-            display_name = self.name
+        display_name = self.display_name or self.name
         return display_name
 
     def _format_display_name(self) -> str:
