@@ -1,6 +1,6 @@
 name: tools_tests
 on:
-  pull_request_target:
+  pull_request:
     paths:
       - src/promptflow-tools/**
       - '**tools_tests.yml'
@@ -25,11 +25,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
-          pip install -r ./src/promptflow-tools/requirements.txt
+          pip install google-search-results==2.4.1
+          pip install openai>=1.0.0
       - name: Generate configs
         run: |
           python ./scripts/tool/generate_connection_config.py --tenant_id ${{ secrets.TENANT_ID }} --client_id ${{ secrets.CLIENT_ID }} --client_secret ${{ secrets.CLIENT_SECRET }}
 
       - name: Run tests
+        shell: bash
         run: |
+          export PYTHONPATH=./src/promptflow
           pytest ./src/promptflow-tools/tests

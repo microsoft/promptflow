@@ -18,7 +18,7 @@ class OpenAI(ToolProvider):
         self._client = OpenAIClient(
             api_key=connection.api_key,
             organization=connection.organization,
-            base_url=connection.base_url
+            base_url=connection.api_base
         )
 
     @tool(streaming_option_parameter="stream")
