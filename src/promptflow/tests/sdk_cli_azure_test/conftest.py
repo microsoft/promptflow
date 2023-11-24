@@ -15,8 +15,8 @@ import pytest
 from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockerFixture
 
+from promptflow._sdk._constants import FlowType
 from promptflow.azure import PFClient
-from promptflow.azure._constants import FlowType
 from promptflow.azure._entities._flow import Flow
 
 from ._azure_utils import get_cred
