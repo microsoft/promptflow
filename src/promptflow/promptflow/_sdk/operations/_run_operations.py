@@ -121,6 +121,7 @@ class RunOperations(TelemetryMixin):
         :return: Run object.
         :rtype: ~promptflow.entities.Run
         """
+        kwargs.pop("inner_call", None)
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name, inner_call=True, **kwargs)
         local_storage = LocalStorageOperations(run=run)
@@ -165,6 +166,7 @@ class RunOperations(TelemetryMixin):
         :return: archived run object.
         :rtype: ~promptflow._sdk.entities._run.Run
         """
+        kwargs.pop("inner_call", None)
         name = Run._validate_and_return_run_name(name)
         ORMRun.get(name).archive()
         return self.get(name, inner_call=True, **kwargs)
@@ -178,6 +180,7 @@ class RunOperations(TelemetryMixin):
         :return: restored run object.
         :rtype: ~promptflow._sdk.entities._run.Run
         """
+        kwargs.pop("inner_call", None)
         name = Run._validate_and_return_run_name(name)
         ORMRun.get(name).restore()
         return self.get(name, inner_call=True, **kwargs)
@@ -201,6 +204,7 @@ class RunOperations(TelemetryMixin):
         :return: updated run object
         :rtype: ~promptflow._sdk.entities._run.Run
         """
+        kwargs.pop("inner_call", None)
         name = Run._validate_and_return_run_name(name)
         # the kwargs is to support update run status scenario but keep it private
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
@@ -236,6 +240,7 @@ class RunOperations(TelemetryMixin):
             raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
 
         name = Run._validate_and_return_run_name(name)
+        kwargs.pop("inner_call", None)
         run = self.get(name=name, inner_call=True, **kwargs)
         local_storage = LocalStorageOperations(run=run)
         inputs, outputs = local_storage.load_inputs_and_outputs()
@@ -263,6 +268,7 @@ class RunOperations(TelemetryMixin):
         :return: Run metrics.
         :rtype: Dict[str, Any]
         """
+        kwargs.pop("inner_call", None)
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name, inner_call=True, **kwargs)
         run._check_run_status_is_completed()
@@ -279,6 +285,7 @@ class RunOperations(TelemetryMixin):
 
             local_storage = LocalStorageOperations(run)
             detail = local_storage.load_detail()
+            kwargs.pop("inner_call", None)
             metadata = RunMetadata(
                 name=run.name,
                 display_name=run.display_name,
@@ -311,6 +318,7 @@ class RunOperations(TelemetryMixin):
         validated_runs = []
         for run in runs:
             run_name = Run._validate_and_return_run_name(run)
+            kwargs.pop("inner_call", None)
             validated_runs.append(self.get(name=run_name, inner_call=True, **kwargs))
 
         html_path = kwargs.pop("html_path", None)
@@ -349,5 +357,6 @@ class RunOperations(TelemetryMixin):
     def _get_local_storage(self, run: Union[str, Run], **kwargs) -> LocalStorageOperations:
         """Get the local storage of the run."""
         if isinstance(run, str):
+            kwargs.pop("inner_call", None)
             run = self.get(name=run, inner_call=True, **kwargs)
         return LocalStorageOperations(run)

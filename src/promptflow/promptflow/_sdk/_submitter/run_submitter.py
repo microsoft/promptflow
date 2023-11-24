@@ -32,10 +32,12 @@ class RunSubmitter:
 
     def submit(self, run: Run, stream=False, **kwargs):
         self._run_bulk(run=run, stream=stream, **kwargs)
-        return self.run_operations.get(name=run.name)
+        kwargs.pop("inner_call", None)
+        return self.run_operations.get(name=run.name, inner_call=True, **kwargs)
 
     def _run_bulk(self, run: Run, stream=False, **kwargs):
         # validate & resolve variant
+        kwargs.pop("inner_call", None)
         if run.variant:
             tuning_node, variant = parse_variant(run.variant)
         else:
@@ -43,12 +45,12 @@ class RunSubmitter:
 
         if run.run is not None:
             if isinstance(run.run, str):
-                run.run = self.run_operations.get(name=run.run)
+                run.run = self.run_operations.get(name=run.run, inner_call=True, **kwargs)
             elif not isinstance(run.run, Run):
                 raise TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
             else:
                 # get the run again to make sure it's status is latest
-                run.run = self.run_operations.get(name=run.run.name)
+                run.run = self.run_operations.get(name=run.run.name, inner_call=True, **kwargs)
             if run.run.status != Status.Completed.value:
                 raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
             run.run.outputs = self.run_operations._get_outputs(run.run)
@@ -118,6 +120,7 @@ class RunSubmitter:
             # system metrics: token related
             system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
 
+            kwargs.pop("inner_call", None)
             self.run_operations.update(
                 name=run.name,
                 status=status,

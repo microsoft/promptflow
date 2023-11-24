@@ -95,6 +95,7 @@ class RunInfo(Base):
         start_time: Optional[Union[str, datetime.datetime]] = None,
         end_time: Optional[Union[str, datetime.datetime]] = None,
         system_metrics: Optional[Dict[str, int]] = None,
+        **kwargs,
     ) -> None:
         update_dict = {}
         if status is not None:

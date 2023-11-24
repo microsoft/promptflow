@@ -221,6 +221,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         """
         stream = kwargs.pop("stream", False)
         reset = kwargs.pop("reset_runtime", False)
+        kwargs.pop("inner_call", None)
 
         rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"), reset=reset)
 
@@ -392,6 +393,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _check_cloud_run_completed(self, run_name: str, **kwargs) -> bool:
         """Check if the cloud run is completed."""
+        kwargs.pop("inner_call", None)
         run = self.get(run=run_name, inner_call=True, **kwargs)
         run._check_run_status_is_completed()
 
@@ -664,6 +666,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :return: The run object
         :rtype: ~promptflow.entities.Run
         """
+        kwargs.pop("inner_call", None)
         run = self.get(run=run, inner_call=True, **kwargs)
         # TODO: maybe we need to make this configurable
         file_handler = sys.stdout
@@ -968,6 +971,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if response.status_code == 200:
             # the modify api returns different data format compared with get api, so we use get api here to
             # return standard Run object
+            kwargs.pop("inner_call", None)
             return self.get(run=run_id, inner_call=True, **kwargs)
         else:
             raise RunRequestException(

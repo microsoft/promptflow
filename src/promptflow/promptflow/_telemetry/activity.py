@@ -131,11 +131,13 @@ def monitor_operation(
             # TODO(2699383): use same request id with service caller
             # by pass request id from kwargs
             request_id = kwargs.get("request_id", uuid.uuid4())
+            kwargs["request_id"] = request_id
+            print(request_id)
             custom_dimensions["request_id"] = request_id
 
             # check if it's first SDK call
-            first_sdk_call = kwargs.get("first_call", False)
-            custom_dimensions["first_sdk_call"] = first_sdk_call
+            inner_call = kwargs.get("inner_call", False)
+            custom_dimensions["first_sdk_call"] = not inner_call
 
             custom_dimensions.update(extract_telemetry_info(self))
 

@@ -341,7 +341,7 @@ class FlowOperations(TelemetryMixin):
             f.write(dump_yaml(sorted_connection_dict, sort_keys=False))
         return env_var_names
 
-    def _migrate_connections(self, connection_names: List[str], output_dir: Path):
+    def _migrate_connections(self, connection_names: List[str], output_dir: Path, **kwargs):
         from promptflow._sdk._pf_client import PFClient
 
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -349,7 +349,10 @@ class FlowOperations(TelemetryMixin):
         local_client = PFClient()
         connection_paths, env_var_names = [], {}
         for connection_name in connection_names:
-            connection = local_client.connections.get(name=connection_name, with_secrets=True, inner_call=True)
+            kwargs.pop("inner_call", None)
+            connection = local_client.connections.get(
+                name=connection_name, with_secrets=True, inner_call=True, **kwargs
+            )
             connection_var_name = self._refine_connection_name(connection_name)
             connection_paths.append(output_dir / f"{connection_var_name}.yaml")
             for env_var_name in self._dump_connection(
