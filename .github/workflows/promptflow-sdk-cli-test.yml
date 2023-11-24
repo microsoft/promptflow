@@ -114,6 +114,7 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executable]" --force}}
+        pip install openai==0.28.0
         pip freeze
     - name: Run SDK CLI Executable Test
       shell: pwsh
