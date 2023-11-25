@@ -6,12 +6,11 @@ import time
 from typing import List, Mapping
 
 from jinja2 import Template
-from openai import APIConnectionError, APIStatusError, APIError, RateLimitError, APITimeoutError
+from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
-
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
 
@@ -239,7 +238,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         )
                         print(msg, file=sys.stderr)
                     time.sleep(retry_after_seconds)
-                except APIError as e:
+                except OpenAIError as e:
                     # For other non-retriable errors from APIError,
                     # For example, AuthenticationError, APIConnectionError, BadRequestError, NotFoundError
                     # Mark UserError for all the non-retriable OpenAIError
@@ -365,7 +364,13 @@ def find_referenced_image_set(kwargs: dict):
     return referenced_images
 
 
-def connection_mapping(connection):
+def normalize_connection_config(connection):
+    """
+    Normalizes the configuration of a given connection object for compatibility.
+
+    This function takes a connection object and normalizes its configuration,
+    ensuring it is compatible and standardized for use.
+    """
     if isinstance(connection, AzureOpenAIConnection):
         return {
             "api_key": connection.api_key,

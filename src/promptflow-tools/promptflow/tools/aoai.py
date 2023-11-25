@@ -7,7 +7,7 @@ except Exception:
         "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
 
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
-    validate_functions, process_function_call, post_process_chat_api_response, connection_mapping
+    validate_functions, process_function_call, post_process_chat_api_response, normalize_connection_config
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -20,7 +20,7 @@ class AzureOpenAI(ToolProvider):
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
         self.connection = connection
-        self._connection_dict = connection_mapping(self.connection)
+        self._connection_dict = normalize_connection_config(self.connection)
         self._client = AzureOpenAIClient(**self._connection_dict)
 
     def calculate_cache_string_for_completion(

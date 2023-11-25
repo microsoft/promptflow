@@ -8,7 +8,7 @@ except Exception:
 
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, to_bool, validate_functions, process_function_call, \
-    post_process_chat_api_response, connection_mapping
+    post_process_chat_api_response, normalize_connection_config
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -31,7 +31,7 @@ class Engine(str, Enum):
 class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
-        self._connection_dict = connection_mapping(connection)
+        self._connection_dict = normalize_connection_config(connection)
         self._client = OpenAIClient(**self._connection_dict)
 
     @tool
