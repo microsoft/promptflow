@@ -98,7 +98,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             return response.json()
         else:
             # TODO: add more error handling
-            raise PromptflowException(f"Error when calling executor API, response: {response}")
+            raise PromptflowException(f"Error when calling executor API, response: {response}, "
+                                      f"error: {response.content}")
 
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
