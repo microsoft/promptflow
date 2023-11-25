@@ -239,7 +239,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         print(msg, file=sys.stderr)
                     time.sleep(retry_after_seconds)
                 except OpenAIError as e:
-                    # For other non-retriable errors from APIError,
+                    # For other non-retriable errors from OpenAIError,
                     # For example, AuthenticationError, APIConnectionError, BadRequestError, NotFoundError
                     # Mark UserError for all the non-retriable OpenAIError
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
