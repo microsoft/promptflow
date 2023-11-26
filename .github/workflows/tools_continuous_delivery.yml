@@ -11,7 +11,6 @@ on:
 
 jobs:
   continuous_delivery_release:
-    if: github.event_name == 'push'
     uses: ./.github/workflows/wheel_distributing.yml
     name: Continuous delivery release
     with:
@@ -21,10 +20,10 @@ jobs:
       ConfigsFolderPath: "scripts/distributing/configs"
     secrets: inherit
 
-  deploy_runtime_with_updated_tools_package:
-    needs: continuous_delivery_release
-    uses: ./.github/workflows/tools_deploy_runtime.yml
-    name: Deploy runtime
-    with:
-      ToolsPackageVersion: ${{ needs.continuous_delivery_release.outputs.PackageVersion }}
-    secrets: inherit
+#  deploy_runtime_with_updated_tools_package:
+#    needs: continuous_delivery_release
+#    uses: ./.github/workflows/tools_deploy_runtime.yml
+#    name: Deploy runtime
+#    with:
+#      ToolsPackageVersion: ${{ needs.continuous_delivery_release.outputs.PackageVersion }}
+#    secrets: inherit
