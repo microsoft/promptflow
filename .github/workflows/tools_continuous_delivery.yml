@@ -3,7 +3,7 @@ name: tools_continuous_delivery
 on:
   push:
     branches:
-      - main
+      - dev/upgrade-openai
     paths:
       - 'src/promptflow-tools/**'
       - '!README.*'
