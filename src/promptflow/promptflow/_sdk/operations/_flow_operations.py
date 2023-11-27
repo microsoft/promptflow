@@ -130,7 +130,7 @@ class FlowOperations(TelemetryMixin):
         from promptflow._constants import FlowLanguage
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
 
-        if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.Csharp:
+        if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
                 is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
                 flow_inputs, dependency_nodes_outputs = submitter.resolve_data(

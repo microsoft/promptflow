@@ -1,30 +1,16 @@
+import multiprocessing
 from types import GeneratorType
 
 import pytest
 
-from promptflow.contracts.run_info import FlowRunInfo
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
-from promptflow.storage import AbstractRunStorage
 
 from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
-
-
-class MemoryRunStorage(AbstractRunStorage):
-    def __init__(self):
-        self._node_runs = {}
-        self._flow_runs = {}
-
-    def persist_flow_run(self, run_info: FlowRunInfo):
-        self._flow_runs[run_info.run_id] = run_info
-
-    def persist_node_run(self, run_info: NodeRunInfo):
-        self._node_runs[run_info.run_id] = run_info
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
@@ -35,7 +21,7 @@ class TestExecutor:
             inputs = self.get_bulk_inputs(flow_folder)
             return inputs[0]
         return {
-            "url": "https://www.apple.com/shop/buy-iphone/iphone-14",
+            "url": "https://www.microsoft.com/en-us/windows/",
             "text": "some_text",
         }
 
@@ -120,6 +106,20 @@ class TestExecutor:
         assert isinstance(run_info.api_calls, list)
         assert run_info.node == node_name
         assert run_info.system_metrics["duration"] >= 0
+
+    def test_executor_exec_node_with_llm_node(self, dev_connections):
+        # Run the test in a new process to ensure the openai api is injected correctly for the single node run
+        context = multiprocessing.get_context("spawn")
+        queue = context.Queue()
+        process = context.Process(
+            target=exec_node_within_process,
+            args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True)
+        )
+        process.start()
+        process.join()
+
+        if not queue.empty():
+            raise queue.get()
 
     def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
@@ -240,3 +240,20 @@ class TestExecutor:
         flow_result = executor.exec_line({"input": "World"})
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.output["output"] == "Hello World"
+
+
+def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
+    try:
+        result = FlowExecutor.load_and_exec_node(
+            flow_file=get_yaml_file(flow_file),
+            node_name=node_name,
+            flow_inputs=flow_inputs,
+            dependency_nodes_outputs=dependency_nodes_outputs,
+            connections=connections,
+            raise_ex=raise_ex
+        )
+        assert len(result.api_calls) == 1
+        # Assert llm single node run contains openai traces
+        assert result.api_calls[0]["children"]
+    except Exception as ex:
+        queue.put(ex)
