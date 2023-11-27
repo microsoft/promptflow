@@ -3,18 +3,23 @@
 # ---------------------------------------------------------
 import contextlib
 import time
+from typing import Callable
 from unittest.mock import patch
 
+import pydash
 import pytest
 
+from promptflow import load_run
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
 from promptflow._utils.utils import environment_variable_overwrite
+from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
+
+RUNS_DIR = "./tests/test_configs/runs"
 
 
 @contextlib.contextmanager
@@ -45,8 +50,13 @@ def extension_consent_config_overwrite(val):
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=True)
 
 
-@pytest.mark.skipif(condition=not is_live(), reason="telemetry tests, only run in live mode.")
+# @pytest.mark.skipif(condition=not is_live(), reason="telemetry tests, only run in live mode.")
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
+@pytest.mark.usefixtures(
+    "mock_set_headers_with_user_aml_token",
+    "single_worker_thread_pool",
+    "vcr_recording",
+)
 @pytest.mark.e2etest
 class TestTelemetry:
     def test_logging_handler(self):
@@ -142,3 +152,29 @@ class TestTelemetry:
         another_handler = next((h for h in another_logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
         assert logger is another_logger
         assert handler is another_handler
+
+    def test_inner_function_call(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
+        request_ids = set()
+        first_sdk_calls = []
+
+        @contextlib.contextmanager
+        def check_inner_call(*args, **kwargs):
+            request_id = pydash.get(kwargs, "custom_dimensions.request_id")
+            first_sdk_call = pydash.get(kwargs, "custom_dimensions.first_sdk_call")
+            request_ids.add(request_id)
+            first_sdk_calls.append(first_sdk_call)
+            yield
+
+        with patch("promptflow._telemetry.activity.log_activity") as mock_logger:
+            mock_logger.side_effect = check_inner_call
+            run = load_run(
+                source=f"{RUNS_DIR}/run_with_env.yaml",
+                params_override=[{"runtime": runtime}],
+            )
+            run.name = randstr("name")
+            pf.runs.create_or_update(run=run)
+
+        # only 1 request id
+        assert len(request_ids) == 1
+        # only 1 first sdk call
+        assert first_sdk_calls == [True, False]

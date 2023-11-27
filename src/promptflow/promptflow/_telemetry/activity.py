@@ -132,7 +132,6 @@ def monitor_operation(
             # by pass request id from kwargs
             request_id = kwargs.get("request_id", uuid.uuid4())
             kwargs["request_id"] = request_id
-            print(request_id)
             custom_dimensions["request_id"] = request_id
 
             # check if it's first SDK call
@@ -141,7 +140,7 @@ def monitor_operation(
 
             custom_dimensions.update(extract_telemetry_info(self))
 
-            with log_activity(logger, activity_name, activity_type, custom_dimensions):
+            with log_activity(logger, activity_name, activity_type, custom_dimensions=custom_dimensions):
                 return f(self, *args, **kwargs)
 
         return wrapper
