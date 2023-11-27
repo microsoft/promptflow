@@ -3,11 +3,12 @@
 # ---------------------------------------------------------
 import mock
 import pytest
-from tests.sdk_cli_azure_test.recording_utilities import is_live
 
 from promptflow import PFClient
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+from ..recording_utilities import is_live
 
 AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
