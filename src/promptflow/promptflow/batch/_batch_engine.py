@@ -63,6 +63,19 @@ class BatchEngine:
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ):
+        """Create a new batch engine instance
+
+        :param flow_file: The flow file path
+        :type flow_file: Path
+        :param working_dir: The flow working directory path
+        :type working_dir: Optional[Path]
+        :param connections: The connections used in the flow
+        :type connections: Optional[dict]
+        :param storage: The storage to store execution results
+        :type storage: Optional[~promptflow.storage._run_storage.AbstractRunStorage]
+        :param kwargs: The keyword arguments related to creating the executor proxy class
+        :type kwargs: Any
+        """
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
         FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
