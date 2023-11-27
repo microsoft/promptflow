@@ -7,6 +7,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
 
+from dateutil import parser
+
 
 class Status(Enum):
     """An enumeration class for different types of run status."""
@@ -111,6 +113,8 @@ class RunInfo:
             metrics=data.get("metrics", None),
             error=data.get("error", None),
             parent_run_id=data.get("parent_run_id", None),
+            start_time=parser.parse(data.get("start_time")).replace(tzinfo=None),
+            end_time=parser.parse(data.get("end_time")).replace(tzinfo=None),
             index=data.get("index", None),
             api_calls=data.get("api_calls", None),
             variant_id=data.get("variant_id", ""),
@@ -120,10 +124,6 @@ class RunInfo:
             system_metrics=data.get("system_metrics", None),
             result=data.get("result", None),
         )
-        if "start_time" in data:
-            run_info.start_time = datetime.fromisoformat(data["start_time"])
-        if "end_time" in data:
-            run_info.end_time = datetime.fromisoformat(data["end_time"])
         return run_info
 
 
@@ -215,6 +215,8 @@ class FlowRunInfo:
             root_run_id=data.get("root_run_id", None),
             source_run_id=data.get("source_run_id", None),
             flow_id=data.get("flow_id"),
+            start_time=parser.parse(data.get("start_time")).replace(tzinfo=None),
+            end_time=parser.parse(data.get("end_time")).replace(tzinfo=None),
             index=data.get("index", None),
             api_calls=data.get("api_calls", None),
             variant_id=data.get("variant_id", ""),
@@ -225,8 +227,4 @@ class FlowRunInfo:
             result=data.get("result", None),
             upload_metrics=data.get("upload_metrics", False),
         )
-        if "start_time" in data:
-            flow_run_info.start_time = datetime.fromisoformat(data["start_time"])
-        if "end_time" in data:
-            flow_run_info.end_time = datetime.fromisoformat(data["end_time"])
         return flow_run_info
