@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import inspect
 
 from flask import jsonify, request
 from flask_restx import Namespace, Resource, fields
@@ -10,6 +11,8 @@ from promptflow._sdk._errors import ConnectionNotFoundError
 from promptflow._sdk._service.utils.utils import local_user_only
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
+import promptflow._sdk.schemas._connection as connection
+
 
 api = Namespace("Connections", description="Connections Management")
 
@@ -27,6 +30,22 @@ list_connection_field = api.model(
 )
 # Response model of connection operation
 dict_field = api.schema_model("ConnectionDict", {"additionalProperties": True, "type": "object"})
+# Response model of connection spec
+connection_config_spec_model = api.model(
+    "ConnectionConfigSpec",
+    {
+        "name": fields.String,
+        "optional": fields.Boolean,
+        "default": fields.String,
+    },
+)
+connection_spec_model = api.model(
+    "ConnectionSpec",
+    {
+        "connection_type": fields.String,
+        "config_spec": fields.List(fields.Nested(connection_config_spec_model)),
+    },
+)
 
 
 @api.errorhandler(ConnectionNotFoundError)
@@ -104,3 +123,33 @@ class ConnectionWithSecret(Resource):
         connection = connection_op.get(name=name, with_secrets=True, raise_error=True)
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)
+
+
+@api.route("/specs")
+class ConnectionSpecs(Resource):
+    @api.doc(description="List connection spec")
+    @api.response(code=200, description="List connection spec", skip_none=True, model=connection_spec_model)
+    def get(self):
+        hide_connection_fields = ["module"]
+        connection_specs = []
+        for name, obj in inspect.getmembers(connection):
+            if (
+                inspect.isclass(obj)
+                and issubclass(obj, connection.ConnectionSchema)
+                and not isinstance(obj, connection.ConnectionSchema)
+            ):
+                config_specs = []
+                for field_name, field in obj._declared_fields.items():
+                    if not field.dump_only and field_name not in hide_connection_fields:
+                        configs = {"name": field_name, "optional": field.allow_none}
+                        if field.default:
+                            configs["default"] = field.default
+                        if field_name == "type":
+                            configs["default"] = field.allowed_values[0]
+                        config_specs.append(configs)
+                connection_spec = {
+                    "connection_type": name.replace("Schema", ""),
+                    "config_specs": config_specs,
+                }
+                connection_specs.append(connection_spec)
+        return jsonify(connection_specs)
