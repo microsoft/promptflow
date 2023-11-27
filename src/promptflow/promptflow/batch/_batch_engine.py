@@ -86,8 +86,8 @@ class BatchEngine:
                 flow_file, self._working_dir, connections=connections, storage=storage, **kwargs
             )
         self._storage = storage
-        # set it to True when the batch run is cancelled
-        self._canceled_signal = False
+        # set it to True when the batch run is canceled
+        self._is_canceled = False
 
     def run(
         self,
@@ -133,12 +133,12 @@ class BatchEngine:
             raise e
         finally:
             # destroy executor proxy if the batch run is not cancelled
-            if not self._canceled_signal:
+            if not self._is_canceled:
                 self._executor_proxy.destroy()
 
     def cancel(self):
         """Cancel the batch run"""
-        self._canceled_signal = True
+        self._is_canceled = True
 
     def _exec_batch(
         self,
