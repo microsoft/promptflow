@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import inspect
+import json
 import logging
 import shutil
 from abc import ABC, abstractmethod
@@ -223,45 +224,39 @@ class FlowMetaYamlGenerator(BaseGenerator):
         return ["flow_name"]
 
 
-class StreamlitFileGenerator(BaseGenerator):
-    def __init__(self, flow_name, flow_dag_path, connection_provider):
+class StreamlitFileReplicator:
+    def __init__(self, flow_name, flow_dag_path):
         self.flow_name = flow_name
         self.flow_dag_path = Path(flow_dag_path)
-        self.connection_provider = connection_provider
         self.executable = ExecutableFlow.from_yaml(
             flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
         )
         self.is_chat_flow, self.chat_history_input_name, error_msg = FlowOperations._is_chat_flow(self.executable)
-        if not self.is_chat_flow:
-            raise UserErrorException(f"Only support chat flow in ui mode, {error_msg}.")
-        self._chat_input_name = next(
-            (flow_input for flow_input, value in self.executable.inputs.items() if value.is_chat_input), None
-        )
-        self._chat_input = self.executable.inputs[self._chat_input_name]
-        if self._chat_input.type not in [ValueType.STRING.value, ValueType.LIST.value]:
-            raise UserErrorException(
-                f"Only support string or list type for chat input, but got {self._chat_input.type}."
-            )
 
     @property
-    def chat_input_default_value(self):
-        return self._chat_input.default
+    def flow_inputs(self):
+        if self.is_chat_flow:
+            results = {}
+            for flow_input, value in self.executable.inputs.items():
+                if value.is_chat_input:
+                    if value.type.value not in [ValueType.STRING.value, ValueType.LIST.value]:
+                        raise UserErrorException(
+                            f"Only support string or list type for chat input, but got {value.type.value}."
+                        )
+                    results.update({flow_input: (value.default, value.type.value)})
+        else:
+            results = {
+                flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
+            }
+        return results
 
     @property
-    def chat_input_value_type(self):
-        return self._chat_input.type
+    def label(self):
+        return "Chat" if self.is_chat_flow else "Run"
 
     @property
-    def chat_input_name(self):
-        return self._chat_input_name
-
-    @property
-    def flow_inputs_params(self):
-        return f"{self.chat_input_name}={self.chat_input_name}"
-
-    @property
-    def tpl_file(self):
-        return SERVE_TEMPLATE_PATH / "flow_test_main.py.jinja2"
+    def py_file(self):
+        return SERVE_TEMPLATE_PATH / "main.py"
 
     @property
     def flow_path(self):
@@ -271,20 +266,20 @@ class StreamlitFileGenerator(BaseGenerator):
     def entry_template_keys(self):
         return [
             "flow_name",
-            "chat_input_name",
-            "flow_inputs_params",
             "flow_path",
             "is_chat_flow",
             "chat_history_input_name",
-            "connection_provider",
-            "chat_input_default_value",
-            "chat_input_value_type",
-            "chat_input_name",
+            "flow_inputs",
+            "label",
         ]
 
     def generate_to_file(self, target):
         if Path(target).name == "main.py":
-            super().generate_to_file(target=target)
+            target = Path(target).resolve()
+            shutil.copy(self.py_file, target)
+            config_content = {key: getattr(self, key) for key in self.entry_template_keys}
+            with open(target.parent / "config.json", "w") as file:
+                json.dump(config_content, file, indent=4)
         else:
             shutil.copy(SERVE_TEMPLATE_PATH / Path(target).name, target)
 
