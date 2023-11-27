@@ -26,7 +26,7 @@ class FlowLanguage:
     """The enum of tool source type."""
 
     Python = "python"
-    Csharp = "csharp"
+    CSharp = "csharp"
 
 
 USER_AGENT = "USER_AGENT"
