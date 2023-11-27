@@ -84,7 +84,11 @@ def entry(argv):
 
     args = parser.parse_args(argv)
     logger = get_telemetry_logger()
-    activity_name = f"pf.{args.action}.{args.sub_action}"
+    activity_name = "pf."
+    if getattr(args, "action", None):
+        activity_name += f".{args.action}"
+    if getattr(args, "sub_action", None):
+        activity_name += f".{args.sub_action}"
     with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
         run_command(args)
 
