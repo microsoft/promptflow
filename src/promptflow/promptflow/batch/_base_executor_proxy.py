@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Optional
@@ -98,8 +102,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             return response.json()
         else:
             # TODO: add more error handling
-            raise PromptflowException(f"Error when calling executor API, response: {response}, "
-                                      f"error: {response.content}")
+            raise PromptflowException(
+                f"Error when calling executor API, response: {response}, error: {response.content}"
+            )
 
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
