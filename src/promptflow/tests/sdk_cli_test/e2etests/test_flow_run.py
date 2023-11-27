@@ -506,7 +506,7 @@ class TestFlowRun:
         assert run.tags == tags
 
     def test_run_display_name(self, pf):
-        # use folder name if not specify display_name
+        # use run name if not specify display_name
         run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
@@ -550,7 +550,7 @@ class TestFlowRun:
         )
         assert "${timestamp}" not in run.display_name
 
-    def test_run_dump(self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient) -> None:
+    def test_run_dump(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         run = pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
         # in fact, `pf.run` will internally query the run from db in `RunSubmitter`
@@ -558,7 +558,7 @@ class TestFlowRun:
         # if no dump operation, a RunNotFoundError will be raised here
         pf.runs.get(run.name)
 
-    def test_run_list(self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient) -> None:
+    def test_run_list(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
         # create a run to ensure there is at least one run in the db
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
@@ -639,7 +639,7 @@ class TestFlowRun:
         pf.visualize([run1, run2])
 
     def test_incomplete_run_visualize(
-        self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient, capfd: pytest.CaptureFixture
+        self, azure_open_ai_connection: AzureOpenAIConnection, pf, capfd: pytest.CaptureFixture
     ) -> None:
         failed_run = pf.run(
             flow=f"{FLOWS_DIR}/failed_flow",
@@ -653,7 +653,7 @@ class TestFlowRun:
         )
 
         # patch logger.error to print, so that we can capture the error message using capfd
-        from promptflow.azure.operations import _run_operations
+        from promptflow._sdk.operations import _run_operations
 
         _run_operations.logger.error = print
 
@@ -676,7 +676,7 @@ class TestFlowRun:
         additional_includes = _get_additional_includes(snapshot_path / "flow.dag.yaml")
         assert not additional_includes
 
-    def test_input_mapping_source_not_found_error(self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient):
+    def test_input_mapping_source_not_found_error(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -782,7 +782,7 @@ class TestFlowRun:
         non_existing_keywords = ["execution.flow", "user log"]
         assert all([keyword not in logs for keyword in non_existing_keywords])
 
-    def test_get_detail_against_partial_fail_run(self, pf: PFClient) -> None:
+    def test_get_detail_against_partial_fail_run(self, pf) -> None:
         run = pf.run(
             flow=f"{FLOWS_DIR}/partial_fail",
             data=f"{FLOWS_DIR}/partial_fail/data.jsonl",
@@ -845,7 +845,13 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
         )
         inputs = pf.runs._get_inputs(run=run)
-        assert inputs == {"line_number": [0], "question": ["input value from default"]}
+        assert inputs == {
+            "line_number": [0],
+            "input_bool": [False],
+            "input_dict": [{}],
+            "input_list": [[]],
+            "input_str": ["input value from default"],
+        }
 
         # inputs should be persisted when data value are used
         run = pf.run(
@@ -868,7 +874,7 @@ class TestFlowRun:
             "url": ["https://www.youtube.com/watch?v=o5ZQyXaAv1g"],
         }
 
-    def test_executor_logs_in_batch_run_logs(self, pf: PFClient) -> None:
+    def test_executor_logs_in_batch_run_logs(self, pf) -> None:
         run = create_run_against_multi_line_data_without_llm(pf)
         local_storage = LocalStorageOperations(run=run)
         logs = local_storage.logger.get_logs()
@@ -934,7 +940,7 @@ class TestFlowRun:
         # no error when processing lines
         assert "error" not in run._to_dict(), run.name
 
-    def test_get_details_for_image_in_flow(self, pf: PFClient) -> None:
+    def test_get_details_for_image_in_flow(self, pf) -> None:
         image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image"
         data_path = f"{image_flow_path}/image_inputs/inputs.jsonl"
         run = pf.run(

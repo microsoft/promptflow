@@ -12,6 +12,7 @@ from typing import Dict, Tuple, Union
 import yaml
 from marshmallow import Schema
 
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_ENCODING,
@@ -225,6 +226,10 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         return self._flow_dir.name
 
     @property
+    def display_name(self) -> str:
+        return self.dag.get("display_name", None)
+
+    @property
     def tools_meta_path(self) -> Path:
         target_path = self._flow_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
         target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -310,10 +315,21 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
+        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
 
-        invoker = FlowContextResolver.resolve(flow=self)
+        if not self._executable:
+            self._executable = self._init_executable()
 
-        result = invoker._invoke(
-            data=inputs,
-        )
-        return result
+        if self._executable.program_language == FlowLanguage.CSharp:
+            with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
+                result = submitter.exec_with_inputs(
+                    inputs=inputs,
+                )
+                return result
+        else:
+
+            invoker = FlowContextResolver.resolve(flow=self)
+            result = invoker._invoke(
+                data=inputs,
+            )
+            return result

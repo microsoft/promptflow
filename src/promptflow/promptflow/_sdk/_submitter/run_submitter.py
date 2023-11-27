@@ -6,6 +6,7 @@
 import datetime
 from pathlib import Path
 
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import parse_variant
@@ -65,14 +66,23 @@ class RunSubmitter:
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations, **kwargs) -> dict:
         run_id = run.name
-        with _change_working_dir(flow.code):
-            connections = SubmitterHelper.resolve_connections(flow=flow, **kwargs)
+        if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.CSharp:
+            connections = []
+        else:
+            with _change_working_dir(flow.code):
+                connections = SubmitterHelper.resolve_connections(flow=flow, **kwargs)
         column_mapping = run.column_mapping
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables, **kwargs)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
-        batch_engine = BatchEngine(flow.path, flow.code, connections=connections, storage=local_storage)
+        batch_engine = BatchEngine(
+            flow.path,
+            flow.code,
+            connections=connections,
+            storage=local_storage,
+            log_path=local_storage.logger.file_path,
+        )
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
