@@ -9,6 +9,8 @@ import logging
 import os
 import tempfile
 import webbrowser
+import subprocess
+import signal
 from pathlib import Path
 
 from promptflow._cli._params import (
@@ -36,6 +38,7 @@ from promptflow._cli._pf._init_entry_generators import (
 )
 from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 
@@ -144,6 +147,15 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
     add_param_static_folder = lambda parser: parser.add_argument(  # noqa: E731
         "--static_folder", type=str, help=argparse.SUPPRESS
     )
+    add_assembly_folder = lambda parser: parser.add_argument(  # noqa: E731
+        "--assembly_folder", type=str, default=".", help="Path to the assembly folder."
+    )
+    add_connection_provider_url = lambda parser: parser.add_argument(  # noqa: E731
+        "--connection_provider_url", type=str, default="", help="Connection provider url."
+    )
+    add_log_path = lambda parser: parser.add_argument(  # noqa: E731
+        "--log_path", type=str, default="", help="Log file path."
+    )
     activate_action(
         name="serve",
         description="Serving a flow as an endpoint.",
@@ -155,6 +167,9 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
             add_param_static_folder,
             add_param_environment_variables,
             add_param_config,
+            add_assembly_folder,
+            add_connection_provider_url,
+            add_log_path,
         ]
         + logging_params,
         subparsers=subparsers,
@@ -423,33 +438,74 @@ def test_flow(args):
 
 
 def serve_flow(args):
+    from promptflow._sdk._load_functions import load_flow
+
     logger.info("Start serve model: %s", args.source)
     # Set environment variable for local test
     source = Path(args.source)
-    os.environ["PROMPTFLOW_PROJECT_PATH"] = source.absolute().as_posix()
-    from promptflow._sdk._serving.app import create_app
-
-    static_folder = args.static_folder
-    if static_folder:
-        static_folder = Path(static_folder).absolute().as_posix()
     logger.info(
         "Start promptflow server with port %s",
         args.port,
     )
-    config = list_of_dict_to_dict(args.config)
-    # Change working directory to model dir
-    print(f"Change working directory to model dir {source}")
-    os.chdir(source)
-    app = create_app(
-        static_folder=static_folder,
-        environment_variables=list_of_dict_to_dict(args.environment_variables),
-        config=config,
-    )
-    target = f"http://{args.host}:{args.port}"
-    print(f"Opening browser {target}...")
-    webbrowser.open(target)
-    # Debug is not supported for now as debug will rerun command, and we changed working directory.
-    app.run(port=args.port, host=args.host)
+    os.environ["PROMPTFLOW_PROJECT_PATH"] = source.absolute().as_posix()
+    flow = load_flow(args.source)
+    if "language" in flow.dag and flow.dag["language"] == FlowLanguage.CSharp:
+        from promptflow.batch._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
+        try:
+            # Change working directory to model dir
+            print(f"Change working directory to model dir {source}")
+            os.chdir(source)
+            command = ["pfs"]
+            with open('pfs_service.txt', 'w') as f:
+                pfs_process = subprocess.Popen(command, stdout=f, stderr=subprocess.STDOUT)
+            logger.info("Redirect pfs log to pfs_service.txt")
+            command = [
+                "dotnet",
+                EXECUTOR_SERVICE_DLL,
+                "-p",
+                str(args.port),
+                "-y",
+                "flow.dag.yaml",
+                "-a",
+                args.assembly_folder,
+                "-c",
+                args.connection_provider_url,
+                "-l",
+                args.log_path,
+                "-s"
+            ]
+            with open('dotnet_service.txt', 'w') as f:
+                csharp_process = subprocess.Popen(command, stdout=f, stderr=subprocess.STDOUT)
+            logger.info("Redirect dotnet log to dotnet_service.txt")
+            pfs_process.wait()
+            csharp_process.wait()
+        except KeyboardInterrupt:
+            for process in [pfs_process, csharp_process]:
+                if process and process.poll() is None:
+                    process.terminate()
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+    else:
+        from promptflow._sdk._serving.app import create_app
+        static_folder = args.static_folder
+        if static_folder:
+            static_folder = Path(static_folder).absolute().as_posix()
+        config = list_of_dict_to_dict(args.config)
+        # Change working directory to model dir
+        print(f"Change working directory to model dir {source}")
+        os.chdir(source)
+        app = create_app(
+            static_folder=static_folder,
+            environment_variables=list_of_dict_to_dict(args.environment_variables),
+            config=config,
+        )
+        target = f"http://{args.host}:{args.port}"
+        print(f"Opening browser {target}...")
+        webbrowser.open(target)
+        # Debug is not supported for now as debug will rerun command, and we changed working directory.
+        app.run(port=args.port, host=args.host)
     logger.info("Promptflow app ended")
 
 
