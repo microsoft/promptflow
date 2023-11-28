@@ -145,6 +145,7 @@ class BatchEngine:
             raise e
         finally:
             # destroy executor proxy if the batch run is not cancelled
+            # TODO: add a lock to avoid destroy proxy twice
             if not self._is_canceled:
                 self._executor_proxy.destroy()
 
