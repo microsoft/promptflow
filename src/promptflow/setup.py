@@ -23,7 +23,7 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
 REQUIRES = [
     "psutil",  # get process information when bulk run
     "httpx>=0.25.1",  # used to send http requests asynchronously
-    "openai",  # promptflow._core.api_injector
+    "openai",  # promptflow._core.openai_injector
     "flask>=2.2.3,<4.0.0",  # Serving endpoint requirements
     "flask-restx>=1.2.0,<2.0.0",  # Serving endpoint requirements
     "sqlalchemy>=1.4.48,<3.0.0",  # sqlite requirements
