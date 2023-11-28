@@ -16,6 +16,7 @@
 - Support pfazure run create with remote flow.
   - For remote workspace flow: `pfazure run create --flow azureml:<flow-name>`
   - For remote registry flow: `pfazure run create --flow azureml://registries/<registry-name>/models/<flow-name>/versions/<flow-version>`
+- Support set logging level via environment variable `PF_LOGGING_LEVEL`, valid values includes `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`, default to `INFO`.
 
 ### Bugs Fixed
 

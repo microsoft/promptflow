@@ -336,11 +336,10 @@ class LoggerFactory:
     def get_logger(name: str, verbosity: int = logging.INFO, target_stdout: bool = False):
         logger = logging.getLogger(name)
         logger.propagate = False
-        pf_logging_level = get_pf_logging_level(default=None)
         # Set default logger level to debug, we are using handler level to control log by default
-        logger_level = pf_logging_level or logging.DEBUG
-        logger.setLevel(logger_level)
-        verbosity = pf_logging_level or verbosity
+        logger.setLevel(logging.DEBUG)
+        # Use env var at first, then use verbosity
+        verbosity = get_pf_logging_level(default=None) or verbosity
         if not LoggerFactory._find_handler(logger, logging.StreamHandler):
             LoggerFactory._add_handler(logger, verbosity, target_stdout)
         # TODO: Find a more elegant way to set the logging level for azure.core.pipeline.policies._universal
