@@ -3,11 +3,14 @@
 # ---------------------------------------------------------
 import contextlib
 import time
+from logging import Logger
+from typing import Callable
 from unittest.mock import MagicMock, patch
 
 import pydash
 import pytest
 
+from promptflow import load_run
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
@@ -46,6 +49,9 @@ def extension_consent_config_overwrite(val):
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=original_consent)
         else:
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=True)
+
+
+RUNS_DIR = "./tests/test_configs/runs"
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -192,3 +198,30 @@ class TestTelemetry:
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
                 # Perform some activity
                 pass
+
+    def test_inner_function_call(self, pf, runtime: str, randstr: Callable[[str], str]):
+        request_ids = set()
+        first_sdk_calls = []
+
+        def check_inner_call(*args, **kwargs):
+            if "extra" in kwargs:
+                request_id = pydash.get(kwargs, "extra.custom_dimensions.request_id")
+                first_sdk_call = pydash.get(kwargs, "extra.custom_dimensions.public_call")
+                request_ids.add(request_id)
+                first_sdk_calls.append(first_sdk_call)
+
+        with patch.object(Logger, "info") as mock_logger:
+            mock_logger.side_effect = check_inner_call
+            run = load_run(
+                source=f"{RUNS_DIR}/run_with_env.yaml",
+                params_override=[{"runtime": runtime}],
+            )
+            run.name = randstr("name")
+            pf.runs.create_or_update(run=run)
+
+        # only 1 request id
+        assert len(request_ids) == 1
+        # only 1 and last call is public call
+        assert first_sdk_calls[0] is True
+        assert first_sdk_calls[-1] is True
+        assert set(first_sdk_calls[1:-1]) == {False}
