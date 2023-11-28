@@ -12,7 +12,8 @@ from promptflow.executor.flow_executor import (
     _inject_stream_options,
     enable_streaming_for_llm_tool,
 )
-from promptflow.tools.aoai import AzureOpenAI, chat, completion
+from promptflow.tools.aoai import chat, completion
+from promptflow.tools.embedding import embedding
 
 
 @pytest.mark.unittest
@@ -101,7 +102,7 @@ class TestEnableStreamForLLMTool:
         [
             (completion, True),
             (chat, True),
-            (AzureOpenAI.embedding, False),
+            (embedding, False),
         ],
     )
     def test_enable_stream_for_llm_tool(self, tool, should_be_wrapped):

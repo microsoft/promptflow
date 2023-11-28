@@ -7,9 +7,9 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+from .._utils.logger_utils import LoggerFactory
 from ._configuration import Configuration
 from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
-from ._logger_factory import LoggerFactory
 from ._user_agent import USER_AGENT
 from ._utils import setup_user_agent_to_operation_context
 from .entities import Run
@@ -33,6 +33,7 @@ class PFClient:
     _instance = None
 
     def __init__(self, **kwargs):
+        logger.debug("PFClient init with kwargs: %s", kwargs)
         self._runs = RunOperations()
         self._connection_provider = None
         self._config = kwargs.get("config", None) or {}
@@ -188,6 +189,7 @@ class PFClient:
         if not self._connection_provider:
             # Get a copy with config override instead of the config instance
             self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
+            logger.debug("PFClient connection provider: %s", self._connection_provider)
         return self._connection_provider
 
     @property
@@ -196,10 +198,10 @@ class PFClient:
         if not self._connections:
             self._ensure_connection_provider()
             if self._connection_provider == ConnectionProvider.LOCAL.value:
-                logger.debug("Using local connection operations.")
+                logger.debug("PFClient using local connection operations.")
                 self._connections = ConnectionOperations()
             elif self._connection_provider.startswith(ConnectionProvider.AZUREML.value):
-                logger.debug("Using local azure connection operations.")
+                logger.debug("PFClient using local azure connection operations.")
                 self._connections = LocalAzureConnectionOperations(self._connection_provider)
             else:
                 raise ValueError(f"Unsupported connection provider: {self._connection_provider}")

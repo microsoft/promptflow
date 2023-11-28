@@ -4,7 +4,6 @@
 
 import argparse
 import json
-import logging
 from functools import partial
 
 from promptflow._cli._params import add_param_all_results, add_param_max_results, add_param_set, logging_params
@@ -14,8 +13,9 @@ from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import load_yaml
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._utils.logger_utils import LoggerFactory
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 _client = None
 
 

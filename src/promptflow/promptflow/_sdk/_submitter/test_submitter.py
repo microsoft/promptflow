@@ -19,15 +19,16 @@ from promptflow._sdk.operations._local_storage_operations import LoggerOperation
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.multimedia_utils import persist_multimedia_data
+from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 
+from ..._utils.logger_utils import LoggerFactory
 from .utils import SubmitterHelper, variant_overwrite_context
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class TestSubmitter:
