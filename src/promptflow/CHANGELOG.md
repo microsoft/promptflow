@@ -29,6 +29,8 @@
 - Improved CLI invoke time.
 - Bump `pydash` upper bound to 8.0.0.
 - Bump `SQLAlchemy` upper bound to 3.0.0.
+- Bump `flask` upper bound to 4.0.0, `flask-restx` upper bound to 2.0.0.
+- Bump `ruamel.yaml` upper bound to 1.0.0.
 
 ## 1.0.0 (2023.11.09)
 
