@@ -111,6 +111,7 @@ class OperationContext(Dict):
             user_agent = os.environ.get(USER_AGENT, '').strip()
             yield user_agent if user_agent not in agent else ''
 
+        # strip to avoid leading or trailing spaces, which may cause error when sending request
         return " ".join(parts()).strip()
 
     def append_user_agent(self, user_agent: str):

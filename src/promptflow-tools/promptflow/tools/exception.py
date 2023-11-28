@@ -1,4 +1,4 @@
-from openai.error import OpenAIError
+from openai import OpenAIError
 
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 

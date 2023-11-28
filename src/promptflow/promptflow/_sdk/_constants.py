@@ -78,6 +78,13 @@ REGISTRY_URI_PREFIX = "azureml://registries/"
 FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
 FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
 
+# Tool meta info
+UIONLY_HIDDEN = "uionly_hidden"
+SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
+ICON_DARK = "icon_dark"
+ICON_LIGHT = "icon_light"
+ICON = "icon"
+
 
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
