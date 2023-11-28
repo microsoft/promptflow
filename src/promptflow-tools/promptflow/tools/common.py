@@ -381,7 +381,7 @@ def normalize_connection_config(connection):
         return {
             "api_key": connection.api_key,
             "organization": connection.organization,
-            "base_url": connection.api_base
+            "base_url": connection.base_url
         }
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}'. " \
