@@ -46,28 +46,6 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
             error_type_and_message=error_type_and_message,
         ) from e
 
-    if prompt_only:
-        # Currently this is a hard code for prompt tool
-        # TODO: Use registration instead of hard code
-        reserved_keys_to_raise = {"template"}
-    else:
-        # Import the tools module to initialize the LLM reserved keys
-        import promptflow.tools  # noqa: F401
-        from promptflow._core.tools_manager import reserved_keys
-
-        reserved_keys_to_raise = reserved_keys
-
-    for input in inputs.keys():
-        if input in reserved_keys_to_raise:
-            raise ReservedVariableCannotBeUsed(
-                message_format=(
-                    "Generate tool meta failed for {tool_type} tool. Jinja parsing failed: "
-                    "Variable name '{key}' is a reserved name by {tool_type} tools, please change to another name."
-                ),
-                key=input,
-                tool_type=tool_type.value,
-            )
-
     pattern = f"{COMMENT_START_STRING}(((?!{COMMENT_END_STRING}).)*){COMMENT_END_STRING}"
     match_result = re.match(pattern, content)
     description = match_result.groups()[0].strip() if match_result else None
@@ -324,10 +302,6 @@ class ToolValidationError(UserErrorException):
 
 
 class JinjaParsingError(ToolValidationError):
-    pass
-
-
-class ReservedVariableCannotBeUsed(JinjaParsingError):
     pass
 
 

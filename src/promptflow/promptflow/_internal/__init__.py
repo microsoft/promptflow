@@ -22,7 +22,6 @@ from promptflow._core.tool_meta_generator import (
     MultipleToolsDefined,
     NoToolDefined,
     PythonParsingError,
-    ReservedVariableCannotBeUsed,
     generate_prompt_meta,
     generate_python_meta,
     generate_tool_meta_dict_by_file,
