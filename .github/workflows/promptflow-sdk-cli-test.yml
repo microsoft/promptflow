@@ -78,6 +78,9 @@ jobs:
         pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        # Pin the openai version for sdk cli tests because pf and pf-tools which support openai 1.x aren't published to PyPi
+        # TODO: Remove restriction on openai version after pf-tools package which supports openai 1.x is published
+        pip install openai==0.28.0
         pip freeze
     - name: Azure login (non pull_request workflow)
       if: github.event_name != 'pull_request'
@@ -112,9 +115,10 @@ jobs:
       working-directory: artifacts
       run: |
         Set-PSDebug -Trace 1
-        pip uninstall -y promptflow promptflow-sdk promptflow-tools
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executable]"}}
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executable]" --force}}
+        # Pin the openai version for sdk cli tests because pf and pf-tools which support openai 1.x aren't published to PyPi
+        # TODO: Remove restriction on openai version after pf package which supports openai 1.x is published
+        pip install openai==0.28.0
         pip freeze
     - name: Run SDK CLI Executable Test
       shell: pwsh
