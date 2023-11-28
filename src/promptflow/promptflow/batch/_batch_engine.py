@@ -132,9 +132,17 @@ class BatchEngine:
             batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
             # run flow in batch mode
             output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
             with _change_working_dir(self._working_dir):
-                batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
+                batch_result = loop.run_until_complete(
+                    self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
+                )
             return batch_result
+
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
             if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
@@ -154,7 +162,7 @@ class BatchEngine:
         self._is_canceled = True
         self._executor_proxy.destroy()
 
-    def _exec_batch(
+    async def _exec_batch(
         self,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
@@ -169,9 +177,9 @@ class BatchEngine:
         if isinstance(self._executor_proxy, PythonExecutorProxy):
             line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
         else:
-            line_results = asyncio.run(self._exec_batch_internal(batch_inputs, run_id))
+            line_results = await self._exec_batch_internal(batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-        aggr_results = asyncio.run(self._exec_aggregation_internal(batch_inputs, line_results, run_id))
+        aggr_results = await self._exec_aggregation_internal(batch_inputs, line_results, run_id)
 
         # persist outputs to output dir
         outputs = [
