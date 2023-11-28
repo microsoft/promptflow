@@ -128,14 +128,19 @@ class BatchResult:
 
     @classmethod
     def create(
-        cls, start_time: datetime, end_time: datetime, line_results: List[LineResult], aggr_result: AggregationResult
+        cls,
+        start_time: datetime,
+        end_time: datetime,
+        line_results: List[LineResult],
+        aggr_result: AggregationResult,
+        status: Status = Status.Completed,
     ) -> "BatchResult":
         total_lines = len(line_results)
         completed_lines = sum(line_result.run_info.status == Status.Completed for line_result in line_results)
         failed_lines = total_lines - completed_lines
 
         return cls(
-            status=Status.Completed,
+            status=status,
             total_lines=total_lines,
             completed_lines=completed_lines,
             failed_lines=failed_lines,

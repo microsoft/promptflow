@@ -47,6 +47,10 @@ class TestExecutorTraces:
 
         return get_trace
 
+    @pytest.mark.skipif(
+        pkg_resources.get_distribution("openai").version.startswith("1."),
+        reason="test needs to be upgraded to adapt to openai>=1.0.0",
+    )
     @pytest.mark.parametrize("flow_folder", ["openai_chat_api_flow", "openai_completion_api_flow"])
     def test_executor_openai_api_flow(self, flow_folder, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)

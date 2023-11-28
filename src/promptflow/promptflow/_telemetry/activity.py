@@ -50,9 +50,14 @@ def log_activity(
     :type custom_dimensions: dict
     :return: None
     """
+    from promptflow._core.operation_context import OperationContext
+
+    user_agent = OperationContext.get_instance().get_user_agent()
+
     activity_info = {
         "activity_name": activity_name,
         "activity_type": activity_type,
+        "user_agent": user_agent,
     }
     custom_dimensions = custom_dimensions or {}
     activity_info.update(custom_dimensions)

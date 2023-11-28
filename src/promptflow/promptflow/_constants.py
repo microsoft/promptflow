@@ -27,3 +27,7 @@ class FlowLanguage:
 
     Python = "python"
     CSharp = "csharp"
+
+
+USER_AGENT = "USER_AGENT"
+PF_USER_AGENT = "PF_USER_AGENT"
