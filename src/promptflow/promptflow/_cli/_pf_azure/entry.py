@@ -6,6 +6,7 @@ import json
 import time
 
 from promptflow._cli._user_agent import USER_AGENT
+from promptflow._cli._utils import _get_cli_activity_name
 
 from promptflow._telemetry.activity import log_activity, ActivityType
 from promptflow._telemetry.telemetry import get_telemetry_logger
@@ -90,12 +91,7 @@ def entry(argv):
 
     args = parser.parse_args(argv)
     logger = get_telemetry_logger()
-    activity_name = "pf."
-    if getattr(args, "action", None):
-        activity_name += f".{args.action}"
-    if getattr(args, "sub_action", None):
-        activity_name += f".{args.sub_action}"
-    with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
+    with log_activity(logger, _get_cli_activity_name(args), activity_type=ActivityType.PUBLICAPI):
         run_command(args)
 
 
