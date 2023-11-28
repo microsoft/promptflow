@@ -110,6 +110,7 @@ class OperationContext(Dict):
         """
 
         def parts():
+            # Be careful not to use "self.user_agent" as it will recursively call get_user_agent in __getattr__
             agent = self.get(self._USER_AGENT, '')
             yield agent
             promptflow_agent = f"promptflow/{VERSION}"
