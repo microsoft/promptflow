@@ -4,7 +4,6 @@
 
 import argparse
 import json
-import logging
 import re
 import shutil
 from pathlib import Path
@@ -21,9 +20,10 @@ from promptflow._cli._pf._init_entry_generators import (
 from promptflow._cli._utils import activate_action, exception_handler, list_of_dict_to_dict
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.exceptions import UserErrorException
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 def add_tool_parser(subparsers):

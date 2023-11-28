@@ -5,7 +5,6 @@
 import argparse
 import importlib
 import json
-import logging
 import os
 import tempfile
 import webbrowser
@@ -38,10 +37,11 @@ from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
+from promptflow._utils.logger_utils import LoggerFactory
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 def add_flow_parser(subparsers):
@@ -66,11 +66,6 @@ def dispatch_flow_commands(args: argparse.Namespace):
     elif args.sub_action == "test":
         test_flow(args)
     elif args.sub_action == "serve":
-        if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
-            pass
-        else:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
-                handler.setLevel(logging.INFO)
         serve_flow(args)
     elif args.sub_action == "build":
         build_flow(args)
@@ -438,7 +433,7 @@ def serve_flow(args):
     )
     config = list_of_dict_to_dict(args.config)
     # Change working directory to model dir
-    print(f"Change working directory to model dir {source}")
+    logger.info(f"Change working directory to model dir {source}")
     os.chdir(source)
     app = create_app(
         static_folder=static_folder,
@@ -446,7 +441,7 @@ def serve_flow(args):
         config=config,
     )
     target = f"http://{args.host}:{args.port}"
-    print(f"Opening browser {target}...")
+    logger.info(f"Opening browser {target}...")
     webbrowser.open(target)
     # Debug is not supported for now as debug will rerun command, and we changed working directory.
     app.run(port=args.port, host=args.host)

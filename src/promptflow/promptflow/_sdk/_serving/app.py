@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import json
-import logging
 import mimetypes
 import os
 from pathlib import Path
@@ -25,11 +24,12 @@ from promptflow._sdk._serving.utils import (
     streaming_response_required,
 )
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._version import VERSION
 
 from .swagger import generate_swagger
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 DEFAULT_STATIC_PATH = Path(__file__).parent / "static"
 USER_AGENT = f"promptflow-local-serving/{VERSION}"
 
@@ -71,7 +71,6 @@ class PromptflowServingApp(Flask):
         # Set the flow name as folder name
         self.flow.name = Path(self.project_path).stem
         self.response_fields_to_remove = get_output_fields_to_remove(self.flow, logger)
-        logger.info("Promptflow executor initiated successfully.")
 
     def init_swagger(self):
         flow = self.flow_entity._init_executable()

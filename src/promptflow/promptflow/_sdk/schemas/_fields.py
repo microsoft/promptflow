@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import copy
-import logging
 import typing
 from pathlib import Path
 
@@ -13,11 +12,11 @@ from marshmallow.utils import RAISE, resolve_field_instance
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY
 from promptflow._sdk.schemas._base import PathAwareSchema
+from promptflow._utils.logger_utils import LoggerFactory
 
 # pylint: disable=unused-argument,no-self-use,protected-access
 
-
-module_logger = logging.getLogger(__name__)
+module_logger = LoggerFactory.get_logger(__name__)
 
 
 class StringTransformedEnum(Field):

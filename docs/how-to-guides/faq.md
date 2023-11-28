@@ -51,3 +51,15 @@ This is often due to outdated cache. To refresh the tool list and make newly ins
 4. Wait a moment for the tool list refreshing.
 
 Reloading clears the previous cache and populates the tool list with any newly installed tools. So that the missing tools are now visible.
+
+
+### Set logging level
+
+Promptflow uses `logging` module to log messages. You can set logging level via environment variable `PF_LOGGING_LEVEL`, valid values includes `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`, default to `INFO`.
+Below is the serving logs after setting `PF_LOGGING_LEVEL` to `DEBUG`:
+
+![img](../media/how-to-guides/pf_logging_level.png)
+
+Compare to the serving logs with `WARNING` level:
+
+![img](../media/how-to-guides/pf_logging_level_warning.png)
