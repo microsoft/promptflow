@@ -12,6 +12,7 @@ from mock.mock import Mock
 
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._vendor import get_upload_files_from_folder
+from promptflow._utils.flow_utils import load_flow_dag
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = PROMOTFLOW_ROOT / "tests/test_configs/flows"
@@ -127,6 +128,8 @@ class TestFlow:
 
         with flow._build_code() as code:
             assert code is not None
+            _, temp_flow = load_flow_dag(code.path)
+            assert "additional_includes" not in temp_flow
             upload_paths = get_upload_files_from_folder(
                 path=code.path,
                 ignore_file=code._ignore_file,
