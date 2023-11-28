@@ -374,6 +374,7 @@ def normalize_connection_config(connection):
     if isinstance(connection, AzureOpenAIConnection):
         return {
             "api_key": connection.api_key,
+            "api_type": connection.api_type,
             "api_version": connection.api_version,
             "azure_endpoint": connection.api_base
         }

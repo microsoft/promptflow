@@ -1,9 +1,9 @@
-promptflow.tools.gpt4v.GPT4v.chat:
+promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
   name: Azure OpenAI GPT-4V
   description: Use Azure OpenAI GPT-4V to leverage AOAI vision ability.
   type: custom_llm
   module: promptflow.tools.aoai_gpt4v
-  class_name: GPT4v
+  class_name: AzureOpenAI
   function: chat
   icon:
     light: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAx0lEQVR4nJWSwQ2CQBBFX0jAcjgqXUgPJNiIsQQrIVCIFy8GC6ABDcGDX7Mus9n1Xz7zZ+fPsLPwH4bUg0dD2wMPcbR48Uxq4AKU4iSTDwZ1LhWXipN/B3V0J6hjBTvgLHZNonewBXrgDpzEvXSIjN0BE3AACmmF4kl5F6tNzcCoLpW0SvGovFvsb4oZ2AANcAOu4ka6axCcINN3rg654sww+CYsPD0OwjcozFNh/Qcd78tqVbCIW+n+Fky472Bh/Q6SYb1EEy8tDzd+9IsVPAAAAABJRU5ErkJggg==
@@ -31,10 +31,6 @@ promptflow.tools.gpt4v.GPT4v.chat:
       default: 1
       type:
         - double
-    n:
-      default: 1
-      type:
-        - int
     max_tokens:
       default: ""
       type:
