@@ -62,7 +62,7 @@ def my_list_func(prefix: str = "", size: int = 10, **kwargs) -> List[Dict[str, U
 
 In `input_settings` section of tool, add following properties to the input that you want to make dynamic:
 
-- `dynamic_list`:
+- `DynamicList`:
   - `function`: Path to the list function (module_name.function_name).
   - `input_mapping`: Parameters to pass to the function, can reference other input values.
 - `allow_manual_entry`: Allow user to enter input value manually. Default to false.
@@ -93,7 +93,6 @@ input_settings = {
 def my_tool(input_text: list, input_prefix: str) -> str:
     return f"Hello {input_prefix} {','.join(input_text)}"
 ```
-
 ## Use the tool in VS Code
 
 Once you package and share your tool, you can use it in VS Code per the [tool package guide](create-and-use-tool-package.md#use-your-tool-from-vscode-extension). You could try `my-tools-package` for a quick test.

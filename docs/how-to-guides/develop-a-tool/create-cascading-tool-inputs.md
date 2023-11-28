@@ -3,8 +3,11 @@
 Cascading input settings are useful when the value of one input field determines which subsequent inputs are shown. This makes the input process more streamlined, user-friendly, and error-free. This guide will walk through how to create cascading inputs for your tools.
 
 ## Prerequisites
-Please make sure you have the latest version of [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) installed (v1.2.0+).
-
+- Please make sure you have the latest version of [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) installed (v1.2.0+).
+- Please install promptflow package and ensure that its version is 1.0.0 or later.
+  ```
+  pip install promptflow>=1.0.0
+  ```
 
 ## Create a tool with cascading inputs
 We'll build out an example tool to show how cascading inputs work. The `student_id` and `teacher_id` inputs will be controlled by the value selected for the `user_type` input. Here's how to configure this in the tool code.
@@ -17,7 +20,6 @@ Develop the tool function, following the [cascading inputs example](https://gith
     * The `enabled_by` attribute specifies the input field, which must be an enum type, that controls the visibility of the dependent input field.
     * The `enabled_by_value` attribute defines the accepted enum values from the `enabled_by` field that will make this dependent input field visible.
     > Note: `enabled_by_value` takes a list, allowing multiple values to enable an input.
-
 
 ```python
 from enum import Enum
@@ -41,7 +43,6 @@ class UserType(str, Enum):
 )
 def my_tool(user_type: UserType, student_id: str = "", teacher_id: str = "") -> str:
     """This is a dummy function to support enabled by feature.
-
     :param user_type: user type, student or teacher.
     :param student_id: student id.
     :param teacher_id: teacher id.
