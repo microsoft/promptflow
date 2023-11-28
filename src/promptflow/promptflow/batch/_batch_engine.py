@@ -4,6 +4,7 @@
 
 import asyncio
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
@@ -130,18 +131,20 @@ class BatchEngine:
             # resolve input data from input dirs and apply inputs mapping
             batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
             batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
-            # run flow in batch mode
+            # resolve output dir
             output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+            # run flow in batch mode
             with _change_working_dir(self._working_dir):
-                batch_result = loop.run_until_complete(
-                    self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
-                )
-            return batch_result
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    with ThreadPoolExecutor(1) as executor:
+                        return executor.submit(
+                            lambda: asyncio.run(
+                                self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
+                            )
+                        ).result()
+                else:
+                    return asyncio.run(self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure))
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
             if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
