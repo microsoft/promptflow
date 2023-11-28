@@ -141,15 +141,15 @@ def example_prompt_template_with_function() -> str:
 
 @pytest.fixture
 def example_prompt_template_with_image() -> str:
-    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/marketing_writer/prompt_with_image.jinja2") as f:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_image.jinja2") as f:
         prompt_template = f.read()
     return prompt_template
 
 
 @pytest.fixture
 def example_image() -> Image:
-    with open(PROMOTFLOW_ROOT / "tests/test_configs/images/number10.jpg", "rb") as f:
-        image = json.load(f.read())
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/images/number10.jpg", "rb") as f:
+        image = Image(f.read())
     return image
 
 

@@ -13,7 +13,7 @@ from .utils import PFSOperations
 
 @pytest.fixture
 def app() -> Flask:
-    app = create_app()
+    app, _ = create_app()
     app.config.update({"TESTING": True})
     yield app
 

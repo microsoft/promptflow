@@ -292,15 +292,14 @@ def test_stream_python_nonstream_tools(
         "Accept": accept,
     }
     response = flow_serving_client.post("/score", json=payload, headers=headers)
-    assert response.status_code == expected_status_code
-    assert response.content_type == expected_content_type
-
     if "text/event-stream" in response.content_type:
         for line in response.data.decode().split("\n"):
             print(line)
     else:
         result = response.json
         print(result)
+    assert response.status_code == expected_status_code
+    assert response.content_type == expected_content_type
 
 
 @pytest.mark.usefixtures("serving_client_image_python_flow", "recording_injection", "setup_local_connection")

@@ -3,11 +3,15 @@
 # ---------------------------------------------------------
 import mock
 import pytest
-from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
 from promptflow import PFClient
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+from ..recording_utilities import is_live
+
+AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
+RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
 
 @pytest.mark.sdk_test
@@ -15,6 +19,7 @@ from promptflow._sdk.operations._local_azure_connection_operations import LocalA
 class TestPFClient:
     # Test pf client when connection provider is azureml.
     # This tests suites need azure dependencies.
+    @pytest.mark.skipif(condition=not is_live(), reason="This test requires an actual PFClient")
     def test_connection_provider(self, subscription_id: str, resource_group_name: str, workspace_name: str):
         target = "promptflow._sdk._pf_client.Configuration"
         with mock.patch(target) as mocked:
