@@ -443,7 +443,7 @@ def serve_flow_csharp(args, source):
     from promptflow.batch._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
     try:
         # Change working directory to model dir
-        print(f"Change working directory to model dir {source}")
+        logger.info(f"Change working directory to model dir {source}")
         os.chdir(source)
         command = [
             "dotnet",
