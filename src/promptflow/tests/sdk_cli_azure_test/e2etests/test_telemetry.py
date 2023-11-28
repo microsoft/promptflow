@@ -20,7 +20,6 @@ from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_e
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
 
 RUNS_DIR = "./tests/test_configs/runs"
 
@@ -156,7 +155,6 @@ class TestTelemetry:
         assert logger is another_logger
         assert handler is another_handler
 
-    @pytest.mark.skipif(condition=not is_live(), reason="TODO(2832803): re-enable after fix recording.")
     def test_inner_function_call(self, pf, runtime: str, randstr: Callable[[str], str]):
         request_ids = set()
         first_sdk_calls = []
