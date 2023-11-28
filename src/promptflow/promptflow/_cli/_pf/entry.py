@@ -23,8 +23,10 @@ from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands  #
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands  # noqa: E402
 from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  # noqa: E402
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
+from promptflow._cli._user_agent import USER_AGENT # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
-from promptflow._sdk._utils import LoggerFactory, get_promptflow_sdk_version, print_pf_version  # noqa: E402
+from promptflow._sdk._utils import LoggerFactory, get_promptflow_sdk_version, print_pf_version, \
+    setup_user_agent_to_operation_context  # noqa: E402
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -117,6 +119,7 @@ def main():
         show_privacy_statement()
         show_welcome_message()
         command_args.append("-h")
+    setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 
 
