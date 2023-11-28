@@ -12,7 +12,7 @@ promptflow.tools.open_source_llm.OpenSourceLLM.call:
       - string
       dynamic_list:
         func_path: promptflow.tools.open_source_llm.list_endpoint_names
-      allow_manual_entry: false
+      allow_manual_entry: true # Allow the user to clear this field
       is_multi_select: false
     deployment_name:
       default: ''
@@ -24,7 +24,7 @@ promptflow.tools.open_source_llm.OpenSourceLLM.call:
         - name: endpoint
           type: 
           - string
-          optional: true # need to understand if this is blocking or not on the manual entry.
+          optional: true
           reference: ${inputs.endpoint} 
       allow_manual_entry: true
       is_multi_select: false
