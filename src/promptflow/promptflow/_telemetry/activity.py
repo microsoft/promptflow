@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import contextlib
 import functools
+import threading
 import uuid
 from datetime import datetime
 
@@ -25,6 +26,9 @@ class ActivityCompletionStatus(object):
 
     SUCCESS = "Success"
     FAILURE = "Failure"
+
+
+thread_local_storage = threading.local()
 
 
 @contextlib.contextmanager
@@ -54,10 +58,20 @@ def log_activity(
     from promptflow._core.operation_context import OperationContext
 
     user_agent = OperationContext.get_instance().get_user_agent()
+    # TODO(2699383): use same request id with service caller
+    request_id = getattr(thread_local_storage, "request_id", None)
+    if not request_id:
+        # public function call
+        public_call = True
+        request_id = str(uuid.uuid4())
+        thread_local_storage.request_id = request_id
+    else:
+        public_call = False
 
     activity_info = {
         # TODO(2699383): use same request id with service caller
-        "request_id": str(uuid.uuid4()),
+        "request_id": request_id,
+        "public_call": public_call,
         "activity_name": activity_name,
         "activity_type": activity_type,
         "user_agent": user_agent,
@@ -79,6 +93,9 @@ def log_activity(
         completion_status = ActivityCompletionStatus.FAILURE
     finally:
         try:
+            if public_call:
+                # recover request id in global storage
+                del thread_local_storage.request_id
             end_time = datetime.utcnow()
             duration_ms = round((end_time - start_time).total_seconds() * 1000, 2)
 
