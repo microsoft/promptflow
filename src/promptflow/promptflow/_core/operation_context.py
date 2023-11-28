@@ -127,6 +127,7 @@ class OperationContext(Dict):
                 self.user_agent = f"{self.user_agent} {user_agent}"
         else:
             self.user_agent = user_agent
+        self.user_agent = self.user_agent.strip()
         if self.user_agent.startswith(" "):
             raise ValueError("User agent string cannot start with a space, got {}".format(self.user_agent))
 
