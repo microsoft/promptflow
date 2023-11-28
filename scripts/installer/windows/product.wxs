@@ -91,7 +91,7 @@
             Impersonate="no"
             ExeCommand="cmd.exe /c SC CREATE PromptFlowService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown binPath= &quot;\&quot;%ProgramFiles%\promptflow\pfsvc.exe\&quot;&quot;"
             Return="check" />
-        <CustomAction Id="InstallPromptFlowService"
+        <CustomAction Id="StartPromptFlowService"
             Directory="DynamicCliDir"
             Execute="commit"
             ExeCommand="cmd.exe /c &quot;%ProgramFiles%\promptflow\pfsvc.exe manual &amp;&quot;"
@@ -104,6 +104,7 @@
             Return="check" />
         <InstallExecuteSequence>
             <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
+            <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="UninstallPromptFlowService" Before="InstallFinalize">REMOVE="ALL"</Custom>
             <ScheduleReboot After='InstallFinalize' />
         </InstallExecuteSequence>
