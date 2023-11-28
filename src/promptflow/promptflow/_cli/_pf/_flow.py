@@ -10,7 +10,6 @@ import os
 import tempfile
 import webbrowser
 import subprocess
-import signal
 from pathlib import Path
 
 from promptflow._cli._params import (
