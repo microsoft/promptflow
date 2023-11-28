@@ -1,4 +1,4 @@
-# Customizing an LLM Tool
+# Customizing an LLM tool
 In this document, we will guide you through the process of customizing an LLM tool, allowing users to seamlessly connect to a large language model with prompt tuning experience using a `PromptTemplate`.
 
 ## Prerequisites

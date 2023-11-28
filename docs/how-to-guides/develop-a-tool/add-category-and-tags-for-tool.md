@@ -1,4 +1,4 @@
-# Adding Category and Tags for Tool
+# Adding category and tags for tool
 
 This document is dedicated to guiding you through the process of categorizing and tagging your tools for optimal organization and efficiency. Categories help you organize your tools into specific folders, making it much easier to find what you need. Tags, on the other hand, work like labels that offer more detailed descriptions. They enable you to quickly search and filter tools based on specific characteristics or functions. By using categories and tags, you'll not only tailor your tool library to your preferences but also save time by effortlessly finding the right tool for any task.
 

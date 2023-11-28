@@ -1,4 +1,4 @@
-# Create and Use Your Own Custom Strong Type Connection
+# Create and use your own custom strong type connection
 Connections provide a secure method for managing credentials for external APIs and data sources in prompt flow. This guide explains how to create and use a custom strong type connection.
 
 ## What is a Custom Strong Type Connection?

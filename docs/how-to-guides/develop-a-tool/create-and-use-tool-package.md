@@ -1,4 +1,4 @@
-# Create and Use Tool Package
+# Create and use tool package
 In this document, we will guide you through the process of developing your own tool package, offering detailed steps and advice on how to utilize your creation.
 
 The custom tool is the prompt flow tool developed by yourself. If you find it useful, you can follow this guidance to make it a tool package. This will enable you to conveniently reuse it, share it with your team, or distribute it to anyone in the world.

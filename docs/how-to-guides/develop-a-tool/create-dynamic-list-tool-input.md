@@ -1,4 +1,4 @@
-# Creating a Dynamic List Tool Input
+# Creating a dynamic list tool input
 
 Tool input options can be generated on the fly using a dynamic list. Instead of having predefined static options, the tool author defines a request function that queries backends like APIs to retrieve real-time options. This enables flexible integration with various data sources to populate dynamic options. For instance, the function could call a storage API to list current files. Rather than a hardcoded list, the user sees up-to-date options when running the tool.
 

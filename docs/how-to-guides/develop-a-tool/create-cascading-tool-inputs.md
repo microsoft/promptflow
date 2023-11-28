@@ -1,4 +1,4 @@
-# Creating Cascading Tool Inputs
+# Creating cascading tool inputs
 
 Cascading input settings are useful when the value of one input field determines which subsequent inputs are shown. This makes the input process more streamlined, user-friendly, and error-free. This guide will walk through how to create cascading inputs for your tools.
 
