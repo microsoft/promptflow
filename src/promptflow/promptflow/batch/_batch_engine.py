@@ -1,8 +1,14 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 import asyncio
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
+
+from httpx import ConnectError
 
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
@@ -19,6 +25,7 @@ from promptflow._utils.utils import dump_list_to_jsonl, log_progress, resolve_di
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -63,6 +70,19 @@ class BatchEngine:
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ):
+        """Create a new batch engine instance
+
+        :param flow_file: The flow file path
+        :type flow_file: Path
+        :param working_dir: The flow working directory path
+        :type working_dir: Optional[Path]
+        :param connections: The connections used in the flow
+        :type connections: Optional[dict]
+        :param storage: The storage to store execution results
+        :type storage: Optional[~promptflow.storage._run_storage.AbstractRunStorage]
+        :param kwargs: The keyword arguments related to creating the executor proxy class
+        :type kwargs: Any
+        """
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
         FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
@@ -73,6 +93,8 @@ class BatchEngine:
                 flow_file, self._working_dir, connections=connections, storage=storage, **kwargs
             )
         self._storage = storage
+        # set it to True when the batch run is canceled
+        self._is_canceled = False
 
     def run(
         self,
@@ -115,10 +137,22 @@ class BatchEngine:
             return batch_result
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
+            if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
+                bulk_logger.warning("The batch run may have been canceled or encountered other issues.")
+                return BatchResult.create(
+                    self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
+                )
             raise e
         finally:
-            # destroy executor proxy
-            self._executor_proxy.destroy()
+            # destroy executor proxy if the batch run is not cancelled
+            # TODO: add a lock to avoid destroy proxy twice
+            if not self._is_canceled:
+                self._executor_proxy.destroy()
+
+    def cancel(self):
+        """Cancel the batch run"""
+        self._is_canceled = True
+        self._executor_proxy.destroy()
 
     def _exec_batch(
         self,
