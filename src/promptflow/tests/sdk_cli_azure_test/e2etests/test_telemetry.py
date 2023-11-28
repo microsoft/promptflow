@@ -55,7 +55,7 @@ RUNS_DIR = "./tests/test_configs/runs"
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
-@pytest.mark.usefixtures("single_worker_thread_pool", "vcr_recording")
+@pytest.mark.usefixtures("mock_set_headers_with_user_aml_token", "single_worker_thread_pool", "vcr_recording")
 @pytest.mark.e2etest
 class TestTelemetry:
     def test_logging_handler(self):
