@@ -17,11 +17,14 @@ import pytest
 import yaml
 
 from promptflow._cli._pf.entry import main
+from promptflow._constants import PF_USER_AGENT
+from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
@@ -1105,6 +1108,7 @@ class TestCli:
 
     def test_flow_build(self):
         source = f"{FLOWS_DIR}/web_classification_with_additional_include/flow.dag.yaml"
+        output_path = "dist"
 
         def get_node_settings(_flow_dag_path: Path):
             flow_dag = yaml.safe_load(_flow_dag_path.read_text())
@@ -1112,27 +1116,32 @@ class TestCli:
             target_node.pop("name")
             return target_node
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        try:
             run_pf_command(
                 "flow",
                 "build",
                 "--source",
                 source,
                 "--output",
-                temp_dir,
+                output_path,
                 "--format",
                 "docker",
                 "--variant",
                 "${summarize_text_content.variant_0}",
             )
 
-            new_flow_dag_path = Path(temp_dir, "flow", "flow.dag.yaml")
+            new_flow_dag_path = Path(output_path, "flow", "flow.dag.yaml")
             flow_dag = yaml.safe_load(Path(source).read_text())
             assert (
                 get_node_settings(new_flow_dag_path)
                 == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
             )
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
+
+            connection_path = Path(output_path, "connections", "azure_open_ai_connection.yaml")
+            assert connection_path.exists()
+        finally:
+            shutil.rmtree(output_path, ignore_errors=True)
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
@@ -1537,6 +1546,22 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert "**data_scrubbed**" in log_content
+
+    def test_cli_ua(self, pf):
+        # clear user agent before test
+        context = OperationContext().get_instance()
+        context.user_agent = ""
+        with environment_variable_overwrite(PF_USER_AGENT, ""):
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "run",
+                    "show",
+                    "--name",
+                    "not_exist",
+                )
+        user_agent = context.get_user_agent()
+        ua_dict = parse_ua_to_dict(user_agent)
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow"}
 
     def test_config_set_pure_flow_directory_macro(self, capfd: pytest.CaptureFixture) -> None:
         run_pf_command(

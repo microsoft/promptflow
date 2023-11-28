@@ -27,4 +27,3 @@ httpx
 
 # Version Pin
 ruamel.yaml>=0.18.5
-flask>=3.0.0

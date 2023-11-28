@@ -3,14 +3,15 @@ import json
 import re
 import sys
 import time
+from typing import List, Mapping
 
 from jinja2 import Template
-from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout, APIConnectionError
-from promptflow.exceptions import SystemErrorException, UserErrorException
+from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
-    ChatAPIFunctionRoleInvalidFormat
-from typing import List, Mapping
+    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+from promptflow.exceptions import SystemErrorException, UserErrorException
 
 
 class ChatInputList(list):
@@ -18,6 +19,7 @@ class ChatInputList(list):
     ChatInputList is a list of ChatInput objects. It is used to override the __str__ method of list to return a string
     that can be easily parsed as message list.
     """
+
     def __init__(self, iterable=None):
         super().__init__(iterable or [])
 
@@ -30,7 +32,7 @@ def validate_role(role: str, valid_roles: List[str] = None):
         valid_roles = ["assistant", "function", "user", "system"]
 
     if role not in valid_roles:
-        valid_roles_str = ','.join([f'\'{role}:\\n\''for role in valid_roles])
+        valid_roles_str = ','.join([f'\'{role}:\\n\'' for role in valid_roles])
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
             f"lines as role delimiters: {valid_roles_str}. Current parsed role '{role}'"
@@ -195,23 +197,32 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                 except (SystemErrorException, UserErrorException) as e:
                     # Throw inner wrapped exception directly
                     raise e
-                except (RateLimitError, ServiceUnavailableError, APIError, Timeout, APIConnectionError) as e:
+                except (APIStatusError, APIConnectionError) as e:
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
-                    #  Use default Timeout 600s, refer to
-                    #  https://github.com/openai/openai-python/blob/d1c36582e82cfa97568d7e9184454ee3b77975fc/openai/api_requestor.py#L37  # noqa
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
-                    if isinstance(e, RateLimitError) and getattr(e.error, "type", None) == "insufficient_quota":
+                    if isinstance(e, APIConnectionError) and not isinstance(e, APITimeoutError) \
+                            and "connection aborted" not in str(e).lower():
+                        raise WrappedOpenAIError(e)
+                    # Retry InternalServerError(>=500), RateLimitError(429), UnprocessableEntityError(422)
+                    if isinstance(e, APIStatusError):
+                        status_code = e.response.status_code
+                        if status_code < 500 and status_code not in [429, 422]:
+                            raise WrappedOpenAIError(e)
+                    if isinstance(e, RateLimitError) and getattr(e, "type", None) == "insufficient_quota":
                         # Exit retry if this is quota insufficient error
                         print(f"{type(e).__name__} with insufficient quota. Throw user error.", file=sys.stderr)
-                        raise WrappedOpenAIError(e)
-                    if isinstance(e, APIConnectionError) and "connection aborted" not in str(e).lower():
                         raise WrappedOpenAIError(e)
                     if i == tries:
                         # Exit retry if max retry reached
                         print(f"{type(e).__name__} reached max retry. Exit retry with user error.", file=sys.stderr)
                         raise ExceedMaxRetryTimes(e)
-                    retry_after_in_header = e.headers.get("Retry-After", None)
+
+                    if hasattr(e, 'response') and e.response is not None:
+                        retry_after_in_header = e.response.headers.get("retry-after", None)
+                    else:
+                        retry_after_in_header = None
+
                     if not retry_after_in_header:
                         retry_after_seconds = delay * (2 ** i)
                         msg = (
@@ -229,7 +240,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                     time.sleep(retry_after_seconds)
                 except OpenAIError as e:
                     # For other non-retriable errors from OpenAIError,
-                    # For example, AuthenticationError, APIConnectionError, InvalidRequestError, InvalidAPIType
+                    # For example, AuthenticationError, APIConnectionError, BadRequestError, NotFoundError
                     # Mark UserError for all the non-retriable OpenAIError
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
                     raise WrappedOpenAIError(e)
@@ -290,7 +301,8 @@ def post_process_chat_api_response(completion, stream, functions):
         def generator():
             for chunk in completion:
                 if chunk.choices:
-                    yield getattr(chunk.choices[0]["delta"], "content", "")
+                    yield chunk.choices[0].delta.content if hasattr(chunk.choices[0].delta, 'content') and \
+                                                            chunk.choices[0].delta.content is not None else ""
 
         # We must return the generator object, not using yield directly here.
         # Otherwise, the function itself will become a generator, despite whether stream is True or False.
@@ -299,7 +311,7 @@ def post_process_chat_api_response(completion, stream, functions):
         # When calling function, function_call response will be returned as a field in message, so we need return
         # message directly. Otherwise, we only return content.
         if functions is not None:
-            return completion.choices[0].message
+            return completion.model_dump()["choices"][0]["message"]
         else:
             # chat api may return message with no content.
             return getattr(completion.choices[0].message, "content", "")
@@ -350,3 +362,28 @@ def find_referenced_image_set(kwargs: dict):
     except ImportError:
         pass
     return referenced_images
+
+
+def normalize_connection_config(connection):
+    """
+    Normalizes the configuration of a given connection object for compatibility.
+
+    This function takes a connection object and normalizes its configuration,
+    ensuring it is compatible and standardized for use.
+    """
+    if isinstance(connection, AzureOpenAIConnection):
+        return {
+            "api_key": connection.api_key,
+            "api_version": connection.api_version,
+            "azure_endpoint": connection.api_base
+        }
+    elif isinstance(connection, OpenAIConnection):
+        return {
+            "api_key": connection.api_key,
+            "organization": connection.organization,
+            "base_url": connection.api_base
+        }
+    else:
+        error_message = f"Not Support connection type '{type(connection).__name__}'. " \
+                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
+        raise InvalidConnectionType(message=error_message)
