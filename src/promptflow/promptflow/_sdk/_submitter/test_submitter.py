@@ -19,6 +19,7 @@ from promptflow._sdk.operations._local_storage_operations import LoggerOperation
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.multimedia_utils import persist_multimedia_data
+from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
@@ -410,7 +411,6 @@ class TestSubmitterViaProxy(TestSubmitter):
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY
-        from promptflow.batch import CSharpExecutorProxy
 
         if not connections:
             connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
@@ -464,3 +464,31 @@ class TestSubmitterViaProxy(TestSubmitter):
                 return line_result
             finally:
                 flow_executor.destroy()
+
+    def exec_with_inputs(self, inputs):
+        from promptflow._constants import LINE_NUMBER_KEY
+
+        try:
+            connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
+                tools_meta=CSharpExecutorProxy.generate_tool_metadata(
+                    flow_dag=self.flow.dag,
+                    working_dir=self.flow.code,
+                )
+            )
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            flow_executor = CSharpExecutorProxy.create(
+                flow_file=self.flow.path,
+                working_dir=self.flow.code,
+                connections=connections,
+                storage=storage,
+            )
+            # validate inputs
+            flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
+            line_result = asyncio.run(flow_executor.exec_line_async(inputs, index=0))
+            # line_result = flow_executor.exec_line(inputs, index=0)
+            if isinstance(line_result.output, dict):
+                # Remove line_number from output
+                line_result.output.pop(LINE_NUMBER_KEY, None)
+            return line_result
+        finally:
+            flow_executor.destroy()

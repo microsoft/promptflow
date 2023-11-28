@@ -5,6 +5,8 @@
 import json
 import time
 
+from promptflow._cli._user_agent import USER_AGENT
+
 # Log the start time
 start_time = time.perf_counter()
 
@@ -16,7 +18,11 @@ import sys  # noqa: E402
 from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
-from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version  # noqa: E402
+from promptflow._sdk._utils import (  # noqa: E402
+    get_promptflow_sdk_version,
+    print_pf_version,
+    setup_user_agent_to_operation_context,
+)
 from promptflow._utils.logger_utils import LoggerFactory  # noqa: E402
 
 # configure logger for CLI
@@ -87,6 +93,7 @@ def main():
         return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
     if len(command_args) == 0:
         command_args.append("-h")
+    setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 
 

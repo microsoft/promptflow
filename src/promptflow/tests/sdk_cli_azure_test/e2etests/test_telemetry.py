@@ -3,18 +3,21 @@
 # ---------------------------------------------------------
 import contextlib
 import time
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import pydash
 import pytest
 
+from promptflow._constants import PF_USER_AGENT
+from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension
+from promptflow._telemetry.activity import ActivityType, log_activity
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
-from promptflow._utils.utils import environment_variable_overwrite
+from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
 
 
 @contextlib.contextmanager
@@ -45,8 +48,8 @@ def extension_consent_config_overwrite(val):
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=True)
 
 
-@pytest.mark.skipif(condition=not is_live(), reason="telemetry tests, only run in live mode.")
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
+@pytest.mark.usefixtures("single_worker_thread_pool", "vcr_recording")
 @pytest.mark.e2etest
 class TestTelemetry:
     def test_logging_handler(self):
@@ -65,7 +68,7 @@ class TestTelemetry:
         from promptflow._core.operation_context import OperationContext
 
         assert call_from_extension() is False
-        with environment_variable_overwrite("USER_AGENT", "prompt-flow-extension/1.0.0"):
+        with environment_variable_overwrite(PF_USER_AGENT, "prompt-flow-extension/1.0.0"):
             assert call_from_extension() is True
         # remove extension ua in context
         context = OperationContext().get_instance()
@@ -122,7 +125,7 @@ class TestTelemetry:
             assert handler._is_telemetry_enabled is False
 
         with extension_consent_config_overwrite(False):
-            with environment_variable_overwrite("USER_AGENT", "prompt-flow-extension/1.0.0"):
+            with environment_variable_overwrite(PF_USER_AGENT, "prompt-flow-extension/1.0.0"):
                 logger = get_telemetry_logger()
                 handler = logger.handlers[0]
                 assert isinstance(handler, PromptFlowSDKLogHandler)
@@ -142,3 +145,50 @@ class TestTelemetry:
         another_handler = next((h for h in another_logger.handlers if isinstance(h, PromptFlowSDKLogHandler)), None)
         assert logger is another_logger
         assert handler is another_handler
+
+    def test_sdk_telemetry_ua(self, pf):
+        from promptflow import PFClient
+        from promptflow.azure import PFClient as PFAzureClient
+
+        # log activity will pick correct ua
+        def assert_ua(*args, **kwargs):
+            ua = pydash.get(kwargs, "extra.custom_dimensions.user_agent", None)
+            ua_dict = parse_ua_to_dict(ua)
+            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+
+        logger = MagicMock()
+        logger.info = MagicMock()
+        logger.info.side_effect = assert_ua
+
+        # clear user agent before test
+        context = OperationContext().get_instance()
+        context.user_agent = ""
+        # get telemetry logger from SDK should not have extension ua
+        # start a clean local SDK client
+        with environment_variable_overwrite(PF_USER_AGENT, ""):
+            PFClient()
+            user_agent = context.get_user_agent()
+            ua_dict = parse_ua_to_dict(user_agent)
+            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+
+            # Call log_activity
+            with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
+                # Perform some activity
+                pass
+
+        # start a clean Azure SDK client
+        with environment_variable_overwrite(PF_USER_AGENT, ""):
+            PFAzureClient(
+                ml_client=pf._ml_client,
+                subscription_id=pf._ml_client.subscription_id,
+                resource_group_name=pf._ml_client.resource_group_name,
+                workspace_name=pf._ml_client.workspace_name,
+            )
+            user_agent = context.get_user_agent()
+            ua_dict = parse_ua_to_dict(user_agent)
+            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+
+            # Call log_activity
+            with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
+                # Perform some activity
+                pass
