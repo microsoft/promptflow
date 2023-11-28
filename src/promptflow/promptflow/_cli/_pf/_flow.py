@@ -453,17 +453,17 @@ def serve_flow_csharp(args, source):
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
-            "-p",
+            "--port",
             str(args.port),
-            "-y",
+            "--yaml_path",
             "flow.dag.yaml",
-            "-a",
+            "--assembly_folder",
             ".",
-            "-c",
+            "--connection_provider_url",
             "",
-            "-l",
+            "--log_path",
             "",
-            "-s"
+            "--serving"
         ]
         subprocess.run(command, stdout=sys.stdout, stderr=sys.stderr)
     except KeyboardInterrupt:
