@@ -13,10 +13,11 @@ The table below provides an index of custom tool packages. The columns contain:
 
 | Package Name | Description | Owner | Support Contact |  
 |-|-|-|-|
-|||||
+| promptflow-azure-ai-language | Collection of Azure AI Language Prompt flow tools. | Sean Murray | taincidents@microsoft.com |
 
 ```{toctree}
 :maxdepth: 1
 :hidden:
 
+azure-ai-language-tool
 ```

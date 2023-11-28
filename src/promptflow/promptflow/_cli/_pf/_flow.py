@@ -15,7 +15,7 @@ from promptflow._cli._params import (
     add_param_config,
     add_param_entry,
     add_param_environment_variables,
-    add_param_flow_name,
+    add_param_flow_display_name,
     add_param_function,
     add_param_inputs,
     add_param_prompt_template,
@@ -29,7 +29,7 @@ from promptflow._cli._pf._init_entry_generators import (
     ChatFlowDAGGenerator,
     FlowDAGGenerator,
     OpenAIConnectionGenerator,
-    StreamlitFileGenerator,
+    StreamlitFileReplicator,
     ToolMetaGenerator,
     ToolPyGenerator,
     copy_extra_files,
@@ -107,7 +107,7 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
     add_params = [
         add_param_type,
         add_param_yes,
-        add_param_flow_name,
+        add_param_flow_display_name,
         add_param_entry,
         add_param_function,
         add_param_prompt_template,
@@ -389,10 +389,9 @@ def test_flow(args):
                 os.path.join(temp_dir, "logo.png"),
             ]
             for script in script_path:
-                StreamlitFileGenerator(
-                    flow_name=flow.name,
+                StreamlitFileReplicator(
+                    flow_name=flow.display_name if flow.display_name else flow.name,
                     flow_dag_path=flow.flow_dag_path,
-                    connection_provider=pf_client._ensure_connection_provider(),
                 ).generate_to_file(script)
             main_script_path = os.path.join(temp_dir, "main.py")
             pf_client.flows._chat_with_ui(script=main_script_path)

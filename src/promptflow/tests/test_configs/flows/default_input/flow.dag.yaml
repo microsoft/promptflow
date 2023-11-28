@@ -1,7 +1,17 @@
+
 inputs:
-  question:
+  input_str:
     type: string
     default: input value from default
+  input_bool:
+    type: bool
+    default: False
+  input_list:
+    type: list
+    default: []
+  input_dict:
+    type: object
+    default: {}
 outputs:
   output:
     type: string
@@ -13,13 +23,19 @@ nodes:
     type: code
     path: test_print_input.py
   inputs:
-    input: ${inputs.question}
+    input_str: ${inputs.input_str}
+    input_bool: ${inputs.input_bool}
+    input_list: ${inputs.input_list}
+    input_dict: ${inputs.input_dict}
 - name: aggregate_node
   type: python
   source:
     type: code
     path: test_print_aggregation.py
   inputs:
-    inputs: ${inputs.question}
+    input_str: ${inputs.input_str}
+    input_bool: ${inputs.input_bool}
+    input_list: ${inputs.input_list}
+    input_dict: ${inputs.input_dict}
   aggregation: true
   use_variants: false

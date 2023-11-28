@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from _constants import (
     CONNECTION_FILE,
+    DEFAULT_REGISTRY_NAME,
     DEFAULT_RESOURCE_GROUP_NAME,
     DEFAULT_RUNTIME_NAME,
     DEFAULT_SUBSCRIPTION_ID,
@@ -20,7 +21,6 @@ from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
 from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
-from sdk_cli_test.recording_utilities import RecordStorage
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -30,6 +30,11 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
 
 load_dotenv()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def modify_work_directory():
+    os.chdir(Path(__file__).parent.parent.absolute())
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -80,11 +85,6 @@ def env_with_secrets_config_file():
 
 @pytest.fixture
 def azure_open_ai_connection() -> AzureOpenAIConnection:
-    if RecordStorage.is_replaying_mode():
-        return AzureOpenAIConnection(
-            api_key="dummy_key",
-            api_base="dummy_base",
-        )
     return ConnectionManager().get("azure_open_ai_connection")
 
 
@@ -199,3 +199,8 @@ def workspace_name() -> str:
 @pytest.fixture
 def runtime_name() -> str:
     return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)
+
+
+@pytest.fixture
+def registry_name() -> str:
+    return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)

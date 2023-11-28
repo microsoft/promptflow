@@ -1,5 +1,0 @@
-{
-    "idx": "${output.idx}",
-    "mod": "${data.mod}",
-    "mod_2": "${data.mod_2}"
-}

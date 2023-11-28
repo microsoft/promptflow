@@ -326,7 +326,7 @@ class TestToolResolver:
             inputs={
                 "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
                 "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL),
-                "image": InputAssignment(value=str(DATA_ROOT / "test_image.jpg"), value_type=InputValueType.LITERAL),
+                "image": InputAssignment(value=str(DATA_ROOT / "logo.jpg"), value_type=InputValueType.LITERAL),
             },
             connection="conn_name",
             provider="mock",
