@@ -79,9 +79,9 @@ class TestRunAPIs:
         assert len(run_from_pfs) == 1
         assert run_from_pfs[0]["node"] == "print_env"
 
-    def test_get_run_log(self, pfs_op: PFSOperations) -> None:
-        log = pfs_op.get_run_log(name=self.run.name, status_code=200).json
-        assert log
+    def test_get_run_log(self, pfs_op: PFSOperations, pf_client: PFClient) -> None:
+        log = pfs_op.get_run_log(name=self.run.name, status_code=200)
+        assert not log.data.decode("utf-8").startswith("\"")
 
     def test_get_run_metrics(self, pfs_op: PFSOperations) -> None:
         metrics = pfs_op.get_run_metrics(name=self.run.name, status_code=200).json
