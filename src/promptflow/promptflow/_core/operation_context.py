@@ -108,7 +108,10 @@ class OperationContext(Dict):
             yield f"promptflow/{VERSION}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
-        return " ".join(parts()).strip()
+        ua = " ".join(parts()).strip()
+        if ua.startswith(" "):
+            raise ValueError("User agent string cannot start with a space, got {}".format(ua))
+        return ua
 
     def append_user_agent(self, user_agent: str):
         """Append the user agent string.
@@ -124,6 +127,8 @@ class OperationContext(Dict):
                 self.user_agent = f"{self.user_agent} {user_agent}"
         else:
             self.user_agent = user_agent
+        if self.user_agent.startswith(" "):
+            raise ValueError("User agent string cannot start with a space, got {}".format(self.user_agent))
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
