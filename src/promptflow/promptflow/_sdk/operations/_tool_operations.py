@@ -11,6 +11,7 @@ from typing import Union
 
 from promptflow._core.tool_meta_generator import _parse_tool_from_function, asdict_without_none, is_tool
 from promptflow._core.tools_manager import collect_package_tools
+from promptflow._sdk._constants import ICON, ICON_DARK, ICON_LIGHT
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow.contracts.multimedia import Image
@@ -64,12 +65,16 @@ class ToolOperations:
                 raise UserErrorException(f"Cannot find {input_name} in tool inputs.")
             if settings.enabled_by and settings.enabled_by not in tool_inputs:
                 raise UserErrorException(
-                    f"Cannot find the input \"{settings.enabled_by}\" for the enabled_by of {input_name}.")
+                    f'Cannot find the input "{settings.enabled_by}" for the enabled_by of {input_name}.'
+                )
             if settings.dynamic_list:
                 dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
                 has_kwargs = any([param.kind == param.VAR_KEYWORD for param in dynamic_func_inputs.values()])
-                required_inputs = [k for k, v in dynamic_func_inputs.items() if
-                                   v.default is inspect.Parameter.empty and v.kind != v.VAR_KEYWORD]
+                required_inputs = [
+                    k
+                    for k, v in dynamic_func_inputs.items()
+                    if v.default is inspect.Parameter.empty and v.kind != v.VAR_KEYWORD
+                ]
                 if settings.dynamic_list._input_mapping:
                     # Validate input mapping in dynamic_list
                     for func_input, reference_input in settings.dynamic_list._input_mapping.items():
@@ -99,8 +104,9 @@ class ToolOperations:
         :return: package tool name, serialized tool
         :rtype: str, Dict[str, str]
         """
-        tool = _parse_tool_from_function(tool_func, initialize_inputs=initialize_inputs,
-                                         gen_custom_type_conn=True, skip_prompt_template=True)
+        tool = _parse_tool_from_function(
+            tool_func, initialize_inputs=initialize_inputs, gen_custom_type_conn=True, skip_prompt_template=True
+        )
         extra_info = getattr(tool_func, "__extra_info")
         tool_name = (
             f"{tool.module}.{tool.class_name}.{tool.function}"
@@ -109,20 +115,37 @@ class ToolOperations:
         )
         construct_tool = asdict(tool, dict_factory=lambda x: {k: v for (k, v) in x if v})
         if extra_info:
-            if "icon" in extra_info:
-                if not Path(extra_info["icon"]).exists():
-                    raise UserErrorException(f"Cannot find the icon path {extra_info['icon']}.")
-                extra_info["icon"] = self._serialize_image_data(extra_info["icon"])
+            if ICON in extra_info:
+                if ICON_LIGHT in extra_info or ICON_DARK in extra_info:
+                    raise UserErrorException(f"You cannot provide both `icon` and `{ICON_LIGHT}` or `{ICON_DARK}`.")
+                extra_info[ICON] = self._serialize_icon_data(extra_info["icon"])
+            if ICON_LIGHT in extra_info:
+                icon = extra_info.get("icon", {})
+                icon["light"] = self._serialize_icon_data(extra_info[ICON_LIGHT])
+                extra_info[ICON] = icon
+            if ICON_DARK in extra_info:
+                icon = extra_info.get("icon", {})
+                icon["dark"] = self._serialize_icon_data(extra_info[ICON_DARK])
+                extra_info[ICON] = icon
             construct_tool.update(extra_info)
 
         # Update tool input settings
         input_settings = getattr(tool_func, "__input_settings")
         if input_settings:
             tool_inputs = construct_tool.get("inputs", {})
+            generated_by_inputs = {}
             self._validate_input_settings(tool_inputs, input_settings)
             for input_name, settings in input_settings.items():
                 tool_inputs[input_name].update(asdict_without_none(settings))
+                if settings.generated_by:
+                    generated_by_inputs.update(settings.generated_by._input_settings)
+            tool_inputs.update(generated_by_inputs)
         return tool_name, construct_tool
+
+    def _serialize_icon_data(self, icon):
+        if not Path(icon).exists():
+            raise UserErrorException(f"Cannot find the icon path {icon}.")
+        return self._serialize_image_data(icon)
 
     @staticmethod
     def _serialize_image_data(image_path):
@@ -145,8 +168,8 @@ class ToolOperations:
 
     @monitor_operation(activity_name="pf.tools.list", activity_type=ActivityType.PUBLICAPI)
     def list(
-            self,
-            flow: Union[str, PathLike] = None,
+        self,
+        flow: Union[str, PathLike] = None,
     ):
         """
         List all package tools in the environment and code tools in the flow.

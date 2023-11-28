@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import datetime
+import functools
 import json
 import logging
 import uuid
@@ -448,6 +449,8 @@ class Run(YAMLTranslatableMixin):
         return RunSchema
 
     def _to_rest_object(self):
+        from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
+
         from promptflow.azure._restclient.flow.models import (
             BatchDataInput,
             RunDisplayNameGenerationType,
@@ -486,56 +489,57 @@ class Run(YAMLTranslatableMixin):
                         )
                     inputs_mapping[k] = val
 
-        if self._use_remote_flow:
-            # submit with params flow_definition_resource_id which will be resolved in pfazure run create operation
-            # the flow resource id looks like: "azureml://locations/<region>/workspaces/<ws-name>/flows/<flow-name>"
-            if not isinstance(self.flow, str) or (
-                not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX) and not self.flow.startswith(REGISTRY_URI_PREFIX)
-            ):
-                raise ValueError(
-                    f"Invalid flow value when transforming to rest object: {self.flow!r}. "
-                    f"Expecting a flow definition resource id starts with '{FLOW_RESOURCE_ID_PREFIX}' "
-                    f"or a flow registry uri starts with '{REGISTRY_URI_PREFIX}'"
+        # use functools.partial to avoid too many arguments that have the same values
+        common_submit_bulk_run_request = functools.partial(
+            SubmitBulkRunRequest,
+            run_id=self.name,
+            # will use user provided display name since PFS will have special logic to update it.
+            run_display_name=self._get_default_display_name(),
+            description=self.description,
+            tags=self.tags,
+            node_variant=self.variant,
+            variant_run_id=variant,
+            batch_data_input=BatchDataInput(
+                data_uri=self.data,
+            ),
+            inputs_mapping=inputs_mapping,
+            run_experiment_name=self._experiment_name,
+            environment_variables=self.environment_variables,
+            connections=self.connections,
+            flow_lineage_id=self._lineage_id,
+            run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
+        )
+
+        if str(self.flow).startswith(REMOTE_URI_PREFIX):
+            if not self._use_remote_flow:
+                # in normal case, we will upload local flow to datastore and resolve the self.flow to be remote uri
+                # upload via _check_and_upload_path
+                # submit with params FlowDefinitionDataStoreName and FlowDefinitionBlobPath
+                path_uri = AzureMLDatastorePathUri(str(self.flow))
+                return common_submit_bulk_run_request(
+                    flow_definition_data_store_name=path_uri.datastore,
+                    flow_definition_blob_path=path_uri.path,
                 )
-            return SubmitBulkRunRequest(
-                flow_definition_resource_id=self.flow,
-                run_id=self.name,
-                # will use user provided display name since PFS will have special logic to update it.
-                run_display_name=self._get_default_display_name(),
-                description=self.description,
-                tags=self.tags,
-                node_variant=self.variant,
-                variant_run_id=variant,
-                batch_data_input=BatchDataInput(
-                    data_uri=self.data,
-                ),
-                inputs_mapping=inputs_mapping,
-                run_experiment_name=self._experiment_name,
-                environment_variables=self.environment_variables,
-                connections=self.connections,
-                flow_lineage_id=self._lineage_id,
-                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
-            )
+            else:
+                # if the flow is a remote flow in the beginning, we will submit with params FlowDefinitionResourceID
+                # submit with params flow_definition_resource_id which will be resolved in pfazure run create operation
+                # the flow resource id looks like: "azureml://locations/<region>/workspaces/<ws-name>/flows/<flow-name>"
+                if not isinstance(self.flow, str) or (
+                    not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX) and not self.flow.startswith(REGISTRY_URI_PREFIX)
+                ):
+                    raise UserErrorException(
+                        f"Invalid flow value when transforming to rest object: {self.flow!r}. "
+                        f"Expecting a flow definition resource id starts with '{FLOW_RESOURCE_ID_PREFIX}' "
+                        f"or a flow registry uri starts with '{REGISTRY_URI_PREFIX}'"
+                    )
+                return common_submit_bulk_run_request(
+                    flow_definition_resource_id=self.flow,
+                )
         else:
             # upload via CodeOperations.create_or_update
             # submit with param FlowDefinitionDataUri
-            return SubmitBulkRunRequest(
+            return common_submit_bulk_run_request(
                 flow_definition_data_uri=str(self.flow),
-                run_id=self.name,
-                run_display_name=self._get_default_display_name(),
-                description=self.description,
-                tags=self.tags,
-                node_variant=self.variant,
-                variant_run_id=variant,
-                batch_data_input=BatchDataInput(
-                    data_uri=self.data,
-                ),
-                inputs_mapping=inputs_mapping,
-                run_experiment_name=self._experiment_name,
-                environment_variables=self.environment_variables,
-                connections=self.connections,
-                flow_lineage_id=self._lineage_id,
-                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
             )
 
     def _check_run_status_is_completed(self) -> None:
