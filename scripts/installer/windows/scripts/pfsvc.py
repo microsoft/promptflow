@@ -48,6 +48,9 @@ def init():
         servicemanager.Initialize()
         servicemanager.PrepareToHostSingle(PromptFlowServiceFramework)
         servicemanager.StartServiceCtrlDispatcher()
+    elif len(sys.argv) == 2 and sys.argv[1] == "manual":
+        sys.argv = sys.argv[:1]
+        main()
     else:
         win32serviceutil.HandleCommandLine(PromptFlowServiceFramework)
 
