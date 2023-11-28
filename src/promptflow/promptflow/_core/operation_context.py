@@ -5,7 +5,7 @@ import os
 from contextvars import ContextVar
 from typing import Dict, Mapping
 
-from promptflow._sdk._constants import USER_AGENT
+from promptflow._constants import USER_AGENT, PF_USER_AGENT
 from promptflow._version import VERSION
 
 
@@ -104,12 +104,14 @@ class OperationContext(Dict):
         """
 
         def parts():
-            agent = self.get("user_agent", '')
+            agent = self.get("_user_agent", '')
             yield agent
             promptflow_agent = f"promptflow/{VERSION}"
             yield promptflow_agent if promptflow_agent not in agent else ''
             user_agent = os.environ.get(USER_AGENT, '').strip()
             yield user_agent if user_agent not in agent else ''
+            pf_user_agent = os.environ.get(PF_USER_AGENT, '').strip()
+            yield pf_user_agent if pf_user_agent not in agent else ''
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
         return " ".join(parts()).strip()
@@ -123,10 +125,14 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        agent = self.get("user_agent", '')
+        agent = self.get("_user_agent", '')
         user_agent = user_agent.strip()
         if user_agent not in agent:
-            self.user_agent = f"{agent} {user_agent}".strip()
+            self._user_agent = f"{agent} {user_agent}".strip()
+
+    @property
+    def user_agent(self):
+        return self.get_user_agent()
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.

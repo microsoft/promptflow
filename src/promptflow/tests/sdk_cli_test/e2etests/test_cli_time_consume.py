@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 import multiprocessing
 from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._constants import USER_AGENT
+from promptflow._constants import USER_AGENT
 
 FLOWS_DIR = "./tests/test_configs/flows"
 CONNECTIONS_DIR = "./tests/test_configs/connections"

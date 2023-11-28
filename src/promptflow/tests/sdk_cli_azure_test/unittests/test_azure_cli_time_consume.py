@@ -5,7 +5,7 @@ import timeit
 from unittest import mock
 import pytest
 from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._constants import USER_AGENT
+from promptflow._constants import USER_AGENT
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"

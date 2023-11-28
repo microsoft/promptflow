@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
+import os
 import time
 from unittest.mock import MagicMock, patch
 
@@ -16,6 +17,7 @@ from promptflow._telemetry.activity import ActivityType, log_activity
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
+from promptflow._constants import USER_AGENT
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -192,3 +194,8 @@ class TestTelemetry:
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
                 # Perform some activity
                 pass
+
+    def test_user_agent(self) -> None:
+        os.environ[USER_AGENT] = "perf_monitor/1.0"
+        context = OperationContext.get_instance()
+        assert "perf_monitor/1.0" in context.get_user_agent()
