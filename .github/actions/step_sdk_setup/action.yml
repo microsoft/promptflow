@@ -48,7 +48,7 @@ runs:
       Set-PSDebug -Trace 2
       python ./setup.py bdist_wheel
       $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
-      pip install $package.FullName --force
+      pip install $package.FullName
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: src/promptflow-tools
