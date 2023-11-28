@@ -58,7 +58,7 @@ class OpenAIConnectionSchema(ConnectionSchema):
     type = StringTransformedEnum(allowed_values="open_ai", required=True)
     api_key = fields.Str(required=True)
     organization = fields.Str()
-    api_base = fields.Str()
+    base_url = fields.Str()
 
 
 class EmbeddingStoreConnectionSchema(ConnectionSchema):
