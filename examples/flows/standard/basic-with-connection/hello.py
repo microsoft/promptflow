@@ -1,5 +1,6 @@
 from typing import Union
 import openai
+from openai.version import VERSION as OPENAI_VERSION
 
 from promptflow import tool
 from promptflow.connections import CustomConnection, AzureOpenAIConnection
@@ -11,6 +12,22 @@ from promptflow.connections import CustomConnection, AzureOpenAIConnection
 
 def to_bool(value) -> bool:
     return str(value).lower() == "true"
+
+
+def get_client(connection: Union[CustomConnection, AzureOpenAIConnection]):
+    if OPENAI_VERSION.startswith("0."):
+        raise Exception(
+            "Please upgrade your OpenAI package to version >= 1.0.0 or using the command: pip install --upgrade openai."
+        )
+    if isinstance(connection, CustomConnection):
+        from openai import OpenAI as Client
+    elif isinstance(connection, AzureOpenAIConnection):
+        from openai import AzureOpenAI as Client
+    else:
+        raise ValueError(f"Unsupported connection type {type(connection)}")
+    # connection can be extract as a dict object contains the configs and secrets
+    connection_dict = dict(connection)
+    return Client(**connection_dict)
 
 
 @tool
@@ -37,12 +54,10 @@ def my_python_tool(
 
     # TODO: remove below type conversion after client can pass json rather than string.
     echo = to_bool(echo)
-    # connection can be extract as a dict object contains the configs and secrets
-    connection_dict = dict(connection)
 
-    response = openai.Completion.create(
+    response = get_client(connection).completions.create(
         prompt=prompt,
-        engine=deployment_name,
+        model=deployment_name,
         # empty string suffix should be treated as None.
         suffix=suffix if suffix else None,
         max_tokens=int(max_tokens),
@@ -59,8 +74,6 @@ def my_python_tool(
         # Logit bias must be a dict if we passed it to openai api.
         logit_bias=logit_bias if logit_bias else {},
         user=user,
-        request_timeout=30,
-        **connection_dict,
     )
 
     # get first element because prompt is single.

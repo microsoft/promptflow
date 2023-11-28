@@ -1,5 +1,5 @@
 import os
-import openai
+from openai.version import VERSION as OPENAI_VERSION
 
 from dotenv import load_dotenv
 from promptflow import tool
@@ -11,6 +11,27 @@ from promptflow import tool
 
 def to_bool(value) -> bool:
     return str(value).lower() == "true"
+
+
+def get_client():
+    if OPENAI_VERSION.startswith("0."):
+        raise Exception(
+            "Please upgrade your OpenAI package to version >= 1.0.0 or using the command: pip install --upgrade openai."
+        )
+    api_key = os.environ["AZURE_OPENAI_API_KEY"]
+    conn = dict(
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        api_base=os.environ["AZURE_OPENAI_API_BASE"],
+    )
+    if api_key.startswith("sk-"):
+        from openai import OpenAI as Client
+    else:
+        from openai import AzureOpenAI as Client
+        conn.update(
+            api_type=os.environ.get("AZURE_OPENAI_API_TYPE", "azure"),
+            api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-07-01-preview"),
+        )
+    return Client(**conn)
 
 
 @tool
@@ -40,19 +61,12 @@ def my_python_tool(
     if "AZURE_OPENAI_API_KEY" not in os.environ:
         raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
 
-    conn = dict(
-        api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        api_base=os.environ["AZURE_OPENAI_API_BASE"],
-        api_type=os.environ.get("AZURE_OPENAI_API_TYPE", "azure"),
-        api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-07-01-preview"),
-    )
-
     # TODO: remove below type conversion after client can pass json rather than string.
     echo = to_bool(echo)
 
-    response = openai.Completion.create(
+    response = get_client().completions.create(
         prompt=prompt,
-        engine=deployment_name,
+        model=deployment_name,
         # empty string suffix should be treated as None.
         suffix=suffix if suffix else None,
         max_tokens=int(max_tokens),
@@ -69,8 +83,6 @@ def my_python_tool(
         # Logit bias must be a dict if we passed it to openai api.
         logit_bias=logit_bias if logit_bias else {},
         user=user,
-        request_timeout=30,
-        **conn,
     )
 
     # get first element because prompt is single.
