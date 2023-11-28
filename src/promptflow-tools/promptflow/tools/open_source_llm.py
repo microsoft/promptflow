@@ -8,31 +8,30 @@ import urllib.request
 
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Tuple, Mapping, Optional, Union
+from typing import Any, Dict, List, Tuple, Mapping, Optional
 from urllib.request import HTTPError
 
-from promptflow._core.tool import ToolProvider, tool
-from promptflow._sdk._constants import ConnectionType
+from promptflow import ToolProvider, tool
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
-from promptflow.tools.common import render_jinja_template, validate_role
+from promptflow.tools.common import render_jinja_template, parse_chat
 from promptflow.tools.exception import (
     OpenSourceLLMOnlineEndpointError,
     OpenSourceLLMUserError,
-    OpenSourceLLMKeyValidationError,
-    ChatAPIInvalidRole
+    OpenSourceLLMKeyValidationError
 )
 
 DEPLOYMENT_DEFAULT = "default"
 VALID_LLAMA_ROLES = {"system", "user", "assistant"}
 REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
 REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
+DEFAULT_ENDPOINT_NAME = "-- please enter an endpoint name --"
 ENDPOINT_REQUIRED_ENV_VARS = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME"]
 
 
-def handle_online_endpoint_error(max_retries: int = 3,
-                                 initial_delay: float = 1,
-                                 exponential_base: float = 2):
+def handle_oneline_endpoint_error(max_retries: int = 3,
+                                  initial_delay: float = 1,
+                                  exponential_base: float = 2):
     def deco_retry(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -42,7 +41,7 @@ def handle_online_endpoint_error(max_retries: int = 3,
                     return func(*args, **kwargs)
                 except HTTPError as e:
                     if i == max_retries - 1:
-                        error_message = f"Exception hit calling Online Endpoint: {type(e).__name__}: {str(e)}"
+                        error_message = f"Exception hit calling Oneline Endpoint: {type(e).__name__}: {str(e)}"
                         print(error_message, file=sys.stderr)
                         raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
@@ -561,28 +560,90 @@ def get_model_type(deployment_model: str) -> str:
         return None
 
     model = m[1].lower()
-    if model.startswith("llama-2"):
+    if model.startswith(ModelFamily.LLAMA.lower()):
         return ModelFamily.LLAMA
-    elif model.startswith("tiiuae-falcon"):
+    elif model.startswith(ModelFamily.FALCON.lower()):
         return ModelFamily.FALCON
-    elif model.startswith("databricks-dolly-v2"):
+    elif model.startswith(ModelFamily.DOLLY.lower()):
         return ModelFamily.DOLLY
     elif model.startswith("gpt2"):
         return ModelFamily.GPT2
     else:
-        # Not found and\or handled. Ignore this endpoint\deployment
-        return None
+        raise ValueError(f"Unexpected model type: {model} derived from deployed model: {deployment_model}")
 
 
-def validate_model_family(model_family: str):
+def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None) -> Tuple[str, str, str]:
+    from azure.identity import DefaultAzureCredential
+    credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+
     try:
-        return ModelFamily[model_family]
+        from azure.ai.ml import MLClient
+        ml_client = MLClient(
+            credential=credential,
+            subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
+            resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
+            workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
+    except Exception as e:
+        message = "Unable to connect to AzureML. Please ensure the following environment variables are set: "
+        message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
+        message += "\nException: " + str(e)
+        raise OpenSourceLLMOnlineEndpointError(message=message)
+
+    found = False
+    for ep in ml_client.online_endpoints.list():
+        if ep.name == endpoint_name:
+            endpoint_uri = ep.scoring_uri
+            endpoint_key = ml_client.online_endpoints.get_keys(ep.name).primary_key
+            found = True
+            break
+
+    if not found:
+        raise ValueError(f"Endpoint {endpoint_name} not found.")
+
+    found = False
+    if deployment_name is None:
+        deployment_name = sorted(ep.traffic, key=lambda item: item[1])[0]
+        found = True
+
+    for d in ml_client.online_deployments.list(ep.name):
+        if d.name == deployment_name:
+            model = get_model_type(d.model)
+            found = True
+            break
+
+    if not found:
+        raise ValueError(f"Deployment {deployment_name} not found.")
+
+    return (endpoint_uri, endpoint_key, model)
+
+
+def get_deployment_from_connection(connection: CustomConnection) -> Tuple[str, str, str]:
+    conn_dict = dict(connection)
+    for key in REQUIRED_CONFIG_KEYS:
+        if key not in conn_dict:
+            accepted_keys = ",".join([key for key in REQUIRED_CONFIG_KEYS])
+            raise OpenSourceLLMKeyValidationError(
+                message=f"""Required key `{key}` not found in given custom connection.
+Required keys are: {accepted_keys}."""
+            )
+    for key in REQUIRED_SECRET_KEYS:
+        if key not in conn_dict:
+            accepted_keys = ",".join([key for key in REQUIRED_SECRET_KEYS])
+            raise OpenSourceLLMKeyValidationError(
+                message=f"""Required secret key `{key}` not found in given custom connection.
+Required keys are: {accepted_keys}."""
+            )
+    try:
+        model_family = ModelFamily[connection.configs['model_family']]
     except KeyError:
         accepted_models = ",".join([model.name for model in ModelFamily])
         raise OpenSourceLLMKeyValidationError(
-            message=f"""Given model_family '{model_family}' not recognized.
+            message=f"""Given model_family '{connection.configs['model_family']}' not recognized.
 Supported models are: {accepted_models}."""
         )
+    return (connection.configs['endpoint_url'],
+            connection.secrets['endpoint_api_key'],
+            model_family)
 
 
 class ModelFamily(str, Enum):
@@ -590,14 +651,6 @@ class ModelFamily(str, Enum):
     DOLLY = "Dolly"
     GPT2 = "GPT-2"
     FALCON = "Falcon"
-
-    @classmethod
-    def _missing_(cls, value):
-        value = value.lower()
-        for member in cls:
-            if member.lower() == value:
-                return member
-        return None
 
 
 class API(str, Enum):
@@ -623,36 +676,6 @@ class ContentFormatterBase:
             r'\\([\\\"a-zA-Z])',
             r'\\\1',
             prompt)
-
-    @staticmethod
-    def parse_chat(chat_str: str) -> List[Dict[str, str]]:
-        # LLaMa only supports below roles.
-        separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
-        chunks = re.split(separator, chat_str)
-
-        # remove any empty chunks
-        chunks = [c.strip() for c in chunks if c.strip()]
-
-        chat_list = []
-        for index in range(0, len(chunks), 2):
-            role = chunks[index].lower()
-
-            # Check if prompt follows chat api message format and has valid role.
-            try:
-                validate_role(role, VALID_LLAMA_ROLES)
-            except ChatAPIInvalidRole as e:
-                raise OpenSourceLLMUserError(message=e.message)
-
-            if len(chunks) <= index + 1:
-                message = "Unexpected chat format. Please ensure the query matches the chat format of the model used."
-                raise OpenSourceLLMUserError(message=message)
-
-            chat_list.append({
-                "role": role,
-                "content": chunks[index+1]
-            })
-
-        return chat_list
 
     @abstractmethod
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
@@ -731,7 +754,7 @@ class LlamaContentFormatter(ContentFormatterBase):
             model_kwargs["do_sample"] = True
 
         if self.api == API.CHAT:
-            prompt_value = ContentFormatterBase.parse_chat(self.chat_history)
+            prompt_value = parse_chat(self.chat_history, valid_roles=["assistant", "user", "system"])
         else:
             prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
 
@@ -759,57 +782,11 @@ class LlamaContentFormatter(ContentFormatterBase):
             raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
 
-class ServerlessLlamaContentFormatter(ContentFormatterBase):
-    """Content formatter for LLaMa"""
-
-    def __init__(self, api: API, chat_history: Optional[str] = ""):
-        super().__init__()
-        self.api = api
-        self.chat_history = chat_history
-        self.model_id = "llama-2-7b-hf"
-
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
-        """Formats the request according the the chosen api"""
-        # Modify max_tokens key for serverless
-        model_kwargs["max_tokens"] = model_kwargs["max_new_tokens"]
-        if self.api == API.CHAT:
-            messages = ContentFormatterBase.parse_chat(self.chat_history)
-            base_body = {
-                "model": self.model_id,
-                "messages": messages,
-                "n": 1,
-            }
-            base_body.update(model_kwargs)
-
-        else:
-            prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
-            base_body = {
-                "model": self.model_id,
-                "prompt": prompt_value,
-                "n": 1,
-            }
-            base_body.update(model_kwargs)
-
-        return json.dumps(base_body)
-
-    def format_response_payload(self, output: bytes) -> str:
-        """Formats response"""
-        response_json = json.loads(output)
-        if self.api == API.CHAT and "choices" in response_json:
-            return response_json["choices"][0]["message"]["content"]
-        elif self.api == API.COMPLETION and "choices" in response_json:
-            return response_json["choices"][0]["text"]
-        else:
-            error_message = f"Unexpected response format. Response: {response_json}"
-            print(error_message, file=sys.stderr)
-            raise OpenSourceLLMOnlineEndpointError(message=error_message)
-
-
 class ContentFormatterFactory:
     """Factory class for supported models"""
 
     def get_content_formatter(
-        model_family: ModelFamily, api: API, chat_history: Optional[List[Dict]] = [], endpoint_url: Optional[str] = ""
+        model_family: ModelFamily, api: API, chat_history: Optional[List[Dict]] = []
     ) -> ContentFormatterBase:
         if model_family == ModelFamily.LLAMA:
             if is_serverless_endpoint(endpoint_url):
@@ -914,35 +891,13 @@ class AzureMLOnlineEndpoint:
 
 class OpenSourceLLM(ToolProvider):
 
-    def __init__(self):
+    def __init__(self,
+                 connection: CustomConnection = None,
+                 endpoint_name: str = None):
         super().__init__()
 
-    def get_deployment_from_endpoint(self,
-                                     subscription_id: str,
-                                     resource_group_name: str,
-                                     workspace_name: str,
-                                     endpoint_name: str,
-                                     deployment_name: str = None) -> Tuple[str, str, str]:
-        endpoints_and_deployments = ENDPOINT_CONTAINER.get_endpoints_and_deployments(
-            subscription_id,
-            resource_group_name,
-            workspace_name)
-
-        for ep in endpoints_and_deployments:
-            if ep.endpoint_name == endpoint_name:
-                if deployment_name is None:
-                    return (ep.endpoint_url,
-                            ep.endpoint_key,
-                            ep.default_deployment.model_family)
-                for d in ep.deployments:
-                    if d.deployment_name == deployment_name:
-                        return (ep.endpoint_url,
-                                ep.endpoint_key,
-                                d.model_family)
-
-        message = """Invalid endpoint and deployment values.
-Please ensure endpoint name and deployment names are correct, and the deployment was successfull."""
-        raise OpenSourceLLMUserError(message=message)
+        self.endpoint_key = None
+        self.endpoint_name = endpoint_name
 
     def sanitize_endpoint_url(self,
                               endpoint_url: str,
@@ -999,12 +954,11 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         return (self.sanitize_endpoint_url(endpoint_url, api_type), endpoint_key, model_family)
 
     @tool
-    @handle_online_endpoint_error()
+    @handle_oneline_endpoint_error()
     def call(
         self,
         prompt: PromptTemplate,
         api: API,
-        endpoint: str = None,
         deployment_name: str = None,
         temperature: float = 1.0,
         max_new_tokens: int = 500,
@@ -1012,6 +966,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         model_kwargs: Optional[Dict] = {},
         **kwargs
     ) -> str:
+        self.deployment_name = deployment_name
 
         # Sanitize deployment name. Empty deployment name is the same as None.
         if deployment_name is not None:
@@ -1041,8 +996,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         content_formatter = ContentFormatterFactory.get_content_formatter(
             model_family=self.model_family,
             api=api,
-            chat_history=prompt,
-            endpoint_url=self.endpoint_uri
+            chat_history=prompt
         )
 
         llm = AzureMLOnlineEndpoint(
@@ -1050,7 +1004,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
             endpoint_api_key=self.endpoint_key,
             model_family=self.model_family,
             content_formatter=content_formatter,
-            deployment_name=deployment_name,
+            deployment_name=self.deployment_name,
             model_kwargs=model_kwargs
         )
 

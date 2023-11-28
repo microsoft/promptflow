@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 import abc
-import logging
+import json
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Tuple, Union
@@ -11,6 +11,7 @@ from typing import Dict, Tuple, Union
 import yaml
 from marshmallow import Schema
 
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_ENCODING,
@@ -20,11 +21,13 @@ from promptflow._sdk._constants import (
 )
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
+from ..._utils.flow_utils import resolve_flow_path
+from ..._utils.logger_utils import LoggerFactory
 from .._constants import DAG_FILE_NAME
 from ._connection import _Connection
 from ._validation import SchemaValidatableMixin
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class FlowBase(abc.ABC):
@@ -49,8 +52,6 @@ class FlowContext:
     :type connections: Optional[Dict[str, Dict]]
     :param variant: Variant of the flow.
     :type variant: Optional[str]
-    :param environment_variables: Environment variables for the flow.
-    :type environment_variables: Optional[Dict[str, str]]
     :param variant: Overrides of the flow.
     :type variant: Optional[Dict[str, Dict]]
     :param streaming: Whether the flow's output need to be return in streaming mode.
@@ -62,18 +63,16 @@ class FlowContext:
         *,
         connections=None,
         variant=None,
-        environment_variables=None,
         overrides=None,
         streaming=None,
     ):
-        self.connections, self.connection_objs = connections or {}, {}
+        self.connections, self._connection_objs = connections or {}, {}
         self.variant = variant
-        self.environment_variables = environment_variables or {}
         self.overrides = overrides or {}
         self.streaming = streaming
-        # self.connection_provider = connection_provider
+        # TODO: introduce connection provider support
 
-    def resolve_connections(self):
+    def _resolve_connections(self):
         # resolve connections and create placeholder for connection objects
         for _, v in self.connections.items():
             if isinstance(v, dict):
@@ -81,13 +80,32 @@ class FlowContext:
                     if isinstance(conn, _Connection):
                         name = self._get_connection_obj_name(conn)
                         v[k] = name
-                        self.connection_objs[name] = conn
+                        self._connection_objs[name] = conn
 
     @classmethod
-    def _get_connection_obj_name(cls, connection):
+    def _get_connection_obj_name(cls, connection: _Connection):
         # create a unique connection name for connection obj
-        connection_name = f"connection_{id(connection)}"
+        # will generate same name if connection has same content
+        connection_dict = connection._to_dict()
+        connection_name = f"connection_{hash(json.dumps(connection_dict, sort_keys=True))}"
         return connection_name
+
+    def _to_dict(self):
+        return {
+            "connections": self.connections,
+            "variant": self.variant,
+            "overrides": self.overrides,
+            "streaming": self.streaming,
+        }
+
+    def __eq__(self, other):
+        if isinstance(other, FlowContext):
+            return self._to_dict() == other._to_dict()
+        return False
+
+    def __hash__(self):
+        self._resolve_connections()
+        return hash(json.dumps(self._to_dict(), sort_keys=True))
 
 
 class Flow(FlowBase):
@@ -95,7 +113,8 @@ class Flow(FlowBase):
 
     def __init__(
         self,
-        code: str,
+        code: Union[str, PathLike],
+        dag: dict,
         **kwargs,
     ):
         self._code = Path(code)
@@ -103,6 +122,8 @@ class Flow(FlowBase):
         self._path = Path(path) if path else None
         self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
+        self._content_hash = kwargs.pop("content_hash", None)
+        self.dag = dag
         super().__init__(**kwargs)
 
     @property
@@ -141,17 +162,22 @@ class Flow(FlowBase):
     ):
         source_path = Path(source)
         if not source_path.exists():
-            raise Exception(f"Source {source_path.absolute().as_posix()} does not exist")
-        if source_path.is_dir() and (source_path / DAG_FILE_NAME).is_file():
-            return cls(code=source_path.absolute().as_posix(), **kwargs)
-        elif source_path.is_file() and source_path.name == DAG_FILE_NAME:
-            # TODO: for file, we should read the yaml to get code and set path to source_path
-            return cls(code=source_path.absolute().parent.as_posix(), **kwargs)
+            raise UserErrorException(f"Source {source_path.absolute().as_posix()} does not exist")
 
-        raise Exception("Source must be a directory or a 'flow.dag.yaml' file")
+        flow_path = resolve_flow_path(source_path)
+        if flow_path.exists():
+            # TODO: for file, we should read the yaml to get code and set path to source_path
+            # read flow file to get hash
+            with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+                flow_content = f.read()
+                flow_dag = yaml.safe_load(flow_content)
+                kwargs["content_hash"] = hash(flow_content)
+            return cls(code=flow_path.parent.absolute().as_posix(), dag=flow_dag, **kwargs)
+
+        raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
-        from promptflow._sdk.operations._run_submitter import variant_overwrite_context
+        from promptflow._sdk._submitter import variant_overwrite_context
 
         # TODO: check if there is potential bug here
         # this is a little wired:
@@ -161,6 +187,14 @@ class Flow(FlowBase):
             from promptflow.contracts.flow import Flow as ExecutableFlow
 
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
+
+    def __eq__(self, other):
+        if isinstance(other, Flow):
+            return self._content_hash == other._content_hash and self.context == other.context
+        return False
+
+    def __hash__(self):
+        return hash(self.context) ^ self._content_hash
 
 
 class ProtectedFlow(Flow, SchemaValidatableMixin):
@@ -190,6 +224,10 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
     @property
     def name(self) -> str:
         return self._flow_dir.name
+
+    @property
+    def display_name(self) -> str:
+        return self.dag.get("display_name", None)
 
     @property
     def tools_meta_path(self) -> Path:
@@ -262,14 +300,36 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         :param kwargs: flow inputs with key word arguments.
         :return:
         """
-        from promptflow._sdk.operations._test_submitter import TestSubmitter
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
-        with TestSubmitter(flow=self, flow_context=self.context).init() as submitter:
-            # validate inputs
-            flow_inputs, _ = submitter.resolve_data(inputs=kwargs)
-            result = submitter.exec_with_inputs(
-                inputs=flow_inputs,
-            )
+
+        invoker = FlowContextResolver.resolve(flow=self)
+
+        result = invoker._invoke(
+            data=kwargs,
+        )
         return result.output
+
+    def invoke(self, inputs: dict) -> "LineResult":
+        """Invoke a flow and get a LineResult object."""
+        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
+
+        if not self._executable:
+            self._executable = self._init_executable()
+
+        if self._executable.program_language == FlowLanguage.CSharp:
+            with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
+                result = submitter.exec_with_inputs(
+                    inputs=inputs,
+                )
+                return result
+        else:
+
+            invoker = FlowContextResolver.resolve(flow=self)
+            result = invoker._invoke(
+                data=inputs,
+            )
+            return result

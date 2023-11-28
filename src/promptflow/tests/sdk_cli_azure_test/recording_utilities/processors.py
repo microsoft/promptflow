@@ -13,7 +13,9 @@ from .utils import (
     is_json_payload_request,
     is_json_payload_response,
     sanitize_azure_workspace_triad,
+    sanitize_experiment_id,
     sanitize_upload_hash,
+    sanitize_username,
 )
 
 
@@ -37,6 +39,23 @@ class AzureWorkspaceTriadProcessor(RecordingProcessor):
         return response
 
 
+class AzureMLExperimentIDProcessor(RecordingProcessor):
+    """Sanitize Azure ML experiment id, currently we use workspace id as the value."""
+
+    def process_request(self, request: Request) -> Request:
+        request.uri = sanitize_experiment_id(request.uri)
+        return request
+
+    def process_response(self, response: Dict) -> Dict:
+        if is_json_payload_response(response):
+            if "experimentId" in response["body"]["string"]:
+                body = json.loads(response["body"]["string"])
+                if "experimentId" in body:
+                    body["experimentId"] = SanitizedValues.WORKSPACE_ID
+                response["body"]["string"] = json.dumps(body)
+        return response
+
+
 class AzureResourceProcessor(RecordingProcessor):
     """Sanitize sensitive data in Azure resource GET response."""
 
@@ -44,6 +63,7 @@ class AzureResourceProcessor(RecordingProcessor):
         # datastore related
         self.storage_account_names = set()
         self.storage_container_names = set()
+        self.file_share_names = set()
 
     def _sanitize_request_url_for_storage(self, uri: str) -> str:
         # this instance will store storage account names and container names
@@ -52,6 +72,8 @@ class AzureResourceProcessor(RecordingProcessor):
             uri = uri.replace(account_name, SanitizedValues.FAKE_ACCOUNT_NAME)
         for container_name in self.storage_container_names:
             uri = uri.replace(container_name, SanitizedValues.FAKE_CONTAINER_NAME)
+        for file_share_name in self.file_share_names:
+            uri = uri.replace(file_share_name, SanitizedValues.FAKE_FILE_SHARE_NAME)
         return uri
 
     def process_request(self, request: Request) -> Request:
@@ -112,9 +134,16 @@ class AzureResourceProcessor(RecordingProcessor):
         body["properties"]["subscriptionId"] = SanitizedValues.SUBSCRIPTION_ID
         body["properties"]["resourceGroup"] = SanitizedValues.RESOURCE_GROUP_NAME
         self.storage_account_names.add(body["properties"]["accountName"])
-        self.storage_container_names.add(body["properties"]["containerName"])
         body["properties"]["accountName"] = SanitizedValues.FAKE_ACCOUNT_NAME
-        body["properties"]["containerName"] = SanitizedValues.FAKE_CONTAINER_NAME
+        # blob storage
+        if "containerName" in body["properties"]:
+            self.storage_container_names.add(body["properties"]["containerName"])
+            body["properties"]["containerName"] = SanitizedValues.FAKE_CONTAINER_NAME
+        # file share
+        elif "fileShareName" in body["properties"]:
+            self.file_share_names.add(body["properties"]["fileShareName"])
+            body["properties"]["fileShareName"] = SanitizedValues.FAKE_FILE_SHARE_NAME
+
         return body
 
 
@@ -135,14 +164,17 @@ class StorageProcessor(RecordingProcessor):
 
     def process_request(self, request: Request) -> Request:
         request.uri = sanitize_upload_hash(request.uri)
+        request.uri = sanitize_username(request.uri)
         if is_json_payload_request(request) and request.body is not None:
             body = request.body.decode("utf-8")
             body = sanitize_upload_hash(body)
+            body = sanitize_username(body)
             request.body = body.encode("utf-8")
         return request
 
     def process_response(self, response: Dict) -> Dict:
         if is_json_payload_response(response):
+            response["body"]["string"] = sanitize_username(response["body"]["string"])
             body = json.loads(response["body"]["string"])
             if isinstance(body, dict):
                 self._sanitize_list_secrets_response(body)
@@ -171,9 +203,28 @@ class TenantProcessor(RecordingProcessor):
     def __init__(self, tenant_id: str):
         self.tenant_id = tenant_id
 
+    def process_request(self, request: Request) -> Request:
+        if is_json_payload_request(request) and request.body is not None:
+            body = request.body.decode("utf-8")
+            body = str(body).replace(self.tenant_id, SanitizedValues.TENANT_ID)
+            request.body = body.encode("utf-8")
+        return request
+
     def process_response(self, response: Dict) -> Dict:
         if is_json_payload_response(response):
             response["body"]["string"] = str(response["body"]["string"]).replace(
                 self.tenant_id, SanitizedValues.TENANT_ID
             )
+        return response
+
+
+class IndexServiceProcessor(RecordingProcessor):
+    """Sanitize index service responses."""
+
+    def process_response(self, response: Dict) -> Dict:
+        if is_json_payload_response(response):
+            if "continuationToken" in response["body"]["string"]:
+                body = json.loads(response["body"]["string"])
+                body.pop("continuationToken", None)
+                response["body"]["string"] = json.dumps(body)
         return response

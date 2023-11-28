@@ -62,18 +62,6 @@ class InvalidBulkTestRequest(ValidationException):
         )
 
 
-class InputMappingError(ValidationException):
-    def __init__(
-        self,
-        target: ErrorTarget = ErrorTarget.EXECUTOR,
-        **kwargs,
-    ):
-        super().__init__(
-            target=target,
-            **kwargs,
-        )
-
-
 class InvalidFlowRequest(ValidationException):
     def __init__(
         self,
@@ -165,10 +153,6 @@ class InvalidReferenceProperty(NodeReferenceError):
 
 
 class OutputReferenceNotExist(NodeReferenceError):
-    pass
-
-
-class ReferenceNodeBypassed(NodeReferenceError):
     pass
 
 

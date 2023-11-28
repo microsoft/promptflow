@@ -3,9 +3,11 @@ from typing import Union
 
 import pytest
 
+from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.tool_utils import (
     DynamicListError,
     ListFunctionResponseError,
+    _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_interface,
     load_function_from_function_path,
@@ -13,7 +15,7 @@ from promptflow._utils.tool_utils import (
     validate_dynamic_list_func_response_type,
 )
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
-from promptflow.contracts.tool import ValueType
+from promptflow.contracts.tool import ValueType, Tool, ToolType
 
 
 # mock functions for dynamic list function testing
@@ -55,7 +57,7 @@ class TestToolUtils:
         def func(conn: [AzureOpenAIConnection, CustomConnection], input: [str, int]):
             pass
 
-        input_defs, _, connection_types = function_to_interface(func)
+        input_defs, _, connection_types, _ = function_to_interface(func)
         assert len(input_defs) == 2
         assert input_defs["conn"].type == ["AzureOpenAIConnection", "CustomConnection"]
         assert input_defs["input"].type == [ValueType.OBJECT]
@@ -68,6 +70,19 @@ class TestToolUtils:
         with pytest.raises(Exception) as exec_info:
             function_to_interface(func, {"input_str": "test"})
         assert "Duplicate inputs found from" in exec_info.value.args[0]
+
+    def test_function_to_interface_with_kwargs(self):
+        def func(input_str: str, **kwargs):
+            pass
+
+        _, _, _, enable_kwargs = function_to_interface(func)
+        assert enable_kwargs is True
+
+        def func(input_str: str):
+            pass
+
+        _, _, _, enable_kwargs = function_to_interface(func)
+        assert enable_kwargs is False
 
     def test_param_to_definition(self):
         from promptflow._sdk.entities import CustomStrongTypeConnection
@@ -347,3 +362,13 @@ class TestToolUtils:
             "is not callable.'. \nPlease contact the tool author/support team for troubleshooting assistance.",
         ):
             load_function_from_function_path(func_path)
+
+    def test_find_deprecated_tools(self):
+        package_tools = {
+            "new_tool_1": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+            "new_tool_2": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]).serialize(),
+        }
+        with pytest.raises(DuplicateToolMappingError, match="secure operation"):
+            _find_deprecated_tools(package_tools)

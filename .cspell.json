@@ -24,10 +24,12 @@
     ".gitignore",
     "scripts/docs/_build/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
+    "src/promptflow/promptflow/azure/_restclient/swagger.json",
     "src/promptflow/tests/**",
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
-    "**/setup.py"
+    "**/setup.py",
+    "scripts/installer/windows/**"
   ],
   "words": [
     "aoai",
@@ -72,7 +74,10 @@
     "msrest",
     "cref",
     "msal",
-    "pfbytes"
+    "pfbytes",
+    "Apim",
+    "junit",
+    "nunit"
   ],
   "ignoreWords": [
     "openmpi",
@@ -142,7 +147,14 @@
     "Hwfoxydrg",
     "llms",
     "vcrpy",
-    "tiiuae"
+    "uionly",
+    "llmops",
+    "Abhishek",
+    "restx",
+    "httpx"
+  ],
+  "flagWords": [
+    "Prompt Flow"
   ],
   "allowCompoundWords": true
 }
