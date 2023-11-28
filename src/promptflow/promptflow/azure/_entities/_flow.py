@@ -88,6 +88,11 @@ class Flow(AdditionalIncludesMixin):
         """
         with super()._try_build_local_code() as code:
             if isinstance(code, Code):
+                if self._get_all_additional_includes_configs():
+                    from promptflow._sdk._submitter import remove_additional_includes
+
+                    # Remove additional include in the flow yaml.
+                    remove_additional_includes(code.path)
                 # promptflow snapshot has specific ignore logic, like it should ignore `.run` by default
                 code._ignore_file = PromptflowIgnoreFile(code.path)
                 # promptflow snapshot will always be uploaded to default storage
