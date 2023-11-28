@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from ._constants import (
+from _constants import (
     CONNECTION_FILE,
     DEFAULT_REGISTRY_NAME,
     DEFAULT_RESOURCE_GROUP_NAME,
@@ -20,7 +20,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
-from .sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
+from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
