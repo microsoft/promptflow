@@ -443,6 +443,7 @@ def serve_flow(args):
         serve_flow_python(args, source)
     logger.info("Promptflow app ended")
 
+
 def serve_flow_csharp(args, source):
     from promptflow.batch._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
     try:
@@ -468,6 +469,7 @@ def serve_flow_csharp(args, source):
     except KeyboardInterrupt:
         pass
 
+
 def serve_flow_python(args, source):
     from promptflow._sdk._serving.app import create_app
     static_folder = args.static_folder
@@ -487,6 +489,7 @@ def serve_flow_python(args, source):
     webbrowser.open(target)
     # Debug is not supported for now as debug will rerun command, and we changed working directory.
     app.run(port=args.port, host=args.host)
+
 
 def build_flow(args):
     """
