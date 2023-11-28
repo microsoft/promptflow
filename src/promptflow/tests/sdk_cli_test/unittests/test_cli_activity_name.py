@@ -43,7 +43,7 @@ class TestCliTimeConsume:
                 "--flow",
                 "print_input_flow",
                 "--data",
-                f"print_input_flow.jsonl",
+                "print_input_flow.jsonl",
             )) == activity_name
 
     def test_pf_run_update(self, activity_name="pf.run.update") -> None:
@@ -65,7 +65,7 @@ class TestCliTimeConsume:
                 "flow",
                 "test",
                 "--flow",
-                f"print_input_flow",
+                "print_input_flow",
                 "--inputs",
                 "text=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
             )) == activity_name

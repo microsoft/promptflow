@@ -34,9 +34,9 @@ class TestAzureCliTimeConsume:
                 "run",
                 "create",
                 "--flow",
-                f"print_input_flow",
+                "print_input_flow",
                 "--data",
-                f"print_input_flow.jsonl"
+                "print_input_flow.jsonl"
             )) == activity_name
 
     def test_pfazure_run_update(self, activity_name="pfazure.run.update"):

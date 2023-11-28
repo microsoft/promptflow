@@ -30,8 +30,6 @@ def _create_run(run: Run, **kwargs):
 class PFClient:
     """A client class to interact with prompt flow entities."""
 
-    _instance = None
-
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
         self._runs = RunOperations()
