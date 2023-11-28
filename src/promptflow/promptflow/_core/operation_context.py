@@ -109,8 +109,6 @@ class OperationContext(Dict):
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
         ua = " ".join(parts()).strip()
-        if ua.startswith(" "):
-            raise ValueError("User agent string cannot start with a space, got {}".format(ua))
         return ua
 
     def append_user_agent(self, user_agent: str):
@@ -128,8 +126,6 @@ class OperationContext(Dict):
         else:
             self.user_agent = user_agent
         self.user_agent = self.user_agent.strip()
-        if self.user_agent.startswith(" "):
-            raise ValueError("User agent string cannot start with a space, got {}".format(self.user_agent))
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
