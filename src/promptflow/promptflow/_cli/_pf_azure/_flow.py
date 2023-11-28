@@ -241,6 +241,8 @@ def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
                 tag_key = k.replace("tags.", "")
                 tags[tag_key] = v
                 continue
-            result[k] = v
+            # replace "-" with "_" to handle the usage for both "-" and "_" in the command key
+            normalized_key = k.replace("-", "_")
+            result[normalized_key] = v
     result["tags"] = tags
     return result
