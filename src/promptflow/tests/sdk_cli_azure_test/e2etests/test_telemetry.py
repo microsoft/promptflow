@@ -3,11 +3,13 @@
 # ---------------------------------------------------------
 import contextlib
 import time
+from typing import Callable
 from unittest.mock import MagicMock, patch
 
 import pydash
 import pytest
 
+from promptflow import load_run
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
@@ -16,8 +18,11 @@ from promptflow._telemetry.activity import ActivityType, log_activity
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
+from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
+RUNS_DIR = "./tests/test_configs/runs"
 
 
 @contextlib.contextmanager
