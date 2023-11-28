@@ -11,6 +11,7 @@ from tests.utils import verify_url_exists
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
 from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection
+from promptflow.contracts.multimedia import Image
 from promptflow.tools.aoai import AzureOpenAI
 
 PROMOTFLOW_ROOT = Path(__file__).absolute().parents[1]
@@ -60,6 +61,11 @@ def gpt2_custom_connection():
 
 
 @pytest.fixture
+def llama_chat_custom_connection():
+    return ConnectionManager().get("llama_chat_connection")
+
+
+@pytest.fixture
 def open_source_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
@@ -100,6 +106,13 @@ def example_prompt_template() -> str:
 
 
 @pytest.fixture
+def example_prompt_template_with_name_in_roles() -> str:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_name_in_roles.jinja2") as f:
+        prompt_template = f.read()
+    return prompt_template
+
+
+@pytest.fixture
 def chat_history() -> list:
     with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/marketing_writer/history.json") as f:
         history = json.load(f)
@@ -111,6 +124,20 @@ def example_prompt_template_with_function() -> str:
     with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_function.jinja2") as f:
         prompt_template = f.read()
     return prompt_template
+
+
+@pytest.fixture
+def example_prompt_template_with_image() -> str:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_image.jinja2") as f:
+        prompt_template = f.read()
+    return prompt_template
+
+
+@pytest.fixture
+def example_image() -> Image:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/images/number10.jpg", "rb") as f:
+        image = Image(f.read())
+    return image
 
 
 # functions

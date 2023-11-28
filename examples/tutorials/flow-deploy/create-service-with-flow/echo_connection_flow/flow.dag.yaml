@@ -1,0 +1,17 @@
+inputs:
+  flow_input:
+    type: string
+outputs:
+  output:
+    type: object
+    reference: ${echo_connection.output}
+nodes:
+- name: echo_connection
+  type: python
+  source:
+    type: code
+    path: echo_connection.py
+  inputs:
+    flow_input: ${inputs.flow_input}
+    node_input: "dummy_node_input"
+    connection: open_ai_connection

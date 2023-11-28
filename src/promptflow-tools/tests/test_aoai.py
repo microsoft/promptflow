@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+import json
 
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tools.aoai import chat, completion
@@ -71,6 +72,23 @@ class TestAOAI:
         assert "function_call" in result
         assert result["function_call"]["name"] == "get_current_weather"
 
+    def test_aoai_chat_with_name_in_roles(
+            self, azure_open_ai_connection, example_prompt_template_with_name_in_roles, chat_history, functions):
+        result = chat(
+            connection=azure_open_ai_connection,
+            prompt=example_prompt_template_with_name_in_roles,
+            deployment_name="gpt-35-turbo",
+            max_tokens="inF",
+            temperature=0,
+            functions=functions,
+            name="get_location",
+            result=json.dumps({"location": "Austin"}),
+            question="What is the weather in Boston?",
+            prev_question="Where is Boston?"
+        )
+        assert "function_call" in result
+        assert result["function_call"]["name"] == "get_current_weather"
+
     def test_aoai_chat_message_with_no_content(self, aoai_provider):
         # missing colon after role name. Sometimes following prompt may result in empty content.
         prompt = (
@@ -117,16 +135,14 @@ class TestAOAI:
         conn_dict = {"api_key": "dummy", "api_base": "base", "api_version": "dummy_ver", "api_type": "azure"}
         conn = AzureOpenAIConnection(**conn_dict)
 
-        def mock_completion(**kwargs):
-            assert kwargs["engine"] == deployment_name
+        def mock_completion(self, **kwargs):
+            assert kwargs["model"] == deployment_name
             for k, v in expected.items():
-                assert kwargs[k] == v, f"Expect {k} to be {v}, but got {kwargs[k]}"
-            for k, v in conn_dict.items():
                 assert kwargs[k] == v, f"Expect {k} to be {v}, but got {kwargs[k]}"
             text = kwargs["prompt"]
             return AttrDict({"choices": [AttrDict({"text": text})]})
 
-        with patch("openai.Completion.create", new=mock_completion):
+        with patch("openai.resources.Completions.create", new=mock_completion):
             prompt = "dummy_prompt"
             result = completion(connection=conn, prompt=prompt, deployment_name=deployment_name, **params)
             assert result == prompt

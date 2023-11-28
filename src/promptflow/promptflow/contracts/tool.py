@@ -18,9 +18,9 @@ T = TypeVar("T", bound="Enum")
 
 
 def _deserialize_enum(cls: Type[T], val) -> T:
-    if not all(isinstance(i, str) for i in cls):
+    if not all(isinstance(i.value, str) for i in cls):
         return val
-    typ = next((i for i in cls if val.lower() == i.lower()), None)
+    typ = next((i for i in cls if val.lower() == i.value.lower()), None)
     # Keep string value for unknown type, as they may be resolved later after some requisites imported.
     # Type resolve will be ensured in 'ensure_node_inputs_type' before execution.
     return typ if typ else val
@@ -60,12 +60,13 @@ class ValueType(str, Enum):
             return ValueType.INT
         if isinstance(t, float):
             return ValueType.DOUBLE
+        # FilePath is a subclass of str, so it must be checked before str
+        if isinstance(t, FilePath):
+            return ValueType.FILE_PATH
         if isinstance(t, str):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
-        if isinstance(t, FilePath):
-            return ValueType.FILE_PATH
         return ValueType.OBJECT
 
     @staticmethod
@@ -228,6 +229,7 @@ class ToolType(str, Enum):
 
     LLM = "llm"
     PYTHON = "python"
+    CSHARP = "csharp"
     PROMPT = "prompt"
     _ACTION = "action"
     CUSTOM_LLM = "custom_llm"
@@ -254,7 +256,7 @@ class InputDefinition:
         """
 
         data = {}
-        data["type"] = ([t.value for t in self.type],)
+        data["type"] = [t.value for t in self.type]
         if len(self.type) == 1:
             data["type"] = self.type[0].value
         if self.default:
@@ -361,6 +363,10 @@ class Tool:
     :type is_builtin: Optional[bool]
     :param stage: The stage of the tool
     :type stage: Optional[str]
+    :param enable_kwargs: Whether to enable kwargs, only available for customer python tool
+    :type enable_kwargs: Optional[bool]
+    :param deprecated_tools: A list of old tool IDs that are mapped to the current tool ID.
+    :type deprecated_tools: Optional[List[str]]
     """
 
     name: str
@@ -376,6 +382,8 @@ class Tool:
     connection_type: Optional[List[str]] = None
     is_builtin: Optional[bool] = None
     stage: Optional[str] = None
+    enable_kwargs: Optional[bool] = False
+    deprecated_tools: Optional[List[str]] = None
 
     def serialize(self) -> dict:
         """Serialize tool to dict and skip None fields.
@@ -415,7 +423,15 @@ class Tool:
             connection_type=data.get("connection_type"),
             is_builtin=data.get("is_builtin"),
             stage=data.get("stage"),
+            enable_kwargs=data.get("enable_kwargs", False),
+            deprecated_tools=data.get("deprecated_tools"),
         )
 
     def _require_connection(self) -> bool:
         return self.type is ToolType.LLM or isinstance(self.connection_type, list) and len(self.connection_type) > 0
+
+
+class ToolFuncCallScenario(str, Enum):
+    GENERATED_BY = "generated_by"
+    REVERSE_GENERATED_BY = "reverse_generated_by"
+    DYNAMIC_LIST = "dynamic_list"

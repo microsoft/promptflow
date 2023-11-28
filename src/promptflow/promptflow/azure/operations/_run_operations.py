@@ -14,7 +14,6 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
 from typing import Any, Dict, List, Optional, Union
 
-import pandas as pd
 import requests
 import yaml
 from azure.ai.ml._scope_dependent_operations import (
@@ -24,15 +23,16 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 from azure.ai.ml.constants._common import AzureMLResourceType
+from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
-from pandas import DataFrame
 
 from promptflow._sdk._constants import (
     LINE_NUMBER,
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
+    REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
     ListViewType,
@@ -40,13 +40,13 @@ from promptflow._sdk._constants import (
     RunHistoryKeys,
     RunStatus,
 )
-from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
-from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
+from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
+from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
     AUTOMATIC_RUNTIME_NAME,
@@ -57,7 +57,7 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -72,7 +72,7 @@ class RunRequestException(Exception):
         super().__init__(message)
 
 
-class RunOperations(_ScopeDependentOperations, TelemetryMixin):
+class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
@@ -92,11 +92,20 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         flow_operations: FlowOperations,
         credential,
         service_caller: FlowServiceCaller,
+        workspace: Workspace,
         **kwargs: Dict,
     ):
-        super().__init__(operation_scope, operation_config)
+        super().__init__(
+            operation_scope=operation_scope,
+            operation_config=operation_config,
+            workspace_name=operation_scope.workspace_name,
+            subscription_id=operation_scope.subscription_id,
+            resource_group_name=operation_scope.resource_group_name,
+        )
+        self._operation_scope = operation_scope
         self._all_operations = all_operations
         self._service_caller = service_caller
+        self._workspace = workspace
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
@@ -111,38 +120,26 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         return self._all_operations.all_operations[AzureMLResourceType.DATASTORE]
 
     @cached_property
-    def _common_azure_url_pattern(self):
-        operation_scope = self._operation_scope
-        url = (
-            f"/subscriptions/{operation_scope.subscription_id}"
-            f"/resourceGroups/{operation_scope.resource_group_name}"
-            f"/providers/Microsoft.MachineLearningServices"
-            f"/workspaces/{operation_scope.workspace_name}"
-        )
-        return url
-
-    @cached_property
     def _run_history_endpoint_url(self):
         """Get the endpoint url for the workspace."""
         endpoint = self._service_caller._service_endpoint
-        return endpoint + "history/v1.0" + self._common_azure_url_pattern
-
-    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
-        """Return the telemetry values of run operations.
-
-        :return: The telemetry values
-        :rtype: Dict
-        """
-        return {
-            "subscription_id": self._operation_scope.subscription_id,
-            "resource_group_name": self._operation_scope.resource_group_name,
-            "workspace_name": self._operation_scope.workspace_name,
-        }
+        return endpoint + "history/v1.0" + self._service_caller._common_azure_url_pattern
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
-        url = f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid={self._common_azure_url_pattern}"
-        return url
+        workspace_kind = str(self._workspace._kind).lower()
+        if workspace_kind == "default":
+            return (
+                f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
+        elif workspace_kind == "project":
+            return (
+                f"https://ai.azure.com/projectflows/bulkrun/run/{run_id}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
+        else:
+            raise RunOperationParameterError(f"Unsupported workspace kind: {workspace_kind!r}")
 
     def _get_input_portal_url_from_input_uri(self, input_uri):
         """Get the portal url for the data input."""
@@ -165,7 +162,10 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         elif input_uri.startswith("azureml:"):
             # named asset id
             name, version = input_uri.split(":")[1:]
-            return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
+            return (
+                f"https://ml.azure.com/data/{name}/{version}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
         else:
             logger.warning(error_msg)
             return None
@@ -184,8 +184,8 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             return None
         datastore, path = match.groups()
         return (
-            f"https://ml.azure.com/data/datastore/{datastore}/edit?wsid={self._common_azure_url_pattern}"
-            f"&activeFilePath={path}#browseTab"
+            f"https://ml.azure.com/data/datastore/{datastore}/"
+            f"edit?wsid={self._service_caller._common_azure_url_pattern}&activeFilePath={path}#browseTab"
         )
 
     def _get_portal_url_from_asset_id(self, asset_id, log_warning=False):
@@ -199,7 +199,9 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
                 logger.warning(error_msg)
             return None
         name, version = match.groups()
-        return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
+        return (
+            f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._service_caller._common_azure_url_pattern}"
+        )
 
     def _get_headers(self):
         token = self._credential.get_token("https://management.azure.com/.default").token
@@ -221,6 +223,9 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         stream = kwargs.pop("stream", False)
         reset = kwargs.pop("reset_runtime", False)
 
+        # validate the run object
+        run._validate_for_run_create_operation()
+
         rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"), reset=reset)
 
         self._service_caller.submit_bulk_run(
@@ -241,7 +246,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     ) -> List[Run]:
         """List runs in the workspace.
 
-        :param max_results: The max number of runs to return, defaults to 100
+        :param max_results: The max number of runs to return, defaults to 50, max is 100
         :type max_results: int
         :param list_view_type: The list view type, defaults to ListViewType.ACTIVE_ONLY
         :type list_view_type: ListViewType
@@ -322,7 +327,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     @monitor_operation(activity_name="pfazure.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False, **kwargs
-    ) -> DataFrame:
+    ) -> "DataFrame":
         """Get the details from the run.
 
         .. note::
@@ -339,6 +344,8 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         :return: The details data frame.
         :rtype: pandas.DataFrame
         """
+        from pandas import DataFrame
+
         # if all_results is True, set max_results to sys.maxsize
         if all_results:
             max_results = sys.maxsize
@@ -382,7 +389,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             new_k = f"outputs.{k}"
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
-        df = pd.DataFrame(data).reindex(columns=columns)
+        df = DataFrame(data).reindex(columns=columns)
         if f"outputs.{LINE_NUMBER}" in columns:
             df = df.set_index(f"outputs.{LINE_NUMBER}")
         return df
@@ -650,11 +657,13 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, run: Union[str, Run]) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream the logs of a run.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails or canceled.
+        :type raise_on_error: bool
         :return: The run object
         :rtype: ~promptflow.entities.Run
         """
@@ -705,13 +714,26 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
                 f'Duration: "{duration}"\n'
                 f'Run url: "{self._get_run_portal_url(run_id=run.name)}"'
             )
-            # won't print error here, put it in run dict
         except KeyboardInterrupt:
             error_message = (
                 "The output streaming for the flow run was interrupted.\n"
                 "But the run is still executing on the cloud.\n"
             )
             print(error_message)
+
+        if run.status == RunStatus.FAILED or run.status == RunStatus.CANCELED:
+            if run.status == RunStatus.FAILED:
+                try:
+                    error_message = run._error["error"]["message"]
+                except Exception:  # pylint: disable=broad-except
+                    error_message = "Run fails with unknown error."
+            else:
+                error_message = "Run is canceled."
+            if raise_on_error:
+                raise InvalidRunStatusError(error_message)
+            else:
+                print_red_error(error_message)
+
         return run
 
     def _resolve_data_to_asset_id(self, run: Run):
@@ -752,9 +774,14 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         return test_data
 
     def _resolve_flow(self, run: Run):
+        if run._use_remote_flow:
+            return self._resolve_flow_definition_resource_id(run=run)
         flow = load_flow(run.flow)
-        # ignore .promptflow/dag.tools.json only for run submission scenario
-        self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
+        self._flow_operations._resolve_arm_id_or_upload_dependencies(
+            flow=flow,
+            # ignore .promptflow/dag.tools.json only for run submission scenario in python
+            ignore_tools_json=flow._flow_dict.get("language", None) != "csharp",
+        )
         return flow.path
 
     def _get_session_id(self, flow):
@@ -900,7 +927,9 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
 
     def _resolve_runtime(self, run, flow_path, runtime, reset=None):
         runtime = run._runtime or runtime
-        session_id = self._get_session_id(flow=flow_path)
+        # for remote flow case, use flow name as session id
+        # for local flow case, use flow path to calculate session id
+        session_id = run._flow_name if run._use_remote_flow else self._get_session_id(flow=flow_path)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime(run=run, session_id=session_id, reset=reset)
@@ -954,3 +983,14 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             raise RunRequestException(
                 f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
             )
+
+    def _resolve_flow_definition_resource_id(self, run: Run):
+        """Resolve the flow definition resource id."""
+        # for registry flow pattern, the flow uri can be passed as flow definition resource id directly
+        if run.flow.startswith(REGISTRY_URI_PREFIX):
+            return run.flow
+
+        # for workspace flow pattern, generate the flow definition resource id
+        workspace_id = self._workspace._workspace_id
+        location = self._workspace.location
+        return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{run._flow_name}"

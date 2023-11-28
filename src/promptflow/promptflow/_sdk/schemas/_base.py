@@ -5,7 +5,6 @@
 # pylint: disable=unused-argument,no-self-use
 
 import copy
-import logging
 from collections import OrderedDict
 from pathlib import Path
 from typing import Optional
@@ -17,8 +16,9 @@ from pydash import objects
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, FILE_PREFIX, PARAMS_OVERRIDE_KEY
 from promptflow._sdk._utils import load_yaml
+from promptflow._utils.logger_utils import LoggerFactory
 
-module_logger = logging.getLogger(__name__)
+module_logger = LoggerFactory.get_logger(__name__)
 
 
 class PatchedMeta:

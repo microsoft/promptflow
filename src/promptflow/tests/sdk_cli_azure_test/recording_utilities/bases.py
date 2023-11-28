@@ -12,10 +12,12 @@ from vcr.request import Request
 
 from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING, SanitizedValues
 from .processors import (
+    AzureMLExperimentIDProcessor,
     AzureOpenAIConnectionProcessor,
     AzureResourceProcessor,
     AzureWorkspaceTriadProcessor,
     DropProcessor,
+    IndexServiceProcessor,
     RecordingProcessor,
     StorageProcessor,
     TenantProcessor,
@@ -127,10 +129,13 @@ class PFAzureIntegrationTestRecording:
 
     def _get_recording_processors(self) -> List[RecordingProcessor]:
         return [
+            AzureMLExperimentIDProcessor(),
             AzureOpenAIConnectionProcessor(),
             AzureResourceProcessor(),
             AzureWorkspaceTriadProcessor(),
             DropProcessor(),
+            IndexServiceProcessor(),
+            StorageProcessor(),
             TenantProcessor(tenant_id=self.tenant_id),
         ]
 
@@ -183,11 +188,6 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
             filter_query_parameters=["api-version"],
         )
         self.cassette = self._cm.__enter__()
-
-    def _get_recording_processors(self) -> List[RecordingProcessor]:
-        recording_processors = super(PFAzureRunIntegrationTestRecording, self)._get_recording_processors()
-        recording_processors.append(StorageProcessor())
-        return recording_processors
 
     def _postprocess_recording(self) -> None:
         self._drop_duplicate_recordings()

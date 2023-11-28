@@ -19,7 +19,9 @@ FLOW_RESULT_KEYS = ["category", "evidence"]
 _client = PFClient()
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowTest:
@@ -196,3 +198,9 @@ class TestFlowTest:
     def test_pf_test_with_non_english_input(self):
         result = _client.test(flow=f"{FLOWS_DIR}/flow_with_non_english_input")
         assert result["output"] == "Hello 日本語"
+
+    def test_pf_node_test_with_dict_input(self):
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input").absolute()
+        inputs = {"get_dict_val.output.value": {"key": "value"}}
+        result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
+        assert result.status.value == "Completed"

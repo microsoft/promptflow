@@ -163,6 +163,38 @@ def build_delete_connection_request(
     )
 
 
+def build_get_connection_with_secrets_request(
+    subscription_id,  # type: str
+    resource_group_name,  # type: str
+    workspace_name,  # type: str
+    connection_name,  # type: str
+    **kwargs  # type: Any
+):
+    # type: (...) -> HttpRequest
+    accept = "application/json"
+    # Construct URL
+    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Connections/{connectionName}/listsecrets')
+    path_format_arguments = {
+        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
+        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
+        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
+        "connectionName": _SERIALIZER.url("connection_name", connection_name, 'str'),
+    }
+
+    url = _format_url_section(url, **path_format_arguments)
+
+    # Construct headers
+    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
+    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
+
+    return HttpRequest(
+        method="GET",
+        url=url,
+        headers=header_parameters,
+        **kwargs
+    )
+
+
 def build_list_connections_request(
     subscription_id,  # type: str
     resource_group_name,  # type: str
@@ -537,6 +569,66 @@ class ConnectionsOperations(object):
         return deserialized
 
     delete_connection.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Connections/{connectionName}'}  # type: ignore
+
+
+    @distributed_trace
+    def get_connection_with_secrets(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        connection_name,  # type: str
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> "_models.ConnectionDto"
+        """get_connection_with_secrets.
+
+        :param subscription_id: The Azure Subscription ID.
+        :type subscription_id: str
+        :param resource_group_name: The Name of the resource group in which the workspace is located.
+        :type resource_group_name: str
+        :param workspace_name: The name of the workspace.
+        :type workspace_name: str
+        :param connection_name:
+        :type connection_name: str
+        :keyword callable cls: A custom type or function that will be passed the direct response
+        :return: ConnectionDto, or the result of cls(response)
+        :rtype: ~flow.models.ConnectionDto
+        :raises: ~azure.core.exceptions.HttpResponseError
+        """
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.ConnectionDto"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
+
+        
+        request = build_get_connection_with_secrets_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            connection_name=connection_name,
+            template_url=self.get_connection_with_secrets.metadata['url'],
+        )
+        request = _convert_request(request)
+        request.url = self._client.format_url(request.url)
+
+        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+
+        deserialized = self._deserialize('ConnectionDto', pipeline_response)
+
+        if cls:
+            return cls(pipeline_response, deserialized, {})
+
+        return deserialized
+
+    get_connection_with_secrets.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Connections/{connectionName}/listsecrets'}  # type: ignore
 
 
     @distributed_trace

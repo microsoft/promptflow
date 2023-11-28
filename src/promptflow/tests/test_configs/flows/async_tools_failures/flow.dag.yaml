@@ -1,0 +1,16 @@
+inputs:
+  text:
+    type: string
+    default: dummy_input
+outputs:
+  output_prompt:
+    type: string
+    reference: ${async_fail.output}
+nodes:
+- name: async_fail
+  type: python
+  source:
+    type: code
+    path: async_fail.py
+  inputs:
+    s: ${inputs.text}
