@@ -6,7 +6,7 @@ import functools
 import uuid
 from datetime import datetime
 
-from promptflow._constants import INNER_CALL_PARAM
+from promptflow._constants import INNER_CALL_PARAM, REQUEST_ID_PARAM
 from promptflow._telemetry.telemetry import TelemetryMixin
 
 
@@ -136,8 +136,8 @@ def monitor_operation(
             logger = get_telemetry_logger()
             # TODO(2699383): use same request id with service caller
             # by pass request id from kwargs
-            request_id = kwargs.get("request_id", uuid.uuid4())
-            kwargs["request_id"] = request_id
+            request_id = kwargs.get(REQUEST_ID_PARAM, uuid.uuid4())
+            kwargs[REQUEST_ID_PARAM] = request_id
             custom_dimensions["request_id"] = request_id
 
             # check if it's first SDK call
