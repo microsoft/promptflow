@@ -18,7 +18,6 @@ from promptflow._telemetry.activity import ActivityType, log_activity
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
-from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -156,7 +155,7 @@ class TestTelemetry:
         assert logger is another_logger
         assert handler is another_handler
 
-    def test_inner_function_call(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
+    def test_inner_function_call(self, pf, runtime: str, randstr: Callable[[str], str]):
         request_ids = set()
         first_sdk_calls = []
 
