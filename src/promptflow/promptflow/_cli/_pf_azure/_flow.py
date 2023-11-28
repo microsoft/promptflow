@@ -46,17 +46,21 @@ def add_parser_flow_create(subparsers):
     """Add flow create parser to the pf flow subparsers."""
     epilog = """
 Use "--set" to set flow properties like:
-    display-name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
+    display_name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
     type: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
     description: Flow description. e.g. "--set description=<description>."
     tags: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
 
+Note:
+    In "--set" parameter, if the key name consists of multiple words, use snake-case instead of kebab-case. e.g. "--set display_name=<flow-display-name>"
+
 Examples:
+
 # Create a flow to azure portal with local flow folder.
-pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-name> type=<flow-type>
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type>
 
 # Create a flow with more properties
-pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
 """  # noqa: E501
     add_param_source = lambda parser: parser.add_argument(  # noqa: E731
         "--flow", type=str, help="Source folder of the flow."
@@ -237,8 +241,6 @@ def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
                 tag_key = k.replace("tags.", "")
                 tags[tag_key] = v
                 continue
-            # replace "-" with "_" to handle the usage for both "-" and "_" in the command key
-            normalized_key = k.replace("-", "_")
-            result[normalized_key] = v
+            result[k] = v
     result["tags"] = tags
     return result
