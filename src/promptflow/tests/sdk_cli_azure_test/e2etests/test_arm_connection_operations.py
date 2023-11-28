@@ -4,14 +4,11 @@
 
 import pytest
 
-from promptflow.azure import PFClient
-from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
 
 @pytest.fixture
-def connection_ops(pf: PFClient) -> ArmConnectionOperations:
+def connection_ops(pf):
     return pf._arm_connections
 
 
@@ -19,7 +16,7 @@ def connection_ops(pf: PFClient) -> ArmConnectionOperations:
 @pytest.mark.e2etest
 @pytest.mark.usefixtures("vcr_recording")
 class TestArmConnectionOperations:
-    def test_get_connection(self, connection_ops: ArmConnectionOperations):
+    def test_get_connection(self, connection_ops):
         # Note: Secrets will be returned by arm api
         result = connection_ops.get(name="azure_open_ai_connection")
         assert (

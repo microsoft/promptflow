@@ -136,7 +136,7 @@ class RecordStorage(object):
         :return: original output of node run
         :rtype: object
         """
-        input_dict["_args"] = self._recursive_create_hashable_args(input_dict["_args"])
+        input_dict = self._recursive_create_hashable_args(input_dict)
         hash_value: str = hashlib.sha1(str(sorted(input_dict.items())).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
         if current_saved_records is None:
@@ -249,7 +249,7 @@ class RecordStorage(object):
         :type output: object
         """
         # filter args, object at will not hash
-        input_dict["_args"] = self._recursive_create_hashable_args(input_dict["_args"])
+        input_dict = self._recursive_create_hashable_args(input_dict)
         hash_value: str = hashlib.sha1(str(sorted(input_dict.items())).encode("utf-8")).hexdigest()
         current_saved_records: Dict[str, str] = self.cached_items.get(self._record_file_str, None)
         output_value, output_generator, output_type = self._parse_output_generator(output)

@@ -16,11 +16,10 @@ This document is dedicated to guiding you through the process of categorizing an
 
 ## How to add category and tags for a tool
 
-### Initialize a package tool with category and tags
-
 You can use [pf tool init](../../reference/pf-command-reference.md#pf-tool-init) to initialize a package tool with category and tags:
 ```python
 pf tool init --package <package-name> --tool <tool-name> --set category=<tool_category> tags=<tool_tags>
+
 ```
 
 Here, we use an example to show the categories and tags of the tool after initialization. Assume that the user executes this command:

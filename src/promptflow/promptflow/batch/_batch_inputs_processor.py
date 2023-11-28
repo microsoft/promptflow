@@ -6,14 +6,14 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import UnexpectedError
 from promptflow._utils.load_data import load_data
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow._utils.utils import resolve_dir_to_absolute
-from promptflow.batch._errors import InputMappingError
+from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
-from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 
 
 class BatchInputsProcessor:
@@ -30,6 +30,14 @@ class BatchInputsProcessor:
 
     def process_batch_inputs(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
         input_dicts = self._resolve_input_data(input_dirs)
+        no_input_data = all(len(data) == 0 for data in input_dicts.values())
+        if no_input_data:
+            input_dirs_str = "\n".join(f"{input}: {Path(path).as_posix()}" for input, path in input_dirs.items())
+            message_format = (
+                "Couldn't find any inputs data at the given input paths. Please review the provided path "
+                "and consider resubmitting.\n{input_dirs}"
+            )
+            raise EmptyInputsData(message_format=message_format, input_dirs=input_dirs_str)
         return self._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
 
     def _resolve_input_data(self, input_dirs: Dict[str, str]):
@@ -89,7 +97,7 @@ class BatchInputsProcessor:
         # For input has default value, we don't try to read data from default mapping.
         # Default value is in higher priority than default mapping.
         for key, value in self._flow_inputs.items():
-            if value and value.default:
+            if value and value.default is not None:
                 del result_mapping[key]
         result_mapping.update(inputs_mapping)
         return result_mapping

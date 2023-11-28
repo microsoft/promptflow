@@ -5,7 +5,7 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
 
 ## Prerequisites
 
-- Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.0.10 or a more recent version.
+- Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.4.2 or later.
 - Create a tool package as described in [Create and Use Tool Package](create-and-use-tool-package.md).
 - Prepare custom icon image that meets these requirements:
 
@@ -22,7 +22,8 @@ You can use [pf tool init](../../reference/pf-command-reference.md#pf-tool-init)
 ```bash
 pf tool init --package <package-name> --tool <tool-name> --set icon=<icon-path>
 ```
-PF CLI will copy the icon file to the folder `<package-name>/icon/<icon-file-name>` and generate a tool script in the package. The tool icon will be configured in the tool script, the code is as follows:
+
+PF CLI will copy the icon file to the folder `<package-name>/icon/<icon-file-name>` and generate a tool script in the package. The tool icon will be configured in the tool script. Here we use [an existing tool project](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart) as an example, the code is as follows:
 ```python
 from pathlib import Path
 
@@ -106,3 +107,21 @@ The content of `output.html` looks like the following, open it in a web browser 
 </body>
 </html>
 ```
+
+### Can I add tool icons for dark and light mode separately?
+Yes, you can add the tool icon data to the tool code as follows:
+```python
+from promptflow import tool
+
+@tool(name="tool_name", icon_dark=<icon-path>, icon_light=<icon-path>)
+def tool_func(input_text: str) -> str:
+    # Tool logic
+    pass
+```
+
+Or run the command below in your tool project directory to automatically generate tool code, use _--icon-light_ to add a custom tool icon for the light mode and use _--icon-dark_ to add a custom tool icon for the dark mode:
+```python
+pf tool init --set icon_dark=<icon-path> icon_light=<icon-path>
+```
+
+Note: Both light and dark icons are optional. If you set either a light or dark icon, it will be used in its respective mode, and the system default icon will be used in the other mode.

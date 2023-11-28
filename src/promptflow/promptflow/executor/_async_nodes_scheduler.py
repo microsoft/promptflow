@@ -4,7 +4,7 @@
 
 import asyncio
 from asyncio import Task
-from typing import Dict, List, Tuple, Any
+from typing import Any, Dict, List, Tuple
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
@@ -41,19 +41,12 @@ class AsyncNodesScheduler:
             dag_manager.completed_nodes_outputs[node] = None
         return dag_manager.completed_nodes_outputs, dag_manager.bypassed_nodes
 
-    async def _wait_and_complete_nodes(
-        self,
-        task2nodes: Dict[Task, Node],
-        dag_manager: DAGManager
-    ) -> Dict[Task, Node]:
+    async def _wait_and_complete_nodes(self, task2nodes: Dict[Task, Node], dag_manager: DAGManager) -> Dict[Task, Node]:
         if not task2nodes:
             raise NoNodeExecutedError("No nodes are ready for execution, but the flow is not completed.")
         tasks = [task for task in task2nodes]
         done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        dag_manager.complete_nodes({
-            task2nodes[task].name: task.result()
-            for task in done
-        })
+        dag_manager.complete_nodes({task2nodes[task].name: task.result() for task in done})
         for task in done:
             del task2nodes[task]
         return task2nodes
@@ -62,26 +55,22 @@ class AsyncNodesScheduler:
         self,
         dag_manager: DAGManager,
         context: FlowExecutionContext,
-    ) -> Dict[Task[Any], Node]:
+    ) -> Dict[Task, Node]:
         # Bypass nodes and update node run info until there are no nodes to bypass
         nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
             for node in nodes_to_bypass:
-                node_outputs = dag_manager.get_bypassed_node_outputs(node)
-                context.bypass_node(node, node_outputs)
+                context.bypass_node(node)
             nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         # Create tasks for ready nodes
-        return {
-            self._create_node_task(node, dag_manager, context): node
-            for node in dag_manager.pop_ready_nodes()
-        }
+        return {self._create_node_task(node, dag_manager, context): node for node in dag_manager.pop_ready_nodes()}
 
     def _create_node_task(
         self,
         node: Node,
         dag_manager: DAGManager,
         context: FlowExecutionContext,
-    ) -> Task[Any]:
+    ) -> Task:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         task = context.invoke_tool_async(node, f, kwargs)

@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
 from jinja2 import Environment, meta
 
+from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -18,6 +19,8 @@ from ..contracts.tool import ConnectionType, InputDefinition, Tool, ToolFuncCall
 from ..contracts.types import PromptTemplate
 
 module_logger = logging.getLogger(__name__)
+
+_DEPRECATED_TOOLS = "deprecated_tools"
 
 
 def value_to_str(val):
@@ -107,8 +110,9 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
     )
 
 
-def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_conn=False,
-                          skip_prompt_template=False) -> tuple:
+def function_to_interface(
+    f: Callable, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False
+) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
     input_defs = {}
@@ -247,8 +251,7 @@ def validate_tool_func_result(func_call_scenario: str, result):
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         if not isinstance(result, Dict):
             raise RetrieveToolFuncResultValidationError(
-                f"ToolFuncCallScenario {func_call_scenario} response must be a dict. "
-                f"{result} is not a dict."
+                f"ToolFuncCallScenario {func_call_scenario} response must be a dict. " f"{result} is not a dict."
             )
     elif func_call_scenario == ToolFuncCallScenario.DYNAMIC_LIST:
         validate_dynamic_list_func_response_type(result, f"ToolFuncCallScenario {func_call_scenario}")
@@ -300,6 +303,47 @@ def load_function_from_function_path(func_path: str):
             f"Failed to parse function from function path: '{func_path}'. Expected format: format 'my_module.my_func'. "
             f"Detailed error: {e}"
         )
+
+
+# Handling backward compatibility and generating a mapping between the previous and new tool IDs.
+def _find_deprecated_tools(package_tools) -> Dict[str, str]:
+    _deprecated_tools = {}
+    for tool_id, tool in package_tools.items():
+        # a list of old tool IDs that are mapped to the current tool ID.
+        if tool and _DEPRECATED_TOOLS in tool:
+            for old_tool_id in tool[_DEPRECATED_TOOLS]:
+                # throw error to prompt user for manual resolution of this conflict, ensuring secure operation.
+                if old_tool_id in _deprecated_tools:
+                    raise DuplicateToolMappingError(
+                        message_format=(
+                            "The tools '{first_tool_id}', '{second_tool_id}' are both linked to the deprecated "
+                            "tool ID '{deprecated_tool_id}'. To ensure secure operation, please either "
+                            "remove or adjust one of these tools in your environment and fix this conflict."
+                        ),
+                        first_tool_id=_deprecated_tools[old_tool_id],
+                        second_tool_id=tool_id,
+                        deprecated_tool_id=old_tool_id,
+                        target=ErrorTarget.TOOL,
+                    )
+
+                _deprecated_tools[old_tool_id] = tool_id
+
+    return _deprecated_tools
+
+
+def _get_function_path(function):
+    # Validate function exist
+    if isinstance(function, str):
+        module_name, func_name = function.rsplit(".", 1)
+        module = importlib.import_module(module_name)
+        func = getattr(module, func_name)
+        func_path = function
+    elif isinstance(function, Callable):
+        func = function
+        func_path = f"{function.__module__}.{function.__name__}"
+    else:
+        raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
+    return func, func_path
 
 
 class RetrieveToolFuncResultError(UserErrorException):

@@ -21,6 +21,7 @@ PROMPT_FLOW_DIR_NAME = ".promptflow"
 HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
 SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_FILE = "pfs.port"
+PF_SERVICE_LOG_FILE = "pfs.log"
 
 if not HOME_PROMPT_FLOW_DIR.is_dir():
     HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)
@@ -71,6 +72,17 @@ VIS_PORTAL_URL_TMPL = (
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
     "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
+REMOTE_URI_PREFIX = "azureml:"
+REGISTRY_URI_PREFIX = "azureml://registries/"
+FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
+FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
+
+# Tool meta info
+UIONLY_HIDDEN = "uionly_hidden"
+SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
+ICON_DARK = "icon_dark"
+ICON_LIGHT = "icon_light"
+ICON = "icon"
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -209,11 +221,6 @@ MAX_SHOW_DETAILS_RESULTS = 100  # show details
 class CLIListOutputFormat:
     JSON = "json"
     TABLE = "table"
-
-
-def get_run_output_path(run) -> Path:
-    # store the run outputs to user's local dir
-    return (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / str(run.name)).resolve()
 
 
 class LocalStorageFilenames:
