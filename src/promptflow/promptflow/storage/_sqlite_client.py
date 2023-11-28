@@ -9,8 +9,6 @@ from datetime import datetime
 from sqlite3 import OperationalError
 from typing import List
 
-import dataset
-from dataset.types import Types
 from sqlalchemy.exc import IntegrityError
 
 from promptflow._utils.retry_utils import retry
@@ -21,6 +19,8 @@ INDEX = "INDEX"
 
 
 def _get_type(t: type):
+    from dataset.types import Types
+
     if issubclass(t, str):
         return Types.string
     elif issubclass(t, int):
@@ -36,7 +36,7 @@ def _get_type(t: type):
 
 
 class TableInfo:
-    def __init__(self, db: dataset.Database, table: dataset.Table, primary_key: str):
+    def __init__(self, db, table, primary_key: str):
         self.db = db
         self.table = table
         self.primary_key = primary_key
@@ -74,6 +74,8 @@ class SqliteClient:
 
         db_path = ":memory:" if in_memory else f"{db_folder_path}/{db_name}"
         # Set check_same_thread=False because different threads might use the same db.
+        import dataset
+
         db = dataset.connect(
             f"sqlite:///{db_path}?check_same_thread=False",
             on_connect_statements=[f"PRAGMA busy_timeout = {timeout_seconds * 1000}"],

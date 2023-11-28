@@ -5,7 +5,6 @@
 import collections
 import hashlib
 import json
-import logging
 import multiprocessing
 import os
 import platform
@@ -33,7 +32,7 @@ from marshmallow import ValidationError
 from ruamel.yaml import YAML
 
 import promptflow
-from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN
+from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
@@ -66,6 +65,7 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.tool import ToolType
 from promptflow.exceptions import UserErrorException
 
@@ -332,7 +332,7 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
     'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the
     original value as a fallback.
     """
-    logger = logging.getLogger(LOGGER_NAME)
+    logger = LoggerFactory.get_logger(LOGGER_NAME)
     for connection_name, connection in connections.items():
         values = connection.get("value", {})
         for key, val in values.items():
@@ -478,7 +478,7 @@ def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
-    logger = logging.getLogger(LOGGER_NAME)
+    logger = LoggerFactory.get_logger(LOGGER_NAME)
 
     def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
@@ -590,7 +590,7 @@ def _generate_tool_meta(
     *,
     include_errors_in_output: bool = False,
 ) -> Dict[str, dict]:
-    logger = logging.getLogger(LOGGER_NAME)
+    logger = LoggerFactory.get_logger(LOGGER_NAME)
     # use multi process generate to avoid system path disturb
     manager = multiprocessing.Manager()
     tools_dict = manager.dict()
@@ -786,19 +786,29 @@ def update_user_agent_from_env_var():
     """Update user agent from env var to OperationContext"""
     from promptflow._core.operation_context import OperationContext
 
-    if "USER_AGENT" in os.environ:
+    if USER_AGENT in os.environ:
         # Append vscode or other user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
+        OperationContext.get_instance().append_user_agent(os.environ[USER_AGENT])
+
+    if PF_USER_AGENT in os.environ:
+        # Append promptflow user agent from env
+        OperationContext.get_instance().append_user_agent(os.environ[PF_USER_AGENT])
 
 
-def setup_user_agent_to_operation_context(user_agent):
-    """Setup user agent to OperationContext"""
+def setup_user_agent_to_operation_context(user_agent=None):
+    """Setup user agent to OperationContext.
+    For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
+    For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
+    For calls from SDK, ua will be like: promptflow-sdk/
+    """
     from promptflow._core.operation_context import OperationContext
 
     update_user_agent_from_env_var()
     # Append user agent
     context = OperationContext.get_instance()
-    context.append_user_agent(user_agent)
+    # skip append if empty
+    if user_agent:
+        context.append_user_agent(user_agent)
     return context.get_user_agent()
 
 

@@ -1,3 +1,7 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Optional
@@ -6,7 +10,8 @@ import httpx
 
 from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow._utils.logger_utils import logger
-from promptflow.exceptions import PromptflowException, SystemErrorException
+from promptflow.batch._errors import ExecutorServiceUnhealthy
+from promptflow.exceptions import PromptflowException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -98,8 +103,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             return response.json()
         else:
             # TODO: add more error handling
-            raise PromptflowException(f"Error when calling executor API, response: {response}, "
-                                      f"error: {response.content}")
+            raise PromptflowException(
+                f"Error when calling executor API, response: {response}, error: {response.content}"
+            )
 
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
@@ -115,7 +121,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         while (datetime.utcnow() - start_time).seconds < waiting_health_timeout:
             if await self.check_health():
                 return
-        raise SystemErrorException(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
+        raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
     async def check_health(self):
         try:

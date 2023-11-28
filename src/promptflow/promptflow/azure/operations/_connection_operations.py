@@ -12,9 +12,9 @@ from azure.ai.ml._scope_dependent_operations import (
 )
 
 from promptflow._sdk._constants import LOGGER_NAME
-from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._entities._workspace_connection_spec import WorkspaceConnectionSpec
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
