@@ -42,12 +42,6 @@ class PFClient:
         self._tools = ToolOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = PFClient()
-        return cls._instance
-
     def run(
         self,
         flow: Union[str, PathLike],
