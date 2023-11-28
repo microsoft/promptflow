@@ -20,7 +20,7 @@ class OperationContext(Dict):
 
     _CONTEXT_KEY = "operation_context"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
-    _USER_AGENT = "_user_agent"
+    _USER_AGENT = "user_agent"
 
     @classmethod
     def get_instance(cls):
@@ -60,7 +60,10 @@ class OperationContext(Dict):
         if value is not None and not isinstance(value, (int, float, str, bool)):
             raise TypeError("Value must be a primitive")
         # set the item in the data attribute
-        self[name] = value
+        if name == self._USER_AGENT:
+            self[name] = value.strip()
+        else:
+            self[name] = value
 
     def __getattr__(self, name):
         """Get the attribute.
@@ -74,6 +77,8 @@ class OperationContext(Dict):
         Returns:
             int, float, str, bool, or None: The value of the attribute.
         """
+        if name == self._USER_AGENT:
+            return self.get_user_agent()
         if name in self:
             return self[name]
         else:
@@ -131,10 +136,6 @@ class OperationContext(Dict):
         user_agent = user_agent.strip()
         if user_agent not in agent:
             self[self._USER_AGENT] = f"{agent} {user_agent}".strip()
-
-    @property
-    def user_agent(self):
-        return self.get_user_agent()
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
