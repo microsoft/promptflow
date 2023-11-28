@@ -10,7 +10,7 @@ FROM docker.io/continuumio/miniconda3:latest
 
 WORKDIR /
 
-COPY ./flow /flow
+COPY ./flow/{{env.python_requirements_txt}} /flow/{{env.python_requirements_txt}}
 
 # create conda environment
 {% if env.conda_file %}
@@ -33,6 +33,8 @@ RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
     conda run -n {{env.conda_env_name}} pip install gunicorn==20.1.0 && \
     conda run -n {{env.conda_env_name}} pip cache purge && \
     conda clean -a -y
+
+COPY ./flow /flow
 
 {% if env.setup_sh %}
 RUN conda run -n {{env.conda_env_name}} sh /flow/{{ env.setup_sh }}
