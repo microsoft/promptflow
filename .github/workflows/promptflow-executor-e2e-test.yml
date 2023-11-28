@@ -87,8 +87,7 @@ jobs:
       working-directory: artifacts
       run: |
         Set-PSDebug -Trace 1
-        pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
-        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        pip install promptflow-tools
         # Pin the openai version for sdk cli tests because pf and pf-tools which support openai 1.x aren't published to PyPi
         # TODO: Remove restriction on openai version after pf-tools package which supports openai 1.x is published
         pip install openai==0.27.10
