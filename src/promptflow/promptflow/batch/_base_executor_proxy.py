@@ -10,7 +10,8 @@ import httpx
 
 from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow._utils.logger_utils import logger
-from promptflow.exceptions import PromptflowException, SystemErrorException
+from promptflow.batch._errors import ExecutorServiceUnhealthy
+from promptflow.exceptions import PromptflowException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -120,7 +121,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         while (datetime.utcnow() - start_time).seconds < waiting_health_timeout:
             if await self.check_health():
                 return
-        raise SystemErrorException(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
+        raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
     async def check_health(self):
         try:

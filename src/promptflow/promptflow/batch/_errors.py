@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 
 class InputMappingError(ValidationException):
@@ -11,4 +11,8 @@ class InputMappingError(ValidationException):
 
 
 class EmptyInputsData(UserErrorException):
+    pass
+
+
+class ExecutorServiceUnhealthy(SystemErrorException):
     pass

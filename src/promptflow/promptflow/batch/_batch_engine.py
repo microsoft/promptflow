@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
+from httpx import ConnectError
+
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
@@ -23,6 +25,7 @@ from promptflow._utils.utils import dump_list_to_jsonl, log_progress, resolve_di
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
+from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -134,6 +137,11 @@ class BatchEngine:
             return batch_result
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
+            if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
+                bulk_logger.warning("The batch run may have been canceled or encountered other issues.")
+                return BatchResult.create(
+                    self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
+                )
             raise e
         finally:
             # destroy executor proxy if the batch run is not cancelled
@@ -143,6 +151,7 @@ class BatchEngine:
     def cancel(self):
         """Cancel the batch run"""
         self._is_canceled = True
+        self._executor_proxy.destroy()
 
     def _exec_batch(
         self,
