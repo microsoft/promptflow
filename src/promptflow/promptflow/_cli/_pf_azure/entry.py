@@ -91,7 +91,7 @@ def entry(argv):
 
     args = parser.parse_args(argv)
     logger = get_telemetry_logger()
-    with log_activity(logger, _get_cli_activity_name(args), activity_type=ActivityType.PUBLICAPI):
+    with log_activity(logger, _get_cli_activity_name(cli='pfazure', args=args), activity_type=ActivityType.PUBLICAPI):
         run_command(args)
 
 
