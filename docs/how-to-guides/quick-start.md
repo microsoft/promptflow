@@ -262,7 +262,7 @@ flow_path = "web-classification"  # "web-classification" is the directory name
 
 # Test flow
 flow_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}  # The inputs of the flow.
-flow_result = pf.test(flow=flow_path, inputs=inputs)
+flow_result = pf.test(flow=flow_path, inputs=flow_inputs)
 print(f"Flow outputs: {flow_result}")
 
 # Test node in the flow
