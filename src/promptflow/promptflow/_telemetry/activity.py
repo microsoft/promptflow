@@ -6,6 +6,7 @@ import functools
 import uuid
 from datetime import datetime
 
+from promptflow._constants import INNER_CALL_PARAM
 from promptflow._telemetry.telemetry import TelemetryMixin
 
 
@@ -140,7 +141,7 @@ def monitor_operation(
             custom_dimensions["request_id"] = request_id
 
             # check if it's first SDK call
-            inner_call = kwargs.get("inner_call", False)
+            inner_call = kwargs.get(INNER_CALL_PARAM, False)
             custom_dimensions["first_sdk_call"] = not inner_call
 
             custom_dimensions.update(extract_telemetry_info(self))

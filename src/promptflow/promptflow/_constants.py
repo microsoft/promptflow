@@ -31,3 +31,6 @@ class FlowLanguage:
 
 USER_AGENT = "USER_AGENT"
 PF_USER_AGENT = "PF_USER_AGENT"
+
+INNER_CALL_PARAM = "_inner_call"
+REQUEST_ID_PARAM = "_request_id"

@@ -6,7 +6,7 @@
 import datetime
 from pathlib import Path
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import INNER_CALL_PARAM, FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import parse_variant
@@ -33,12 +33,12 @@ class RunSubmitter:
 
     def submit(self, run: Run, stream=False, **kwargs):
         self._run_bulk(run=run, stream=stream, **kwargs)
-        kwargs.pop("inner_call", None)
+        kwargs.pop(INNER_CALL_PARAM, None)
         return self.run_operations.get(name=run.name, inner_call=True, **kwargs)
 
     def _run_bulk(self, run: Run, stream=False, **kwargs):
         # validate & resolve variant
-        kwargs.pop("inner_call", None)
+        kwargs.pop(INNER_CALL_PARAM, None)
         if run.variant:
             tuning_node, variant = parse_variant(run.variant)
         else:
@@ -130,7 +130,7 @@ class RunSubmitter:
             # system metrics: token related
             system_metrics = batch_result.system_metrics.to_dict() if batch_result else {}
 
-            kwargs.pop("inner_call", None)
+            kwargs.pop(INNER_CALL_PARAM, None)
             self.run_operations.update(
                 name=run.name,
                 status=status,

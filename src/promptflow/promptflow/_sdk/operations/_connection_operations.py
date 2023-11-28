@@ -4,6 +4,7 @@
 from datetime import datetime
 from typing import List
 
+from promptflow._constants import INNER_CALL_PARAM
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._orm import Connection as ORMConnection
 from promptflow._sdk._utils import safe_parse_object_list
@@ -80,5 +81,5 @@ class ConnectionOperations(TelemetryMixin):
             orm_object.createdDate = now
         orm_object.lastModifiedDate = now
         ORMConnection.create_or_update(orm_object)
-        kwargs.pop("inner_call", None)
+        kwargs.pop(INNER_CALL_PARAM, None)
         return self.get(connection.name, inner_call=True, **kwargs)

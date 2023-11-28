@@ -14,6 +14,7 @@ from typing import Dict, Iterable, List, Tuple, Union
 
 import yaml
 
+from promptflow._constants import INNER_CALL_PARAM
 from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
@@ -349,7 +350,7 @@ class FlowOperations(TelemetryMixin):
         local_client = PFClient()
         connection_paths, env_var_names = [], {}
         for connection_name in connection_names:
-            kwargs.pop("inner_call", None)
+            kwargs.pop(INNER_CALL_PARAM, None)
             connection = local_client.connections.get(
                 name=connection_name, with_secrets=True, inner_call=True, **kwargs
             )

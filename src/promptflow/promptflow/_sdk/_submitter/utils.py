@@ -12,6 +12,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pydash import objects
 
+from promptflow._constants import INNER_CALL_PARAM
 from promptflow._sdk._constants import (
     DEFAULT_VAR_ID,
     INPUTS,
@@ -217,7 +218,7 @@ class SubmitterHelper:
         result = {}
         for n in connection_names:
             try:
-                kwargs.pop("inner_call", None)
+                kwargs.pop(INNER_CALL_PARAM, None)
                 conn = client.connections.get(name=n, with_secrets=True, inner_call=True, **kwargs)
                 result[n] = conn._to_execution_connection_dict()
             except Exception as e:

@@ -33,7 +33,7 @@ from marshmallow import ValidationError
 from ruamel.yaml import YAML
 
 import promptflow
-from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
+from promptflow._constants import EXTENSION_UA, INNER_CALL_PARAM, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
@@ -861,7 +861,7 @@ def get_local_connections_from_executable(executable, client, connections_to_ign
     result = {}
     for n in connection_names:
         if n not in connections_to_ignore:
-            kwargs.pop("inner_call", None)
+            kwargs.pop(INNER_CALL_PARAM, None)
             conn = client.connections.get(name=n, with_secrets=True, inner_call=True, **kwargs)
             result[n] = conn._to_execution_connection_dict()
     return result
