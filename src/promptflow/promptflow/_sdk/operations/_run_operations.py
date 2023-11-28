@@ -47,6 +47,7 @@ class RunOperations(TelemetryMixin):
         max_results: Optional[int] = MAX_RUN_LIST_RESULTS,
         *,
         list_view_type: ListViewType = ListViewType.ACTIVE_ONLY,
+        **kwargs,
     ) -> List[Run]:
         """List runs.
 
