@@ -18,7 +18,7 @@ In this guide, we will provide a detailed walkthrough on how to use `FilePath` a
 
 Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your own tool, please refer to [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package).
 
-1. Add a `FilePath` input for your tool, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_file_path_input.py).
+Add a `FilePath` input for your tool, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_file_path_input.py).
 
     ```python
     import importlib
@@ -35,28 +35,6 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
     
         return new_module.hello(input_text)   
     ```
-
-2. `FilePath` input format in a tool YAML, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_file_path_input.yaml).
-
-   ```yaml
-    my_tool_package.tools.tool_with_file_path_input.my_tool:
-      function: my_tool
-        inputs:
-          # yaml format for FilePath input
-          input_file:
-            type:
-            - file_path
-          input_text:
-            type:
-            - string
-      module: my_tool_package.tools.tool_with_file_path_input
-      name: Tool with FilePath Input
-      description: This is a tool to demonstrate the usage of FilePath input
-      type: python   
-    ```
-
-    > [!Note] tool yaml file can be generated using a python script. For further details, please refer to [create custom tool package](create-and-use-tool-package.md#create-custom-tool-package).
-
 
 ### Use tool with a file path input in VS Code extension
 

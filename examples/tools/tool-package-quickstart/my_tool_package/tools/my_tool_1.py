@@ -2,7 +2,7 @@ from promptflow import tool
 from promptflow.connections import CustomConnection
 
 
-@tool
+@tool(name="My First Tool", description="This is my first tool")
 def my_tool(connection: CustomConnection, input_text: str) -> str:
     # Replace with your tool code.
     # Usually connection contains configs to connect to an API.
