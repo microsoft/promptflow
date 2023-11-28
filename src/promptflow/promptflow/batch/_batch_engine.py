@@ -142,7 +142,6 @@ class BatchEngine:
                     self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
                 )
             return batch_result
-
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
             if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
