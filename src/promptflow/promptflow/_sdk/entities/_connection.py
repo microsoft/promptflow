@@ -23,7 +23,6 @@ from promptflow._sdk._constants import (
     CustomStrongTypeConnectionConfigs,
 )
 from promptflow._sdk._errors import UnsecureConnectionError
-from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -46,6 +45,7 @@ from promptflow._sdk.schemas._connection import (
     SerpConnectionSchema,
     WeaviateConnectionSchema,
 )
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
 
 logger = LoggerFactory.get_logger(name=__name__)
