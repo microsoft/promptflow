@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import datetime
+import functools
 import json
 import logging
 import uuid
@@ -488,31 +489,36 @@ class Run(YAMLTranslatableMixin):
                         )
                     inputs_mapping[k] = val
 
+        # use functools.partial to avoid too many arguments that have the same values
+        common_submit_bulk_run_request = functools.partial(
+            SubmitBulkRunRequest,
+            run_id=self.name,
+            # will use user provided display name since PFS will have special logic to update it.
+            run_display_name=self._get_default_display_name(),
+            description=self.description,
+            tags=self.tags,
+            node_variant=self.variant,
+            variant_run_id=variant,
+            batch_data_input=BatchDataInput(
+                data_uri=self.data,
+            ),
+            inputs_mapping=inputs_mapping,
+            run_experiment_name=self._experiment_name,
+            environment_variables=self.environment_variables,
+            connections=self.connections,
+            flow_lineage_id=self._lineage_id,
+            run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
+        )
+
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
             if not self._use_remote_flow:
                 # in normal case, we will upload local flow to datastore and resolve the self.flow to be remote uri
                 # upload via _check_and_upload_path
                 # submit with params FlowDefinitionDataStoreName and FlowDefinitionBlobPath
                 path_uri = AzureMLDatastorePathUri(str(self.flow))
-                return SubmitBulkRunRequest(
+                return common_submit_bulk_run_request(
                     flow_definition_data_store_name=path_uri.datastore,
                     flow_definition_blob_path=path_uri.path,
-                    run_id=self.name,
-                    # will use user provided display name since PFS will have special logic to update it.
-                    run_display_name=self._get_default_display_name(),
-                    description=self.description,
-                    tags=self.tags,
-                    node_variant=self.variant,
-                    variant_run_id=variant,
-                    batch_data_input=BatchDataInput(
-                        data_uri=self.data,
-                    ),
-                    inputs_mapping=inputs_mapping,
-                    run_experiment_name=self._experiment_name,
-                    environment_variables=self.environment_variables,
-                    connections=self.connections,
-                    flow_lineage_id=self._lineage_id,
-                    run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
                 )
             else:
                 # if the flow is a remote flow in the beginning, we will submit with params FlowDefinitionResourceID
@@ -526,45 +532,14 @@ class Run(YAMLTranslatableMixin):
                         f"Expecting a flow definition resource id starts with '{FLOW_RESOURCE_ID_PREFIX}' "
                         f"or a flow registry uri starts with '{REGISTRY_URI_PREFIX}'"
                     )
-                return SubmitBulkRunRequest(
+                return common_submit_bulk_run_request(
                     flow_definition_resource_id=self.flow,
-                    run_id=self.name,
-                    # will use user provided display name since PFS will have special logic to update it.
-                    run_display_name=self._get_default_display_name(),
-                    description=self.description,
-                    tags=self.tags,
-                    node_variant=self.variant,
-                    variant_run_id=variant,
-                    batch_data_input=BatchDataInput(
-                        data_uri=self.data,
-                    ),
-                    inputs_mapping=inputs_mapping,
-                    run_experiment_name=self._experiment_name,
-                    environment_variables=self.environment_variables,
-                    connections=self.connections,
-                    flow_lineage_id=self._lineage_id,
-                    run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
                 )
         else:
             # upload via CodeOperations.create_or_update
             # submit with param FlowDefinitionDataUri
-            return SubmitBulkRunRequest(
+            return common_submit_bulk_run_request(
                 flow_definition_data_uri=str(self.flow),
-                run_id=self.name,
-                run_display_name=self._get_default_display_name(),
-                description=self.description,
-                tags=self.tags,
-                node_variant=self.variant,
-                variant_run_id=variant,
-                batch_data_input=BatchDataInput(
-                    data_uri=self.data,
-                ),
-                inputs_mapping=inputs_mapping,
-                run_experiment_name=self._experiment_name,
-                environment_variables=self.environment_variables,
-                connections=self.connections,
-                flow_lineage_id=self._lineage_id,
-                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
             )
 
     def _check_run_status_is_completed(self) -> None:

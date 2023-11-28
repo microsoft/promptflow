@@ -2625,4 +2625,1868 @@ interactions:
     status:
       code: 200
       message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores/workspaceblobstore
+  response:
+    body:
+      string: "{\n  \"id\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores/workspaceblobstore\",\n
+        \ \"name\": \"workspaceblobstore\",\n  \"type\": \"Microsoft.MachineLearningServices/workspaces/datastores\",\n
+        \ \"properties\": {\n    \"description\": null,\n    \"tags\": null,\n    \"properties\":
+        null,\n    \"isDefault\": true,\n    \"credentials\": {\n      \"credentialsType\":
+        \"AccountKey\"\n    },\n    \"intellectualProperty\": null,\n    \"subscriptionId\":
+        \"96aede12-2f73-41cb-b983-6d11a904839b\",\n    \"resourceGroup\": \"promptflow\",\n
+        \   \"datastoreType\": \"AzureBlob\",\n    \"accountName\": \"promptfloweast4063704120\",\n
+        \   \"containerName\": \"azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5\",\n
+        \   \"endpoint\": \"core.windows.net\",\n    \"protocol\": \"https\",\n    \"serviceDataAccessAuthIdentity\":
+        \"WorkspaceSystemAssignedIdentity\"\n  },\n  \"systemData\": {\n    \"createdAt\":
+        \"2023-04-08T02:53:06.5886442+00:00\",\n    \"createdBy\": \"779301c0-18b2-4cdc-801b-a0a3368fee0a\",\n
+        \   \"createdByType\": \"Application\",\n    \"lastModifiedAt\": \"2023-04-08T02:53:07.521127+00:00\",\n
+        \   \"lastModifiedBy\": \"779301c0-18b2-4cdc-801b-a0a3368fee0a\",\n    \"lastModifiedByType\":
+        \"Application\"\n  }\n}"
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Length:
+      - '1227'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 28 Nov 2023 03:51:47 GMT
+      Expires:
+      - '-1'
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Vary:
+      - Accept-Encoding
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-MSEdge-Ref:
+      - 'Ref A: A6B6919A46544732A0E3AEC51A8B71A8 Ref B: TYO201100114019 Ref C: 2023-11-28T03:51:46Z'
+      x-aml-cluster:
+      - vienna-eastus-01
+      x-ms-correlation-request-id:
+      - 2ade8d26-f87d-40f7-bd40-21d641a99deb
+      x-ms-ratelimit-remaining-subscription-reads:
+      - '11999'
+      x-ms-request-id:
+      - 2ade8d26-f87d-40f7-bd40-21d641a99deb
+      x-ms-response-type:
+      - standard
+      x-ms-routing-request-id:
+      - JAPANEAST:20231128T035147Z:2ade8d26-f87d-40f7-bd40-21d641a99deb
+      x-request-time:
+      - '0.077'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://management.azure.com/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores/workspaceblobstore/listSecrets
+  response:
+    body:
+      string: "{\n  \"secretsType\": \"AccountKey\",\n  \"key\": \"\"\n}"
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Length:
+      - '134'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 28 Nov 2023 03:51:48 GMT
+      Expires:
+      - '-1'
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-MSEdge-Ref:
+      - 'Ref A: 03A854E3E2D7481CB89D6F43449ABC8D Ref B: TYO201100114019 Ref C: 2023-11-28T03:51:47Z'
+      x-aml-cluster:
+      - vienna-eastus-02
+      x-ms-correlation-request-id:
+      - 141b543e-a35c-4192-9710-7f0bb49ce6df
+      x-ms-ratelimit-remaining-subscription-writes:
+      - '1199'
+      x-ms-request-id:
+      - 141b543e-a35c-4192-9710-7f0bb49ce6df
+      x-ms-response-type:
+      - standard
+      x-ms-routing-request-id:
+      - JAPANEAST:20231128T035148Z:141b543e-a35c-4192-9710-7f0bb49ce6df
+      x-request-time:
+      - '0.758'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.18.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Tue, 28 Nov 2023 03:51:48 GMT
+      x-ms-version:
+      - '2023-08-03'
+    method: HEAD
+    uri: https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      Accept-Ranges:
+      - bytes
+      Content-Length:
+      - '379'
+      Content-MD5:
+      - lI/pz9jzTQ7Td3RHPL7y7w==
+      Content-Type:
+      - application/octet-stream
+      Date:
+      - Tue, 28 Nov 2023 03:51:49 GMT
+      ETag:
+      - '"0x8DBDEA29BC58A81"'
+      Last-Modified:
+      - Mon, 06 Nov 2023 08:30:18 GMT
+      Server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      Vary:
+      - Origin
+      x-ms-access-tier:
+      - Hot
+      x-ms-access-tier-inferred:
+      - 'true'
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-client-request-id:
+      - 7523d7aa-8da1-11ee-a4ad-6045bd62fdf4
+      x-ms-creation-time:
+      - Mon, 06 Nov 2023 08:30:18 GMT
+      x-ms-lease-state:
+      - available
+      x-ms-lease-status:
+      - unlocked
+      x-ms-meta-name:
+      - 94331215-cf7f-452a-9f1a-1d276bc9b0e4
+      x-ms-meta-upload_status:
+      - completed
+      x-ms-meta-version:
+      - 3f163752-edb0-4afc-a6f5-b0a670bd7c24
+      x-ms-request-id:
+      - fbe62bd9-c01e-0081-29ae-21ad56000000
+      x-ms-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.18.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Tue, 28 Nov 2023 03:51:50 GMT
+      x-ms-version:
+      - '2023-08-03'
+    method: HEAD
+    uri: https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/az-ml-artifacts/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      Date:
+      - Tue, 28 Nov 2023 03:51:49 GMT
+      Server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      x-ms-client-request-id:
+      - 75c8ae87-8da1-11ee-ba58-6045bd62fdf4
+      x-ms-error-code:
+      - BlobNotFound
+      x-ms-request-id:
+      - fbe62c6c-c01e-0081-30ae-21ad56000000
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 404
+      message: The specified blob does not exist.
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores/workspaceblobstore
+  response:
+    body:
+      string: "{\n  \"id\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores/workspaceblobstore\",\n
+        \ \"name\": \"workspaceblobstore\",\n  \"type\": \"Microsoft.MachineLearningServices/workspaces/datastores\",\n
+        \ \"properties\": {\n    \"description\": null,\n    \"tags\": null,\n    \"properties\":
+        null,\n    \"isDefault\": true,\n    \"credentials\": {\n      \"credentialsType\":
+        \"AccountKey\"\n    },\n    \"intellectualProperty\": null,\n    \"subscriptionId\":
+        \"96aede12-2f73-41cb-b983-6d11a904839b\",\n    \"resourceGroup\": \"promptflow\",\n
+        \   \"datastoreType\": \"AzureBlob\",\n    \"accountName\": \"promptfloweast4063704120\",\n
+        \   \"containerName\": \"azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5\",\n
+        \   \"endpoint\": \"core.windows.net\",\n    \"protocol\": \"https\",\n    \"serviceDataAccessAuthIdentity\":
+        \"WorkspaceSystemAssignedIdentity\"\n  },\n  \"systemData\": {\n    \"createdAt\":
+        \"2023-04-08T02:53:06.5886442+00:00\",\n    \"createdBy\": \"779301c0-18b2-4cdc-801b-a0a3368fee0a\",\n
+        \   \"createdByType\": \"Application\",\n    \"lastModifiedAt\": \"2023-04-08T02:53:07.521127+00:00\",\n
+        \   \"lastModifiedBy\": \"779301c0-18b2-4cdc-801b-a0a3368fee0a\",\n    \"lastModifiedByType\":
+        \"Application\"\n  }\n}"
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Length:
+      - '1227'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 28 Nov 2023 03:51:50 GMT
+      Expires:
+      - '-1'
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Vary:
+      - Accept-Encoding
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-MSEdge-Ref:
+      - 'Ref A: 6970B02824AC40EE9DE0A010F1F7E88F Ref B: TYO201100114019 Ref C: 2023-11-28T03:51:50Z'
+      x-aml-cluster:
+      - vienna-eastus-01
+      x-ms-correlation-request-id:
+      - fc6a5a3a-5966-4611-9832-62fca5418af9
+      x-ms-ratelimit-remaining-subscription-reads:
+      - '11999'
+      x-ms-request-id:
+      - fc6a5a3a-5966-4611-9832-62fca5418af9
+      x-ms-response-type:
+      - standard
+      x-ms-routing-request-id:
+      - JAPANEAST:20231128T035150Z:fc6a5a3a-5966-4611-9832-62fca5418af9
+      x-request-time:
+      - '0.075'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://management.azure.com/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores/workspaceblobstore/listSecrets
+  response:
+    body:
+      string: "{\n  \"secretsType\": \"AccountKey\",\n  \"key\": \"\"\n}"
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Length:
+      - '134'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 28 Nov 2023 03:51:51 GMT
+      Expires:
+      - '-1'
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      X-Cache:
+      - CONFIG_NOCACHE
+      X-Content-Type-Options:
+      - nosniff
+      X-MSEdge-Ref:
+      - 'Ref A: A4DAACA8C363457F8321389B3C485881 Ref B: TYO201100114019 Ref C: 2023-11-28T03:51:50Z'
+      x-aml-cluster:
+      - vienna-eastus-02
+      x-ms-correlation-request-id:
+      - bc38042c-5304-452c-b669-3f50efcedfe2
+      x-ms-ratelimit-remaining-subscription-writes:
+      - '1199'
+      x-ms-request-id:
+      - bc38042c-5304-452c-b669-3f50efcedfe2
+      x-ms-response-type:
+      - standard
+      x-ms-routing-request-id:
+      - JAPANEAST:20231128T035151Z:bc38042c-5304-452c-b669-3f50efcedfe2
+      x-request-time:
+      - '0.110'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.18.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Tue, 28 Nov 2023 03:51:51 GMT
+      x-ms-version:
+      - '2023-08-03'
+    method: HEAD
+    uri: https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/LocalUpload/7c59ad67129b552538ca09362171cc15/web_classification/classify_with_llm.jinja2
+  response:
+    body:
+      string: ''
+    headers:
+      Accept-Ranges:
+      - bytes
+      Content-Length:
+      - '590'
+      Content-MD5:
+      - lO4oQJbXkB2KYDp3GfsrCg==
+      Content-Type:
+      - application/octet-stream
+      Date:
+      - Tue, 28 Nov 2023 03:51:52 GMT
+      ETag:
+      - '"0x8DBEF3C372FD0D5"'
+      Last-Modified:
+      - Mon, 27 Nov 2023 11:30:10 GMT
+      Server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      Vary:
+      - Origin
+      x-ms-access-tier:
+      - Hot
+      x-ms-access-tier-inferred:
+      - 'true'
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-client-request-id:
+      - 76c3e1ca-8da1-11ee-838d-6045bd62fdf4
+      x-ms-creation-time:
+      - Mon, 27 Nov 2023 11:30:08 GMT
+      x-ms-lease-state:
+      - available
+      x-ms-lease-status:
+      - unlocked
+      x-ms-meta-name:
+      - c1a29d69-1b45-4d05-ae0e-b7ed44b7fa1a
+      x-ms-meta-upload_status:
+      - completed
+      x-ms-meta-version:
+      - '1'
+      x-ms-request-id:
+      - 8680a859-601e-0031-19ae-21ec9f000000
+      x-ms-server-encrypted:
+      - 'true'
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.18.1 Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Tue, 28 Nov 2023 03:51:52 GMT
+      x-ms-version:
+      - '2023-08-03'
+    method: HEAD
+    uri: https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/az-ml-artifacts/7c59ad67129b552538ca09362171cc15/web_classification/classify_with_llm.jinja2
+  response:
+    body:
+      string: ''
+    headers:
+      Date:
+      - Tue, 28 Nov 2023 03:51:52 GMT
+      Server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Origin
+      x-ms-client-request-id:
+      - 776a6404-8da1-11ee-ba9f-6045bd62fdf4
+      x-ms-error-code:
+      - BlobNotFound
+      x-ms-request-id:
+      - 8680a8d5-601e-0031-04ae-21ec9f000000
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 404
+      message: The specified blob does not exist.
+- request:
+    body: '{"flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
+      "LocalUpload/7c59ad67129b552538ca09362171cc15/web_classification/flow.dag.yaml",
+      "runId": "eefe928d-2053-4dde-ad38-3a9e5a408b65", "runDisplayName": "eefe928d-2053-4dde-ad38-3a9e5a408b65",
+      "runExperimentName": "web_classification", "batchDataInput": {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl"},
+      "inputsMapping": {}, "connections": {}, "environmentVariables": {}, "runtimeName":
+      "hod-ci", "sessionId": "8a353369f754e5e4d415ede705304bc4a6a6c7594481cad5", "flowLineageId":
+      "97280ab0e0bfee2b7b9a66a5e6391fa0f52550ecf78501ac8bd57d5e31eddfd6", "runDisplayNameGenerationType":
+      "UserProvidedMacro"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '756'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+    method: POST
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/BulkRuns/submit
+  response:
+    body:
+      string: '"eefe928d-2053-4dde-ad38-3a9e5a408b65"'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '38'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 28 Nov 2023 03:52:11 GMT
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains; preload
+      X-Content-Type-Options:
+      - nosniff
+      x-aml-cluster:
+      - vienna-eastus-02
+      x-ms-client-request-id:
+      - 2251d381-997f-4455-b429-ae9a136c502b
+      x-ms-client-session-id:
+      - ''
+      x-ms-client-user-type:
+      - ApiUser
+      x-ms-response-type:
+      - standard
+      x-request-time:
+      - '14.226'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "eefe928d-2053-4dde-ad38-3a9e5a408b65", "selectRunMetadata":
+      true, "selectRunDefinition": true, "selectJobSpecification": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/rundata
+  response:
+    body:
+      string: "{\n  \"runMetadata\": {\n    \"runNumber\": 1701143525,\n    \"rootRunId\":
+        \"eefe928d-2053-4dde-ad38-3a9e5a408b65\",\n    \"createdUtc\": \"2023-11-28T03:52:05.7661963+00:00\",\n
+        \   \"createdBy\": {\n      \"userObjectId\": \"c05e0746-e125-4cb3-9213-a8b535eacd79\",\n
+        \     \"userPuId\": \"10032000324F7449\",\n      \"userIdp\": null,\n      \"userAltSecId\":
+        null,\n      \"userIss\": \"https://sts.windows.net/72f988bf-86f1-41af-91ab-2d7cd011db47/\",\n
+        \     \"userTenantId\": \"72f988bf-86f1-41af-91ab-2d7cd011db47\",\n      \"userName\":
+        \"Honglin Du\",\n      \"upn\": null\n    },\n    \"userId\": \"c05e0746-e125-4cb3-9213-a8b535eacd79\",\n
+        \   \"token\": null,\n    \"tokenExpiryTimeUtc\": null,\n    \"error\": null,\n
+        \   \"warnings\": null,\n    \"revision\": 2,\n    \"statusRevision\": 1,\n
+        \   \"runUuid\": \"d6cb448d-fd1f-4d1a-a31e-72c685f861d9\",\n    \"parentRunUuid\":
+        null,\n    \"rootRunUuid\": \"d6cb448d-fd1f-4d1a-a31e-72c685f861d9\",\n    \"lastStartTimeUtc\":
+        null,\n    \"currentComputeTime\": \"00:00:00\",\n    \"computeDuration\":
+        null,\n    \"effectiveStartTimeUtc\": null,\n    \"lastModifiedBy\": {\n      \"userObjectId\":
+        \"c05e0746-e125-4cb3-9213-a8b535eacd79\",\n      \"userPuId\": \"10032000324F7449\",\n
+        \     \"userIdp\": null,\n      \"userAltSecId\": null,\n      \"userIss\":
+        \"https://sts.windows.net/72f988bf-86f1-41af-91ab-2d7cd011db47/\",\n      \"userTenantId\":
+        \"72f988bf-86f1-41af-91ab-2d7cd011db47\",\n      \"userName\": \"Honglin Du\",\n
+        \     \"upn\": null\n    },\n    \"lastModifiedUtc\": \"2023-11-28T03:52:05.7661963+00:00\",\n
+        \   \"duration\": null,\n    \"cancelationReason\": null,\n    \"currentAttemptId\":
+        1,\n    \"runId\": \"eefe928d-2053-4dde-ad38-3a9e5a408b65\",\n    \"parentRunId\":
+        null,\n    \"experimentId\": \"d30efbeb-f81d-4cfa-b5cc-a0570a049009\",\n    \"status\":
+        \"Preparing\",\n    \"startTimeUtc\": null,\n    \"endTimeUtc\": null,\n    \"scheduleId\":
+        null,\n    \"displayName\": \"eefe928d-2053-4dde-ad38-3a9e5a408b65\",\n    \"name\":
+        null,\n    \"dataContainerId\": \"dcid.eefe928d-2053-4dde-ad38-3a9e5a408b65\",\n
+        \   \"description\": null,\n    \"hidden\": false,\n    \"runType\": \"azureml.promptflow.FlowRun\",\n
+        \   \"runTypeV2\": {\n      \"orchestrator\": null,\n      \"traits\": [],\n
+        \     \"attribution\": \"PromptFlow\",\n      \"computeType\": \"AmlcDsi\"\n
+        \   },\n    \"properties\": {\n      \"azureml.promptflow.runtime_name\":
+        \"hod-ci\",\n      \"azureml.promptflow.runtime_version\": \"20231114.v2\",\n
+        \     \"azureml.promptflow.definition_file_name\": \"flow.dag.yaml\",\n      \"azureml.promptflow.session_id\":
+        \"8a353369f754e5e4d415ede705304bc4a6a6c7594481cad5\",\n      \"azureml.promptflow.flow_lineage_id\":
+        \"97280ab0e0bfee2b7b9a66a5e6391fa0f52550ecf78501ac8bd57d5e31eddfd6\",\n      \"azureml.promptflow.flow_definition_datastore_name\":
+        \"workspaceblobstore\",\n      \"azureml.promptflow.flow_definition_blob_path\":
+        \"LocalUpload/7c59ad67129b552538ca09362171cc15/web_classification/flow.dag.yaml\",\n
+        \     \"azureml.promptflow.input_data\": \"azureml://datastores/workspaceblobstore/paths/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl\",\n
+        \     \"azureml.promptflow.snapshot_id\": \"48df2e3e-67ce-4049-9abc-715986f220a6\",\n
+        \     \"_azureml.evaluation_run\": \"promptflow.BatchRun\"\n    },\n    \"parameters\":
+        {},\n    \"actionUris\": {},\n    \"scriptName\": null,\n    \"target\": null,\n
+        \   \"uniqueChildRunComputeTargets\": [],\n    \"tags\": {},\n    \"settings\":
+        {},\n    \"services\": {},\n    \"inputDatasets\": [],\n    \"outputDatasets\":
+        [],\n    \"runDefinition\": null,\n    \"jobSpecification\": null,\n    \"primaryMetricName\":
+        null,\n    \"createdFrom\": null,\n    \"cancelUri\": null,\n    \"completeUri\":
+        null,\n    \"diagnosticsUri\": null,\n    \"computeRequest\": null,\n    \"compute\":
+        null,\n    \"retainForLifetimeOfWorkspace\": false,\n    \"queueingInfo\":
+        null,\n    \"inputs\": null,\n    \"outputs\": null\n  },\n  \"runDefinition\":
+        {\n    \"Nodes\": [\n      {\n        \"Name\": \"fetch_text_content_from_url\",\n
+        \       \"Type\": \"python\",\n        \"Source\": {\n          \"Type\":
+        \"code\",\n          \"Tool\": null,\n          \"Path\": \"fetch_text_content_from_url.py\"\n
+        \       },\n        \"Inputs\": {\n          \"fetch_url\": \"${inputs.url}\"\n
+        \       },\n        \"Tool\": \"fetch_text_content_from_url.py\",\n        \"Reduce\":
+        false,\n        \"Comment\": null,\n        \"Activate\": null,\n        \"Api\":
+        null,\n        \"Provider\": null,\n        \"Connection\": null,\n        \"Module\":
+        null\n      },\n      {\n        \"Name\": \"prepare_examples\",\n        \"Type\":
+        \"python\",\n        \"Source\": {\n          \"Type\": \"code\",\n          \"Tool\":
+        null,\n          \"Path\": \"prepare_examples.py\"\n        },\n        \"Inputs\":
+        {},\n        \"Tool\": \"prepare_examples.py\",\n        \"Reduce\": false,\n
+        \       \"Comment\": null,\n        \"Activate\": null,\n        \"Api\":
+        null,\n        \"Provider\": null,\n        \"Connection\": null,\n        \"Module\":
+        null\n      },\n      {\n        \"Name\": \"classify_with_llm\",\n        \"Type\":
+        \"llm\",\n        \"Source\": {\n          \"Type\": \"code\",\n          \"Tool\":
+        null,\n          \"Path\": \"classify_with_llm.jinja2\"\n        },\n        \"Inputs\":
+        {\n          \"deployment_name\": \"text-davinci-003\",\n          \"suffix\":
+        \"\",\n          \"max_tokens\": \"128\",\n          \"temperature\": \"0.1\",\n
+        \         \"top_p\": \"1.0\",\n          \"logprobs\": \"\",\n          \"echo\":
+        \"False\",\n          \"stop\": \"\",\n          \"presence_penalty\": \"0\",\n
+        \         \"frequency_penalty\": \"0\",\n          \"best_of\": \"1\",\n          \"logit_bias\":
+        \"\",\n          \"url\": \"${inputs.url}\",\n          \"examples\": \"${prepare_examples.output}\",\n
+        \         \"text_content\": \"${summarize_text_content.output}\"\n        },\n
+        \       \"Tool\": \"classify_with_llm.jinja2\",\n        \"Reduce\": false,\n
+        \       \"Comment\": null,\n        \"Activate\": null,\n        \"Api\":
+        \"completion\",\n        \"Provider\": \"AzureOpenAI\",\n        \"Connection\":
+        \"azure_open_ai_connection\",\n        \"Module\": \"promptflow.tools.aoai\"\n
+        \     },\n      {\n        \"Name\": \"convert_to_dict\",\n        \"Type\":
+        \"python\",\n        \"Source\": {\n          \"Type\": \"code\",\n          \"Tool\":
+        null,\n          \"Path\": \"convert_to_dict.py\"\n        },\n        \"Inputs\":
+        {\n          \"input_str\": \"${classify_with_llm.output}\"\n        },\n
+        \       \"Tool\": \"convert_to_dict.py\",\n        \"Reduce\": false,\n        \"Comment\":
+        null,\n        \"Activate\": null,\n        \"Api\": null,\n        \"Provider\":
+        null,\n        \"Connection\": null,\n        \"Module\": null\n      },\n
+        \     {\n        \"Name\": \"summarize_text_content\",\n        \"Type\":
+        \"llm\",\n        \"Source\": {\n          \"Type\": \"code\",\n          \"Tool\":
+        null,\n          \"Path\": \"summarize_text_content__variant_1.jinja2\"\n
+        \       },\n        \"Inputs\": {\n          \"deployment_name\": \"text-davinci-003\",\n
+        \         \"suffix\": \"\",\n          \"max_tokens\": \"256\",\n          \"temperature\":
+        \"0.3\",\n          \"top_p\": \"1.0\",\n          \"logprobs\": \"\",\n          \"echo\":
+        \"False\",\n          \"stop\": \"\",\n          \"presence_penalty\": \"0\",\n
+        \         \"frequency_penalty\": \"0\",\n          \"best_of\": \"1\",\n          \"logit_bias\":
+        \"\",\n          \"text\": \"${fetch_text_content_from_url.output}\"\n        },\n
+        \       \"Tool\": \"summarize_text_content__variant_1.jinja2\",\n        \"Reduce\":
+        false,\n        \"Comment\": null,\n        \"Activate\": null,\n        \"Api\":
+        \"completion\",\n        \"Provider\": null,\n        \"Connection\": \"azure_open_ai_connection\",\n
+        \       \"Module\": null\n      }\n    ],\n    \"Tools\": [\n      {\n        \"Name\":
+        \"Content Safety (Text Analyze)\",\n        \"Type\": \"python\",\n        \"Inputs\":
+        {\n          \"connection\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"AzureContentSafetyConnection\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"hate_category\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": \"medium_sensitivity\",\n            \"Description\":
+        null,\n            \"Enum\": [\n              \"disable\",\n              \"low_sensitivity\",\n
+        \             \"medium_sensitivity\",\n              \"high_sensitivity\"\n
+        \           ],\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"self_harm_category\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"string\"\n            ],\n            \"Default\":
+        \"medium_sensitivity\",\n            \"Description\": null,\n            \"Enum\":
+        [\n              \"disable\",\n              \"low_sensitivity\",\n              \"medium_sensitivity\",\n
+        \             \"high_sensitivity\"\n            ],\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"sexual_category\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": \"medium_sensitivity\",\n            \"Description\":
+        null,\n            \"Enum\": [\n              \"disable\",\n              \"low_sensitivity\",\n
+        \             \"medium_sensitivity\",\n              \"high_sensitivity\"\n
+        \           ],\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"text\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"violence_category\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": \"medium_sensitivity\",\n            \"Description\":
+        null,\n            \"Enum\": [\n              \"disable\",\n              \"low_sensitivity\",\n
+        \             \"medium_sensitivity\",\n              \"high_sensitivity\"\n
+        \           ],\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        \"Use Azure Content Safety to detect harmful content.\",\n        \"connection_type\":
+        null,\n        \"Module\": \"content_safety_text.tools.content_safety_text_tool\",\n
+        \       \"class_name\": null,\n        \"Source\": null,\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"analyze_text\",\n
+        \       \"action_type\": null,\n        \"provider_config\": null,\n        \"function_config\":
+        null,\n        \"Icon\": null,\n        \"Category\": null,\n        \"Tags\":
+        null,\n        \"is_builtin\": true,\n        \"package\": \"promptflow-contentsafety\",\n
+        \       \"package_version\": \"0.0.9\",\n        \"default_prompt\": null,\n
+        \       \"enable_kwargs\": false\n      },\n      {\n        \"Name\": \"Embedding\",\n
+        \       \"Type\": \"python\",\n        \"Inputs\": {\n          \"connection\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"AzureOpenAIConnection\",\n
+        \             \"OpenAIConnection\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"deployment_name\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": \"connection\",\n
+        \           \"enabled_by_type\": [\n              \"AzureOpenAIConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        [\n              \"text-embedding-ada-002\",\n              \"text-search-ada-doc-001\",\n
+        \             \"text-search-ada-query-001\"\n            ],\n            \"Capabilities\":
+        {\n              \"completion\": false,\n              \"chat_completion\":
+        false,\n              \"embeddings\": true\n            },\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"input\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"model\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": [\n              \"text-embedding-ada-002\",\n
+        \             \"text-search-ada-doc-001\",\n              \"text-search-ada-query-001\"\n
+        \           ],\n            \"enabled_by\": \"connection\",\n            \"enabled_by_type\":
+        [\n              \"OpenAIConnection\"\n            ],\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": \"Use Open AI's embedding model to create
+        an embedding vector representing the input text.\",\n        \"connection_type\":
+        null,\n        \"Module\": \"promptflow.tools.embedding\",\n        \"class_name\":
+        null,\n        \"Source\": null,\n        \"LkgCode\": null,\n        \"Code\":
+        null,\n        \"Function\": \"embedding\",\n        \"action_type\": null,\n
+        \       \"provider_config\": null,\n        \"function_config\": null,\n        \"Icon\":
+        null,\n        \"Category\": null,\n        \"Tags\": null,\n        \"is_builtin\":
+        true,\n        \"package\": \"promptflow-tools\",\n        \"package_version\":
+        \"0.1.0b10\",\n        \"default_prompt\": null,\n        \"enable_kwargs\":
+        false\n      },\n      {\n        \"Name\": \"Open Source LLM\",\n        \"Type\":
+        \"custom_llm\",\n        \"Inputs\": {\n          \"api\": {\n            \"Name\":
+        null,\n            \"Type\": [\n              \"string\"\n            ],\n
+        \           \"Default\": null,\n            \"Description\": null,\n            \"Enum\":
+        [\n              \"chat\",\n              \"completion\"\n            ],\n
+        \           \"enabled_by\": null,\n            \"enabled_by_type\": null,\n
+        \           \"enabled_by_value\": null,\n            \"model_list\": null,\n
+        \           \"Capabilities\": null,\n            \"dynamic_list\": null,\n
+        \           \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"connection\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"CustomConnection\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"deployment_name\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"endpoint_name\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"string\"\n            ],\n            \"Default\":
+        \"-- please enter an endpoint name --\",\n            \"Description\": null,\n
+        \           \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"max_new_tokens\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"int\"\n            ],\n            \"Default\":
+        \"500\",\n            \"Description\": null,\n            \"Enum\": null,\n
+        \           \"enabled_by\": null,\n            \"enabled_by_type\": null,\n
+        \           \"enabled_by_value\": null,\n            \"model_list\": null,\n
+        \           \"Capabilities\": null,\n            \"dynamic_list\": null,\n
+        \           \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"model_kwargs\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"object\"\n            ],\n            \"Default\":
+        \"{}\",\n            \"Description\": null,\n            \"Enum\": null,\n
+        \           \"enabled_by\": null,\n            \"enabled_by_type\": null,\n
+        \           \"enabled_by_value\": null,\n            \"model_list\": null,\n
+        \           \"Capabilities\": null,\n            \"dynamic_list\": null,\n
+        \           \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"temperature\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"double\"\n            ],\n            \"Default\":
+        \"1.0\",\n            \"Description\": null,\n            \"Enum\": null,\n
+        \           \"enabled_by\": null,\n            \"enabled_by_type\": null,\n
+        \           \"enabled_by_value\": null,\n            \"model_list\": null,\n
+        \           \"Capabilities\": null,\n            \"dynamic_list\": null,\n
+        \           \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"top_p\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"double\"\n            ],\n            \"Default\": \"1.0\",\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": \"Use an Open Source model from the Azure
+        Model catalog, deployed to an AzureML Online Endpoint for LLM Chat or Completion
+        API calls.\",\n        \"connection_type\": null,\n        \"Module\": \"promptflow.tools.open_source_llm\",\n
+        \       \"class_name\": \"OpenSourceLLM\",\n        \"Source\": null,\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"call\",\n        \"action_type\":
+        null,\n        \"provider_config\": null,\n        \"function_config\": null,\n
+        \       \"Icon\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAABYUlEQVR4nIWRsUtbcRRGz70v5BmHiLSh7pJu0oJDHUrf1kVwlCIRHMTN/yDasd0imCkgZGibFlrd5DmFNDSiksADsdAhk3TIZmj6kCa/65BERCie6Rsu93LPByPeajUxztWEKXcxzwTg/VQz18y9mwYwMQ9AxkNHLzI5nfvT9lwqa1H3c9AAwRATob7qLw8mLTz/tHEJxZnnK/4i/+Ivr8oGUNtqho1gdCz5yx+mRtAK63kAooPSAhwVTor7TwE+Zs+K4Q6UFqIDSIDG02nTb7tTa7N7xxFMPuvVrsumX9MaQwJM+wNxtNne9Fc/iJZfF2KAysAUbv81rzqxe939cfW9EFcnhi8CKIjz1BSjjyQfJR8j9DFTT8UNN6Q6XXFIRo3eRe/CyCgirtN1KQDq+VZ4GnCPRtAKa3nuiEq5w5+V9d+w82T+TXJJR6Luqf7b9pyftahXeXk8VP1gWbf8r+4bvICY0FkMumIAAAAASUVORK5CYII=\",\n
+        \       \"Category\": null,\n        \"Tags\": null,\n        \"is_builtin\":
+        true,\n        \"package\": \"promptflow-tools\",\n        \"package_version\":
+        \"0.1.0b10\",\n        \"default_prompt\": null,\n        \"enable_kwargs\":
+        false\n      },\n      {\n        \"Name\": \"Serp API\",\n        \"Type\":
+        \"python\",\n        \"Inputs\": {\n          \"connection\": {\n            \"Name\":
+        null,\n            \"Type\": [\n              \"SerpConnection\"\n            ],\n
+        \           \"Default\": null,\n            \"Description\": null,\n            \"Enum\":
+        null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"engine\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": \"google\",\n
+        \           \"Description\": null,\n            \"Enum\": [\n              \"google\",\n
+        \             \"bing\"\n            ],\n            \"enabled_by\": null,\n
+        \           \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"location\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": \"\",\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"num\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"int\"\n            ],\n            \"Default\": \"10\",\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"query\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"safe\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": \"off\",\n
+        \           \"Description\": null,\n            \"Enum\": [\n              \"active\",\n
+        \             \"off\"\n            ],\n            \"enabled_by\": null,\n
+        \           \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": \"Use Serp API to obtain search results from
+        a specific search engine.\",\n        \"connection_type\": null,\n        \"Module\":
+        \"promptflow.tools.serpapi\",\n        \"class_name\": \"SerpAPI\",\n        \"Source\":
+        null,\n        \"LkgCode\": null,\n        \"Code\": null,\n        \"Function\":
+        \"search\",\n        \"action_type\": null,\n        \"provider_config\":
+        null,\n        \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": true,\n        \"package\":
+        \"promptflow-tools\",\n        \"package_version\": \"0.1.0b10\",\n        \"default_prompt\":
+        null,\n        \"enable_kwargs\": false\n      },\n      {\n        \"Name\":
+        \"Faiss Index Lookup\",\n        \"Type\": \"python\",\n        \"Inputs\":
+        {\n          \"path\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"top_k\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"int\"\n
+        \           ],\n            \"Default\": \"3\",\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"vector\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"list\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": \"Search vector based query from the FAISS
+        index file.\",\n        \"connection_type\": null,\n        \"Module\": \"promptflow_vectordb.tool.faiss_index_lookup\",\n
+        \       \"class_name\": \"FaissIndexLookup\",\n        \"Source\": null,\n
+        \       \"LkgCode\": null,\n        \"Code\": null,\n        \"Function\":
+        \"search\",\n        \"action_type\": null,\n        \"provider_config\":
+        null,\n        \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": true,\n        \"package\":
+        \"promptflow-vectordb\",\n        \"package_version\": \"0.0.1\",\n        \"default_prompt\":
+        null,\n        \"enable_kwargs\": false\n      },\n      {\n        \"Name\":
+        \"Vector DB Lookup\",\n        \"Type\": \"python\",\n        \"Inputs\":
+        {\n          \"class_name\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        \"connection\",\n            \"enabled_by_type\": [\n              \"WeaviateConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"collection_name\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"string\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        \"connection\",\n            \"enabled_by_type\": [\n              \"QdrantConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"connection\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"CognitiveSearchConnection\",\n              \"QdrantConnection\",\n
+        \             \"WeaviateConnection\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"index_name\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": \"connection\",\n
+        \           \"enabled_by_type\": [\n              \"CognitiveSearchConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"search_filters\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"object\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        \"connection\",\n            \"enabled_by_type\": [\n              \"CognitiveSearchConnection\",\n
+        \             \"QdrantConnection\"\n            ],\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"search_params\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"object\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": \"connection\",\n
+        \           \"enabled_by_type\": [\n              \"CognitiveSearchConnection\",\n
+        \             \"QdrantConnection\"\n            ],\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"text_field\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": \"connection\",\n
+        \           \"enabled_by_type\": [\n              \"CognitiveSearchConnection\",\n
+        \             \"QdrantConnection\",\n              \"WeaviateConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"top_k\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"int\"\n            ],\n            \"Default\": \"3\",\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"vector\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"list\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"vector_field\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"string\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        \"connection\",\n            \"enabled_by_type\": [\n              \"CognitiveSearchConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        \"Search vector based query from existing Vector Database.\",\n        \"connection_type\":
+        null,\n        \"Module\": \"promptflow_vectordb.tool.vector_db_lookup\",\n
+        \       \"class_name\": \"VectorDBLookup\",\n        \"Source\": null,\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"search\",\n        \"action_type\":
+        null,\n        \"provider_config\": null,\n        \"function_config\": null,\n
+        \       \"Icon\": null,\n        \"Category\": null,\n        \"Tags\": null,\n
+        \       \"is_builtin\": true,\n        \"package\": \"promptflow-vectordb\",\n
+        \       \"package_version\": \"0.0.1\",\n        \"default_prompt\": null,\n
+        \       \"enable_kwargs\": false\n      },\n      {\n        \"Name\": \"Vector
+        Index Lookup\",\n        \"Type\": \"python\",\n        \"Inputs\": {\n          \"path\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"query\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"object\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"top_k\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"int\"\n
+        \           ],\n            \"Default\": \"3\",\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        \"Search text or vector based query from AzureML Vector Index.\",\n        \"connection_type\":
+        null,\n        \"Module\": \"promptflow_vectordb.tool.vector_index_lookup\",\n
+        \       \"class_name\": \"VectorIndexLookup\",\n        \"Source\": null,\n
+        \       \"LkgCode\": null,\n        \"Code\": null,\n        \"Function\":
+        \"search\",\n        \"action_type\": null,\n        \"provider_config\":
+        null,\n        \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": true,\n        \"package\":
+        \"promptflow-vectordb\",\n        \"package_version\": \"0.0.1\",\n        \"default_prompt\":
+        null,\n        \"enable_kwargs\": false\n      },\n      {\n        \"Name\":
+        \"classify_with_llm.jinja2\",\n        \"Type\": \"llm\",\n        \"Inputs\":
+        {\n          \"examples\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"text_content\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"url\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": null,\n        \"connection_type\": null,\n
+        \       \"Module\": null,\n        \"class_name\": null,\n        \"Source\":
+        \"classify_with_llm.jinja2\",\n        \"LkgCode\": null,\n        \"Code\":
+        null,\n        \"Function\": null,\n        \"action_type\": null,\n        \"provider_config\":
+        null,\n        \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": false,\n        \"package\":
+        null,\n        \"package_version\": null,\n        \"default_prompt\": null,\n
+        \       \"enable_kwargs\": false\n      },\n      {\n        \"Name\": \"convert_to_dict.py\",\n
+        \       \"Type\": \"python\",\n        \"Inputs\": {\n          \"input_str\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"convert_to_dict.py\",\n        \"LkgCode\": null,\n
+        \       \"Code\": null,\n        \"Function\": \"convert_to_dict\",\n        \"action_type\":
+        null,\n        \"provider_config\": null,\n        \"function_config\": null,\n
+        \       \"Icon\": null,\n        \"Category\": null,\n        \"Tags\": null,\n
+        \       \"is_builtin\": false,\n        \"package\": null,\n        \"package_version\":
+        null,\n        \"default_prompt\": null,\n        \"enable_kwargs\": false\n
+        \     },\n      {\n        \"Name\": \"fetch_text_content_from_url.py\",\n
+        \       \"Type\": \"python\",\n        \"Inputs\": {\n          \"fetch_url\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"fetch_text_content_from_url.py\",\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"fetch_text_content_from_url\",\n
+        \       \"action_type\": null,\n        \"provider_config\": null,\n        \"function_config\":
+        null,\n        \"Icon\": null,\n        \"Category\": null,\n        \"Tags\":
+        null,\n        \"is_builtin\": false,\n        \"package\": null,\n        \"package_version\":
+        null,\n        \"default_prompt\": null,\n        \"enable_kwargs\": false\n
+        \     },\n      {\n        \"Name\": \"prepare_examples.py\",\n        \"Type\":
+        \"python\",\n        \"Inputs\": null,\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"prepare_examples.py\",\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"prepare_examples\",\n
+        \       \"action_type\": null,\n        \"provider_config\": null,\n        \"function_config\":
+        null,\n        \"Icon\": null,\n        \"Category\": null,\n        \"Tags\":
+        null,\n        \"is_builtin\": false,\n        \"package\": null,\n        \"package_version\":
+        null,\n        \"default_prompt\": null,\n        \"enable_kwargs\": false\n
+        \     },\n      {\n        \"Name\": \"summarize_text_content.jinja2\",\n
+        \       \"Type\": \"llm\",\n        \"Inputs\": {\n          \"text\": {\n
+        \           \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"summarize_text_content.jinja2\",\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": null,\n        \"action_type\":
+        null,\n        \"provider_config\": null,\n        \"function_config\": null,\n
+        \       \"Icon\": null,\n        \"Category\": null,\n        \"Tags\": null,\n
+        \       \"is_builtin\": false,\n        \"package\": null,\n        \"package_version\":
+        null,\n        \"default_prompt\": null,\n        \"enable_kwargs\": false\n
+        \     },\n      {\n        \"Name\": \"summarize_text_content__variant_1.jinja2\",\n
+        \       \"Type\": \"llm\",\n        \"Inputs\": {\n          \"text\": {\n
+        \           \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"summarize_text_content__variant_1.jinja2\",\n
+        \       \"LkgCode\": null,\n        \"Code\": null,\n        \"Function\":
+        null,\n        \"action_type\": null,\n        \"provider_config\": null,\n
+        \       \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": false,\n        \"package\":
+        null,\n        \"package_version\": null,\n        \"default_prompt\": null,\n
+        \       \"enable_kwargs\": false\n      }\n    ],\n    \"Codes\": null,\n
+        \   \"Inputs\": {\n      \"url\": {\n        \"Name\": null,\n        \"Type\":
+        \"string\",\n        \"Default\": \"https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h\",\n
+        \       \"Description\": null,\n        \"is_chat_input\": false,\n        \"is_chat_history\":
+        null\n      }\n    },\n    \"Outputs\": {\n      \"category\": {\n        \"Name\":
+        null,\n        \"Type\": \"string\",\n        \"Description\": null,\n        \"Reference\":
+        \"${convert_to_dict.output.category}\",\n        \"evaluation_only\": false,\n
+        \       \"is_chat_output\": false\n      },\n      \"evidence\": {\n        \"Name\":
+        null,\n        \"Type\": \"string\",\n        \"Description\": null,\n        \"Reference\":
+        \"${convert_to_dict.output.evidence}\",\n        \"evaluation_only\": false,\n
+        \       \"is_chat_output\": false\n      }\n    }\n  },\n  \"jobSpecification\":
+        null,\n  \"systemSettings\": null\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 28 Nov 2023 03:52:13 GMT
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '47053'
+      x-aml-cluster:
+      - vienna-eastus-01
+      x-ms-response-type:
+      - standard
+      x-request-time:
+      - '0.038'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "eefe928d-2053-4dde-ad38-3a9e5a408b65", "selectRunMetadata":
+      true, "selectRunDefinition": true, "selectJobSpecification": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, br
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/rundata
+  response:
+    body:
+      string: "{\n  \"runMetadata\": {\n    \"runNumber\": 1701143525,\n    \"rootRunId\":
+        \"eefe928d-2053-4dde-ad38-3a9e5a408b65\",\n    \"createdUtc\": \"2023-11-28T03:52:05.7661963+00:00\",\n
+        \   \"createdBy\": {\n      \"userObjectId\": \"c05e0746-e125-4cb3-9213-a8b535eacd79\",\n
+        \     \"userPuId\": \"10032000324F7449\",\n      \"userIdp\": null,\n      \"userAltSecId\":
+        null,\n      \"userIss\": \"https://sts.windows.net/72f988bf-86f1-41af-91ab-2d7cd011db47/\",\n
+        \     \"userTenantId\": \"72f988bf-86f1-41af-91ab-2d7cd011db47\",\n      \"userName\":
+        \"Honglin Du\",\n      \"upn\": null\n    },\n    \"userId\": \"c05e0746-e125-4cb3-9213-a8b535eacd79\",\n
+        \   \"token\": null,\n    \"tokenExpiryTimeUtc\": null,\n    \"error\": null,\n
+        \   \"warnings\": null,\n    \"revision\": 2,\n    \"statusRevision\": 1,\n
+        \   \"runUuid\": \"d6cb448d-fd1f-4d1a-a31e-72c685f861d9\",\n    \"parentRunUuid\":
+        null,\n    \"rootRunUuid\": \"d6cb448d-fd1f-4d1a-a31e-72c685f861d9\",\n    \"lastStartTimeUtc\":
+        null,\n    \"currentComputeTime\": \"00:00:00\",\n    \"computeDuration\":
+        null,\n    \"effectiveStartTimeUtc\": null,\n    \"lastModifiedBy\": {\n      \"userObjectId\":
+        \"c05e0746-e125-4cb3-9213-a8b535eacd79\",\n      \"userPuId\": \"10032000324F7449\",\n
+        \     \"userIdp\": null,\n      \"userAltSecId\": null,\n      \"userIss\":
+        \"https://sts.windows.net/72f988bf-86f1-41af-91ab-2d7cd011db47/\",\n      \"userTenantId\":
+        \"72f988bf-86f1-41af-91ab-2d7cd011db47\",\n      \"userName\": \"Honglin Du\",\n
+        \     \"upn\": null\n    },\n    \"lastModifiedUtc\": \"2023-11-28T03:52:05.7661963+00:00\",\n
+        \   \"duration\": null,\n    \"cancelationReason\": null,\n    \"currentAttemptId\":
+        1,\n    \"runId\": \"eefe928d-2053-4dde-ad38-3a9e5a408b65\",\n    \"parentRunId\":
+        null,\n    \"experimentId\": \"d30efbeb-f81d-4cfa-b5cc-a0570a049009\",\n    \"status\":
+        \"Preparing\",\n    \"startTimeUtc\": null,\n    \"endTimeUtc\": null,\n    \"scheduleId\":
+        null,\n    \"displayName\": \"eefe928d-2053-4dde-ad38-3a9e5a408b65\",\n    \"name\":
+        null,\n    \"dataContainerId\": \"dcid.eefe928d-2053-4dde-ad38-3a9e5a408b65\",\n
+        \   \"description\": null,\n    \"hidden\": false,\n    \"runType\": \"azureml.promptflow.FlowRun\",\n
+        \   \"runTypeV2\": {\n      \"orchestrator\": null,\n      \"traits\": [],\n
+        \     \"attribution\": \"PromptFlow\",\n      \"computeType\": \"AmlcDsi\"\n
+        \   },\n    \"properties\": {\n      \"azureml.promptflow.runtime_name\":
+        \"hod-ci\",\n      \"azureml.promptflow.runtime_version\": \"20231114.v2\",\n
+        \     \"azureml.promptflow.definition_file_name\": \"flow.dag.yaml\",\n      \"azureml.promptflow.session_id\":
+        \"8a353369f754e5e4d415ede705304bc4a6a6c7594481cad5\",\n      \"azureml.promptflow.flow_lineage_id\":
+        \"97280ab0e0bfee2b7b9a66a5e6391fa0f52550ecf78501ac8bd57d5e31eddfd6\",\n      \"azureml.promptflow.flow_definition_datastore_name\":
+        \"workspaceblobstore\",\n      \"azureml.promptflow.flow_definition_blob_path\":
+        \"LocalUpload/7c59ad67129b552538ca09362171cc15/web_classification/flow.dag.yaml\",\n
+        \     \"azureml.promptflow.input_data\": \"azureml://datastores/workspaceblobstore/paths/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl\",\n
+        \     \"azureml.promptflow.snapshot_id\": \"48df2e3e-67ce-4049-9abc-715986f220a6\",\n
+        \     \"_azureml.evaluation_run\": \"promptflow.BatchRun\"\n    },\n    \"parameters\":
+        {},\n    \"actionUris\": {},\n    \"scriptName\": null,\n    \"target\": null,\n
+        \   \"uniqueChildRunComputeTargets\": [],\n    \"tags\": {},\n    \"settings\":
+        {},\n    \"services\": {},\n    \"inputDatasets\": [],\n    \"outputDatasets\":
+        [],\n    \"runDefinition\": null,\n    \"jobSpecification\": null,\n    \"primaryMetricName\":
+        null,\n    \"createdFrom\": null,\n    \"cancelUri\": null,\n    \"completeUri\":
+        null,\n    \"diagnosticsUri\": null,\n    \"computeRequest\": null,\n    \"compute\":
+        null,\n    \"retainForLifetimeOfWorkspace\": false,\n    \"queueingInfo\":
+        null,\n    \"inputs\": null,\n    \"outputs\": null\n  },\n  \"runDefinition\":
+        {\n    \"Nodes\": [\n      {\n        \"Name\": \"fetch_text_content_from_url\",\n
+        \       \"Type\": \"python\",\n        \"Source\": {\n          \"Type\":
+        \"code\",\n          \"Tool\": null,\n          \"Path\": \"fetch_text_content_from_url.py\"\n
+        \       },\n        \"Inputs\": {\n          \"fetch_url\": \"${inputs.url}\"\n
+        \       },\n        \"Tool\": \"fetch_text_content_from_url.py\",\n        \"Reduce\":
+        false,\n        \"Comment\": null,\n        \"Activate\": null,\n        \"Api\":
+        null,\n        \"Provider\": null,\n        \"Connection\": null,\n        \"Module\":
+        null\n      },\n      {\n        \"Name\": \"prepare_examples\",\n        \"Type\":
+        \"python\",\n        \"Source\": {\n          \"Type\": \"code\",\n          \"Tool\":
+        null,\n          \"Path\": \"prepare_examples.py\"\n        },\n        \"Inputs\":
+        {},\n        \"Tool\": \"prepare_examples.py\",\n        \"Reduce\": false,\n
+        \       \"Comment\": null,\n        \"Activate\": null,\n        \"Api\":
+        null,\n        \"Provider\": null,\n        \"Connection\": null,\n        \"Module\":
+        null\n      },\n      {\n        \"Name\": \"classify_with_llm\",\n        \"Type\":
+        \"llm\",\n        \"Source\": {\n          \"Type\": \"code\",\n          \"Tool\":
+        null,\n          \"Path\": \"classify_with_llm.jinja2\"\n        },\n        \"Inputs\":
+        {\n          \"deployment_name\": \"text-davinci-003\",\n          \"suffix\":
+        \"\",\n          \"max_tokens\": \"128\",\n          \"temperature\": \"0.1\",\n
+        \         \"top_p\": \"1.0\",\n          \"logprobs\": \"\",\n          \"echo\":
+        \"False\",\n          \"stop\": \"\",\n          \"presence_penalty\": \"0\",\n
+        \         \"frequency_penalty\": \"0\",\n          \"best_of\": \"1\",\n          \"logit_bias\":
+        \"\",\n          \"url\": \"${inputs.url}\",\n          \"examples\": \"${prepare_examples.output}\",\n
+        \         \"text_content\": \"${summarize_text_content.output}\"\n        },\n
+        \       \"Tool\": \"classify_with_llm.jinja2\",\n        \"Reduce\": false,\n
+        \       \"Comment\": null,\n        \"Activate\": null,\n        \"Api\":
+        \"completion\",\n        \"Provider\": \"AzureOpenAI\",\n        \"Connection\":
+        \"azure_open_ai_connection\",\n        \"Module\": \"promptflow.tools.aoai\"\n
+        \     },\n      {\n        \"Name\": \"convert_to_dict\",\n        \"Type\":
+        \"python\",\n        \"Source\": {\n          \"Type\": \"code\",\n          \"Tool\":
+        null,\n          \"Path\": \"convert_to_dict.py\"\n        },\n        \"Inputs\":
+        {\n          \"input_str\": \"${classify_with_llm.output}\"\n        },\n
+        \       \"Tool\": \"convert_to_dict.py\",\n        \"Reduce\": false,\n        \"Comment\":
+        null,\n        \"Activate\": null,\n        \"Api\": null,\n        \"Provider\":
+        null,\n        \"Connection\": null,\n        \"Module\": null\n      },\n
+        \     {\n        \"Name\": \"summarize_text_content\",\n        \"Type\":
+        \"llm\",\n        \"Source\": {\n          \"Type\": \"code\",\n          \"Tool\":
+        null,\n          \"Path\": \"summarize_text_content__variant_1.jinja2\"\n
+        \       },\n        \"Inputs\": {\n          \"deployment_name\": \"text-davinci-003\",\n
+        \         \"suffix\": \"\",\n          \"max_tokens\": \"256\",\n          \"temperature\":
+        \"0.3\",\n          \"top_p\": \"1.0\",\n          \"logprobs\": \"\",\n          \"echo\":
+        \"False\",\n          \"stop\": \"\",\n          \"presence_penalty\": \"0\",\n
+        \         \"frequency_penalty\": \"0\",\n          \"best_of\": \"1\",\n          \"logit_bias\":
+        \"\",\n          \"text\": \"${fetch_text_content_from_url.output}\"\n        },\n
+        \       \"Tool\": \"summarize_text_content__variant_1.jinja2\",\n        \"Reduce\":
+        false,\n        \"Comment\": null,\n        \"Activate\": null,\n        \"Api\":
+        \"completion\",\n        \"Provider\": null,\n        \"Connection\": \"azure_open_ai_connection\",\n
+        \       \"Module\": null\n      }\n    ],\n    \"Tools\": [\n      {\n        \"Name\":
+        \"Content Safety (Text Analyze)\",\n        \"Type\": \"python\",\n        \"Inputs\":
+        {\n          \"connection\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"AzureContentSafetyConnection\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"hate_category\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": \"medium_sensitivity\",\n            \"Description\":
+        null,\n            \"Enum\": [\n              \"disable\",\n              \"low_sensitivity\",\n
+        \             \"medium_sensitivity\",\n              \"high_sensitivity\"\n
+        \           ],\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"self_harm_category\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"string\"\n            ],\n            \"Default\":
+        \"medium_sensitivity\",\n            \"Description\": null,\n            \"Enum\":
+        [\n              \"disable\",\n              \"low_sensitivity\",\n              \"medium_sensitivity\",\n
+        \             \"high_sensitivity\"\n            ],\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"sexual_category\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": \"medium_sensitivity\",\n            \"Description\":
+        null,\n            \"Enum\": [\n              \"disable\",\n              \"low_sensitivity\",\n
+        \             \"medium_sensitivity\",\n              \"high_sensitivity\"\n
+        \           ],\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"text\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"violence_category\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": \"medium_sensitivity\",\n            \"Description\":
+        null,\n            \"Enum\": [\n              \"disable\",\n              \"low_sensitivity\",\n
+        \             \"medium_sensitivity\",\n              \"high_sensitivity\"\n
+        \           ],\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        \"Use Azure Content Safety to detect harmful content.\",\n        \"connection_type\":
+        null,\n        \"Module\": \"content_safety_text.tools.content_safety_text_tool\",\n
+        \       \"class_name\": null,\n        \"Source\": null,\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"analyze_text\",\n
+        \       \"action_type\": null,\n        \"provider_config\": null,\n        \"function_config\":
+        null,\n        \"Icon\": null,\n        \"Category\": null,\n        \"Tags\":
+        null,\n        \"is_builtin\": true,\n        \"package\": \"promptflow-contentsafety\",\n
+        \       \"package_version\": \"0.0.9\",\n        \"default_prompt\": null,\n
+        \       \"enable_kwargs\": false\n      },\n      {\n        \"Name\": \"Embedding\",\n
+        \       \"Type\": \"python\",\n        \"Inputs\": {\n          \"connection\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"AzureOpenAIConnection\",\n
+        \             \"OpenAIConnection\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"deployment_name\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": \"connection\",\n
+        \           \"enabled_by_type\": [\n              \"AzureOpenAIConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        [\n              \"text-embedding-ada-002\",\n              \"text-search-ada-doc-001\",\n
+        \             \"text-search-ada-query-001\"\n            ],\n            \"Capabilities\":
+        {\n              \"completion\": false,\n              \"chat_completion\":
+        false,\n              \"embeddings\": true\n            },\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"input\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"model\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": [\n              \"text-embedding-ada-002\",\n
+        \             \"text-search-ada-doc-001\",\n              \"text-search-ada-query-001\"\n
+        \           ],\n            \"enabled_by\": \"connection\",\n            \"enabled_by_type\":
+        [\n              \"OpenAIConnection\"\n            ],\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": \"Use Open AI's embedding model to create
+        an embedding vector representing the input text.\",\n        \"connection_type\":
+        null,\n        \"Module\": \"promptflow.tools.embedding\",\n        \"class_name\":
+        null,\n        \"Source\": null,\n        \"LkgCode\": null,\n        \"Code\":
+        null,\n        \"Function\": \"embedding\",\n        \"action_type\": null,\n
+        \       \"provider_config\": null,\n        \"function_config\": null,\n        \"Icon\":
+        null,\n        \"Category\": null,\n        \"Tags\": null,\n        \"is_builtin\":
+        true,\n        \"package\": \"promptflow-tools\",\n        \"package_version\":
+        \"0.1.0b10\",\n        \"default_prompt\": null,\n        \"enable_kwargs\":
+        false\n      },\n      {\n        \"Name\": \"Open Source LLM\",\n        \"Type\":
+        \"custom_llm\",\n        \"Inputs\": {\n          \"api\": {\n            \"Name\":
+        null,\n            \"Type\": [\n              \"string\"\n            ],\n
+        \           \"Default\": null,\n            \"Description\": null,\n            \"Enum\":
+        [\n              \"chat\",\n              \"completion\"\n            ],\n
+        \           \"enabled_by\": null,\n            \"enabled_by_type\": null,\n
+        \           \"enabled_by_value\": null,\n            \"model_list\": null,\n
+        \           \"Capabilities\": null,\n            \"dynamic_list\": null,\n
+        \           \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"connection\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"CustomConnection\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"deployment_name\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"endpoint_name\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"string\"\n            ],\n            \"Default\":
+        \"-- please enter an endpoint name --\",\n            \"Description\": null,\n
+        \           \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"max_new_tokens\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"int\"\n            ],\n            \"Default\":
+        \"500\",\n            \"Description\": null,\n            \"Enum\": null,\n
+        \           \"enabled_by\": null,\n            \"enabled_by_type\": null,\n
+        \           \"enabled_by_value\": null,\n            \"model_list\": null,\n
+        \           \"Capabilities\": null,\n            \"dynamic_list\": null,\n
+        \           \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"model_kwargs\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"object\"\n            ],\n            \"Default\":
+        \"{}\",\n            \"Description\": null,\n            \"Enum\": null,\n
+        \           \"enabled_by\": null,\n            \"enabled_by_type\": null,\n
+        \           \"enabled_by_value\": null,\n            \"model_list\": null,\n
+        \           \"Capabilities\": null,\n            \"dynamic_list\": null,\n
+        \           \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"temperature\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"double\"\n            ],\n            \"Default\":
+        \"1.0\",\n            \"Description\": null,\n            \"Enum\": null,\n
+        \           \"enabled_by\": null,\n            \"enabled_by_type\": null,\n
+        \           \"enabled_by_value\": null,\n            \"model_list\": null,\n
+        \           \"Capabilities\": null,\n            \"dynamic_list\": null,\n
+        \           \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"top_p\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"double\"\n            ],\n            \"Default\": \"1.0\",\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": \"Use an Open Source model from the Azure
+        Model catalog, deployed to an AzureML Online Endpoint for LLM Chat or Completion
+        API calls.\",\n        \"connection_type\": null,\n        \"Module\": \"promptflow.tools.open_source_llm\",\n
+        \       \"class_name\": \"OpenSourceLLM\",\n        \"Source\": null,\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"call\",\n        \"action_type\":
+        null,\n        \"provider_config\": null,\n        \"function_config\": null,\n
+        \       \"Icon\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAABYUlEQVR4nIWRsUtbcRRGz70v5BmHiLSh7pJu0oJDHUrf1kVwlCIRHMTN/yDasd0imCkgZGibFlrd5DmFNDSiksADsdAhk3TIZmj6kCa/65BERCie6Rsu93LPByPeajUxztWEKXcxzwTg/VQz18y9mwYwMQ9AxkNHLzI5nfvT9lwqa1H3c9AAwRATob7qLw8mLTz/tHEJxZnnK/4i/+Ivr8oGUNtqho1gdCz5yx+mRtAK63kAooPSAhwVTor7TwE+Zs+K4Q6UFqIDSIDG02nTb7tTa7N7xxFMPuvVrsumX9MaQwJM+wNxtNne9Fc/iJZfF2KAysAUbv81rzqxe939cfW9EFcnhi8CKIjz1BSjjyQfJR8j9DFTT8UNN6Q6XXFIRo3eRe/CyCgirtN1KQDq+VZ4GnCPRtAKa3nuiEq5w5+V9d+w82T+TXJJR6Luqf7b9pyftahXeXk8VP1gWbf8r+4bvICY0FkMumIAAAAASUVORK5CYII=\",\n
+        \       \"Category\": null,\n        \"Tags\": null,\n        \"is_builtin\":
+        true,\n        \"package\": \"promptflow-tools\",\n        \"package_version\":
+        \"0.1.0b10\",\n        \"default_prompt\": null,\n        \"enable_kwargs\":
+        false\n      },\n      {\n        \"Name\": \"Serp API\",\n        \"Type\":
+        \"python\",\n        \"Inputs\": {\n          \"connection\": {\n            \"Name\":
+        null,\n            \"Type\": [\n              \"SerpConnection\"\n            ],\n
+        \           \"Default\": null,\n            \"Description\": null,\n            \"Enum\":
+        null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"engine\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": \"google\",\n
+        \           \"Description\": null,\n            \"Enum\": [\n              \"google\",\n
+        \             \"bing\"\n            ],\n            \"enabled_by\": null,\n
+        \           \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"location\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": \"\",\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"num\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"int\"\n            ],\n            \"Default\": \"10\",\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"query\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"safe\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": \"off\",\n
+        \           \"Description\": null,\n            \"Enum\": [\n              \"active\",\n
+        \             \"off\"\n            ],\n            \"enabled_by\": null,\n
+        \           \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": \"Use Serp API to obtain search results from
+        a specific search engine.\",\n        \"connection_type\": null,\n        \"Module\":
+        \"promptflow.tools.serpapi\",\n        \"class_name\": \"SerpAPI\",\n        \"Source\":
+        null,\n        \"LkgCode\": null,\n        \"Code\": null,\n        \"Function\":
+        \"search\",\n        \"action_type\": null,\n        \"provider_config\":
+        null,\n        \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": true,\n        \"package\":
+        \"promptflow-tools\",\n        \"package_version\": \"0.1.0b10\",\n        \"default_prompt\":
+        null,\n        \"enable_kwargs\": false\n      },\n      {\n        \"Name\":
+        \"Faiss Index Lookup\",\n        \"Type\": \"python\",\n        \"Inputs\":
+        {\n          \"path\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"top_k\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"int\"\n
+        \           ],\n            \"Default\": \"3\",\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"vector\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"list\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": \"Search vector based query from the FAISS
+        index file.\",\n        \"connection_type\": null,\n        \"Module\": \"promptflow_vectordb.tool.faiss_index_lookup\",\n
+        \       \"class_name\": \"FaissIndexLookup\",\n        \"Source\": null,\n
+        \       \"LkgCode\": null,\n        \"Code\": null,\n        \"Function\":
+        \"search\",\n        \"action_type\": null,\n        \"provider_config\":
+        null,\n        \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": true,\n        \"package\":
+        \"promptflow-vectordb\",\n        \"package_version\": \"0.0.1\",\n        \"default_prompt\":
+        null,\n        \"enable_kwargs\": false\n      },\n      {\n        \"Name\":
+        \"Vector DB Lookup\",\n        \"Type\": \"python\",\n        \"Inputs\":
+        {\n          \"class_name\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        \"connection\",\n            \"enabled_by_type\": [\n              \"WeaviateConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"collection_name\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"string\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        \"connection\",\n            \"enabled_by_type\": [\n              \"QdrantConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"connection\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"CognitiveSearchConnection\",\n              \"QdrantConnection\",\n
+        \             \"WeaviateConnection\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"index_name\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": \"connection\",\n
+        \           \"enabled_by_type\": [\n              \"CognitiveSearchConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"search_filters\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"object\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        \"connection\",\n            \"enabled_by_type\": [\n              \"CognitiveSearchConnection\",\n
+        \             \"QdrantConnection\"\n            ],\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"search_params\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"object\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": \"connection\",\n
+        \           \"enabled_by_type\": [\n              \"CognitiveSearchConnection\",\n
+        \             \"QdrantConnection\"\n            ],\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"text_field\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": \"connection\",\n
+        \           \"enabled_by_type\": [\n              \"CognitiveSearchConnection\",\n
+        \             \"QdrantConnection\",\n              \"WeaviateConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"top_k\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"int\"\n            ],\n            \"Default\": \"3\",\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"vector\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"list\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"vector_field\": {\n            \"Name\": null,\n
+        \           \"Type\": [\n              \"string\"\n            ],\n            \"Default\":
+        null,\n            \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        \"connection\",\n            \"enabled_by_type\": [\n              \"CognitiveSearchConnection\"\n
+        \           ],\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        \"Search vector based query from existing Vector Database.\",\n        \"connection_type\":
+        null,\n        \"Module\": \"promptflow_vectordb.tool.vector_db_lookup\",\n
+        \       \"class_name\": \"VectorDBLookup\",\n        \"Source\": null,\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"search\",\n        \"action_type\":
+        null,\n        \"provider_config\": null,\n        \"function_config\": null,\n
+        \       \"Icon\": null,\n        \"Category\": null,\n        \"Tags\": null,\n
+        \       \"is_builtin\": true,\n        \"package\": \"promptflow-vectordb\",\n
+        \       \"package_version\": \"0.0.1\",\n        \"default_prompt\": null,\n
+        \       \"enable_kwargs\": false\n      },\n      {\n        \"Name\": \"Vector
+        Index Lookup\",\n        \"Type\": \"python\",\n        \"Inputs\": {\n          \"path\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"query\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"object\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"top_k\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"int\"\n
+        \           ],\n            \"Default\": \"3\",\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        \"Search text or vector based query from AzureML Vector Index.\",\n        \"connection_type\":
+        null,\n        \"Module\": \"promptflow_vectordb.tool.vector_index_lookup\",\n
+        \       \"class_name\": \"VectorIndexLookup\",\n        \"Source\": null,\n
+        \       \"LkgCode\": null,\n        \"Code\": null,\n        \"Function\":
+        \"search\",\n        \"action_type\": null,\n        \"provider_config\":
+        null,\n        \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": true,\n        \"package\":
+        \"promptflow-vectordb\",\n        \"package_version\": \"0.0.1\",\n        \"default_prompt\":
+        null,\n        \"enable_kwargs\": false\n      },\n      {\n        \"Name\":
+        \"classify_with_llm.jinja2\",\n        \"Type\": \"llm\",\n        \"Inputs\":
+        {\n          \"examples\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          },\n          \"text_content\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         },\n          \"url\": {\n            \"Name\": null,\n            \"Type\":
+        [\n              \"string\"\n            ],\n            \"Default\": null,\n
+        \           \"Description\": null,\n            \"Enum\": null,\n            \"enabled_by\":
+        null,\n            \"enabled_by_type\": null,\n            \"enabled_by_value\":
+        null,\n            \"model_list\": null,\n            \"Capabilities\": null,\n
+        \           \"dynamic_list\": null,\n            \"allow_manual_entry\": false,\n
+        \           \"is_multi_select\": false,\n            \"generated_by\": null,\n
+        \           \"input_type\": \"default\"\n          }\n        },\n        \"Outputs\":
+        null,\n        \"Description\": null,\n        \"connection_type\": null,\n
+        \       \"Module\": null,\n        \"class_name\": null,\n        \"Source\":
+        \"classify_with_llm.jinja2\",\n        \"LkgCode\": null,\n        \"Code\":
+        null,\n        \"Function\": null,\n        \"action_type\": null,\n        \"provider_config\":
+        null,\n        \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": false,\n        \"package\":
+        null,\n        \"package_version\": null,\n        \"default_prompt\": null,\n
+        \       \"enable_kwargs\": false\n      },\n      {\n        \"Name\": \"convert_to_dict.py\",\n
+        \       \"Type\": \"python\",\n        \"Inputs\": {\n          \"input_str\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"convert_to_dict.py\",\n        \"LkgCode\": null,\n
+        \       \"Code\": null,\n        \"Function\": \"convert_to_dict\",\n        \"action_type\":
+        null,\n        \"provider_config\": null,\n        \"function_config\": null,\n
+        \       \"Icon\": null,\n        \"Category\": null,\n        \"Tags\": null,\n
+        \       \"is_builtin\": false,\n        \"package\": null,\n        \"package_version\":
+        null,\n        \"default_prompt\": null,\n        \"enable_kwargs\": false\n
+        \     },\n      {\n        \"Name\": \"fetch_text_content_from_url.py\",\n
+        \       \"Type\": \"python\",\n        \"Inputs\": {\n          \"fetch_url\":
+        {\n            \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"fetch_text_content_from_url.py\",\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"fetch_text_content_from_url\",\n
+        \       \"action_type\": null,\n        \"provider_config\": null,\n        \"function_config\":
+        null,\n        \"Icon\": null,\n        \"Category\": null,\n        \"Tags\":
+        null,\n        \"is_builtin\": false,\n        \"package\": null,\n        \"package_version\":
+        null,\n        \"default_prompt\": null,\n        \"enable_kwargs\": false\n
+        \     },\n      {\n        \"Name\": \"prepare_examples.py\",\n        \"Type\":
+        \"python\",\n        \"Inputs\": null,\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"prepare_examples.py\",\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": \"prepare_examples\",\n
+        \       \"action_type\": null,\n        \"provider_config\": null,\n        \"function_config\":
+        null,\n        \"Icon\": null,\n        \"Category\": null,\n        \"Tags\":
+        null,\n        \"is_builtin\": false,\n        \"package\": null,\n        \"package_version\":
+        null,\n        \"default_prompt\": null,\n        \"enable_kwargs\": false\n
+        \     },\n      {\n        \"Name\": \"summarize_text_content.jinja2\",\n
+        \       \"Type\": \"llm\",\n        \"Inputs\": {\n          \"text\": {\n
+        \           \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"summarize_text_content.jinja2\",\n        \"LkgCode\":
+        null,\n        \"Code\": null,\n        \"Function\": null,\n        \"action_type\":
+        null,\n        \"provider_config\": null,\n        \"function_config\": null,\n
+        \       \"Icon\": null,\n        \"Category\": null,\n        \"Tags\": null,\n
+        \       \"is_builtin\": false,\n        \"package\": null,\n        \"package_version\":
+        null,\n        \"default_prompt\": null,\n        \"enable_kwargs\": false\n
+        \     },\n      {\n        \"Name\": \"summarize_text_content__variant_1.jinja2\",\n
+        \       \"Type\": \"llm\",\n        \"Inputs\": {\n          \"text\": {\n
+        \           \"Name\": null,\n            \"Type\": [\n              \"string\"\n
+        \           ],\n            \"Default\": null,\n            \"Description\":
+        null,\n            \"Enum\": null,\n            \"enabled_by\": null,\n            \"enabled_by_type\":
+        null,\n            \"enabled_by_value\": null,\n            \"model_list\":
+        null,\n            \"Capabilities\": null,\n            \"dynamic_list\":
+        null,\n            \"allow_manual_entry\": false,\n            \"is_multi_select\":
+        false,\n            \"generated_by\": null,\n            \"input_type\": \"default\"\n
+        \         }\n        },\n        \"Outputs\": null,\n        \"Description\":
+        null,\n        \"connection_type\": null,\n        \"Module\": null,\n        \"class_name\":
+        null,\n        \"Source\": \"summarize_text_content__variant_1.jinja2\",\n
+        \       \"LkgCode\": null,\n        \"Code\": null,\n        \"Function\":
+        null,\n        \"action_type\": null,\n        \"provider_config\": null,\n
+        \       \"function_config\": null,\n        \"Icon\": null,\n        \"Category\":
+        null,\n        \"Tags\": null,\n        \"is_builtin\": false,\n        \"package\":
+        null,\n        \"package_version\": null,\n        \"default_prompt\": null,\n
+        \       \"enable_kwargs\": false\n      }\n    ],\n    \"Codes\": null,\n
+        \   \"Inputs\": {\n      \"url\": {\n        \"Name\": null,\n        \"Type\":
+        \"string\",\n        \"Default\": \"https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h\",\n
+        \       \"Description\": null,\n        \"is_chat_input\": false,\n        \"is_chat_history\":
+        null\n      }\n    },\n    \"Outputs\": {\n      \"category\": {\n        \"Name\":
+        null,\n        \"Type\": \"string\",\n        \"Description\": null,\n        \"Reference\":
+        \"${convert_to_dict.output.category}\",\n        \"evaluation_only\": false,\n
+        \       \"is_chat_output\": false\n      },\n      \"evidence\": {\n        \"Name\":
+        null,\n        \"Type\": \"string\",\n        \"Description\": null,\n        \"Reference\":
+        \"${convert_to_dict.output.evidence}\",\n        \"evaluation_only\": false,\n
+        \       \"is_chat_output\": false\n      }\n    }\n  },\n  \"jobSpecification\":
+        null,\n  \"systemSettings\": null\n}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 28 Nov 2023 03:52:15 GMT
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '47053'
+      x-aml-cluster:
+      - vienna-eastus-02
+      x-ms-response-type:
+      - standard
+      x-request-time:
+      - '0.043'
+    status:
+      code: 200
+      message: OK
 version: 1
