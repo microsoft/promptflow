@@ -28,7 +28,19 @@ class TestConnectionAPIs:
 
     def test_get_connection(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         name = create_custom_connection(pf_client)
-        conn_from_pfs = pfs_op.get_connection(name=name).json
+        conn_from_pfs = pfs_op.get_connection(name=name, status_code=200).json
         assert conn_from_pfs["name"] == name
         assert conn_from_pfs["configs"]["api_base"] == "test"
         assert "api_key" in conn_from_pfs["secrets"]
+
+        # get connection with secret
+        conn_from_pfs = pfs_op.get_connection_with_secret(name=name, status_code=200).json
+        assert not conn_from_pfs["secrets"]["api_key"].startswith("*")
+
+    def test_list_connection_with_invalid_user(self, pfs_op: PFSOperations) -> None:
+        conn_from_pfs = pfs_op.connection_operation_with_invalid_user()
+        assert conn_from_pfs.status_code == 403
+
+    def test_get_connection_specs(self, pfs_op: PFSOperations) -> None:
+        specs = pfs_op.get_connection_specs(status_code=200).json
+        assert len(specs) > 1

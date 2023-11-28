@@ -2,24 +2,41 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import argparse
+import json
 from typing import Dict, List
 
-from promptflow._cli._params import add_param_set, logging_params
+from promptflow._cli._params import (
+    add_param_archived_only,
+    add_param_flow_name,
+    add_param_flow_type,
+    add_param_include_archived,
+    add_param_include_others,
+    add_param_max_results,
+    add_param_output_format,
+    add_param_set,
+    logging_params,
+)
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
-from promptflow._cli._utils import _set_workspace_argument_for_subparsers, activate_action
+from promptflow._cli._utils import (
+    _output_result_list_with_format,
+    _set_workspace_argument_for_subparsers,
+    activate_action,
+    exception_handler,
+)
+from promptflow._sdk._constants import get_list_view_type
 
 
 def add_parser_flow(subparsers):
     """Add flow parser to the pf subparsers."""
     flow_parser = subparsers.add_parser(
         "flow",
-        description="Manage flows for promptflow.",
-        help="pfazure flow",
+        description="Manage flows for prompt flow.",
+        help="Manage prompt flows.",
     )
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_flow_create(flow_subparsers)
-    # add_parser_flow_get(flow_subparsers)
-    # add_parser_flow_list(flow_subparsers)
+    add_parser_flow_show(flow_subparsers)
+    add_parser_flow_list(flow_subparsers)
     # add_parser_flow_delete(flow_subparsers)
     # add_parser_flow_download(flow_subparsers)
     flow_parser.set_defaults(action="flow")
@@ -29,17 +46,21 @@ def add_parser_flow_create(subparsers):
     """Add flow create parser to the pf flow subparsers."""
     epilog = """
 Use "--set" to set flow properties like:
-    name: Flow name that will be created in remote. Default to be flow folder name + timestamp if not specified.
+    display_name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
     type: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
     description: Flow description. e.g. "--set description=<description>."
     tags: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
 
+Note:
+    In "--set" parameter, if the key name consists of multiple words, use snake-case instead of kebab-case. e.g. "--set display_name=<flow-display-name>"
+
 Examples:
+
 # Create a flow to azure portal with local flow folder.
-pfazure flow create --flow <flow-folder-path> --set name=<flow-name> type=<flow-type>
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type>
 
 # Create a flow with more properties
-pfazure flow create --flow <flow-folder-path> --set name=<flow-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
 """  # noqa: E501
     add_param_source = lambda parser: parser.add_argument(  # noqa: E731
         "--flow", type=str, help="Source folder of the flow."
@@ -63,15 +84,62 @@ pfazure flow create --flow <flow-folder-path> --set name=<flow-name> type=<flow-
 
 def add_parser_flow_list(subparsers):
     """Add flow list parser to the pf flow subparsers."""
-    add_params = [_set_workspace_argument_for_subparsers] + logging_params
+    epilog = """
+Examples:
+
+# List flows:
+pfazure flow list
+# List most recent 10 runs status:
+pfazure flow list --max-results 10
+# List active and archived flows:
+pfazure flow list --include-archived
+# List archived flow only:
+pfazure flow list --archived-only
+# List all flows as table:
+pfazure flow list --output table
+# List flows with specific type:
+pfazure flow list --type standard
+# List flows that are owned by all users:
+pfazure flow list --include-others
+"""
+    add_params = [
+        add_param_max_results,
+        add_param_include_others,
+        add_param_flow_type,
+        add_param_archived_only,
+        add_param_include_archived,
+        add_param_output_format,
+        _set_workspace_argument_for_subparsers,
+    ] + logging_params
 
     activate_action(
         name="list",
         description="List flows for promptflow.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="pf flow list",
+        help_message="pfazure flow list",
+        action_param_name="sub_action",
+    )
+
+
+def add_parser_flow_show(subparsers):
+    """Add flow get parser to the pf flow subparsers."""
+    epilog = """
+Examples:
+
+# Get flow:
+pfazure flow show --name <flow-name>
+"""
+    add_params = [add_param_flow_name, _set_workspace_argument_for_subparsers] + logging_params
+
+    activate_action(
+        name="show",
+        description="Show a flow from Azure.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="pfazure flow show",
         action_param_name="sub_action",
     )
 
@@ -104,6 +172,10 @@ def add_parser_flow_download(subparsers):
 def dispatch_flow_commands(args: argparse.Namespace):
     if args.sub_action == "create":
         create_flow(args)
+    elif args.sub_action == "show":
+        show_flow(args)
+    elif args.sub_action == "list":
+        list_flows(args)
 
 
 def _get_flow_operation(subscription_id, resource_group, workspace_name):
@@ -111,33 +183,39 @@ def _get_flow_operation(subscription_id, resource_group, workspace_name):
     return pf_client._flows
 
 
+@exception_handler("Create flow")
 def create_flow(args: argparse.Namespace):
     """Create a flow for promptflow."""
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     params = _parse_flow_metadata_args(args.params_override)
     pf.flows.create_or_update(
         flow=args.flow,
-        name=params.get("name", None),
+        display_name=params.get("display_name", None),
         type=params.get("type", None),
         description=params.get("description", None),
         tags=params.get("tags", None),
     )
 
 
-def list_flows(
-    workspace_name: str,
-    resource_group: str,
-    subscription_id: str,
-):
+@exception_handler("Show flow")
+def show_flow(args: argparse.Namespace):
+    """Get a flow for promptflow."""
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    flow = pf.flows.get(args.name)
+    print(json.dumps(flow._to_dict(), indent=4))
+
+
+def list_flows(args: argparse.Namespace):
     """List flows for promptflow."""
-    flow_operations = _get_flow_operation(subscription_id, resource_group, workspace_name)
-    flows = flow_operations._list()
-    flow_count = len(flows)
-    print(f"Collected {flow_count} flows.")
-    if flow_count > 0:
-        print("=================== Flows ===================")
-        for flow in flows:
-            print(f"Name: {flow.name!r}, owner: {flow.owner!r}, flow_id: {flow.flow_id!r}")
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    flows = pf.flows.list(
+        max_results=args.max_results,
+        include_others=args.include_others,
+        flow_type=args.type,
+        list_view_type=get_list_view_type(args.archived_only, args.include_archived),
+    )
+    flow_list = [flow._to_dict() for flow in flows]
+    _output_result_list_with_format(flow_list, args.output)
 
 
 def download_flow(
@@ -163,6 +241,8 @@ def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
                 tag_key = k.replace("tags.", "")
                 tags[tag_key] = v
                 continue
-            result[k] = v
+            # replace "-" with "_" to handle the usage for both "-" and "_" in the command key
+            normalized_key = k.replace("-", "_")
+            result[normalized_key] = v
     result["tags"] = tags
     return result

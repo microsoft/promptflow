@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
 import copy
 import functools
 import inspect
@@ -9,10 +10,11 @@ import uuid
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
-from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 import yaml
 
+from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
@@ -20,9 +22,14 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import ToolInvoker
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.execution_utils import (
+    apply_default_value_for_input,
+    collect_lines,
+    get_aggregation_inputs_properties,
+)
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
@@ -31,26 +38,19 @@ from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
-from promptflow.executor._errors import (
-    InputMappingError,
-    NodeOutputNotFound,
-    OutputReferenceNotExist,
-    SingleNodeValidationError,
-)
+from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
+from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
     FlowNodesScheduler,
 )
-from promptflow.executor._result import AggregationResult, BulkResult, LineResult
+from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
-
-LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
-LINE_TIMEOUT_SEC = 600
 
 
 class FlowExecutor:
@@ -124,7 +124,7 @@ class FlowExecutor:
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
         self._connections = connections
-        self._aggregation_inputs_references = self._get_aggregation_inputs_properties(flow)
+        self._aggregation_inputs_references = get_aggregation_inputs_properties(flow)
         self._aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
         if worker_count is not None:
             self._worker_count = worker_count
@@ -197,8 +197,32 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+        return cls._create_from_flow(
+            flow_file=flow_file,
+            flow=flow,
+            connections=connections,
+            working_dir=working_dir,
+            storage=storage,
+            raise_ex=raise_ex,
+            node_override=node_override,
+            line_timeout_sec=line_timeout_sec,
+        )
+
+    @classmethod
+    def _create_from_flow(
+        cls,
+        flow: Flow,
+        connections: dict,
+        working_dir: Optional[Path],
+        *,
+        flow_file: Optional[Path] = None,
+        storage: Optional[AbstractRunStorage] = None,
+        raise_ex: bool = True,
+        node_override: Optional[Dict[str, Dict[str, Any]]] = None,
+        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+    ):
+        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
@@ -265,6 +289,10 @@ class FlowExecutor:
         :param raise_ex: Whether to raise exceptions or not. Default is False.
         :type raise_ex: Optional[bool]
         """
+        # Inject OpenAI API to make sure traces and headers injection works and
+        # update OpenAI API configs from environment variables.
+        inject_openai_api()
+
         OperationContext.get_instance().run_mode = RunMode.SingleNode.name
         dependency_nodes_outputs = dependency_nodes_outputs or {}
 
@@ -293,11 +321,14 @@ class FlowExecutor:
                 node_name=node_name,
                 flow_file=flow_file,
             )
-
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
-        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value)
+        # Only load the node's referenced flow inputs
+        node_referenced_flow_inputs = FlowExecutor._get_node_referenced_flow_inputs(node, flow.inputs)
+        inputs_with_default_value = apply_default_value_for_input(node_referenced_flow_inputs, flow_inputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
+            flow, node, inputs_with_default_value
+        )
+        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -306,7 +337,7 @@ class FlowExecutor:
 
         resolved_inputs = {}
         for k, v in resolved_node.node.inputs.items():
-            value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, converted_flow_inputs_for_node)
+            value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, inputs)
             resolved_inputs[k] = value
             if resolved_node.node.aggregation:
                 # For aggregation node, we need to convert value to list.
@@ -326,23 +357,24 @@ class FlowExecutor:
         storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
-            ToolInvoker.activate(DefaultToolInvoker())
-
             # Will generate node run in context
             context = FlowExecutionContext(
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
             )
-            context.current_node = node
-            context.start()
+
             try:
-                resolved_node.callable(**resolved_inputs)
+                if inspect.iscoroutinefunction(resolved_node.callable):
+                    asyncio.run(
+                        context.invoke_tool_async(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs),
+                    )
+                else:
+                    context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
             except Exception:
-                if raise_ex:
+                if raise_ex:  # Only raise exception when raise_ex is True
                     raise
-            finally:
-                context.end()
+
             node_runs = run_tracker.collect_node_runs()
             if len(node_runs) != 1:
                 # Should not happen except there is bug in run_tracker or thread control.
@@ -400,46 +432,12 @@ class FlowExecutor:
         """
         return self._aggregation_nodes
 
-    @staticmethod
-    def _get_aggregation_inputs_properties(flow: Flow) -> AbstractSet[str]:
-        normal_node_names = {node.name for node in flow.nodes if flow.is_normal_node(node.name)}
-        properties = set()
-        for node in flow.nodes:
-            if node.name in normal_node_names:
-                continue
-            for value in node.inputs.values():
-                if not value.value_type == InputValueType.NODE_REFERENCE:
-                    continue
-                if value.value in normal_node_names:
-                    properties.add(value.serialize())
-        return properties
-
-    def _collect_lines(self, indexes: List[int], kvs: Mapping[str, List]) -> Mapping[str, List]:
-        """Collect the values from the kvs according to the indexes."""
-        return {k: [v[i] for i in indexes] for k, v in kvs.items()}
-
     def _fill_lines(self, indexes, values, nlines):
         """Fill the values into the result list according to the indexes."""
         result = [None] * nlines
         for idx, value in zip(indexes, values):
             result[idx] = value
         return result
-
-    def _handle_line_failures(self, run_infos: List[FlowRunInfo], raise_on_line_failure: bool = False):
-        failed = [i for i, r in enumerate(run_infos) if r.status == Status.Failed]
-        failed_msg = None
-        if len(failed) > 0:
-            failed_indexes = ",".join([str(i) for i in failed])
-            first_fail_exception = run_infos[failed[0]].error["message"]
-            if raise_on_line_failure:
-                failed_msg = "Flow run failed due to the error: " + first_fail_exception
-                raise Exception(failed_msg)
-
-            failed_msg = (
-                f"{len(failed)}/{len(run_infos)} flow run failed, indexes: [{failed_indexes}],"
-                f" exception of index {failed[0]}: {first_fail_exception}"
-            )
-            logger.error(failed_msg)
 
     def _exec_batch_with_process_pool(
         self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
@@ -498,7 +496,7 @@ class FlowExecutor:
             [result.aggregation_inputs for result in results],
             keys=self._aggregation_inputs_references,
         )
-        succeeded_aggregation_inputs = self._collect_lines(succeeded, aggregation_inputs)
+        succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
             aggr_results = self._exec_aggregation(succeeded_inputs, succeeded_aggregation_inputs, run_id)
             logger.info("Finish executing aggregation nodes.")
@@ -588,7 +586,7 @@ class FlowExecutor:
             one_input_value = list(aggregation_inputs.values())[0]
             aggregation_lines = len(one_input_value)
         for key, value in inputs.items():
-            if key not in aggregated_flow_inputs and (value and value.default):
+            if key not in aggregated_flow_inputs and (value and value.default is not None):
                 aggregated_flow_inputs[key] = [value.default] * aggregation_lines
         return aggregated_flow_inputs
 
@@ -607,6 +605,8 @@ class FlowExecutor:
             node.inputs = {
                 k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
             }
+        # Load multimedia data for the flow inputs of aggregation nodes.
+        inputs = load_multimedia_data(self._flow.inputs, inputs)
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
         run_tracker = self._run_tracker
@@ -642,7 +642,7 @@ class FlowExecutor:
         :rtype: dict
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = apply_default_value_for_input(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -700,10 +700,10 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
-            # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
+            # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
             operation_context = OperationContext.get_instance()
             operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
@@ -730,99 +730,17 @@ class FlowExecutor:
             }
         )
 
-    def exec_bulk(
-        self,
-        inputs: List[Dict[str, Any]],
-        run_id: str = None,
-        validate_inputs: bool = True,
-        raise_on_line_failure: bool = False,
-        node_concurrency=DEFAULT_CONCURRENCY_BULK,
-        output_dir: Path = None,
-    ) -> BulkResult:
-        """The entry points for bulk run execution
-
-        :param inputs: A list of dictionaries containing input data.
-        :type inputs: List[Dict[str, Any]]
-        :param run_id: Run ID.
-        :type run_id: Optional[str]
-        :param validate_inputs: Whether to validate the inputs. Defaults to True.
-        :type validate_inputs: Optional[bool]
-        :param raise_on_line_failure: Whether to raise an exception on line failure. Defaults to False. \
-        [To be deprecated]
-        :type raise_on_line_failure: Optional[bool]
-        :param node_concurrency: The node concurrency. Defaults to DEFAULT_CONCURRENCY_BULK.
-        :type node_concurrency: Optional[int]
-        :return: The bulk result.
-        :rtype: ~promptflow.executor.flow_executor.BulkResult
-        """
-
-        self._node_concurrency = node_concurrency
-        # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
-        inputs = [
-            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
-            for each_line_input in inputs
-        ]
-        run_id = run_id or str(uuid.uuid4())
-        with self._run_tracker.node_log_manager:
-            OperationContext.get_instance().run_mode = RunMode.Batch.name
-            line_results = self._exec_batch_with_process_pool(
-                inputs, run_id, output_dir, validate_inputs=validate_inputs
-            )
-            self._add_line_results(line_results)  # For bulk run, currently we need to add line results to run_tracker
-            self._handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-            aggr_results = self._exec_aggregation_with_bulk_results(inputs, line_results, run_id)
-        outputs = [
-            {LINE_NUMBER_KEY: r.run_info.index, **r.output}
-            for r in line_results
-            if r.run_info.status == Status.Completed
-        ]
-        return BulkResult(
-            outputs=outputs,
-            metrics=aggr_results.metrics,
-            line_results=line_results,
-            aggr_results=aggr_results,
-        )
-
     @staticmethod
-    def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
-        updated_inputs = dict(line_inputs or {})
-        for key, value in inputs.items():
-            if key not in updated_inputs and (value and value.default):
-                updated_inputs[key] = value.default
-        return updated_inputs
-
-    def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
-        """Validate and apply inputs mapping for all lines in the flow.
-
-        :param inputs: The inputs to the flow.
-        :type inputs: Any
-        :param inputs_mapping: The mapping of input names to their corresponding values.
-        :type inputs_mapping: Dict[str, Any]
-        :return: A list of dictionaries containing the resolved inputs for each line in the flow.
-        :rtype: List[Dict[str, Any]]
-        """
-        if not inputs_mapping:
-            logger.warning(
-                msg=(
-                    "Starting run without column mapping may lead to unexpected results. "
-                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
-                )
-            )
-
-        inputs_mapping = self._complete_inputs_mapping_by_default_value(inputs_mapping)
-        resolved_inputs = self._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
-        return resolved_inputs
-
-    def _complete_inputs_mapping_by_default_value(self, inputs_mapping):
-        inputs_mapping = inputs_mapping or {}
-        result_mapping = self._default_inputs_mapping
-        # For input has default value, we don't try to read data from default mapping.
-        # Default value is in higher priority than default mapping.
-        for key, value in self._flow.inputs.items():
-            if value and value.default:
-                del result_mapping[key]
-        result_mapping.update(inputs_mapping)
-        return result_mapping
+    def _get_node_referenced_flow_inputs(
+        node, flow_inputs: Dict[str, FlowInputDefinition]
+    ) -> Dict[str, FlowInputDefinition]:
+        node_referenced_flow_inputs = {}
+        for _, value in node.inputs.items():
+            # Only add flow input to node_referenced_flow_inputs when it is exist and referenced by node.
+            # If flow input is not exist, we will raise exception in FlowValidator.convert_flow_inputs_for_node.
+            if value.value_type == InputValueType.FLOW_INPUT and value.value in flow_inputs:
+                node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
+        return node_referenced_flow_inputs
 
     def _exec(
         self,
@@ -959,7 +877,15 @@ class FlowExecutor:
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
-        nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+        #  TODO: Use a mixed scheduler to support both async and thread pool mode.
+        should_use_async = all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+        if should_use_async:
+            flow_logger.info("Start executing nodes in async mode.")
+            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
+            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
+        else:
+            flow_logger.info("Start executing nodes in thread pool mode.")
+            nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
@@ -986,202 +912,10 @@ class FlowExecutor:
         inputs: Mapping[str, Mapping[str, Any]],
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
-        """Apply input mapping to inputs for new contract.
+        # TODO: This function will be removed after the batch engine refactoring is completed.
+        from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
 
-        .. admonition:: Examples
-
-            .. code-block:: python
-
-                inputs: {
-                    "data": {"answer": "I'm fine, thank you.", "question": "How are you?"},
-                    "baseline": {"answer": "The weather is good."},
-                }
-                inputs_mapping: {
-                    "question": "${data.question}",
-                    "groundtruth": "${data.answer}",
-                    "baseline": "${baseline.answer}",
-                    "deployment_name": "literal_value",
-                }
-
-                Returns: {
-                    "question": "How are you?",
-                    "groundtruth": "I'm fine, thank you."
-                    "baseline": "The weather is good.",
-                    "deployment_name": "literal_value",
-                }
-
-        :param inputs: A mapping of input keys to their corresponding values.
-        :type inputs: Mapping[str, Mapping[str, Any]]
-        :param inputs_mapping: A mapping of input keys to their corresponding mapping expressions.
-        :type inputs_mapping: Mapping[str, str]
-        :return: A dictionary of input keys to their corresponding mapped values.
-        :rtype: Dict[str, Any]
-        :raises InputMappingError: If any of the input mapping relations are not found in the inputs.
-        """
-        import re
-
-        result = {}
-        notfound_mapping_relations = []
-        for map_to_key, map_value in inputs_mapping.items():
-            # Ignore reserved key configuration from input mapping.
-            if map_to_key == LINE_NUMBER_KEY:
-                continue
-            if not isinstance(map_value, str):  # All non-string values are literal values.
-                result[map_to_key] = map_value
-                continue
-            match = re.search(r"^\${([^{}]+)}$", map_value)
-            if match is not None:
-                pattern = match.group(1)
-                # Could also try each pair of key value from inputs to match the pattern.
-                # But split pattern by '.' is one deterministic way.
-                # So, give key with less '.' higher priority.
-                splitted_str = pattern.split(".")
-                find_match = False
-                for i in range(1, len(splitted_str)):
-                    key = ".".join(splitted_str[:i])
-                    source = ".".join(splitted_str[i:])
-                    if key in inputs and source in inputs[key]:
-                        find_match = True
-                        result[map_to_key] = inputs[key][source]
-                        break
-                if not find_match:
-                    notfound_mapping_relations.append(map_value)
-            else:
-                result[map_to_key] = map_value  # Literal value
-        # Return all not found mapping relations in one exception to provide better debug experience.
-        if notfound_mapping_relations:
-            invalid_relations = ", ".join(notfound_mapping_relations)
-            raise InputMappingError(
-                message_format=(
-                    "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
-                    "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                    "For more information, refer to the following documentation: https://aka.ms/pf/column-mapping"
-                ),
-                invalid_relations=invalid_relations,
-            )
-        # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
-        if LINE_NUMBER_KEY in inputs:
-            result[LINE_NUMBER_KEY] = inputs[LINE_NUMBER_KEY]
-        return result
-
-    @staticmethod
-    def _merge_input_dicts_by_line(
-        input_dict: Mapping[str, List[Mapping[str, Any]]],
-    ) -> List[Mapping[str, Mapping[str, Any]]]:
-        for input_key, list_of_one_input in input_dict.items():
-            if not list_of_one_input:
-                raise InputMappingError(
-                    message_format=(
-                        "The input for batch run is incorrect. Input from key '{input_key}' is an empty list, "
-                        "which means we cannot generate a single line input for the flow run. "
-                        "Please rectify the input and try again."
-                    ),
-                    input_key=input_key,
-                )
-
-        # Check if line numbers are aligned.
-        all_lengths_without_line_number = {
-            input_key: len(list_of_one_input)
-            for input_key, list_of_one_input in input_dict.items()
-            if not any(LINE_NUMBER_KEY in one_item for one_item in list_of_one_input)
-        }
-        if len(set(all_lengths_without_line_number.values())) > 1:
-            raise InputMappingError(
-                message_format=(
-                    "The input for batch run is incorrect. Line numbers are not aligned. "
-                    "Some lists have dictionaries missing the 'line_number' key, "
-                    "and the lengths of these lists are different. "
-                    "List lengths are: {all_lengths_without_line_number}. "
-                    "Please make sure these lists have the same length or add 'line_number' key to each dictionary."
-                ),
-                all_lengths_without_line_number=all_lengths_without_line_number,
-            )
-
-        # Collect each line item from each input.
-        tmp_dict = {}
-        for input_key, list_of_one_input in input_dict.items():
-            if input_key in all_lengths_without_line_number:
-                # Assume line_number start from 0.
-                for index, one_line_item in enumerate(list_of_one_input):
-                    if index not in tmp_dict:
-                        tmp_dict[index] = {}
-                    tmp_dict[index][input_key] = one_line_item
-            else:
-                for one_line_item in list_of_one_input:
-                    if LINE_NUMBER_KEY in one_line_item:
-                        index = one_line_item[LINE_NUMBER_KEY]
-                        if index not in tmp_dict:
-                            tmp_dict[index] = {}
-                        tmp_dict[index][input_key] = one_line_item
-        result = []
-        for line, values_for_one_line in tmp_dict.items():
-            # Missing input is not acceptable line.
-            if len(values_for_one_line) != len(input_dict):
-                continue
-            values_for_one_line[LINE_NUMBER_KEY] = line
-            result.append(values_for_one_line)
-        return result
-
-    @staticmethod
-    def _apply_inputs_mapping_for_all_lines(
-        input_dict: Mapping[str, List[Mapping[str, Any]]],
-        inputs_mapping: Mapping[str, str],
-    ) -> List[Dict[str, Any]]:
-        """Apply input mapping to all input lines.
-
-        For example:
-        input_dict = {
-            'data': [{'question': 'q1', 'answer': 'ans1'}, {'question': 'q2', 'answer': 'ans2'}],
-            'baseline': [{'answer': 'baseline_ans1'}, {'answer': 'baseline_ans2'}],
-            'output': [{'answer': 'output_ans1', 'line_number': 0}, {'answer': 'output_ans2', 'line_number': 1}],
-        }
-        inputs_mapping: {
-            "question": "${data.question}",  # Question from the data
-            "groundtruth": "${data.answer}",  # Answer from the data
-            "baseline": "${baseline.answer}",  # Answer from the baseline
-            "deployment_name": "text-davinci-003",  # literal value
-            "answer": "${output.answer}",  # Answer from the output
-            "line_number": "${output.line_number}",  # Answer from the output
-        }
-
-        Returns:
-        [{
-            "question": "q1",
-            "groundtruth": "ans1",
-            "baseline": "baseline_ans1",
-            "answer": "output_ans1",
-            "deployment_name": "text-davinci-003",
-            "line_number": 0,
-        },
-        {
-            "question": "q2",
-            "groundtruth": "ans2",
-            "baseline": "baseline_ans2",
-            "answer": "output_ans2",
-            "deployment_name": "text-davinci-003",
-            "line_number": 1,
-        }]
-        """
-        if inputs_mapping is None:
-            # This exception should not happen since developers need to use _default_inputs_mapping for None input.
-            # So, this exception is one system error.
-            raise UnexpectedError(
-                message_format=(
-                    "The input for batch run is incorrect. Please make sure to set up a proper input mapping before "
-                    "proceeding. If you need additional help, feel free to contact support for further assistance."
-                )
-            )
-        merged_list = FlowExecutor._merge_input_dicts_by_line(input_dict)
-        if len(merged_list) == 0:
-            raise InputMappingError(
-                message_format=(
-                    "The input for batch run is incorrect. Could not find one complete line on the provided input. "
-                    "Please ensure that you supply data on the same line to resolve this issue."
-                )
-            )
-
-        result = [FlowExecutor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
-        return result
+        return apply_inputs_mapping(inputs, inputs_mapping)
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
         """Enable the LLM node that is connected to output to return streaming results controlled by `stream_required`.
@@ -1196,12 +930,20 @@ class FlowExecutor:
         :return: None
         """
         for node in self._flow.nodes:
+            streaming_option_parameter = self._parse_streaming_option_parameter(node)
             if (
-                self._flow.is_llm_node(node)
+                streaming_option_parameter is not None
                 and self._flow.is_referenced_by_flow_output(node)
                 and not self._flow.is_referenced_by_other_node(node)
             ):
-                self._tools_manager.wrap_tool(node.name, wrapper=_inject_stream_options(stream_required))
+                wrapper = _inject_stream_options(stream_required, streaming_option_parameter)
+                self._tools_manager.wrap_tool(node.name, wrapper=wrapper)
+
+    def _parse_streaming_option_parameter(self, node: Node) -> Optional[str]:
+        if self._flow.is_llm_node(node):
+            return "stream"
+        tool_function = self._tools_manager.get_tool(node.name)
+        return getattr(tool_function, STREAMING_OPTION_PARAMETER_ATTR, None)
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
@@ -1219,7 +961,7 @@ class FlowExecutor:
             self._tools_manager.wrap_tool(node.name, wrapper=_ensure_node_result_is_serializable)
 
 
-def _inject_stream_options(should_stream: Callable[[], bool]):
+def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_parameter="stream"):
     """Inject the stream options to the decorated function.
 
     AzureOpenAI.completion and AzureOpenAI.chat tools support both stream and non-stream mode.
@@ -1229,13 +971,13 @@ def _inject_stream_options(should_stream: Callable[[], bool]):
     def stream_option_decorator(f):
         # We only wrap the function if it has a "stream" parameter
         signature = inspect.signature(f)
-        if "stream" not in signature.parameters:
+        if streaming_option_parameter not in signature.parameters:
             return f
 
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             kwargs = kwargs or {}
-            kwargs.update(stream=should_stream())
+            kwargs.update({streaming_option_parameter: should_stream()})
 
             return f(*args, **kwargs)
 

@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -16,7 +17,7 @@ _client = PFClient()
 
 
 @pytest.mark.e2etest
-class TestCli:
+class TestTool:
     def get_tool_meta(self, tool_path):
         module_name = f"test_tool.{Path(tool_path).stem}"
 
@@ -269,4 +270,11 @@ class TestCli:
                 "function": "my_tool",
             }
         }
+        assert expect_tool_meta == tool_meta
+
+    def test_tool_with_generated_by_input(self):
+        tool_path = TOOL_ROOT / "tool_with_generated_by_input.py"
+        tool_meta = self.get_tool_meta(tool_path)
+        with open(TOOL_ROOT / "expected_generated_by_meta.json", "r") as f:
+            expect_tool_meta = json.load(f)
         assert expect_tool_meta == tool_meta
