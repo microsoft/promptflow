@@ -17,7 +17,7 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
 KEY_BASED_AOAI_TYPE = "azure"
 TOKEN_BASED_AOAI_TYPE = "azure_ad"
 
-def chat_completion(*args, **kwargs):
+def chat_completion(**kwargs):
     azure_endpoint = kwargs.pop("azure_endpoint", None)
     api_version = kwargs.pop("api_version", None)
     api_type = kwargs.pop("api_type", None)
@@ -26,7 +26,11 @@ def chat_completion(*args, **kwargs):
         api_key = kwargs.pop("api_key", None)
         client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
     elif api_type == TOKEN_BASED_AOAI_TYPE:
-        client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version)
+        token_provider = kwargs.pop("token_provider", None)
+        client = AzureOpenAIClient(
+            azure_endpoint=azure_endpoint,
+            api_version=api_version,
+            azure_ad_token_provider=token_provider)
 
     deployment_name = kwargs.pop("deployment_name", None)
 
@@ -110,6 +114,7 @@ class AzureOpenAI(ToolProvider):
             api_version=api_version,
             api_type=api_type,
             api_key=api_key,
+            token_provider=self.connection.get_token,
             deployment_name=deployment_name,
             headers=headers,
             stream=stream,
