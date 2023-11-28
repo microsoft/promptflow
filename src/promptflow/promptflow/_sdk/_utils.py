@@ -862,7 +862,7 @@ def get_local_connections_from_executable(executable, client, connections_to_ign
     for n in connection_names:
         if n not in connections_to_ignore:
             kwargs.pop(INNER_CALL_PARAM, None)
-            conn = client.connections.get(name=n, with_secrets=True, inner_call=True, **kwargs)
+            conn = client.connections.get(name=n, with_secrets=True, _inner_call=True, **kwargs)
             result[n] = conn._to_execution_connection_dict()
     return result
 

@@ -82,4 +82,4 @@ class ConnectionOperations(TelemetryMixin):
         orm_object.lastModifiedDate = now
         ORMConnection.create_or_update(orm_object)
         kwargs.pop(INNER_CALL_PARAM, None)
-        return self.get(connection.name, inner_call=True, **kwargs)
+        return self.get(connection.name, _inner_call=True, **kwargs)

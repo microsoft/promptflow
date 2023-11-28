@@ -352,7 +352,7 @@ class FlowOperations(TelemetryMixin):
         for connection_name in connection_names:
             kwargs.pop(INNER_CALL_PARAM, None)
             connection = local_client.connections.get(
-                name=connection_name, with_secrets=True, inner_call=True, **kwargs
+                name=connection_name, with_secrets=True, _inner_call=True, **kwargs
             )
             connection_var_name = self._refine_connection_name(connection_name)
             connection_paths.append(output_dir / f"{connection_var_name}.yaml")

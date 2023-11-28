@@ -95,7 +95,7 @@ class RunOperations(TelemetryMixin):
 
             created_run = RunSubmitter(run_operations=self).submit(run=run, **kwargs)
             if stream:
-                self.stream(created_run, inner_call=True, **kwargs)
+                self.stream(created_run, _inner_call=True, **kwargs)
             return created_run
         except RunExistsError:
             raise RunExistsError(f"Run {run.name!r} already exists.")
@@ -124,19 +124,19 @@ class RunOperations(TelemetryMixin):
         """
         kwargs.pop(INNER_CALL_PARAM, None)
         name = Run._validate_and_return_run_name(name)
-        run = self.get(name=name, inner_call=True, **kwargs)
+        run = self.get(name=name, _inner_call=True, **kwargs)
         local_storage = LocalStorageOperations(run=run)
 
         file_handler = sys.stdout
         try:
             printed = 0
-            run = self.get(run.name, inner_call=True, **kwargs)
+            run = self.get(run.name, _inner_call=True, **kwargs)
             while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
                 file_handler.flush()
                 available_logs = local_storage.logger.get_logs()
                 printed = incremental_print(available_logs, printed, file_handler)
                 time.sleep(10)
-                run = self.get(run.name, inner_call=True, **kwargs)
+                run = self.get(run.name, _inner_call=True, **kwargs)
             # ensure all logs are printed
             file_handler.flush()
             available_logs = local_storage.logger.get_logs()
@@ -170,7 +170,7 @@ class RunOperations(TelemetryMixin):
         kwargs.pop(INNER_CALL_PARAM, None)
         name = Run._validate_and_return_run_name(name)
         ORMRun.get(name).archive()
-        return self.get(name, inner_call=True, **kwargs)
+        return self.get(name, _inner_call=True, **kwargs)
 
     @monitor_operation(activity_name="pf.runs.restore", activity_type=ActivityType.PUBLICAPI)
     def restore(self, name: Union[str, Run], **kwargs) -> Run:
@@ -184,7 +184,7 @@ class RunOperations(TelemetryMixin):
         kwargs.pop(INNER_CALL_PARAM, None)
         name = Run._validate_and_return_run_name(name)
         ORMRun.get(name).restore()
-        return self.get(name, inner_call=True, **kwargs)
+        return self.get(name, _inner_call=True, **kwargs)
 
     @monitor_operation(activity_name="pf.runs.update", activity_type=ActivityType.PUBLICAPI)
     def update(
@@ -209,7 +209,7 @@ class RunOperations(TelemetryMixin):
         name = Run._validate_and_return_run_name(name)
         # the kwargs is to support update run status scenario but keep it private
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
-        return self.get(name, inner_call=True, **kwargs)
+        return self.get(name, _inner_call=True, **kwargs)
 
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
@@ -242,7 +242,7 @@ class RunOperations(TelemetryMixin):
 
         name = Run._validate_and_return_run_name(name)
         kwargs.pop(INNER_CALL_PARAM, None)
-        run = self.get(name=name, inner_call=True, **kwargs)
+        run = self.get(name=name, _inner_call=True, **kwargs)
         local_storage = LocalStorageOperations(run=run)
         inputs, outputs = local_storage.load_inputs_and_outputs()
         inputs = inputs.to_dict("list")
@@ -271,7 +271,7 @@ class RunOperations(TelemetryMixin):
         """
         kwargs.pop(INNER_CALL_PARAM, None)
         name = Run._validate_and_return_run_name(name)
-        run = self.get(name=name, inner_call=True, **kwargs)
+        run = self.get(name=name, _inner_call=True, **kwargs)
         run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
         return local_storage.load_metrics()
@@ -295,7 +295,7 @@ class RunOperations(TelemetryMixin):
                 output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,
-                metrics=self.get_metrics(name=run.name, inner_call=True, **kwargs),
+                metrics=self.get_metrics(name=run.name, _inner_call=True, **kwargs),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
             )
@@ -320,7 +320,7 @@ class RunOperations(TelemetryMixin):
         for run in runs:
             run_name = Run._validate_and_return_run_name(run)
             kwargs.pop(INNER_CALL_PARAM, None)
-            validated_runs.append(self.get(name=run_name, inner_call=True, **kwargs))
+            validated_runs.append(self.get(name=run_name, _inner_call=True, **kwargs))
 
         html_path = kwargs.pop("html_path", None)
         try:
@@ -359,5 +359,5 @@ class RunOperations(TelemetryMixin):
         """Get the local storage of the run."""
         if isinstance(run, str):
             kwargs.pop(INNER_CALL_PARAM, None)
-            run = self.get(name=run, inner_call=True, **kwargs)
+            run = self.get(name=run, _inner_call=True, **kwargs)
         return LocalStorageOperations(run)

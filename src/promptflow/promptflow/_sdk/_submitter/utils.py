@@ -219,7 +219,7 @@ class SubmitterHelper:
         for n in connection_names:
             try:
                 kwargs.pop(INNER_CALL_PARAM, None)
-                conn = client.connections.get(name=n, with_secrets=True, inner_call=True, **kwargs)
+                conn = client.connections.get(name=n, with_secrets=True, _inner_call=True, **kwargs)
                 result[n] = conn._to_execution_connection_dict()
             except Exception as e:
                 if raise_error:

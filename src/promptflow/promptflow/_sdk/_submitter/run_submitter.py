@@ -34,7 +34,7 @@ class RunSubmitter:
     def submit(self, run: Run, stream=False, **kwargs):
         self._run_bulk(run=run, stream=stream, **kwargs)
         kwargs.pop(INNER_CALL_PARAM, None)
-        return self.run_operations.get(name=run.name, inner_call=True, **kwargs)
+        return self.run_operations.get(name=run.name, _inner_call=True, **kwargs)
 
     def _run_bulk(self, run: Run, stream=False, **kwargs):
         # validate & resolve variant
@@ -46,12 +46,12 @@ class RunSubmitter:
 
         if run.run is not None:
             if isinstance(run.run, str):
-                run.run = self.run_operations.get(name=run.run, inner_call=True, **kwargs)
+                run.run = self.run_operations.get(name=run.run, _inner_call=True, **kwargs)
             elif not isinstance(run.run, Run):
                 raise TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
             else:
                 # get the run again to make sure it's status is latest
-                run.run = self.run_operations.get(name=run.run.name, inner_call=True, **kwargs)
+                run.run = self.run_operations.get(name=run.run.name, _inner_call=True, **kwargs)
             if run.run.status != Status.Completed.value:
                 raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
             run.run.outputs = self.run_operations._get_outputs(run.run)
@@ -136,7 +136,7 @@ class RunSubmitter:
                 status=status,
                 end_time=datetime.datetime.now(),
                 system_metrics=system_metrics,
-                inner_call=True,
+                _inner_call=True,
                 **kwargs,
             )
 

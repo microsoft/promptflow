@@ -239,8 +239,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         if in_jupyter_notebook():
             print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
         if stream:
-            self.stream(run=run.name, inner_call=True, **kwargs)
-        return self.get(run=run.name, inner_call=True, **kwargs)
+            self.stream(run=run.name, _inner_call=True, **kwargs)
+        return self.get(run=run.name, _inner_call=True, **kwargs)
 
     @monitor_operation(activity_name="pfazure.runs.list", activity_type=ActivityType.PUBLICAPI)
     def list(
@@ -399,7 +399,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     def _check_cloud_run_completed(self, run_name: str, **kwargs) -> bool:
         """Check if the cloud run is completed."""
         kwargs.pop(INNER_CALL_PARAM, None)
-        run = self.get(run=run_name, inner_call=True, **kwargs)
+        run = self.get(run=run_name, _inner_call=True, **kwargs)
         run._check_run_status_is_completed()
 
     def _get_flow_runs_pagination(self, name: str, max_results: int) -> List[dict]:
@@ -672,7 +672,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :rtype: ~promptflow.entities.Run
         """
         kwargs.pop(INNER_CALL_PARAM, None)
-        run = self.get(run=run, inner_call=True, **kwargs)
+        run = self.get(run=run, _inner_call=True, **kwargs)
         # TODO: maybe we need to make this configurable
         file_handler = sys.stdout
         # different from Azure ML job, flow job can run very fast, so it might not print anything;
@@ -702,7 +702,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 available_logs = self._get_log(flow_run_id=run.name)
                 printed = incremental_print(available_logs, printed, file_handler)
                 time.sleep(10)
-                run = self.get(run=run.name, inner_call=True, **kwargs)
+                run = self.get(run=run.name, _inner_call=True, **kwargs)
             # ensure all logs are printed
             file_handler.flush()
             available_logs = self._get_log(flow_run_id=run.name)
@@ -984,7 +984,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             # the modify api returns different data format compared with get api, so we use get api here to
             # return standard Run object
             kwargs.pop(INNER_CALL_PARAM, None)
-            return self.get(run=run_id, inner_call=True, **kwargs)
+            return self.get(run=run_id, _inner_call=True, **kwargs)
         else:
             raise RunRequestException(
                 f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
