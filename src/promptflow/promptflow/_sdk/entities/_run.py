@@ -521,7 +521,7 @@ class Run(YAMLTranslatableMixin):
                 if not isinstance(self.flow, str) or (
                     not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX) and not self.flow.startswith(REGISTRY_URI_PREFIX)
                 ):
-                    raise ValueError(
+                    raise UserErrorException(
                         f"Invalid flow value when transforming to rest object: {self.flow!r}. "
                         f"Expecting a flow definition resource id starts with '{FLOW_RESOURCE_ID_PREFIX}' "
                         f"or a flow registry uri starts with '{REGISTRY_URI_PREFIX}'"
