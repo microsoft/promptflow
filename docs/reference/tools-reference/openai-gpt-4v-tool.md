@@ -30,7 +30,6 @@ Setup connections to provisioned resources in prompt flow.
 | model                  | string      | the language model to use, currently only support gpt-4-vision-preview                         | Yes      |
 | max\_tokens            | integer     | the maximum number of tokens to generate in the response. Default is a low value decided by [OpenAI API](https://platform.openai.com/docs/guides/vision).                      | No       |
 | temperature            | float       | the randomness of the generated text. Default is 1.                                            | No       |
-| n                      | integer     | how many chat completion choices to generate for each input message. Default is 1.             | No       |
 | stop                   | list        | the stopping sequence for the generated text. Default is null.                                 | No       |
 | top_p                  | float       | the probability of using the top choice from the generated tokens. Default is 1.               | No       |
 | presence\_penalty      | float       | value that controls the model's behavior with regards to repeating phrases. Default is 0.      | No       |
