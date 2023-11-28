@@ -249,7 +249,7 @@ class FlowOperations(TelemetryMixin):
                 inputs=inputs,
                 chat_history_name=chat_history_input_name,
                 environment_variables=environment_variables,
-                show_step_output=kwargs.get("show_step_output", False),
+                show_step_output=kwargs.pop("show_step_output", False),
                 **kwargs,
             )
 
