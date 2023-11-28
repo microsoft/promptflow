@@ -167,10 +167,7 @@ class ToolOperations:
         return image_url
 
     @monitor_operation(activity_name="pf.tools.list", activity_type=ActivityType.PUBLICAPI)
-    def list(
-        self,
-        flow: Union[str, PathLike] = None,
-    ):
+    def list(self, flow: Union[str, PathLike] = None, **kwargs):
         """
         List all package tools in the environment and code tools in the flow.
 

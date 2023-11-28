@@ -254,7 +254,7 @@ class FlowOperations(TelemetryMixin):
             )
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
-    def _chat_with_ui(self, script):
+    def _chat_with_ui(self, script, **kwargs):
         try:
             import bs4  # noqa: F401
             import streamlit_quill  # noqa: F401
