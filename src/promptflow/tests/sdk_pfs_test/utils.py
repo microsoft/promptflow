@@ -48,6 +48,12 @@ class PFSOperations:
             assert status_code == response.status_code
         return response
 
+    def get_connection_specs(self, status_code=None):
+        response = self._client.get(f"{self.CONNECTION_URL_PREFIX}/specs")
+        if status_code:
+            assert status_code == response.status_code
+        return response
+
     # run APIs
     def list_runs(self, status_code=None):
         # TODO: add query parameters

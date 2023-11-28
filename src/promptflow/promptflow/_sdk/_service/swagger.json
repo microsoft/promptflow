@@ -22,6 +22,23 @@
                 ]
             }
         },
+        "/Connections/specs": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "List connection spec",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionSpec"
+                        }
+                    }
+                },
+                "description": "List connection spec",
+                "operationId": "get_connection_specs",
+                "tags": [
+                    "Connections"
+                ]
+            }
+        },
         "/Connections/{name}": {
             "parameters": [
                 {
@@ -32,46 +49,6 @@
                     "type": "string"
                 }
             ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Get connection",
-                "operationId": "get_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Create connection",
-                "operationId": "post_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
             "put": {
                 "responses": {
                     "200": {
@@ -97,6 +74,21 @@
                     "Connections"
                 ]
             },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
             "delete": {
                 "responses": {
                     "200": {
@@ -105,6 +97,31 @@
                 },
                 "description": "Delete connection",
                 "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Create connection",
+                "operationId": "post_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
                 "tags": [
                     "Connections"
                 ]
@@ -188,21 +205,6 @@
                     "type": "string"
                 }
             ],
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
-                "tags": [
-                    "Runs"
-                ]
-            },
             "put": {
                 "responses": {
                     "200": {
@@ -235,6 +237,21 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
+                "tags": [
+                    "Runs"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]
@@ -499,6 +516,34 @@
         },
         "ConnectionDict": {
             "additionalProperties": true,
+            "type": "object"
+        },
+        "ConnectionSpec": {
+            "properties": {
+                "connection_type": {
+                    "type": "string"
+                },
+                "config_spec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConfigSpec"
+                    }
+                }
+            },
+            "type": "object"
+        },
+        "ConfigSpec": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "optional": {
+                    "type": "boolean"
+                },
+                "default": {
+                    "type": "string"
+                }
+            },
             "type": "object"
         },
         "RunList": {

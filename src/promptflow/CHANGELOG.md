@@ -13,11 +13,14 @@
   - Use `pf config set run.output_path=<output-path>` to specify, and the run output path will be `<output-path>/<run-name>`.
   - Introduce macro `${flow_directory}` for `run.output_path` in config, which will be replaced with corresponding flow directory.
   - The flow directory cannot be set as run output path, which means `pf config set run.output_path='${flow_directory}'` is invalid; but you can use child folder, e.g. `pf config set run.output_path='${flow_directory}/.runs'`.
+- Support pfazure run create with remote flow.
+  - For remote workspace flow: `pfazure run create --flow azureml:<flow-name>`
+  - For remote registry flow: `pfazure run create --flow azureml://registries/<registry-name>/models/<flow-name>/versions/<flow-version>`
 
 ### Bugs Fixed
 
 - [SDK/CLI] Fix node test with dict node input will raise "Required input(s) missing".
-- [SDK/CLI] Will use run name as display name when display name not specified(used flow folder name before).
+- [SDK/CLI] Will use run name as display name when display name not specified (used flow folder name before).
 
 ### Improvements
 - Force 'az login' if using azureml connection provider in cli command.

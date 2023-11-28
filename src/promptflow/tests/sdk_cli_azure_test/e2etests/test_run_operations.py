@@ -16,6 +16,9 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunN
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow.azure import PFClient
+from promptflow.azure._entities._flow import Flow
+from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 from ..recording_utilities import is_live
@@ -116,6 +119,46 @@ class TestFlowRun:
         eval_run = pf.runs.stream(run=eval_run.name)
         assert eval_run.status == RunStatus.COMPLETED
 
+    def test_run_bulk_with_remote_flow(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str], created_flow: Flow
+    ):
+        """Test run bulk with remote workspace flow."""
+        name = randstr("name")
+        run = pf.run(
+            flow=f"azureml:{created_flow.name}",
+            data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+            column_mapping={"name": "${data.name}"},
+            runtime=runtime,
+            name=name,
+        )
+        assert isinstance(run, Run)
+        assert run.name == name
+
+    def test_run_bulk_with_registry_flow(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str], registry_name: str
+    ):
+        """Test run bulk with remote registry flow."""
+        name = randstr("name")
+        run = pf.run(
+            flow=f"azureml://registries/{registry_name}/models/simple_hello_world/versions/202311241",
+            data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+            column_mapping={"name": "${data.name}"},
+            runtime=runtime,
+            name=name,
+        )
+        assert isinstance(run, Run)
+        assert run.name == name
+
+        # test invalid registry flow
+        with pytest.raises(UserErrorException, match="Invalid remote flow pattern, got"):
+            pf.run(
+                flow="azureml://registries/no-flow",
+                data=f"{DATAS_DIR}/simple_hello_world.jsonl",
+                column_mapping={"name": "${data.name}"},
+                runtime=runtime,
+                name=name,
+            )
+
     def test_run_with_connection_overwrite(self, pf, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
@@ -186,7 +229,7 @@ class TestFlowRun:
     # TODO: confirm whether this test is a end-to-end test
     def test_run_bulk_not_exist(self, pf, runtime: str, randstr: Callable[[str], str]):
         test_data = f"{DATAS_DIR}/webClassification1.jsonl"
-        with pytest.raises(FileNotFoundError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 # data with file:/// prefix is not supported, should raise not exist error
@@ -412,6 +455,7 @@ class TestFlowRun:
         mock_run = MagicMock()
         mock_run._runtime = "fake_runtime"
         mock_run._to_rest_object.return_value = SubmitBulkRunRequest()
+        mock_run._use_remote_flow = False
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
@@ -536,7 +580,7 @@ class TestFlowRun:
             )
 
     def test_run_data_not_provided(self, pf, randstr: Callable[[str], str]):
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 name=randstr("name"),

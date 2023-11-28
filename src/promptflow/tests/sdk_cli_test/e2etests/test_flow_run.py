@@ -506,7 +506,7 @@ class TestFlowRun:
         assert run.tags == tags
 
     def test_run_display_name(self, pf):
-        # use folder name if not specify display_name
+        # use run name if not specify display_name
         run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
