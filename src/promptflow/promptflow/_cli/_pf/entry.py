@@ -76,10 +76,7 @@ def run_command(args):
         )
 
 
-def entry(argv):
-    """
-    Control plane CLI tools for promptflow.
-    """
+def get_parser_args(argv):
     parser = argparse.ArgumentParser(
         prog="pf",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -96,9 +93,16 @@ def entry(argv):
     add_config_parser(subparsers)
     add_tool_parser(subparsers)
 
-    args = parser.parse_args(argv)
+    return parser.prog, parser.parse_args(argv)
+
+
+def entry(argv):
+    """
+    Control plane CLI tools for promptflow.
+    """
+    prog, args = get_parser_args(argv)
     logger = get_telemetry_logger()
-    with log_activity(logger, _get_cli_activity_name(cli='pf', args=args), activity_type=ActivityType.PUBLICAPI):
+    with log_activity(logger, _get_cli_activity_name(cli=prog, args=args), activity_type=ActivityType.PUBLICAPI):
         run_command(args)
 
 

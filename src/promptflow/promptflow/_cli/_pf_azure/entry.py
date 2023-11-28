@@ -72,10 +72,7 @@ def run_command(args):
         )
 
 
-def entry(argv):
-    """
-    Control plane CLI tools for promptflow cloud version.
-    """
+def get_parser_args(argv):
     parser = argparse.ArgumentParser(
         prog="pfazure",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -89,9 +86,16 @@ def entry(argv):
     add_parser_run(subparsers)
     add_parser_flow(subparsers)
 
-    args = parser.parse_args(argv)
+    return parser.prog, parser.parse_args(argv)
+
+
+def entry(argv):
+    """
+    Control plane CLI tools for promptflow cloud version.
+    """
+    prog, args = get_parser_args(argv)
     logger = get_telemetry_logger()
-    with log_activity(logger, _get_cli_activity_name(cli='pfazure', args=args), activity_type=ActivityType.PUBLICAPI):
+    with log_activity(logger, _get_cli_activity_name(cli=prog, args=args), activity_type=ActivityType.PUBLICAPI):
         run_command(args)
 
 

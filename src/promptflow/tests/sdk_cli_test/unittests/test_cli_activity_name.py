@@ -1,35 +1,11 @@
-import argparse
-import sys
-
 import pytest
-
-from promptflow._cli._pf._config import add_config_parser
-from promptflow._cli._pf._connection import add_connection_parser
-from promptflow._cli._pf._flow import add_flow_parser
-from promptflow._cli._pf._run import add_run_parser
-from promptflow._cli._pf._tool import add_tool_parser
+from promptflow._cli._pf.entry import get_parser_args
 from promptflow._cli._utils import _get_cli_activity_name
 
 
 def get_cli_activity_name(cmd):
-    sys.argv = list(cmd)[1:]
-    parser = argparse.ArgumentParser(
-        prog="pf",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="pf: manage prompt flow assets. Learn more: https://microsoft.github.io/promptflow.",
-    )
-    parser.add_argument(
-        "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
-    )
-    subparsers = parser.add_subparsers()
-    add_flow_parser(subparsers)
-    add_connection_parser(subparsers)
-    add_run_parser(subparsers)
-    add_config_parser(subparsers)
-    add_tool_parser(subparsers)
-
-    args = parser.parse_args(sys.argv)
-    return _get_cli_activity_name(cli='pf', args=args)
+    prog, args = get_parser_args(list(cmd)[1:])
+    return _get_cli_activity_name(cli=prog, args=args)
 
 
 @pytest.mark.unittest
