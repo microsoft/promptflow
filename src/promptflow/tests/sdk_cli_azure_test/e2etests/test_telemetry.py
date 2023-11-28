@@ -54,7 +54,12 @@ def extension_consent_config_overwrite(val):
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
-@pytest.mark.usefixtures("single_worker_thread_pool", "vcr_recording")
+@pytest.mark.usefixtures(
+    "single_worker_thread_pool",
+    "vcr_recording",
+    "mock_get_azure_pf_client",
+    "mock_set_headers_with_user_aml_token",
+)
 @pytest.mark.e2etest
 class TestTelemetry:
     def test_logging_handler(self):
