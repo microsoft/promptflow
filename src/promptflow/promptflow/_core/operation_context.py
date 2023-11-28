@@ -79,7 +79,7 @@ class OperationContext(Dict):
         """
         if name == self._USER_AGENT:
             return self.get_user_agent()
-        if name in self:
+        elif name in self:
             return self[name]
         else:
             super().__getattribute__(name)
