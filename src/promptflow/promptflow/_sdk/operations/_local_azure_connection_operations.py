@@ -81,11 +81,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         return subscription_id, resource_group, workspace_name
 
     @monitor_operation(activity_name="pf.connections.azure.list", activity_type=ActivityType.PUBLICAPI)
-    def list(
-        self,
-        max_results: int = MAX_LIST_CLI_RESULTS,
-        all_results: bool = False,
-    ) -> List[_Connection]:
+    def list(self, max_results: int = MAX_LIST_CLI_RESULTS, all_results: bool = False, **kwargs) -> List[_Connection]:
         """List connections.
 
         :return: List of run objects.
@@ -118,7 +114,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         return self._client._connections.get(name)
 
     @monitor_operation(activity_name="pf.connections.azure.delete", activity_type=ActivityType.PUBLICAPI)
-    def delete(self, name: str) -> None:
+    def delete(self, name: str, **kwargs) -> None:
         """Delete a connection entity.
 
         :param name: Name of the connection.

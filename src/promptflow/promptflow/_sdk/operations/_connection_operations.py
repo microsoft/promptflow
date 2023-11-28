@@ -20,11 +20,7 @@ class ConnectionOperations(TelemetryMixin):
         super().__init__(**kwargs)
 
     @monitor_operation(activity_name="pf.connections.list", activity_type=ActivityType.PUBLICAPI)
-    def list(
-        self,
-        max_results: int = MAX_LIST_CLI_RESULTS,
-        all_results: bool = False,
-    ) -> List[_Connection]:
+    def list(self, max_results: int = MAX_LIST_CLI_RESULTS, all_results: bool = False, **kwargs) -> List[_Connection]:
         """List connections.
 
         :param max_results: Max number of results to return.
@@ -60,7 +56,7 @@ class ConnectionOperations(TelemetryMixin):
         return _Connection._from_orm_object(orm_connection)
 
     @monitor_operation(activity_name="pf.connections.delete", activity_type=ActivityType.PUBLICAPI)
-    def delete(self, name: str) -> None:
+    def delete(self, name: str, **kwargs) -> None:
         """Delete a connection entity.
 
         :param name: Name of the connection.
