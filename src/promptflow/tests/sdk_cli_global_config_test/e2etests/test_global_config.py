@@ -18,7 +18,7 @@ class TestGlobalConfig:
         run = pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
         assert run.status == "Completed"
 
-    def test_connection_operations(self, pf):
+    def test_connection_operations(self, pf) -> None:
         connections = pf.connections.list()
         assert len(connections) > 0, f"No connection found. Provider: {pf._connection_provider}"
         # Assert create/update/delete not supported.

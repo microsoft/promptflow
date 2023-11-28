@@ -83,15 +83,19 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 pf flow test --flow ./my_chatbot --interactive
 ```
 
+**Core value: ensuring "High Quality” from prototype to production**
+
+Explore our [**15-minute tutorial**](examples/tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md) that guides you through prompt tuning ➡ batch testing ➡ evaluation, all designed to ensure high quality ready for production.
+
 Next Step! Continue with the **Tutorial**  👇 section to delve deeper into prompt flow.
 
 ## Tutorial 🏃‍♂️
 
-Prompt Flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
+Prompt flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
 
 ### Develop your own LLM apps
 
-#### VS Code Extension<img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="25"/>
+#### VS Code Extension
 
 We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI.
 
@@ -162,11 +166,9 @@ use of the software operates as your consent to these practices.
 
 ### Telemetry Configuration
 
-Telemetry collection is off by default.
+Telemetry collection is on by default.
 
-To opt in, please run `pf config set cli.telemetry_enabled=true` to turn it on.
-
-For Europe user, please run `pf config set cli.eu_user=true` to make sure telemetry is sent to Europe server.
+To opt out, please run `pf config set telemetry.enabled=false` to turn it off.
 
 ## License
 

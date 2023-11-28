@@ -537,7 +537,8 @@ class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     COGNITIVE_SEARCH = "CognitiveSearch"
     COGNITIVE_SERVICE = "CognitiveService"
     CUSTOM_KEYS = "CustomKeys"
-    AZURE_AI_CONTENT_SAFETY = "AzureAIContentSafety"
+    AZURE_BLOB = "AzureBlob"
+    AZURE_ONE_LAKE = "AzureOneLake"
     COSMOS_DB = "CosmosDb"
     COSMOS_DB_MONGO_DB_API = "CosmosDbMongoDbApi"
     AZURE_DATA_EXPLORER = "AzureDataExplorer"
@@ -616,6 +617,7 @@ class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     WEB_TABLE = "WebTable"
     XERO = "Xero"
     ZOHO = "Zoho"
+    GENERIC_CONTAINER_REGISTRY = "GenericContainerRegistry"
 
 class ConnectionScope(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -844,6 +846,11 @@ class FeaturizationMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     CUSTOM = "Custom"
     OFF = "Off"
 
+class FlowFeatureStateEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    READY = "Ready"
+    E2_E_TEST = "E2ETest"
+
 class FlowPatchOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     ARCHIVE_FLOW = "ArchiveFlow"
@@ -1006,6 +1013,11 @@ class IdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MANAGED = "Managed"
     SERVICE_PRINCIPAL = "ServicePrincipal"
     AML_TOKEN = "AMLToken"
+
+class InputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    DEFAULT = "Default"
+    UI_ONLY_HIDDEN = "UIOnly_Hidden"
 
 class IntellectualPropertyAccessMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1423,6 +1435,9 @@ class RuntimeStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     UNAVAILABLE = "Unavailable"
     FAILED = "Failed"
+    NOT_EXIST = "NotExist"
+    STARTING = "Starting"
+    STOPPING = "Stopping"
 
 class RuntimeType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1489,6 +1504,8 @@ class SetupFlowSessionAction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum))
 
     INSTALL = "Install"
     RESET = "Reset"
+    UPDATE = "Update"
+    DELETE = "Delete"
 
 class ShortSeriesHandlingConfiguration(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1595,6 +1612,12 @@ class TaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     TEXT_MULTI_LABELING = "TextMultiLabeling"
     TEXT_NER = "TextNER"
     TEXT_CLASSIFICATION_MULTILABEL = "TextClassificationMultilabel"
+
+class ToolFuncCallScenario(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    GENARATED_BY = "Genarated_by"
+    REVERSE_GENERATED_BY = "Reverse_generated_by"
+    DYNAMIC_LIST = "Dynamic_list"
 
 class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1708,6 +1731,7 @@ class ValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FUNCTION_STR = "function_str"
     FORM_RECOGNIZER_CONNECTION = "FormRecognizerConnection"
     FILE_PATH = "file_path"
+    IMAGE = "image"
 
 class VmPriority(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
