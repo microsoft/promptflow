@@ -296,8 +296,7 @@ class TestBuiltinsManager:
         with pytest.raises(InputTypeMismatch) as ex:
             BuiltinsManager._load_tool_from_module(module, tool_name, module_name, class_name, method_name, node_inputs)
         expected_message = (
-            "The input for flow is incorrect. The tool 'test_tool' requires a literal value for the input 'input1', "
-            "however, a value '${flow.value1}' was provided which is not a literal value. "
-            "Please provide a literal value for 'input1' to correct this issue."
+            "Invalid input for 'test_tool': Initialization input 'input1' requires a literal value, "
+            "but ${flow.value1} was received."
         )
         assert expected_message == str(ex.value)

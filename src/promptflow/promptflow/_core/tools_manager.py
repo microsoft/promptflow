@@ -282,9 +282,8 @@ class BuiltinsManager:
             if v.value_type != InputValueType.LITERAL:
                 raise InputTypeMismatch(
                     message_format=(
-                        "The input for flow is incorrect. The tool '{tool_name}' requires a literal value for "
-                        "the input '{input_name}', however, a value '{input_value}' was provided which is not a "
-                        "literal value. Please provide a literal value for '{input_name}' to correct this issue."
+                        "Invalid input for '{tool_name}': Initialization input '{input_name}' requires a literal "
+                        "value, but {input_value} was received."
                     ),
                     tool_name=tool_name,
                     input_name=k,
