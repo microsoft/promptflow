@@ -13,13 +13,13 @@ CLI_PERF_MONITOR_AGENT = None
 
 
 @pytest.fixture(autouse=True)
-def init(cli_perf_monitor_agent):
-    global CLI_PERF_MONITOR_AGENT
-    CLI_PERF_MONITOR_AGENT = cli_perf_monitor_agent
+def set_env(cli_perf_monitor_agent):
+    os.environ[USER_AGENT] = cli_perf_monitor_agent
+    yield
+    del os.environ[USER_AGENT]
 
 
 def run_cli_command(cmd, time_limit=3600):
-    os.environ[USER_AGENT] = "perf_monitor/1.0"
     from promptflow._cli._pf_azure.entry import main
     from promptflow.azure.operations._run_operations import RunOperations
 

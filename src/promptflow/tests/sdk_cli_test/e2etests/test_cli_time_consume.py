@@ -18,15 +18,15 @@ DATAS_DIR = "./tests/test_configs/datas"
 CLI_PERF_MONITOR_AGENT = None
 
 
-@pytest.fixture(autouse=True, scope="module")
-def init(cli_perf_monitor_agent):
-    global CLI_PERF_MONITOR_AGENT
-    CLI_PERF_MONITOR_AGENT = cli_perf_monitor_agent
+@pytest.fixture(autouse=True)
+def set_env(cli_perf_monitor_agent):
+    os.environ[USER_AGENT] = cli_perf_monitor_agent
+    yield
+    del os.environ[USER_AGENT]
 
 
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
     from promptflow._cli._pf.entry import main
-    os.environ[USER_AGENT] = "perf_monitor/1.0"
     sys.argv = list(cmd)
     output = io.StringIO()
     st = timeit.default_timer()

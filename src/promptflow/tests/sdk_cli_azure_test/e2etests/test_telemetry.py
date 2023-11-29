@@ -196,6 +196,11 @@ class TestTelemetry:
                 pass
 
     def test_ci_user_agent(self, cli_perf_monitor_agent) -> None:
-        os.environ[USER_AGENT] = cli_perf_monitor_agent
-        context = OperationContext.get_instance()
-        assert cli_perf_monitor_agent in context.get_user_agent()
+        try:
+            os.environ[USER_AGENT] = cli_perf_monitor_agent
+            context = OperationContext.get_instance()
+            assert cli_perf_monitor_agent in context.get_user_agent()
+        except Exception as e:
+            raise e
+        finally:
+            del os.environ[USER_AGENT]
