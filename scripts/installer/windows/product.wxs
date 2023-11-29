@@ -101,7 +101,7 @@
             Execute="commit"
             Impersonate="no"
             ExeCommand="cmd.exe /c SC DELETE PromptService"
-            Return="check" />
+            Return="ignore" />
         <InstallExecuteSequence>
             <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
