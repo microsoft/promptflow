@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -155,6 +156,17 @@ def sanitize_username(value: str) -> str:
         flags=re.IGNORECASE,
     )
     return value
+
+
+def sanitize_pfs_body(body: str) -> str:
+    body_dict = json.loads(body)
+    if "runtimeName" in body_dict:
+        body_dict["runtimeName"] = SanitizedValues.RUNTIME_NAME
+    if "sessionId" in body_dict:
+        body_dict["sessionId"] = SanitizedValues.SESSION_ID
+    if "flowLineageId" in body:
+        body_dict["flowLineageId"] = SanitizedValues.FLOW_LINEAGE_ID
+    return json.dumps(body_dict)
 
 
 def _is_json_payload(headers: Dict, key: str) -> bool:

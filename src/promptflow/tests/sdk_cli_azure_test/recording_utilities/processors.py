@@ -14,6 +14,7 @@ from .utils import (
     is_json_payload_response,
     sanitize_azure_workspace_triad,
     sanitize_experiment_id,
+    sanitize_pfs_body,
     sanitize_upload_hash,
     sanitize_username,
 )
@@ -203,14 +204,7 @@ class PFSProcessor(RecordingProcessor):
     def process_request(self, request: Request) -> Request:
         if is_json_payload_request(request) and request.body is not None:
             body = request.body.decode("utf-8")
-            body_dict = json.loads(request.body.decode("utf-8"))
-            if "runtimeName" in body_dict:
-                body_dict["runtimeName"] = SanitizedValues.RUNTIME_NAME
-            if "sessionId" in body_dict:
-                body_dict["sessionId"] = SanitizedValues.SESSION_ID
-            if "flowLineageId" in body:
-                body_dict["flowLineageId"] = SanitizedValues.FLOW_LINEAGE_ID
-            body = json.dumps(body_dict)
+            body = sanitize_pfs_body(body)
             request.body = body.encode("utf-8")
         return request
 

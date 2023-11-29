@@ -2,12 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import inspect
 import json
 from pathlib import Path
 from typing import Dict, List
 
 import vcr
+from vcr import matchers
 from vcr.request import Request
 
 from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING, SanitizedValues
@@ -23,7 +25,7 @@ from .processors import (
     StorageProcessor,
     TenantProcessor,
 )
-from .utils import is_live, is_record, is_replay, sanitize_upload_hash
+from .utils import is_json_payload_request, is_live, is_record, is_replay, sanitize_pfs_body, sanitize_upload_hash
 from .variable_recorder import VariableRecorder
 
 
@@ -76,7 +78,7 @@ class PFAzureIntegrationTestRecording:
         return recording_file
 
     def _init_vcr(self) -> vcr.VCR:
-        return vcr.VCR(
+        _vcr = vcr.VCR(
             cassette_library_dir=self.recording_file.parent.as_posix(),
             before_record_request=self._process_request_recording,
             before_record_response=self._process_response_recording,
@@ -84,6 +86,8 @@ class PFAzureIntegrationTestRecording:
             record_mode="none" if is_replay() else "all",
             filter_headers=FILTER_HEADERS,
         )
+        _vcr.match_on += ("body",)
+        return _vcr
 
     def enter_vcr(self):
         self._cm = self.vcr.use_cassette(self.recording_file.as_posix())
@@ -224,14 +228,15 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         return r1.path == r2.path
 
     def _custom_request_body_matcher(self, r1: Request, r2: Request) -> bool:
-        if r1.path == r2.path:
-            # /BulkRuns/submit - submit run, match by "runId" in body
-            # /rundata - get run, match by "runId" in body
-            if r1.path.endswith("/BulkRuns/submit") or r1.path.endswith("/rundata"):
-                return r1.body.get("runId") == r2.body.get("runId")
-            else:
-                # we don't match by body for other requests, so return True
-                return True
+        if is_json_payload_request(r1) and r1.body is not None:
+            # note that `sanitize_upload_hash` is not idempotent
+            # so we should not modify r1 directly
+            # otherwise it will be sanitized multiple times with many zeros
+            _r1 = copy.deepcopy(r1)
+            body1 = _r1.body.decode("utf-8")
+            body1 = sanitize_pfs_body(body1)
+            body1 = sanitize_upload_hash(body1)
+            _r1.body = body1.encode("utf-8")
+            return matchers.body(_r1, r2)
         else:
-            # path no match, so this pair shall not match
-            return False
+            return matchers.body(r1, r2)
