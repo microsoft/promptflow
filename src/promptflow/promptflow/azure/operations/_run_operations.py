@@ -27,6 +27,7 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
     LINE_NUMBER,
     LOGGER_NAME,
@@ -780,7 +781,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._flow_operations._resolve_arm_id_or_upload_dependencies(
             flow=flow,
             # ignore .promptflow/dag.tools.json only for run submission scenario in python
-            ignore_tools_json=flow._flow_dict.get("language", None) != "csharp",
+            ignore_tools_json=flow._flow_dict.get(LANGUAGE_KEY, None) != FlowLanguage.CSharp,
         )
         return flow.path
 

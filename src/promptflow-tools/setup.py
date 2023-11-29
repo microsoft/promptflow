@@ -28,12 +28,15 @@ if not version:
 with open("README.md", encoding="utf-8") as f:
     readme = f.read()
 
+with open("CHANGELOG.md", encoding="utf-8") as f:
+    changelog = f.read()
+
 setup(
     name=PACKAGE_NAME,
     version=version,
     description="Prompt flow built-in tools",
     long_description_content_type="text/markdown",
-    long_description=readme,
+    long_description=readme + "\n\n" + changelog,
     author="Microsoft Corporation",
     classifiers=[
         "Programming Language :: Python :: 3",
