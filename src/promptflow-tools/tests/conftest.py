@@ -5,6 +5,8 @@ import sys
 
 from pathlib import Path
 from pytest_mock import MockerFixture  # noqa: E402
+from tests.utils import verify_url_exists
+
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
@@ -50,22 +52,7 @@ def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
     '''Verify that there is a MIR endpoint up and available for the Custom Connection.
     We explicitly do not pass the endpoint key to avoid the delay in generating a response.
     '''
-
-    import urllib.request
-    from urllib.request import HTTPError
-    from urllib.error import URLError
-
-    try:
-        urllib.request.urlopen(
-            urllib.request.Request(connection.configs['endpoint_url']),
-            timeout=50)
-    except HTTPError as e:
-        # verify that the connection is not authorized, anything else would mean the endpoint is failed
-        return e.code == 403
-    except URLError:
-        # Endpoint does not exist - skip the test
-        return False
-    raise Exception("Task Succeeded unexpectedly.")
+    return verify_url_exists(connection.configs['endpoint_url'])
 
 
 @pytest.fixture

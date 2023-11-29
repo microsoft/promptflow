@@ -2,36 +2,40 @@ import functools
 import json
 import os
 import re
+import requests
 import sys
 import time
-import urllib.request
+import tempfile
 
 from abc import abstractmethod
+from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Tuple, Mapping, Optional
-from urllib.request import HTTPError
+from typing import Any, Dict, List, Tuple, Optional, Union
 
-from promptflow import ToolProvider, tool
+from promptflow._core.tool import ToolProvider, tool
+from promptflow._sdk._constants import ConnectionType
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
-from promptflow.tools.common import render_jinja_template, parse_chat
+from promptflow.tools.common import render_jinja_template, validate_role
 from promptflow.tools.exception import (
     OpenSourceLLMOnlineEndpointError,
     OpenSourceLLMUserError,
-    OpenSourceLLMKeyValidationError
+    OpenSourceLLMKeyValidationError,
+    ChatAPIInvalidRole
 )
 
+
 DEPLOYMENT_DEFAULT = "default"
+CONNECTION_CACHE_FILE = "pf_connection_names"
 VALID_LLAMA_ROLES = {"system", "user", "assistant"}
 REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
 REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
-DEFAULT_ENDPOINT_NAME = "-- please enter an endpoint name --"
 ENDPOINT_REQUIRED_ENV_VARS = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME"]
 
 
-def handle_oneline_endpoint_error(max_retries: int = 3,
-                                  initial_delay: float = 1,
-                                  exponential_base: float = 2):
+def handle_online_endpoint_error(max_retries: int = 3,
+                                 initial_delay: float = 1,
+                                 exponential_base: float = 2):
     def deco_retry(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -39,9 +43,9 @@ def handle_oneline_endpoint_error(max_retries: int = 3,
             for i in range(max_retries):
                 try:
                     return func(*args, **kwargs)
-                except HTTPError as e:
+                except OpenSourceLLMOnlineEndpointError as e:
                     if i == max_retries - 1:
-                        error_message = f"Exception hit calling Oneline Endpoint: {type(e).__name__}: {str(e)}"
+                        error_message = f"Exception hit calling Online Endpoint: {type(e).__name__}: {str(e)}"
                         print(error_message, file=sys.stderr)
                         raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
@@ -49,6 +53,39 @@ def handle_oneline_endpoint_error(max_retries: int = 3,
                     time.sleep(delay)
         return wrapper
     return deco_retry
+
+
+class ConnectionCache:
+    def __init__(self,
+                 use_until: datetime,
+                 subscription_id: str,
+                 resource_group: str,
+                 workspace_name: str,
+                 connection_names: List[str]):
+        self.use_until = use_until
+        self.subscription_id = subscription_id
+        self.resource_group = resource_group
+        self.workspace_name = workspace_name
+        self.connection_names = connection_names
+
+    @classmethod
+    def from_filename(self, file):
+        cache = json.load(file)
+        return self(cache['use_until'],
+                    cache['subscription_id'],
+                    cache['resource_group'],
+                    cache['workspace_name'],
+                    cache['connection_names'])
+
+    def can_use(self,
+                subscription_id: str,
+                resource_group: str,
+                workspace_name: str):
+        use_until_time = datetime.fromisoformat(self.use_until)
+        return (use_until_time > datetime.now()
+                and self.subscription_id == subscription_id
+                and self.resource_group == resource_group
+                and self.workspace_name == workspace_name)
 
 
 class Endpoint:
@@ -74,10 +111,7 @@ class Deployment:
 class ServerlessEndpointsContainer:
     API_VERSION = "2023-08-01-preview"
 
-    def _get_headers(self):
-        from azure.identity import DefaultAzureCredential
-        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
-        token = credential.get_token("https://management.azure.com/.default").token
+    def _get_headers(self, token: str) -> Dict[str, str]:
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -90,35 +124,43 @@ class ServerlessEndpointsContainer:
             + f"/resourceGroups/{resource_group}/providers/Microsoft.MachineLearningServices" \
             + f"/workspaces/{workspace_name}/serverlessEndpoints{suffix}?api-version={self.API_VERSION}"
 
-    def _list(self, subscription_id, resource_group, workspace_name):
-        try:
-            headers = self._get_headers()
-        except Exception as e:
-            print(f"Unable to get token for ARM. Skipping serverless endpoints. Exception: {e}", file=sys.stderr)
-            return []
+    def _list(self, token: str, subscription_id: str, resource_group: str, workspace_name: str):
+        headers = self._get_headers(token)
         url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name)
 
         try:
-            req = urllib.request.Request(url=url, headers=headers)
-            response = urllib.request.urlopen(req, timeout=50)
-            result = response.read()
-            return json.loads(result)['value']
+            response = requests.get(url, headers=headers, timeout=50)
+            return json.loads(response.content)['value']
         except Exception as e:
             print(f"Error encountered when listing serverless endpoints. Exception: {e}", file=sys.stderr)
             return []
 
     def _validate_model_family(self, serverless_endpoint):
         try:
-            if (serverless_endpoint.get('properties', {}).get('offer', {}).get('publisher') == 'Meta'
-                    and "llama" in serverless_endpoint.get('properties', {}).get('offer', {}).get('offerName')
-                    and serverless_endpoint.get('properties', {}).get('provisioningState') == "Succeeded"):
+            if serverless_endpoint.get('properties', {}).get('provisioningState') != "Succeeded":
+                return None
+
+            if (try_get_from_dict(serverless_endpoint,
+                                  ['properties', 'offer', 'publisher']) == 'Meta'
+                    and "llama" in try_get_from_dict(serverless_endpoint,
+                                                     ['properties', 'offer', 'offerName'])):
+                return ModelFamily.LLAMA
+            if (try_get_from_dict(serverless_endpoint,
+                                  ['properties', 'marketplaceInfo', 'publisherId']) == 'metagenai'
+                    and "llama" in try_get_from_dict(serverless_endpoint,
+                                                     ['properties', 'marketplaceInfo', 'offerId'])):
                 return ModelFamily.LLAMA
         except Exception as ex:
-            print(f"Ignoring endpoint {serverless_endpoint['id']} due to error: {ex}")
+            print(f"Ignoring endpoint {serverless_endpoint['id']} due to error: {ex}", file=sys.stderr)
             return None
 
-    def list_serverless_endpoints(self, subscription_id, resource_group, workspace_name):
-        serverlessEndpoints = self._list(subscription_id, resource_group, workspace_name)
+    def list_serverless_endpoints(self,
+                                  token,
+                                  subscription_id,
+                                  resource_group,
+                                  workspace_name,
+                                  return_endpoint_url: bool = False):
+        serverlessEndpoints = self._list(token, subscription_id, resource_group, workspace_name)
 
         result = []
         for e in serverlessEndpoints:
@@ -129,56 +171,57 @@ class ServerlessEndpointsContainer:
                     # "hyperlink": self.get_endpoint_url(e.endpoint_name)
                     "description": f"Serverless Endpoint:  {e['name']}",
                 })
-
+                if return_endpoint_url:
+                    result[-1]['url'] = try_get_from_dict(e, ['properties', 'inferenceEndpoint', 'uri'])
         return result
 
-    def _list_endpoint_key(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name):
-        try:
-            headers = self._get_headers()
-        except Exception as e:
-            print(f"Unable to get token for ARM. Exception: {e}", file=sys.stderr)
-            raise
-
+    def _list_endpoint_key(self,
+                           token: str,
+                           subscription_id: str,
+                           resource_group: str,
+                           workspace_name: str,
+                           serverless_endpoint_name: str):
+        headers = self._get_headers(token)
         url = self.get_serverless_arm_url(subscription_id,
                                           resource_group,
                                           workspace_name,
                                           f"{serverless_endpoint_name}/listKeys")
         try:
-            req = urllib.request.Request(url=url, data=str.encode(""), headers=headers)
-            response = urllib.request.urlopen(req, timeout=50)
-            result = response.read()
-            return json.loads(result)
+            response = requests.post(url, headers=headers, timeout=50)
+            return json.loads(response.content)
         except Exception as e:
             print(f"Unable to get key from selected serverless endpoint. Exception: {e}", file=sys.stderr)
 
-    def get_serverless_endpoint(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name):
-        try:
-            headers = self._get_headers()
-        except Exception as e:
-            print(f"Unable to get token for ARM. Exception: {e}", file=sys.stderr)
-            raise
+    def get_serverless_endpoint(self,
+                                token: str,
+                                subscription_id: str,
+                                resource_group: str,
+                                workspace_name: str,
+                                serverless_endpoint_name: str):
+        headers = self._get_headers(token)
         url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name, serverless_endpoint_name)
 
         try:
-            req = urllib.request.Request(url=url, headers=headers)
-            response = urllib.request.urlopen(req, timeout=50)
-            result = response.read()
-            return json.loads(result)
+            response = requests.get(url, headers=headers, timeout=50)
+            return json.loads(response.content)
         except Exception as e:
             print(f"Unable to get selected serverless endpoint. Exception: {e}", file=sys.stderr)
 
     def get_serverless_endpoint_key(self,
-                                    subscription_id,
-                                    resource_group,
-                                    workspace_name,
-                                    serverless_endpoint_name) -> Tuple[str, str, str]:
-        endpoint = self.get_serverless_endpoint(subscription_id,
+                                    token: str,
+                                    subscription_id: str,
+                                    resource_group: str,
+                                    workspace_name: str,
+                                    serverless_endpoint_name: str) -> Tuple[str, str, str]:
+        endpoint = self.get_serverless_endpoint(token,
+                                                subscription_id,
                                                 resource_group,
                                                 workspace_name,
                                                 serverless_endpoint_name)
-        endpoint_url = endpoint.get('properties', {}).get('inferenceEndpoint', {}).get('uri')
+        endpoint_url = try_get_from_dict(endpoint, ['properties', 'inferenceEndpoint', 'uri'])
         model_family = self._validate_model_family(endpoint)
-        endpoint_key = self._list_endpoint_key(subscription_id,
+        endpoint_key = self._list_endpoint_key(token,
+                                               subscription_id,
                                                resource_group,
                                                workspace_name,
                                                serverless_endpoint_name)['primaryKey']
@@ -188,33 +231,18 @@ class ServerlessEndpointsContainer:
 
 
 class CustomConnectionsContainer:
-    def __init__(self) -> None:
-        self.__azure_custom_connections = None
-        self.__subscription_id = None
-        self.__resource_group_name = None
-        self.__workspace_name = None
 
     def get_azure_custom_connection_names(self,
-                                          subscription_id,
-                                          resource_group_name,
-                                          workspace_name) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-
-        if (self.__azure_custom_connections is not None
-                and self.__subscription_id == subscription_id
-                and self.__resource_group_name == resource_group_name
-                and self.__workspace_name == workspace_name):
-            return self.__azure_custom_connections
-
+                                          credential,
+                                          subscription_id: str,
+                                          resource_group_name: str,
+                                          workspace_name: str,
+                                          return_endpoint_url: bool = False
+                                          ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+        
         result = []
         try:
-            from azure.identity import DefaultAzureCredential
             from promptflow.azure import PFClient as AzurePFClient
-            credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
-        except Exception as e:
-            print(f"Skipping Azure PFClient. Exception: {e}", file=sys.stderr)
-            return result
-
-        try:
             azure_pf_client = AzurePFClient(
                 credential=credential,
                 subscription_id=subscription_id,
@@ -227,7 +255,6 @@ class CustomConnectionsContainer:
             return result
 
         connections = azure_pf_client._connections.list()
-
         for c in connections:
             if c.type == ConnectionType.CUSTOM and "model_family" in c.configs:
                 try:
@@ -238,19 +265,16 @@ class CustomConnectionsContainer:
                         # "hyperlink": "",
                         "description": f"Custom Connection:  {c.name}",
                     })
-
+                    if return_endpoint_url:
+                        result[-1]['url'] = c.configs['endpoint_url']
                 except Exception:
                     # silently ignore unsupported model family
                     continue
-
-        self.__subscription_id = subscription_id
-        self.__resource_group_name = resource_group_name
-        self.__workspace_name = workspace_name
-        self.__azure_custom_connections = result
-
         return result
 
-    def get_local_custom_connection_names(self) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    def get_local_custom_connection_names(self,
+                                          return_endpoint_url: bool = False
+                                          ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
         result = []
         try:
             from promptflow import PFClient as LocalPFClient
@@ -260,7 +284,6 @@ class CustomConnectionsContainer:
 
         pf = LocalPFClient()
         connections = pf.connections.list()
-
         for c in connections:
             if c.type == ConnectionType.CUSTOM and "model_family" in c.configs:
                 try:
@@ -271,6 +294,8 @@ class CustomConnectionsContainer:
                         # "hyperlink": "",
                         "description": f"Local Custom Connection:  {c.name}",
                     })
+                    if return_endpoint_url:
+                        result[-1]['url'] = c.configs['endpoint_url']
 
                 except Exception:
                     # silently ignore unsupported model family
@@ -287,13 +312,12 @@ class CustomConnectionsContainer:
         return self.get_endpoint_from_custom_connection(connection)
 
     def get_endpoint_from_azure_custom_connection(self,
+                                                  credential,
                                                   subscription_id,
                                                   resource_group_name,
                                                   workspace_name,
                                                   connection_name) -> Tuple[str, str, str]:
         from promptflow.azure import PFClient as AzurePFClient
-        from azure.identity import DefaultAzureCredential
-        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
 
         azure_pf_client = AzurePFClient(
                 credential=credential,
@@ -330,33 +354,32 @@ Required keys are: {accepted_keys}."""
                 model_family)
 
     def list_custom_connection_names(self,
+                                     credential,
                                      subscription_id: str,
                                      resource_group_name: str,
-                                     workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+                                     workspace_name: str,
+                                     return_endpoint_url: bool = False
+                                     ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
 
-        azure_custom_connections = self.get_azure_custom_connection_names(subscription_id,
+        azure_custom_connections = self.get_azure_custom_connection_names(credential,
+                                                                          subscription_id,
                                                                           resource_group_name,
-                                                                          workspace_name)
-        local_custom_connections = self.get_local_custom_connection_names()
+                                                                          workspace_name,
+                                                                          return_endpoint_url)
+        local_custom_connections = self.get_local_custom_connection_names(return_endpoint_url)
 
         return azure_custom_connections + local_custom_connections
 
 
 class EndpointsContainer:
-    def __init__(self) -> None:
-        self.__endpoints_and_deployments = None
-        self.__subscription_id = None
-        self.__resource_group_name = None
-        self.__workspace_name = None
 
     def get_ml_client(self,
+                      credential,
                       subscription_id: str,
                       resource_group_name: str,
                       workspace_name: str):
-        from azure.ai.ml import MLClient
-        from azure.identity import DefaultAzureCredential
-        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
         try:
+            from azure.ai.ml import MLClient
             return MLClient(
                 credential=credential,
                 subscription_id=subscription_id,
@@ -369,23 +392,14 @@ class EndpointsContainer:
             raise OpenSourceLLMOnlineEndpointError(message=message)
 
     def get_endpoints_and_deployments(self,
+                                      credential,
                                       subscription_id: str,
                                       resource_group_name: str,
                                       workspace_name: str) -> List[Endpoint]:
 
-        if (self.__endpoints_and_deployments is not None
-                and self.__subscription_id == subscription_id
-                and self.__resource_group_name == resource_group_name
-                and self.__workspace_name == workspace_name):
-            return self.__endpoints_and_deployments
-
-        ml_client = self.get_ml_client(subscription_id, resource_group_name, workspace_name)
-        self.__subscription_id = subscription_id
-        self.__resource_group_name = resource_group_name
-        self.__workspace_name = workspace_name
+        ml_client = self.get_ml_client(credential, subscription_id, resource_group_name, workspace_name)
 
         list_of_endpoints: List[Endpoint] = []
-
         for ep in ml_client.online_endpoints.list():
             endpoint = Endpoint(
                 endpoint_name=ep.name,
@@ -423,12 +437,15 @@ class EndpointsContainer:
             + f"/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
 
     def list_endpoint_names(self,
+                            credential,
                             subscription_id,
                             resource_group_name,
-                            workspace_name
+                            workspace_name,
+                            return_endpoint_url: bool = False
                             ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
         '''Function for listing endpoints in the UX'''
         endpoints_and_deployments = self.get_endpoints_and_deployments(
+            credential,
             subscription_id,
             resource_group_name,
             workspace_name)
@@ -444,9 +461,13 @@ class EndpointsContainer:
                                                    workspace_name),
                 "description": f"Online Endpoint:  {e.endpoint_name}",
             })
+            if return_endpoint_url:
+                result[-1]['url'] = e.endpoint_url
+
         return result
 
     def list_deployment_names(self,
+                              credential,
                               subscription_id,
                               resource_group_name,
                               workspace_name,
@@ -457,6 +478,7 @@ class EndpointsContainer:
             return []
 
         endpoints_and_deployments = self.get_endpoints_and_deployments(
+            credential,
             subscription_id,
             resource_group_name,
             workspace_name)
@@ -483,6 +505,17 @@ def is_serverless_endpoint(endpoint_url: str) -> bool:
     return "serverless.ml.azure.com" in endpoint_url or "inference.ai.azure.com" in endpoint_url
 
 
+def try_get_from_dict(some_dict: Dict, key_list: List):
+    for key in key_list:
+        if some_dict is None:
+            return some_dict
+        elif key in some_dict:
+            some_dict = some_dict[key]
+        else:
+            return None
+    return some_dict
+
+
 def parse_endpoint_connection_type(endpoint_connection_name: str) -> Tuple[str, str]:
     endpoint_connection_details = endpoint_connection_name.split("/")
     return (endpoint_connection_details[0].lower(), endpoint_connection_details[1])
@@ -490,16 +523,62 @@ def parse_endpoint_connection_type(endpoint_connection_name: str) -> Tuple[str, 
 
 def list_endpoint_names(subscription_id: str,
                         resource_group_name: str,
-                        workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-    serverless_endpoints = SERVERLESS_ENDPOINT_CONTAINER.list_serverless_endpoints(subscription_id,
-                                                                                   resource_group_name,
-                                                                                   workspace_name)
-    online_endpoints = ENDPOINT_CONTAINER.list_endpoint_names(subscription_id, resource_group_name, workspace_name)
-    custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(subscription_id,
-                                                                                  resource_group_name,
-                                                                                  workspace_name)
+                        workspace_name: str,
+                        return_endpoint_url: bool = False) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    cache_file_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            cache_file_path = os.path.join(os.path.dirname(temp_file.name), CONNECTION_CACHE_FILE)
+            print(f"Attempting to read connection cache. File path: {cache_file_path}", file=sys.stdout)
+            with open(cache_file_path, 'r') as file:
+                cache = ConnectionCache.from_filename(file)
+                if cache.can_use(subscription_id, resource_group_name, workspace_name):
+                    if len(cache.connection_names) > 0:
+                        print("....using Connection Cache File", file=sys.stdout)
+                        return cache.connection_names
+                    else:
+                        print("....skipping. No connections in file", file=sys.stdout)
+                else:
+                    print("....skipping. File not relevant", file=sys.stdout)
+    except Exception as e:
+        print(f"....failed to find\\read connection cache file. Regenerating. Error:{e}", file=sys.stdout)
 
-    return custom_connections + serverless_endpoints + online_endpoints
+    try:
+        from azure.identity import DefaultAzureCredential
+        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+        token = credential.get_token("https://management.azure.com/.default").token
+    except Exception as e:
+        print(f"Skipping list_endpoint_names. Exception: {e}", file=sys.stderr)
+        msg = "Exception getting token: Please retry"
+        return [{ "value": msg, "display_value": msg, "description": msg }]
+
+    serverless_endpoints = SERVERLESS_ENDPOINT_CONTAINER.list_serverless_endpoints(token, subscription_id, resource_group_name, workspace_name, return_endpoint_url)
+    online_endpoints = ENDPOINT_CONTAINER.list_endpoint_names(credential, subscription_id, resource_group_name, workspace_name, return_endpoint_url)
+    custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(credential, subscription_id, resource_group_name, workspace_name, return_endpoint_url)
+
+    list_of_endpoints = custom_connections + serverless_endpoints + online_endpoints
+
+    cache = ConnectionCache(use_until=(datetime.now() + timedelta(minutes=5)).isoformat(),
+                            subscription_id=subscription_id,
+                            resource_group=resource_group_name,
+                            workspace_name=workspace_name,
+                            connection_names=list_of_endpoints)
+
+    if len(list_of_endpoints) == 0:
+        msg = "No endpoints found. Please add a connection."
+        return [{ "value": msg, "display_value": msg, "description": msg }]
+
+    if cache_file_path is not None:
+        try:
+            print(f"Attempting to write connection cache. File path: {cache_file_path}", file=sys.stdout)
+            with open(cache_file_path, 'w') as file:
+                json.dump(cache, file, default=lambda obj: obj.__dict__)
+                print("....written", file=sys.stdout)
+        except Exception as e:
+            print(f"""....failed to write connection cache file. Will need to reload next time.
+Error:{e}""", file=sys.stdout)
+
+    return list_of_endpoints
 
 
 def list_deployment_names(subscription_id: str,
@@ -508,22 +587,31 @@ def list_deployment_names(subscription_id: str,
                           endpoint: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
     deployment_default_list = [{
         "value": DEPLOYMENT_DEFAULT,
-        "display_value": DEPLOYMENT_DEFAULT
+        "display_value": DEPLOYMENT_DEFAULT,
+        "description": "This will use the default deployment for the selected online endpoint. You can also manually enter a deployment name here."
         }]
 
     if endpoint is None or endpoint.strip() == "" or "/" not in endpoint:
         return deployment_default_list
-    (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_connection_type(endpoint)
 
-    if endpoint_connection_type == "onlineendpoint":
-        return deployment_default_list + ENDPOINT_CONTAINER.list_deployment_names(
-            subscription_id,
-            resource_group_name,
-            workspace_name,
-            endpoint_connection_name
-        )
-    else:
+    (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_connection_type(endpoint)
+    if endpoint_connection_type != "onlineendpoint":
         return deployment_default_list
+
+    try:
+        from azure.identity import DefaultAzureCredential
+        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+    except Exception as e:
+        print(f"Skipping list_deployment_names. Exception: {e}", file=sys.stderr)
+        return deployment_default_list
+
+    return deployment_default_list + ENDPOINT_CONTAINER.list_deployment_names(
+        credential,
+        subscription_id,
+        resource_group_name,
+        workspace_name,
+        endpoint_connection_name
+    )
 
 
 def format_generic_response_payload(output: bytes, response_key: str) -> str:
@@ -556,94 +644,32 @@ Instead, received {response_json} and access failed at key `{e}`.
 def get_model_type(deployment_model: str) -> str:
     m = re.match(r'azureml://registries/[^/]+/models/([^/]+)/versions/', deployment_model)
     if m is None:
-        print(f"Unexpected model format: {deployment_model}. Skipping")
+        print(f"Unexpected model format: {deployment_model}. Skipping", file=sys.stdout)
         return None
 
     model = m[1].lower()
-    if model.startswith(ModelFamily.LLAMA.lower()):
+    if model.startswith("llama-2"):
         return ModelFamily.LLAMA
-    elif model.startswith(ModelFamily.FALCON.lower()):
+    elif model.startswith("tiiuae-falcon"):
         return ModelFamily.FALCON
-    elif model.startswith(ModelFamily.DOLLY.lower()):
+    elif model.startswith("databricks-dolly-v2"):
         return ModelFamily.DOLLY
     elif model.startswith("gpt2"):
         return ModelFamily.GPT2
     else:
-        raise ValueError(f"Unexpected model type: {model} derived from deployed model: {deployment_model}")
+        # Not found and\or handled. Ignore this endpoint\deployment
+        return None
 
 
-def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None) -> Tuple[str, str, str]:
-    from azure.identity import DefaultAzureCredential
-    credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
-
+def validate_model_family(model_family: str):
     try:
-        from azure.ai.ml import MLClient
-        ml_client = MLClient(
-            credential=credential,
-            subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
-            resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
-            workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
-    except Exception as e:
-        message = "Unable to connect to AzureML. Please ensure the following environment variables are set: "
-        message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
-        message += "\nException: " + str(e)
-        raise OpenSourceLLMOnlineEndpointError(message=message)
-
-    found = False
-    for ep in ml_client.online_endpoints.list():
-        if ep.name == endpoint_name:
-            endpoint_uri = ep.scoring_uri
-            endpoint_key = ml_client.online_endpoints.get_keys(ep.name).primary_key
-            found = True
-            break
-
-    if not found:
-        raise ValueError(f"Endpoint {endpoint_name} not found.")
-
-    found = False
-    if deployment_name is None:
-        deployment_name = sorted(ep.traffic, key=lambda item: item[1])[0]
-        found = True
-
-    for d in ml_client.online_deployments.list(ep.name):
-        if d.name == deployment_name:
-            model = get_model_type(d.model)
-            found = True
-            break
-
-    if not found:
-        raise ValueError(f"Deployment {deployment_name} not found.")
-
-    return (endpoint_uri, endpoint_key, model)
-
-
-def get_deployment_from_connection(connection: CustomConnection) -> Tuple[str, str, str]:
-    conn_dict = dict(connection)
-    for key in REQUIRED_CONFIG_KEYS:
-        if key not in conn_dict:
-            accepted_keys = ",".join([key for key in REQUIRED_CONFIG_KEYS])
-            raise OpenSourceLLMKeyValidationError(
-                message=f"""Required key `{key}` not found in given custom connection.
-Required keys are: {accepted_keys}."""
-            )
-    for key in REQUIRED_SECRET_KEYS:
-        if key not in conn_dict:
-            accepted_keys = ",".join([key for key in REQUIRED_SECRET_KEYS])
-            raise OpenSourceLLMKeyValidationError(
-                message=f"""Required secret key `{key}` not found in given custom connection.
-Required keys are: {accepted_keys}."""
-            )
-    try:
-        model_family = ModelFamily[connection.configs['model_family']]
+        return ModelFamily[model_family]
     except KeyError:
         accepted_models = ",".join([model.name for model in ModelFamily])
         raise OpenSourceLLMKeyValidationError(
-            message=f"""Given model_family '{connection.configs['model_family']}' not recognized.
+            message=f"""Given model_family '{model_family}' not recognized.
 Supported models are: {accepted_models}."""
         )
-    return (connection.configs['endpoint_url'],
-            connection.secrets['endpoint_api_key'],
-            model_family)
 
 
 class ModelFamily(str, Enum):
@@ -651,6 +677,14 @@ class ModelFamily(str, Enum):
     DOLLY = "Dolly"
     GPT2 = "GPT-2"
     FALCON = "Falcon"
+
+    @classmethod
+    def _missing_(cls, value):
+        value = value.lower()
+        for member in cls:
+            if member.lower() == value:
+                return member
+        return None
 
 
 class API(str, Enum):
@@ -676,6 +710,36 @@ class ContentFormatterBase:
             r'\\([\\\"a-zA-Z])',
             r'\\\1',
             prompt)
+
+    @staticmethod
+    def parse_chat(chat_str: str) -> List[Dict[str, str]]:
+        # LLaMa only supports below roles.
+        separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
+        chunks = re.split(separator, chat_str)
+
+        # remove any empty chunks
+        chunks = [c.strip() for c in chunks if c.strip()]
+
+        chat_list = []
+        for index in range(0, len(chunks), 2):
+            role = chunks[index].lower()
+
+            # Check if prompt follows chat api message format and has valid role.
+            try:
+                validate_role(role, VALID_LLAMA_ROLES)
+            except ChatAPIInvalidRole as e:
+                raise OpenSourceLLMUserError(message=e.message)
+
+            if len(chunks) <= index + 1:
+                message = "Unexpected chat format. Please ensure the query matches the chat format of the model used."
+                raise OpenSourceLLMUserError(message=message)
+
+            chat_list.append({
+                "role": role,
+                "content": chunks[index+1]
+            })
+
+        return chat_list
 
     @abstractmethod
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
@@ -754,7 +818,7 @@ class LlamaContentFormatter(ContentFormatterBase):
             model_kwargs["do_sample"] = True
 
         if self.api == API.CHAT:
-            prompt_value = parse_chat(self.chat_history, valid_roles=["assistant", "user", "system"])
+            prompt_value = ContentFormatterBase.parse_chat(self.chat_history)
         else:
             prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
 
@@ -782,11 +846,56 @@ class LlamaContentFormatter(ContentFormatterBase):
             raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
 
+class ServerlessLlamaContentFormatter(ContentFormatterBase):
+    """Content formatter for LLaMa"""
+
+    def __init__(self, api: API, chat_history: Optional[str] = ""):
+        super().__init__()
+        self.api = api
+        self.chat_history = chat_history
+        self.model_id = "llama-2-7b-hf"
+
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
+        """Formats the request according the the chosen api"""
+        # Modify max_tokens key for serverless
+        model_kwargs["max_tokens"] = model_kwargs["max_new_tokens"]
+        if self.api == API.CHAT:
+            messages = ContentFormatterBase.parse_chat(self.chat_history)
+            base_body = {
+                "model": self.model_id,
+                "messages": messages,
+                "n": 1,
+            }
+            base_body.update(model_kwargs)
+
+        else:
+            prompt_value = ContentFormatterBase.escape_special_characters(prompt)
+            base_body = {
+                "prompt": prompt_value,
+                "n": 1,
+            }
+            base_body.update(model_kwargs)
+
+        return json.dumps(base_body)
+
+    def format_response_payload(self, output: bytes) -> str:
+        """Formats response"""
+        response_json = json.loads(output)
+        if self.api == API.CHAT and "choices" in response_json:
+            return response_json["choices"][0]["message"]["content"]
+        elif self.api == API.COMPLETION and "choices" in response_json:
+            return response_json["choices"][0]["text"]
+        else:
+            error_message = f"Unexpected response format. Response: {response_json}"
+            print(error_message, file=sys.stderr)
+            raise OpenSourceLLMOnlineEndpointError(message=error_message)
+
+
 class ContentFormatterFactory:
     """Factory class for supported models"""
 
     def get_content_formatter(
-        model_family: ModelFamily, api: API, chat_history: Optional[List[Dict]] = []
+        model_family: ModelFamily, api: API, chat_history: Optional[List[Dict]] = [], endpoint_url: Optional[str] = ""
     ) -> ContentFormatterBase:
         if model_family == ModelFamily.LLAMA:
             if is_serverless_endpoint(endpoint_url):
@@ -817,7 +926,7 @@ class AzureMLOnlineEndpoint:
     transform function to handle formats between the LLM and
     the endpoint"""
 
-    model_kwargs: Optional[Dict] = None
+    model_kwargs: Optional[Dict] = {}
     """Key word arguments to pass to the model."""
 
     def __init__(
@@ -827,7 +936,7 @@ class AzureMLOnlineEndpoint:
         content_formatter: ContentFormatterBase,
         model_family: ModelFamily,
         deployment_name: Optional[str] = None,
-        model_kwargs: Optional[Dict] = None,
+        model_kwargs: Optional[Dict] = {},
     ):
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
@@ -836,35 +945,26 @@ class AzureMLOnlineEndpoint:
         self.model_kwargs = model_kwargs
         self.model_family = model_family
 
-    @property
-    def _identifying_params(self) -> Mapping[str, Any]:
-        """Get the identifying parameters."""
-        _model_kwargs = self.model_kwargs or {}
-        return {
-            **{"model_kwargs": _model_kwargs},
-        }
-
-    @property
-    def _llm_type(self) -> str:
-        """Return type of llm."""
-        return "azureml_endpoint"
-
-    def _call_endpoint(self, body: bytes) -> bytes:
+    def _call_endpoint(self, request_body: str) -> str:
         """call."""
 
         headers = {
             "Content-Type": "application/json",
             "Authorization": ("Bearer " + self.endpoint_api_key),
-            "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family}
+            "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family
+            }
 
         # If this is not set it'll use the default deployment on the endpoint.
         if self.deployment_name is not None:
             headers["azureml-model-deployment"] = self.deployment_name
 
-        req = urllib.request.Request(self.endpoint_url, body, headers)
-        response = urllib.request.urlopen(req, timeout=50)
-        result = response.read()
-        return result
+        result = requests.post(self.endpoint_url, data=request_body, headers=headers)
+        if result.status_code != 200:
+            error_message = f"Request failure while calling Online Endpoint Status:{result.status_code}: Error:{result.text}"
+            print(error_message, file=sys.stderr)
+            raise OpenSourceLLMOnlineEndpointError(message=error_message)
+
+        return result.text
 
     def __call__(
         self,
@@ -879,11 +979,9 @@ class AzureMLOnlineEndpoint:
             .. code-block:: python
                 response = azureml_model("Tell me a joke.")
         """
-        _model_kwargs = self.model_kwargs or {}
 
-        body = self.content_formatter.format_request_payload(prompt, _model_kwargs)
-        endpoint_request = str.encode(body)
-        endpoint_response = self._call_endpoint(endpoint_request)
+        request_body = self.content_formatter.format_request_payload(prompt, self.model_kwargs)
+        endpoint_response = self._call_endpoint(request_body)
         response = self.content_formatter.format_response_payload(endpoint_response)
 
         return response
@@ -891,13 +989,38 @@ class AzureMLOnlineEndpoint:
 
 class OpenSourceLLM(ToolProvider):
 
-    def __init__(self,
-                 connection: CustomConnection = None,
-                 endpoint_name: str = None):
+    def __init__(self):
         super().__init__()
 
-        self.endpoint_key = None
-        self.endpoint_name = endpoint_name
+    def get_deployment_from_endpoint(self,
+                                     credential,
+                                     subscription_id: str,
+                                     resource_group_name: str,
+                                     workspace_name: str,
+                                     endpoint_name: str,
+                                     deployment_name: str = None) -> Tuple[str, str, str]:
+
+        endpoints_and_deployments = ENDPOINT_CONTAINER.get_endpoints_and_deployments(
+            credential,
+            subscription_id,
+            resource_group_name,
+            workspace_name)
+
+        for ep in endpoints_and_deployments:
+            if ep.endpoint_name == endpoint_name:
+                if deployment_name is None:
+                    return (ep.endpoint_url,
+                            ep.endpoint_key,
+                            ep.default_deployment.model_family)
+                for d in ep.deployments:
+                    if d.deployment_name == deployment_name:
+                        return (ep.endpoint_url,
+                                ep.endpoint_key,
+                                d.model_family)
+
+        message = """Invalid endpoint and deployment values.
+Please ensure endpoint name and deployment names are correct, and the deployment was successfull."""
+        raise OpenSourceLLMUserError(message=message)
 
     def sanitize_endpoint_url(self,
                               endpoint_url: str,
@@ -918,20 +1041,42 @@ class OpenSourceLLM(ToolProvider):
                              workspace_name: str,
                              endpoint: str,
                              api_type: API,
-                             deployment_name: str = None) -> Tuple[str, str, str]:
+                             deployment_name: str = None,
+                             **kwargs) -> Tuple[str, str, str]:
+        if self.endpoint_values_in_kwargs(**kwargs):
+            endpoint_uri = kwargs["endpoint_uri"]
+            endpoint_key = kwargs["endpoint_key"]
+            model_family = kwargs["model_family"]
+
+            # clean these up, aka don't send them to MIR
+            del kwargs["endpoint_uri"]
+            del kwargs["endpoint_key"]
+            del kwargs["model_family"]
+
+            return (endpoint_uri, endpoint_key, model_family)
+
+        try:
+            from azure.identity import DefaultAzureCredential
+            credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+            token = credential.get_token("https://management.azure.com/.default").token
+        except Exception as e:
+            print(f"Skipping list_endpoint_names. Exception: {e}", file=sys.stderr)
+            return []
 
         (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_connection_type(endpoint)
 
-        print(f"endpoint_connection_type: {endpoint_connection_type} name: {endpoint_connection_name}")
+        print(f"endpoint_connection_type: {endpoint_connection_type} name: {endpoint_connection_name}", file=sys.stdout)
 
         if endpoint_connection_type.lower() == "serverlessendpoint":
             (endpoint_url, endpoint_key, model_family) = SERVERLESS_ENDPOINT_CONTAINER.get_serverless_endpoint_key(
+                token,
                 subscription_id,
                 resource_group_name,
                 workspace_name,
                 endpoint_connection_name)
         elif endpoint_connection_type.lower() == "onlineendpoint":
-            (endpoint_url, endpoint_key, model_family) = self.get_deployment_from_endpoint(subscription_id,
+            (endpoint_url, endpoint_key, model_family) = self.get_deployment_from_endpoint(credential,
+                                                                                           subscription_id,
                                                                                            resource_group_name,
                                                                                            workspace_name,
                                                                                            endpoint_connection_name,
@@ -940,6 +1085,7 @@ class OpenSourceLLM(ToolProvider):
             (endpoint_url,
              endpoint_key,
              model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(
+                credential,
                 subscription_id,
                 resource_group_name,
                 workspace_name,
@@ -953,39 +1099,48 @@ class OpenSourceLLM(ToolProvider):
             raise OpenSourceLLMUserError(message=f"Invalid endpoint connection type: {endpoint_connection_type}")
         return (self.sanitize_endpoint_url(endpoint_url, api_type), endpoint_key, model_family)
 
+    def endpoint_values_in_kwargs(self, **kwargs):
+        # This is mostly for testing, suggest not using this since security\privacy concerns for the endpoint key
+        if 'endpoint_uri' not in kwargs and 'endpoint_key' not in kwargs and 'model_family' not in kwargs:
+            return False
+
+        if 'endpoint_uri' not in kwargs or 'endpoint_key' not in kwargs or 'model_family' not in kwargs:
+            message = """Endpoint connection via kwargs not fully set.
+If using kwargs, the following values must be set: endpoint_uri, endpoint_key, and model_family"""
+            raise OpenSourceLLMKeyValidationError(message=message)
+
+        return True
+
     @tool
-    @handle_oneline_endpoint_error()
+    @handle_online_endpoint_error()
     def call(
         self,
         prompt: PromptTemplate,
         api: API,
-        deployment_name: str = None,
-        temperature: float = 1.0,
-        max_new_tokens: int = 500,
-        top_p: float = 1.0,
+        endpoint: str,
+        deployment_name: Optional[str] = None,
+        temperature: Optional[float] = 1.0,
+        max_new_tokens: Optional[int] = 500,
+        top_p: Optional[float] = 1.0,
         model_kwargs: Optional[Dict] = {},
         **kwargs
     ) -> str:
-        self.deployment_name = deployment_name
-
         # Sanitize deployment name. Empty deployment name is the same as None.
         if deployment_name is not None:
             deployment_name = deployment_name.strip()
-            
             if not deployment_name or deployment_name == DEPLOYMENT_DEFAULT:
                 deployment_name = None 
 
-        print(f"Executing Open Source LLM Tool for endpoint: '{endpoint}', deployment: '{deployment_name}'")
+        print(f"Executing Open Source LLM Tool for endpoint: '{endpoint}', deployment: '{deployment_name}'", file=sys.stdout)
 
-        (self.endpoint_uri,
-            self.endpoint_key,
-            self.model_family) = self.get_endpoint_details(
-                subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION", None),
-                resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP", None),
-                workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME", None),
-                endpoint=endpoint,
-                api_type=api,
-                deployment_name=deployment_name)
+        (endpoint_uri, endpoint_key, model_family) = self.get_endpoint_details(
+            subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION", None),
+            resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP", None),
+            workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME", None),
+            endpoint=endpoint,
+            api_type=api,
+            deployment_name=deployment_name,
+            **kwargs)
 
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
 
@@ -994,17 +1149,18 @@ class OpenSourceLLM(ToolProvider):
         model_kwargs["max_new_tokens"] = max_new_tokens
 
         content_formatter = ContentFormatterFactory.get_content_formatter(
-            model_family=self.model_family,
+            model_family=model_family,
             api=api,
-            chat_history=prompt
+            chat_history=prompt,
+            endpoint_url=endpoint_uri
         )
 
         llm = AzureMLOnlineEndpoint(
-            endpoint_url=self.endpoint_uri,
-            endpoint_api_key=self.endpoint_key,
-            model_family=self.model_family,
+            endpoint_url=endpoint_uri,
+            endpoint_api_key=endpoint_key,
+            model_family=model_family,
             content_formatter=content_formatter,
-            deployment_name=self.deployment_name,
+            deployment_name=deployment_name,
             model_kwargs=model_kwargs
         )
 

@@ -1,24 +1,25 @@
 import copy
 import os
 import pytest
-from promptflow.tools.common import parse_chat
-from promptflow.tools.exception import (
-    OpenSourceLLMOnlineEndpointError,
-    OpenSourceLLMKeyValidationError,
-    ChatAPIInvalidRole
-)
-from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatterBase
+from azure.identity import DefaultAzureCredential
 from typing import List, Dict
 
-
-@pytest.fixture
-def gpt2_provider(gpt2_custom_connection) -> OpenSourceLLM:
-    return OpenSourceLLM(gpt2_custom_connection)
-
-
-@pytest.fixture
-def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
-    return OpenSourceLLM(llama_chat_custom_connection)
+from promptflow.tools.exception import (
+    OpenSourceLLMUserError,
+    OpenSourceLLMKeyValidationError
+)
+from promptflow.tools.open_source_llm import (
+    OpenSourceLLM,
+    API,
+    ContentFormatterBase,
+    LlamaContentFormatter,
+    list_endpoint_names,
+    list_deployment_names,
+    CustomConnectionsContainer,
+    get_model_type,
+    ModelFamily,
+    ServerlessEndpointsContainer
+)
 
 
 @pytest.fixture
@@ -27,7 +28,6 @@ def endpoints_provider(open_source_llm_ws_service_connection) -> Dict[str, List[
         pytest.skip("Service Credential not available")
 
     from azure.ai.ml import MLClient
-    from azure.identity import DefaultAzureCredential
     credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
     ml_client = MLClient(
         credential=credential,
@@ -73,9 +73,12 @@ def completion_endpoints_provider(endpoints_provider: Dict[str, List[str]]) -> D
 
     return completion_endpoints
 
-
 @pytest.mark.usefixtures("use_secrets_config_file")
 class TestOpenSourceLLM:
+    stateless_os_llm = OpenSourceLLM()
+    gpt2_connection = "connection/gpt2_connection"
+    llama_connection = "connection/llama_chat_connection"
+    llama_serverless_connection = "connection/llama_chat_serverless"
     completion_prompt = "In the context of Azure ML, what does the ML stand for?"
     chat_prompt = """system:
 You are a AI which helps Customers answer questions.
@@ -83,41 +86,46 @@ You are a AI which helps Customers answer questions.
 user:
 """ + completion_prompt
 
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_completion(self, gpt2_provider):
-        response = gpt2_provider.call(
-            self.completion_prompt,
-            API.COMPLETION)
-        assert len(response) > 25
-
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_completion_with_deploy(self, gpt2_provider):
-        response = gpt2_provider.call(
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_completion(self):
+        response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
+            endpoint=self.gpt2_connection)
+        assert len(response) > 25
+
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_completion_with_deploy(self):
+        response = self.stateless_os_llm.call(
+            self.completion_prompt,
+            API.COMPLETION,
+            endpoint=self.gpt2_connection,
             deployment_name="gpt2-9")
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_chat(self, gpt2_provider):
-        response = gpt2_provider.call(
-            self.chat_prompt,
-            API.CHAT)
-        assert len(response) > 25
-
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_chat_with_deploy(self, gpt2_provider):
-        response = gpt2_provider.call(
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_chat(self):
+        response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
+            endpoint=self.gpt2_connection)
+        assert len(response) > 25
+
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_chat_with_deploy(self):
+        response = self.stateless_os_llm.call(
+            self.chat_prompt,
+            API.CHAT,
+            endpoint=self.gpt2_connection,
             deployment_name="gpt2-9")
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_chat_with_max_length(self, gpt2_provider):
-        response = gpt2_provider.call(
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_chat_with_max_length(self):
+        response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
+            endpoint=self.gpt2_connection,
             max_new_tokens=2)
         # GPT-2 doesn't take this parameter
         assert len(response) > 25
@@ -127,8 +135,8 @@ user:
         tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.configs['endpoint_url']
         with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
-            os = OpenSourceLLM(tmp)
-            os.call(self.chat_prompt, API.CHAT)
+            customConnectionsContainer = CustomConnectionsContainer()
+            customConnectionsContainer.get_endpoint_from_custom_connection(connection=tmp)
         assert exc_info.value.message == """Required key `endpoint_url` not found in given custom connection.
 Required keys are: endpoint_url,model_family."""
         assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
@@ -138,8 +146,8 @@ Required keys are: endpoint_url,model_family."""
         tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.secrets['endpoint_api_key']
         with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
-            os = OpenSourceLLM(tmp)
-            os.call(self.chat_prompt, API.CHAT)
+            customConnectionsContainer = CustomConnectionsContainer()
+            customConnectionsContainer.get_endpoint_from_custom_connection(connection=tmp)
         assert exc_info.value.message == (
             "Required secret key `endpoint_api_key` "
             + """not found in given custom connection.
@@ -151,8 +159,8 @@ Required keys are: endpoint_api_key.""")
         tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.configs['model_family']
         with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
-            os = OpenSourceLLM(tmp)
-            os.call(self.completion_prompt, API.COMPLETION)
+            customConnectionsContainer = CustomConnectionsContainer()
+            customConnectionsContainer.get_endpoint_from_custom_connection(connection=tmp)
         assert exc_info.value.message == """Required key `model_family` not found in given custom connection.
 Required keys are: endpoint_url,model_family."""
         assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
@@ -163,8 +171,7 @@ Required keys are: endpoint_url,model_family."""
         assert out_of_danger == "The quick \\brown fox\\tjumped\\\\over \\the \\\\boy\\r\\n"
 
     def test_open_source_llm_llama_parse_chat_with_chat(self):
-        parsed_chat = parse_chat(self.chat_prompt, valid_roles=["system", "user", "assistant"])
-        assert len(parsed_chat) == 2
+        LlamaContentFormatter.parse_chat(self.chat_prompt)
 
     def test_open_source_llm_llama_parse_multi_turn(self):
         multi_turn_chat = """user:
@@ -176,85 +183,96 @@ assistant:
 Mobius, which starred Jared Leto
 
 user:
-Why was that the greatest movie of all time?"""
-        parsed_chat = parse_chat(multi_turn_chat, valid_roles=["system", "user", "assistant"])
-        assert len(parsed_chat) == 3
+Why was that the greatest movie of all time?
+"""
+        LlamaContentFormatter.parse_chat(multi_turn_chat)
+
+    def test_open_source_llm_llama_parse_ignore_whitespace(self):
+        bad_chat_prompt = f"""system:
+You are a AI which helps Customers answer questions.
+
+user:
+
+user:
+{self.completion_prompt}"""
+        with pytest.raises(OpenSourceLLMUserError) as exc_info:
+            LlamaContentFormatter.parse_chat(bad_chat_prompt)
+        assert exc_info.value.message == (
+            "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
+            + "lines as role delimiters: 'assistant:\\n','system:\\n','user:\\n'. Current parsed role 'in the context "
+            + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
+            + "Completion API, please select the appropriate API type and deployment name. If you do intend to use "
+            + "the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in "
+            + "our gallery that contain 'Chat' in the name.")
+        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
     def test_open_source_llm_llama_parse_chat_with_comp(self):
-        with pytest.raises(ChatAPIInvalidRole) as exc_info:
-            parse_chat(self.completion_prompt, valid_roles=["system", "user", "assistant"])
+        with pytest.raises(OpenSourceLLMUserError) as exc_info:
+            LlamaContentFormatter.parse_chat(self.completion_prompt)
         assert exc_info.value.message == (
-            "The Chat API requires a specific format for prompt definition, and the "
-            + "prompt should include separate lines as role delimiters: 'system:\\n','user:\\n','assistant:\\n'. "
-            + "Current parsed role 'in the context of azure ml, what does the ml stand for?' does not "
-            + "meet the requirement. If you intend to use the Completion API, please select the appropriate API type "
-            + "and deployment name. If you do intend to use the Chat API, please refer to the guideline at "
-            + "https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' in the name.")
-
-        assert exc_info.value.error_codes == "UserError/ToolValidationError/ChatAPIInvalidRole".split("/")
-
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_llama_endpoint_miss(self, gpt2_custom_connection):
-        tmp = copy.deepcopy(gpt2_custom_connection)
-        tmp.configs['endpoint_url'] += 'completely/real/endpoint'
-        os = OpenSourceLLM(tmp)
-        with pytest.raises(OpenSourceLLMOnlineEndpointError) as exc_info:
-            os.call(
-                self.completion_prompt,
-                API.COMPLETION)
-        assert exc_info.value.message == (
-            "Exception hit calling Oneline Endpoint: "
-            + "HTTPError: HTTP Error 424: Failed Dependency")
-        assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")
-
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_llama_deployment_miss(self, gpt2_provider):
-        with pytest.raises(OpenSourceLLMOnlineEndpointError) as exc_info:
-            gpt2_provider.call(self.completion_prompt,
-                               API.COMPLETION,
-                               deployment_name="completely/real/deployment-007")
-        assert exc_info.value.message == (
-            "Exception hit calling Oneline Endpoint: "
-            + "HTTPError: HTTP Error 404: Not Found")
-        assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")
+            "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
+            + "lines as role delimiters: 'assistant:\\n','system:\\n','user:\\n'. Current parsed role 'in the context "
+            + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
+            + "Completion API, please select the appropriate API type and deployment name. If you do intend to use the "
+            + "Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
+            + "gallery that contain 'Chat' in the name.")
+        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
-            os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
-            response = os_llm.call(self.chat_prompt, API.CHAT)
+            response = self.stateless_os_llm.call(
+                self.chat_prompt,
+                API.CHAT,
+                endpoint=f"onlineEndpoint/{endpoint_name}")
             assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name_with_deployment(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
-            os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
             for deployment_name in chat_endpoints_provider[endpoint_name]:
-                response = os_llm.call(self.chat_prompt, API.CHAT, deployment_name=deployment_name)
+                response = self.stateless_os_llm.call(
+                    self.chat_prompt,
+                    API.CHAT,
+                    endpoint=f"onlineEndpoint/{endpoint_name}",
+                    deployment_name=deployment_name)
                 assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
-            os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
-            response = os_llm.call(self.completion_prompt, API.COMPLETION)
+            response = self.stateless_os_llm.call(
+                self.completion_prompt,
+                API.COMPLETION,
+                endpoint=f"onlineEndpoint/{endpoint_name}")
             assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name_with_deployment(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
-            os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
             for deployment_name in completion_endpoints_provider[endpoint_name]:
-                response = os_llm.call(self.completion_prompt, API.COMPLETION, deployment_name=deployment_name)
+                response = self.stateless_os_llm.call(
+                    self.completion_prompt,
+                    API.COMPLETION,
+                    endpoint=f"onlineEndpoint/{endpoint_name}",
+                    deployment_name=deployment_name)
                 assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("llama_chat_custom_connection")
-    def test_open_source_llm_llama_chat(self, llama_chat_provider):
-        response = llama_chat_provider.call(self.chat_prompt, API.CHAT)
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_llama_chat(self):
+        response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint=self.llama_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("llama_chat_custom_connection")
-    def test_open_source_llm_llama_chat_history(self, llama_chat_provider):
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_llama_serverless(self):
+        response = self.stateless_os_llm.call(
+            self.chat_prompt,
+            API.CHAT,
+            endpoint=self.llama_serverless_connection)
+        assert len(response) > 25
+
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_llama_chat_history(self):
         chat_history_prompt = """user:
 * Given the following conversation history and the users next question, answer the next question.
 If the conversation is irrelevant or empty, just restate the original question.
@@ -274,9 +292,10 @@ assistant:
 
 user:
 {{ chat_input }}"""
-        response = llama_chat_provider.call(
+        response = self.stateless_os_llm.call(
             chat_history_prompt,
             API.CHAT,
+            endpoint=self.llama_connection,
             chat_history=[
                 {
                     "inputs":
@@ -315,44 +334,116 @@ user:
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
             endpoint=None)
-        assert len(deployments) == 0
+        assert len(deployments) == 1
+        assert deployments[0]['value'] == 'default'
 
         deployments = list_deployment_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
             endpoint='')
-        assert len(deployments) == 0
+        assert len(deployments) == 1
+        assert deployments[0]['value'] == 'default'
 
         deployments = list_deployment_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
             endpoint='fake_endpoint name')
-        assert len(deployments) == 0
+        assert len(deployments) == 1
+        assert deployments[0]['value'] == 'default'
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_dynamic_list_happy_path(self, chat_endpoints_provider):
-        # workaround to set env variables from service credential
-        print(chat_endpoints_provider)
+    def test_open_source_llm_dynamic_list_serverless_test(self):
+        subscription_id = os.getenv("AZUREML_ARM_SUBSCRIPTION")
+        resource_group_name = os.getenv("AZUREML_ARM_RESOURCEGROUP")
+        workspace_name = os.getenv("AZUREML_ARM_WORKSPACE_NAME")
 
-        endpoints = list_endpoint_names(
+        se_container =  ServerlessEndpointsContainer()
+        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+        token = credential.get_token("https://management.azure.com/.default").token
+
+        eps = se_container.list_serverless_endpoints(
+            token,
+            subscription_id,
+            resource_group_name,
+            workspace_name)
+
+        if len(eps) == 0:
+            pytest.skip("Service Credential not available")
+
+        endpoint_connection_name = eps[0]["value"].replace("serverlessEndpoint/", "")
+
+        eps_keys = se_container._list_endpoint_key(
+            token,
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_connection_name
+        )
+        assert len(eps_keys) == 2
+
+        (endpoint_url, endpoint_key, model_family) = se_container.get_serverless_endpoint_key(
+            token,
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_connection_name)
+        
+        assert len(endpoint_url) > 20
+        assert model_family == "LLaMa"
+        assert endpoint_key == eps_keys['primaryKey']
+
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_dynamic_list_custom_connections_test(self):
+        custom_container = CustomConnectionsContainer()
+        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+
+        connections = custom_container.list_custom_connection_names(
+            credential,
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
+        
+        assert len(connections) > 1
+
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_dynamic_list_happy_path(self):
+        endpoints = list_endpoint_names(
+            subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
+            resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
+            workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
+            return_endpoint_url=True
+            )
         # we might want to remove this or skip if there are zero endpoints in the long term.
         # currently we have low cost compute for a GPT2 endpoint, so if nothing else this should be available.
         assert len(endpoints) > 0
-
         for endpoint in endpoints:
-            prompt = self.chat_prompt if "chat" in endpoint['value'] else self.completion_prompt
-            api_type = API.CHAT if "chat" in endpoint['value'] else API.COMPLETION
+            assert "value" in endpoint
+            assert "display_value" in endpoint
+            assert "description" in endpoint
+
+        from tests.utils import verify_url_exists
+        for endpoint in endpoints:
+            if not verify_url_exists(endpoint["url"]):
+                continue
+
+            is_chat = "serverless" in endpoint['value'] or "chat" in endpoint['value']
+
+            if is_chat:
+                prompt = self.chat_prompt
+                api_type = API.CHAT
+            else:
+                prompt = self.completion_prompt
+                api_type = API.COMPLETION
 
             # test with default endpoint
             response = self.stateless_os_llm.call(
                 prompt,
                 api_type,
-                endpoint=endpoint['value'])
+                endpoint=endpoint['value'],
+                max_new_tokens=10,
+                model_kwargs={})
             assert len(response) > 25
 
             deployments = list_deployment_names(
@@ -363,14 +454,18 @@ user:
             if "onlineEndpoint" in endpoint['value']:
                 assert len(deployments) > 0
             else:
-                assert len(deployments) == 0
+                assert len(deployments) == 1
+                assert deployments[0]['value'] == 'default'
+                continue
 
             for deployment in deployments:
                 response = self.stateless_os_llm.call(
                     prompt,
                     api_type,
                     endpoint=endpoint['value'],
-                    deployment_name=deployment['value'])
+                    deployment_name=deployment['value'],
+                    max_new_tokens=10,
+                    model_kwargs={})
                 assert len(response) > 25
 
     def test_open_source_llm_get_model_llama(self):
