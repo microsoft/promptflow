@@ -151,7 +151,9 @@
     "llmops",
     "Abhishek",
     "restx",
-    "httpx"
+    "httpx",
+    "tiiuae",
+    "metagenai"
   ],
   "flagWords": [
     "Prompt Flow"
