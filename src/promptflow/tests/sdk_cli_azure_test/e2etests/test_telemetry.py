@@ -20,7 +20,6 @@ from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_
 from promptflow._constants import USER_AGENT
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..._constants import CI_CLI_USER_AGENT
 
 
 @contextlib.contextmanager
@@ -196,7 +195,12 @@ class TestTelemetry:
                 # Perform some activity
                 pass
 
-    def test_ci_user_agent(self) -> None:
-        os.environ[USER_AGENT] = CI_CLI_USER_AGENT
-        context = OperationContext.get_instance()
-        assert CI_CLI_USER_AGENT in context.get_user_agent()
+    def test_ci_user_agent(self, cli_perf_monitor_agent) -> None:
+        try:
+            os.environ[USER_AGENT] = cli_perf_monitor_agent
+            context = OperationContext.get_instance()
+            assert cli_perf_monitor_agent in context.get_user_agent()
+        except Exception as e:
+            raise e
+        finally:
+            del os.environ[USER_AGENT]
