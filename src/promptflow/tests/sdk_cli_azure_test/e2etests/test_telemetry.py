@@ -195,7 +195,7 @@ class TestTelemetry:
                 # Perform some activity
                 pass
 
-    def test_ci_user_agent(self) -> None:
-        os.environ[USER_AGENT] = "perf_monitor/1.0"
+    def test_ci_user_agent(self, cli_perf_monitor_agent) -> None:
+        os.environ[USER_AGENT] = cli_perf_monitor_agent
         context = OperationContext.get_instance()
-        assert "perf_monitor/1.0" in context.get_user_agent()
+        assert cli_perf_monitor_agent in context.get_user_agent()
