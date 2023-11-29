@@ -21,18 +21,19 @@ def get_client(connection: Union[CustomConnection, AzureOpenAIConnection]):
         )
 
     # connection can be extract as a dict object contains the configs and secrets
-    if isinstance(connection, CustomConnection):
-        connection_dict = dict(connection)
+    connection_dict = dict(connection)
+    api_key = connection_dict.get("api_key")
+    conn = dict(
+        api_key=api_key,
+    )
+    if api_key.startswith("sk-"):
         from openai import OpenAI as Client
-    elif isinstance(connection, AzureOpenAIConnection):
-        from openai import AzureOpenAI as Client
-        connection_dict = {
-            "azure_endpoint": connection.api_base,
-            "api_key": connection.api_key,
-            "api_version": connection.api_version,
-        }
     else:
-        raise ValueError(f"Unsupported connection type {type(connection)}")
+        from openai import AzureOpenAI as Client
+        conn.update(
+            azure_endpoint=connection_dict.get("api_base"),
+            api_version=connection_dict.get("api_version", "2023-07-01-preview"),
+        )
     return Client(**connection_dict)
 
 
