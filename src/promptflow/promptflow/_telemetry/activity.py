@@ -57,6 +57,9 @@ def log_activity(
     """
     from promptflow._core.operation_context import OperationContext
 
+    if not custom_dimensions:
+        custom_dimensions = {}
+
     context = OperationContext.get_instance()
     user_agent = context.get_user_agent()
     # TODO(2699383): use same request id with service caller
