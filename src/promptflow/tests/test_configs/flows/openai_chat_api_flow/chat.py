@@ -1,9 +1,24 @@
 import openai
+from openai.version import VERSION as OPENAI_VERSION
 from typing import List
 
 from promptflow import tool
 from promptflow.connections import AzureOpenAIConnection
 
+def get_client(connection: AzureOpenAIConnection):
+    api_key = connection.api_key
+    conn = dict(
+        api_key=connection.api_key,
+    )
+    if api_key.startswith("sk-"):
+        from openai import OpenAI as Client
+    else:
+        from openai import AzureOpenAI as Client
+        conn.update(
+            azure_endpoint=connection.api_base,
+            api_version=connection.api_version,
+        )
+    return Client(**conn)
 
 def create_messages(question, chat_history):
     yield {"role": "system", "content": "You are a helpful assistant."}
@@ -16,17 +31,29 @@ def create_messages(question, chat_history):
 @tool
 def chat(connection: AzureOpenAIConnection, question: str, chat_history: List) -> str:
     stream = True
-    completion = openai.ChatCompletion.create(
-        engine="gpt-35-turbo",
-        messages=list(create_messages(question, chat_history)),
-        temperature=1.0,
-        top_p=1.0,
-        n=1,
-        stream=stream,
-        stop=None,
-        max_tokens=16,
-        **dict(connection),
-    )
+    if OPENAI_VERSION.startswith("0."):
+        completion = openai.ChatCompletion.create(
+            engine="gpt-35-turbo",
+            messages=list(create_messages(question, chat_history)),
+            temperature=1.0,
+            top_p=1.0,
+            n=1,
+            stream=stream,
+            stop=None,
+            max_tokens=16,
+            **dict(connection),
+        )
+    else:
+        completion = get_client(connection).chat.completions.create(
+            model="gpt-35-turbo",
+            messages=list(create_messages(question, chat_history)),
+            temperature=1.0,
+            top_p=1.0,
+            n=1,
+            stream=stream,
+            stop=None,
+            max_tokens=16
+        )
 
     if stream:
         def generator():

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
@@ -116,7 +117,7 @@ class ToolResolver:
                     )
                     raise NodeInputValidationError(message=msg) from e
                 except Exception as e:
-                    msg = f"Input '{k}' for node '{node.name}' of value {v.value} is not type {value_type}."
+                    msg = f"Input '{k}' for node '{node.name}' of value {v.value} is not type {value_type.value}."
                     raise NodeInputValidationError(message=msg) from e
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.
@@ -146,7 +147,7 @@ class ToolResolver:
             elif node.type is ToolType.CUSTOM_LLM:
                 if node.source.type == ToolSourceType.PackageWithPrompt:
                     resolved_tool = self._resolve_package_node(node, convert_input_types=convert_input_types)
-                    return self._integrate_prompt_in_package_node(node, resolved_tool)
+                    return self._integrate_prompt_in_package_node(resolved_tool)
                 raise NotImplementedError(
                     f"Tool source type {node.source.type} for custom_llm tool is not supported yet."
                 )
@@ -291,7 +292,8 @@ class ToolResolver:
         self._remove_init_args(updated_node.inputs, init_args)
         return ResolvedTool(node=updated_node, definition=tool, callable=callable, init_args=init_args)
 
-    def _integrate_prompt_in_package_node(self, node: Node, resolved_tool: ResolvedTool):
+    def _integrate_prompt_in_package_node(self, resolved_tool: ResolvedTool):
+        node = resolved_tool.node
         prompt_tpl = PromptTemplate(self._load_source_content(node))
         prompt_tpl_inputs_mapping = get_inputs_for_prompt_template(prompt_tpl)
         msg = (
@@ -308,6 +310,11 @@ class ToolResolver:
                 f"function {callable.__name__} is missing a prompt template argument.",
                 target=ErrorTarget.EXECUTOR,
             )
-        resolved_tool.node = node
         resolved_tool.callable = partial(callable, **{prompt_tpl_param_name: prompt_tpl})
+        #  Copy the attributes to make sure they are still available after partial.
+        attributes_to_set = [STREAMING_OPTION_PARAMETER_ATTR]
+        for attr in attributes_to_set:
+            attr_val = getattr(callable, attr, None)
+            if attr_val is not None:
+                setattr(resolved_tool.callable, attr, attr_val)
         return resolved_tool

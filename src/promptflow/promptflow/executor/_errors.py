@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+from jinja2 import TemplateSyntaxError
+
 from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class
 from promptflow.exceptions import (
     ErrorTarget,
@@ -51,18 +53,6 @@ class ConnectionNotFound(InvalidRequest):
 
 
 class InvalidBulkTestRequest(ValidationException):
-    def __init__(
-        self,
-        target: ErrorTarget = ErrorTarget.EXECUTOR,
-        **kwargs,
-    ):
-        super().__init__(
-            target=target,
-            **kwargs,
-        )
-
-
-class InputMappingError(ValidationException):
     def __init__(
         self,
         target: ErrorTarget = ErrorTarget.EXECUTOR,
@@ -168,10 +158,6 @@ class OutputReferenceNotExist(NodeReferenceError):
     pass
 
 
-class ReferenceNodeBypassed(NodeReferenceError):
-    pass
-
-
 class NodeOutputNotFound(UserErrorException):
     pass
 
@@ -223,6 +209,10 @@ class ResolveToolError(PromptflowException):
         error_type_and_message = None
         if self.inner_exception:
             error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
+            if isinstance(self.inner_exception, TemplateSyntaxError):
+                error_type_and_message = (
+                    f"Jinja parsing failed at line {self.inner_exception.lineno}: {error_type_and_message}"
+                )
 
         return {
             "node_name": self._node_name,

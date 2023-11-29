@@ -1,0 +1,29 @@
+inputs:
+  image:
+    type: image
+    default: logo.jpg
+outputs:
+  output:
+    type: image
+    reference: ${python_node.output}
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: pick_an_image.py
+  inputs:
+    image_1: ${inputs.image}
+    image_2:
+      data:image/png;path: logo_2.png
+- name: aggregate
+  type: python
+  source:
+    type: code
+    path: merge_images.py
+  inputs:
+    image_1:
+    - data:image/jpg;path: logo.jpg
+    image_2: ${inputs.image}
+    image_3: ${python_node.output}
+  aggregation: true

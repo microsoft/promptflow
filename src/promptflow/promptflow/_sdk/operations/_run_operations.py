@@ -3,15 +3,15 @@
 # ---------------------------------------------------------
 
 import copy
-import logging
 import os.path
 import sys
 import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
-import pandas as pd
+import yaml
 
+from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
@@ -28,12 +28,13 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import TelemetryMixin
-from promptflow.contracts._run_management import RunMetadata, RunVisualization
+from promptflow._utils.logger_utils import LoggerFactory
+from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization, VisualizationConfig
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class RunOperations(TelemetryMixin):
@@ -92,7 +93,7 @@ class RunOperations(TelemetryMixin):
         # TODO: change to async
         stream = kwargs.pop("stream", False)
         try:
-            from promptflow._sdk.operations._run_submitter import RunSubmitter
+            from promptflow._sdk._submitter import RunSubmitter
 
             created_run = RunSubmitter(run_operations=self).submit(run=run, **kwargs)
             if stream:
@@ -113,11 +114,13 @@ class RunOperations(TelemetryMixin):
         )
 
     @monitor_operation(activity_name="pf.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, name: Union[str, Run]) -> Run:
+    def stream(self, name: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.
 
         :param name: Name of the run, or run object.
         :type name: Union[str, ~promptflow.sdk.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails or canceled.
+        :type raise_on_error: bool
         :return: Run object.
         :rtype: ~promptflow.entities.Run
         """
@@ -140,13 +143,20 @@ class RunOperations(TelemetryMixin):
             available_logs = local_storage.logger.get_logs()
             incremental_print(available_logs, printed, file_handler)
             self._print_run_summary(run)
-            # print error message when run is failed
-            if run.status == RunStatus.FAILED:
-                error_message = local_storage.load_exception()["message"]
-                print_red_error(error_message)
         except KeyboardInterrupt:
             error_message = "The output streaming for the run was interrupted, but the run is still executing."
             print(error_message)
+
+        if run.status == RunStatus.FAILED or run.status == RunStatus.CANCELED:
+            if run.status == RunStatus.FAILED:
+                error_message = local_storage.load_exception().get("message", "Run fails with unknown error.")
+            else:
+                error_message = "Run is canceled."
+            if raise_on_error:
+                raise InvalidRunStatusError(error_message)
+            else:
+                print_red_error(error_message)
+
         return run
 
     @monitor_operation(activity_name="pf.runs.archive", activity_type=ActivityType.PUBLICAPI)
@@ -202,7 +212,7 @@ class RunOperations(TelemetryMixin):
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
-    ) -> pd.DataFrame:
+    ) -> "DataFrame":
         """Get the details from the run.
 
         .. note::
@@ -219,6 +229,8 @@ class RunOperations(TelemetryMixin):
         :return: The details data frame.
         :rtype: pandas.DataFrame
         """
+        from pandas import DataFrame
+
         # if all_results is True, set max_results to sys.maxsize
         if all_results:
             max_results = sys.maxsize
@@ -242,7 +254,7 @@ class RunOperations(TelemetryMixin):
             new_k = f"outputs.{k}"
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
-        df = pd.DataFrame(data).head(max_results).reindex(columns=columns)
+        df = DataFrame(data).head(max_results).reindex(columns=columns)
         return df
 
     @monitor_operation(activity_name="pf.runs.get_metrics", activity_type=ActivityType.PUBLICAPI)
@@ -261,7 +273,9 @@ class RunOperations(TelemetryMixin):
         return local_storage.load_metrics()
 
     def _visualize(self, runs: List[Run], html_path: Optional[str] = None) -> None:
-        details, metadatas = [], []
+        details: List[RunDetail] = []
+        metadatas: List[RunMetadata] = []
+        configs: List[VisualizationConfig] = []
         for run in runs:
             # check run status first
             # if run status is not compeleted, there might be unexpected error during parse data
@@ -284,7 +298,20 @@ class RunOperations(TelemetryMixin):
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
-        data_for_visualize = RunVisualization(detail=details, metadata=metadatas)
+            # TODO: add language to run metadata
+            flow_dag = yaml.safe_load(metadata.dag)
+            configs.append(
+                VisualizationConfig(
+                    [AvailableIDE.VS_CODE]
+                    if flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.Python
+                    else [AvailableIDE.VS]
+                )
+            )
+        data_for_visualize = RunVisualization(
+            detail=details,
+            metadata=metadatas,
+            config=configs,
+        )
         html_string = generate_html_string(asdict(data_for_visualize))
         # if html_path is specified, not open it in webbrowser(as it comes from VSC)
         dump_html(html_string, html_path=html_path, open_html=html_path is None)

@@ -58,6 +58,7 @@ class OpenAIConnectionSchema(ConnectionSchema):
     type = StringTransformedEnum(allowed_values="open_ai", required=True)
     api_key = fields.Str(required=True)
     organization = fields.Str()
+    base_url = fields.Str()
 
 
 class EmbeddingStoreConnectionSchema(ConnectionSchema):
@@ -96,7 +97,7 @@ class AzureContentSafetyConnectionSchema(ConnectionSchema):
     )
     api_key = fields.Str(required=True)
     endpoint = fields.Str(required=True)
-    api_version = fields.Str(dump_default="2023-04-30-preview")
+    api_version = fields.Str(dump_default="2023-10-01")
     api_type = fields.Str(dump_default="Content Safety")
 
 

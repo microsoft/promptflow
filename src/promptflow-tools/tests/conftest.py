@@ -9,6 +9,7 @@ from pytest_mock import MockerFixture  # noqa: E402
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
 from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection
+from promptflow.contracts.multimedia import Image
 from promptflow.tools.aoai import AzureOpenAI
 
 PROMOTFLOW_ROOT = Path(__file__).absolute().parents[1]
@@ -136,6 +137,20 @@ def example_prompt_template_with_function() -> str:
     with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_function.jinja2") as f:
         prompt_template = f.read()
     return prompt_template
+
+
+@pytest.fixture
+def example_prompt_template_with_image() -> str:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_image.jinja2") as f:
+        prompt_template = f.read()
+    return prompt_template
+
+
+@pytest.fixture
+def example_image() -> Image:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/images/number10.jpg", "rb") as f:
+        image = Image(f.read())
+    return image
 
 
 # functions

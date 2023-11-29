@@ -1,10 +1,11 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import os
 from contextvars import ContextVar
-from typing import Dict
+from typing import Dict, Mapping
 
+from promptflow._constants import USER_AGENT, PF_USER_AGENT
 from promptflow._version import VERSION
 
 
@@ -19,6 +20,7 @@ class OperationContext(Dict):
 
     _CONTEXT_KEY = "operation_context"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
+    _USER_AGENT = "user_agent"
 
     @classmethod
     def get_instance(cls):
@@ -58,7 +60,10 @@ class OperationContext(Dict):
         if value is not None and not isinstance(value, (int, float, str, bool)):
             raise TypeError("Value must be a primitive")
         # set the item in the data attribute
-        self[name] = value
+        if name == self._USER_AGENT:
+            self[name] = value.strip()
+        else:
+            self[name] = value
 
     def __getattr__(self, name):
         """Get the attribute.
@@ -72,7 +77,9 @@ class OperationContext(Dict):
         Returns:
             int, float, str, bool, or None: The value of the attribute.
         """
-        if name in self:
+        if name == self._USER_AGENT:
+            return self.get_user_agent()
+        elif name in self:
             return self[name]
         else:
             super().__getattribute__(name)
@@ -103,11 +110,19 @@ class OperationContext(Dict):
         """
 
         def parts():
-            if "user_agent" in self:
-                yield self.get("user_agent")
-            yield f"promptflow/{VERSION}"
+            # Be careful not to use "self.user_agent" as it will recursively call get_user_agent in __getattr__
+            agent = self.get(self._USER_AGENT, '')
+            yield agent
+            promptflow_agent = f"promptflow/{VERSION}"
+            yield promptflow_agent if promptflow_agent not in agent else ''
+            user_agent = os.environ.get(USER_AGENT, '').strip()
+            yield user_agent if user_agent not in agent else ''
+            pf_user_agent = os.environ.get(PF_USER_AGENT, '').strip()
+            yield pf_user_agent if pf_user_agent not in agent else ''
 
-        return " ".join(parts())
+        # strip to avoid leading or trailing spaces, which may cause error when sending request
+        ua = " ".join(parts()).strip()
+        return ua
 
     def append_user_agent(self, user_agent: str):
         """Append the user agent string.
@@ -118,11 +133,52 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        if "user_agent" in self:
-            if user_agent not in self.user_agent:
-                self.user_agent = f"{self.user_agent} {user_agent}"
+        agent = self.get(self._USER_AGENT, '')
+        user_agent = user_agent.strip()
+        if user_agent not in agent:
+            self[self._USER_AGENT] = f"{agent} {user_agent}".strip()
+
+    def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
+        """Infer the batch input source from the input mapping and set it in the OperationContext instance.
+
+        This method analyzes the `inputs_mapping` to ascertain the origin of the inputs for a batch operation.
+        The `inputs_mapping` should be a dictionary with keys representing input names and values specifying the sources
+        of these inputs. Inputs can originate from direct data or from the outputs of a previous run.
+
+        The `inputs_mapping` is dictated entirely by the external caller. For more details on column mapping, refer to
+        https://aka.ms/pf/column-mapping. The mapping can include references to both the inputs and outputs of previous
+        runs, using a reserved source name 'run' to indicate such references. However, this method specifically checks
+        for references to outputs of previous runs, which are denoted by values starting with "${run.outputs". When such
+        a reference is found, the `batch_input_source` attribute of the OperationContext instance is set to "Run" to
+        reflect that the batch operation is utilizing outputs from a prior run.
+
+        If no values in the `inputs_mapping` start with "${run.outputs", it is inferred that the inputs do not derive
+        from a previous run, and the `batch_input_source` is set to "Data".
+
+        Examples of `inputs_mapping`:
+            - Referencing a previous run's output:
+                {'input1': '${run.outputs.some_output}', 'input2': 'direct_data'}
+              In this case, 'input1' is sourced from a prior run's output, and 'input2' is from direct data.
+              The `batch_input_source` would be set to "Run".
+
+            - Sourcing directly from data:
+                {'input1': 'data_source1', 'input2': 'data_source2'}
+              Since no values start with "${run.outputs", the `batch_input_source` is set to "Data".
+
+        Args:
+            inputs_mapping (Mapping[str, str]): A dictionary mapping input names to their sources, where the sources
+            can be either direct data or outputs from a previous run. The structure and content of this mapping are
+            entirely under the control of the external caller.
+
+        Returns:
+            None
+        """
+        if inputs_mapping and any(
+            isinstance(value, str) and value.startswith("${run.outputs") for value in inputs_mapping.values()
+        ):
+            self.batch_input_source = "Run"
         else:
-            self.user_agent = user_agent
+            self.batch_input_source = "Data"
 
     def get_context_dict(self):
         """Get the context dictionary.

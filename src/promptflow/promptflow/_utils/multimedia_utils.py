@@ -1,5 +1,4 @@
 import base64
-import imghdr
 import os
 import re
 import uuid
@@ -8,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict
 from urllib.parse import urlparse
 
+import filetype
 import requests
 
 from promptflow.contracts._errors import InvalidImageInput
@@ -72,9 +72,9 @@ def _create_image_from_file(f: Path, mime_type: str = None):
 def _create_image_from_base64(base64_str: str, mime_type: str = None):
     image_bytes = base64.b64decode(base64_str)
     if not mime_type:
-        # TODO: imghdr is about to deprecated, should use something else.
-        format = imghdr.what(None, image_bytes)
-        mime_type = f"image/{format}" if format else "image/*"
+        mime_type = filetype.guess_mime(image_bytes)
+        if not mime_type.startswith("image/"):
+            mime_type = "image/*"
     return Image(image_bytes, mime_type=mime_type)
 
 
@@ -82,14 +82,18 @@ def _create_image_from_url(url: str, mime_type: str = None):
     response = requests.get(url)
     if response.status_code == 200:
         if not mime_type:
-            format = imghdr.what(None, response.content)
-            mime_type = f"image/{format}" if format else "image/*"
-        return Image(response.content, mime_type=mime_type)
+            mime_type = filetype.guess_mime(response.content)
+            if not mime_type.startswith("image/"):
+                mime_type = "image/*"
+        return Image(response.content, mime_type=mime_type, source_url=url)
     else:
         raise InvalidImageInput(
-            message_format=f"Error while fetching image from URL: {url}. "
-            "Error code: {response.status_code}. Error message: {response.text}.",
+            message_format="Failed to fetch image from URL: {url}. Error code: {error_code}. "
+            "Error message: {error_message}.",
             target=ErrorTarget.EXECUTOR,
+            url=url,
+            error_code=response.status_code,
+            error_message=response.text,
         )
 
 
@@ -210,7 +214,11 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
         if value.type == ValueType.IMAGE:
-            updated_inputs[key] = create_image(updated_inputs[key])
+            if isinstance(updated_inputs[key], list):
+                # For aggregation node, the image input is a list.
+                updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
+            else:
+                updated_inputs[key] = create_image(updated_inputs[key])
         elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
             updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
     return updated_inputs

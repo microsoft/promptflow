@@ -1,4 +1,4 @@
-name: step_sdk_setup_win
+name: step_sdk_setup
 inputs:
   scriptPath:
     required: false
@@ -16,21 +16,11 @@ runs:
     shell: pwsh
     run: |
       pip uninstall -y promptflow promptflow-sdk promptflow-tools
-  - name: 'Build and install: promptflow-tools'
-    shell: pwsh
-    run: |
-      Set-PSDebug -Trace 2
-      python ./setup.py bdist_wheel
-      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
-      pip install $package.FullName
-      echo "########### pip freeze (After) ###########"
-      pip freeze
-    working-directory: src/promptflow-tools
   - name: 'Build and install: promptflow with extra'
     if: inputs.setupType == 'promptflow_with_extra'
     shell: pwsh
     run: |
-      Set-PSDebug -Trace 2
+      Set-PSDebug -Trace 1
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
       pip list
@@ -44,7 +34,7 @@ runs:
     if: inputs.setupType == 'promptflow_dev'
     shell: pwsh
     run: |
-      Set-PSDebug -Trace 2
+      Set-PSDebug -Trace 1
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
       $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
@@ -52,3 +42,13 @@ runs:
       echo "########### pip freeze ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}
+  - name: 'Build and install: promptflow-tools'
+    shell: pwsh
+    run: |
+      Set-PSDebug -Trace 2
+      python ./setup.py bdist_wheel
+      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
+      pip install $package.FullName
+      echo "########### pip freeze (After) ###########"
+      pip freeze
+    working-directory: src/promptflow-tools

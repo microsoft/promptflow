@@ -9,6 +9,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Union
 
+from promptflow._core.token_provider import AzureTokenProvider, TokenProviderABC
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
@@ -22,7 +23,6 @@ from promptflow._sdk._constants import (
     CustomStrongTypeConnectionConfigs,
 )
 from promptflow._sdk._errors import UnsecureConnectionError
-from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -45,8 +45,8 @@ from promptflow._sdk.schemas._connection import (
     SerpConnectionSchema,
     WeaviateConnectionSchema,
 )
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
-from promptflow._core.token_provider import TokenProviderABC, AzureTokenProvider
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -257,7 +257,7 @@ class _Connection(YAMLTranslatableMixin):
         return {
             "type": self.class_name,  # Required class name for connection in executor
             "module": self.module,
-            "value": value,
+            "value": {k: v for k, v in value.items() if v is not None},  # Filter None value out
             "secret_keys": secret_keys,
         }
 
@@ -270,6 +270,10 @@ class _Connection(YAMLTranslatableMixin):
             configs = {k: v for k, v in value_dict.items() if k not in secrets}
             return CustomConnection(name=name, configs=configs, secrets=secrets)
         return type_cls(name=name, **value_dict)
+
+    def _get_scrubbed_secrets(self):
+        """Return the scrubbed secrets of connection."""
+        return {key: val for key, val in self.secrets.items() if self._is_scrubbed_value(val)}
 
 
 class _StrongTypeConnection(_Connection):
@@ -349,8 +353,13 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     TYPE = ConnectionType.AZURE_OPEN_AI
 
     def __init__(
-        self, api_key: str, api_base: str, api_type: str = "azure", api_version: str = "2023-07-01-preview",
-        token_provider: TokenProviderABC = None, **kwargs
+        self,
+        api_key: str,
+        api_base: str,
+        api_type: str = "azure",
+        api_version: str = "2023-07-01-preview",
+        token_provider: TokenProviderABC = None,
+        **kwargs,
     ):
         configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version}
         secrets = {"api_key": api_key}
@@ -406,14 +415,19 @@ class OpenAIConnection(_StrongTypeConnection):
     :type api_key: str
     :param organization: Optional. The unique identifier for your organization which can be used in API requests.
     :type organization: str
+    :param base_url: Optional. Specify when use customized api base, leave None to use open ai default api base.
+    :type base_url: str
     :param name: Connection name.
     :type name: str
     """
 
     TYPE = ConnectionType.OPEN_AI
 
-    def __init__(self, api_key: str, organization: str = None, **kwargs):
-        configs = {"organization": organization}
+    def __init__(self, api_key: str, organization: str = None, base_url=None, **kwargs):
+        if base_url == "":
+            # Keep empty as None to avoid disturbing openai pick the default api base.
+            base_url = None
+        configs = {"organization": organization, "base_url": base_url}
         secrets = {"api_key": api_key}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
@@ -430,6 +444,16 @@ class OpenAIConnection(_StrongTypeConnection):
     def organization(self, value):
         """Set the connection organization."""
         self.configs["organization"] = value
+
+    @property
+    def base_url(self):
+        """Return the connection api base."""
+        return self.configs.get("base_url")
+
+    @base_url.setter
+    def base_url(self, value):
+        """Set the connection api base."""
+        self.configs["base_url"] = value
 
 
 class SerpConnection(_StrongTypeConnection):
@@ -571,7 +595,7 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
         self,
         api_key: str,
         endpoint: str,
-        api_version: str = "2023-04-30-preview",
+        api_version: str = "2023-10-01",
         api_type: str = "Content Safety",
         **kwargs,
     ):

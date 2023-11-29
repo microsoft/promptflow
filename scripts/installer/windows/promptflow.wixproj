@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Project -->
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>3.10</ProductVersion>
+    <ProjectGuid>04ff6707-750d-4474-89b3-7922c84721be</ProjectGuid>
+    <SchemaVersion>2.0</SchemaVersion>
+    <OutputName>promptflow-$(env.CLI_VERSION)</OutputName>
+    <OutputType>Package</OutputType>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+    <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
+  </PropertyGroup>
+  <!-- Local WiX -->
+  <PropertyGroup>
+    <LocalWixRoot>wix</LocalWixRoot>
+    <WixToolPath>$(MSBuildThisFileDirectory)$(LocalWixRoot)</WixToolPath>
+    <WixTargetsPath Condition="Exists('$(WixToolPath)\Wix.targets')">$(WixToolPath)\Wix.targets</WixTargetsPath>
+    <WixTasksPath Condition="Exists('$(WixToolPath)\wixtasks.dll')">$(WixToolPath)\wixtasks.dll</WixTasksPath>
+    <PromptflowSource>scripts\dist\promptflow</PromptflowSource>
+    <LinkerAdditionalOptions>-fv</LinkerAdditionalOptions>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <OutputPath>out\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>out\obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;PromptflowSource=$(PromptflowSource)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>out\</OutputPath>
+    <IntermediateOutputPath>out\obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>PromptflowSource=$(PromptflowSource)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <OutputPath>out\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>out\obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug;PromptflowSource=$(PromptflowSource)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <OutputPath>out\</OutputPath>
+    <IntermediateOutputPath>out\obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>PromptflowSource=$(PromptflowSource)</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="out\promptflow.wxs">
+      <Link>promptflow.wxs</Link>
+    </Compile>
+    <Compile Include="product.wxs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\resources\logo_pf.png" />
+  </ItemGroup>
+  <!-- UI -->
+  <ItemGroup>
+    <WixExtension Include="WixUIExtension">
+      <HintPath>$(WixExtDir)\WixUIExtension.dll</HintPath>
+      <Name>WixUIExtension</Name>
+    </WixExtension>
+    <WixExtension Include="WixUtilExtension">
+      <HintPath>$(WixExtDir)\WixUtilExtension.dll</HintPath>
+      <Name>WixUtilExtension</Name>
+    </WixExtension>
+  </ItemGroup>
+  <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\wix.targets" Condition=" '$(WixTargetsPath)' == '' AND Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\wix.targets') " />
+  <Target Name="EnsureWixToolsetInstalled" Condition=" '$(WixTargetsImported)' != 'true' ">
+    <Error Text="The WiX Toolset v3.10 build tools must be installed to build this project. To download the WiX Toolset, see https://wixtoolset.org/releases/v3.10/stable" />
+  </Target>
+  <Target Name="BeforeBuild">
+    <HeatDirectory Directory="$(PromptflowSource)" ToolPath="$(WixToolPath)" AutogenerateGuids="true" ComponentGroupName="PromptflowCliComponentGroup" SuppressRootDirectory="true" DirectoryRefId="DynamicCliDir" OutputFile="out\promptflow.wxs" PreprocessorVariable="var.PromptflowSource" />
+  </Target>
+</Project>

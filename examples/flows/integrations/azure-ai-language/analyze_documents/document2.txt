@@ -1,0 +1,54 @@
+Siemens and Microsoft partner to drive cross-industry AI adoption
+October 31, 2023 | Microsoft News Center
+Share on Facebook (opens new window)
+ 
+Share on LinkedIn (opens new window)
+ 
+Share on Twitter (opens new window)
+Companies introduce Siemens Industrial Copilot, a generative AI-powered assistant, designed to enhance human-machine collaboration and boost productivity.
+Companies will work together to build additional copilots for manufacturing, infrastructure, transportation, and healthcare industries.
+Leading automotive supplier, Schaeffler AG, is an early adopter of Siemens Industrial Copilot.
+In addition, the Siemens Teamcenter app for Microsoft Teams will be generally available in December 2023 and accelerate innovation across the product lifecycle.
+Woman refers to what's on her mobile device as she works in an environment with many wires and cables. Imagery with graphs and numbers is superimposed on the photo.
+Siemens and Microsoft partner to drive cross-industry AI adoption
+Microsoft and Siemens are deepening their partnership by bringing the benefits of generative AI to industries worldwide. As a first step, the companies are introducing Siemens Industrial Copilot, an AI-powered jointly developed assistant aimed at improving human-machine collaboration in manufacturing. In addition, the launch of the integration between Siemens Teamcenter software for product lifecycle management and Microsoft Teams will further pave the way to enabling the industrial metaverse. It will simplify virtual collaboration of design engineers, frontline workers, and other teams across business functions.
+
+"With this next generation of AI, we have a unique opportunity to accelerate innovation across the entire industrial sector," said Satya Nadella, Chairman and CEO, Microsoft. "We're building on our longstanding collaboration with Siemens and bringing together AI advances across the Microsoft Cloud with Siemens' industrial domain expertise to empower both frontline and knowledge workers with new, AI-powered tools, starting with Siemens Industrial Copilot."
+
+"Together with Microsoft, our shared vision is to empower customers with the adoption of generative AI," says Roland Busch, CEO of Siemens AG. "This has the potential to revolutionize the way companies design, develop, manufacture, and operate. Making human-machine collaboration more widely available allows engineers to accelerate code development, increase innovation and tackle skilled labor shortages."
+
+A new era of human-machine collaboration
+
+Siemens Industrial Copilot will allow users to rapidly generate, optimize and debug complex automation code, and significantly shorten simulation times. This will reduce a task that previously took weeks to minutes. The copilot ingests automation and process simulation information from Siemens' open digital business platform, Siemens Xcelerator, and enhances it with Microsoft's Azure OpenAI Service. Customers maintain full control over their data, and it is not used to train underlying AI models.
+
+Siemens Industrial Copilot promises to boost productivity and efficiency across the industrial lifecycle. Using natural language, maintenance staff can be assisted with detailed repair instructions and engineers with quick access to simulation tools.
+
+The vision: Copilots for all industries
+
+The companies envision AI copilots assisting professionals in various industries, including manufacturing, infrastructure, transportation, and healthcare. Numerous copilots are already planned in the manufacturing sectors, such as automotive, consumer package goods and machine building.
+
+Schaeffler AG, a leading automotive supplier, is among the first in the automotive industry to embrace generative AI in the engineering phase. This helps its engineers to generate reliable code for programming industrial automation systems such as robots. In addition, the company intends to incorporate Siemens Industrial Copilot during their own operations, aiming to significantly reduce downtimes, and also for their clients at a later stage.
+
+"With this joint pilot, we're stepping into a new age of productivity and innovation. This Siemens Industrial Copilot will help our team work more efficiently, reduce repetitive tasks, and unleash creativity. We're excited to partner with Siemens and Microsoft on this project," says Klaus Rosenfeld, CEO of Schaeffler Group.
+
+Generative AI facilitates virtual collaboration
+
+To bring virtual collaboration across teams to the next level, Teamcenter for Microsoft Teams will be generally available beginning December 2023. This new app uses the latest advances in generative AI to connect functions across the product design and manufacturing lifecycle such as frontline workers to engineering teams. It connects Siemens' Teamcenter software for product lifecycle management (PLM) with Microsoft's collaboration platform Teams to make data more accessible for factory and field service workers. This will enable millions of workers who do not have access to PLM tools today to contribute to the design and manufacturing process more easily as part of their daily work.
+
+Siemens will share more details on Siemens Industrial Copilot at the SPS expo in Nuremberg, Germany, in November 2023.
+
+Siemens AG
+
+Siemens AG (Berlin and Munich) is a technology company focused on industry, infrastructure, transport, and healthcare. From more resource-efficient factories, resilient supply chains, and smarter buildings and grids, to cleaner and more comfortable transportation as well as advanced healthcare, the company creates technology with purpose adding real value for customers. By combining the real and the digital worlds, Siemens empowers its customers to transform their industries and markets, helping them to transform the everyday for billions of people. Siemens also owns a majority stake in the publicly listed company Siemens Healthineers, a globally leading medical technology provider shaping the future of healthcare. In addition, Siemens holds a minority stake in Siemens Energy, a global leader in the transmission and generation of electrical power.
+
+In fiscal 2022, which ended on September 30, 2022, the Siemens Group generated revenue of €72.0 billion and net income of €4.4 billion. As of September 30, 2022, the company employed around 311,000 people worldwide. Further information is available on the Internet at www.siemens.com.
+
+Siemens global Website
+
+Discover Siemens as a strong partner, technological pioneer and responsible employer.
+
+ 
+
+About Microsoft
+
+Microsoft (Nasdaq "MSFT" @microsoft) enables digital transformation for the era of an intelligent cloud and an intelligent edge. Its mission is to empower every person and every organization on the planet to achieve more.

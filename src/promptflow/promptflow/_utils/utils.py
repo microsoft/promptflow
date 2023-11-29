@@ -140,11 +140,13 @@ def log_progress(
     logger: logging.Logger,
     count: int,
     total_count: int,
-    formatter="{count} / {total_count} finished.",
+    formatter="Finished {count} / {total_count} lines.",
 ):
-    log_interval = max(int(total_count / 10), 1)
+    # Calculate log_interval to determine when to log progress.
+    # If total_count is less than 100, log every 10% of total_count; otherwise, log every 10 lines.
+    log_interval = min(10, max(int(total_count / 10), 1))
     if count > 0 and (count % log_interval == 0 or count == total_count):
-        average_execution_time = round((datetime.now().timestamp() - run_start_time.timestamp()) / count, 2)
+        average_execution_time = round((datetime.utcnow().timestamp() - run_start_time.timestamp()) / count, 2)
         estimated_execution_time = round(average_execution_time * (total_count - count), 2)
         logger.info(formatter.format(count=count, total_count=total_count))
         logger.info(
@@ -154,14 +156,18 @@ def log_progress(
 
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
-    from promptflow._core import flow_execution_context
+    from promptflow._core import tool
 
-    i = len(frame_summaries) - 1
-    while i > 0:
-        frame_summary = frame_summaries[i]
-        if frame_summary.filename == flow_execution_context.__file__:
+    tool_file = tool.__file__
+    core_folder = os.path.dirname(tool_file)
+
+    for i in range(len(frame_summaries) - 1):
+        cur_file = frame_summaries[i].filename
+        next_file = frame_summaries[i + 1].filename
+        # If the current frame is in tool.py and the next frame is not in _core folder
+        # then we can say that the next frame is in user code.
+        if cur_file == tool_file and not next_file.startswith(core_folder):
             return frame_summaries[i + 1 :]
-        i -= 1
     return frame_summaries
 
 
@@ -221,3 +227,23 @@ def environment_variable_overwrite(key, val):
             os.environ[key] = backup_value
         else:
             os.environ.pop(key)
+
+
+def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path]) -> Path:
+    """Resolve directory to absolute path with base_dir as root"""
+    path = sub_dir if isinstance(sub_dir, Path) else Path(sub_dir)
+    if not path.is_absolute():
+        base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
+        path = base_dir / sub_dir
+    return path
+
+
+def parse_ua_to_dict(ua):
+    """Parse string user agent to dict with name as ua name and value as ua version."""
+    ua_dict = {}
+    ua_list = ua.split(" ")
+    for item in ua_list:
+        if item:
+            key, value = item.split("/")
+            ua_dict[key] = value
+    return ua_dict

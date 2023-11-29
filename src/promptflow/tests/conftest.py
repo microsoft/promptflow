@@ -7,10 +7,21 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from _constants import CONNECTION_FILE, ENV_FILE
+from _constants import (
+    CONNECTION_FILE,
+    DEFAULT_REGISTRY_NAME,
+    DEFAULT_RESOURCE_GROUP_NAME,
+    DEFAULT_RUNTIME_NAME,
+    DEFAULT_SUBSCRIPTION_ID,
+    DEFAULT_WORKSPACE_NAME,
+    ENV_FILE,
+    CLI_PERF_MONITOR_AGENT,
+)
 from _pytest.monkeypatch import MonkeyPatch
+from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
+from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -18,6 +29,13 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
+
+load_dotenv()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def modify_work_directory():
+    os.chdir(Path(__file__).parent.parent.absolute())
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -75,26 +93,6 @@ def azure_open_ai_connection() -> AzureOpenAIConnection:
 def temp_output_dir() -> str:
     with tempfile.TemporaryDirectory() as temp_dir:
         yield temp_dir
-
-
-@pytest.fixture
-def default_subscription_id() -> str:
-    return "96aede12-2f73-41cb-b983-6d11a904839b"
-
-
-@pytest.fixture
-def default_resource_group() -> str:
-    return "promptflow"
-
-
-@pytest.fixture
-def default_workspace() -> str:
-    return "promptflow-eastus"
-
-
-@pytest.fixture
-def workspace_with_acr_access() -> str:
-    return "promptflow-eastus-dev"
 
 
 @pytest.fixture
@@ -164,11 +162,51 @@ def mock_module_with_list_func(mock_list_func):
 
     with patch.object(importlib, "import_module") as mock_import:
 
-        def side_effect(module_name):
+        def side_effect(module_name, *args, **kwargs):
             if module_name == "my_tool_package.tools.tool_with_dynamic_list_input":
                 return mock_module
             else:
-                return original_import_module(module_name)
+                return original_import_module(module_name, *args, **kwargs)
 
         mock_import.side_effect = side_effect
         yield
+
+
+# below fixtures are used for pfazure and global config tests
+@pytest.fixture
+def subscription_id() -> str:
+    if is_replay():
+        return SanitizedValues.SUBSCRIPTION_ID
+    else:
+        return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
+
+
+@pytest.fixture
+def resource_group_name() -> str:
+    if is_replay():
+        return SanitizedValues.RESOURCE_GROUP_NAME
+    else:
+        return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
+
+
+@pytest.fixture
+def workspace_name() -> str:
+    if is_replay():
+        return SanitizedValues.WORKSPACE_NAME
+    else:
+        return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
+
+
+@pytest.fixture
+def runtime_name() -> str:
+    return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)
+
+
+@pytest.fixture
+def registry_name() -> str:
+    return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)
+
+
+@pytest.fixture(scope="session")
+def cli_perf_monitor_agent() -> str:
+    return CLI_PERF_MONITOR_AGENT
