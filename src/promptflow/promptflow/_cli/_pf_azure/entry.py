@@ -7,8 +7,7 @@ import time
 
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._cli._utils import _get_cli_activity_name
-
-from promptflow._telemetry.activity import log_activity, ActivityType
+from promptflow._telemetry.activity import ActivityType, log_activity
 from promptflow._telemetry.telemetry import get_telemetry_logger
 
 # Log the start time
@@ -94,6 +93,8 @@ def entry(argv):
     Control plane CLI tools for promptflow cloud version.
     """
     prog, args = get_parser_args(argv)
+    if hasattr(args, "user_agent"):
+        setup_user_agent_to_operation_context(args.user_agent)
     logger = get_telemetry_logger()
     with log_activity(logger, _get_cli_activity_name(cli=prog, args=args), activity_type=ActivityType.PUBLICAPI):
         run_command(args)

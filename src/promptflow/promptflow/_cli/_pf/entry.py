@@ -25,8 +25,12 @@ from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  #
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
-from promptflow._sdk._utils import LoggerFactory, get_promptflow_sdk_version, print_pf_version, \
-    setup_user_agent_to_operation_context  # noqa: E402
+from promptflow._sdk._utils import (  # noqa: E402
+    LoggerFactory,
+    get_promptflow_sdk_version,
+    print_pf_version,
+    setup_user_agent_to_operation_context,
+)
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -103,6 +107,8 @@ def entry(argv):
     Control plane CLI tools for promptflow.
     """
     prog, args = get_parser_args(argv)
+    if hasattr(args, "user_agent"):
+        setup_user_agent_to_operation_context(args.user_agent)
     logger = get_telemetry_logger()
     with log_activity(logger, _get_cli_activity_name(cli=prog, args=args), activity_type=ActivityType.PUBLICAPI):
         run_command(args)
