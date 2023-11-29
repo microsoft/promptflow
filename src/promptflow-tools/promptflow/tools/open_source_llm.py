@@ -28,6 +28,7 @@ from promptflow.tools.exception import (
 DEPLOYMENT_DEFAULT = "default"
 CONNECTION_CACHE_FILE = "pf_connection_names"
 VALID_LLAMA_ROLES = {"system", "user", "assistant"}
+AUTH_REQUIRED_CONNECTION_TYPES = {"serverlessendpoint", "onlineendpoint", "connection"}
 REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
 REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
 ENDPOINT_REQUIRED_ENV_VARS = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME"]
@@ -296,7 +297,6 @@ class CustomConnectionsContainer:
                     })
                     if return_endpoint_url:
                         result[-1]['url'] = c.configs['endpoint_url']
-
                 except Exception:
                     # silently ignore unsupported model family
                     continue
@@ -1055,33 +1055,34 @@ Please ensure endpoint name and deployment names are correct, and the deployment
 
             return (endpoint_uri, endpoint_key, model_family)
 
-        try:
-            from azure.identity import DefaultAzureCredential
-            credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
-            token = credential.get_token("https://management.azure.com/.default").token
-        except Exception as e:
-            print(f"Skipping list_endpoint_names. Exception: {e}", file=sys.stderr)
-            return []
-
         (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_connection_type(endpoint)
-
         print(f"endpoint_connection_type: {endpoint_connection_type} name: {endpoint_connection_name}", file=sys.stdout)
 
-        if endpoint_connection_type.lower() == "serverlessendpoint":
+        con_type = endpoint_connection_type.lower()
+        if con_type in AUTH_REQUIRED_CONNECTION_TYPES:
+            try:
+                from azure.identity import DefaultAzureCredential
+                credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+                token = credential.get_token("https://management.azure.com/.default").token
+            except Exception as e:
+                print(f"Skipping list_endpoint_names. Exception: {e}", file=sys.stderr)
+                return []
+
+        if con_type == "serverlessendpoint":
             (endpoint_url, endpoint_key, model_family) = SERVERLESS_ENDPOINT_CONTAINER.get_serverless_endpoint_key(
                 token,
                 subscription_id,
                 resource_group_name,
                 workspace_name,
                 endpoint_connection_name)
-        elif endpoint_connection_type.lower() == "onlineendpoint":
+        elif con_type == "onlineendpoint":
             (endpoint_url, endpoint_key, model_family) = self.get_deployment_from_endpoint(credential,
                                                                                            subscription_id,
                                                                                            resource_group_name,
                                                                                            workspace_name,
                                                                                            endpoint_connection_name,
                                                                                            deployment_name)
-        elif endpoint_connection_type.lower() == "connection":
+        elif con_type == "connection":
             (endpoint_url,
              endpoint_key,
              model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(
@@ -1090,7 +1091,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
                 resource_group_name,
                 workspace_name,
                 endpoint_connection_name)
-        elif endpoint_connection_type.lower() == "localconnection":
+        elif con_type == "localconnection":
             (endpoint_url,
              endpoint_key,
              model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(

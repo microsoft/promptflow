@@ -73,6 +73,7 @@ def completion_endpoints_provider(endpoints_provider: Dict[str, List[str]]) -> D
 
     return completion_endpoints
 
+
 @pytest.mark.usefixtures("use_secrets_config_file")
 class TestOpenSourceLLM:
     stateless_os_llm = OpenSourceLLM()
@@ -359,7 +360,7 @@ user:
         resource_group_name = os.getenv("AZUREML_ARM_RESOURCEGROUP")
         workspace_name = os.getenv("AZUREML_ARM_WORKSPACE_NAME")
 
-        se_container =  ServerlessEndpointsContainer()
+        se_container = ServerlessEndpointsContainer()
         credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
         token = credential.get_token("https://management.azure.com/.default").token
 
@@ -389,7 +390,7 @@ user:
             resource_group_name,
             workspace_name,
             endpoint_connection_name)
-        
+
         assert len(endpoint_url) > 20
         assert model_family == "LLaMa"
         assert endpoint_key == eps_keys['primaryKey']
@@ -404,7 +405,6 @@ user:
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
-        
         assert len(connections) > 1
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
