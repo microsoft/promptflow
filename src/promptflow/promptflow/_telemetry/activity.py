@@ -62,16 +62,16 @@ def log_activity(
     request_id = getattr(thread_local_storage, "request_id", None)
     if not request_id:
         # public function call
-        public_call = True
+        first_call = True
         request_id = str(uuid.uuid4())
         thread_local_storage.request_id = request_id
     else:
-        public_call = False
+        first_call = False
 
     activity_info = {
         # TODO(2699383): use same request id with service caller
         "request_id": request_id,
-        "public_call": public_call,
+        "first_call": first_call,
         "activity_name": activity_name,
         "activity_type": activity_type,
         "user_agent": user_agent,
@@ -93,7 +93,7 @@ def log_activity(
         completion_status = ActivityCompletionStatus.FAILURE
     finally:
         try:
-            if public_call:
+            if first_call:
                 # recover request id in global storage
                 del thread_local_storage.request_id
             end_time = datetime.utcnow()

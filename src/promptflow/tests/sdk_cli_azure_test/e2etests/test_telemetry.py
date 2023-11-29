@@ -206,7 +206,7 @@ class TestTelemetry:
         def check_inner_call(*args, **kwargs):
             if "extra" in kwargs:
                 request_id = pydash.get(kwargs, "extra.custom_dimensions.request_id")
-                first_sdk_call = pydash.get(kwargs, "extra.custom_dimensions.public_call")
+                first_sdk_call = pydash.get(kwargs, "extra.custom_dimensions.first_call")
                 request_ids.add(request_id)
                 first_sdk_calls.append(first_sdk_call)
 
