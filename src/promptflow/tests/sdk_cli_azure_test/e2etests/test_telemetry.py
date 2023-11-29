@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import contextlib
 import time
+import uuid
 from logging import Logger
 from typing import Callable
 from unittest.mock import MagicMock, patch
@@ -225,3 +226,34 @@ class TestTelemetry:
         assert first_sdk_calls[0] is True
         assert first_sdk_calls[-1] is True
         assert set(first_sdk_calls[1:-1]) == {False}
+
+    def test_different_request_id(self):
+        from promptflow import PFClient
+
+        pf = PFClient()
+        request_ids = set()
+        first_sdk_calls = []
+
+        def check_inner_call(*args, **kwargs):
+            if "extra" in kwargs:
+                request_id = pydash.get(kwargs, "extra.custom_dimensions.request_id")
+                first_sdk_call = pydash.get(kwargs, "extra.custom_dimensions.first_call")
+                request_ids.add(request_id)
+                first_sdk_calls.append(first_sdk_call)
+
+        with patch.object(Logger, "info") as mock_logger:
+            mock_logger.side_effect = check_inner_call
+            run = load_run(
+                source=f"{RUNS_DIR}/run_with_env.yaml",
+            )
+            # create 2 times will get 2 request ids
+            run.name = str(uuid.uuid4())
+            pf.runs.create_or_update(run=run)
+            run.name = str(uuid.uuid4())
+            pf.runs.create_or_update(run=run)
+
+        # only 1 request id
+        assert len(request_ids) == 2
+        # 1 and last call is public call
+        assert first_sdk_calls[0] is True
+        assert first_sdk_calls[-1] is True
