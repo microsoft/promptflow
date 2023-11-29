@@ -15,7 +15,6 @@ from promptflow._constants import USER_AGENT
 FLOWS_DIR = "./tests/test_configs/flows"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
-CLI_PERF_MONITOR_AGENT = None
 
 
 @pytest.fixture(autouse=True)
