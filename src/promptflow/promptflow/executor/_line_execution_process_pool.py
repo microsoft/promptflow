@@ -30,7 +30,12 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._errors import LineExecutionTimeoutError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
+from ._preloaded_resolved_tools import preloaded_obj
 from promptflow.storage import AbstractRunStorage
+
+flow_file = None
+connections = None
+working_dir = None
 
 
 def signal_handler(signum, frame):
@@ -159,6 +164,12 @@ class LineExecutionProcessPool:
             )
             bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
             multiprocessing_start_method = None
+        elif ((multiprocessing_start_method == "fork" or
+               multiprocessing.get_start_method() == "fork") and
+              "forkserver" in sys_start_methods):
+            bulk_logger.info(
+                "Current method is 'fork' and 'forkserver' is available. Set start method to 'forkserver'.")
+            multiprocessing_start_method = "forkserver"
         self.context = get_multiprocessing_context(multiprocessing_start_method)
         use_fork = self.context.get_start_method() == "fork"
         # When using fork, we use this method to create the executor to avoid reloading the flow
@@ -166,11 +177,18 @@ class LineExecutionProcessPool:
         if use_fork:
             self._executor_creation_func = partial(create_executor_fork, flow_executor=flow_executor)
         elif flow_executor._flow_file:
+            global flow_file
+            flow_file = flow_executor._flow_file
+            global connections
+            connections = flow_executor._connections
+            global working_dir
+            working_dir = flow_executor._working_dir
             self._executor_creation_func = partial(
                 FlowExecutor.create,
                 flow_file=flow_executor._flow_file,
                 connections=flow_executor._connections,
                 working_dir=flow_executor._working_dir,
+                loaded_tools=preloaded_obj.tools,
                 raise_ex=False,
             )
         else:  # Legacy flow executor, will be deprecated with the legacy pf portal.
@@ -362,6 +380,8 @@ class LineExecutionProcessPool:
             ),
         ):
             try:
+                if self.context.get_start_method() == "forkserver":
+                    self.context.set_forkserver_preload(['_preloaded_resolved_tools'])
                 # The variable 'async_result' here is not the actual result of the batch run
                 # but an AsyncResult object that can be used to check if the execution are finished
                 # The actual results of the batch run are stored in 'result_list'
