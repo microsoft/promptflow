@@ -315,12 +315,16 @@ def update_environment_variables_with_connections(built_connections):
 
 
 def _match_env_reference(val: str):
-    val = val.strip()
-    m = re.match(r"^\$\{env:(.+)}$", val)
-    if not m:
+    try:
+        val = val.strip()
+        m = re.match(r"^\$\{env:(.+)}$", val)
+        if not m:
+            return None
+        name = m.groups()[0]
+        return name
+    except Exception:
+        # for exceptions when val is not a string, return
         return None
-    name = m.groups()[0]
-    return name
 
 
 def override_connection_config_with_environment_variable(connections: Dict[str, dict]):
