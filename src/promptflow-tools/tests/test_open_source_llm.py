@@ -26,13 +26,13 @@ from promptflow.tools.open_source_llm import (
 def verify_service_endpoints(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
     if not open_source_llm_ws_service_connection:
         # pytest.skip("Service Credential not available")
-        raise Exception(message=f"open_source_llm_ws_service_connection:{open_source_llm_ws_service_connection}")
+        raise Exception(f"open_source_llm_ws_service_connection:{open_source_llm_ws_service_connection}")
     print("open_source_llm_ws_service_connection completed")
     required_env_vars = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME",
                          "AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_CLIENT_SECRET"]
     for rev in required_env_vars:
         if rev not in os.environ:
-            raise Exception(message=f"test not setup correctly. Missing Required Environment Variable:{rev}")
+            raise Exception(f"test not setup correctly. Missing Required Environment Variable:{rev}")
 
 
 @pytest.fixture
