@@ -88,6 +88,44 @@ pfazure_exe = EXE(
     version="./version_info.txt",
 )
 
+
+pfs_a = Analysis(
+    ['pfs.py'],
+    pathex=[],
+    binaries=[],
+    datas=datas,
+    hiddenimports=hidden_imports,
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+pfs_pyz = PYZ(pfs_a.pure, pfs_a.zipped_data, cipher=block_cipher)
+pfs_exe = EXE(
+    pfs_pyz,
+    pfs_a.scripts,
+    [],
+    exclude_binaries=True,
+    name='pfs',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon='../resources/logo32.ico',
+    version="./version_info.txt",
+)
+
+
 pfsvc_a = Analysis(
     ['pfsvc.py'],
     pathex=[],
@@ -133,6 +171,10 @@ coll = COLLECT(
     pfazure_a.binaries,
     pfazure_a.zipfiles,
     pfazure_a.datas,
+    pfs_exe,
+    pfs_a.binaries,
+    pfs_a.zipfiles,
+    pfs_a.datas,
     pfsvc_exe,
     pfsvc_a.binaries,
     pfsvc_a.zipfiles,
