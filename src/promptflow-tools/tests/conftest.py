@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import pytest
@@ -69,8 +70,8 @@ def llama_chat_custom_connection():
 def open_source_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
-        subs = json.loads(creds_custom_connection.secrets['service_credential'])
-        for key, value in subs.items():
+        service_credentials = ast.literal_eval(creds_custom_connection.secrets['service_credential'])
+        for key, value in service_credentials.items():
             os.environ[key] = value
         return True
     except Exception as e:
