@@ -1,9 +1,6 @@
 name: promptflow-release-testing-matrix
 on:
   workflow_call:
-  pull_request:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       # can leave empty when trigger manually
@@ -63,8 +60,6 @@ jobs:
         } else {
           echo "PROMPT_FLOW_TEST_MODE=live"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
         }
-        # TEMP - always run live tests
-        echo "PROMPT_FLOW_TEST_MODE=live"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
     - name: checkout
       uses: actions/checkout@v3
     - name: Display and Set Environment Variables
