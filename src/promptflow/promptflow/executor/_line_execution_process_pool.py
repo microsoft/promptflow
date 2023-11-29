@@ -337,7 +337,6 @@ class LineExecutionProcessPool:
         return result
 
     def run(self, batch_inputs):
-        # signal.signal(signal.SIGINT, signal_handler)
         for index, inputs in batch_inputs:
             self._inputs_queue.put(
                 (
