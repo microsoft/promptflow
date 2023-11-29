@@ -1,4 +1,4 @@
-import pkg_resources
+from importlib.metadata import version
 from types import GeneratorType
 
 import pytest
@@ -48,7 +48,7 @@ class TestExecutorTraces:
         return get_trace
 
     @pytest.mark.skipif(
-        pkg_resources.get_distribution("openai").version.startswith("1."),
+        version("openai").startswith("1."),
         reason="test needs to be upgraded to adapt to openai>=1.0.0",
     )
     @pytest.mark.parametrize("flow_folder", ["openai_chat_api_flow", "openai_completion_api_flow"])
@@ -71,7 +71,7 @@ class TestExecutorTraces:
         assert get_traced is True
 
     @pytest.mark.skipif(
-        pkg_resources.get_distribution("openai").version.startswith("0."),
+        version("openai").startswith("0."),
         reason="Run tests for openai>=1.0.0",
     )
     @pytest.mark.parametrize("flow_folder", ["openai_v1_chat_api_flow", "openai_v1_completion_api_flow"])
