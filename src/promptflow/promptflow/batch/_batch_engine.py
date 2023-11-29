@@ -273,7 +273,10 @@ class BatchEngine:
     def _has_running_loop(self) -> bool:
         """Check if the current thread has a running event loop."""
         # When using asyncio.get_running_loop(), a RuntimeError is raised if there is no running event loop.
-        # So we use a try-catch block to determine whether there is currently an event loop in place.
+        # So, we use a try-catch block to determine whether there is currently an event loop in place.
+        #
+        # Note that this is the only way to check whether there is a running loop now, see:
+        # https://docs.python.org/3/library/asyncio-eventloop.html?highlight=get_running_loop#asyncio.get_running_loop
         try:
             asyncio.get_running_loop()
             return True
