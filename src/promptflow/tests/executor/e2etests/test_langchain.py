@@ -10,6 +10,10 @@ from promptflow.batch._result import BatchResult
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
 
 
+@pytest.mark.skipif(
+    pkg_resources.get_distribution("openai").version.startswith("1."),
+    reason="test needs to be upgraded to adapt to openai>=1.0.0",
+)
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestLangchain:
@@ -22,10 +26,6 @@ class TestLangchain:
         ],
     )
     def test_batch_with_langchain(self, flow_folder, inputs_mapping, dev_connections):
-        if flow_folder.startswith("openai"):
-            if pkg_resources.get_distribution("openai").version.startswith("1."):
-                pytest.skip("test needs to be upgraded to adapt to openai>=1.0.0")
-
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
         )
