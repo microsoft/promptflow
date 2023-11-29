@@ -33,7 +33,7 @@ def get_client(connection: Union[CustomConnection, AzureOpenAIConnection]):
             azure_endpoint=connection_dict.get("api_base"),
             api_version=connection_dict.get("api_version", "2023-07-01-preview"),
         )
-    return Client(**connection_dict)
+    return Client(**conn)
 
 
 @tool
