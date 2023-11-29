@@ -13,7 +13,7 @@ import yaml
 
 from promptflow.exceptions import ErrorTarget
 
-from .._constants import FlowLanguage
+from .._constants import LANGUAGE_KEY, FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
@@ -590,7 +590,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
-            program_language=data.get("language", FlowLanguage.Python),
+            program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
         )
 
     def _apply_default_node_variants(self: "Flow"):
