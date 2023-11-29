@@ -9,7 +9,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS runtime
 COPY --from=build / /
 
 WORKDIR /flow
-ENV ASPNETCORE_URLS=http://+:8080
-ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV IS_IN_DOCKER="true"
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Promptflow.DotnetService.dll", "-y", "flow.dag.yaml", "-a", ".", "-c", "", "-p", "8080", "-l", "", "-s"]
