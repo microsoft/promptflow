@@ -1,10 +1,11 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import os
 from contextvars import ContextVar
 from typing import Dict, Mapping
 
+from promptflow._constants import USER_AGENT, PF_USER_AGENT
 from promptflow._version import VERSION
 
 
@@ -19,6 +20,7 @@ class OperationContext(Dict):
 
     _CONTEXT_KEY = "operation_context"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
+    _USER_AGENT = "user_agent"
 
     @classmethod
     def get_instance(cls):
@@ -58,7 +60,10 @@ class OperationContext(Dict):
         if value is not None and not isinstance(value, (int, float, str, bool)):
             raise TypeError("Value must be a primitive")
         # set the item in the data attribute
-        self[name] = value
+        if name == self._USER_AGENT:
+            self[name] = value.strip()
+        else:
+            self[name] = value
 
     def __getattr__(self, name):
         """Get the attribute.
@@ -72,7 +77,9 @@ class OperationContext(Dict):
         Returns:
             int, float, str, bool, or None: The value of the attribute.
         """
-        if name in self:
+        if name == self._USER_AGENT:
+            return self.get_user_agent()
+        elif name in self:
             return self[name]
         else:
             super().__getattribute__(name)
@@ -103,9 +110,15 @@ class OperationContext(Dict):
         """
 
         def parts():
-            if "user_agent" in self:
-                yield self.get("user_agent")
-            yield f"promptflow/{VERSION}"
+            # Be careful not to use "self.user_agent" as it will recursively call get_user_agent in __getattr__
+            agent = self.get(self._USER_AGENT, '')
+            yield agent
+            promptflow_agent = f"promptflow/{VERSION}"
+            yield promptflow_agent if promptflow_agent not in agent else ''
+            user_agent = os.environ.get(USER_AGENT, '').strip()
+            yield user_agent if user_agent not in agent else ''
+            pf_user_agent = os.environ.get(PF_USER_AGENT, '').strip()
+            yield pf_user_agent if pf_user_agent not in agent else ''
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
         ua = " ".join(parts()).strip()
@@ -120,12 +133,10 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        if "user_agent" in self:
-            if user_agent not in self.user_agent:
-                self.user_agent = f"{self.user_agent} {user_agent}"
-        else:
-            self.user_agent = user_agent
-        self.user_agent = self.user_agent.strip()
+        agent = self.get(self._USER_AGENT, '')
+        user_agent = user_agent.strip()
+        if user_agent not in agent:
+            self[self._USER_AGENT] = f"{agent} {user_agent}".strip()
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.

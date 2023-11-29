@@ -4,6 +4,7 @@
 import contextlib
 import functools
 import uuid
+from contextvars import ContextVar
 from datetime import datetime
 
 from promptflow._telemetry.telemetry import TelemetryMixin
@@ -25,6 +26,9 @@ class ActivityCompletionStatus(object):
 
     SUCCESS = "Success"
     FAILURE = "Failure"
+
+
+request_id_context = ContextVar("request_id_context", default=None)
 
 
 @contextlib.contextmanager
@@ -53,16 +57,28 @@ def log_activity(
     """
     from promptflow._core.operation_context import OperationContext
 
-    user_agent = OperationContext.get_instance().get_user_agent()
+    if not custom_dimensions:
+        custom_dimensions = {}
+
+    context = OperationContext.get_instance()
+    user_agent = context.get_user_agent()
+    # TODO(2699383): use same request id with service caller
+    request_id = request_id_context.get()
+    if not request_id:
+        # public function call
+        first_call = True
+        request_id = str(uuid.uuid4())
+        request_id_context.set(request_id)
+    else:
+        first_call = False
 
     activity_info = {
-        # TODO(2699383): use same request id with service caller
-        "request_id": str(uuid.uuid4()),
+        "request_id": request_id,
+        "first_call": first_call,
         "activity_name": activity_name,
         "activity_type": activity_type,
         "user_agent": user_agent,
     }
-    custom_dimensions = custom_dimensions or {}
     activity_info.update(custom_dimensions)
 
     start_time = datetime.utcnow()
@@ -79,6 +95,9 @@ def log_activity(
         completion_status = ActivityCompletionStatus.FAILURE
     finally:
         try:
+            if first_call:
+                # recover request id in global storage
+                request_id_context.set(None)
             end_time = datetime.utcnow()
             duration_ms = round((end_time - start_time).total_seconds() * 1000, 2)
 
