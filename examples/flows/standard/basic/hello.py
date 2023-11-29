@@ -21,13 +21,13 @@ def get_client():
     api_key = os.environ["AZURE_OPENAI_API_KEY"]
     conn = dict(
         api_key=os.environ["AZURE_OPENAI_API_KEY"],
-        api_base=os.environ["AZURE_OPENAI_API_BASE"],
     )
     if api_key.startswith("sk-"):
         from openai import OpenAI as Client
     else:
         from openai import AzureOpenAI as Client
         conn.update(
+            azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
             api_type=os.environ.get("AZURE_OPENAI_API_TYPE", "azure"),
             api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-07-01-preview"),
         )
