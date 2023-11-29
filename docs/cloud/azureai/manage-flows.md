@@ -37,7 +37,7 @@ To create a flow to Azure from local flow directory, you can use
 pfazure flow create --flow <path-to-flow-folder> 
 
 # create the flow with metadata
-pfazure flow create --flow <path-to-flow-folder> --set display-name=<display-name> description=<description> tags.key1=value1
+pfazure flow create --flow <path-to-flow-folder> --set display_name=<display-name> description=<description> tags.key1=value1
 ```
 
 After the flow is created successfully, you can see the flow summary in the command line.

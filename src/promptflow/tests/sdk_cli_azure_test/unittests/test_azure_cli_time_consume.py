@@ -1,15 +1,19 @@
 import multiprocessing
+import os
 import sys
 import timeit
 from unittest import mock
-
 import pytest
+from promptflow._core.operation_context import OperationContext
+from promptflow._constants import USER_AGENT
+from tests._constants import CI_CLI_USER_AGENT
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
 def run_cli_command(cmd, time_limit=3600):
+    os.environ[USER_AGENT] = CI_CLI_USER_AGENT
     from promptflow._cli._pf_azure.entry import main
     from promptflow.azure.operations._run_operations import RunOperations
 
@@ -28,6 +32,8 @@ def run_cli_command(cmd, time_limit=3600):
         main()
         ed = timeit.default_timer()
         print(f"{cmd}, \nTotal time: {ed - st}s")
+        context = OperationContext.get_instance()
+        print("request id: ", context.get("request_id"))
         assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
 
 

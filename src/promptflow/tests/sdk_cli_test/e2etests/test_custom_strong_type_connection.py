@@ -37,7 +37,7 @@ class TestCustomStrongTypeConnection:
             "configs": {
                 "api_base": "test",
                 "promptflow.connection.custom_type": "MyCustomConnection",
-                "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.connection.module": "tests.sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
@@ -50,7 +50,7 @@ class TestCustomStrongTypeConnection:
             "configs": {
                 "api_base": "test2",
                 "promptflow.connection.custom_type": "MyCustomConnection",
-                "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.connection.module": "tests.sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
@@ -76,7 +76,7 @@ class TestCustomStrongTypeConnection:
             "configs": {
                 "api_base": "test",
                 "promptflow.connection.custom_type": "MyCustomConnection",
-                "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.connection.module": "tests.sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
@@ -89,7 +89,7 @@ class TestCustomStrongTypeConnection:
             "configs": {
                 "api_base": "test2",
                 "promptflow.connection.custom_type": "MyCustomConnection",
-                "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.connection.module": "tests.sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
