@@ -1,5 +1,5 @@
-import pkg_resources
 from collections import namedtuple
+from importlib.metadata import version
 from types import GeneratorType
 from unittest.mock import patch
 
@@ -24,7 +24,7 @@ from promptflow.tools.embedding import embedding
 
 
 @pytest.mark.skipif(
-    not pkg_resources.get_distribution("openai").version.startswith("1."),
+    not version("openai").startswith("1."),
     reason="the test should run with openai>=1.0.0",
 )
 @pytest.mark.unittest
@@ -47,7 +47,7 @@ def test_inject_operation_headers():
 
 
 @pytest.mark.skipif(
-    not pkg_resources.get_distribution("openai").version.startswith("1."),
+    not version("openai").startswith("1."),
     reason="the test should run with openai>=1.0.0",
 )
 @pytest.mark.unittest
@@ -90,7 +90,7 @@ def test_aoai_generator_proxy():
 
 
 @pytest.mark.skipif(
-    not pkg_resources.get_distribution("openai").version.startswith("1."),
+    not version("openai").startswith("1."),
     reason="the test should run with openai>=1.0.0",
 )
 @pytest.mark.unittest
@@ -118,7 +118,7 @@ def test_aoai_call_inject():
 
 
 @pytest.mark.skipif(
-    pkg_resources.get_distribution("openai").version.startswith("1."),
+    version("openai").startswith("1."),
     reason="test needs to be upgraded to adapt to openai>=1.0.0",
 )
 @pytest.mark.unittest
@@ -180,7 +180,7 @@ def test_aoai_tool_header():
 
 
 @pytest.mark.skipif(
-    pkg_resources.get_distribution("openai").version.startswith("1."),
+    version("openai").startswith("1."),
     reason="test needs to be upgraded to adapt to openai>=1.0.0",
 )
 @pytest.mark.unittest
@@ -211,7 +211,7 @@ def test_aoai_chat_tool_prompt():
 
 
 @pytest.mark.skipif(
-    not pkg_resources.get_distribution("openai").version.startswith("1."),
+    not version("openai").startswith("1."),
     reason="the test should run with openai>=1.0.0",
 )
 @pytest.mark.parametrize(
