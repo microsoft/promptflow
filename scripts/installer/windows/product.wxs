@@ -94,19 +94,18 @@
         <CustomAction Id="StartPromptFlowService"
             Directory="DynamicCliDir"
             Execute="commit"
-            ExeCommand="cmd.exe /c start /B pfsvc manual"
+            ExeCommand="powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -Command pfs"
             Return="check" />
         <CustomAction Id="UninstallPromptFlowService"
             Directory="%ProgramFiles%\promptflow"
             Execute="commit"
             Impersonate="no"
             ExeCommand="cmd.exe /c SC DELETE PromptService"
-            Return="check" />
+            Return="ignore" />
         <InstallExecuteSequence>
             <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">(NOT Installed) AND (NOT WIX_UPGRADE_DETECTED)</Custom>
             <Custom Action="UninstallPromptFlowService" Before="InstallFinalize">REMOVE="ALL"</Custom>
-            <ScheduleReboot After='InstallFinalize' />
         </InstallExecuteSequence>
 
     </Product>
