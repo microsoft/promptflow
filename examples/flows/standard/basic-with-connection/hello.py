@@ -27,6 +27,7 @@ def get_client(connection: Union[CustomConnection, AzureOpenAIConnection]):
         from openai import AzureOpenAI as Client
         connection_dict["azure_endpoint"] = connection.api_base
         connection_dict.pop("api_base")
+        connection_dict.pop("api_type")
     else:
         raise ValueError(f"Unsupported connection type {type(connection)}")
     return Client(**connection_dict)
