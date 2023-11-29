@@ -22,6 +22,7 @@
 
 - [SDK/CLI] Fix node test with dict node input will raise "Required input(s) missing".
 - [SDK/CLI] Will use run name as display name when display name not specified (used flow folder name before).
+- [SDK/CLI] Fix pf flow build created unexpected layer of dist folder
 
 ### Improvements
 - Force 'az login' if using azureml connection provider in cli command.
@@ -29,6 +30,8 @@
 - Improved CLI invoke time.
 - Bump `pydash` upper bound to 8.0.0.
 - Bump `SQLAlchemy` upper bound to 3.0.0.
+- Bump `flask` upper bound to 4.0.0, `flask-restx` upper bound to 2.0.0.
+- Bump `ruamel.yaml` upper bound to 1.0.0.
 
 ## 1.0.0 (2023.11.09)
 
