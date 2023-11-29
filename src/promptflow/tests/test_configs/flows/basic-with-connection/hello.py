@@ -96,9 +96,7 @@ def my_python_tool(
             best_of=int(best_of),
             # Logit bias must be a dict if we passed it to openai api.
             logit_bias=logit_bias if logit_bias else {},
-            user=user,
-            request_timeout=30,
-            **dict(connection),
+            user=user
         )
 
     # get first element because prompt is single.

@@ -44,7 +44,6 @@ def completion(connection: AzureOpenAIConnection, prompt: str) -> str:
             n=1,
             stream=stream,
             stop=None,
-            **dict(connection),
         )
 
     if stream:

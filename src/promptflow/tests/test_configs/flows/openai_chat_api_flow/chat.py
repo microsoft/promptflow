@@ -44,7 +44,7 @@ def chat(connection: AzureOpenAIConnection, question: str, chat_history: List) -
             **dict(connection),
         )
     else:
-        response = get_client(connection).chat.completions.create(
+        completion = get_client(connection).chat.completions.create(
             model="gpt-35-turbo",
             messages=list(create_messages(question, chat_history)),
             temperature=1.0,
@@ -52,8 +52,7 @@ def chat(connection: AzureOpenAIConnection, question: str, chat_history: List) -
             n=1,
             stream=stream,
             stop=None,
-            max_tokens=16,
-            **dict(connection),
+            max_tokens=16
         )
 
     if stream:
