@@ -97,7 +97,7 @@
             ExeCommand="cmd.exe /c start /B pfsvc manual"
             Return="check" />
         <CustomAction Id="UninstallPromptFlowService"
-            Directory="%ProgramFiles%\promptflow"
+            Directory="DynamicCliDir"
             Execute="commit"
             Impersonate="no"
             ExeCommand="cmd.exe /c SC DELETE PromptService"
