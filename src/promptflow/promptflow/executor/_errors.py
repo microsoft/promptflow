@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+from jinja2 import TemplateSyntaxError
+
 from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class
 from promptflow.exceptions import (
     ErrorTarget,
@@ -207,6 +209,11 @@ class ResolveToolError(PromptflowException):
         error_type_and_message = None
         if self.inner_exception:
             error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
+            if isinstance(self.inner_exception, TemplateSyntaxError):
+                error_type_and_message = (
+                    f"({self.inner_exception.__class__.__name__}) in line "
+                    f"{self.inner_exception.lineno}: {self.inner_exception}"
+                )
 
         return {
             "node_name": self._node_name,
