@@ -4,7 +4,6 @@
 
 import abc
 import json
-import logging
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Tuple, Union
@@ -12,7 +11,7 @@ from typing import Dict, Tuple, Union
 import yaml
 from marshmallow import Schema
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_ENCODING,
@@ -23,11 +22,12 @@ from promptflow._sdk._constants import (
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from ..._utils.flow_utils import resolve_flow_path
+from ..._utils.logger_utils import LoggerFactory
 from .._constants import DAG_FILE_NAME
 from ._connection import _Connection
 from ._validation import SchemaValidatableMixin
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class FlowBase(abc.ABC):
@@ -300,27 +300,19 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         :param kwargs: flow inputs with key word arguments.
         :return:
         """
-        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
-        invoker = FlowContextResolver.resolve(flow=self)
-
-        result = invoker._invoke(
-            data=kwargs,
-        )
+        result = self.invoke(inputs=kwargs)
         return result.output
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
-        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
-        if not self._executable:
-            self._executable = self._init_executable()
-
-        if self._executable.program_language == FlowLanguage.CSharp:
+        if self.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
                 result = submitter.exec_with_inputs(
                     inputs=inputs,

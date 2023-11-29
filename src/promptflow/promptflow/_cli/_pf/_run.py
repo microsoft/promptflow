@@ -18,7 +18,7 @@ from promptflow._cli._params import (
     add_param_run_name,
     add_param_set,
     add_parser_build,
-    logging_params,
+    base_params,
 )
 from promptflow._cli._utils import (
     _output_result_list_with_format,
@@ -96,7 +96,7 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
         add_param_environment_variables,
         add_param_connections,
         add_param_set,
-    ] + logging_params
+    ] + base_params
 
     add_params.extend(add_param_list)
     create_parser = activate_action(
@@ -135,7 +135,7 @@ Example:
 # Cancel a run:
 pf run cancel --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
     activate_action(
         name="cancel",
         description=None,
@@ -157,7 +157,7 @@ pf run update --name <name> --set display_name="<display-name>" description="<de
     add_params = [
         add_param_run_name,
         add_param_set,
-    ] + logging_params
+    ] + base_params
     activate_action(
         name="update",
         description=None,
@@ -176,7 +176,7 @@ Example:
 # Stream run logs:
 pf run stream --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
     activate_action(
         name="stream",
         description=None,
@@ -211,7 +211,7 @@ pf run list --output table
         add_param_archived_only,
         add_param_include_archived,
         add_param_output_format,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="list",
@@ -231,7 +231,7 @@ Example:
 # Show the status of a run:
 pf run show --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
 
     activate_action(
         name="show",
@@ -260,7 +260,7 @@ pf run show-details --name <name>
         help=f"Number of lines to show. Default is {MAX_SHOW_DETAILS_RESULTS}.",
     )
 
-    add_params = [add_param_max_results, add_param_run_name, add_param_all_results] + logging_params
+    add_params = [add_param_max_results, add_param_run_name, add_param_all_results] + base_params
 
     activate_action(
         name="show-details",
@@ -280,7 +280,7 @@ Example:
 # View metrics of a run:
 pf run show-metrics --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
 
     activate_action(
         name="show-metrics",
@@ -311,7 +311,7 @@ pf run visualize --names "<name1>, <name2>"
         "--html-path", type=str, default=None, help=argparse.SUPPRESS
     )
 
-    add_params = [add_param_name, add_param_html_path] + logging_params
+    add_params = [add_param_name, add_param_html_path] + base_params
 
     activate_action(
         name="visualize",
@@ -331,7 +331,7 @@ Example:
 # Archive a run:
 pf run archive --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
 
     activate_action(
         name="archive",
@@ -351,7 +351,7 @@ Example:
 # Restore an archived run:
 pf run restore --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
 
     activate_action(
         name="restore",

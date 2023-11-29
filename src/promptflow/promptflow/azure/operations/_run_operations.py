@@ -27,6 +27,7 @@ from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
     LINE_NUMBER,
     LOGGER_NAME,
@@ -41,12 +42,12 @@ from promptflow._sdk._constants import (
     RunStatus,
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
-from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
     AUTOMATIC_RUNTIME_NAME,
@@ -780,7 +781,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._flow_operations._resolve_arm_id_or_upload_dependencies(
             flow=flow,
             # ignore .promptflow/dag.tools.json only for run submission scenario in python
-            ignore_tools_json=flow._flow_dict.get("language", None) != "csharp",
+            ignore_tools_json=flow._flow_dict.get(LANGUAGE_KEY, None) != FlowLanguage.CSharp,
         )
         return flow.path
 

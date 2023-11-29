@@ -7,7 +7,7 @@ import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
-from flask import Response, jsonify, request
+from flask import Response, jsonify, make_response, request
 from flask_restx import Namespace, Resource, fields
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
@@ -163,7 +163,7 @@ class LogContent(Resource):
         run = run_op.get(name=name)
         local_storage_op = LocalStorageOperations(run=run)
         log_content = local_storage_op.logger.get_logs()
-        return log_content
+        return make_response(log_content)
 
 
 @api.route("/<string:name>/metrics")

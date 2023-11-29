@@ -1,12 +1,21 @@
 import multiprocessing
+import os
 import sys
 import timeit
 from unittest import mock
-
 import pytest
+from promptflow._core.operation_context import OperationContext
+from promptflow._constants import USER_AGENT
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+@pytest.fixture(autouse=True)
+def set_env(cli_perf_monitor_agent):
+    os.environ[USER_AGENT] = cli_perf_monitor_agent
+    yield
+    del os.environ[USER_AGENT]
 
 
 def run_cli_command(cmd, time_limit=3600):
@@ -28,6 +37,8 @@ def run_cli_command(cmd, time_limit=3600):
         main()
         ed = timeit.default_timer()
         print(f"{cmd}, \nTotal time: {ed - st}s")
+        context = OperationContext.get_instance()
+        print("request id: ", context.get("request_id"))
         assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
 
 

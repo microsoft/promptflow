@@ -16,11 +16,15 @@
 - Support pfazure run create with remote flow.
   - For remote workspace flow: `pfazure run create --flow azureml:<flow-name>`
   - For remote registry flow: `pfazure run create --flow azureml://registries/<registry-name>/models/<flow-name>/versions/<flow-version>`
+- Support set logging level via environment variable `PF_LOGGING_LEVEL`, valid values includes `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`, default to `INFO`.
+- Remove openai version restrictions
 
 ### Bugs Fixed
 
 - [SDK/CLI] Fix node test with dict node input will raise "Required input(s) missing".
 - [SDK/CLI] Will use run name as display name when display name not specified (used flow folder name before).
+- [SDK/CLI] Fix pf flow build created unexpected layer of dist folder
+- [SDK/CLI] Fix deploy prompt flow: connections value may be none
 
 ### Improvements
 - Force 'az login' if using azureml connection provider in cli command.
@@ -28,6 +32,8 @@
 - Improved CLI invoke time.
 - Bump `pydash` upper bound to 8.0.0.
 - Bump `SQLAlchemy` upper bound to 3.0.0.
+- Bump `flask` upper bound to 4.0.0, `flask-restx` upper bound to 2.0.0.
+- Bump `ruamel.yaml` upper bound to 1.0.0.
 
 ## 1.0.0 (2023.11.09)
 

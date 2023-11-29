@@ -1,14 +1,14 @@
 import argparse
 import json
-import logging
 
-from promptflow._cli._params import add_param_set_positional, logging_params
+from promptflow._cli._params import add_param_set_positional, base_params
 from promptflow._cli._utils import activate_action, list_of_dict_to_dict
 from promptflow._sdk._configuration import Configuration, InvalidConfigValue
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._utils import print_red_error
+from promptflow._utils.logger_utils import LoggerFactory
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 def add_config_set(subparsers):
@@ -22,7 +22,7 @@ def add_config_set(subparsers):
         name="set",
         description="Set prompt flow configs for current user.",
         epilog=epilog,
-        add_params=[add_param_set_positional] + logging_params,
+        add_params=[add_param_set_positional] + base_params,
         subparsers=subparsers,
         help_message="Set prompt flow configs for current user, configs will be stored at ~/.promptflow/pf.yaml.",
         action_param_name="sub_action",
@@ -40,7 +40,7 @@ def add_config_show(subparsers):
         name="show",
         description="Show prompt flow configs for current user.",
         epilog=epilog,
-        add_params=logging_params,
+        add_params=base_params,
         subparsers=subparsers,
         help_message="Show prompt flow configs for current user.",
         action_param_name="sub_action",
