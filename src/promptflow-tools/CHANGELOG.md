@@ -1,7 +1,7 @@
 # Release History
 
-## 0.1.0b16 (Upcoming)
+## 1.0.0 (2023.11.30)
 
 ### Features Added
-- Support openai 1.x for promptflow-tools
-- Rename api_base to base_url for openai connection mapping
+- Support openai 1.x in promptflow-tools
+- Add new tool `OpenAI GPT-4V`
