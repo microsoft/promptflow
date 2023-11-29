@@ -4,12 +4,16 @@
 import contextlib
 import os
 import time
+import uuid
+from logging import Logger
+from typing import Callable
 from unittest.mock import MagicMock, patch
 
 import pydash
 import pytest
 
-from promptflow._constants import PF_USER_AGENT
+from promptflow import load_run
+from promptflow._constants import PF_USER_AGENT, USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension
@@ -17,7 +21,6 @@ from promptflow._telemetry.activity import ActivityType, log_activity
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
-from promptflow._constants import USER_AGENT
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -50,8 +53,11 @@ def extension_consent_config_overwrite(val):
             config.set_config(key=Configuration.EXTENSION_COLLECT_TELEMETRY, value=True)
 
 
+RUNS_DIR = "./tests/test_configs/runs"
+
+
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
-@pytest.mark.usefixtures("single_worker_thread_pool", "vcr_recording")
+@pytest.mark.usefixtures("mock_set_headers_with_user_aml_token", "single_worker_thread_pool", "vcr_recording")
 @pytest.mark.e2etest
 class TestTelemetry:
     def test_logging_handler(self):
@@ -194,6 +200,64 @@ class TestTelemetry:
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
                 # Perform some activity
                 pass
+
+    def test_inner_function_call(self, pf, runtime: str, randstr: Callable[[str], str]):
+        request_ids = set()
+        first_sdk_calls = []
+
+        def check_inner_call(*args, **kwargs):
+            if "extra" in kwargs:
+                request_id = pydash.get(kwargs, "extra.custom_dimensions.request_id")
+                first_sdk_call = pydash.get(kwargs, "extra.custom_dimensions.first_call")
+                request_ids.add(request_id)
+                first_sdk_calls.append(first_sdk_call)
+
+        with patch.object(Logger, "info") as mock_logger:
+            mock_logger.side_effect = check_inner_call
+            run = load_run(
+                source=f"{RUNS_DIR}/run_with_env.yaml",
+                params_override=[{"runtime": runtime}],
+            )
+            run.name = randstr("name")
+            pf.runs.create_or_update(run=run)
+
+        # only 1 request id
+        assert len(request_ids) == 1
+        # only 1 and last call is public call
+        assert first_sdk_calls[0] is True
+        assert first_sdk_calls[-1] is True
+        assert set(first_sdk_calls[1:-1]) == {False}
+
+    def test_different_request_id(self):
+        from promptflow import PFClient
+
+        pf = PFClient()
+        request_ids = set()
+        first_sdk_calls = []
+
+        def check_inner_call(*args, **kwargs):
+            if "extra" in kwargs:
+                request_id = pydash.get(kwargs, "extra.custom_dimensions.request_id")
+                first_sdk_call = pydash.get(kwargs, "extra.custom_dimensions.first_call")
+                request_ids.add(request_id)
+                first_sdk_calls.append(first_sdk_call)
+
+        with patch.object(Logger, "info") as mock_logger:
+            mock_logger.side_effect = check_inner_call
+            run = load_run(
+                source=f"{RUNS_DIR}/run_with_env.yaml",
+            )
+            # create 2 times will get 2 request ids
+            run.name = str(uuid.uuid4())
+            pf.runs.create_or_update(run=run)
+            run.name = str(uuid.uuid4())
+            pf.runs.create_or_update(run=run)
+
+        # only 1 request id
+        assert len(request_ids) == 2
+        # 1 and last call is public call
+        assert first_sdk_calls[0] is True
+        assert first_sdk_calls[-1] is True
 
     def test_ci_user_agent(self, cli_perf_monitor_agent) -> None:
         try:

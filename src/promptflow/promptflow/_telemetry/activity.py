@@ -4,9 +4,9 @@
 import contextlib
 import functools
 import uuid
+from contextvars import ContextVar
 from datetime import datetime
 
-from promptflow._core.operation_context import OperationContext
 from promptflow._telemetry.telemetry import TelemetryMixin
 
 
@@ -26,6 +26,9 @@ class ActivityCompletionStatus(object):
 
     SUCCESS = "Success"
     FAILURE = "Failure"
+
+
+request_id_context = ContextVar("request_id_context", default=None)
 
 
 @contextlib.contextmanager
@@ -52,19 +55,31 @@ def log_activity(
     :type custom_dimensions: dict
     :return: None
     """
-    custom_dimensions = custom_dimensions or {}
+    from promptflow._core.operation_context import OperationContext
+
+    if not custom_dimensions:
+        custom_dimensions = {}
+
     context = OperationContext.get_instance()
-    request_id = custom_dimensions.get('request_id', context.get('request_id', str(uuid.uuid4())))
     user_agent = context.get_user_agent()
+    # TODO(2699383): use same request id with service caller
+    request_id = request_id_context.get()
+    if not request_id:
+        # public function call
+        first_call = True
+        request_id = str(uuid.uuid4())
+        request_id_context.set(request_id)
+    else:
+        first_call = False
+
     activity_info = {
-        # TODO(2699383): use same request id with service caller
         "request_id": request_id,
+        "first_call": first_call,
         "activity_name": activity_name,
         "activity_type": activity_type,
-        "user_agent": user_agent
+        "user_agent": user_agent,
     }
     activity_info.update(custom_dimensions)
-    context['request_id'] = request_id
 
     start_time = datetime.utcnow()
     completion_status = ActivityCompletionStatus.SUCCESS
@@ -80,6 +95,9 @@ def log_activity(
         completion_status = ActivityCompletionStatus.FAILURE
     finally:
         try:
+            if first_call:
+                # recover request id in global storage
+                request_id_context.set(None)
             end_time = datetime.utcnow()
             duration_ms = round((end_time - start_time).total_seconds() * 1000, 2)
 
