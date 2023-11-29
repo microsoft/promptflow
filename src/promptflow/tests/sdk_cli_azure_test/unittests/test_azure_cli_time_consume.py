@@ -6,14 +6,14 @@ from unittest import mock
 import pytest
 from promptflow._core.operation_context import OperationContext
 from promptflow._constants import USER_AGENT
-from tests._constants import CI_CLI_USER_AGENT
+from tests._constants import CLI_PERF_MONITOR_AGENT
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
 def run_cli_command(cmd, time_limit=3600):
-    os.environ[USER_AGENT] = CI_CLI_USER_AGENT
+    os.environ[USER_AGENT] = CLI_PERF_MONITOR_AGENT
     from promptflow._cli._pf_azure.entry import main
     from promptflow.azure.operations._run_operations import RunOperations
 

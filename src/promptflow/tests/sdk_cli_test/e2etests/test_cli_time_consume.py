@@ -11,7 +11,7 @@ import pytest
 import multiprocessing
 from promptflow._core.operation_context import OperationContext
 from promptflow._constants import USER_AGENT
-from tests._constants import CI_CLI_USER_AGENT
+from tests._constants import CLI_PERF_MONITOR_AGENT
 
 FLOWS_DIR = "./tests/test_configs/flows"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
@@ -21,7 +21,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
     from promptflow._cli._pf.entry import main
 
-    os.environ[USER_AGENT] = CI_CLI_USER_AGENT
+    os.environ[USER_AGENT] = CLI_PERF_MONITOR_AGENT
     sys.argv = list(cmd)
     output = io.StringIO()
     st = timeit.default_timer()
