@@ -135,6 +135,12 @@ class BatchEngine:
             output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
             # run flow in batch mode
             with _change_working_dir(self._working_dir):
+                # When run this part in a notebook, due to the asynchronous execution and the fact that each thread
+                # allows only one event loop, using asyncio.run directly leads to a RuntimeError due to "asyncio.run()
+                # cannot be called from a running event loop".
+                #
+                # To address this issue, we add a check for the event loop here. If the current thread already has an
+                # event loop, we run _exec_batch in a new thread; otherwise, we run it in the current thread.
                 if self._has_running_loop():
                     with ThreadPoolExecutor(1) as executor:
                         return executor.submit(
