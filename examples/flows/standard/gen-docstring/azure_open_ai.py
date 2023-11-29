@@ -19,7 +19,7 @@ class AOAI(ABC):
                 "using the command: pip install --upgrade openai."
             )
         init_params = {}
-        api_type = os.environ.get("OPENAI_API_TYPE")
+        api_type = os.environ.get("API_TYPE")
         if os.getenv("OPENAI_API_VERSION") is not None:
             init_params["api_version"] = os.environ.get("OPENAI_API_VERSION")
         if os.getenv("OPENAI_ORG_ID") is not None:
