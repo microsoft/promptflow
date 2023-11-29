@@ -135,9 +135,9 @@ class BatchEngine:
             output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
             # run flow in batch mode
             with _change_working_dir(self._working_dir):
-                # When run this part in a notebook, due to the asynchronous execution and the fact that each thread
-                # allows only one event loop, using asyncio.run directly leads to a RuntimeError due to "asyncio.run()
-                # cannot be called from a running event loop".
+                # When run in an async environment (e.g., in a notebook), because each thread allows only one event
+                # loop, using asyncio.run directly leads to a RuntimeError ("asyncio.run() cannot be called from a
+                # running event loop").
                 #
                 # To address this issue, we add a check for the event loop here. If the current thread already has an
                 # event loop, we run _exec_batch in a new thread; otherwise, we run it in the current thread.
@@ -271,6 +271,9 @@ class BatchEngine:
         dump_list_to_jsonl(output_file, outputs)
 
     def _has_running_loop(self) -> bool:
+        """Check if the current thread has a running event loop."""
+        # When using asyncio.get_running_loop(), a RuntimeError is raised if there is no running event loop.
+        # So we use a try-catch block to determine whether there is currently an event loop in place.
         try:
             asyncio.get_running_loop()
             return True
