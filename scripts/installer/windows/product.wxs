@@ -94,7 +94,7 @@
         <CustomAction Id="StartPromptFlowService"
             Directory="DynamicCliDir"
             Execute="commit"
-            ExeCommand="cmd.exe /C start /B pfs"
+            ExeCommand="PowerShell.exe -WindowStyle hidden pfs"
             Return="ignore" />
         <CustomAction Id="UninstallPromptFlowService"
             Directory="DynamicCliDir"
