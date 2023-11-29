@@ -32,8 +32,7 @@ class OAI:
                 "using the command: pip install --upgrade openai."
             )
         init_params = {}
-        if os.getenv("OPENAI_API_TYPE") is not None:
-            init_params["api_type"] = os.environ.get("OPENAI_API_TYPE")
+        api_type = os.environ.get("OPENAI_API_TYPE")
         if os.getenv("OPENAI_API_VERSION") is not None:
             init_params["api_version"] = os.environ.get("OPENAI_API_VERSION")
         if os.getenv("OPENAI_ORG_ID") is not None:
@@ -41,7 +40,7 @@ class OAI:
         if os.getenv("OPENAI_API_KEY") is None:
             raise ValueError("OPENAI_API_KEY is not set in environment variables")
         if os.getenv("OPENAI_API_BASE") is not None:
-            if init_params.get("api_type") == "azure":
+            if api_type == "azure":
                 init_params["azure_endpoint"] = os.environ.get("OPENAI_API_BASE")
             else:
                 init_params["base_url"] = os.environ.get("OPENAI_API_BASE")
@@ -49,7 +48,7 @@ class OAI:
         init_params["api_key"] = os.environ.get("OPENAI_API_KEY")
 
         # A few sanity checks
-        if init_params.get("api_type") == "azure":
+        if api_type == "azure":
             if init_params.get("azure_endpoint") is None:
                 raise ValueError(
                     "OPENAI_API_BASE is not set in environment variables, this is required when api_type==azure"
