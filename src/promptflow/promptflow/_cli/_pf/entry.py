@@ -107,7 +107,8 @@ def entry(argv):
     Control plane CLI tools for promptflow.
     """
     prog, args = get_parser_args(argv)
-    setup_user_agent_to_operation_context(args.user_agent)
+    if hasattr(args, "user_agent"):
+        setup_user_agent_to_operation_context(args.user_agent)
     logger = get_telemetry_logger()
     with log_activity(logger, _get_cli_activity_name(cli=prog, args=args), activity_type=ActivityType.PUBLICAPI):
         run_command(args)
