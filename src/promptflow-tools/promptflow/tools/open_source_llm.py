@@ -600,7 +600,7 @@ def list_deployment_names(subscription_id: str,
     deployment_default_list = [{
         "value": DEPLOYMENT_DEFAULT,
         "display_value": DEPLOYMENT_DEFAULT,
-        "description": "This will use the default deployment for the selected online endpoint." \
+        "description": "This will use the default deployment for the selected online endpoint."
             + "You can also manually enter a deployment name here."
         }]
 
@@ -1079,8 +1079,10 @@ Please ensure endpoint name and deployment names are correct, and the deployment
                 credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
                 token = credential.get_token("https://management.azure.com/.default").token
             except Exception as e:
-                print(f"Skipping list_endpoint_names. Exception: {e}", file=sys.stderr)
-                return []
+                message = f"""Error encountered while attempting to Authorize access to {endpoint}.
+Exception: {e}"""
+                print(message, file=sys.stderr)
+                raise OpenSourceLLMUserError(message=message)
 
         if con_type == "serverlessendpoint":
             (endpoint_url, endpoint_key, model_family) = SERVERLESS_ENDPOINT_CONTAINER.get_serverless_endpoint_key(

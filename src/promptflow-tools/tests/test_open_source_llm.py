@@ -21,12 +21,20 @@ from promptflow.tools.open_source_llm import (
     ServerlessEndpointsContainer
 )
 
-
 @pytest.fixture
-def endpoints_provider(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
+def verify_service_endpoints(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
     if not open_source_llm_ws_service_connection:
         pytest.skip("Service Credential not available")
+    print("open_source_llm_ws_service_connection completed")
+    required_env_vars = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME",
+                         "AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_CLIENT_SECRET"]
+    for rev in required_env_vars:
+        if not rev in os.environ:
+            raise Exception(message=f"test not setup correctly. Missing Required Environment Variable:{rev}")
 
+
+@pytest.fixture
+def endpoints_provider(verify_service_endpoints) -> Dict[str, List[str]]:
     from azure.ai.ml import MLClient
     credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
     ml_client = MLClient(
@@ -87,16 +95,14 @@ You are a AI which helps Customers answer questions.
 user:
 """ + completion_prompt
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_completion(self):
+    def test_open_source_llm_completion(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
             endpoint=self.gpt2_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_completion_with_deploy(self):
+    def test_open_source_llm_completion_with_deploy(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
@@ -104,16 +110,14 @@ user:
             deployment_name="gpt2-9")
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_chat(self):
+    def test_open_source_llm_chat(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
             endpoint=self.gpt2_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_chat_with_deploy(self):
+    def test_open_source_llm_chat_with_deploy(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
@@ -121,8 +125,7 @@ user:
             deployment_name="gpt2-9")
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_chat_with_max_length(self):
+    def test_open_source_llm_chat_with_max_length(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
@@ -219,7 +222,6 @@ user:
             + "gallery that contain 'Chat' in the name.")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             response = self.stateless_os_llm.call(
@@ -228,7 +230,6 @@ user:
                 endpoint=f"onlineEndpoint/{endpoint_name}")
             assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name_with_deployment(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             for deployment_name in chat_endpoints_provider[endpoint_name]:
@@ -239,7 +240,6 @@ user:
                     deployment_name=deployment_name)
                 assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             response = self.stateless_os_llm.call(
@@ -248,7 +248,6 @@ user:
                 endpoint=f"onlineEndpoint/{endpoint_name}")
             assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name_with_deployment(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             for deployment_name in completion_endpoints_provider[endpoint_name]:
@@ -259,21 +258,18 @@ user:
                     deployment_name=deployment_name)
                 assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_llama_chat(self):
+    def test_open_source_llm_llama_chat(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint=self.llama_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_llama_serverless(self):
+    def test_open_source_llm_llama_serverless(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
             endpoint=self.llama_serverless_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_llama_chat_history(self):
+    def test_open_source_llm_llama_chat_history(self, verify_service_endpoints):
         chat_history_prompt = """user:
 * Given the following conversation history and the users next question, answer the next question.
 If the conversation is irrelevant or empty, just restate the original question.
@@ -328,8 +324,7 @@ user:
             chat_input="Sorry I didn't follow, could you say that again?")
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_dynamic_list_ignore_deployment(self):
+    def test_open_source_llm_dynamic_list_ignore_deployment(self, verify_service_endpoints):
         deployments = list_deployment_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
@@ -354,8 +349,7 @@ user:
         assert len(deployments) == 1
         assert deployments[0]['value'] == 'default'
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_dynamic_list_serverless_test(self):
+    def test_open_source_llm_dynamic_list_serverless_test(self, verify_service_endpoints):
         subscription_id = os.getenv("AZUREML_ARM_SUBSCRIPTION")
         resource_group_name = os.getenv("AZUREML_ARM_RESOURCEGROUP")
         workspace_name = os.getenv("AZUREML_ARM_WORKSPACE_NAME")
@@ -395,8 +389,7 @@ user:
         assert model_family == "LLaMa"
         assert endpoint_key == eps_keys['primaryKey']
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_dynamic_list_custom_connections_test(self):
+    def test_open_source_llm_dynamic_list_custom_connections_test(self, verify_service_endpoints):
         custom_container = CustomConnectionsContainer()
         credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
 
@@ -407,8 +400,7 @@ user:
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
         assert len(connections) > 1
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_dynamic_list_happy_path(self):
+    def test_open_source_llm_dynamic_list_happy_path(self, verify_service_endpoints):
         endpoints = list_endpoint_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
