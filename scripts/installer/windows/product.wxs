@@ -106,7 +106,6 @@
             <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="UninstallPromptFlowService" Before="InstallFinalize">REMOVE="ALL"</Custom>
-            <ScheduleReboot After='InstallFinalize' />
         </InstallExecuteSequence>
 
     </Product>
