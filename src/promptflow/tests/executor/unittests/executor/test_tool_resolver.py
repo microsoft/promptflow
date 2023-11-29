@@ -173,8 +173,8 @@ class TestToolResolver:
 
         assert isinstance(exec_info.value.inner_exception, TemplateSyntaxError)
         expected_message = (
-            "Tool load failed in 'node': (TemplateSyntaxError) in line 1: "
-            "expected token 'end of print statement', got 'context'"
+            "Tool load failed in 'node': Jinja parsing failed at line 1: "
+            "(TemplateSyntaxError) expected token 'end of print statement', got 'context'"
         )
         assert expected_message in exec_info.value.message
 

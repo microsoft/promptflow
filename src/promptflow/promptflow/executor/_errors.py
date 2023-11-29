@@ -211,8 +211,7 @@ class ResolveToolError(PromptflowException):
             error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
             if isinstance(self.inner_exception, TemplateSyntaxError):
                 error_type_and_message = (
-                    f"({self.inner_exception.__class__.__name__}) in line "
-                    f"{self.inner_exception.lineno}: {self.inner_exception}"
+                    f"Jinja parsing failed at line {self.inner_exception.lineno}: {error_type_and_message}"
                 )
 
         return {
