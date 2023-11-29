@@ -4,4 +4,4 @@
 
 ### Features Added
 - Support openai 1.x in promptflow-tools
-- Add new tool `OpenAI GPT-4V`
+- Add new tool "OpenAI GPT-4V"
