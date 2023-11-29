@@ -456,3 +456,13 @@ def _output_result_list_with_format(result_list: List[Dict], output_format: CLIL
         )
         logger.warning(warning_message)
         print(json.dumps(result_list, indent=4))
+
+
+def _get_cli_activity_name(cli, args):
+    activity_name = cli
+    if getattr(args, "action", None):
+        activity_name += f".{args.action}"
+    if getattr(args, "sub_action", None):
+        activity_name += f".{args.sub_action}"
+
+    return activity_name

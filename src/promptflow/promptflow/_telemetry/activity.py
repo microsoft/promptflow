@@ -57,7 +57,8 @@ def log_activity(
     """
     from promptflow._core.operation_context import OperationContext
 
-    user_agent = OperationContext.get_instance().get_user_agent()
+    context = OperationContext.get_instance()
+    user_agent = context.get_user_agent()
     # TODO(2699383): use same request id with service caller
     request_id = request_id_context.get()
     if not request_id:
@@ -69,14 +70,12 @@ def log_activity(
         first_call = False
 
     activity_info = {
-        # TODO(2699383): use same request id with service caller
         "request_id": request_id,
         "first_call": first_call,
         "activity_name": activity_name,
         "activity_type": activity_type,
         "user_agent": user_agent,
     }
-    custom_dimensions = custom_dimensions or {}
     activity_info.update(custom_dimensions)
 
     start_time = datetime.utcnow()

@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
+import os
 import time
 import uuid
 from logging import Logger
@@ -12,7 +13,7 @@ import pydash
 import pytest
 
 from promptflow import load_run
-from promptflow._constants import PF_USER_AGENT
+from promptflow._constants import PF_USER_AGENT, USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension
@@ -21,6 +22,7 @@ from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_a
 from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
+from ..._constants import CI_CLI_USER_AGENT
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
 
@@ -257,3 +259,8 @@ class TestTelemetry:
         # 1 and last call is public call
         assert first_sdk_calls[0] is True
         assert first_sdk_calls[-1] is True
+
+    def test_ci_user_agent(self) -> None:
+        os.environ[USER_AGENT] = CI_CLI_USER_AGENT
+        context = OperationContext.get_instance()
+        assert CI_CLI_USER_AGENT in context.get_user_agent()

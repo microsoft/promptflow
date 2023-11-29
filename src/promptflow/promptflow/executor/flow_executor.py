@@ -837,7 +837,9 @@ class FlowExecutor:
                         "The output type '{output_type}' is currently unsupported. "
                         "Please choose from available types: '{supported_output_type}' and try again."
                     ),
-                    output_type=output.reference.value_type,
+                    output_type=output.reference.value_type.value
+                    if hasattr(output.reference.value_type, "value")
+                    else output.reference.value_type,
                     supported_output_type=[output_type.value for output_type in InputValueType],
                 )
             node = next((n for n in self._flow.nodes if n.name == output.reference.value), None)

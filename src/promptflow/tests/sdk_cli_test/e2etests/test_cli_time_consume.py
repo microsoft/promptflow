@@ -1,6 +1,6 @@
 import contextlib
 import io
-import multiprocessing
+import os
 import sys
 import tempfile
 import timeit
@@ -8,6 +8,10 @@ import uuid
 from pathlib import Path
 
 import pytest
+import multiprocessing
+from promptflow._core.operation_context import OperationContext
+from promptflow._constants import USER_AGENT
+from tests._constants import CI_CLI_USER_AGENT
 
 FLOWS_DIR = "./tests/test_configs/flows"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
@@ -17,6 +21,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
     from promptflow._cli._pf.entry import main
 
+    os.environ[USER_AGENT] = CI_CLI_USER_AGENT
     sys.argv = list(cmd)
     output = io.StringIO()
     st = timeit.default_timer()
@@ -24,6 +29,8 @@ def run_cli_command(cmd, time_limit=3600, result_queue=None):
         main()
     ed = timeit.default_timer()
     print(f"{cmd}, \n Total time: {ed - st}s")
+    context = OperationContext.get_instance()
+    print("request id: ", context.get("request_id"))
     assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
     res_value = output.getvalue()
     if result_queue:
