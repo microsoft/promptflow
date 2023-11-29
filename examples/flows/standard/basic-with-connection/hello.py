@@ -20,14 +20,16 @@ def get_client(connection: Union[CustomConnection, AzureOpenAIConnection]):
             "Please upgrade your OpenAI package to version >= 1.0.0 or using the command: pip install --upgrade openai."
         )
     # connection can be extract as a dict object contains the configs and secrets
-    connection_dict = dict(connection)
     if isinstance(connection, CustomConnection):
+        connection_dict = dict(connection)
         from openai import OpenAI as Client
     elif isinstance(connection, AzureOpenAIConnection):
         from openai import AzureOpenAI as Client
-        connection_dict["azure_endpoint"] = connection.api_base
-        connection_dict.pop("api_base")
-        connection_dict.pop("api_type")
+        connection_dict = {
+            "azure_endpoint": connection.api_base,
+            "api_key": connection.api_key,
+            "api_version": connection.api_version,
+        }
     else:
         raise ValueError(f"Unsupported connection type {type(connection)}")
     return Client(**connection_dict)
