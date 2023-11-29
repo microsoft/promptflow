@@ -94,7 +94,7 @@
         <CustomAction Id="StartPromptFlowService"
             Directory="DynamicCliDir"
             Execute="deferred"
-            ExeCommand="cmd.exe /c start /B pfsvc manual"
+            ExeCommand="cmd.exe /c start /B /MIN pfsvc manual"
             Return="ignore" />
         <CustomAction Id="UninstallPromptFlowService"
             Directory="DynamicCliDir"
