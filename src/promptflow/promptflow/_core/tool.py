@@ -43,6 +43,14 @@ class ToolInvoker(ABC):
         return cls._active_tool_invoker
 
 
+def call_func(func, args, kwargs):
+    return func(*args, **kwargs)
+
+
+async def call_func_async(func, args, kwargs):
+    return await func(*args, **kwargs)
+
+
 def tool(
     func=None,
     *,
@@ -77,10 +85,10 @@ def tool(
                 from .tracer import Tracer
 
                 if Tracer.active_instance() is None:
-                    return await func(*args, **kwargs)
+                    return await call_func_async(func, args, kwargs)
                 try:
                     Tracer.push_tool(func, args, kwargs)
-                    output = await func(*args, **kwargs)
+                    output = await call_func_async(func, args, kwargs)
                     return Tracer.pop(output)
                 except Exception as e:
                     Tracer.pop(None, e)
@@ -94,10 +102,10 @@ def tool(
                 from .tracer import Tracer
 
                 if Tracer.active_instance() is None:
-                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                    return call_func(func, args, kwargs)  # Do nothing if no tracing is enabled.
                 try:
                     Tracer.push_tool(func, args, kwargs)
-                    output = func(*args, **kwargs)
+                    output = call_func(func, args, kwargs)
                     return Tracer.pop(output)
                 except Exception as e:
                     Tracer.pop(None, e)
