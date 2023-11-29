@@ -444,7 +444,7 @@ class LocalStorageOperations(AbstractRunStorage):
                 outputs = pd.read_json(f, orient="records", lines=True)
                 # if all line runs are failed, no need to fill
                 if len(outputs) > 0:
-                    outputs = self._outputs_padding(outputs, inputs["line_number"].tolist())
+                    outputs = self._outputs_padding(outputs, inputs[LINE_NUMBER].tolist())
                     outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                     outputs = outputs.set_index(LINE_NUMBER)
         return inputs, outputs
