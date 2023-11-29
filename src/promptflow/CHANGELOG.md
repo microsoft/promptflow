@@ -22,6 +22,7 @@
 
 - [SDK/CLI] Fix node test with dict node input will raise "Required input(s) missing".
 - [SDK/CLI] Will use run name as display name when display name not specified (used flow folder name before).
+- [SDK/CLI] Fix pf flow build created unexpected layer of dist folder
 
 ### Improvements
 - Force 'az login' if using azureml connection provider in cli command.
