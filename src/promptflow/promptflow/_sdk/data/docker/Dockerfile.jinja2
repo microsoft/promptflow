@@ -10,7 +10,9 @@ FROM docker.io/continuumio/miniconda3:latest
 
 WORKDIR /
 
+{% if env.python_requirements_txt %}
 COPY ./flow/{{env.python_requirements_txt}} /flow/{{env.python_requirements_txt}}
+{% end %}
 
 # create conda environment
 {% if env.conda_file %}
