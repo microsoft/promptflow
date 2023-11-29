@@ -96,7 +96,7 @@ html_theme_options = {
     "announcement":
         "Prompt flow now supports OpenAI 1.x. Reach "
         "<a href='https://microsoft.github.io/promptflow/how-to-guides/faq.html#openai-1-x-support'>here</a> "
-        "for more details. Thank you for using Prompt flow!",
+        "for more details. Thank you for using prompt flow!",
     "show_nav_level": 1,
 }
 
