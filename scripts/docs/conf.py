@@ -94,9 +94,9 @@ html_theme_options = {
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
     "navbar_center": ["navbar-nav"],
     "announcement":
-        "Prompt flow now supports OpenAI 1.x. Reach "
+        "Prompt flow supports OpenAI 1.x since v1.1.0. This may introduce breaking change. Reach "
         "<a href='https://microsoft.github.io/promptflow/how-to-guides/faq.html#openai-1-x-support'>here</a> "
-        "for more details. Thank you for using prompt flow!",
+        "for guide to upgrade.",
     "show_nav_level": 1,
 }
 

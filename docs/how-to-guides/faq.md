@@ -18,6 +18,10 @@ Please use the following command to upgrade promptflow for openai 1.x support:
 pip install promptflow>=1.1.0
 pip install promptflow-tools>=1.0.0
 ```
+Note that the command above will upgrade your openai package a version later than 1.0.0, 
+which may introduce breaking changes to custom tool code.
+
+Reach [OpenAI migration guide](https://github.com/openai/openai-python/discussions/742) for more details.
 
 ## Troubleshooting ##
 
