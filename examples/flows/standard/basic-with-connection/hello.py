@@ -19,6 +19,7 @@ def get_client(connection: Union[CustomConnection, AzureOpenAIConnection]):
         raise Exception(
             "Please upgrade your OpenAI package to version >= 1.0.0 or using the command: pip install --upgrade openai."
         )
+
     # connection can be extract as a dict object contains the configs and secrets
     if isinstance(connection, CustomConnection):
         connection_dict = dict(connection)
