@@ -53,8 +53,8 @@ LINE_RESULT_DICT = {
 
 
 @pytest.mark.unittest
-class TestExecutorProxy:
-    def test_batch_with_csharp_executor_proxy(self):
+class TestCSharpExecutorProxy:
+    def test_batch(self):
         # mock the response of the execution api
         mock_execution = MagicMock()
         mock_execution.status_code = 200
@@ -85,5 +85,5 @@ class TestExecutorProxy:
             assert batch_result.completed_lines == batch_result.total_lines
             assert batch_result.system_metrics.duration > 0
 
-    def test_batch_cancel_with_csharp_executor_proxy(self):
+    def test_batch_cancel(self):
         pass
