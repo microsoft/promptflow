@@ -27,3 +27,6 @@ httpx
 
 # Version Pin
 ruamel.yaml>=0.18.5
+
+promptflow-tools==0.0.211
+--extra-index-url https://azuremlsdktestpypi.azureedge.net/test-promptflow/
