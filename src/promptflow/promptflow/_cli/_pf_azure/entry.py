@@ -6,6 +6,10 @@ import json
 import time
 
 from promptflow._cli._user_agent import USER_AGENT
+from promptflow._cli._utils import _get_cli_activity_name
+
+from promptflow._telemetry.activity import log_activity, ActivityType
+from promptflow._telemetry.telemetry import get_telemetry_logger
 
 # Log the start time
 start_time = time.perf_counter()
@@ -18,35 +22,18 @@ import sys  # noqa: E402
 from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
-from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
     get_promptflow_sdk_version,
     print_pf_version,
     setup_user_agent_to_operation_context,
 )
+from promptflow._utils.logger_utils import LoggerFactory  # noqa: E402
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
-def entry(argv):
-    """
-    Control plane CLI tools for promptflow cloud version.
-    """
-    parser = argparse.ArgumentParser(
-        prog="pfazure",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="pfazure: manage prompt flow assets in azure. Learn more: https://microsoft.github.io/promptflow.",
-    )
-    parser.add_argument(
-        "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
-    )
-
-    subparsers = parser.add_subparsers()
-    add_parser_run(subparsers)
-    add_parser_flow(subparsers)
-
-    args = parser.parse_args(argv)
+def run_command(args):
     # Log the init finish time
     init_finish_time = time.perf_counter()
     try:
@@ -83,6 +70,33 @@ def entry(argv):
             init_finish_time - start_time,
             invoke_finish_time - init_finish_time,
         )
+
+
+def get_parser_args(argv):
+    parser = argparse.ArgumentParser(
+        prog="pfazure",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="pfazure: manage prompt flow assets in azure. Learn more: https://microsoft.github.io/promptflow.",
+    )
+    parser.add_argument(
+        "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
+    )
+
+    subparsers = parser.add_subparsers()
+    add_parser_run(subparsers)
+    add_parser_flow(subparsers)
+
+    return parser.prog, parser.parse_args(argv)
+
+
+def entry(argv):
+    """
+    Control plane CLI tools for promptflow cloud version.
+    """
+    prog, args = get_parser_args(argv)
+    logger = get_telemetry_logger()
+    with log_activity(logger, _get_cli_activity_name(cli=prog, args=args), activity_type=ActivityType.PUBLICAPI):
+        run_command(args)
 
 
 def main():

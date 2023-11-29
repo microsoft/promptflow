@@ -60,12 +60,12 @@ class TestPFClient:
 
     def test_local_azure_connection_extract_workspace(self):
         res = LocalAzureConnectionOperations._extract_workspace(
-            "azureml:/subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/789"
+            "azureml://subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/789"
         )
         assert res == ("123", "456", "789")
 
         res = LocalAzureConnectionOperations._extract_workspace(
-            "azureml:/subscriptions/123/resourcegroups/456/workspaces/789"
+            "azureml://subscriptions/123/resourcegroups/456/workspaces/789"
         )
         assert res == ("123", "456", "789")
 
@@ -75,6 +75,6 @@ class TestPFClient:
 
         with pytest.raises(ValueError) as e:
             LocalAzureConnectionOperations._extract_workspace(
-                "azureml:/subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/"
+                "azureml://subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/"
             )
         assert "Malformed connection provider string" in str(e.value)

@@ -234,7 +234,7 @@ class LineExecutionProcessPool:
             start_time = datetime.utcnow()
             completed = False
 
-            while datetime.now().timestamp() - start_time.timestamp() <= timeout_time:
+            while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time:
                 try:
                     # Responsible for checking the output queue messages and
                     # processing them within a specified timeout period.
@@ -337,7 +337,6 @@ class LineExecutionProcessPool:
         return result
 
     def run(self, batch_inputs):
-        signal.signal(signal.SIGINT, signal_handler)
         for index, inputs in batch_inputs:
             self._inputs_queue.put(
                 (

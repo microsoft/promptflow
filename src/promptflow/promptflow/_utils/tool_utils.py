@@ -110,8 +110,9 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
     )
 
 
-def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_conn=False,
-                          skip_prompt_template=False) -> tuple:
+def function_to_interface(
+    f: Callable, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False
+) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
     input_defs = {}
@@ -250,8 +251,7 @@ def validate_tool_func_result(func_call_scenario: str, result):
     if func_call_scenario == ToolFuncCallScenario.REVERSE_GENERATED_BY:
         if not isinstance(result, Dict):
             raise RetrieveToolFuncResultValidationError(
-                f"ToolFuncCallScenario {func_call_scenario} response must be a dict. "
-                f"{result} is not a dict."
+                f"ToolFuncCallScenario {func_call_scenario} response must be a dict. " f"{result} is not a dict."
             )
     elif func_call_scenario == ToolFuncCallScenario.DYNAMIC_LIST:
         validate_dynamic_list_func_response_type(result, f"ToolFuncCallScenario {func_call_scenario}")
@@ -329,6 +329,21 @@ def _find_deprecated_tools(package_tools) -> Dict[str, str]:
                 _deprecated_tools[old_tool_id] = tool_id
 
     return _deprecated_tools
+
+
+def _get_function_path(function):
+    # Validate function exist
+    if isinstance(function, str):
+        module_name, func_name = function.rsplit(".", 1)
+        module = importlib.import_module(module_name)
+        func = getattr(module, func_name)
+        func_path = function
+    elif isinstance(function, Callable):
+        func = function
+        func_path = f"{function.__module__}.{function.__name__}"
+    else:
+        raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
+    return func, func_path
 
 
 class RetrieveToolFuncResultError(UserErrorException):

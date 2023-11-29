@@ -5,7 +5,6 @@
 import argparse
 import contextlib
 import json
-import logging
 import os
 import shutil
 import sys
@@ -23,12 +22,13 @@ from tabulate import tabulate
 from promptflow._sdk._constants import LOGGER_NAME, CLIListOutputFormat
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
-logger = logging.getLogger(__name__)
+logger = LoggerFactory.get_logger(__name__)
 
 
 def _set_workspace_argument_for_subparsers(subparser, required=False):
@@ -449,10 +449,20 @@ def _output_result_list_with_format(result_list: List[Dict], output_format: CLIL
     elif output_format == CLIListOutputFormat.JSON:
         print(json.dumps(result_list, indent=4))
     else:
-        logger = logging.getLogger(LOGGER_NAME)
+        logger = LoggerFactory.get_logger(LOGGER_NAME)
         warning_message = (
             f"Unknown output format {output_format!r}, accepted values are 'json' and 'table';"
             "will print using 'json'."
         )
         logger.warning(warning_message)
         print(json.dumps(result_list, indent=4))
+
+
+def _get_cli_activity_name(cli, args):
+    activity_name = cli
+    if getattr(args, "action", None):
+        activity_name += f".{args.action}"
+    if getattr(args, "sub_action", None):
+        activity_name += f".{args.sub_action}"
+
+    return activity_name

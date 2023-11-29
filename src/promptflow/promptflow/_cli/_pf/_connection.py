@@ -4,7 +4,6 @@
 
 import argparse
 import json
-import logging
 from functools import partial
 
 from promptflow._cli._params import add_param_all_results, add_param_max_results, add_param_set, logging_params
@@ -14,9 +13,17 @@ from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import load_yaml
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._utils.logger_utils import LoggerFactory
 
-logger = logging.getLogger(LOGGER_NAME)
-_client = PFClient()  # Do we have some function like PFClient.get_instance?
+logger = LoggerFactory.get_logger(LOGGER_NAME)
+_client = None
+
+
+def _get_pf_client():
+    global _client
+    if _client is None:
+        _client = PFClient()
+    return _client
 
 
 def add_param_file(parser):
@@ -178,24 +185,24 @@ def create_connection(file_path, params_override=None, name=None):
     if name:
         params_override.append({"name": name})
     connection = load_connection(source=file_path, params_override=params_override)
-    existing_connection = _client.connections.get(connection.name, raise_error=False)
+    existing_connection = _get_pf_client().connections.get(connection.name, raise_error=False)
     if existing_connection:
         logger.warning(f"Connection with name {connection.name} already exists. Updating it.")
         # Note: We don't set the existing secret back here, let user input the secrets.
     validate_and_interactive_get_secrets(connection)
-    connection = _client.connections.create_or_update(connection)
+    connection = _get_pf_client().connections.create_or_update(connection)
     print(json.dumps(connection._to_dict(), indent=4))
 
 
 @exception_handler("Connection show")
 def show_connection(name):
-    connection = _client.connections.get(name)
+    connection = _get_pf_client().connections.get(name)
     print(json.dumps(connection._to_dict(), indent=4))
 
 
 @exception_handler("Connection list")
 def list_connection(max_results=MAX_LIST_CLI_RESULTS, all_results=False):
-    connections = _client.connections.list(max_results, all_results)
+    connections = _get_pf_client().connections.list(max_results, all_results)
     print(json.dumps([connection._to_dict() for connection in connections], indent=4))
 
 
@@ -204,7 +211,7 @@ def _upsert_connection_from_file(file, params_override=None):
     params_override = params_override or []
     params_override.append(load_yaml(file))
     connection = load_connection(source=file, params_override=params_override)
-    existing_connection = _client.connections.get(connection.name, raise_error=False)
+    existing_connection = _get_pf_client().connections.get(connection.name, raise_error=False)
     if existing_connection:
         connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
         validate_and_interactive_get_secrets(connection, is_update=True)
@@ -212,26 +219,26 @@ def _upsert_connection_from_file(file, params_override=None):
         connection._secrets = existing_connection._secrets
     else:
         validate_and_interactive_get_secrets(connection)
-    connection = _client.connections.create_or_update(connection)
+    connection = _get_pf_client().connections.create_or_update(connection)
     return connection
 
 
 @exception_handler("Connection update")
 def update_connection(name, params_override=None):
     params_override = params_override or []
-    existing_connection = _client.connections.get(name)
+    existing_connection = _get_pf_client().connections.get(name)
     connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
     validate_and_interactive_get_secrets(connection, is_update=True)
     # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
     connection._secrets = existing_connection._secrets
-    connection = _client.connections.create_or_update(connection)
+    connection = _get_pf_client().connections.create_or_update(connection)
     print(json.dumps(connection._to_dict(), indent=4))
 
 
 @exception_handler("Connection delete")
 def delete_connection(name):
     if confirm("Are you sure you want to perform this operation?"):
-        _client.connections.delete(name)
+        _get_pf_client().connections.delete(name)
     else:
         print("The delete operation was canceled.")
 

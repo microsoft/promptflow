@@ -6,6 +6,7 @@ import functools
 import uuid
 from datetime import datetime
 
+from promptflow._core.operation_context import OperationContext
 from promptflow._telemetry.telemetry import TelemetryMixin
 
 
@@ -51,19 +52,19 @@ def log_activity(
     :type custom_dimensions: dict
     :return: None
     """
-    from promptflow._core.operation_context import OperationContext
-
-    user_agent = OperationContext.get_instance().get_user_agent()
-
+    custom_dimensions = custom_dimensions or {}
+    context = OperationContext.get_instance()
+    request_id = custom_dimensions.get('request_id', context.get('request_id', str(uuid.uuid4())))
+    user_agent = context.get_user_agent()
     activity_info = {
         # TODO(2699383): use same request id with service caller
-        "request_id": str(uuid.uuid4()),
+        "request_id": request_id,
         "activity_name": activity_name,
         "activity_type": activity_type,
-        "user_agent": user_agent,
+        "user_agent": user_agent
     }
-    custom_dimensions = custom_dimensions or {}
     activity_info.update(custom_dimensions)
+    context['request_id'] = request_id
 
     start_time = datetime.utcnow()
     completion_status = ActivityCompletionStatus.SUCCESS
