@@ -240,7 +240,7 @@ class CustomConnectionsContainer:
                                           workspace_name: str,
                                           return_endpoint_url: bool = False
                                           ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-        
+
         result = []
         try:
             from promptflow.azure import PFClient as AzurePFClient
@@ -500,7 +500,7 @@ ENDPOINT_CONTAINER = EndpointsContainer()
 CUSTOM_CONNECTION_CONTAINER = CustomConnectionsContainer()
 SERVERLESS_ENDPOINT_CONTAINER = ServerlessEndpointsContainer()
 
-        
+
 def is_serverless_endpoint(endpoint_url: str) -> bool:
     return "serverless.ml.azure.com" in endpoint_url or "inference.ai.azure.com" in endpoint_url
 
@@ -550,11 +550,23 @@ def list_endpoint_names(subscription_id: str,
     except Exception as e:
         print(f"Skipping list_endpoint_names. Exception: {e}", file=sys.stderr)
         msg = "Exception getting token: Please retry"
-        return [{ "value": msg, "display_value": msg, "description": msg }]
+        return [{"value": msg, "display_value": msg, "description": msg}]
 
-    serverless_endpoints = SERVERLESS_ENDPOINT_CONTAINER.list_serverless_endpoints(token, subscription_id, resource_group_name, workspace_name, return_endpoint_url)
-    online_endpoints = ENDPOINT_CONTAINER.list_endpoint_names(credential, subscription_id, resource_group_name, workspace_name, return_endpoint_url)
-    custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(credential, subscription_id, resource_group_name, workspace_name, return_endpoint_url)
+    serverless_endpoints = SERVERLESS_ENDPOINT_CONTAINER.list_serverless_endpoints(token,
+                                                                                   subscription_id,
+                                                                                   resource_group_name,
+                                                                                   workspace_name,
+                                                                                   return_endpoint_url)
+    online_endpoints = ENDPOINT_CONTAINER.list_endpoint_names(credential,
+                                                              subscription_id,
+                                                              resource_group_name,
+                                                              workspace_name,
+                                                              return_endpoint_url)
+    custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(credential,
+                                                                                  subscription_id,
+                                                                                  resource_group_name,
+                                                                                  workspace_name,
+                                                                                  return_endpoint_url)
 
     list_of_endpoints = custom_connections + serverless_endpoints + online_endpoints
 
@@ -566,7 +578,7 @@ def list_endpoint_names(subscription_id: str,
 
     if len(list_of_endpoints) == 0:
         msg = "No endpoints found. Please add a connection."
-        return [{ "value": msg, "display_value": msg, "description": msg }]
+        return [{"value": msg, "display_value": msg, "description": msg}]
 
     if cache_file_path is not None:
         try:
@@ -588,7 +600,8 @@ def list_deployment_names(subscription_id: str,
     deployment_default_list = [{
         "value": DEPLOYMENT_DEFAULT,
         "display_value": DEPLOYMENT_DEFAULT,
-        "description": "This will use the default deployment for the selected online endpoint. You can also manually enter a deployment name here."
+        "description": "This will use the default deployment for the selected online endpoint." \
+            + "You can also manually enter a deployment name here."
         }]
 
     if endpoint is None or endpoint.strip() == "" or "/" not in endpoint:
@@ -960,7 +973,8 @@ class AzureMLOnlineEndpoint:
 
         result = requests.post(self.endpoint_url, data=request_body, headers=headers)
         if result.status_code != 200:
-            error_message = f"Request failure while calling Online Endpoint Status:{result.status_code}: Error:{result.text}"
+            error_message = f"""Request failure while calling Online Endpoint Status:{result.status_code}
+Error:{result.text}"""
             print(error_message, file=sys.stderr)
             raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
@@ -1130,9 +1144,10 @@ If using kwargs, the following values must be set: endpoint_uri, endpoint_key, a
         if deployment_name is not None:
             deployment_name = deployment_name.strip()
             if not deployment_name or deployment_name == DEPLOYMENT_DEFAULT:
-                deployment_name = None 
+                deployment_name = None
 
-        print(f"Executing Open Source LLM Tool for endpoint: '{endpoint}', deployment: '{deployment_name}'", file=sys.stdout)
+        print(f"Executing Open Source LLM Tool for endpoint: '{endpoint}', deployment: '{deployment_name}'",
+              file=sys.stdout)
 
         (endpoint_uri, endpoint_key, model_family) = self.get_endpoint_details(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION", None),
