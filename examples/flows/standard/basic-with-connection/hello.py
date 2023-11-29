@@ -1,5 +1,4 @@
 from typing import Union
-import openai
 from openai.version import VERSION as OPENAI_VERSION
 
 from promptflow import tool
