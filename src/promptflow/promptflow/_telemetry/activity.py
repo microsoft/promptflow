@@ -3,8 +3,8 @@
 # ---------------------------------------------------------
 import contextlib
 import functools
-import threading
 import uuid
+from contextvars import ContextVar
 from datetime import datetime
 
 from promptflow._telemetry.telemetry import TelemetryMixin
@@ -28,7 +28,7 @@ class ActivityCompletionStatus(object):
     FAILURE = "Failure"
 
 
-thread_local_storage = threading.local()
+request_id_context = ContextVar("request_id_context", default=None)
 
 
 @contextlib.contextmanager
@@ -59,12 +59,12 @@ def log_activity(
 
     user_agent = OperationContext.get_instance().get_user_agent()
     # TODO(2699383): use same request id with service caller
-    request_id = getattr(thread_local_storage, "request_id", None)
+    request_id = request_id_context.get()
     if not request_id:
         # public function call
         first_call = True
         request_id = str(uuid.uuid4())
-        thread_local_storage.request_id = request_id
+        request_id_context.set(request_id)
     else:
         first_call = False
 
@@ -95,7 +95,7 @@ def log_activity(
         try:
             if first_call:
                 # recover request id in global storage
-                del thread_local_storage.request_id
+                request_id_context.set(None)
             end_time = datetime.utcnow()
             duration_ms = round((end_time - start_time).total_seconds() * 1000, 2)
 
