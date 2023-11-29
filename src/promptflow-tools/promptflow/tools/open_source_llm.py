@@ -601,7 +601,7 @@ def list_deployment_names(subscription_id: str,
         "value": DEPLOYMENT_DEFAULT,
         "display_value": DEPLOYMENT_DEFAULT,
         "description": "This will use the default deployment for the selected online endpoint."
-            + "You can also manually enter a deployment name here."
+        + "You can also manually enter a deployment name here."
         }]
 
     if endpoint is None or endpoint.strip() == "" or "/" not in endpoint:
