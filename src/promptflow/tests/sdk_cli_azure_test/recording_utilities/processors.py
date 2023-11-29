@@ -197,6 +197,27 @@ class DropProcessor(RecordingProcessor):
         return request
 
 
+class PFSProcessor(RecordingProcessor):
+    """Sanitize request/response for PFS operations."""
+
+    def process_request(self, request: Request) -> Request:
+        if is_json_payload_request(request) and request.body is not None:
+            body = request.body.decode("utf-8")
+            body_dict = json.loads(request.body.decode("utf-8"))
+            if "runtimeName" in body_dict:
+                body_dict["runtimeName"] = SanitizedValues.RUNTIME_NAME
+            if "sessionId" in body_dict:
+                body_dict["sessionId"] = SanitizedValues.SESSION_ID
+            if "flowLineageId" in body:
+                body_dict["flowLineageId"] = SanitizedValues.FLOW_LINEAGE_ID
+            body = json.dumps(body_dict)
+            request.body = body.encode("utf-8")
+        return request
+
+    def process_response(self, response: Dict) -> Dict:
+        return super().process_response(response)
+
+
 class TenantProcessor(RecordingProcessor):
     """Sanitize tenant id in responses."""
 

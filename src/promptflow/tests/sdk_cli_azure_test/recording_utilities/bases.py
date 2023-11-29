@@ -18,6 +18,7 @@ from .processors import (
     AzureWorkspaceTriadProcessor,
     DropProcessor,
     IndexServiceProcessor,
+    PFSProcessor,
     RecordingProcessor,
     StorageProcessor,
     TenantProcessor,
@@ -33,7 +34,6 @@ class PFAzureIntegrationTestRecording:
         self.tenant_id = tenant_id
         self.recording_file = self._get_recording_file()
         self.recording_processors = self._get_recording_processors()
-        self.replay_processors = self._get_replay_processors()
         self.vcr = self._init_vcr()
         self._cm = None  # context manager from VCR
         self.cassette = None
@@ -101,9 +101,7 @@ class PFAzureIntegrationTestRecording:
         if is_record():
             for processor in self.recording_processors:
                 request = processor.process_request(request)
-        else:
-            for processor in self.replay_processors:
-                request = processor.process_request(request)
+
         return request
 
     def _process_response_recording(self, response: Dict) -> Dict:
@@ -121,9 +119,7 @@ class PFAzureIntegrationTestRecording:
 
             for processor in self.recording_processors:
                 response = processor.process_response(response)
-        else:
-            for processor in self.replay_processors:
-                response = processor.process_response(response)
+
         response["body"]["string"] = response["body"]["string"].encode("utf-8")
         return response
 
@@ -135,12 +131,10 @@ class PFAzureIntegrationTestRecording:
             AzureWorkspaceTriadProcessor(),
             DropProcessor(),
             IndexServiceProcessor(),
+            PFSProcessor(),
             StorageProcessor(),
             TenantProcessor(tenant_id=self.tenant_id),
         ]
-
-    def _get_replay_processors(self) -> List[RecordingProcessor]:
-        return []
 
     def get_or_record_variable(self, variable: str, default: str) -> str:
         if not is_replay():
