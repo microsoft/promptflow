@@ -135,8 +135,7 @@ class BatchEngine:
             output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
             # run flow in batch mode
             with _change_working_dir(self._working_dir):
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
+                if self._has_running_loop():
                     with ThreadPoolExecutor(1) as executor:
                         return executor.submit(
                             lambda: asyncio.run(
@@ -264,3 +263,10 @@ class BatchEngine:
         """Persist outputs to json line file in output directory"""
         output_file = output_dir / OUTPUT_FILE_NAME
         dump_list_to_jsonl(output_file, outputs)
+
+    def _has_running_loop(self) -> bool:
+        try:
+            asyncio.get_running_loop()
+            return True
+        except RuntimeError:
+            return False
