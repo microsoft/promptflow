@@ -21,20 +21,12 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
     )
     workflow_name = "samples_" + workflow_name
 
-    if "create_service_with_flow" in workflow_name:
-        ReadmeSteps.setup_target(
-            workflow_path,
-            "flow_service_workflow_replace.yml.jinja2",
-            f"{workflow_name}.yml",
-            relative_path.as_posix(),
-        )
-    else: 
-        ReadmeSteps.setup_target(
-            workflow_path,
-            "basic_workflow_replace.yml.jinja2",
-            f"{workflow_name}.yml",
-            relative_path.as_posix(),
-        )
+    ReadmeSteps.setup_target(
+        workflow_path,
+        "basic_workflow_replace.yml.jinja2",
+        f"{workflow_name}.yml",
+        relative_path.as_posix(),
+    )
     ReadmeSteps.install_dependencies()
     ReadmeSteps.install_dev_dependencies()
     ReadmeSteps.create_env()
