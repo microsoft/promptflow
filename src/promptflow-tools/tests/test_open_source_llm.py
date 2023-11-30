@@ -25,6 +25,7 @@ from promptflow.tools.open_source_llm import (
 def validate_response(response):
     assert len(response) > 15
 
+
 @pytest.fixture
 def verify_service_endpoints(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
     if not open_source_llm_ws_service_connection:
