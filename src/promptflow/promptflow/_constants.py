@@ -15,6 +15,7 @@ SERPAPI_API_KEY = "serpapi-api-key"
 CONTENT_SAFETY_API_KEY = "content-safety-api-key"
 ERROR_RESPONSE_COMPONENT_NAME = "promptflow"
 EXTENSION_UA = "prompt-flow-extension"
+LANGUAGE_KEY = "language"
 
 DEFAULT_ENCODING = "utf-8"
 
@@ -28,6 +29,11 @@ class FlowLanguage:
 
     Python = "python"
     CSharp = "csharp"
+
+
+class AvailableIDE:
+    VS = "vs"
+    VS_CODE = "vsc"
 
 
 USER_AGENT = "USER_AGENT"

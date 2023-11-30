@@ -1582,3 +1582,20 @@ class TestCli:
 
         config = Configuration.get_instance()
         assert config.get_run_output_path() is None
+
+    def test_user_agent_in_cli(self):
+        context = OperationContext().get_instance()
+        context.user_agent = ""
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "run",
+                "show",
+                "--name",
+                "not_exist",
+                "--user-agent",
+                "a/1.0.0 b/2.0",
+            )
+        user_agent = context.get_user_agent()
+        ua_dict = parse_ua_to_dict(user_agent)
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow", "a", "b"}
+        context.user_agent = ""

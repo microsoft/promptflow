@@ -17,11 +17,14 @@
   - For remote workspace flow: `pfazure run create --flow azureml:<flow-name>`
   - For remote registry flow: `pfazure run create --flow azureml://registries/<registry-name>/models/<flow-name>/versions/<flow-version>`
 - Support set logging level via environment variable `PF_LOGGING_LEVEL`, valid values includes `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`, default to `INFO`.
+- Remove openai version restrictions
 
 ### Bugs Fixed
 
 - [SDK/CLI] Fix node test with dict node input will raise "Required input(s) missing".
 - [SDK/CLI] Will use run name as display name when display name not specified (used flow folder name before).
+- [SDK/CLI] Fix pf flow build created unexpected layer of dist folder
+- [SDK/CLI] Fix deploy prompt flow: connections value may be none
 
 ### Improvements
 - Force 'az login' if using azureml connection provider in cli command.

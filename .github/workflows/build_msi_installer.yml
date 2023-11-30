@@ -53,7 +53,7 @@ jobs:
 
       - name: Setup and Install dev promptflow
         if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
-        uses: "./.github/actions/step_sdk_setup_win"
+        uses: "./.github/actions/step_sdk_setup"
         with:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
@@ -89,7 +89,7 @@ jobs:
         run: |
           echo 'Version from promptflow: ${{ steps.get-version.outputs.version }}'
           $text = Get-Content "version_info.txt" -Raw
-          
+
           $versionString = '${{ steps.get-version.outputs.version }}'
           $versionArray = $versionString.Split('.')
           if ($versionArray.Count -ge 4) {
@@ -101,7 +101,7 @@ jobs:
           }
           $versionTuple = [string]::Join(', ', $versionArray)
           $text = $text -replace '\$\((env\.FILE_VERSION)\)', $versionTuple
-          
+
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
           $text | Out-File -FilePath "version_info.txt" -Encoding utf8
           pyinstaller promptflow.spec
@@ -113,11 +113,11 @@ jobs:
           $text = Get-Content "promptflow.wixproj" -Raw
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
           $text | Out-File -FilePath "promptflow.wixproj" -Encoding utf8
-          
+
           $text = Get-Content "product.wxs" -Raw
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
-          $text | Out-File -FilePath "product.wxs" -Encoding utf8         
-          
+          $text | Out-File -FilePath "product.wxs" -Encoding utf8
+
           msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
 

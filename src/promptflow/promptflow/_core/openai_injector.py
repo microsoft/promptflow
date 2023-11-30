@@ -5,8 +5,8 @@
 import functools
 import inspect
 import os
-import pkg_resources
 from datetime import datetime
+from importlib.metadata import version
 
 import openai
 
@@ -17,7 +17,7 @@ from .tracer import Tracer
 
 USER_AGENT_HEADER = "x-ms-useragent"
 PROMPTFLOW_PREFIX = "ms-azure-ai-promptflow-"
-IS_LEGACY_OPENAI = pkg_resources.get_distribution("openai").version.startswith("0.")
+IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
 def inject_function(args_to_ignore=None, trace_type=TraceType.LLM):

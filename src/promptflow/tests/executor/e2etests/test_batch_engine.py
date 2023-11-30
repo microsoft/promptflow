@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
@@ -25,6 +26,12 @@ from ..utils import (
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
+
+
+async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
+    batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=connections)
+    await asyncio.sleep(1)
+    return batch_result
 
 
 def submit_batch_run(
@@ -241,3 +248,10 @@ class TestBatch:
         with pytest.raises(error_class) as e:
             submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
         assert error_message in e.value.message
+
+    def test_batch_run_in_existing_loop(self, dev_connections):
+        flow_folder = "prompt_tools"
+        inputs_mapping = {"text": "${data.text}"}
+        batch_result = asyncio.run(async_submit_batch_run(flow_folder, inputs_mapping, dev_connections))
+        assert isinstance(batch_result, BatchResult)
+        assert batch_result.total_lines == batch_result.completed_lines
