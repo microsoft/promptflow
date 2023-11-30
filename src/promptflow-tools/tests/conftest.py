@@ -79,7 +79,7 @@ def llama_chat_custom_connection():
 
 
 @pytest.fixture
-def open_source_llm_ws_service_connection() -> bool:
+def open_source_llm_ws_service_connection() -> None:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
         subs = json.loads(creds_custom_connection.secrets['service_credential'])
@@ -87,8 +87,10 @@ def open_source_llm_ws_service_connection() -> bool:
             os.environ[key] = value
         return True
     except Exception as e:
-        print(f'Something failed setting environment variables for service credentials. Error: {e}')
-        return False
+        message = f"""=== Skipping Tests ===
+Something failed setting environment variables for service credentials. Error: {e}"""
+        print(message)
+        pytest.skip(message)
 
 
 @pytest.fixture(autouse=True)

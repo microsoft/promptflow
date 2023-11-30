@@ -80,18 +80,22 @@ Instead, received {response_json} and access failed at key `{e}`.
 def get_model_type(deployment_model: str) -> str:
     m = re.match(r'azureml://registries/[^/]+/models/([^/]+)/versions/', deployment_model)
     if m is None:
-        raise ValueError(f"Unexpected model format: {deployment_model}")
+        print(f"Unexpected model format: {deployment_model}. Skipping")
+        return None
+
     model = m[1].lower()
-    if model.startswith(ModelFamily.LLAMA.lower()):
+    if model.startswith("llama-2"):
         return ModelFamily.LLAMA
-    elif model.startswith(ModelFamily.FALCON.lower()):
+    elif model.startswith("tiiuae-falcon"):
         return ModelFamily.FALCON
-    elif model.startswith(ModelFamily.DOLLY.lower()):
+    elif model.startswith("databricks-dolly-v2"):
         return ModelFamily.DOLLY
     elif model.startswith("gpt2"):
         return ModelFamily.GPT2
     else:
-        raise ValueError(f"Unexpected model type: {model} derived from deployed model: {deployment_model}")
+        # Not found and\or handled. Ignore this endpoint\deployment
+        print(f"Unexpected model type: {model} derived from deployed model: {deployment_model}")
+        return None
 
 
 def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None) -> Tuple[str, str, str]:
@@ -130,6 +134,8 @@ def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None
     for d in ml_client.online_deployments.list(ep.name):
         if d.name == deployment_name:
             model = get_model_type(d.model)
+            if model is None:
+                raise ValueError(f"Unexpected model format: {d.model}")
             found = True
             break
 
