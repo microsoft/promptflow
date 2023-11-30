@@ -92,8 +92,9 @@ jobs:
       working-directory: artifacts
       run: |
         Set-PSDebug -Trace 1
-        pip install promptflow-tools
+        pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
+        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
     - name: Azure Login
       uses: azure/login@v1
