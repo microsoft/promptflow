@@ -54,7 +54,7 @@
   "open_source_llm_ws_service_connection": {
     "type": "CustomConnection",
     "value": {
-      "service_credential": "gewoods-temp-service-credential"
+      "service_credential": "service-credential"
     },
     "module": "promptflow.connections",
     "secret_keys": [
