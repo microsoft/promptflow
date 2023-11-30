@@ -3,13 +3,14 @@
 # ---------------------------------------------------------
 
 from datetime import datetime
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
 import httpx
 
 from promptflow._constants import LINE_TIMEOUT_SEC
-from promptflow._utils.logger_utils import logger
+from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.exceptions import PromptflowException
 from promptflow.executor._result import AggregationResult, LineResult
@@ -97,15 +98,22 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         response = self.process_http_response(response)
         return AggregationResult.deserialize(response)
 
-    def process_http_response(self, response: httpx.Response):
+    def process_http_response(self, response: httpx.Response, is_aggregation: bool = False):
         status_code = response.status_code
         if status_code == 200:
             return response.json()
         else:
-            # TODO: add more error handling
-            raise PromptflowException(
-                f"Error when calling executor API, response: {response}, error: {response.content}"
+            bulk_logger.error(
+                f"Error when calling executor API, status code: {response.status_code}, error: {response.text}"
             )
+            try:
+                error_response = response.json()
+                return error_response
+            except JSONDecodeError:
+                # TODO: add more error handling
+                raise PromptflowException(
+                    f"Error when calling executor API, response: {response}, error: {response.text}"
+                )
 
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
@@ -129,9 +137,9 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             async with httpx.AsyncClient() as client:
                 response = await client.get(health_url)
             if response.status_code != 200:
-                logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Response: {response.status_code} - {response.text}")
+                bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Response: {response.status_code} - {response.text}")
                 return False
             return True
         except Exception as e:
-            logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
+            bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
             return False
