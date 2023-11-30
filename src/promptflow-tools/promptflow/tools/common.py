@@ -29,9 +29,9 @@ class ChatInputList(list):
 
 def validate_max_tokens(max_tokens):
     # openai only supports max_tokens is larger than 0
-    if max_tokens == "inf" or max_tokens is None:
+    if max_tokens is None or str(max_tokens).lower() == "inf":
         return
-    elif max_tokens <= 0:
+    elif int(max_tokens) <= 0:
         raise InvalidMaxTokens(message=f"max_tokens {max_tokens} is less than the minimum of 1.")
 
 
