@@ -9,7 +9,7 @@ datas += collect_data_files('streamlit')
 datas += copy_metadata('streamlit')
 datas += collect_data_files('streamlit_quill')
 datas += collect_data_files('promptflow')
-hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs', 'promptflow-tools']
+hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs', 'promptflow.tools']
 
 service_hidden_imports = ['win32timezone']
 
