@@ -783,6 +783,9 @@ class TestFlowRun:
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
+    def test_request_id_when_making_http_requests(self):
+        pass
+
 
 # separate some tests as they cannot use the fixture that mocks the aml-user-token
 @pytest.mark.skipif(condition=not is_live(), reason="aml-user-token will be mocked")
