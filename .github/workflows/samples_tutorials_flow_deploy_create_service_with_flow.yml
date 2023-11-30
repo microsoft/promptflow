@@ -31,14 +31,11 @@ jobs:
         run: |
           apt-get update
           apt-get install -y curl
-          if [[ -e requirements.txt ]]; then
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-          fi
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
       - name: Prepare dev requirements
         working-directory: examples
         run: |
-          python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
       - name: Extract Steps examples/tutorials/flow-deploy/create-service-with-flow/README.md
         run: |
