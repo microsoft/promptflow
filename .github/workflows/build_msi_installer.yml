@@ -50,6 +50,8 @@ jobs:
 
       - name: Python Setup
         uses: "./.github/actions/step_create_python_environment"
+        with:
+          pythonVersion: "3.10.8"
 
       - name: Setup and Install dev promptflow
         if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
