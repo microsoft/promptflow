@@ -209,7 +209,8 @@ class LineExecutionProcessPool:
             self._n_process = min(self._worker_count, self._nlines)
             bulk_logger.info(
                 f"Using fork, the number of processes is determined by the lesser of the worker_count set by the"
-                f"environment variable configuration and the row count, If not process count: {self._n_process}")
+                f"environment variable configuration and the row count, If not set the worker_count, the default"
+                f"is 16, process count: {self._n_process}")
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
 
