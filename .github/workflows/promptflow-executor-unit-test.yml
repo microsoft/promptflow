@@ -93,9 +93,6 @@ jobs:
       run: |
         Set-PSDebug -Trace 1
         pip install promptflow-tools
-        # Pin the openai version for sdk cli tests because pf and pf-tools which support openai 1.x aren't published to PyPi
-        # TODO: Remove restriction on openai version after pf-tools package which supports openai 1.x is published
-        pip install openai
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         pip freeze
     - name: Azure Login
