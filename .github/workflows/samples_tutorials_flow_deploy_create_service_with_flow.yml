@@ -39,7 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
           apt-get update
-          apt-get install git
+          apt-get install -y git
       - name: Extract Steps examples/tutorials/flow-deploy/create-service-with-flow/README.md
         run: |
           python scripts/readme/extract_steps_from_readme.py -f examples/tutorials/flow-deploy/create-service-with-flow/README.md -o examples/tutorials/flow-deploy/create-service-with-flow
