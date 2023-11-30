@@ -65,6 +65,8 @@ class SanitizedValues:
     # trick: "unknown_user" is the value when client fails to get username
     #        use this value so that we don't do extra logic when replay
     USERNAME = "unknown_user"
+    # MISC
+    EMAIL_USERNAME = "username"
 
 
 class AzureMLResourceTypes:
