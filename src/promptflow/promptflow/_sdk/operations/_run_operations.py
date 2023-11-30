@@ -9,6 +9,9 @@ import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
+import yaml
+
+from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
@@ -26,7 +29,7 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.contracts._run_management import RunMetadata, RunVisualization
+from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization, VisualizationConfig
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -270,7 +273,9 @@ class RunOperations(TelemetryMixin):
         return local_storage.load_metrics()
 
     def _visualize(self, runs: List[Run], html_path: Optional[str] = None) -> None:
-        details, metadatas = [], []
+        details: List[RunDetail] = []
+        metadatas: List[RunMetadata] = []
+        configs: List[VisualizationConfig] = []
         for run in runs:
             # check run status first
             # if run status is not compeleted, there might be unexpected error during parse data
@@ -293,7 +298,20 @@ class RunOperations(TelemetryMixin):
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
-        data_for_visualize = RunVisualization(detail=details, metadata=metadatas)
+            # TODO: add language to run metadata
+            flow_dag = yaml.safe_load(metadata.dag)
+            configs.append(
+                VisualizationConfig(
+                    [AvailableIDE.VS_CODE]
+                    if flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.Python
+                    else [AvailableIDE.VS]
+                )
+            )
+        data_for_visualize = RunVisualization(
+            detail=details,
+            metadata=metadatas,
+            config=configs,
+        )
         html_string = generate_html_string(asdict(data_for_visualize))
         # if html_path is specified, not open it in webbrowser(as it comes from VSC)
         dump_html(html_string, html_path=html_path, open_html=html_path is None)

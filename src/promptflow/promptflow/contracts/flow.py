@@ -13,7 +13,7 @@ import yaml
 
 from promptflow.exceptions import ErrorTarget
 
-from .._constants import FlowLanguage
+from .._constants import LANGUAGE_KEY, FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
@@ -590,7 +590,7 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
-            program_language=data.get("language", FlowLanguage.Python),
+            program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
         )
 
     def _apply_default_node_variants(self: "Flow"):
@@ -650,6 +650,8 @@ class Flow:
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
         from promptflow._core.tools_manager import ToolLoader
 
+        # TODO: consider refactor this. It will raise an error if promptflow-tools
+        #  is not installed even for csharp flow.
         self._tool_loader = ToolLoader(working_dir, package_tool_keys)
 
     def _apply_node_overrides(self, node_overrides):

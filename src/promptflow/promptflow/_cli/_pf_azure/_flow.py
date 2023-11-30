@@ -14,7 +14,7 @@ from promptflow._cli._params import (
     add_param_max_results,
     add_param_output_format,
     add_param_set,
-    logging_params,
+    base_params,
 )
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
@@ -69,7 +69,7 @@ pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-n
         _set_workspace_argument_for_subparsers,
         add_param_source,
         add_param_set,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="create",
@@ -110,7 +110,7 @@ pfazure flow list --include-others
         add_param_include_archived,
         add_param_output_format,
         _set_workspace_argument_for_subparsers,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="list",
@@ -131,7 +131,7 @@ Examples:
 # Get flow:
 pfazure flow show --name <flow-name>
 """
-    add_params = [add_param_flow_name, _set_workspace_argument_for_subparsers] + logging_params
+    add_params = [add_param_flow_name, _set_workspace_argument_for_subparsers] + base_params
 
     activate_action(
         name="show",
@@ -156,7 +156,7 @@ def add_parser_flow_download(subparsers):
         _set_workspace_argument_for_subparsers,
         add_param_source,
         add_param_destination,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="download",
