@@ -415,9 +415,9 @@ class TestSubmitterViaProxy(TestSubmitter):
         if not connections:
             connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
                 tools_meta=CSharpExecutorProxy.generate_tool_metadata(
-                    flow_dag=self.flow.dag,
                     working_dir=self.flow.code,
-                )
+                ),
+                flow_dag=self.flow.dag,
             )
         credential_list = ConnectionManager(connections).get_secret_list()
 
@@ -471,9 +471,9 @@ class TestSubmitterViaProxy(TestSubmitter):
         try:
             connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
                 tools_meta=CSharpExecutorProxy.generate_tool_metadata(
-                    flow_dag=self.flow.dag,
                     working_dir=self.flow.code,
-                )
+                ),
+                flow_dag=self.flow.dag,
             )
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             flow_executor = CSharpExecutorProxy.create(

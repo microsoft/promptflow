@@ -14,10 +14,11 @@ from typing import Dict, Iterable, List, Tuple, Union
 
 import yaml
 
-from promptflow._constants import LANGUAGE_KEY
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
+from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
@@ -370,16 +371,30 @@ class FlowOperations(TelemetryMixin):
         output_dir: Path,
     ):
         from promptflow.contracts.flow import Flow as ExecutableFlow
+        from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 
         executable = ExecutableFlow.from_yaml(
             flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent.absolute()
         )
 
         with _change_working_dir(flow_dag_path.parent):
-            return self._migrate_connections(
-                connection_names=executable.get_connection_names(),
-                output_dir=output_dir,
-            )
+            if executable.program_language == FlowLanguage.CSharp:
+                connection_names = SubmitterHelper.resolve_connection_names_from_tool_meta(
+                    tools_meta=CSharpExecutorProxy.generate_tool_metadata(
+                        working_dir=flow_dag_path.parent.absolute(),
+                    ),
+                    flow_dag=executable.serialize(),
+                )
+
+                return self._migrate_connections(
+                    connection_names=connection_names,
+                    output_dir=output_dir,
+                )
+            else:
+                return self._migrate_connections(
+                    connection_names=executable.get_connection_names(),
+                    output_dir=output_dir,
+                )
 
     def _build_flow(
         self,
@@ -418,6 +433,7 @@ class FlowOperations(TelemetryMixin):
         env_var_names: List[str],
         connection_paths: List[Path],
         flow_name: str,
+        is_csharp_flow: bool = False,
     ):
         (output_dir / "settings.json").write_text(
             data=json.dumps({env_var_name: "" for env_var_name in env_var_names}, indent=2),
@@ -427,8 +443,12 @@ class FlowOperations(TelemetryMixin):
         environment_config = self._build_environment_config(flow_dag_path)
 
         # TODO: make below strings constants
+        if is_csharp_flow:
+            source = Path(__file__).parent.parent / "data" / "docker_csharp"
+        else:
+            source = Path(__file__).parent.parent / "data" / "docker"
         copy_tree_respect_template_and_ignore_file(
-            source=Path(__file__).parent.parent / "data" / "docker",
+            source=source,
             target=output_dir,
             render_context={
                 "env": environment_config,
@@ -537,6 +557,7 @@ class FlowOperations(TelemetryMixin):
         output_dir.mkdir(parents=True, exist_ok=True)
 
         flow = load_flow(flow)
+        is_csharp_flow = flow.dag.get(LANGUAGE_KEY, "") == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
             raise ValueError(f"Unsupported export format: {format}")
@@ -557,6 +578,7 @@ class FlowOperations(TelemetryMixin):
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
+            update_flow_tools_json=False if is_csharp_flow else True
         )
 
         if flow_only:
@@ -575,6 +597,7 @@ class FlowOperations(TelemetryMixin):
                 connection_paths=connection_paths,
                 flow_name=flow.name,
                 env_var_names=env_var_names,
+                is_csharp_flow=is_csharp_flow,
             )
         elif format == "executable":
             self._build_as_executable(
