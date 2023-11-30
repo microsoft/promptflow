@@ -27,7 +27,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
-from promptflow.executor._errors import LineExecutionTimeoutError, InvalidMemoryUsageFactor
+from promptflow.executor._errors import LineExecutionTimeoutError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
@@ -197,19 +197,18 @@ class LineExecutionProcessPool:
         # Starting a new process in non-fork mode requires to allocate memory. Determine the maximum number of processes
         # based on available memory to avoid memory bursting.
         if not self._use_fork:
-            memory_usage_factor = os.environ.get("PF_BATCH_Memory_Usage_Factor")
-            available_max_worker_count = get_available_max_worker_count(memory_usage_factor)
+            available_max_worker_count = get_available_max_worker_count()
             self._n_process = min(self._worker_count, self._nlines, available_max_worker_count)
             bulk_logger.info(
-                f"Not using fork, the number of processes is determined by calculating the difference between the"
-                f"current system available memory and the total memory usage factor set by the environment"
-                f"variable multiplied by the total memory, and then dividing this difference by the memory of process."
-                f"If not set memory usage factor, the default is 1, process count: {self._n_process}")
+                f"Not using fork, calculate the current system available memory divided by process memory, "
+                f"and take the minimum value of this value, the worker_count set by the environment variable "
+                f"configuration, and the row count as the final number of processes. "
+                f"process count: {self._n_process}")
         else:
             self._n_process = min(self._worker_count, self._nlines)
             bulk_logger.info(
-                f"Using fork, the number of processes is determined by the lesser of the worker_count set by the"
-                f"environment variable configuration and the row count, If not set the worker_count, the default"
+                f"Using fork, the number of processes is determined by the lesser of the worker_count set by the "
+                f"environment variable configuration and the row count, If not set the worker_count, the default "
                 f"is 16, process count: {self._n_process}")
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
@@ -545,20 +544,14 @@ def create_executor_legacy(*, flow, connections, loaded_tools, cache_manager, st
     )
 
 
-def get_available_max_worker_count(memory_usage_factor=None):
-    if memory_usage_factor is None:
-        memory_usage_factor = 1
-    memory_usage_factor = convert_to_decimal(memory_usage_factor)
+def get_available_max_worker_count():
     pid = os.getpid()
     mem_info = psutil.virtual_memory()
-    total_memory = mem_info.total / (1024 * 1024)  # in MB
-    sys_available_memory = mem_info.available / (1024 * 1024)  # in MB
+    available_memory = mem_info.available / (1024 * 1024)  # in MB
     process = psutil.Process(pid)
     process_memory_info = process.memory_info()
     process_memory = process_memory_info.rss / (1024 * 1024)  # in MB
-    # To ensure system stability, reserve memory for system usage.
-    available_memory = (sys_available_memory - (1-memory_usage_factor) * total_memory)
-    available_max_worker_count = math.floor(available_memory / process_memory)
+    available_max_worker_count = math.floor((available_memory) / process_memory)
     if available_max_worker_count < 1:
         # TODO: For the case of vector db, Optimize execution logic
         # 1. Let the main process not consume memory because it does not actually invoke
@@ -582,25 +575,3 @@ def get_multiprocessing_context(multiprocessing_start_method=None):
     else:
         context = multiprocessing.get_context()
         return context
-
-
-def convert_to_decimal(memory_usage_factor):
-    if isinstance(memory_usage_factor, (int, float)):
-        return memory_usage_factor
-    elif memory_usage_factor.endswith('%'):
-        # Remove the '%' sign and convert to float
-        number = float(memory_usage_factor.rstrip('%'))
-        # Convert the percentage to a decimal
-        return number / 100
-    else:
-        try:
-            # Try to convert the string to a float
-            return float(memory_usage_factor)
-        except ValueError:
-            # If the string cannot be converted to a float, raise an error
-            raise InvalidMemoryUsageFactor(
-                message_format=(
-                    f"Cannot convert string to number: {memory_usage_factor}"
-                ),
-                memory_usage_factor=memory_usage_factor
-            )

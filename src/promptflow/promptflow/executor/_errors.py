@@ -175,12 +175,6 @@ class LineExecutionTimeoutError(UserErrorException):
         )
 
 
-class InvalidMemoryUsageFactor(UserErrorException):
-    """Exception raised when node reference not found or unsupported"""
-
-    pass
-
-
 class EmptyLLMApiMapping(UserErrorException):
     """Exception raised when connection_type_to_api_mapping is empty and llm node provider can't be inferred"""
 
