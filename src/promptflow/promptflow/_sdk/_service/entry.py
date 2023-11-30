@@ -8,7 +8,8 @@ import sys
 import waitress
 import yaml
 
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_NO_INTERACTIVE_LOGIN, PF_SERVICE_PORT_FILE
+from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import get_random_port, is_port_in_use
 from promptflow._sdk._utils import read_write_by_user
