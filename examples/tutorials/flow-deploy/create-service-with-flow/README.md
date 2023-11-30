@@ -9,10 +9,10 @@ Reference [here](./simple_score.py) for a minimal service example.
 The output of score.py will be a json serialized dictionary.
 You can use json parser to parse the output.
 
-## 1. Start the service
+## 1. Start the service and put in background
 
 ```bash
-python simple_score.py
+nohup python simple_score.py & 
 ```
 
 ## 2. Test the service with request
