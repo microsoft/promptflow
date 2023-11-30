@@ -1,6 +1,6 @@
 # Release History
 
-## 1.1.0 (Upcoming)
+## 1.1.0 (2023.11.30)
 
 ### Features Added
 - Add `pfazure flow show/list` to show or list flows from Azure AI.
