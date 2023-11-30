@@ -82,7 +82,7 @@ When installing the prompt flow, you can't select an install location.
 In Windows, the 64-bit prompt flow installs in `C:\Program Files\promptflow`. 
 
 
-### What version of the Azure CLI is installed?
+### What version of the prompt flow is installed?
 
 Type `pf --version` in a terminal window to know what version of the prompt flow is installed. 
 Your output looks like this:
