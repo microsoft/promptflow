@@ -12,7 +12,7 @@ You can use json parser to parse the output.
 ## 1. Start the service and put in background
 
 ```bash
-nohup python simple_score.py & 
+nohup python simple_score.py > log.txt 2>&1 & 
 ```
 
 ## 2. Test the service with request
