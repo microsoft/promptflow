@@ -51,6 +51,8 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
+    - name: set test mode
+      run: echo "PROMPT_FLOW_TEST_MODE=$(if [[ "${{ github.event_name }}" == "pull_request" ]]; then echo replay; else echo live; fi)" >> $GITHUB_ENV
     - name: checkout
       uses: actions/checkout@v4
     - name: Python Setup - ${{ matrix.os }} - Python Version 3.9
