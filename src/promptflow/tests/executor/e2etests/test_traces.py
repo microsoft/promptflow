@@ -52,7 +52,7 @@ class TestExecutorTraces:
         reason="test needs to be upgraded to adapt to openai>=1.0.0",
     )
     @pytest.mark.parametrize("flow_folder", ["openai_chat_api_flow", "openai_completion_api_flow"])
-    def test_executor_openai_api_flow(self, flow_folder, dev_connections):
+    def test_executor_openai_api_flow(self, flow_folder, dev_connections, recording_injection):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         inputs = get_flow_sample_inputs(flow_folder)
         flow_result = executor.exec_line(inputs)
@@ -75,7 +75,7 @@ class TestExecutorTraces:
         reason="Run tests for openai>=1.0.0",
     )
     @pytest.mark.parametrize("flow_folder", ["openai_v1_chat_api_flow", "openai_v1_completion_api_flow"])
-    def test_executor_openai_v1_api_flow(self, flow_folder, dev_connections):
+    def test_executor_openai_v1_api_flow(self, flow_folder, dev_connections, recording_injection):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         inputs = get_flow_sample_inputs(flow_folder)
         flow_result = executor.exec_line(inputs)
