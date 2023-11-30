@@ -138,8 +138,7 @@ class AzureOpenAI(ToolProvider):
             "n": int(n),
             "stream": stream,
             "stop": stop if stop else None,
-            "max_tokens":
-                int(max_tokens) if max_tokens and str(max_tokens).lower() != "inf" else None,
+            "max_tokens": int(max_tokens) if max_tokens and str(max_tokens).lower() != "inf" else None,
             "presence_penalty": float(presence_penalty),
             "frequency_penalty": float(frequency_penalty),
             "logit_bias": logit_bias,
