@@ -3,13 +3,13 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_tutorials_e2e_development_chat_with_pdf
+name: samples_tutorials_flow_deploy_create_service_with_flow
 on:
   schedule:
-    - cron: "1 19 * * *" # Every day starting at 3:1 BJT
+    - cron: "49 22 * * *" # Every day starting at 6:49 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml ]
+    paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_create_service_with_flow.yml ]
   workflow_dispatch:
 
 env:
@@ -44,7 +44,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
       - name: Refine .env file
-        working-directory: examples/tutorials/e2e-development
+        working-directory: examples/tutorials/flow-deploy/create-service-with-flow
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -54,16 +54,8 @@ jobs:
             sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
             mv .env.example .env
           fi
-      - name: Create AOAI Connection from ENV file
-        working-directory: examples/tutorials/e2e-development
-        run: |
-          if [[ -e .env ]]; then
-            pf connection create --file .env --name chat_with_pdf_custom_connection
-            pf connection list
-          fi
-          
       - name: Create run.yml
-        working-directory: examples/tutorials/e2e-development
+        working-directory: examples/tutorials/flow-deploy/create-service-with-flow
         run: |
           gpt_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           gpt_base=$(echo ${gpt_base//\//\\/})
@@ -74,16 +66,16 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps examples/tutorials/e2e-development/chat-with-pdf.md
+      - name: Extract Steps examples/tutorials/flow-deploy/create-service-with-flow/README.md
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/extract_steps_from_readme.py -f examples/tutorials/e2e-development/chat-with-pdf.md -o examples/tutorials/e2e-development
+          python scripts/readme/extract_steps_from_readme.py -f examples/tutorials/flow-deploy/create-service-with-flow/README.md -o examples/tutorials/flow-deploy/create-service-with-flow
       - name: Cat script
-        working-directory: examples/tutorials/e2e-development
+        working-directory: examples/tutorials/flow-deploy/create-service-with-flow
         run: |
           cat bash_script.sh
       - name: Run scripts
-        working-directory: examples/tutorials/e2e-development
+        working-directory: examples/tutorials/flow-deploy/create-service-with-flow
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -93,7 +85,7 @@ jobs:
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
-        working-directory: examples/tutorials/e2e-development
+        working-directory: examples/tutorials/flow-deploy/create-service-with-flow
         run: |
           pip list
       - name: Upload artifact
@@ -101,4 +93,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/tutorials/e2e-development/bash_script.sh
+          path: examples/tutorials/flow-deploy/create-service-with-flow/bash_script.sh
