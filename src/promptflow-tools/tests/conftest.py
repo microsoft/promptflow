@@ -72,6 +72,16 @@ def open_source_llm_ws_service_connection() -> bool:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
         svc_crd_str = creds_custom_connection.secrets['service_credential']
         print(svc_crd_str)
+        try:
+            subs = json.loads(creds_custom_connection.secrets['service_credential'])
+            print(subs)
+        except Exception as e:
+            print(f"""Something failed during json.loads.
+Creds:{svc_crd_str}
+Error: {e}""")
+
+        
+
         service_credentials = ast.literal_eval(str(svc_crd_str))
         print(service_credentials)
         for key, value in service_credentials.items():
