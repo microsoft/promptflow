@@ -71,7 +71,8 @@ def open_source_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
         svc_crd_str = creds_custom_connection.secrets['service_credential']
-        service_credentials = ast.literal_eval(svc_crd_str)
+        print(svc_crd_str)
+        service_credentials = ast.literal_eval(str(svc_crd_str))
         print(service_credentials)
         for key, value in service_credentials.items():
             print(" -", key)
