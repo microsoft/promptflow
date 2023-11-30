@@ -70,12 +70,16 @@ def llama_chat_custom_connection():
 def open_source_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
-        service_credentials = ast.literal_eval(creds_custom_connection.secrets['service_credential'])
+        svc_crd_str = creds_custom_connection.secrets['service_credential']
+        print(svc_crd_str)
+        service_credentials = ast.literal_eval(svc_crd_str)
         for key, value in service_credentials.items():
             os.environ[key] = value
         return True
     except Exception as e:
-        print(f'Something failed setting environment variables for service credentials. Error: {e}')
+        print(f"""Something failed setting environment variables for service credentials.
+Creds:{svc_crd_str}
+Error: {e}""")
         return False
 
 
