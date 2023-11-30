@@ -140,7 +140,6 @@ user:
         # GPT-2 doesn't take this parameter
         validate_response(response)
 
-
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_url_chat(self, gpt2_custom_connection):
         tmp = copy.deepcopy(gpt2_custom_connection)

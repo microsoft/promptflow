@@ -66,7 +66,7 @@ def llama_chat_custom_connection():
 
 
 @pytest.fixture
-def open_source_llm_ws_service_connection() -> bool+:
+def open_source_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
         subs = json.loads(creds_custom_connection.secrets['service_credential'])
