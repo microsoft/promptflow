@@ -98,7 +98,7 @@
             Return="asyncNoWait" />
         <CustomAction Id="UninstallPromptFlowService"
             Directory="DynamicCliDir"
-            Execute="commit"
+            Execute="deferred"
             Impersonate="no"
             ExeCommand="cmd.exe /c SC DELETE PromptService"
             Return="ignore" />
