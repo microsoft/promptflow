@@ -201,6 +201,10 @@ def sanitize_pfs_body(body: str) -> str:
     return json.dumps(body_dict)
 
 
+def sanitize_email(value: str) -> str:
+    return re.sub(r"([\w\.-]+)@([\w\.-]+)", r"{}@\2".format(SanitizedValues.EMAIL_USERNAME), value)
+
+
 def _is_json_payload(headers: Dict, key: str) -> bool:
     if not headers:
         return False

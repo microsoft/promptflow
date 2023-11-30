@@ -13,6 +13,7 @@ from .utils import (
     is_json_payload_request,
     is_json_payload_response,
     sanitize_azure_workspace_triad,
+    sanitize_email,
     sanitize_experiment_id,
     sanitize_pfs_body,
     sanitize_upload_hash,
@@ -244,4 +245,12 @@ class IndexServiceProcessor(RecordingProcessor):
                 body = json.loads(response["body"]["string"])
                 body.pop("continuationToken", None)
                 response["body"]["string"] = json.dumps(body)
+        return response
+
+
+class EmailProcessor(RecordingProcessor):
+    """Sanitize email address in responses."""
+
+    def process_response(self, response: Dict) -> Dict:
+        response["body"]["string"] = sanitize_email(response["body"]["string"])
         return response
