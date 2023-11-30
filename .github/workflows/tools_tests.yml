@@ -23,11 +23,9 @@ jobs:
       - name: Setup
         run: |
           python -m pip install --upgrade pip
-          python ./scripts/building/dev_setup.py --promptflow-extra-deps azure
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
-          pip install google-search-results==2.4.1
-          pip install openai>=1.0.0
+          pip install -r requirements.txt
       - name: Generate configs
         run: |
           python ./scripts/tool/generate_connection_config.py --tenant_id ${{ secrets.TENANT_ID }} --client_id ${{ secrets.CLIENT_ID }} --client_secret ${{ secrets.CLIENT_SECRET }}
