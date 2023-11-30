@@ -95,7 +95,7 @@
             Directory="DynamicCliDir"
             Execute="commit"
             ExeCommand="PowerShell.exe -WindowStyle hidden pfs"
-            Return="ignore" />
+            Return="asyncNoWait" />
         <CustomAction Id="UninstallPromptFlowService"
             Directory="DynamicCliDir"
             Execute="commit"
