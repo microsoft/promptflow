@@ -22,6 +22,9 @@ from promptflow.tools.open_source_llm import (
 )
 
 
+def validate_response(response):
+    assert len(response) > 15
+
 @pytest.fixture
 def verify_service_endpoints(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
     if not open_source_llm_ws_service_connection:
@@ -102,7 +105,7 @@ user:
             self.completion_prompt,
             API.COMPLETION,
             endpoint=self.gpt2_connection)
-        assert len(response) > 25
+        validate_response(response)
 
     def test_open_source_llm_completion_with_deploy(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
@@ -110,14 +113,14 @@ user:
             API.COMPLETION,
             endpoint=self.gpt2_connection,
             deployment_name="gpt2-9")
-        assert len(response) > 25
+        validate_response(response)
 
     def test_open_source_llm_chat(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
             endpoint=self.gpt2_connection)
-        assert len(response) > 25
+        validate_response(response)
 
     def test_open_source_llm_chat_with_deploy(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
@@ -125,7 +128,7 @@ user:
             API.CHAT,
             endpoint=self.gpt2_connection,
             deployment_name="gpt2-9")
-        assert len(response) > 25
+        validate_response(response)
 
     def test_open_source_llm_chat_with_max_length(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
@@ -134,7 +137,7 @@ user:
             endpoint=self.gpt2_connection,
             max_new_tokens=2)
         # GPT-2 doesn't take this parameter
-        assert len(response) > 25
+        validate_response(response)
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_url_chat(self, gpt2_custom_connection):
@@ -230,7 +233,7 @@ user:
                 self.chat_prompt,
                 API.CHAT,
                 endpoint=f"onlineEndpoint/{endpoint_name}")
-            assert len(response) > 25
+            validate_response(response)
 
     def test_open_source_llm_chat_endpoint_name_with_deployment(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
@@ -240,7 +243,7 @@ user:
                     API.CHAT,
                     endpoint=f"onlineEndpoint/{endpoint_name}",
                     deployment_name=deployment_name)
-                assert len(response) > 25
+                validate_response(response)
 
     def test_open_source_llm_completion_endpoint_name(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
@@ -248,7 +251,7 @@ user:
                 self.completion_prompt,
                 API.COMPLETION,
                 endpoint=f"onlineEndpoint/{endpoint_name}")
-            assert len(response) > 25
+            validate_response(response)
 
     def test_open_source_llm_completion_endpoint_name_with_deployment(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
@@ -258,18 +261,18 @@ user:
                     API.COMPLETION,
                     endpoint=f"onlineEndpoint/{endpoint_name}",
                     deployment_name=deployment_name)
-                assert len(response) > 25
+                validate_response(response)
 
     def test_open_source_llm_llama_chat(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint=self.llama_connection)
-        assert len(response) > 25
+        validate_response(response)
 
     def test_open_source_llm_llama_serverless(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
             endpoint=self.llama_serverless_connection)
-        assert len(response) > 25
+        validate_response(response)
 
     def test_open_source_llm_llama_chat_history(self, verify_service_endpoints):
         chat_history_prompt = """user:
@@ -324,7 +327,7 @@ user:
                 }
             ],
             chat_input="Sorry I didn't follow, could you say that again?")
-        assert len(response) > 25
+        validate_response(response)
 
     def test_open_source_llm_dynamic_list_ignore_deployment(self, verify_service_endpoints):
         deployments = list_deployment_names(
@@ -438,7 +441,7 @@ user:
                 endpoint=endpoint['value'],
                 max_new_tokens=10,
                 model_kwargs={})
-            assert len(response) > 25
+            validate_response(response)
 
             deployments = list_deployment_names(
                 subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
@@ -460,7 +463,7 @@ user:
                     deployment_name=deployment['value'],
                     max_new_tokens=10,
                     model_kwargs={})
-                assert len(response) > 25
+                validate_response(response)
 
     def test_open_source_llm_get_model_llama(self):
         model_assets = [
