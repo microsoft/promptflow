@@ -94,11 +94,11 @@
         <CustomAction Id="StartPromptFlowService"
             Directory="DynamicCliDir"
             Execute="commit"
-            ExeCommand="PowerShell.exe -WindowStyle hidden pfs"
-            Return="ignore" />
+            ExeCommand="PowerShell.exe -WindowStyle hidden Start-Process -FilePath pfs -NoNewWindow -Wait"
+            Return="asyncNoWait" />
         <CustomAction Id="UninstallPromptFlowService"
             Directory="DynamicCliDir"
-            Execute="commit"
+            Execute="deferred"
             Impersonate="no"
             ExeCommand="cmd.exe /c SC DELETE PromptService"
             Return="ignore" />

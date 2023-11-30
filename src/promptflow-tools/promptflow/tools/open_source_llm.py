@@ -671,6 +671,7 @@ def get_model_type(deployment_model: str) -> str:
         return ModelFamily.GPT2
     else:
         # Not found and\or handled. Ignore this endpoint\deployment
+        print(f"Unexpected model type: {model} derived from deployed model: {deployment_model}")
         return None
 
 
