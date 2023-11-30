@@ -48,12 +48,12 @@ class AOAI(ABC):
                     "are you using openai key by mistake?"
                 )
             from openai import AzureOpenAI as Client
-            from openai import AsyncAzureOpenAI as AClient
+            from openai import AsyncAzureOpenAI as AsyncClient
         else:
             from openai import OpenAI as Client
-            from openai import AsyncClient as AClient
+            from openai import AsyncClient as AsyncClient
         self.client = Client(**init_params)
-        self.aclient = AClient(**init_params)
+        self.async_client = AsyncClient(**init_params)
         self.default_engine = None
         self.engine = kwargs.pop('model', None) or os.environ.get("MODEL")
         self.total_tokens = 4000
@@ -181,7 +181,7 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, conversation_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
-        response = await self.aclient.chat.completions.create(
+        response = await self.async_client.chat.completions.create(
             model=self.engine,
             messages=messages,
             temperature=temperature,
@@ -200,7 +200,7 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, conversation_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
-        response = await self.aclient.chat.completions.create(
+        response = await self.async_client.chat.completions.create(
             model=self.engine,
             messages=messages,
             temperature=temperature,
