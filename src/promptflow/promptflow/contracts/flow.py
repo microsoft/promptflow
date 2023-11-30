@@ -650,6 +650,8 @@ class Flow:
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
         from promptflow._core.tools_manager import ToolLoader
 
+        # TODO: consider refactor this. It will raise an error if promptflow-tools
+        #  is not installed even for csharp flow.
         self._tool_loader = ToolLoader(working_dir, package_tool_keys)
 
     def _apply_node_overrides(self, node_overrides):
