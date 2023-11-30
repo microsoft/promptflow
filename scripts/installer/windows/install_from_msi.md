@@ -77,9 +77,7 @@ Select this application, then select the `Uninstall` button.
 ## FAQ
 
 ### Where is the prompt flow installed?
-
-When installing the prompt flow, you can't select an install location. 
-In Windows, the 64-bit prompt flow installs in `C:\Program Files\promptflow`. 
+In Windows, the 64-bit prompt flow installs in `C:\Program Files\promptflow` by default. 
 
 
 ### What version of the prompt flow is installed?
