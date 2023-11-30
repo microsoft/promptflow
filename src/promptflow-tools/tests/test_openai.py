@@ -65,18 +65,6 @@ class TestOpenAI:
         )
         assert "Product X".lower() in result.lower()
 
-    def test_openai_max_tokens_is_zero(self, open_ai_connection, example_prompt_template, chat_history):
-        result = chat(
-            connection=open_ai_connection,
-            prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
-            max_tokens=0,
-            temperature=0,
-            user_input="Write a slogan for product X",
-            chat_history=chat_history,
-        )
-        assert "Product X".lower() in result.lower()
-
     def test_openai_prompt_with_function(
             self, open_ai_connection, example_prompt_template_with_function, functions):
         result = chat(

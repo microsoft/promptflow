@@ -11,7 +11,7 @@ from openai import (
 from promptflow.tools.aoai import chat, completion
 from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, to_openai_error_message, \
-    JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat
+    JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat, InvalidMaxTokens
 from promptflow.tools.openai import chat as openai_chat
 from pytest_mock import MockerFixture
 
@@ -258,3 +258,19 @@ class TestHandleOpenAIError:
         msg = "Completion API is a legacy api and is going to be deprecated soon. " \
               "Please change to use Chat API for current model."
         assert msg in exc_info.value.message
+
+    def test_aoai_invalid_max_tokens(self, azure_open_ai_connection, example_prompt_template, chat_history):
+        with pytest.raises(InvalidMaxTokens) as exc_info:
+            chat(
+                connection=azure_open_ai_connection,
+                prompt=example_prompt_template,
+                deployment_name="gpt-35-turbo",
+                max_tokens=0,
+                temperature=0,
+                user_input="Write a slogan for product X",
+                chat_history=chat_history,
+            )
+        error_codes = "UserError/ToolValidationError/InvalidMaxTokens"
+        msg = "max_tokens 0 is less than the minimum of 1."
+        assert msg == exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")

@@ -9,7 +9,7 @@ from jinja2 import Template
 from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
-    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType
+    ChatAPIFunctionRoleInvalidFormat, InvalidConnectionType, InvalidMaxTokens
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
@@ -25,6 +25,14 @@ class ChatInputList(list):
 
     def __str__(self):
         return "\n".join(map(str, self))
+
+
+def validate_max_tokens(max_tokens):
+    # openai only supports max_tokens is larger than 0
+    if max_tokens == "inf" or max_tokens is None:
+        return
+    elif max_tokens <= 0:
+        raise InvalidMaxTokens(message=f"max_tokens {max_tokens} is less than the minimum of 1.")
 
 
 def validate_role(role: str, valid_roles: List[str] = None):
