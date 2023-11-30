@@ -13,6 +13,7 @@ You can use json parser to parse the output.
 
 ```bash
 nohup python simple_score.py > log.txt 2>&1 & 
+sleep 10
 ```
 
 ## 2. Test the service with request
