@@ -85,25 +85,12 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
-        <CustomAction Id="InstallPromptFlowService"
-            Directory="DynamicCliDir"
-            Execute="commit"
-            Impersonate="no"
-            ExeCommand="cmd.exe /c SC CREATE PromptFlowService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown binPath= &quot;\&quot;%ProgramFiles%\promptflow\pfsvc.exe\&quot;&quot;"
-            Return="check" />
         <CustomAction Id="StartPromptFlowService"
             Directory="DynamicCliDir"
             Execute="commit"
             ExeCommand="PowerShell.exe -WindowStyle hidden pfs"
             Return="asyncNoWait" />
-        <CustomAction Id="UninstallPromptFlowService"
-            Directory="DynamicCliDir"
-            Execute="deferred"
-            Impersonate="no"
-            ExeCommand="cmd.exe /c SC DELETE PromptService"
-            Return="ignore" />
         <InstallExecuteSequence>
-            <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
 
