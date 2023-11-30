@@ -8,6 +8,8 @@ import shelve
 from pathlib import Path
 from typing import Dict
 
+from filelock import FileLock
+
 from promptflow._sdk._errors import PromptflowException
 
 from .constants import ENVIRON_TEST_MODE, RecordMode
@@ -104,9 +106,11 @@ class RecordStorage(object):
         if file_content is not None:
             file_content_line = file_content.get(hashkey, None)
             if file_content_line is not None:
-                saved_dict = shelve.open(str(self.record_file.resolve()), writeback=False)
-                saved_dict[hashkey] = file_content_line
-                saved_dict.close()
+                lock = FileLock(self.record_file.parent / "record_file.lock")
+                with lock:
+                    saved_dict = shelve.open(str(self.record_file.resolve()), "c", writeback=False)
+                    saved_dict[hashkey] = file_content_line
+                    saved_dict.close()
             else:
                 raise RecordItemMissingException(f"Record item not found in cache with hashkey {hashkey}.")
         else:
@@ -117,13 +121,20 @@ class RecordStorage(object):
     def _load_file(self) -> None:
         local_content = self.cached_items.get(self._record_file_str, None)
         if not local_content:
-            if not self.exists_record_file(self.record_file.parent, self.record_file.parts[-1]):
-                return
-            self.cached_items[self._record_file_str] = {}
-            saved_dict = shelve.open(str(self.record_file.resolve()), writeback=False)
-            for key, value in saved_dict.items():
-                self.cached_items[self._record_file_str][key] = value
-            saved_dict.close()
+            lock = FileLock(self.record_file.parent / "record_file.lock")
+            with lock:
+                if not self.exists_record_file(self.record_file.parent, self.record_file.parts[-1]):
+                    return
+                self.cached_items[self._record_file_str] = {}
+                saved_dict = shelve.open(str(self.record_file.resolve()), "r", writeback=False)
+                for key, value in saved_dict.items():
+                    self.cached_items[self._record_file_str][key] = value
+                saved_dict.close()
+
+    def delete_lock_file(self):
+        lock_file = self.record_file.parent / "record_file.lock"
+        if lock_file.exists():
+            os.remove(lock_file)
 
     def get_record(self, input_dict: Dict) -> object:
         """

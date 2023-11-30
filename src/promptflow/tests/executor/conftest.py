@@ -8,8 +8,11 @@ from .recording_utilities import RecordFileMissingException, RecordItemMissingEx
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 
+recording_array = ["fetch_text_content_from_url", "my_python_tool"]
+
 
 def mock_call_func(func, args, kwargs):
+    global recording_array
     if type(func).__name__ == "partial":
         func_wo_partial = func.func
     else:
@@ -17,8 +20,7 @@ def mock_call_func(func, args, kwargs):
     if (
         func_wo_partial.__qualname__.startswith("AzureOpenAI")
         or func_wo_partial.__qualname__.startswith("OpenAI")
-        or func_wo_partial.__qualname__ == "fetch_text_content_from_url"
-        or func_wo_partial.__qualname__ == "my_python_tool"
+        or func_wo_partial.__qualname__ in recording_array
     ):
         input_dict = {}
         for key in kwargs:
@@ -52,6 +54,7 @@ def mock_call_func(func, args, kwargs):
 
 
 async def mock_call_func_async(func, args, kwargs):
+    global recording_array
     if type(func).__name__ == "partial":
         func_wo_partial = func.func
     else:
@@ -59,8 +62,7 @@ async def mock_call_func_async(func, args, kwargs):
     if (
         func_wo_partial.__qualname__.startswith("AzureOpenAI")
         or func_wo_partial.__qualname__.startswith("OpenAI")
-        or func_wo_partial.__qualname__ == "fetch_text_content_from_url"
-        or func_wo_partial.__qualname__ == "my_python_tool"
+        or func_wo_partial.__qualname__ in recording_array
     ):
         input_dict = {}
         for key in kwargs:
@@ -103,7 +105,11 @@ def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixtur
 
 @pytest.fixture
 def recording_injection(mocker: MockerFixture, recording_file_override):
+    global recording_array
+    recording_array = ["fetch_text_content_from_url", "my_python_tool"]
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
         mocker.patch("promptflow._core.tool.call_func", mock_call_func)
         mocker.patch("promptflow._core.tool.call_func_async", mock_call_func_async)
-    yield
+    yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array.extend)
+    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        RecordStorage.get_instance().delete_lock_file()

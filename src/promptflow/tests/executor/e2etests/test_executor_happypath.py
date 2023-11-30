@@ -8,6 +8,7 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 
+from ..recording_utilities import RecordingStorage
 from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
@@ -60,7 +61,7 @@ class TestExecutor:
             "async_tools_with_sync_tools",
         ],
     )
-    def test_executor_exec_line(self, flow_folder, dev_connections):
+    def test_executor_exec_line(self, flow_folder, dev_connections, recording_injection):
         self.skip_serp(flow_folder, dev_connections)
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(self.get_line_inputs())
@@ -123,7 +124,10 @@ class TestExecutor:
         if not queue.empty():
             raise queue.get()
 
-    def test_executor_node_overrides(self, dev_connections, recording_injection):
+    @pytest.mark.skipif(
+        RecordingStorage.is_recording_mode() or RecordingStorage.is_replaying_mode(), reason="Skip in recording mode"
+    )
+    def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
         executor = FlowExecutor.create(
             get_yaml_file(SAMPLE_FLOW),
