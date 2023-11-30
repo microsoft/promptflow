@@ -175,9 +175,9 @@ class TestTelemetry:
         # start a clean local SDK client
         with environment_variable_overwrite(PF_USER_AGENT, ""):
             PFClient()
-            user_agent = context.get_user_agent()
+            user_agent = context.get_client_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+            assert ua_dict.keys() == {"promptflow-sdk"}
 
             # Call log_activity
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
@@ -192,9 +192,9 @@ class TestTelemetry:
                 resource_group_name=pf._ml_client.resource_group_name,
                 workspace_name=pf._ml_client.workspace_name,
             )
-            user_agent = context.get_user_agent()
+            user_agent = context.get_client_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+            assert ua_dict.keys() == {"promptflow-sdk"}
 
             # Call log_activity
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
@@ -263,7 +263,7 @@ class TestTelemetry:
         try:
             os.environ[USER_AGENT] = cli_perf_monitor_agent
             context = OperationContext.get_instance()
-            assert cli_perf_monitor_agent in context.get_user_agent()
+            assert cli_perf_monitor_agent in context.get_client_user_agent()
         except Exception as e:
             raise e
         finally:

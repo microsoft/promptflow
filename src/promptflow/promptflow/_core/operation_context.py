@@ -5,7 +5,7 @@ import os
 from contextvars import ContextVar
 from typing import Dict, Mapping
 
-from promptflow._constants import USER_AGENT, PF_USER_AGENT
+from promptflow._constants import PF_USER_AGENT, USER_AGENT
 from promptflow._version import VERSION
 
 
@@ -111,14 +111,38 @@ class OperationContext(Dict):
 
         def parts():
             # Be careful not to use "self.user_agent" as it will recursively call get_user_agent in __getattr__
-            agent = self.get(self._USER_AGENT, '')
+            agent = self.get(self._USER_AGENT, "")
             yield agent
             promptflow_agent = f"promptflow/{VERSION}"
-            yield promptflow_agent if promptflow_agent not in agent else ''
-            user_agent = os.environ.get(USER_AGENT, '').strip()
-            yield user_agent if user_agent not in agent else ''
-            pf_user_agent = os.environ.get(PF_USER_AGENT, '').strip()
-            yield pf_user_agent if pf_user_agent not in agent else ''
+            yield promptflow_agent if promptflow_agent not in agent else ""
+            user_agent = os.environ.get(USER_AGENT, "").strip()
+            yield user_agent if user_agent not in agent else ""
+            pf_user_agent = os.environ.get(PF_USER_AGENT, "").strip()
+            yield pf_user_agent if pf_user_agent not in agent else ""
+
+        # strip to avoid leading or trailing spaces, which may cause error when sending request
+        ua = " ".join(parts()).strip()
+        return ua
+
+    def get_client_user_agent(self):
+        """Get the client user agent string. won't include promptflow/xxx UA since it doesn't make sense for client.
+
+        This method returns the user agent string for the OperationContext instance.
+        The user agent string consists of the promptflow-sdk version and any additional user agent information stored in
+        the user_agent attribute.
+
+        Returns:
+            str: The user agent string.
+        """
+
+        def parts():
+            # Be careful not to use "self.user_agent" as it will recursively call get_user_agent in __getattr__
+            agent = self.get(self._USER_AGENT, "")
+            yield agent
+            user_agent = os.environ.get(USER_AGENT, "").strip()
+            yield user_agent if user_agent not in agent else ""
+            pf_user_agent = os.environ.get(PF_USER_AGENT, "").strip()
+            yield pf_user_agent if pf_user_agent not in agent else ""
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
         ua = " ".join(parts()).strip()
@@ -133,7 +157,7 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        agent = self.get(self._USER_AGENT, '')
+        agent = self.get(self._USER_AGENT, "")
         user_agent = user_agent.strip()
         if user_agent not in agent:
             self[self._USER_AGENT] = f"{agent} {user_agent}".strip()

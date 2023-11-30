@@ -1559,9 +1559,9 @@ class TestCli:
                     "--name",
                     "not_exist",
                 )
-        user_agent = context.get_user_agent()
+        user_agent = context.get_client_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
-        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow"}
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli"}
 
     def test_config_set_pure_flow_directory_macro(self, capfd: pytest.CaptureFixture) -> None:
         run_pf_command(
@@ -1595,7 +1595,7 @@ class TestCli:
                 "--user-agent",
                 "a/1.0.0 b/2.0",
             )
-        user_agent = context.get_user_agent()
+        user_agent = context.get_client_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
-        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow", "a", "b"}
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "a", "b"}
         context.user_agent = ""

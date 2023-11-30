@@ -12,4 +12,4 @@ from promptflow._core.operation_context import OperationContext
 class TestPFClient:
     def test_pf_client_user_agent(self):
         PFClient()
-        assert "promptflow-sdk" in OperationContext.get_instance().get_user_agent()
+        assert "promptflow-sdk" in OperationContext.get_instance().get_client_user_agent()

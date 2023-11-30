@@ -878,7 +878,7 @@ def setup_user_agent_to_operation_context(user_agent=None):
     # skip append if empty
     if user_agent:
         context.append_user_agent(user_agent)
-    return context.get_user_agent()
+    return context.get_client_user_agent()
 
 
 def call_from_extension() -> bool:
@@ -886,7 +886,7 @@ def call_from_extension() -> bool:
     from promptflow._core.operation_context import OperationContext
 
     context = OperationContext().get_instance()
-    return EXTENSION_UA in context.get_user_agent()
+    return EXTENSION_UA in context.get_client_user_agent()
 
 
 def generate_random_string(length: int = 6) -> str:
@@ -1042,7 +1042,7 @@ def is_from_cli():
     from promptflow._cli._user_agent import USER_AGENT as CLI_UA
     from promptflow._core.operation_context import OperationContext
 
-    return CLI_UA in OperationContext.get_instance().get_user_agent()
+    return CLI_UA in OperationContext.get_instance().get_client_user_agent()
 
 
 def is_url(value: Union[PathLike, str]) -> bool:

@@ -61,7 +61,7 @@ def log_activity(
         custom_dimensions = {}
 
     context = OperationContext.get_instance()
-    user_agent = context.get_user_agent()
+    user_agent = context.get_client_user_agent()
     # TODO(2699383): use same request id with service caller
     request_id = request_id_context.get()
     if not request_id:

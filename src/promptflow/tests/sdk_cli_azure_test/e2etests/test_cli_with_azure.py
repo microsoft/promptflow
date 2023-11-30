@@ -165,6 +165,6 @@ class TestCliWithAzure:
                     "not_exist",
                     pf=pf,
                 )
-            user_agent = context.get_user_agent()
+            user_agent = context.get_client_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-sdk", "promptflow", "promptflow-cli"}
+            assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli"}
