@@ -2,9 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import argparse
+import json
 import os
 import sys
-import json
+
 import waitress
 import yaml
 
@@ -12,7 +13,7 @@ from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import get_random_port, is_port_in_use
-from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user, print_pf_version
+from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version, read_write_by_user
 from promptflow._version import VERSION
 from promptflow.exceptions import UserErrorException
 
