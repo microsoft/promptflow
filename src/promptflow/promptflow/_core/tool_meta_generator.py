@@ -305,6 +305,10 @@ class JinjaParsingError(ToolValidationError):
     pass
 
 
+class ReservedVariableCannotBeUsed(JinjaParsingError):
+    pass
+
+
 class PythonParsingError(ToolValidationError):
     pass
 
