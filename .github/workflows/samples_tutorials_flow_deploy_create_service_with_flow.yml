@@ -31,6 +31,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y curl
+          apt-get install -y sqlite3
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Prepare dev requirements
