@@ -6,6 +6,8 @@ from promptflow import tool
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
 from promptflow.executor._line_execution_process_pool import get_available_max_worker_count
+from promptflow.executor._errors import InvalidMemoryUsageFactor
+
 from promptflow.executor.flow_executor import (
     FlowExecutor,
     _ensure_node_result_is_serializable,
@@ -182,15 +184,34 @@ class TestEnsureNodeResultIsSerializable:
 
 class TestGetAvailableMaxWorkerCount:
     @pytest.mark.parametrize(
-        "total_memory, available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count",
+        (
+            "total_memory",
+            "available_memory",
+            "process_memory",
+            "memory_usage_factor",
+            "expected_max_worker_count",
+            "actual_calculate_worker_count",
+            "expect_exception"
+        ),
         [
-            (1024.0, 128.0, 64.0, 1, -3),  # available_memory - 0.3 * total_memory < 0
-            (1024.0, 307.20, 64.0, 1, 0),  # available_memory - 0.3 * total_memory = 0
-            (1024.0, 768.0, 64.0, 7, 7),  # available_memory - 0.3 * total_memory > 0
+            (1024.0, 128.0, 64.0, 0, 1, -14, False),  # available_memory - memory_usage_factor * total_memory < 0
+            (1024.0, 512.0, 64.0, 0.5, 1, 0, False),  # available_memory - memory_usage_factor * total_memory = 0
+            (1024.0, 768.0, 64.0, 0.7, 7, 7, False),  # available_memory - memory_usage_factor * total_memory > 0
+            (1024.0, 768.0, 64.0, 0.8, 8, 8, False),  # memory_usage_factor is None
+            (1024.0, 512.0, 64.0, "50%", 1, 0, False),  # The environment variable is configured as a percentage
+            (1024.0, 512.0, 64.0, "0.5", 1, 0, False),  # The environment variable is configured as a string
+            (1024.0, 512.0, 64.0, "0.5a", 1, 0, True)
         ],
     )
     def test_get_available_max_worker_count(
-        self, total_memory, available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count
+        self,
+        total_memory,
+        available_memory,
+        process_memory,
+        memory_usage_factor,
+        expected_max_worker_count,
+        actual_calculate_worker_count,
+        expect_exception
     ):
         with patch("psutil.virtual_memory") as mock_mem:
             mock_mem.return_value.total = total_memory * 1024 * 1024
@@ -199,10 +220,14 @@ class TestGetAvailableMaxWorkerCount:
                 mock_process.return_value.memory_info.return_value.rss = process_memory * 1024 * 1024
                 with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
                     mock_logger.warning.return_value = None
-                    max_worker_count = get_available_max_worker_count()
-                    assert max_worker_count == expected_max_worker_count
-                    if actual_calculate_worker_count < 1:
-                        mock_logger.warning.assert_called_with(
-                            f"Available max worker count {actual_calculate_worker_count} is less than 1, "
-                            "set it to 1."
-                        )
+                    if expect_exception:
+                        with pytest.raises(InvalidMemoryUsageFactor):
+                            get_available_max_worker_count(memory_usage_factor)
+                    else:
+                        max_worker_count = get_available_max_worker_count(memory_usage_factor)
+                        assert max_worker_count == expected_max_worker_count
+                        if actual_calculate_worker_count < 1:
+                            mock_logger.warning.assert_called_with(
+                                f"Available max worker count {actual_calculate_worker_count} is less than 1, "
+                                "set it to 1."
+                            )
