@@ -18,6 +18,7 @@ env:
 jobs:
   samples_readme_ci:
     runs-on: ubuntu-latest
+    container: ubuntu # run in container to be able to connect local port
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
