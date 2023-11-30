@@ -4,7 +4,7 @@
 import argparse
 import os
 import sys
-
+import json
 import waitress
 import yaml
 
@@ -12,12 +12,17 @@ from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import get_random_port, is_port_in_use
-from promptflow._sdk._utils import read_write_by_user
+from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user, print_pf_version
 from promptflow._version import VERSION
 from promptflow.exceptions import UserErrorException
 
 
 def main():
+    command_args = sys.argv[1:]
+    if len(command_args) == 1 and command_args[0] == "version":
+        version_dict = {"promptflow": get_promptflow_sdk_version()}
+        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+
     if "USER_AGENT" in os.environ:
         user_agent = f"{os.environ['USER_AGENT']} local_pfs/{VERSION}"
     else:
@@ -33,11 +38,17 @@ def main():
     )
 
     parser.add_argument("-p", "--port", type=int, help="port of the promptflow service")
+    parser.add_argument(
+        "-v", "--version", dest="version", action="store_true", help="show current PromptflowService version and exit"
+    )
 
     args = parser.parse_args(command_args)
+    if args.version:
+        print_pf_version()
+        return
+
     port = args.port
     app, _ = create_app()
-
     if port and is_port_in_use(port):
         app.logger.warning(f"Service port {port} is used.")
         raise UserErrorException(f"Service port {port} is used.")
