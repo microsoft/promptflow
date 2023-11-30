@@ -3,7 +3,8 @@ from PyInstaller.utils.hooks import collect_data_files
 from PyInstaller.utils.hooks import copy_metadata
 
 datas = [('../resources/CLI_LICENSE.rtf', '.'), ('../../../../src/promptflow/NOTICE.txt', '.'),
-('../../../../src/promptflow/promptflow/_sdk/data/executable/', './promptflow/_sdk/data/executable/')]
+('../../../../src/promptflow/promptflow/_sdk/data/executable/', './promptflow/_sdk/data/executable/'),
+('../../../../src/promptflow-tools/promptflow/tools/', './promptflow/tools/')]
 
 datas += collect_data_files('streamlit')
 datas += copy_metadata('streamlit')
