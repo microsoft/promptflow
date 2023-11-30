@@ -45,7 +45,8 @@ class PromptFlowSDKLogHandler(AzureEventHandler):
 
     def __init__(self, custom_properties, enable_telemetry, **kwargs):
         super().__init__(**kwargs)
-
+        # disable AzureEventHandler's logging to avoid warning affect user experience
+        self.disable_telemetry_logger()
         self._is_telemetry_enabled = enable_telemetry
         self._custom_dimensions = custom_properties
 
@@ -89,3 +90,14 @@ class PromptFlowSDKLogHandler(AzureEventHandler):
             record.custom_dimensions = custom_dimensions
 
         return super().log_record_to_envelope(record=record)
+
+    @classmethod
+    def disable_telemetry_logger(cls):
+        """Disable AzureEventHandler's logging to avoid warning affect user experience"""
+        from opencensus.ext.azure.common.processor import logger as processor_logger
+        from opencensus.ext.azure.common.storage import logger as storage_logger
+        from opencensus.ext.azure.common.transport import logger as transport_logger
+
+        processor_logger.setLevel(logging.CRITICAL)
+        transport_logger.setLevel(logging.CRITICAL)
+        storage_logger.setLevel(logging.CRITICAL)
