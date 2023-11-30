@@ -50,6 +50,8 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             ".",
             "--log_path",
             log_path,
+            "--log_level",
+            "Warning",
         ]
         process = subprocess.Popen(command)
         return cls(process, port)
