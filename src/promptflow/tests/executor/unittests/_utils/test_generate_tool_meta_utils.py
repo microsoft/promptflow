@@ -203,14 +203,14 @@ class TestToolMetaUtils:
             pytest.param(
                 "{% zzz",
                 JinjaParsingError,
-                "Generate tool meta failed for llm tool. Jinja parsing failed: "
+                "Generate tool meta failed for llm tool. Jinja parsing failed at line 1: "
                 "(TemplateSyntaxError) Encountered unknown tag 'zzz'.",
                 id="JinjaParsingError_Code",
             ),
             pytest.param(
                 "no_end.jinja2",
                 JinjaParsingError,
-                "Generate tool meta failed for llm tool. Jinja parsing failed: "
+                "Generate tool meta failed for llm tool. Jinja parsing failed at line 2: "
                 "(TemplateSyntaxError) Unexpected end of template. Jinja was looking for the following tags: "
                 "'endfor' or 'else'. The innermost block that needs to be closed is 'for'.",
                 id="JinjaParsingError_File",
@@ -240,14 +240,14 @@ class TestToolMetaUtils:
             pytest.param(
                 "{% zzz",
                 JinjaParsingError,
-                "Generate tool meta failed for prompt tool. Jinja parsing failed: "
+                "Generate tool meta failed for prompt tool. Jinja parsing failed at line 1: "
                 "(TemplateSyntaxError) Encountered unknown tag 'zzz'.",
                 id="JinjaParsingError_Code",
             ),
             pytest.param(
                 "no_end.jinja2",
                 JinjaParsingError,
-                "Generate tool meta failed for prompt tool. Jinja parsing failed: "
+                "Generate tool meta failed for prompt tool. Jinja parsing failed at line 2: "
                 "(TemplateSyntaxError) Unexpected end of template. Jinja was looking for the following tags: "
                 "'endfor' or 'else'. The innermost block that needs to be closed is 'for'.",
                 id="JinjaParsingError_File",

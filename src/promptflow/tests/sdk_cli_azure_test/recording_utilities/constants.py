@@ -77,4 +77,5 @@ TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING = [
     "TestCliWithAzure",
     "TestFlowRun",
     "TestFlow",
+    "TestTelemetry",
 ]

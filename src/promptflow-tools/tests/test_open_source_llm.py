@@ -7,7 +7,7 @@ from promptflow.tools.exception import (
     OpenSourceLLMKeyValidationError,
     ChatAPIInvalidRole
 )
-from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatterBase
+from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatterBase, get_model_type, ModelFamily
 from typing import List, Dict
 
 
@@ -23,9 +23,6 @@ def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
 
 @pytest.fixture
 def endpoints_provider(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
-    if not open_source_llm_ws_service_connection:
-        pytest.skip("Service Credential not available")
-
     from azure.ai.ml import MLClient
     from azure.identity import DefaultAzureCredential
     credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
@@ -119,7 +116,6 @@ user:
             self.chat_prompt,
             API.CHAT,
             max_new_tokens=2)
-        # GPT-2 doesn't take this parameter
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
@@ -218,14 +214,12 @@ Why was that the greatest movie of all time?"""
             + "HTTPError: HTTP Error 404: Not Found")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
             response = os_llm.call(self.chat_prompt, API.CHAT)
             assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name_with_deployment(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
@@ -233,14 +227,12 @@ Why was that the greatest movie of all time?"""
                 response = os_llm.call(self.chat_prompt, API.CHAT, deployment_name=deployment_name)
                 assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
             response = os_llm.call(self.completion_prompt, API.COMPLETION)
             assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name_with_deployment(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
@@ -307,3 +299,63 @@ user:
             ],
             chat_input="Sorry I didn't follow, could you say that again?")
         assert len(response) > 25
+
+    def test_open_source_llm_get_model_llama(self):
+        model_assets = [
+            "azureml://registries/azureml-meta/models/Llama-2-7b-chat/versions/14",
+            "azureml://registries/azureml-meta/models/Llama-2-7b/versions/12",
+            "azureml://registries/azureml-meta/models/Llama-2-13b-chat/versions/12",
+            "azureml://registries/azureml-meta/models/Llama-2-13b/versions/12",
+            "azureml://registries/azureml-meta/models/Llama-2-70b-chat/versions/12",
+            "azureml://registries/azureml-meta/models/Llama-2-70b/versions/13"
+        ]
+
+        for asset_name in model_assets:
+            assert ModelFamily.LLAMA == get_model_type(asset_name)
+
+    def test_open_source_llm_get_model_gpt2(self):
+        model_assets = [
+            "azureml://registries/azureml-staging/models/gpt2/versions/9",
+            "azureml://registries/azureml/models/gpt2/versions/9",
+            "azureml://registries/azureml/models/gpt2-medium/versions/11",
+            "azureml://registries/azureml/models/gpt2-large/versions/11"
+        ]
+
+        for asset_name in model_assets:
+            assert ModelFamily.GPT2 == get_model_type(asset_name)
+
+    def test_open_source_llm_get_model_dolly(self):
+        model_assets = [
+            "azureml://registries/azureml/models/databricks-dolly-v2-12b/versions/11"
+        ]
+
+        for asset_name in model_assets:
+            assert ModelFamily.DOLLY == get_model_type(asset_name)
+
+    def test_open_source_llm_get_model_falcon(self):
+        model_assets = [
+            "azureml://registries/azureml/models/tiiuae-falcon-40b/versions/2",
+            "azureml://registries/azureml/models/tiiuae-falcon-40b/versions/2"
+        ]
+
+        for asset_name in model_assets:
+            assert ModelFamily.FALCON == get_model_type(asset_name)
+
+    def test_open_source_llm_get_model_failure_cases(self):
+        bad_model_assets = [
+            "azureml://registries/azureml-meta/models/CodeLlama-7b-Instruct-hf/versions/3",
+            "azureml://registries/azureml-staging/models/gpt-2/versions/9",
+            "azureml://registries/azureml/models/falcon-40b/versions/2",
+            "azureml://registries/azureml-meta/models/Llama-70b/versions/13",
+            "azureml://registries/azureml/models/openai-whisper-large/versions/14",
+            "azureml://registries/azureml/models/ask-wikipedia/versions/2",
+            "definitely not real",
+            "",
+            "ausreml://registries/azureml/models/ask-wikipedia/versions/2",
+            "azureml://registries/azureml/models/ask-wikipedia/version/2",
+            "azureml://registries/azureml/models/ask-wikipedia/version/"
+        ]
+
+        for asset_name in bad_model_assets:
+            val = get_model_type(asset_name)
+            assert val is None
