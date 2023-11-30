@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
-from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, FLOW_TOOLS_JSON, DEFAULT_ENCODING
+from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -39,8 +39,6 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
-        # TODO: connection_provider_url is not required for local,
-        # will remove it after C# executor marks it as optional
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
@@ -50,8 +48,6 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             flow_file,
             "--assembly_folder",
             ".",
-            "--connection_provider_url",
-            "",
             "--log_path",
             log_path,
         ]
