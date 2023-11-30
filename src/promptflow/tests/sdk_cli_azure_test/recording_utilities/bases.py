@@ -23,16 +23,17 @@ from .processors import (
     PFSProcessor,
     RecordingProcessor,
     StorageProcessor,
-    TenantProcessor,
+    UserInfoProcessor,
 )
 from .utils import is_json_payload_request, is_live, is_record, is_replay, sanitize_pfs_body, sanitize_upload_hash
 from .variable_recorder import VariableRecorder
 
 
 class PFAzureIntegrationTestRecording:
-    def __init__(self, test_class, test_func_name: str, tenant_id: str):
+    def __init__(self, test_class, test_func_name: str, user_object_id: str, tenant_id: str):
         self.test_class = test_class
         self.test_func_name = test_func_name
+        self.user_object_id = user_object_id
         self.tenant_id = tenant_id
         self.recording_file = self._get_recording_file()
         self.recording_processors = self._get_recording_processors()
@@ -44,11 +45,16 @@ class PFAzureIntegrationTestRecording:
     @staticmethod
     def from_test_case(test_class, test_func_name: str, **kwargs) -> "PFAzureIntegrationTestRecording":
         test_class_name = test_class.__name__
+        user_object_id = kwargs.get("user_object_id", "")
         tenant_id = kwargs.get("tenant_id", "")
         if test_class_name in TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING:
-            return PFAzureRunIntegrationTestRecording(test_class, test_func_name, tenant_id=tenant_id)
+            return PFAzureRunIntegrationTestRecording(
+                test_class, test_func_name, user_object_id=user_object_id, tenant_id=tenant_id
+            )
         else:
-            return PFAzureIntegrationTestRecording(test_class, test_func_name, tenant_id=tenant_id)
+            return PFAzureIntegrationTestRecording(
+                test_class, test_func_name, user_object_id=user_object_id, tenant_id=tenant_id
+            )
 
     def _get_recording_file(self) -> Path:
         # recording files are expected to be located at "tests/test_configs/recordings"
@@ -137,7 +143,7 @@ class PFAzureIntegrationTestRecording:
             IndexServiceProcessor(),
             PFSProcessor(),
             StorageProcessor(),
-            TenantProcessor(tenant_id=self.tenant_id),
+            UserInfoProcessor(user_object_id=self.user_object_id, tenant_id=self.tenant_id),
         ]
 
     def get_or_record_variable(self, variable: str, default: str) -> str:

@@ -208,25 +208,27 @@ class PFSProcessor(RecordingProcessor):
             request.body = body.encode("utf-8")
         return request
 
-    def process_response(self, response: Dict) -> Dict:
-        return super().process_response(response)
 
+class UserInfoProcessor(RecordingProcessor):
+    """Sanitize user object id and tenant id in responses."""
 
-class TenantProcessor(RecordingProcessor):
-    """Sanitize tenant id in responses."""
-
-    def __init__(self, tenant_id: str):
+    def __init__(self, user_object_id: str, tenant_id: str):
+        self.user_object_id = user_object_id
         self.tenant_id = tenant_id
 
     def process_request(self, request: Request) -> Request:
         if is_json_payload_request(request) and request.body is not None:
             body = request.body.decode("utf-8")
-            body = str(body).replace(self.tenant_id, SanitizedValues.TENANT_ID)
+            body = str(body).replace(self.user_object_id, SanitizedValues.USER_OBJECT_ID)
+            body = body.replace(self.tenant_id, SanitizedValues.TENANT_ID)
             request.body = body.encode("utf-8")
         return request
 
     def process_response(self, response: Dict) -> Dict:
         if is_json_payload_response(response):
+            response["body"]["string"] = str(response["body"]["string"]).replace(
+                self.user_object_id, SanitizedValues.USER_OBJECT_ID
+            )
             response["body"]["string"] = str(response["body"]["string"]).replace(
                 self.tenant_id, SanitizedValues.TENANT_ID
             )
