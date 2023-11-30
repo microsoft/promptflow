@@ -1,4 +1,5 @@
 import multiprocessing
+import threading
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Optional
@@ -34,6 +35,33 @@ class TestCSharpExecutorProxy:
         assert batch_result.status == Status.Completed
         assert batch_result.completed_lines == batch_result.total_lines
         assert batch_result.system_metrics.duration > 0
+
+    def test_batch_cancel(self):
+        flow_folder = "csharp_flow"
+        mem_run_storage = MemoryRunStorage()
+        # init the batch engine
+        batch_engine = BatchEngine(get_yaml_file(flow_folder), get_flow_folder(flow_folder), storage=mem_run_storage)
+        # prepare the inputs
+        input_dirs = {"data": get_flow_inputs_file(flow_folder)}
+        inputs_mapping = {"question": "${data.question}"}
+        output_dir = Path(mkdtemp())
+        # use a thread to submit a batch run
+        batch_run_thread = threading.Thread(
+            target=self.batch_run_in_thread, args=(batch_engine, input_dirs, inputs_mapping, output_dir)
+        )
+        assert batch_engine._is_canceled is False
+        batch_run_thread.start()
+        # cancel the batch run
+        batch_engine.cancel()
+        batch_run_thread.join()
+        assert batch_engine._is_canceled is True
+        assert batch_result_global.status == Status.Canceled
+        assert batch_result_global.total_lines == 0
+        assert batch_result_global.system_metrics.duration > 0
+
+    def batch_run_in_thread(self, batch_engine: BatchEngine, input_dirs, inputs_mapping, output_dir):
+        global batch_result_global
+        batch_result_global = batch_engine.run(input_dirs, inputs_mapping, output_dir)
 
 
 class MockCSharpExecutorProxy(CSharpExecutorProxy):
