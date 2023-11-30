@@ -88,7 +88,7 @@
         <CustomAction Id="StartPromptFlowService"
             Directory="DynamicCliDir"
             Execute="commit"
-            ExeCommand="PowerShell.exe -WindowStyle hidden pfs"
+            ExeCommand="cmd /c start /b pfs"
             Return="asyncNoWait" />
         <InstallExecuteSequence>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
