@@ -1,6 +1,9 @@
 import tiktoken
+from importlib.metadata import version
 
 from promptflow.exceptions import UserErrorException
+
+IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
 class OpenAIMetricsCalculator:
@@ -47,19 +50,22 @@ class OpenAIMetricsCalculator:
             )
 
         name = api_call.get("name")
-        if name.split(".")[-2] == "ChatCompletion":
+        if name.split(".")[-2] == "ChatCompletion" or name == "openai.resources.chat.completions.Completions.create":
             return self._get_openai_metrics_for_chat_api(api_call)
-        elif name.split(".")[-2] == "Completion":
+        elif name.split(".")[-2] == "Completion" or name == "openai.resources.completions.Completions.create":
             return self._get_openai_metrics_for_completion_api(api_call)
         else:
             raise CalculatingMetricsError(f"Calculating metrics for api {name} is not supported.")
 
     def _try_get_model(self, inputs):
-        api_type = inputs.get("api_type")
-        if not api_type:
-            raise CalculatingMetricsError("Cannot calculate metrics for none or empty api_type.")
-        if api_type == "azure":
-            model = inputs.get("engine")
+        if IS_LEGACY_OPENAI:
+            api_type = inputs.get("api_type")
+            if not api_type:
+                raise CalculatingMetricsError("Cannot calculate metrics for none or empty api_type.")
+            if api_type == "azure":
+                model = inputs.get("engine")
+            else:
+                model = inputs.get("model")
         else:
             model = inputs.get("model")
         if not model:
@@ -81,7 +87,10 @@ class OpenAIMetricsCalculator:
             tokens_per_name
         )
         if isinstance(output, list):
-            metrics["completion_tokens"] = len(output)
+            if IS_LEGACY_OPENAI:
+                metrics["completion_tokens"] = len(output)
+            else:
+                metrics["completion_tokens"] = len([chunk for chunk in output if chunk.choices[0].delta.content])
         else:
             metrics["completion_tokens"] = self._get_completion_tokens_for_chat_api(output, enc)
         metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
@@ -139,7 +148,10 @@ class OpenAIMetricsCalculator:
             for pro in prompt:
                 metrics["prompt_tokens"] += len(enc.encode(pro))
         if isinstance(output, list):
-            metrics["completion_tokens"] = len(output)
+            if IS_LEGACY_OPENAI:
+                metrics["completion_tokens"] = len(output)
+            else:
+                metrics["completion_tokens"] = len([chunk for chunk in output if chunk.choices[0].text])
         else:
             metrics["completion_tokens"] = self._get_completion_tokens_for_completion_api(output, enc)
         metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]

@@ -35,6 +35,16 @@ RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspace
 
 
 @pytest.fixture
+def user_object_id() -> str:
+    if is_replay():
+        return ""
+    credential = get_cred()
+    access_token = credential.get_token("https://management.azure.com/.default")
+    decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
+    return decoded_token["oid"]
+
+
+@pytest.fixture
 def tenant_id() -> str:
     if is_replay():
         return ""
@@ -133,7 +143,9 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
 
 
 @pytest.fixture
-def vcr_recording(request: pytest.FixtureRequest, tenant_id: str) -> PFAzureIntegrationTestRecording:
+def vcr_recording(
+    request: pytest.FixtureRequest, user_object_id: str, tenant_id: str
+) -> PFAzureIntegrationTestRecording:
     """Fixture to record or replay network traffic.
 
     If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
@@ -142,6 +154,7 @@ def vcr_recording(request: pytest.FixtureRequest, tenant_id: str) -> PFAzureInte
     recording = PFAzureIntegrationTestRecording.from_test_case(
         test_class=request.cls,
         test_func_name=request.node.name,
+        user_object_id=user_object_id,
         tenant_id=tenant_id,
     )
     if not is_live():

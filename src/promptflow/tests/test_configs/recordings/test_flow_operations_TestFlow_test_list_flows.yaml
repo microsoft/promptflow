@@ -100,7 +100,7 @@ interactions:
       {"field": "annotations/isArchived", "operator": "eq", "values": ["false"]},
       {"field": "properties/creationContext/createdBy/userTenantId", "operator": "eq",
       "values": ["00000000-0000-0000-0000-000000000000"]}, {"field": "properties/creationContext/createdBy/userObjectId",
-      "operator": "eq", "values": ["dccfa7b6-87c6-4f1e-af43-555f876e37a7"]}], "freeTextSearch":
+      "operator": "eq", "values": ["00000000-0000-0000-0000-000000000000"]}], "freeTextSearch":
       "", "order": [{"direction": "Desc", "field": "properties/creationContext/createdTime"}],
       "pageSize": 3, "skip": 0, "includeTotalResultCount": true, "searchBuilder":
       "AppendPrefix"}'
