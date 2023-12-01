@@ -261,46 +261,65 @@ class TestTelemetry:
 
     def test_duplicate_ua(self):
         context = OperationContext.get_instance()
-        ua1 = 'ua1 ua2 ua3'
-        context['user_agent'] = ua1  # Add fixed UA
-        origin_agent = context.get_user_agent()
+        default_ua = context.get('user_agent', '')
 
-        ua2 = '    ua3   ua2  ua1'
-        context.append_user_agent(ua2)  # Env configuration ua with extra spaces, duplicate ua.
-        agent = context.get_user_agent()
-        assert agent == origin_agent + ' ' + ua2
+        try:
+            ua1 = 'ua1 ua2 ua3'
+            context['user_agent'] = ua1  # Add fixed UA
+            origin_agent = context.get_user_agent()
 
-        ua3 = '  ua3   ua2 ua1  ua4  '
-        context.append_user_agent(ua3)  # Env modifies ua with extra spaces, duplicate ua except ua4.
-        agent = context.get_user_agent()
-        assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
+            ua2 = '    ua3   ua2  ua1'
+            context.append_user_agent(ua2)  # Env configuration ua with extra spaces, duplicate ua.
+            agent = context.get_user_agent()
+            assert agent == origin_agent + ' ' + ua2
 
-        ua4 = 'ua1 ua2'  #
-        context.append_user_agent(ua4)  # Env modifies ua with extra spaces, duplicate ua but not be added.
-        agent = context.get_user_agent()
-        assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
+            ua3 = '  ua3   ua2 ua1  ua4  '
+            context.append_user_agent(ua3)  # Env modifies ua with extra spaces, duplicate ua except ua4.
+            agent = context.get_user_agent()
+            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
 
-        ua5 = 'ua2 ua4 ua5    '
-        context.append_user_agent(ua5)  # Env modifies ua with extra spaces, duplicate ua except ua5.
-        agent = context.get_user_agent()
-        assert agent == origin_agent + ' ' + ua2 + ' ' + ua3 + ' ' + ua5
+            ua4 = 'ua1 ua2'  #
+            context.append_user_agent(ua4)  # Env modifies ua with extra spaces, duplicate ua but not be added.
+            agent = context.get_user_agent()
+            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
+
+            ua5 = 'ua2 ua4 ua5    '
+            context.append_user_agent(ua5)  # Env modifies ua with extra spaces, duplicate ua except ua5.
+            agent = context.get_user_agent()
+            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3 + ' ' + ua5
+        except Exception as e:
+            raise e
+        finally:
+            context['user_agent'] = default_ua
 
     def test_extra_spaces_ua(self):
         context = OperationContext.get_instance()
-        origin_agent = context.get_user_agent()
+        default_ua = context.get('user_agent', '')
 
-        ua1 = '    ua1   ua2   ua3    '
-        context['user_agent'] = ua1
-        assert context.get_user_agent() == origin_agent + ' ' + ua1
+        try:
+            origin_agent = context.get_user_agent()
+            ua1 = '    ua1   ua2   ua3    '
+            context['user_agent'] = ua1
+            assert context.get_user_agent() == origin_agent + ' ' + ua1
 
-        ua2 = 'ua4      ua5      ua6      '
-        context.append_user_agent(ua2)
-        assert context.get_user_agent() == origin_agent + ' ' + ua1 + ' ' + ua2
+            ua2 = 'ua4      ua5      ua6      '
+            context.append_user_agent(ua2)
+            assert context.get_user_agent() == origin_agent + ' ' + ua1 + ' ' + ua2
+        except Exception as e:
+            raise e
+        finally:
+            context['user_agent'] = default_ua
 
     def test_ua_covered(self):
         context = OperationContext.get_instance()
-        PFClient()
-        assert SDK_USER_AGENT in context.get_user_agent()
+        default_ua = context.get('user_agent', '')
+        try:
+            PFClient()
+            assert SDK_USER_AGENT in context.get_user_agent()
 
-        context["user_agent"] = 'test_agent'
-        assert SDK_USER_AGENT not in context.get_user_agent()
+            context["user_agent"] = 'test_agent'
+            assert SDK_USER_AGENT not in context.get_user_agent()
+        except Exception as e:
+            raise
+        finally:
+            context['user_agent'] = default_ua
