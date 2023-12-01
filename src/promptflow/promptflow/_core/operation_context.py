@@ -127,10 +127,6 @@ class OperationContext(Dict):
 
         self.user_agent = self.user_agent
 
-    def delete_user_agent(self, user_agent: str):
-        if user_agent in self.get('user_agent', ''):
-            self['user_agent'] = self['user_agent'].replace(user_agent, '')
-
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
 

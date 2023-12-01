@@ -2,11 +2,9 @@ import threading
 
 import pytest
 
-from promptflow import PFClient
 from promptflow._core.operation_context import OperationContext
 from promptflow._version import VERSION
 from promptflow.contracts.run_mode import RunMode
-from promptflow._sdk._user_agent import USER_AGENT as SDK_USER_AGENT
 
 
 def set_run_mode(context: OperationContext, run_mode: RunMode):

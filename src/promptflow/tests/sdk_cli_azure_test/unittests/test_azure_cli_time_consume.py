@@ -14,12 +14,22 @@ DATAS_DIR = "./tests/test_configs/datas"
 @contextlib.contextmanager
 def check_ua():
     cli_perf_monitor_agent = "perf_monitor/1.0"
-    context = OperationContext.get_instance()
-    context.append_user_agent(cli_perf_monitor_agent)
-    assert cli_perf_monitor_agent in context.get_user_agent()
-    yield
-    context.delete_user_agent(cli_perf_monitor_agent)
-    assert CLI_USER_AGENT in context.get_user_agent()
+    default_context = OperationContext.get_instance()
+    try:
+        instance = OperationContext()
+        OperationContext._current_context.set(instance)
+
+        context = OperationContext.get_instance()
+        context.append_user_agent(cli_perf_monitor_agent)
+        assert cli_perf_monitor_agent in context.get_user_agent()
+        yield
+        assert CLI_USER_AGENT in context.get_user_agent()
+    except Exception as e:
+        raise e
+    finally:
+        OperationContext._current_context.set(default_context)
+        context = OperationContext.get_instance()
+        assert cli_perf_monitor_agent not in context.get_user_agent()
 
 
 def run_cli_command(cmd, time_limit=3600):
