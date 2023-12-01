@@ -110,21 +110,15 @@ class OperationContext(Dict):
         """
 
         # Be careful not to use "self.user_agent" as it will recursively call get_user_agent in __getattr__
-        user_agent = self.get(self._USER_AGENT, '')
+        user_agents = self.get(self._USER_AGENT, '').split(' ')
         promptflow_agent = f'promptflow/{VERSION}'
-        env_user_agent = os.environ.get(USER_AGENT, '').strip()
-        env_pf_user_agent = os.environ.get(PF_USER_AGENT, '').strip()
+        env_user_agents = os.environ.get(USER_AGENT, '').split(' ')
+        env_pf_user_agents = os.environ.get(PF_USER_AGENT, '').split(' ')
 
-        agents = set(user_agent.split(' '))
-        agents.update(
-            *promptflow_agent.split(' '),
-            *env_user_agent.split(' '),
-            *env_pf_user_agent.split(' ')
-        )
+        agents = {*user_agents, promptflow_agent, *env_user_agents, *env_pf_user_agents}
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
-        ua = " ".join(agents).strip()
-        return ua
+        return " ".join(agents).strip()
 
     def append_user_agent(self, user_agent: str):
         """Append the user agent string.
@@ -137,6 +131,8 @@ class OperationContext(Dict):
         """
         agent = self.get(self._USER_AGENT, '')
         user_agent = user_agent.strip()
+        # Repeated addition cannot be completely avoided, but repeated addition of identical uas can be avoided.
+        # Completely avoid duplication within 'get_user_agent' function.
         if user_agent not in agent:
             self[self._USER_AGENT] = f"{agent} {user_agent}".strip()
 
