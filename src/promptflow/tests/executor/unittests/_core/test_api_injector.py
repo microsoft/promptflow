@@ -1,5 +1,4 @@
 from collections import namedtuple
-from importlib.metadata import version
 from types import GeneratorType
 from unittest.mock import patch
 
@@ -23,10 +22,6 @@ from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.embedding import embedding
 
 
-@pytest.mark.skipif(
-    not version("openai").startswith("1."),
-    reason="the test should run with openai>=1.0.0",
-)
 @pytest.mark.unittest
 def test_inject_operation_headers():
     @inject_operation_headers
@@ -46,10 +41,6 @@ def test_inject_operation_headers():
     ) == {"extra_headers": aoai_tools_headers}
 
 
-@pytest.mark.skipif(
-    not version("openai").startswith("1."),
-    reason="the test should run with openai>=1.0.0",
-)
 @pytest.mark.unittest
 def test_aoai_generator_proxy():
     def mock_aoai(**kwargs):
@@ -89,10 +80,6 @@ def test_aoai_generator_proxy():
                 assert trace["output"] == "This is a returned string"
 
 
-@pytest.mark.skipif(
-    not version("openai").startswith("1."),
-    reason="the test should run with openai>=1.0.0",
-)
 @pytest.mark.unittest
 def test_aoai_call_inject():
     def mock_aoai(**kwargs):
@@ -117,75 +104,55 @@ def test_aoai_call_inject():
         assert injected_headers.items() <= return_headers.items()
 
 
-@pytest.mark.skipif(
-    version("openai").startswith("1."),
-    reason="test needs to be upgraded to adapt to openai>=1.0.0",
-)
 @pytest.mark.unittest
 def test_aoai_tool_header():
-    def mock_complete(**kwargs):
+    def mock_complete(*args, **kwargs):
         Response = namedtuple("Response", ["choices"])
         Choice = namedtuple("Choice", ["text"])
-        choice = Choice(text=kwargs.get("headers", {}))
+        choice = Choice(text=kwargs.get("extra_headers", {}))
         response = Response(choices=[choice])
         return response
 
-    def mock_chat(**kwargs):
+    def mock_chat(*args, **kwargs):
         Completion = namedtuple("Completion", ["choices"])
         Choice = namedtuple("Choice", ["message"])
         Message = namedtuple("Message", ["content"])
-        message = Message(content=kwargs.get("headers", {}))
+        message = Message(content=kwargs.get("extra_headers", {}))
         choice = Choice(message=message)
         completion = Completion(choices=[choice])
         return completion
 
-    def mock_embedding(**kwargs):
-        response = {"data": [{"embedding": kwargs.get("headers", {})}]}
+    def mock_embedding(*args, **kwargs):
+        Response = namedtuple("Response", ["data"])
+        Embedding = namedtuple("Embedding", ["embedding"])
+        response = Response(data=[Embedding(embedding=kwargs.get("extra_headers", {}))])
         return response
 
-    with patch("openai.Completion.create", new=mock_complete), patch(
-        "openai.ChatCompletion.create", new=mock_chat
-    ), patch("openai.Embedding.create", new=mock_embedding):
+    with patch("openai.resources.Completions.create", new=mock_complete), patch(
+        "openai.resources.chat.Completions.create", new=mock_chat
+    ), patch("openai.resources.Embeddings.create", new=mock_embedding):
         inject_openai_api()
         aoai_tool_header = {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
 
-        return_headers = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).completion(
+        return_headers = AzureOpenAI(AzureOpenAIConnection(api_key="test", api_base="test")).completion(
             prompt="test", deployment_name="test"
         )
         assert aoai_tool_header.items() <= return_headers.items()
 
-        return_headers = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(
+        return_headers = AzureOpenAI(AzureOpenAIConnection(api_key="test", api_base="test")).chat(
             prompt="user:\ntest", deployment_name="test"
         )
         assert aoai_tool_header.items() <= return_headers.items()
 
-        return_headers = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).embedding(
-            input="test", deployment_name="test"
-        )
-        assert aoai_tool_header.items() <= return_headers.items()
-
         return_headers = embedding(
-            AzureOpenAIConnection(api_key=None, api_base=None), input="test", deployment_name="test"
-        )
-        assert aoai_tool_header.items() <= return_headers.items()
-
-    with patch("openai.Embedding.create", new=mock_embedding):
-        inject_openai_api()
-        aoai_tool_header = {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
-
-        return_headers = embedding(
-            AzureOpenAIConnection(api_key=None, api_base=None), input="test", deployment_name="test"
+            AzureOpenAIConnection(api_key="test", api_base="test"), input="test", deployment_name="test"
         )
         assert aoai_tool_header.items() <= return_headers.items()
 
 
-@pytest.mark.skipif(
-    version("openai").startswith("1."),
-    reason="test needs to be upgraded to adapt to openai>=1.0.0",
-)
 @pytest.mark.unittest
 def test_aoai_chat_tool_prompt():
-    def mock_chat(**kwargs):
+    def mock_chat(*args, **kwargs):
         Completion = namedtuple("Completion", ["choices"])
         Choice = namedtuple("Choice", ["message"])
         Message = namedtuple("Message", ["content"])
@@ -194,26 +161,24 @@ def test_aoai_chat_tool_prompt():
         completion = Completion(choices=[choice])
         return completion
 
-    with patch("openai.ChatCompletion.create", new=mock_chat):
+    with patch("openai.resources.chat.Completions.create", new=mock_chat):
         inject_openai_api()
-        return_messages = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(
+        return_messages = AzureOpenAI(AzureOpenAIConnection(api_key="test", api_base="test")).chat(
             prompt="user:\ntest", deployment_name="test"
         )
         assert return_messages == [{"role": "user", "content": "test"}]
 
-        return_messages = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(
+        return_messages = AzureOpenAI(AzureOpenAIConnection(api_key="test", api_base="test")).chat(
             prompt="user:\r\n", deployment_name="test"
         )
         assert return_messages == [{"role": "user", "content": ""}]
 
         with pytest.raises(UserErrorException, match="The Chat API requires a specific format for prompt"):
-            AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(prompt="user:", deployment_name="test")
+            AzureOpenAI(AzureOpenAIConnection(api_key="test", api_base="test")).chat(
+                prompt="user:", deployment_name="test"
+            )
 
 
-@pytest.mark.skipif(
-    not version("openai").startswith("1."),
-    reason="the test should run with openai>=1.0.0",
-)
 @pytest.mark.parametrize(
     "removed_api, expected_apis",
     [
