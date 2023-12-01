@@ -8,10 +8,10 @@ from dataclasses import asdict
 from pathlib import Path
 
 from flask import Response, jsonify, make_response, request
-from flask_restx import Namespace, Resource, fields
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
 from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations

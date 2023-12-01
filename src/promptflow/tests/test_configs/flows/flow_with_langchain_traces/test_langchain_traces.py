@@ -12,10 +12,9 @@ from promptflow.integrations.langchain import PromptFlowCallbackHandler
 
 @tool
 def test_langchain_traces(question: str, conn: AzureOpenAIConnection):
-    os.environ["OPENAI_API_KEY"] = conn.api_key
+    os.environ["AZURE_OPENAI_API_KEY"] = conn.api_key
     os.environ["OPENAI_API_VERSION"] = conn.api_version
-    os.environ["OPENAI_API_BASE"] = conn.api_base
-    os.environ["OPENAI_API_TYPE"] = conn.api_type
+    os.environ["AZURE_OPENAI_ENDPOINT"] = conn.api_base
 
     llm = AzureOpenAI(
         temperature=0.7,
