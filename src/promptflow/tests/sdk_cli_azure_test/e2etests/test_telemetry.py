@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
-import os
 import time
 import uuid
 from logging import Logger
@@ -12,8 +11,9 @@ from unittest.mock import MagicMock, patch
 import pydash
 import pytest
 
-from promptflow import load_run
-from promptflow._constants import PF_USER_AGENT, USER_AGENT
+from promptflow import load_run, PFClient
+from promptflow._constants import PF_USER_AGENT
+from promptflow._sdk._user_agent import USER_AGENT as SDK_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension
@@ -296,4 +296,13 @@ class TestTelemetry:
         ua2 = 'ua4      ua5      ua6      '
         context.append_user_agent(ua2)
         assert context.get_user_agent() == origin_agent + ' ' + ua1 + ' ' + ua2
+
+    def test_ua_covered(self):
+        context = OperationContext.get_instance()
+        PFClient()
+        assert SDK_USER_AGENT in context.get_user_agent()
+
+        context["user_agent"] = 'test_agent'
+        assert SDK_USER_AGENT not in context.get_user_agent()
+
 
