@@ -151,6 +151,7 @@ class LineExecutionProcessPool:
         self._validate_inputs = validate_inputs
         self._worker_count = flow_executor._worker_count
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
+        self._pf_worker_count = os.environ.get("PF_WORKER_COUNT")
         sys_start_methods = multiprocessing.get_all_start_methods()
         if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
             bulk_logger.warning(
@@ -198,18 +199,35 @@ class LineExecutionProcessPool:
         # based on available memory to avoid memory bursting.
         if not self._use_fork:
             available_max_worker_count = get_available_max_worker_count()
-            self._n_process = min(self._worker_count, self._nlines, available_max_worker_count)
-            bulk_logger.info(
-                f"Not using fork, calculate the current system available memory divided by process memory, "
-                f"and take the minimum value of this value, the worker_count set by the environment variable "
-                f"configuration, and the row count as the final number of processes. "
-                f"process count: {self._n_process}")
+            if self._pf_worker_count is None:
+                self._n_process = min(self._worker_count, self._nlines, available_max_worker_count)
+                bulk_logger.info(
+                    f"Not using fork, and the environment variable PF_WORKER_COUNT is not set. Calculate the current "
+                    f"system available memory divided by process memory, and take the minimum value of this value, "
+                    f"the default value for worker_count 16 and the row count as the final number of processes. "
+                    f"process count: {self._n_process}")
+            else:
+                self._n_process = self._pf_worker_count
+                if available_max_worker_count < self._pf_worker_count:
+                    bulk_logger.warning(
+                        f"The maximum number of processes calculated based on the system available memory "
+                        f"is {available_max_worker_count}, and the PF_WORKER_COUNT is set to {self._pf_worker_count}. "
+                        f"Use the PF_WORKER_COUNT:{self._pf_worker_count} as the final number of processes. "
+                        f"process count: {self._n_process}")
+                else:
+                    bulk_logger.info(
+                        "PF_WORKER_COUNT:{self._pf_worker_count}, process count: {self._n_process}")
         else:
-            self._n_process = min(self._worker_count, self._nlines)
-            bulk_logger.info(
-                f"Using fork, the number of processes is determined by the lesser of the worker_count set by the "
-                f"environment variable configuration and the row count, If not set the worker_count, the default "
-                f"is 16, process count: {self._n_process}")
+            if self._pf_worker_count is None:
+                self._n_process = min(self._worker_count, self._nlines)
+                bulk_logger.info(
+                    f"Using fork, and the environment variable PF_WORKER_COUNT is not set. The number of processes is "
+                    f"determined by the lesser of the default value for worker_count 16 and the row count."
+                    f"process count: {self._n_process}")
+            else:
+                self._n_process = self._pf_worker_count
+                bulk_logger.info(
+                    "PF_WORKER_COUNT:{self._pf_worker_count}, process count: {self._n_process}")
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
 
