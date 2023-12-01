@@ -147,4 +147,3 @@ class TestOperationContext:
         # assert that the list has two elements and they are different objects
         assert len(instances) == 2
         assert instances[0] is not instances[1]
-
