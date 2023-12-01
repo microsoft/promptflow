@@ -1,5 +1,4 @@
---extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-promptflow[azure]==1.1.1
+promptflow[azure]
 promptflow-tools==1.0.0
 python-dotenv
 bs4
