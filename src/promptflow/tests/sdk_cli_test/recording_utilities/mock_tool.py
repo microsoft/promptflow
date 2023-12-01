@@ -33,7 +33,7 @@ def _prepare_input_dict(func, func_wo_partial, args, kwargs):
 
 
 def mock_tool(original_tool):
-    def mock_tool_internal(
+    def tool(
         func=None,
         *args_mock,
         name: str = None,
@@ -170,4 +170,4 @@ def mock_tool(original_tool):
             return tool_decorator(func)
         return tool_decorator
 
-    return mock_tool_internal
+    return tool
