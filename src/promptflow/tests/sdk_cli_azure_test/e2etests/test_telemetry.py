@@ -265,7 +265,10 @@ class TestTelemetry:
 
         try:
             ua1 = 'ua1 ua2 ua3'
-            context['user_agent'] = ua1  # Add fixed UA
+            # context['user_agent'] = ua1,
+            # Due to concurrent running of tests, this assignment will cause overwrite of promptflow-sdk/0.0.1,
+            # resulting in test failure
+            context.append_user_agent(ua1)  # Add fixed UA
             origin_agent = context.get_user_agent()
 
             ua2 = '    ua3   ua2  ua1'
@@ -299,7 +302,10 @@ class TestTelemetry:
         try:
             origin_agent = context.get_user_agent()
             ua1 = '    ua1   ua2   ua3    '
-            context['user_agent'] = ua1
+            context.append_user_agent(ua1)
+            # context['user_agent'] = ua1,
+            # Due to concurrent running of tests, this assignment will cause overwrite of promptflow-sdk/0.0.1,
+            # resulting in test failure
             assert context.get_user_agent() == origin_agent + ' ' + ua1
 
             ua2 = 'ua4      ua5      ua6      '
@@ -320,6 +326,6 @@ class TestTelemetry:
             context["user_agent"] = 'test_agent'
             assert SDK_USER_AGENT not in context.get_user_agent()
         except Exception as e:
-            raise
+            raise e
         finally:
             context['user_agent'] = default_ua
