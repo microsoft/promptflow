@@ -46,7 +46,7 @@ Test coverage is crucial for maintaining code quality. Please adhere to the foll
 - **VSCode Testing**: If you're adding a new built-in tool, make sure to test your tool within the VSCode environment prior to submitting your PR. For more guidance on this, refer to [Use your tool from VSCode Extension](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
 
 
-### Add Documents
+### Add documents
 Ensure to include documentation for your new built-in tool, following the guidelines below:
 - **Error-Free Content**: Rectify all typographical and grammatical errors in the documentation. This will ensure clarity and readability.
 
