@@ -153,9 +153,11 @@ def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixtur
 
 @pytest.fixture
 def recording_injection(mocker: MockerFixture, recording_file_override):
+    from promptflow._core.tool import tool as original_tool
+
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-        mocker.patch("promptflow._core.tool.tool", mock_tool)
-        mocker.patch("promptflow._internal.tool", mock_tool)
+        mocker.patch("promptflow._core.tool.tool", mock_tool(original_tool))
+        mocker.patch("promptflow._internal.tool", mock_tool(original_tool))
     try:
         yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
     finally:
