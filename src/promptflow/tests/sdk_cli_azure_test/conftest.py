@@ -16,8 +16,6 @@ from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType
-from promptflow.azure import PFClient
-from promptflow.azure._entities._flow import Flow
 
 from ._azure_utils import get_cred
 from .recording_utilities import (
@@ -246,7 +244,7 @@ def mock_get_user_identity_info(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
+def created_flow(pf, randstr: Callable[[str], str]):
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
     flow_source = FLOWS_DIR + "/simple_hello_world/"

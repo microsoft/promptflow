@@ -13,7 +13,6 @@ from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk.entities import Run
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
-from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 from ..recording_utilities import is_live
@@ -152,7 +151,7 @@ class TestCliWithAzure:
         assert run.properties["azureml.promptflow.runtime_name"] == runtime
 
     @pytest.mark.skipif(condition=not is_live(), reason="This test requires an actual PFClient")
-    def test_azure_cli_ua(self, pf: PFClient):
+    def test_azure_cli_ua(self, pf):
         # clear user agent before test
         context = OperationContext().get_instance()
         context.user_agent = ""
