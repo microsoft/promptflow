@@ -61,7 +61,7 @@ jobs:
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
-          pip install promptflow[azure,executable]==$env:INPUT_VERSION promptflow-tools
+          pip install promptflow[azure,executable,pfs]==$env:INPUT_VERSION promptflow-tools
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
