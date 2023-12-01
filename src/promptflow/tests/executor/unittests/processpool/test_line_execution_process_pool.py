@@ -258,3 +258,118 @@ class TestLineExecutionProcessPool:
             assert e.value.message == test_error_msg
             assert e.value.target == ErrorTarget.AZURE_RUN_STORAGE
             assert e.value.error_codes[0] == "UserError"
+
+    @pytest.mark.parametrize(
+        (
+            "flow_folder",
+            "is_set_environ_pf_worker_count",
+            "pf_worker_count",
+            "n_process"
+        ),
+        [
+            (SAMPLE_FLOW, True, "3", 3),
+            (SAMPLE_FLOW, False, None, 4)
+        ],
+    )
+    def test_process_pool_parallelism_in_fork_mode(
+            self,
+            dev_connections,
+            flow_folder,
+            is_set_environ_pf_worker_count,
+            pf_worker_count,
+            n_process):
+        if is_set_environ_pf_worker_count:
+            os.environ["PF_WORKER_COUNT"] = pf_worker_count
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+        )
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs()
+        nlines = len(bulk_inputs)
+
+        with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
+            with LineExecutionProcessPool(
+                executor,
+                nlines,
+                run_id,
+                "",
+                False,
+                None,
+            ) as pool:
+                assert pool._n_process == n_process
+                if is_set_environ_pf_worker_count:
+                    mock_logger.info.assert_called_with(
+                        f"PF_WORKER_COUNT:{pf_worker_count}, process count: {n_process}")
+                else:
+                    mock_logger.info.assert_called_with(
+                        f"Using fork, and the environment variable PF_WORKER_COUNT is not set. The number of processes "
+                        f"is determined by the lesser of the default value for worker_count "
+                        f"{pool._DEFAULT_WORKER_COUNT} and the row count: {nlines}. process count: {n_process}")
+
+    @pytest.mark.parametrize(
+        (
+            "flow_folder",
+            "is_set_environ_pf_worker_count",
+            "is_calculation_smaller_than_set",
+            "pf_worker_count",
+            "available_max_worker_count",
+            "n_process"
+        ),
+        [
+            (SAMPLE_FLOW, True, False, "2", 4, 2),
+            (SAMPLE_FLOW, True, True, "6", 2, 6),
+            (SAMPLE_FLOW, False, True, None, 2, 2)
+        ],
+    )
+    def test_process_pool_parallelism_in_non_fork_mode(
+        self,
+        dev_connections,
+        flow_folder,
+        is_set_environ_pf_worker_count,
+        is_calculation_smaller_than_set,
+        pf_worker_count,
+        available_max_worker_count,
+        n_process
+    ):
+        os.environ["PF_BATCH_METHOD"] = "spawn"
+        if is_set_environ_pf_worker_count:
+            os.environ["PF_WORKER_COUNT"] = pf_worker_count
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+        )
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs()
+        nlines = len(bulk_inputs)
+
+        with patch("psutil.virtual_memory") as mock_mem:
+            mock_mem.return_value.available = 128.0 * 1024 * 1024
+            with patch("psutil.Process") as mock_process:
+                mock_process.return_value.memory_info.return_value.rss = 64 * 1024 * 1024
+                with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
+                    with LineExecutionProcessPool(
+                        executor,
+                        nlines,
+                        run_id,
+                        "",
+                        False,
+                        None,
+                    ) as pool:
+                        assert pool._n_process == n_process
+                        if is_set_environ_pf_worker_count and is_calculation_smaller_than_set:
+                            mock_logger.warning.assert_called_with(
+                                f"The maximum number of processes calculated based on the system available memory "
+                                f"is {available_max_worker_count}, and the PF_WORKER_COUNT is set to {pf_worker_count}"
+                                f". Use the PF_WORKER_COUNT:{pf_worker_count} as the final number of processes. "
+                                f"process count: {n_process}")
+                        elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
+                            mock_logger.info.assert_called_with(
+                                f"PF_WORKER_COUNT:{pf_worker_count}, process count: {n_process}")
+                        elif not is_set_environ_pf_worker_count:
+                            mock_logger.info.assert_called_with(
+                                f"Not using fork, and the environment variable PF_WORKER_COUNT is not set. Calculate "
+                                f"the current system available memory divided by process memory, and take the minimum "
+                                f"value of this value: {available_max_worker_count}, the default value for worker_count"
+                                f": {pool._DEFAULT_WORKER_COUNT} and the row count: {nlines} as the final number of "
+                                f"processes. process count: {n_process}")
