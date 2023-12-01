@@ -1,5 +1,11 @@
 # Release History
 
+## 1.2.0 (upcoming)
+
+### Bugs Fixed
+
+- [SDK/CLI] Removing telemetry warning when running commands.
+
 ## 1.1.1 (2023.12.1)
 
 ### Bugs Fixed

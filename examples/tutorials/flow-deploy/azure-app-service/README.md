@@ -37,7 +37,7 @@ bash deploy.sh --path dist -i <image_tag> --name my_app_23d8m -r <docker registr
 
 Example command to use powershell script:
 ```powershell
-.\deploy.ps1 -i <image_tag> --Name my_app_23d8m -r <docker registry> -g <resource_group>
+.\deploy.ps1 dist -i <image_tag> -n my-app-23d8m -r <docker registry> -g <resource_group>
 ```
 Note that the `name` will produce a unique FQDN as AppName.azurewebsites.net.
 
@@ -56,6 +56,12 @@ at (Settings>Configuration) or (Settings>Environment variables), then restart th
 Browse the app at Overview and see the test page:
 
 ![img](assets/test_page.png)
+
+You can also test the app by sending a POST request to the app like:
+```shell
+curl http://<Default-domain-of-app-service>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
+```
+
 
 Tips:
 - Reach deployment logs at (Deployment>Deployment Central) and app logs at (Monitoring>Log stream).

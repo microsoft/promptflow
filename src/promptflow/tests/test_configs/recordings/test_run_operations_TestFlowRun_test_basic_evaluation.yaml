@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.048'
+      - '0.109'
     status:
       code: 200
       message: OK
@@ -53,7 +53,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.204'
+      - '0.084'
     status:
       code: 200
       message: OK
@@ -105,7 +105,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
@@ -143,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.121'
+      - '0.058'
     status:
       code: 200
       message: OK
@@ -159,7 +159,7 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
@@ -184,7 +184,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.204'
+      - '0.083'
     status:
       code: 200
       message: OK
@@ -200,7 +200,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 22 Nov 2023 03:55:02 GMT
+      - Thu, 30 Nov 2023 05:38:04 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -250,7 +250,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 22 Nov 2023 03:55:03 GMT
+      - Thu, 30 Nov 2023 05:38:05 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -282,7 +282,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
@@ -320,7 +320,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.080'
+      - '0.095'
     status:
       code: 200
       message: OK
@@ -336,7 +336,7 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
@@ -361,7 +361,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.096'
+      - '0.103'
     status:
       code: 200
       message: OK
@@ -377,7 +377,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 22 Nov 2023 03:55:05 GMT
+      - Thu, 30 Nov 2023 05:38:09 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -395,7 +395,7 @@ interactions:
       content-type:
       - application/octet-stream
       last-modified:
-      - Sat, 21 Oct 2023 10:03:52 GMT
+      - Mon, 27 Nov 2023 11:30:10 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -403,9 +403,9 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Sat, 21 Oct 2023 10:03:51 GMT
+      - Mon, 27 Nov 2023 11:30:08 GMT
       x-ms-meta-name:
-      - ae2b7263-7dbe-4567-92f3-626b5c6babf7
+      - c1a29d69-1b45-4d05-ae0e-b7ed44b7fa1a
       x-ms-meta-upload_status:
       - completed
       x-ms-meta-version:
@@ -427,7 +427,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 22 Nov 2023 03:55:06 GMT
+      - Thu, 30 Nov 2023 05:38:10 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -452,12 +452,12 @@ interactions:
 - request:
     body: '{"flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
       "LocalUpload/000000000000000000000000000000000000/web_classification/flow.dag.yaml",
-      "runId": "batch_run_name", "runDisplayName": "web_classification", "runExperimentName":
-      "web_classification", "nodeVariant": "${summarize_text_content.variant_0}",
-      "batchDataInput": {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/webClassification3.jsonl"},
+      "runId": "batch_run_name", "runDisplayName": "batch_run_name", "runExperimentName":
+      "", "nodeVariant": "${summarize_text_content.variant_0}", "batchDataInput":
+      {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/webClassification3.jsonl"},
       "inputsMapping": {"url": "${data.url}"}, "connections": {}, "environmentVariables":
-      {}, "runtimeName": "demo-mir", "sessionId": "4dd8f4d5f44dfeb817d3438cf84bd739215d87afd9458597",
-      "flowLineageId": "af1a6951de9be2ce13d3b58b23dbd8b6a0cd8fd4918ad9cb22b28fb8395fbcb0",
+      {}, "runtimeName": "fake-runtime-name", "sessionId": "000000000000000000000000000000000000000000000000",
+      "flowLineageId": "0000000000000000000000000000000000000000000000000000000000000000",
       "runDisplayNameGenerationType": "UserProvidedMacro"}'
     headers:
       Accept:
@@ -467,11 +467,11 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '814'
+      - '832'
       Content-Type:
       - application/json
       User-Agent:
-      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/submit
@@ -490,7 +490,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '14.106'
+      - '9.332'
     status:
       code: 200
       message: OK
@@ -504,7 +504,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
@@ -542,7 +542,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.113'
+      - '0.109'
     status:
       code: 200
       message: OK
@@ -558,7 +558,7 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
@@ -583,7 +583,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.151'
+      - '0.080'
     status:
       code: 200
       message: OK
@@ -599,7 +599,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 22 Nov 2023 03:56:01 GMT
+      - Thu, 30 Nov 2023 05:38:49 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -649,7 +649,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 22 Nov 2023 03:56:02 GMT
+      - Thu, 30 Nov 2023 05:38:50 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -681,7 +681,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
@@ -719,7 +719,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.084'
+      - '0.115'
     status:
       code: 200
       message: OK
@@ -735,7 +735,7 @@ interactions:
       Content-Length:
       - '0'
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
@@ -760,7 +760,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.112'
+      - '0.082'
     status:
       code: 200
       message: OK
@@ -776,7 +776,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 22 Nov 2023 03:56:04 GMT
+      - Thu, 30 Nov 2023 05:38:53 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -826,7 +826,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 22 Nov 2023 03:56:05 GMT
+      - Thu, 30 Nov 2023 05:38:54 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -851,13 +851,13 @@ interactions:
 - request:
     body: '{"flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
       "LocalUpload/000000000000000000000000000000000000/eval-classification-accuracy/flow.dag.yaml",
-      "runId": "eval_run_name", "runDisplayName": "eval-classification-accuracy",
-      "runExperimentName": "eval_classification_accuracy", "variantRunId": "batch_run_name",
-      "batchDataInput": {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/webClassification3.jsonl"},
+      "runId": "eval_run_name", "runDisplayName": "eval_run_name", "runExperimentName":
+      "", "variantRunId": "batch_run_name", "batchDataInput": {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/webClassification3.jsonl"},
       "inputsMapping": {"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
-      "connections": {}, "environmentVariables": {}, "runtimeName": "demo-mir", "sessionId":
-      "f8e4236a4e78e7f7125bbd811ec7976cb330412723a530f8", "flowLineageId": "26c575d863a85371ef937096728441d8c68c3e737b5a1bfeae5ac8f3b9ccb048",
-      "runDisplayNameGenerationType": "UserProvidedMacro"}'
+      "connections": {}, "environmentVariables": {}, "runtimeName": "fake-runtime-name",
+      "sessionId": "000000000000000000000000000000000000000000000000", "flowLineageId":
+      "0000000000000000000000000000000000000000000000000000000000000000", "runDisplayNameGenerationType":
+      "UserProvidedMacro"}'
     headers:
       Accept:
       - application/json
@@ -866,11 +866,11 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '898'
+      - '906'
       Content-Type:
       - application/json
       User-Agent:
-      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: POST
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/submit
@@ -889,7 +889,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '12.755'
+      - '10.687'
     status:
       code: 200
       message: OK
@@ -913,26 +913,26 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1700625320, "rootRunId": "batch_run_name",
-        "createdUtc": "2023-11-22T03:55:20.2414573+00:00", "createdBy": {"userObjectId":
-        "4e60fbf3-0338-41a8-bed5-fc341be556f8", "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+      string: '{"runMetadata": {"runNumber": 1701322698, "rootRunId": "batch_run_name",
+        "createdUtc": "2023-11-30T05:38:18.2679058+00:00", "createdBy": {"userObjectId":
+        "00000000-0000-0000-0000-000000000000", "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "userId": "4e60fbf3-0338-41a8-bed5-fc341be556f8", "token": null,
-        "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 5,
-        "statusRevision": 3, "runUuid": "df1706b3-b892-4488-8a44-7395a35783a9", "parentRunUuid":
-        null, "rootRunUuid": "df1706b3-b892-4488-8a44-7395a35783a9", "lastStartTimeUtc":
-        null, "currentComputeTime": null, "computeDuration": "00:00:10.0594795", "effectiveStartTimeUtc":
+        "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
+        "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 6,
+        "statusRevision": 3, "runUuid": "fcfdf3ba-3682-4807-b8cc-829da4602c2d", "parentRunUuid":
+        null, "rootRunUuid": "fcfdf3ba-3682-4807-b8cc-829da4602c2d", "lastStartTimeUtc":
+        null, "currentComputeTime": null, "computeDuration": "00:00:07.9707380", "effectiveStartTimeUtc":
         null, "lastModifiedBy": {"userObjectId": "74013e41-d17e-462a-8db6-5c0e26c0368c",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "ec6824af-81f6-47fa-a07e-5a04ff0b94e7",
-        "upn": null}, "lastModifiedUtc": "2023-11-22T03:55:42.5569804+00:00", "duration":
-        "00:00:10.0594795", "cancelationReason": null, "currentAttemptId": 1, "runId":
+        "upn": null}, "lastModifiedUtc": "2023-11-30T05:38:39.4333645+00:00", "duration":
+        "00:00:07.9707380", "cancelationReason": null, "currentAttemptId": 1, "runId":
         "batch_run_name", "parentRunId": null, "experimentId": "d30efbeb-f81d-4cfa-b5cc-a0570a049009",
-        "status": "Completed", "startTimeUtc": "2023-11-22T03:55:33.7533783+00:00",
-        "endTimeUtc": "2023-11-22T03:55:43.8128578+00:00", "scheduleId": null, "displayName":
-        "web_classification", "name": null, "dataContainerId": "dcid.batch_run_name",
+        "status": "Completed", "startTimeUtc": "2023-11-30T05:38:32.4562032+00:00",
+        "endTimeUtc": "2023-11-30T05:38:40.4269412+00:00", "scheduleId": null, "displayName":
+        "batch_run_name", "name": null, "dataContainerId": "dcid.batch_run_name",
         "description": null, "hidden": false, "runType": "azureml.promptflow.FlowRun",
         "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
         "computeType": "MIR_v2"}, "properties": {"azureml.promptflow.runtime_name":
@@ -941,11 +941,11 @@ interactions:
         "azureml.promptflow.flow_lineage_id": "af1a6951de9be2ce13d3b58b23dbd8b6a0cd8fd4918ad9cb22b28fb8395fbcb0",
         "azureml.promptflow.node_variant": "${summarize_text_content.variant_0}",
         "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
-        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/217dbb3d5adb00d936791ee0eb78382e/web_classification/flow.dag.yaml",
+        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/7c59ad67129b552538ca09362171cc15/web_classification/flow.dag.yaml",
         "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl",
-        "azureml.promptflow.inputs_mapping": "{\"url\":\"${data.url}\"}", "azureml.promptflow.snapshot_id":
-        "04eb4a38-c229-4f50-bec6-5f5df8e228f6", "_azureml.evaluation_run": "promptflow.BatchRun",
-        "azureml.promptflow.total_tokens": "2510"}, "parameters": {}, "actionUris":
+        "azureml.promptflow.inputs_mapping": "{\"url\":\"${data.url}\"}", "_azureml.evaluation_run":
+        "promptflow.BatchRun", "azureml.promptflow.snapshot_id": "33f47284-7dde-427d-b455-5dca86f5c9ec",
+        "azureml.promptflow.total_tokens": "2376"}, "parameters": {}, "actionUris":
         {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets": [],
         "tags": {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
         [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
@@ -957,324 +957,39 @@ interactions:
         "type": "UriFolder"}}}, "runDefinition": {"Nodes": [{"Name": "fetch_text_content_from_url",
         "Type": "python", "Source": {"Type": "code", "Tool": null, "Path": "fetch_text_content_from_url.py"},
         "Inputs": {"fetch_url": "${inputs.url}"}, "Tool": "fetch_text_content_from_url.py",
-        "Reduce": false, "Comment": null, "Activate": null, "Api": null, "Provider":
-        null, "Connection": null, "Module": null}, {"Name": "prepare_examples", "Type":
-        "python", "Source": {"Type": "code", "Tool": null, "Path": "prepare_examples.py"},
-        "Inputs": {}, "Tool": "prepare_examples.py", "Reduce": false, "Comment": null,
-        "Activate": null, "Api": null, "Provider": null, "Connection": null, "Module":
-        null}, {"Name": "classify_with_llm", "Type": "llm", "Source": {"Type": "code",
-        "Tool": null, "Path": "classify_with_llm.jinja2"}, "Inputs": {"deployment_name":
-        "text-davinci-003", "suffix": "", "max_tokens": "128", "temperature": "0.1",
-        "top_p": "1.0", "logprobs": "", "echo": "False", "stop": "", "presence_penalty":
-        "0", "frequency_penalty": "0", "best_of": "1", "logit_bias": "", "url": "${inputs.url}",
-        "examples": "${prepare_examples.output}", "text_content": "${summarize_text_content.output}"},
-        "Tool": "classify_with_llm.jinja2", "Reduce": false, "Comment": null, "Activate":
+        "Reduce": false, "Activate": null, "Comment": null, "Api": null, "Provider":
+        null, "Connection": null, "Module": null}, {"Name": "summarize_text_content",
+        "Type": null, "Source": null, "Inputs": null, "Tool": null, "Reduce": false,
+        "Activate": null, "Comment": null, "Api": null, "Provider": null, "Connection":
+        null, "Module": null}, {"Name": "prepare_examples", "Type": "python", "Source":
+        {"Type": "code", "Tool": null, "Path": "prepare_examples.py"}, "Inputs": {},
+        "Tool": "prepare_examples.py", "Reduce": false, "Activate": null, "Comment":
+        null, "Api": null, "Provider": null, "Connection": null, "Module": null},
+        {"Name": "classify_with_llm", "Type": "llm", "Source": {"Type": "code", "Tool":
+        null, "Path": "classify_with_llm.jinja2"}, "Inputs": {"deployment_name": "text-davinci-003",
+        "suffix": "", "max_tokens": "128", "temperature": "0.1", "top_p": "1.0", "logprobs":
+        "", "echo": "False", "stop": "", "presence_penalty": "0", "frequency_penalty":
+        "0", "best_of": "1", "logit_bias": "", "url": "${inputs.url}", "examples":
+        "${prepare_examples.output}", "text_content": "${summarize_text_content.output}"},
+        "Tool": "classify_with_llm.jinja2", "Reduce": false, "Activate": null, "Comment":
         null, "Api": "completion", "Provider": "AzureOpenAI", "Connection": "azure_open_ai_connection",
         "Module": "promptflow.tools.aoai"}, {"Name": "convert_to_dict", "Type": "python",
         "Source": {"Type": "code", "Tool": null, "Path": "convert_to_dict.py"}, "Inputs":
         {"input_str": "${classify_with_llm.output}"}, "Tool": "convert_to_dict.py",
-        "Reduce": false, "Comment": null, "Activate": null, "Api": null, "Provider":
-        null, "Connection": null, "Module": null}, {"Name": "summarize_text_content",
-        "Type": "llm", "Source": {"Type": "code", "Tool": null, "Path": "summarize_text_content.jinja2"},
-        "Inputs": {"deployment_name": "text-davinci-003", "suffix": "", "max_tokens":
-        "128", "temperature": "0.2", "top_p": "1.0", "logprobs": "", "echo": "False",
-        "stop": "", "presence_penalty": "0", "frequency_penalty": "0", "best_of":
-        "1", "logit_bias": "", "text": "${fetch_text_content_from_url.output}"}, "Tool":
-        "summarize_text_content.jinja2", "Reduce": false, "Comment": null, "Activate":
-        null, "Api": "completion", "Provider": "AzureOpenAI", "Connection": "azure_open_ai_connection",
-        "Module": "promptflow.tools.aoai"}], "Tools": [{"Name": "Content Safety (Text
-        Analyze)", "Type": "python", "Inputs": {"connection": {"Name": null, "Type":
-        ["AzureContentSafetyConnection"], "Default": null, "Description": null, "Enum":
-        null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null,
-        "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "hate_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
-        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
-        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "self_harm_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
-        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
-        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "sexual_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
-        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
-        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "text": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "violence_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
-        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
-        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Use Azure Content Safety to detect harmful
-        content.", "connection_type": null, "Module": "content_safety_text.tools.content_safety_text_tool",
-        "class_name": null, "Source": null, "LkgCode": null, "Code": null, "Function":
-        "analyze_text", "action_type": null, "provider_config": null, "function_config":
-        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
-        "promptflow-contentsafety", "package_version": "0.0.5", "default_prompt":
-        null, "enable_kwargs": false}, {"Name": "Embedding", "Type": "python", "Inputs":
-        {"connection": {"Name": null, "Type": ["AzureOpenAIConnection", "OpenAIConnection"],
-        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
-        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
-        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
-        "generated_by": null, "input_type": "default"}, "deployment_name": {"Name":
-        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": "connection", "enabled_by_type": ["AzureOpenAIConnection"],
-        "enabled_by_value": null, "model_list": ["text-embedding-ada-002", "text-search-ada-doc-001",
-        "text-search-ada-query-001"], "Capabilities": {"completion": false, "chat_completion":
-        false, "embeddings": true}, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "input": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "model": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": ["text-embedding-ada-002", "text-search-ada-doc-001", "text-search-ada-query-001"],
-        "enabled_by": "connection", "enabled_by_type": ["OpenAIConnection"], "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Use Open AI''s embedding model to create
-        an embedding vector representing the input text.", "connection_type": null,
-        "Module": "promptflow.tools.embedding", "class_name": null, "Source": null,
-        "LkgCode": null, "Code": null, "Function": "embedding", "action_type": null,
-        "provider_config": null, "function_config": null, "Icon": null, "Category":
-        null, "Tags": null, "is_builtin": true, "package": "promptflow-tools", "package_version":
-        "0.1.0b8", "default_prompt": null, "enable_kwargs": false}, {"Name": "Open
-        Source LLM", "Type": "custom_llm", "Inputs": {"api": {"Name": null, "Type":
-        ["string"], "Default": null, "Description": null, "Enum": ["chat", "completion"],
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "connection": {"Name": null, "Type": ["CustomConnection"], "Default": null,
-        "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
-        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
-        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
-        "generated_by": null, "input_type": "default"}, "deployment_name": {"Name":
-        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "model_kwargs": {"Name": null, "Type": ["object"], "Default": "{}", "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Use an Open Source model from the Azure Model
-        catalog, deployed to an AzureML Online Endpoint for LLM Chat or Completion
-        API calls.", "connection_type": null, "Module": "promptflow.tools.open_source_llm",
-        "class_name": "OpenSourceLLM", "Source": null, "LkgCode": null, "Code": null,
-        "Function": "call", "action_type": null, "provider_config": null, "function_config":
-        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
-        "promptflow-tools", "package_version": "0.1.0b8", "default_prompt": null,
-        "enable_kwargs": false}, {"Name": "Serp API", "Type": "python", "Inputs":
-        {"connection": {"Name": null, "Type": ["SerpConnection"], "Default": null,
-        "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
-        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
-        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
-        "generated_by": null, "input_type": "default"}, "engine": {"Name": null, "Type":
-        ["string"], "Default": "google", "Description": null, "Enum": ["google", "bing"],
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "location": {"Name": null, "Type": ["string"], "Default": "", "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "num": {"Name": null, "Type": ["int"], "Default": "10", "Description": null,
-        "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "query": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "safe": {"Name": null, "Type": ["string"], "Default": "off", "Description":
-        null, "Enum": ["active", "off"], "enabled_by": null, "enabled_by_type": null,
-        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
-        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
-        null, "input_type": "default"}}, "Outputs": null, "Description": "Use Serp
-        API to obtain search results from a specific search engine.", "connection_type":
-        null, "Module": "promptflow.tools.serpapi", "class_name": "SerpAPI", "Source":
-        null, "LkgCode": null, "Code": null, "Function": "search", "action_type":
-        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
-        null, "Tags": null, "is_builtin": true, "package": "promptflow-tools", "package_version":
-        "0.1.0b8", "default_prompt": null, "enable_kwargs": false}, {"Name": "Faiss
-        Index Lookup", "Type": "python", "Inputs": {"path": {"Name": null, "Type":
-        ["string"], "Default": null, "Description": null, "Enum": null, "enabled_by":
-        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
-        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}, "top_k": {"Name": null,
-        "Type": ["int"], "Default": "3", "Description": null, "Enum": null, "enabled_by":
-        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
-        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}, "vector": {"Name":
-        null, "Type": ["list"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Search vector based query from the FAISS
-        index file.", "connection_type": null, "Module": "promptflow_vectordb.tool.faiss_index_lookup",
-        "class_name": "FaissIndexLookup", "Source": null, "LkgCode": null, "Code":
-        null, "Function": "search", "action_type": null, "provider_config": null,
-        "function_config": null, "Icon": null, "Category": null, "Tags": null, "is_builtin":
-        true, "package": "promptflow-vectordb", "package_version": "0.0.1", "default_prompt":
-        null, "enable_kwargs": false}, {"Name": "Vector DB Lookup", "Type": "python",
-        "Inputs": {"class_name": {"Name": null, "Type": ["string"], "Default": null,
-        "Description": null, "Enum": null, "enabled_by": "connection", "enabled_by_type":
-        ["WeaviateConnection"], "enabled_by_value": null, "model_list": null, "Capabilities":
-        null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}, "collection_name":
-        {"Name": null, "Type": ["string"], "Default": null, "Description": null, "Enum":
-        null, "enabled_by": "connection", "enabled_by_type": ["QdrantConnection"],
-        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
-        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
-        null, "input_type": "default"}, "connection": {"Name": null, "Type": ["CognitiveSearchConnection",
-        "QdrantConnection", "WeaviateConnection"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "index_name": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection"],
-        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
-        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
-        null, "input_type": "default"}, "search_filters": {"Name": null, "Type": ["object"],
-        "Default": null, "Description": null, "Enum": null, "enabled_by": "connection",
-        "enabled_by_type": ["CognitiveSearchConnection", "QdrantConnection"], "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "search_params": {"Name": null, "Type": ["object"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection",
-        "QdrantConnection"], "enabled_by_value": null, "model_list": null, "Capabilities":
-        null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}, "text_field": {"Name":
-        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection",
-        "QdrantConnection", "WeaviateConnection"], "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "top_k": {"Name": null, "Type": ["int"], "Default": "3", "Description": null,
-        "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "vector": {"Name": null, "Type": ["list"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "vector_field": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection"],
-        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
-        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
-        null, "input_type": "default"}}, "Outputs": null, "Description": "Search vector
-        based query from existing Vector Database.", "connection_type": null, "Module":
-        "promptflow_vectordb.tool.vector_db_lookup", "class_name": "VectorDBLookup",
-        "Source": null, "LkgCode": null, "Code": null, "Function": "search", "action_type":
-        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
-        null, "Tags": null, "is_builtin": true, "package": "promptflow-vectordb",
-        "package_version": "0.0.1", "default_prompt": null, "enable_kwargs": false},
-        {"Name": "Vector Index Lookup", "Type": "python", "Inputs": {"path": {"Name":
-        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "query": {"Name": null, "Type": ["object"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "top_k": {"Name": null, "Type": ["int"], "Default": "3", "Description": null,
-        "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Search text or vector based query from AzureML
-        Vector Index.", "connection_type": null, "Module": "promptflow_vectordb.tool.vector_index_lookup",
-        "class_name": "VectorIndexLookup", "Source": null, "LkgCode": null, "Code":
-        null, "Function": "search", "action_type": null, "provider_config": null,
-        "function_config": null, "Icon": null, "Category": null, "Tags": null, "is_builtin":
-        true, "package": "promptflow-vectordb", "package_version": "0.0.1", "default_prompt":
-        null, "enable_kwargs": false}, {"Name": "classify_with_llm.jinja2", "Type":
-        "llm", "Inputs": {"examples": {"Name": null, "Type": ["string"], "Default":
-        null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
-        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
-        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
-        "generated_by": null, "input_type": "default"}, "text_content": {"Name": null,
-        "Type": ["string"], "Default": null, "Description": null, "Enum": null, "enabled_by":
-        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
-        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}, "url": {"Name": null,
-        "Type": ["string"], "Default": null, "Description": null, "Enum": null, "enabled_by":
-        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
-        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}}, "Outputs": null, "Description":
-        null, "connection_type": null, "Module": null, "class_name": null, "Source":
-        "classify_with_llm.jinja2", "LkgCode": null, "Code": null, "Function": null,
-        "action_type": null, "provider_config": null, "function_config": null, "Icon":
-        null, "Category": null, "Tags": null, "is_builtin": false, "package": null,
-        "package_version": null, "default_prompt": null, "enable_kwargs": false},
-        {"Name": "convert_to_dict.py", "Type": "python", "Inputs": {"input_str": {"Name":
-        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
-        "class_name": null, "Source": "convert_to_dict.py", "LkgCode": null, "Code":
-        null, "Function": "convert_to_dict", "action_type": null, "provider_config":
-        null, "function_config": null, "Icon": null, "Category": null, "Tags": null,
-        "is_builtin": false, "package": null, "package_version": null, "default_prompt":
-        null, "enable_kwargs": false}, {"Name": "fetch_text_content_from_url.py",
-        "Type": "python", "Inputs": {"fetch_url": {"Name": null, "Type": ["string"],
-        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
-        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
-        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
-        "generated_by": null, "input_type": "default"}}, "Outputs": null, "Description":
-        null, "connection_type": null, "Module": null, "class_name": null, "Source":
-        "fetch_text_content_from_url.py", "LkgCode": null, "Code": null, "Function":
-        "fetch_text_content_from_url", "action_type": null, "provider_config": null,
-        "function_config": null, "Icon": null, "Category": null, "Tags": null, "is_builtin":
-        false, "package": null, "package_version": null, "default_prompt": null, "enable_kwargs":
-        false}, {"Name": "prepare_examples.py", "Type": "python", "Inputs": null,
-        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
-        "class_name": null, "Source": "prepare_examples.py", "LkgCode": null, "Code":
-        null, "Function": "prepare_examples", "action_type": null, "provider_config":
-        null, "function_config": null, "Icon": null, "Category": null, "Tags": null,
-        "is_builtin": false, "package": null, "package_version": null, "default_prompt":
-        null, "enable_kwargs": false}, {"Name": "summarize_text_content.jinja2", "Type":
-        "llm", "Inputs": {"text": {"Name": null, "Type": ["string"], "Default": null,
-        "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
-        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
-        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
-        "generated_by": null, "input_type": "default"}}, "Outputs": null, "Description":
-        null, "connection_type": null, "Module": null, "class_name": null, "Source":
-        "summarize_text_content.jinja2", "LkgCode": null, "Code": null, "Function":
-        null, "action_type": null, "provider_config": null, "function_config": null,
-        "Icon": null, "Category": null, "Tags": null, "is_builtin": false, "package":
-        null, "package_version": null, "default_prompt": null, "enable_kwargs": false},
-        {"Name": "summarize_text_content__variant_1.jinja2", "Type": "llm", "Inputs":
-        {"text": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
-        "class_name": null, "Source": "summarize_text_content__variant_1.jinja2",
-        "LkgCode": null, "Code": null, "Function": null, "action_type": null, "provider_config":
-        null, "function_config": null, "Icon": null, "Category": null, "Tags": null,
-        "is_builtin": false, "package": null, "package_version": null, "default_prompt":
-        null, "enable_kwargs": false}], "Codes": null, "Inputs": {"url": {"Name":
-        null, "Type": "string", "Default": "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
-        "Description": null, "is_chat_input": false, "is_chat_history": null}}, "Outputs":
-        {"category": {"Name": null, "Type": "string", "Description": null, "Reference":
+        "Reduce": false, "Activate": null, "Comment": null, "Api": null, "Provider":
+        null, "Connection": null, "Module": null}], "Tools": [], "Codes": null, "Inputs":
+        {"url": {"name": null, "type": "string", "default": "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
+        "description": null, "is_chat_input": false, "is_chat_history": null}}, "Outputs":
+        {"category": {"name": null, "type": "string", "description": null, "reference":
         "${convert_to_dict.output.category}", "evaluation_only": false, "is_chat_output":
-        false}, "evidence": {"Name": null, "Type": "string", "Description": null,
-        "Reference": "${convert_to_dict.output.evidence}", "evaluation_only": false,
+        false}, "evidence": {"name": null, "type": "string", "description": null,
+        "reference": "${convert_to_dict.output.evidence}", "evaluation_only": false,
         "is_chat_output": false}}}, "jobSpecification": null, "systemSettings": null}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '45072'
+      - '8264'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -1286,7 +1001,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.067'
+      - '0.070'
     status:
       code: 200
       message: OK
@@ -1310,39 +1025,39 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1700625376, "rootRunId": "eval_run_name",
-        "createdUtc": "2023-11-22T03:56:16.8971362+00:00", "createdBy": {"userObjectId":
-        "4e60fbf3-0338-41a8-bed5-fc341be556f8", "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+      string: '{"runMetadata": {"runNumber": 1701322742, "rootRunId": "eval_run_name",
+        "createdUtc": "2023-11-30T05:39:02.8663527+00:00", "createdBy": {"userObjectId":
+        "00000000-0000-0000-0000-000000000000", "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "userId": "4e60fbf3-0338-41a8-bed5-fc341be556f8", "token": null,
-        "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 5,
-        "statusRevision": 3, "runUuid": "ac3ddb37-f353-4030-8547-0a030fd233ca", "parentRunUuid":
-        null, "rootRunUuid": "ac3ddb37-f353-4030-8547-0a030fd233ca", "lastStartTimeUtc":
-        null, "currentComputeTime": null, "computeDuration": "00:00:04.6029043", "effectiveStartTimeUtc":
+        "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
+        "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 6,
+        "statusRevision": 3, "runUuid": "4fe0e294-745a-4569-b198-54bb982ffda1", "parentRunUuid":
+        null, "rootRunUuid": "4fe0e294-745a-4569-b198-54bb982ffda1", "lastStartTimeUtc":
+        null, "currentComputeTime": null, "computeDuration": "00:00:04.9650682", "effectiveStartTimeUtc":
         null, "lastModifiedBy": {"userObjectId": "74013e41-d17e-462a-8db6-5c0e26c0368c",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "ec6824af-81f6-47fa-a07e-5a04ff0b94e7",
-        "upn": null}, "lastModifiedUtc": "2023-11-22T03:56:33.971695+00:00", "duration":
-        "00:00:04.6029043", "cancelationReason": null, "currentAttemptId": 1, "runId":
+        "upn": null}, "lastModifiedUtc": "2023-11-30T05:39:22.3324445+00:00", "duration":
+        "00:00:04.9650682", "cancelationReason": null, "currentAttemptId": 1, "runId":
         "eval_run_name", "parentRunId": null, "experimentId": "7bdec279-f99c-4ed3-b0b8-dd75698b8fd0",
-        "status": "Completed", "startTimeUtc": "2023-11-22T03:56:30.2818109+00:00",
-        "endTimeUtc": "2023-11-22T03:56:34.8847152+00:00", "scheduleId": null, "displayName":
-        "eval-classification-accuracy", "name": null, "dataContainerId": "dcid.eval_run_name",
-        "description": null, "hidden": false, "runType": "azureml.promptflow.FlowRun",
-        "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
-        "computeType": "MIR_v2"}, "properties": {"azureml.promptflow.runtime_name":
-        "demo-mir", "azureml.promptflow.runtime_version": "20231011.v2", "azureml.promptflow.definition_file_name":
-        "flow.dag.yaml", "azureml.promptflow.session_id": "f8e4236a4e78e7f7125bbd811ec7976cb330412723a530f8",
+        "status": "Completed", "startTimeUtc": "2023-11-30T05:39:18.3361287+00:00",
+        "endTimeUtc": "2023-11-30T05:39:23.3011969+00:00", "scheduleId": null, "displayName":
+        "eval_run_name", "name": null, "dataContainerId": "dcid.eval_run_name", "description":
+        null, "hidden": false, "runType": "azureml.promptflow.FlowRun", "runTypeV2":
+        {"orchestrator": null, "traits": [], "attribution": "PromptFlow", "computeType":
+        "MIR_v2"}, "properties": {"azureml.promptflow.runtime_name": "demo-mir", "azureml.promptflow.runtime_version":
+        "20231011.v2", "azureml.promptflow.definition_file_name": "flow.dag.yaml",
+        "azureml.promptflow.session_id": "f8e4236a4e78e7f7125bbd811ec7976cb330412723a530f8",
         "azureml.promptflow.flow_lineage_id": "26c575d863a85371ef937096728441d8c68c3e737b5a1bfeae5ac8f3b9ccb048",
         "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
         "azureml.promptflow.flow_definition_blob_path": "LocalUpload/1aa3064d06f6170abbc488cc35c713b9/eval-classification-accuracy/flow.dag.yaml",
         "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl",
         "azureml.promptflow.input_run_id": "batch_run_name", "azureml.promptflow.inputs_mapping":
         "{\"groundtruth\":\"${data.answer}\",\"prediction\":\"${run.outputs.category}\"}",
-        "azureml.promptflow.snapshot_id": "9c873148-7152-49b6-9226-61cef0127786",
-        "_azureml.evaluation_run": "promptflow.BatchRun", "azureml.promptflow.total_tokens":
+        "_azureml.evaluation_run": "promptflow.BatchRun", "azureml.promptflow.snapshot_id":
+        "3094876c-0279-4d1f-b801-4d1a7c5dce51", "azureml.promptflow.total_tokens":
         "0"}, "parameters": {}, "actionUris": {}, "scriptName": null, "target": null,
         "uniqueChildRunComputeTargets": [], "tags": {}, "settings": {}, "services":
         {}, "inputDatasets": [], "outputDatasets": [], "runDefinition": null, "jobSpecification":
@@ -1354,263 +1069,26 @@ interactions:
         "type": "UriFolder"}}}, "runDefinition": {"Nodes": [{"Name": "grade", "Type":
         "python", "Source": {"Type": "code", "Tool": null, "Path": "grade.py"}, "Inputs":
         {"groundtruth": "${inputs.groundtruth}", "prediction": "${inputs.prediction}"},
-        "Tool": "grade.py", "Reduce": false, "Comment": null, "Activate": null, "Api":
+        "Tool": "grade.py", "Reduce": false, "Activate": null, "Comment": null, "Api":
         null, "Provider": null, "Connection": null, "Module": null}, {"Name": "calculate_accuracy",
         "Type": "python", "Source": {"Type": "code", "Tool": null, "Path": "calculate_accuracy.py"},
         "Inputs": {"grades": "${grade.output}"}, "Tool": "calculate_accuracy.py",
-        "Reduce": true, "Comment": null, "Activate": null, "Api": null, "Provider":
-        null, "Connection": null, "Module": null}], "Tools": [{"Name": "Content Safety
-        (Text Analyze)", "Type": "python", "Inputs": {"connection": {"Name": null,
-        "Type": ["AzureContentSafetyConnection"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "hate_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
-        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
-        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "self_harm_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
-        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
-        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "sexual_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
-        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
-        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "text": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "violence_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
-        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
-        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Use Azure Content Safety to detect harmful
-        content.", "connection_type": null, "Module": "content_safety_text.tools.content_safety_text_tool",
-        "class_name": null, "Source": null, "LkgCode": null, "Code": null, "Function":
-        "analyze_text", "action_type": null, "provider_config": null, "function_config":
-        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
-        "promptflow-contentsafety", "package_version": "0.0.5", "default_prompt":
-        null, "enable_kwargs": false}, {"Name": "Embedding", "Type": "python", "Inputs":
-        {"connection": {"Name": null, "Type": ["AzureOpenAIConnection", "OpenAIConnection"],
-        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
-        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
-        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
-        "generated_by": null, "input_type": "default"}, "deployment_name": {"Name":
-        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": "connection", "enabled_by_type": ["AzureOpenAIConnection"],
-        "enabled_by_value": null, "model_list": ["text-embedding-ada-002", "text-search-ada-doc-001",
-        "text-search-ada-query-001"], "Capabilities": {"completion": false, "chat_completion":
-        false, "embeddings": true}, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "input": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "model": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": ["text-embedding-ada-002", "text-search-ada-doc-001", "text-search-ada-query-001"],
-        "enabled_by": "connection", "enabled_by_type": ["OpenAIConnection"], "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Use Open AI''s embedding model to create
-        an embedding vector representing the input text.", "connection_type": null,
-        "Module": "promptflow.tools.embedding", "class_name": null, "Source": null,
-        "LkgCode": null, "Code": null, "Function": "embedding", "action_type": null,
-        "provider_config": null, "function_config": null, "Icon": null, "Category":
-        null, "Tags": null, "is_builtin": true, "package": "promptflow-tools", "package_version":
-        "0.1.0b8", "default_prompt": null, "enable_kwargs": false}, {"Name": "Open
-        Source LLM", "Type": "custom_llm", "Inputs": {"api": {"Name": null, "Type":
-        ["string"], "Default": null, "Description": null, "Enum": ["chat", "completion"],
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "connection": {"Name": null, "Type": ["CustomConnection"], "Default": null,
-        "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
-        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
-        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
-        "generated_by": null, "input_type": "default"}, "deployment_name": {"Name":
-        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "model_kwargs": {"Name": null, "Type": ["object"], "Default": "{}", "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Use an Open Source model from the Azure Model
-        catalog, deployed to an AzureML Online Endpoint for LLM Chat or Completion
-        API calls.", "connection_type": null, "Module": "promptflow.tools.open_source_llm",
-        "class_name": "OpenSourceLLM", "Source": null, "LkgCode": null, "Code": null,
-        "Function": "call", "action_type": null, "provider_config": null, "function_config":
-        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
-        "promptflow-tools", "package_version": "0.1.0b8", "default_prompt": null,
-        "enable_kwargs": false}, {"Name": "Serp API", "Type": "python", "Inputs":
-        {"connection": {"Name": null, "Type": ["SerpConnection"], "Default": null,
-        "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
-        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
-        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
-        "generated_by": null, "input_type": "default"}, "engine": {"Name": null, "Type":
-        ["string"], "Default": "google", "Description": null, "Enum": ["google", "bing"],
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "location": {"Name": null, "Type": ["string"], "Default": "", "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "num": {"Name": null, "Type": ["int"], "Default": "10", "Description": null,
-        "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "query": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "safe": {"Name": null, "Type": ["string"], "Default": "off", "Description":
-        null, "Enum": ["active", "off"], "enabled_by": null, "enabled_by_type": null,
-        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
-        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
-        null, "input_type": "default"}}, "Outputs": null, "Description": "Use Serp
-        API to obtain search results from a specific search engine.", "connection_type":
-        null, "Module": "promptflow.tools.serpapi", "class_name": "SerpAPI", "Source":
-        null, "LkgCode": null, "Code": null, "Function": "search", "action_type":
-        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
-        null, "Tags": null, "is_builtin": true, "package": "promptflow-tools", "package_version":
-        "0.1.0b8", "default_prompt": null, "enable_kwargs": false}, {"Name": "Faiss
-        Index Lookup", "Type": "python", "Inputs": {"path": {"Name": null, "Type":
-        ["string"], "Default": null, "Description": null, "Enum": null, "enabled_by":
-        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
-        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}, "top_k": {"Name": null,
-        "Type": ["int"], "Default": "3", "Description": null, "Enum": null, "enabled_by":
-        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
-        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}, "vector": {"Name":
-        null, "Type": ["list"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Search vector based query from the FAISS
-        index file.", "connection_type": null, "Module": "promptflow_vectordb.tool.faiss_index_lookup",
-        "class_name": "FaissIndexLookup", "Source": null, "LkgCode": null, "Code":
-        null, "Function": "search", "action_type": null, "provider_config": null,
-        "function_config": null, "Icon": null, "Category": null, "Tags": null, "is_builtin":
-        true, "package": "promptflow-vectordb", "package_version": "0.0.1", "default_prompt":
-        null, "enable_kwargs": false}, {"Name": "Vector DB Lookup", "Type": "python",
-        "Inputs": {"class_name": {"Name": null, "Type": ["string"], "Default": null,
-        "Description": null, "Enum": null, "enabled_by": "connection", "enabled_by_type":
-        ["WeaviateConnection"], "enabled_by_value": null, "model_list": null, "Capabilities":
-        null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}, "collection_name":
-        {"Name": null, "Type": ["string"], "Default": null, "Description": null, "Enum":
-        null, "enabled_by": "connection", "enabled_by_type": ["QdrantConnection"],
-        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
-        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
-        null, "input_type": "default"}, "connection": {"Name": null, "Type": ["CognitiveSearchConnection",
-        "QdrantConnection", "WeaviateConnection"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "index_name": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection"],
-        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
-        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
-        null, "input_type": "default"}, "search_filters": {"Name": null, "Type": ["object"],
-        "Default": null, "Description": null, "Enum": null, "enabled_by": "connection",
-        "enabled_by_type": ["CognitiveSearchConnection", "QdrantConnection"], "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "search_params": {"Name": null, "Type": ["object"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection",
-        "QdrantConnection"], "enabled_by_value": null, "model_list": null, "Capabilities":
-        null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
-        false, "generated_by": null, "input_type": "default"}, "text_field": {"Name":
-        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection",
-        "QdrantConnection", "WeaviateConnection"], "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "top_k": {"Name": null, "Type": ["int"], "Default": "3", "Description": null,
-        "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "vector": {"Name": null, "Type": ["list"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "vector_field": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection"],
-        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
-        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
-        null, "input_type": "default"}}, "Outputs": null, "Description": "Search vector
-        based query from existing Vector Database.", "connection_type": null, "Module":
-        "promptflow_vectordb.tool.vector_db_lookup", "class_name": "VectorDBLookup",
-        "Source": null, "LkgCode": null, "Code": null, "Function": "search", "action_type":
-        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
-        null, "Tags": null, "is_builtin": true, "package": "promptflow-vectordb",
-        "package_version": "0.0.1", "default_prompt": null, "enable_kwargs": false},
-        {"Name": "Vector Index Lookup", "Type": "python", "Inputs": {"path": {"Name":
-        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
-        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
-        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
-        "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "query": {"Name": null, "Type": ["object"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "top_k": {"Name": null, "Type": ["int"], "Default": "3", "Description": null,
-        "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": "Search text or vector based query from AzureML
-        Vector Index.", "connection_type": null, "Module": "promptflow_vectordb.tool.vector_index_lookup",
-        "class_name": "VectorIndexLookup", "Source": null, "LkgCode": null, "Code":
-        null, "Function": "search", "action_type": null, "provider_config": null,
-        "function_config": null, "Icon": null, "Category": null, "Tags": null, "is_builtin":
-        true, "package": "promptflow-vectordb", "package_version": "0.0.1", "default_prompt":
-        null, "enable_kwargs": false}, {"Name": "calculate_accuracy.py", "Type": "python",
-        "Inputs": {"grades": {"Name": null, "Type": ["object"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
-        "class_name": null, "Source": "calculate_accuracy.py", "LkgCode": null, "Code":
-        null, "Function": "calculate_accuracy", "action_type": null, "provider_config":
-        null, "function_config": null, "Icon": null, "Category": null, "Tags": null,
-        "is_builtin": false, "package": null, "package_version": null, "default_prompt":
-        null, "enable_kwargs": false}, {"Name": "grade.py", "Type": "python", "Inputs":
-        {"groundtruth": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"},
-        "prediction": {"Name": null, "Type": ["string"], "Default": null, "Description":
-        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
-        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
-        false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
-        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
-        "class_name": null, "Source": "grade.py", "LkgCode": null, "Code": null, "Function":
-        "grade", "action_type": null, "provider_config": null, "function_config":
-        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": false, "package":
-        null, "package_version": null, "default_prompt": null, "enable_kwargs": false}],
-        "Codes": null, "Inputs": {"groundtruth": {"Name": null, "Type": "string",
-        "Default": "APP", "Description": "Please specify the groundtruth column, which
-        contains the true label to the outputs that your flow produces.", "is_chat_input":
-        false, "is_chat_history": null}, "prediction": {"Name": null, "Type": "string",
-        "Default": "APP", "Description": "Please specify the prediction column, which
-        contains the predicted outputs that your flow produces.", "is_chat_input":
-        false, "is_chat_history": null}}, "Outputs": {"grade": {"Name": null, "Type":
-        "string", "Description": null, "Reference": "${grade.output}", "evaluation_only":
-        false, "is_chat_output": false}}}, "jobSpecification": null, "systemSettings":
-        null}'
+        "Reduce": true, "Activate": null, "Comment": null, "Api": null, "Provider":
+        null, "Connection": null, "Module": null}], "Tools": [], "Codes": null, "Inputs":
+        {"groundtruth": {"name": null, "type": "string", "default": "APP", "description":
+        "Please specify the groundtruth column, which contains the true label to the
+        outputs that your flow produces.", "is_chat_input": false, "is_chat_history":
+        null}, "prediction": {"name": null, "type": "string", "default": "APP", "description":
+        "Please specify the prediction column, which contains the predicted outputs
+        that your flow produces.", "is_chat_input": false, "is_chat_history": null}},
+        "Outputs": {"grade": {"name": null, "type": "string", "description": null,
+        "reference": "${grade.output}", "evaluation_only": false, "is_chat_output":
+        false}}}, "jobSpecification": null, "systemSettings": null}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '37681'
+      - '6590'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -1622,7 +1100,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.041'
+      - '0.038'
     status:
       code: 200
       message: OK
@@ -1638,128 +1116,126 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/batch_run_name/logContent
   response:
     body:
-      string: '"2023-11-22 03:55:23 +0000     151 promptflow-runtime INFO     [batch_run_name]
-        Receiving v2 bulk run request 146705b1-9569-4d03-9c8b-fdce5c31a8dc: {customer_content}\n2023-11-22
-        03:55:24 +0000     151 promptflow-runtime INFO     Running <function RunHistoryClient.get_run
-        at 0x7f1dcf1620d0>, 3 more tries to go.\n2023-11-22 03:55:24 +0000     151
+      string: '"2023-11-30 05:38:23 +0000     151 promptflow-runtime INFO     [batch_run_name]
+        Receiving v2 bulk run request f38bfd27-c01e-4511-8305-a68a709ccc3d: {customer_content}\n2023-11-30
+        05:38:23 +0000     151 promptflow-runtime INFO     Running <function RunHistoryClient.get_run
+        at 0x7f1dcf1620d0>, 3 more tries to go.\n2023-11-30 05:38:23 +0000     151
         promptflow-runtime INFO     Running <function RunHistoryClient.get_run at
-        0x7f1dcf162040>, 3 more tries to go.\n2023-11-22 03:55:24 +0000     151 promptflow-runtime
+        0x7f1dcf162040>, 3 more tries to go.\n2023-11-30 05:38:23 +0000     151 promptflow-runtime
         INFO     Running <function RunHistoryClient.update_run_status at 0x7f1dcf15ae50>,
-        3 more tries to go.\n2023-11-22 03:55:24 +0000     151 promptflow-runtime
-        INFO     Updating batch_run_name to Status.Preparing...\n2023-11-22 03:55:24
-        +0000     151 promptflow-runtime INFO     Starting to check process 3749 status
-        for run batch_run_name\n2023-11-22 03:55:24 +0000     151 promptflow-runtime
-        INFO     Start checking run status for bulk run batch_run_name\n2023-11-22
-        03:55:24 +0000     151 promptflow-runtime INFO     Start checking run status
-        for run batch_run_name\n2023-11-22 03:55:24 +0000    3749 promptflow-runtime
-        INFO     [151--3749] Start processing flowV2......\n2023-11-22 03:55:24 +0000    3749
-        promptflow-runtime INFO     Setting mlflow tracking uri...\n2023-11-22 03:55:24
-        +0000    3749 promptflow-runtime INFO     Validating ''AzureML Data Scientist''
-        user authentication...\n2023-11-22 03:55:24 +0000    3749 promptflow-runtime
-        INFO     Running <function RuntimeConfig.validate_by_get_dummy_run at 0x7f1dcf0eb550>,
-        5 more tries to go.\n2023-11-22 03:55:25 +0000    3749 promptflow-runtime
-        INFO     Successfully validated ''AzureML Data Scientist'' user authentication.\n2023-11-22
-        03:55:25 +0000    3749 promptflow-runtime INFO     Using AzureMLRunStorageV2\n2023-11-22
-        03:55:25 +0000    3749 promptflow-runtime INFO     Setting mlflow tracking
-        uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-11-22
-        03:55:25 +0000    3749 promptflow-runtime INFO     Running <function MlflowHelper.get_host_creds
-        at 0x7f1d7575c940>, 5 more tries to go.\n2023-11-22 03:55:25 +0000    3749
-        promptflow-runtime INFO     Initialized blob service client for AzureMLRunTracker.\n2023-11-22
-        03:55:25 +0000    3749 promptflow-runtime INFO     Setting mlflow tracking
-        uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-11-22
-        03:55:25 +0000    3749 promptflow-runtime INFO     Running <function MlflowHelper.get_host_creds
-        at 0x7f1d7575c940>, 5 more tries to go.\n2023-11-22 03:55:25 +0000    3749
+        3 more tries to go.\n2023-11-30 05:38:23 +0000     151 promptflow-runtime
+        INFO     Updating batch_run_name to Status.Preparing...\n2023-11-30 05:38:23
+        +0000     151 promptflow-runtime INFO     Starting to check process 8774 status
+        for run batch_run_name\n2023-11-30 05:38:23 +0000    8774 promptflow-runtime
+        INFO     [151--8774] Start processing flowV2......\n2023-11-30 05:38:23 +0000    8774
+        promptflow-runtime INFO     Setting mlflow tracking uri...\n2023-11-30 05:38:23
+        +0000     151 promptflow-runtime INFO     Start checking run status for bulk
+        run batch_run_name\n2023-11-30 05:38:23 +0000     151 promptflow-runtime INFO     Start
+        checking run status for run batch_run_name\n2023-11-30 05:38:23 +0000    8774
+        promptflow-runtime INFO     Validating ''AzureML Data Scientist'' user authentication...\n2023-11-30
+        05:38:23 +0000    8774 promptflow-runtime INFO     Running <function RuntimeConfig.validate_by_get_dummy_run
+        at 0x7f1dcf0eb550>, 5 more tries to go.\n2023-11-30 05:38:24 +0000    8774
+        promptflow-runtime INFO     Successfully validated ''AzureML Data Scientist''
+        user authentication.\n2023-11-30 05:38:24 +0000    8774 promptflow-runtime
+        INFO     Using AzureMLRunStorageV2\n2023-11-30 05:38:24 +0000    8774 promptflow-runtime
+        INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-11-30
+        05:38:24 +0000    8774 promptflow-runtime INFO     Running <function MlflowHelper.get_host_creds
+        at 0x7f1d7575c940>, 5 more tries to go.\n2023-11-30 05:38:24 +0000    8774
+        promptflow-runtime INFO     Initialized blob service client for AzureMLRunTracker.\n2023-11-30
+        05:38:24 +0000    8774 promptflow-runtime INFO     Setting mlflow tracking
+        uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-11-30
+        05:38:24 +0000    8774 promptflow-runtime INFO     Running <function MlflowHelper.get_host_creds
+        at 0x7f1d7575c940>, 5 more tries to go.\n2023-11-30 05:38:24 +0000    8774
         promptflow-runtime INFO     Running <function SnapshotsClient.download_snapshot
-        at 0x7f1dce2d7310>, 3 more tries to go.\n2023-11-22 03:55:25 +0000    3749
-        promptflow-runtime INFO     Get snapshot sas url for 04eb4a38-c229-4f50-bec6-5f5df8e228f6...\n2023-11-22
-        03:55:32 +0000    3749 promptflow-runtime INFO     Downloading snapshot 04eb4a38-c229-4f50-bec6-5f5df8e228f6
-        from uri {customer_content}...\n2023-11-22 03:55:32 +0000    3749 promptflow-runtime
-        INFO     Downloaded file /service/app/33047/requests/batch_run_name/04eb4a38-c229-4f50-bec6-5f5df8e228f6.zip
-        with size 4651 for snapshot 04eb4a38-c229-4f50-bec6-5f5df8e228f6.\n2023-11-22
-        03:55:32 +0000    3749 promptflow-runtime INFO     Download snapshot 04eb4a38-c229-4f50-bec6-5f5df8e228f6
-        completed.\n2023-11-22 03:55:32 +0000    3749 promptflow-runtime INFO     Running
-        <function prepare_data at 0x7f1d72131b80>, 3 more tries to go.\n2023-11-22
-        03:55:33 +0000    3749 promptflow-runtime INFO     Resolve data from url finished
-        in 0.956815066980198 seconds\n2023-11-22 03:55:33 +0000    3749 promptflow-runtime
-        INFO     Flow run is not terminated, skip persisting flow run record.\n2023-11-22
-        03:55:33 +0000    3749 promptflow-runtime INFO     Starting the aml run ''batch_run_name''...\n2023-11-22
-        03:55:33 +0000    3749 execution.bulk     INFO     Using fork, process count:
-        3\n2023-11-22 03:55:34 +0000    3777 execution          INFO     Process 3777
-        started.\n2023-11-22 03:55:34 +0000    3782 execution          INFO     Process
-        3782 started.\n2023-11-22 03:55:34 +0000    3787 execution          INFO     Process
-        3787 started.\n2023-11-22 03:55:34 +0000    3749 execution          INFO     Process
-        name: Process-40:2, Process id: 3777, Line number: 0 start execution.\n2023-11-22
-        03:55:34 +0000    3749 execution          INFO     Process name: Process-40:3,
-        Process id: 3782, Line number: 1 start execution.\n2023-11-22 03:55:34 +0000    3749
-        promptflow-runtime INFO     Flow run is not terminated, skip persisting flow
-        run record.\n2023-11-22 03:55:34 +0000    3782 execution          INFO     Start
-        to run 5 nodes with concurrency level 2.\n2023-11-22 03:55:34 +0000    3777
-        execution          INFO     Start to run 5 nodes with concurrency level 2.\n2023-11-22
-        03:55:34 +0000    3749 execution          INFO     Process name: Process-40:4,
-        Process id: 3787, Line number: 2 start execution.\n2023-11-22 03:55:34 +0000    3749
-        promptflow-runtime INFO     Flow run is not terminated, skip persisting flow
-        run record.\n2023-11-22 03:55:34 +0000    3749 promptflow-runtime INFO     Flow
-        run is not terminated, skip persisting flow run record.\n2023-11-22 03:55:34
-        +0000    3787 execution          INFO     Start to run 5 nodes with concurrency
-        level 2.\n2023-11-22 03:55:38 +0000    3749 execution          INFO     Process
-        name: Process-40:2, Process id: 3777, Line number: 0 completed.\n2023-11-22
-        03:55:38 +0000    3749 execution.bulk     INFO     Finished 1 / 3 lines.\n2023-11-22
-        03:55:38 +0000    3749 execution.bulk     INFO     Average execution time
-        for completed lines: 4.0 seconds. Estimated time for incomplete lines: 8.0
-        seconds.\n2023-11-22 03:55:38 +0000    3749 execution          INFO     Process
-        name: Process-40:4, Process id: 3787, Line number: 2 completed.\n2023-11-22
-        03:55:38 +0000    3749 execution.bulk     INFO     Finished 2 / 3 lines.\n2023-11-22
-        03:55:38 +0000    3749 execution.bulk     INFO     Average execution time
-        for completed lines: 2.08 seconds. Estimated time for incomplete lines: 2.08
-        seconds.\n2023-11-22 03:55:38 +0000    3749 execution          INFO     Process
-        name: Process-40:3, Process id: 3782, Line number: 1 completed.\n2023-11-22
-        03:55:38 +0000    3749 execution.bulk     INFO     Finished 3 / 3 lines.\n2023-11-22
-        03:55:38 +0000    3749 execution.bulk     INFO     Average execution time
-        for completed lines: 1.54 seconds. Estimated time for incomplete lines: 0.0
-        seconds.\n2023-11-22 03:55:42 +0000    3749 execution.bulk     INFO     Upload
-        status summary metrics for run batch_run_name finished in 2.7794772679917514
-        seconds\n2023-11-22 03:55:42 +0000    3749 promptflow-runtime INFO     Successfully
-        write run properties {\"azureml.promptflow.total_tokens\": 2510} with run
-        id ''batch_run_name''\n2023-11-22 03:55:42 +0000    3749 execution.bulk     INFO     Upload
-        RH properties for run batch_run_name finished in 0.08135116496123374 seconds\n2023-11-22
-        03:55:42 +0000    3749 promptflow-runtime INFO     Running <function AssetClient.create_unregistered_output
-        at 0x7f1dce64fee0>, 3 more tries to go.\n2023-11-22 03:55:42 +0000    3749
-        promptflow-runtime INFO     Creating unregistered output Asset for Run batch_run_name...\n2023-11-22
-        03:55:42 +0000    3749 promptflow-runtime INFO     Created debug_info Asset:
-        azureml://locations/eastus/workspaces/00000/data/azureml_batch_run_name_output_data_debug_info/versions/1\n2023-11-22
-        03:55:42 +0000    3749 promptflow-runtime INFO     Running <function AssetClient.create_unregistered_output
-        at 0x7f1dce64fee0>, 3 more tries to go.\n2023-11-22 03:55:43 +0000    3749
-        promptflow-runtime INFO     Creating unregistered output Asset for Run batch_run_name...\n2023-11-22
-        03:55:43 +0000    3749 promptflow-runtime INFO     Created flow_outputs output
-        Asset: azureml://locations/eastus/workspaces/00000/data/azureml_batch_run_name_output_data_flow_outputs/versions/1\n2023-11-22
-        03:55:43 +0000    3749 promptflow-runtime INFO     Running <function ArtifactClient.register_artifact
-        at 0x7f1dce3e1e50>, 3 more tries to go.\n2023-11-22 03:55:43 +0000    3749
-        promptflow-runtime INFO     Creating Artifact for Run batch_run_name...\n2023-11-22
-        03:55:43 +0000    3749 promptflow-runtime INFO     Created instance_results.jsonl
-        Artifact.\n2023-11-22 03:55:43 +0000    3749 promptflow-runtime INFO     Running
-        <function RunHistoryClient.patch_run at 0x7f1dcf15ad30>, 3 more tries to go.\n2023-11-22
-        03:55:43 +0000    3749 promptflow-runtime INFO     Patching batch_run_name...\n2023-11-22
-        03:55:43 +0000    3749 promptflow-runtime INFO     Ending the aml run ''batch_run_name''
-        with status ''Completed''...\n2023-11-22 03:55:44 +0000     151 promptflow-runtime
-        INFO     Process 3749 finished\n2023-11-22 03:55:44 +0000     151 promptflow-runtime
-        INFO     [151] Child process finished!\n2023-11-22 03:55:44 +0000     151
-        promptflow-runtime INFO     [batch_run_name] End processing bulk run\n2023-11-22
-        03:55:44 +0000     151 promptflow-runtime INFO     Running <function RunHistoryClient.get_run
-        at 0x7f1dcf1620d0>, 3 more tries to go.\n2023-11-22 03:55:44 +0000     151
+        at 0x7f1dcdf3ee50>, 3 more tries to go.\n2023-11-30 05:38:24 +0000    8774
+        promptflow-runtime INFO     Get snapshot sas url for 33f47284-7dde-427d-b455-5dca86f5c9ec...\n2023-11-30
+        05:38:31 +0000    8774 promptflow-runtime INFO     Downloading snapshot 33f47284-7dde-427d-b455-5dca86f5c9ec
+        from uri {customer_content}...\n2023-11-30 05:38:31 +0000    8774 promptflow-runtime
+        INFO     Downloaded file /service/app/33047/requests/batch_run_name/33f47284-7dde-427d-b455-5dca86f5c9ec.zip
+        with size 4643 for snapshot 33f47284-7dde-427d-b455-5dca86f5c9ec.\n2023-11-30
+        05:38:31 +0000    8774 promptflow-runtime INFO     Download snapshot 33f47284-7dde-427d-b455-5dca86f5c9ec
+        completed.\n2023-11-30 05:38:31 +0000    8774 promptflow-runtime INFO     Running
+        <function prepare_data at 0x7f1d72131b80>, 3 more tries to go.\n2023-11-30
+        05:38:32 +0000    8774 promptflow-runtime INFO     Resolve data from url finished
+        in 0.5532839389052242 seconds\n2023-11-30 05:38:32 +0000    8774 promptflow-runtime
+        INFO     Flow run is not terminated, skip persisting flow run record.\n2023-11-30
+        05:38:32 +0000    8774 promptflow-runtime INFO     Starting the aml run ''batch_run_name''...\n2023-11-30
+        05:38:32 +0000    8774 execution.bulk     INFO     Using fork, process count:
+        3\n2023-11-30 05:38:32 +0000    8803 execution          INFO     Process 8803
+        started.\n2023-11-30 05:38:32 +0000    8812 execution          INFO     Process
+        8812 started.\n2023-11-30 05:38:32 +0000    8807 execution          INFO     Process
+        8807 started.\n2023-11-30 05:38:32 +0000    8774 execution          INFO     Process
+        name: Process-132:2, Process id: 8803, Line number: 0 start execution.\n2023-11-30
+        05:38:32 +0000    8803 execution          INFO     Start to run 5 nodes with
+        concurrency level 2.\n2023-11-30 05:38:32 +0000    8774 execution          INFO     Process
+        name: Process-132:4, Process id: 8812, Line number: 1 start execution.\n2023-11-30
+        05:38:32 +0000    8812 execution          INFO     Start to run 5 nodes with
+        concurrency level 2.\n2023-11-30 05:38:32 +0000    8774 promptflow-runtime
+        INFO     Flow run is not terminated, skip persisting flow run record.\n2023-11-30
+        05:38:32 +0000    8807 execution          INFO     Start to run 5 nodes with
+        concurrency level 2.\n2023-11-30 05:38:32 +0000    8774 execution          INFO     Process
+        name: Process-132:3, Process id: 8807, Line number: 2 start execution.\n2023-11-30
+        05:38:32 +0000    8774 promptflow-runtime INFO     Flow run is not terminated,
+        skip persisting flow run record.\n2023-11-30 05:38:32 +0000    8774 promptflow-runtime
+        INFO     Flow run is not terminated, skip persisting flow run record.\n2023-11-30
+        05:38:35 +0000    8774 execution          INFO     Process name: Process-132:4,
+        Process id: 8812, Line number: 1 completed.\n2023-11-30 05:38:35 +0000    8774
+        execution.bulk     INFO     Finished 1 / 3 lines.\n2023-11-30 05:38:35 +0000    8774
+        execution.bulk     INFO     Average execution time for completed lines: 2.64
+        seconds. Estimated time for incomplete lines: 5.28 seconds.\n2023-11-30 05:38:35
+        +0000    8774 execution          INFO     Process name: Process-132:2, Process
+        id: 8803, Line number: 0 completed.\n2023-11-30 05:38:35 +0000    8774 execution.bulk     INFO     Finished
+        2 / 3 lines.\n2023-11-30 05:38:35 +0000    8774 execution.bulk     INFO     Average
+        execution time for completed lines: 1.35 seconds. Estimated time for incomplete
+        lines: 1.35 seconds.\n2023-11-30 05:38:35 +0000    8774 execution          INFO     Process
+        name: Process-132:3, Process id: 8807, Line number: 2 completed.\n2023-11-30
+        05:38:35 +0000    8774 execution.bulk     INFO     Finished 3 / 3 lines.\n2023-11-30
+        05:38:35 +0000    8774 execution.bulk     INFO     Average execution time
+        for completed lines: 0.99 seconds. Estimated time for incomplete lines: 0.0
+        seconds.\n2023-11-30 05:38:39 +0000    8774 execution.bulk     INFO     Upload
+        status summary metrics for run batch_run_name finished in 2.6093493800144643
+        seconds\n2023-11-30 05:38:39 +0000    8774 promptflow-runtime INFO     Successfully
+        write run properties {\"azureml.promptflow.total_tokens\": 2376} with run
+        id ''batch_run_name''\n2023-11-30 05:38:39 +0000    8774 execution.bulk     INFO     Upload
+        RH properties for run batch_run_name finished in 0.07403002609498799 seconds\n2023-11-30
+        05:38:39 +0000    8774 promptflow-runtime INFO     Running <function AssetClient.create_unregistered_output
+        at 0x7f1dce073c10>, 3 more tries to go.\n2023-11-30 05:38:39 +0000    8774
+        promptflow-runtime INFO     Creating unregistered output Asset for Run batch_run_name...\n2023-11-30
+        05:38:39 +0000    8774 promptflow-runtime INFO     Created debug_info Asset:
+        azureml://locations/eastus/workspaces/00000/data/azureml_batch_run_name_output_data_debug_info/versions/1\n2023-11-30
+        05:38:39 +0000    8774 promptflow-runtime INFO     Running <function AssetClient.create_unregistered_output
+        at 0x7f1dce073c10>, 3 more tries to go.\n2023-11-30 05:38:39 +0000    8774
+        promptflow-runtime INFO     Creating unregistered output Asset for Run batch_run_name...\n2023-11-30
+        05:38:39 +0000    8774 promptflow-runtime INFO     Created flow_outputs output
+        Asset: azureml://locations/eastus/workspaces/00000/data/azureml_batch_run_name_output_data_flow_outputs/versions/1\n2023-11-30
+        05:38:39 +0000    8774 promptflow-runtime INFO     Running <function ArtifactClient.register_artifact
+        at 0x7f1dce073ee0>, 3 more tries to go.\n2023-11-30 05:38:39 +0000    8774
+        promptflow-runtime INFO     Creating Artifact for Run batch_run_name...\n2023-11-30
+        05:38:40 +0000    8774 promptflow-runtime INFO     Created instance_results.jsonl
+        Artifact.\n2023-11-30 05:38:40 +0000    8774 promptflow-runtime INFO     Running
+        <function RunHistoryClient.patch_run at 0x7f1dcf15ad30>, 3 more tries to go.\n2023-11-30
+        05:38:40 +0000    8774 promptflow-runtime INFO     Patching batch_run_name...\n2023-11-30
+        05:38:40 +0000    8774 promptflow-runtime INFO     Ending the aml run ''batch_run_name''
+        with status ''Completed''...\n2023-11-30 05:38:40 +0000     151 promptflow-runtime
+        INFO     Process 8774 finished\n2023-11-30 05:38:40 +0000     151 promptflow-runtime
+        INFO     [151] Child process finished!\n2023-11-30 05:38:40 +0000     151
+        promptflow-runtime INFO     [batch_run_name] End processing bulk run\n2023-11-30
+        05:38:43 +0000     151 promptflow-runtime INFO     Running <function RunHistoryClient.get_run
+        at 0x7f1dcf1620d0>, 3 more tries to go.\n2023-11-30 05:38:43 +0000     151
         promptflow-runtime INFO     Running <function RunHistoryClient.get_run at
-        0x7f1dcf162040>, 3 more tries to go.\n2023-11-22 03:55:44 +0000     151 promptflow-runtime
+        0x7f1dcf162040>, 3 more tries to go.\n2023-11-30 05:38:43 +0000     151 promptflow-runtime
         INFO     Run batch_run_name is in progress, Execution status: Completed\n"'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '10052'
+      - '10061'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -1771,7 +1247,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.670'
+      - '0.540'
     status:
       code: 200
       message: OK
@@ -1787,136 +1263,136 @@ interactions:
       Content-Type:
       - application/json
       User-Agent:
-      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/eval_run_name/logContent
   response:
     body:
-      string: '"2023-11-22 03:56:20 +0000     235 promptflow-runtime INFO     [eval_run_name]
-        Receiving v2 bulk run request 813aead2-e53d-4ad8-8b86-9787110b1190: {customer_content}\n2023-11-22
-        03:56:20 +0000     235 promptflow-runtime INFO     Running <function RunHistoryClient.get_run
-        at 0x7f55b536e0d0>, 3 more tries to go.\n2023-11-22 03:56:20 +0000     235
+      string: '"2023-11-30 05:39:08 +0000     151 promptflow-runtime INFO     [eval_run_name]
+        Receiving v2 bulk run request a4a5c9d0-e227-41d8-b1f1-f3e1e822ca2f: {customer_content}\n2023-11-30
+        05:39:08 +0000     151 promptflow-runtime INFO     Running <function RunHistoryClient.get_run
+        at 0x7f1dcf1620d0>, 3 more tries to go.\n2023-11-30 05:39:08 +0000     151
         promptflow-runtime INFO     Running <function RunHistoryClient.get_run at
-        0x7f55b536e040>, 3 more tries to go.\n2023-11-22 03:56:20 +0000     235 promptflow-runtime
-        INFO     Running <function RunHistoryClient.update_run_status at 0x7f55b5367e50>,
-        3 more tries to go.\n2023-11-22 03:56:20 +0000     235 promptflow-runtime
-        INFO     Updating eval_run_name to Status.Preparing...\n2023-11-22 03:56:20
-        +0000     235 promptflow-runtime INFO     Starting to check process 3853 status
-        for run eval_run_name\n2023-11-22 03:56:20 +0000     235 promptflow-runtime
-        INFO     Start checking run status for bulk run eval_run_name\n2023-11-22
-        03:56:20 +0000     235 promptflow-runtime INFO     Start checking run status
-        for run eval_run_name\n2023-11-22 03:56:20 +0000    3853 promptflow-runtime
-        INFO     [235--3853] Start processing flowV2......\n2023-11-22 03:56:21 +0000    3853
-        promptflow-runtime INFO     Setting mlflow tracking uri...\n2023-11-22 03:56:21
-        +0000    3853 promptflow-runtime INFO     Validating ''AzureML Data Scientist''
-        user authentication...\n2023-11-22 03:56:21 +0000    3853 promptflow-runtime
-        INFO     Running <function RuntimeConfig.validate_by_get_dummy_run at 0x7f55b52f7550>,
-        5 more tries to go.\n2023-11-22 03:56:21 +0000    3853 promptflow-runtime
-        INFO     Successfully validated ''AzureML Data Scientist'' user authentication.\n2023-11-22
-        03:56:21 +0000    3853 promptflow-runtime INFO     Using AzureMLRunStorageV2\n2023-11-22
-        03:56:21 +0000    3853 promptflow-runtime INFO     Setting mlflow tracking
-        uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-11-22
-        03:56:21 +0000    3853 promptflow-runtime INFO     Running <function MlflowHelper.get_host_creds
-        at 0x7f555b967940>, 5 more tries to go.\n2023-11-22 03:56:21 +0000    3853
-        promptflow-runtime INFO     Initialized blob service client for AzureMLRunTracker.\n2023-11-22
-        03:56:22 +0000    3853 promptflow-runtime INFO     Setting mlflow tracking
-        uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-11-22
-        03:56:22 +0000    3853 promptflow-runtime INFO     Running <function MlflowHelper.get_host_creds
-        at 0x7f555b967940>, 5 more tries to go.\n2023-11-22 03:56:22 +0000    3853
+        0x7f1dcf162040>, 3 more tries to go.\n2023-11-30 05:39:08 +0000     151 promptflow-runtime
+        INFO     Running <function RunHistoryClient.update_run_status at 0x7f1dcf15ae50>,
+        3 more tries to go.\n2023-11-30 05:39:08 +0000     151 promptflow-runtime
+        INFO     Updating eval_run_name to Status.Preparing...\n2023-11-30 05:39:08
+        +0000     151 promptflow-runtime INFO     Starting to check process 8858 status
+        for run eval_run_name\n2023-11-30 05:39:08 +0000     151 promptflow-runtime
+        INFO     Start checking run status for bulk run eval_run_name\n2023-11-30
+        05:39:08 +0000     151 promptflow-runtime INFO     Start checking run status
+        for run eval_run_name\n2023-11-30 05:39:08 +0000    8858 promptflow-runtime
+        INFO     [151--8858] Start processing flowV2......\n2023-11-30 05:39:08 +0000    8858
+        promptflow-runtime INFO     Setting mlflow tracking uri...\n2023-11-30 05:39:08
+        +0000    8858 promptflow-runtime INFO     Validating ''AzureML Data Scientist''
+        user authentication...\n2023-11-30 05:39:08 +0000    8858 promptflow-runtime
+        INFO     Running <function RuntimeConfig.validate_by_get_dummy_run at 0x7f1dcf0eb550>,
+        5 more tries to go.\n2023-11-30 05:39:09 +0000    8858 promptflow-runtime
+        INFO     Successfully validated ''AzureML Data Scientist'' user authentication.\n2023-11-30
+        05:39:09 +0000    8858 promptflow-runtime INFO     Using AzureMLRunStorageV2\n2023-11-30
+        05:39:09 +0000    8858 promptflow-runtime INFO     Setting mlflow tracking
+        uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-11-30
+        05:39:09 +0000    8858 promptflow-runtime INFO     Running <function MlflowHelper.get_host_creds
+        at 0x7f1d7575c940>, 5 more tries to go.\n2023-11-30 05:39:09 +0000    8858
+        promptflow-runtime INFO     Initialized blob service client for AzureMLRunTracker.\n2023-11-30
+        05:39:09 +0000    8858 promptflow-runtime INFO     Setting mlflow tracking
+        uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-11-30
+        05:39:09 +0000    8858 promptflow-runtime INFO     Running <function MlflowHelper.get_host_creds
+        at 0x7f1d7575c940>, 5 more tries to go.\n2023-11-30 05:39:09 +0000    8858
         promptflow-runtime INFO     Running <function SnapshotsClient.download_snapshot
-        at 0x7f55b02a94c0>, 3 more tries to go.\n2023-11-22 03:56:22 +0000    3853
-        promptflow-runtime INFO     Get snapshot sas url for 9c873148-7152-49b6-9226-61cef0127786...\n2023-11-22
-        03:56:28 +0000    3853 promptflow-runtime INFO     Downloading snapshot 9c873148-7152-49b6-9226-61cef0127786
-        from uri {customer_content}...\n2023-11-22 03:56:28 +0000    3853 promptflow-runtime
-        INFO     Downloaded file /service/app/46593/requests/eval_run_name/9c873148-7152-49b6-9226-61cef0127786.zip
-        with size 1221 for snapshot 9c873148-7152-49b6-9226-61cef0127786.\n2023-11-22
-        03:56:28 +0000    3853 promptflow-runtime INFO     Download snapshot 9c873148-7152-49b6-9226-61cef0127786
-        completed.\n2023-11-22 03:56:28 +0000    3853 promptflow-runtime INFO     Running
-        <function prepare_data at 0x7f555833cb80>, 3 more tries to go.\n2023-11-22
-        03:56:29 +0000    3853 promptflow-runtime INFO     Resolve data from url finished
-        in 0.5507109179161489 seconds\n2023-11-22 03:56:29 +0000    3853 promptflow-runtime
-        INFO     Running <function prepare_data at 0x7f555833cb80>, 3 more tries to
-        go.\n2023-11-22 03:56:29 +0000    3853 promptflow-runtime INFO     Resolve
-        data from url finished in 0.7194579159840941 seconds\n2023-11-22 03:56:29
-        +0000    3853 promptflow-runtime INFO     Flow run is not terminated, skip
-        persisting flow run record.\n2023-11-22 03:56:29 +0000    3853 promptflow-runtime
-        INFO     Starting the aml run ''eval_run_name''...\n2023-11-22 03:56:30 +0000    3853
-        execution.bulk     INFO     Using fork, process count: 3\n2023-11-22 03:56:30
-        +0000    3887 execution          INFO     Process 3887 started.\n2023-11-22
-        03:56:30 +0000    3891 execution          INFO     Process 3891 started.\n2023-11-22
-        03:56:30 +0000    3891 execution          INFO     Start to run 1 nodes with
-        concurrency level 2.\n2023-11-22 03:56:30 +0000    3883 execution          INFO     Process
-        3883 started.\n2023-11-22 03:56:30 +0000    3853 execution          INFO     Process
-        name: Process-42:3, Process id: 3887, Line number: 0 start execution.\n2023-11-22
-        03:56:30 +0000    3883 execution          INFO     Start to run 1 nodes with
-        concurrency level 2.\n2023-11-22 03:56:30 +0000    3853 execution          INFO     Process
-        name: Process-42:4, Process id: 3891, Line number: 1 start execution.\n2023-11-22
-        03:56:30 +0000    3887 execution          INFO     Start to run 1 nodes with
-        concurrency level 2.\n2023-11-22 03:56:30 +0000    3853 promptflow-runtime
-        INFO     Flow run is not terminated, skip persisting flow run record.\n2023-11-22
-        03:56:30 +0000    3853 execution          INFO     Process name: Process-42:2,
-        Process id: 3883, Line number: 2 start execution.\n2023-11-22 03:56:30 +0000    3853
+        at 0x7f1dc7c4b160>, 3 more tries to go.\n2023-11-30 05:39:09 +0000    8858
+        promptflow-runtime INFO     Get snapshot sas url for 3094876c-0279-4d1f-b801-4d1a7c5dce51...\n2023-11-30
+        05:39:16 +0000    8858 promptflow-runtime INFO     Downloading snapshot 3094876c-0279-4d1f-b801-4d1a7c5dce51
+        from uri {customer_content}...\n2023-11-30 05:39:16 +0000    8858 promptflow-runtime
+        INFO     Downloaded file /service/app/33047/requests/eval_run_name/3094876c-0279-4d1f-b801-4d1a7c5dce51.zip
+        with size 1243 for snapshot 3094876c-0279-4d1f-b801-4d1a7c5dce51.\n2023-11-30
+        05:39:16 +0000    8858 promptflow-runtime INFO     Download snapshot 3094876c-0279-4d1f-b801-4d1a7c5dce51
+        completed.\n2023-11-30 05:39:16 +0000    8858 promptflow-runtime INFO     Running
+        <function prepare_data at 0x7f1d72131b80>, 3 more tries to go.\n2023-11-30
+        05:39:17 +0000    8858 promptflow-runtime INFO     Resolve data from url finished
+        in 0.589089963119477 seconds\n2023-11-30 05:39:17 +0000    8858 promptflow-runtime
+        INFO     Running <function prepare_data at 0x7f1d72131b80>, 3 more tries to
+        go.\n2023-11-30 05:39:18 +0000    8858 promptflow-runtime INFO     Resolve
+        data from url finished in 0.9121411391533911 seconds\n2023-11-30 05:39:18
+        +0000    8858 promptflow-runtime INFO     Flow run is not terminated, skip
+        persisting flow run record.\n2023-11-30 05:39:18 +0000    8858 promptflow-runtime
+        INFO     Starting the aml run ''eval_run_name''...\n2023-11-30 05:39:18 +0000    8858
+        execution.bulk     INFO     Using fork, process count: 3\n2023-11-30 05:39:18
+        +0000    8887 execution          INFO     Process 8887 started.\n2023-11-30
+        05:39:18 +0000    8892 execution          INFO     Process 8892 started.\n2023-11-30
+        05:39:18 +0000    8896 execution          INFO     Process 8896 started.\n2023-11-30
+        05:39:18 +0000    8887 execution          INFO     Start to run 1 nodes with
+        concurrency level 2.\n2023-11-30 05:39:18 +0000    8892 execution          INFO     Start
+        to run 1 nodes with concurrency level 2.\n2023-11-30 05:39:18 +0000    8896
+        execution          INFO     Start to run 1 nodes with concurrency level 2.\n2023-11-30
+        05:39:18 +0000    8858 execution          INFO     Process name: Process-134:2,
+        Process id: 8887, Line number: 0 start execution.\n2023-11-30 05:39:18 +0000    8858
+        execution          INFO     Process name: Process-134:4, Process id: 8892,
+        Line number: 1 start execution.\n2023-11-30 05:39:18 +0000    8858 promptflow-runtime
+        INFO     Flow run is not terminated, skip persisting flow run record.\n2023-11-30
+        05:39:18 +0000    8858 execution          INFO     Process name: Process-134:3,
+        Process id: 8896, Line number: 2 start execution.\n2023-11-30 05:39:18 +0000    8858
         promptflow-runtime INFO     Flow run is not terminated, skip persisting flow
-        run record.\n2023-11-22 03:56:30 +0000    3853 promptflow-runtime INFO     Flow
-        run is not terminated, skip persisting flow run record.\n2023-11-22 03:56:30
-        +0000    3853 execution          INFO     Process name: Process-42:4, Process
-        id: 3891, Line number: 1 completed.\n2023-11-22 03:56:30 +0000    3853 execution.bulk     INFO     Finished
-        1 / 3 lines.\n2023-11-22 03:56:30 +0000    3853 execution.bulk     INFO     Average
-        execution time for completed lines: 0.41 seconds. Estimated time for incomplete
-        lines: 0.82 seconds.\n2023-11-22 03:56:31 +0000    3853 execution          INFO     Process
-        name: Process-42:2, Process id: 3883, Line number: 2 completed.\n2023-11-22
-        03:56:31 +0000    3853 execution.bulk     INFO     Finished 2 / 3 lines.\n2023-11-22
-        03:56:31 +0000    3853 execution.bulk     INFO     Average execution time
-        for completed lines: 0.25 seconds. Estimated time for incomplete lines: 0.25
-        seconds.\n2023-11-22 03:56:31 +0000    3853 execution          INFO     Process
-        name: Process-42:3, Process id: 3887, Line number: 0 completed.\n2023-11-22
-        03:56:31 +0000    3853 execution.bulk     INFO     Finished 3 / 3 lines.\n2023-11-22
-        03:56:31 +0000    3853 execution.bulk     INFO     Average execution time
-        for completed lines: 0.19 seconds. Estimated time for incomplete lines: 0.0
-        seconds.\n2023-11-22 03:56:32 +0000    3853 execution          INFO     Executing
-        aggregation nodes...\n2023-11-22 03:56:32 +0000    3853 execution          INFO     Start
-        to run 1 nodes with concurrency level 2.\n2023-11-22 03:56:32 +0000    3853
-        execution          INFO     Finish executing aggregation nodes.\n2023-11-22
-        03:56:33 +0000    3853 execution.bulk     INFO     Upload status summary metrics
-        for run eval_run_name finished in 1.3536192559404299 seconds\n2023-11-22 03:56:33
-        +0000    3853 execution.bulk     INFO     Upload metrics for run eval_run_name
-        finished in 0.31285510503221303 seconds\n2023-11-22 03:56:33 +0000    3853
-        promptflow-runtime INFO     Successfully write run properties {\"azureml.promptflow.total_tokens\":
-        0} with run id ''eval_run_name''\n2023-11-22 03:56:34 +0000    3853 execution.bulk     INFO     Upload
-        RH properties for run eval_run_name finished in 0.0774952529463917 seconds\n2023-11-22
-        03:56:34 +0000    3853 promptflow-runtime INFO     Running <function AssetClient.create_unregistered_output
-        at 0x7f55b03a5f70>, 3 more tries to go.\n2023-11-22 03:56:34 +0000    3853
-        promptflow-runtime INFO     Creating unregistered output Asset for Run eval_run_name...\n2023-11-22
-        03:56:34 +0000    3853 promptflow-runtime INFO     Created debug_info Asset:
-        azureml://locations/eastus/workspaces/00000/data/azureml_eval_run_name_output_data_debug_info/versions/1\n2023-11-22
-        03:56:34 +0000    3853 promptflow-runtime INFO     Running <function AssetClient.create_unregistered_output
-        at 0x7f55b03a5f70>, 3 more tries to go.\n2023-11-22 03:56:34 +0000    3853
-        promptflow-runtime INFO     Creating unregistered output Asset for Run eval_run_name...\n2023-11-22
-        03:56:34 +0000    3853 promptflow-runtime INFO     Created flow_outputs output
-        Asset: azureml://locations/eastus/workspaces/00000/data/azureml_eval_run_name_output_data_flow_outputs/versions/1\n2023-11-22
-        03:56:34 +0000    3853 promptflow-runtime INFO     Running <function ArtifactClient.register_artifact
-        at 0x7f55b03ad280>, 3 more tries to go.\n2023-11-22 03:56:34 +0000    3853
-        promptflow-runtime INFO     Creating Artifact for Run eval_run_name...\n2023-11-22
-        03:56:34 +0000    3853 promptflow-runtime INFO     Created instance_results.jsonl
-        Artifact.\n2023-11-22 03:56:34 +0000    3853 promptflow-runtime INFO     Running
-        <function RunHistoryClient.patch_run at 0x7f55b5367d30>, 3 more tries to go.\n2023-11-22
-        03:56:34 +0000    3853 promptflow-runtime INFO     Patching eval_run_name...\n2023-11-22
-        03:56:34 +0000    3853 promptflow-runtime INFO     Ending the aml run ''eval_run_name''
-        with status ''Completed''...\n2023-11-22 03:56:35 +0000     235 promptflow-runtime
-        INFO     Process 3853 finished\n2023-11-22 03:56:35 +0000     235 promptflow-runtime
-        INFO     [235] Child process finished!\n2023-11-22 03:56:35 +0000     235
-        promptflow-runtime INFO     [eval_run_name] End processing bulk run\n2023-11-22
-        03:56:41 +0000     235 promptflow-runtime INFO     Running <function RunHistoryClient.get_run
-        at 0x7f55b536e0d0>, 3 more tries to go.\n2023-11-22 03:56:41 +0000     235
+        run record.\n2023-11-30 05:39:18 +0000    8858 promptflow-runtime INFO     Flow
+        run is not terminated, skip persisting flow run record.\n2023-11-30 05:39:18
+        +0000    8858 execution          INFO     Process name: Process-134:2, Process
+        id: 8887, Line number: 0 completed.\n2023-11-30 05:39:18 +0000    8858 execution.bulk     INFO     Finished
+        1 / 3 lines.\n2023-11-30 05:39:18 +0000    8858 execution.bulk     INFO     Average
+        execution time for completed lines: 0.39 seconds. Estimated time for incomplete
+        lines: 0.78 seconds.\n2023-11-30 05:39:19 +0000    8858 execution          INFO     Process
+        name: Process-134:4, Process id: 8892, Line number: 1 completed.\n2023-11-30
+        05:39:19 +0000    8858 execution          INFO     Process name: Process-134:3,
+        Process id: 8896, Line number: 2 completed.\n2023-11-30 05:39:19 +0000    8858
+        execution.bulk     INFO     Finished 3 / 3 lines.\n2023-11-30 05:39:19 +0000    8858
+        execution.bulk     INFO     Finished 3 / 3 lines.\n2023-11-30 05:39:19 +0000    8858
+        execution.bulk     INFO     Average execution time for completed lines: 0.16
+        seconds. Estimated time for incomplete lines: 0.0 seconds.\n2023-11-30 05:39:19
+        +0000    8858 execution.bulk     INFO     Average execution time for completed
+        lines: 0.16 seconds. Estimated time for incomplete lines: 0.0 seconds.\n2023-11-30
+        05:39:20 +0000    8858 execution          INFO     Executing aggregation nodes...\n2023-11-30
+        05:39:20 +0000    8858 execution          INFO     Start to run 1 nodes with
+        concurrency level 2.\n2023-11-30 05:39:20 +0000    8858 execution          INFO     Finish
+        executing aggregation nodes.\n2023-11-30 05:39:21 +0000    8858 execution.bulk     INFO     Upload
+        status summary metrics for run eval_run_name finished in 1.6591544589027762
+        seconds\n2023-11-30 05:39:22 +0000    8858 execution.bulk     INFO     Upload
+        metrics for run eval_run_name finished in 0.3773629660718143 seconds\n2023-11-30
+        05:39:22 +0000    8858 promptflow-runtime INFO     Successfully write run
+        properties {\"azureml.promptflow.total_tokens\": 0} with run id ''eval_run_name''\n2023-11-30
+        05:39:22 +0000    8858 execution.bulk     INFO     Upload RH properties for
+        run eval_run_name finished in 0.07352172094397247 seconds\n2023-11-30 05:39:22
+        +0000    8858 promptflow-runtime INFO     Running <function AssetClient.create_unregistered_output
+        at 0x7f1dce075dc0>, 3 more tries to go.\n2023-11-30 05:39:22 +0000    8858
+        promptflow-runtime INFO     Creating unregistered output Asset for Run eval_run_name...\n2023-11-30
+        05:39:22 +0000    8858 promptflow-runtime INFO     Created debug_info Asset:
+        azureml://locations/eastus/workspaces/00000/data/azureml_eval_run_name_output_data_debug_info/versions/1\n2023-11-30
+        05:39:22 +0000    8858 promptflow-runtime INFO     Running <function AssetClient.create_unregistered_output
+        at 0x7f1dce075dc0>, 3 more tries to go.\n2023-11-30 05:39:22 +0000    8858
+        promptflow-runtime INFO     Creating unregistered output Asset for Run eval_run_name...\n2023-11-30
+        05:39:22 +0000    8858 promptflow-runtime INFO     Created flow_outputs output
+        Asset: azureml://locations/eastus/workspaces/00000/data/azureml_eval_run_name_output_data_flow_outputs/versions/1\n2023-11-30
+        05:39:22 +0000    8858 promptflow-runtime INFO     Running <function ArtifactClient.register_artifact
+        at 0x7f1dce0870d0>, 3 more tries to go.\n2023-11-30 05:39:22 +0000    8858
+        promptflow-runtime INFO     Creating Artifact for Run eval_run_name...\n2023-11-30
+        05:39:23 +0000    8858 promptflow-runtime INFO     Created instance_results.jsonl
+        Artifact.\n2023-11-30 05:39:23 +0000    8858 promptflow-runtime INFO     Running
+        <function RunHistoryClient.patch_run at 0x7f1dcf15ad30>, 3 more tries to go.\n2023-11-30
+        05:39:23 +0000    8858 promptflow-runtime INFO     Patching eval_run_name...\n2023-11-30
+        05:39:23 +0000    8858 promptflow-runtime INFO     Ending the aml run ''eval_run_name''
+        with status ''Completed''...\n2023-11-30 05:39:23 +0000     151 promptflow-runtime
+        INFO     Process 8858 finished\n2023-11-30 05:39:23 +0000     151 promptflow-runtime
+        INFO     [151] Child process finished!\n2023-11-30 05:39:23 +0000     151
+        promptflow-runtime INFO     [eval_run_name] End processing bulk run\n2023-11-30
+        05:39:28 +0000     151 promptflow-runtime INFO     Running <function RunHistoryClient.get_run
+        at 0x7f1dcf1620d0>, 3 more tries to go.\n2023-11-30 05:39:28 +0000     151
         promptflow-runtime INFO     Running <function RunHistoryClient.get_run at
-        0x7f55b536e040>, 3 more tries to go.\n2023-11-22 03:56:41 +0000     235 promptflow-runtime
+        0x7f1dcf162040>, 3 more tries to go.\n2023-11-30 05:39:28 +0000     151 promptflow-runtime
         INFO     Run eval_run_name is in progress, Execution status: Completed\n"'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '10775'
+      - '10779'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -1928,7 +1404,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.685'
+      - '0.595'
     status:
       code: 200
       message: OK
