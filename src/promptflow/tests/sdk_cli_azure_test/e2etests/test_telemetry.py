@@ -259,33 +259,23 @@ class TestTelemetry:
         assert first_sdk_calls[0] is True
         assert first_sdk_calls[-1] is True
 
-    def test_ci_user_agent(self, cli_perf_monitor_agent) -> None:
-        try:
-            os.environ[USER_AGENT] = cli_perf_monitor_agent
-            context = OperationContext.get_instance()
-            assert cli_perf_monitor_agent in context.get_user_agent()
-        except Exception as e:
-            raise e
-        finally:
-            del os.environ[USER_AGENT]
-
     def test_duplicate_ua(self):
         context = OperationContext.get_instance()
+        context['user_agent'] = '   ua1 ua2 ua3   '  # Add fixed UA with extra spaces
         origin_agent = context.get_user_agent()
-        context.append_user_agent('   ua1 ua2 ua3   ')  # Add fixed UA with extra spaces
 
-        os.environ[USER_AGENT] = '    ua3   ua2  ua1'  # Env configuration ua with extra spaces, duplicate ua.
+        context.append_user_agent('    ua3   ua2  ua1')  # Env configuration ua with extra spaces, duplicate ua.
         agent = context.get_user_agent()
-        assert agent == origin_agent + ' ua1 ua2 ua3'
+        assert agent == origin_agent
 
-        os.environ[USER_AGENT] = '  ua3   ua2 ua1  u4  '  # Env modifies ua with extra spaces, ua4 should be added.
+        context.append_user_agent('  ua3   ua2 ua1  u4  ')  # Env modifies ua with extra spaces, ua4 should be added.
         agent = context.get_user_agent()
-        assert agent == origin_agent + ' ua1 ua2 ua3 u4'
+        assert agent == origin_agent + ' u4'
 
-        os.environ[USER_AGENT] = 'ua1 ua2'  # Env modifies ua with extra spaces, duplicate ua.
+        context.append_user_agent('ua1 ua2')  # Env modifies ua with extra spaces, duplicate ua.
         agent = context.get_user_agent()
-        assert agent == origin_agent + ' ua1 ua2 ua3'
+        assert agent == origin_agent + ' u4'
 
-        os.environ[USER_AGENT] = 'ua2 ua4 ua5    '  # Env modifies ua with extra spaces, ua4, ua5 should be added.
+        context.append_user_agent('ua2 ua4 ua5    ')  # Env modifies ua with extra spaces, ua4, ua5 should be added.
         agent = context.get_user_agent()
-        assert agent == origin_agent + ' ua1 ua2 ua3 ua4 ua5'
+        assert agent == origin_agent + ' ua5'

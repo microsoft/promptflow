@@ -1,6 +1,5 @@
 import contextlib
 import io
-import os
 import sys
 import tempfile
 import timeit
@@ -10,7 +9,7 @@ from pathlib import Path
 import pytest
 import multiprocessing
 from promptflow._core.operation_context import OperationContext
-from promptflow._constants import USER_AGENT
+from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 
 FLOWS_DIR = "./tests/test_configs/flows"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
@@ -19,9 +18,13 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 @pytest.fixture(autouse=True)
 def set_env(cli_perf_monitor_agent):
-    os.environ[USER_AGENT] = cli_perf_monitor_agent
+    context = OperationContext.get_instance()
+    context.append_user_agent(cli_perf_monitor_agent)
+    assert CLI_USER_AGENT in context.get_user_agent()
+    assert cli_perf_monitor_agent in context.get_user_agent()
     yield
-    del os.environ[USER_AGENT]
+    context.delete_user_agent(cli_perf_monitor_agent)
+    assert cli_perf_monitor_agent in context.get_user_agent()
 
 
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
