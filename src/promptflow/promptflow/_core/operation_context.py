@@ -103,12 +103,12 @@ class OperationContext(Dict):
         """
 
         def parts():
+            yield f"promptflow/{VERSION}"
             if "user_agent" in self:
                 yield self.get("user_agent")
-            yield f"promptflow/{VERSION}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
-        ua = " ".join(parts()).strip()
+        ua = " ".join(parts())
         return ua
 
     def append_user_agent(self, user_agent: str):

@@ -261,32 +261,39 @@ class TestTelemetry:
 
     def test_duplicate_ua(self):
         context = OperationContext.get_instance()
-        context['user_agent'] = 'ua1 ua2 ua3'  # Add fixed UA
+        ua1 = 'ua1 ua2 ua3'
+        context['user_agent'] = ua1  # Add fixed UA
         origin_agent = context.get_user_agent()
 
-        context.append_user_agent('    ua3   ua2  ua1')  # Env configuration ua with extra spaces, duplicate ua.
+        ua2 = '    ua3   ua2  ua1'
+        context.append_user_agent(ua2)  # Env configuration ua with extra spaces, duplicate ua.
         agent = context.get_user_agent()
-        assert agent == origin_agent + '    ua3   ua2  ua1'
+        assert agent == origin_agent + ' ' + ua2
 
-        context.append_user_agent('  ua3   ua2 ua1  ua4  ')  # Env modifies ua with extra spaces, ua4 should be added.
+        ua3 = '  ua3   ua2 ua1  ua4  '
+        context.append_user_agent(ua3)  # Env modifies ua with extra spaces, duplicate ua except ua4.
         agent = context.get_user_agent()
-        assert agent == origin_agent + '     ua3   ua2  ua1' + '   ua3   ua2 ua1  ua4  '
+        assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
 
-        context.append_user_agent('ua1 ua2')  # Env modifies ua with extra spaces, duplicate ua.
+        ua4 = 'ua1 ua2'  #
+        context.append_user_agent(ua4)  # Env modifies ua with extra spaces, duplicate ua but not be added.
         agent = context.get_user_agent()
-        assert agent == origin_agent + '     ua3   ua2  ua1' + '   ua3   ua2 ua1  ua4  ' + '  ua4'
+        assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
 
-        context.append_user_agent('ua2 ua4 ua5    ')  # Env modifies ua with extra spaces, ua4, ua5 should be added.
+        ua5 = 'ua2 ua4 ua5    '
+        context.append_user_agent(ua5)  # Env modifies ua with extra spaces, duplicate ua except ua5.
         agent = context.get_user_agent()
-        assert agent == origin_agent + '     ua3   ua2  ua1' + '   ua3   ua2 ua1  ua4  ' + '  ua4' + 'ua2 ua4 ua5    '
+        assert agent == origin_agent + ' ' + ua2 + ' ' + ua3 + ' ' + ua5
 
     def test_extra_spaces_ua(self):
         context = OperationContext.get_instance()
         origin_agent = context.get_user_agent()
 
-        context['user_agent'] = '    ua1   ua2   ua3    '  # This assignment will retain spaces
-        assert context.get_user_agent() == origin_agent + 'ua1   ua2   ua3'
+        ua1 = '    ua1   ua2   ua3    '
+        context['user_agent'] = ua1
+        assert context.get_user_agent() == origin_agent + ' ' + ua1
 
-        context.append_user_agent('ua4      ua5      ua6      ')
-        assert context.get_user_agent() == origin_agent + '    ua1   ua2   ua3    ' + ' ua4 ua5 ua6'
+        ua2 = 'ua4      ua5      ua6      '
+        context.append_user_agent(ua2)
+        assert context.get_user_agent() == origin_agent + ' ' + ua1 + ' ' + ua2
 
