@@ -306,8 +306,8 @@ class TestAzureCli:
         def check_workspace_info(*args, **kwargs):
             if "custom_dimensions" in kwargs:
                 assert kwargs["custom_dimensions"]["workspace_name"] == workspace_name
-                assert kwargs["custom_dimensions"]["resource_group_name"] == subscription_id
-                assert kwargs["custom_dimensions"]["subscription_id"] == resource_group_name
+                assert kwargs["custom_dimensions"]["resource_group_name"] == resource_group_name
+                assert kwargs["custom_dimensions"]["subscription_id"] == subscription_id
             yield None
 
         with patch("promptflow._telemetry.activity.log_activity") as mock_log_activity:
