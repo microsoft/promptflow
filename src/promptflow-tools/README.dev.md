@@ -18,7 +18,7 @@ pip install pytest pytest-mock
 Use this [workflow](https://github.com/microsoft/promptflow/actions/workflows/tools_secret_upload.yml) to upload secrets in key vault. The secrets you uploaded would be used in [tools tests](https://github.com/microsoft/promptflow/actions/workflows/tools_tests.yml). Note that you only need to upload the SECRETS.
   > [!NOTE] After triggering the workflow, kindly request approval from Promptflow Support before proceeding further.
 
-## PR checkin criteria
+## PR check-in criteria
 When you submit your pull request, ensure it has a specific title and includes a detailed PR description with necessary screenshots of the tool verification result. This can help simplify our review process.
 
 Additionally, your PR should also meet the following criteria:
