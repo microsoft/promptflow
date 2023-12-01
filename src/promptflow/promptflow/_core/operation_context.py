@@ -108,7 +108,7 @@ class OperationContext(Dict):
                 yield self.get("user_agent")
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
-        ua = " ".join(parts())
+        ua = " ".join(parts()).strip()
         return ua
 
     def append_user_agent(self, user_agent: str):

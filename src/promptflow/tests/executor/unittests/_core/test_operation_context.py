@@ -165,22 +165,22 @@ class TestOperationContext:
             ua2 = '    ua3   ua2  ua1'
             context.append_user_agent(ua2)  # Env configuration ua with extra spaces, duplicate ua.
             agent = context.get_user_agent()
-            assert agent == origin_agent + ' ' + ua2
+            assert agent == (origin_agent + ' ' + ua2).strip()
 
             ua3 = '  ua3   ua2 ua1  ua4  '
             context.append_user_agent(ua3)  # Env modifies ua with extra spaces, duplicate ua except ua4.
             agent = context.get_user_agent()
-            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
+            assert agent == (origin_agent + ' ' + ua2 + ' ' + ua3).strip()
 
             ua4 = 'ua1 ua2'  #
             context.append_user_agent(ua4)  # Env modifies ua with extra spaces, duplicate ua but not be added.
             agent = context.get_user_agent()
-            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
+            assert agent == (origin_agent + ' ' + ua2 + ' ' + ua3).strip()
 
             ua5 = 'ua2 ua4 ua5    '
             context.append_user_agent(ua5)  # Env modifies ua with extra spaces, duplicate ua except ua5.
             agent = context.get_user_agent()
-            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3 + ' ' + ua5
+            assert agent == (origin_agent + ' ' + ua2 + ' ' + ua3 + ' ' + ua5).strip()
         except Exception as e:
             raise e
         finally:
@@ -197,11 +197,11 @@ class TestOperationContext:
             # context['user_agent'] = ua1,
             # Due to concurrent running of tests, this assignment will cause overwrite of promptflow-sdk/0.0.1,
             # resulting in test failure
-            assert context.get_user_agent() == origin_agent + ' ' + ua1
+            assert context.get_user_agent() == (origin_agent + ' ' + ua1).strip()
 
             ua2 = 'ua4      ua5      ua6      '
             context.append_user_agent(ua2)
-            assert context.get_user_agent() == origin_agent + ' ' + ua1 + ' ' + ua2
+            assert context.get_user_agent() == (origin_agent + ' ' + ua1 + ' ' + ua2).strip()
         except Exception as e:
             raise e
         finally:
