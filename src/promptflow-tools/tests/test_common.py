@@ -2,8 +2,7 @@ import pytest
 
 from promptflow.contracts.multimedia import Image
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
-    parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, \
-    ChatInputList, validate_max_tokens, InvalidMaxTokens
+    parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList
 
 
 class TestCommon:
