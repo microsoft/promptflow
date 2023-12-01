@@ -56,7 +56,7 @@ class OpenAI(ToolProvider):
 
         if stop:
             params["stop"] = stop
-        if max_tokens:
+        if max_tokens is not None:
             params["max_tokens"] = max_tokens
 
         completion = self._client.chat.completions.create(**params)

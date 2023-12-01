@@ -96,11 +96,24 @@ class SystemMetrics:
         total_metrics = {}
         calculator = OpenAIMetricsCalculator()
         for run_info in node_run_infos:
-            api_calls = run_info.api_calls or []
-            for call in api_calls:
-                metrics = calculator.get_openai_metrics_from_api_call(call)
+            metrics = SystemMetrics._try_get_openai_metrics(run_info)
+            if metrics:
                 calculator.merge_metrics_dict(total_metrics, metrics)
+            else:
+                api_calls = run_info.api_calls or []
+                for call in api_calls:
+                    metrics = calculator.get_openai_metrics_from_api_call(call)
+                    calculator.merge_metrics_dict(total_metrics, metrics)
         return total_metrics
+
+    def _try_get_openai_metrics(run_info):
+        openai_metrics = {}
+        if run_info.system_metrics:
+            for metric in ["total_tokens", "prompt_tokens", "completion_tokens"]:
+                if metric not in run_info.system_metrics:
+                    return False
+                openai_metrics[metric] = run_info.system_metrics[metric]
+        return openai_metrics
 
     def to_dict(self):
         return {
