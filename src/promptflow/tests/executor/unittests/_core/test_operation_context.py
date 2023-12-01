@@ -2,9 +2,11 @@ import threading
 
 import pytest
 
+from promptflow import PFClient
 from promptflow._core.operation_context import OperationContext
 from promptflow._version import VERSION
 from promptflow.contracts.run_mode import RunMode
+from promptflow._sdk._user_agent import USER_AGENT as SDK_USER_AGENT
 
 
 def set_run_mode(context: OperationContext, run_mode: RunMode):
@@ -20,11 +22,9 @@ class TestOperationContext:
     def test_get_user_agent(self):
         operation_context = OperationContext()
         assert operation_context.get_user_agent() == f"promptflow/{VERSION}"
-        assert operation_context.user_agent == f"promptflow/{VERSION}"
 
         operation_context.user_agent = "test_agent/0.0.2"
-        assert operation_context.get_user_agent() == f"test_agent/0.0.2 promptflow/{VERSION}"
-        assert operation_context.user_agent == f"test_agent/0.0.2 promptflow/{VERSION}"
+        assert operation_context.get_user_agent() == f"promptflow/{VERSION} test_agent/0.0.2"
 
     @pytest.mark.parametrize(
         "run_mode, expected",
@@ -90,14 +90,13 @@ class TestOperationContext:
 
     def test_append_user_agent(self):
         context = OperationContext()
-
-        user_agent = context.user_agent
+        user_agent = ' ' + context.user_agent if 'user_agent' in context else ''
 
         context.append_user_agent("test_agent/0.0.2")
-        assert context.user_agent == "test_agent/0.0.2 " + user_agent
+        assert context.user_agent == "test_agent/0.0.2" + user_agent
 
         context.append_user_agent("test_agent/0.0.3")
-        assert context.user_agent == "test_agent/0.0.2 test_agent/0.0.3 " + user_agent
+        assert context.user_agent == "test_agent/0.0.2 test_agent/0.0.3" + user_agent
 
     def test_get_instance(self):
         context1 = OperationContext.get_instance()
@@ -150,3 +149,74 @@ class TestOperationContext:
         # assert that the list has two elements and they are different objects
         assert len(instances) == 2
         assert instances[0] is not instances[1]
+
+    def test_duplicate_ua(self):
+        context = OperationContext.get_instance()
+        default_ua = context.get('user_agent', '')
+
+        try:
+            ua1 = 'ua1 ua2 ua3'
+            # context['user_agent'] = ua1,
+            # Due to concurrent running of tests, this assignment will cause overwrite of promptflow-sdk/0.0.1,
+            # resulting in test failure
+            context.append_user_agent(ua1)  # Add fixed UA
+            origin_agent = context.get_user_agent()
+
+            ua2 = '    ua3   ua2  ua1'
+            context.append_user_agent(ua2)  # Env configuration ua with extra spaces, duplicate ua.
+            agent = context.get_user_agent()
+            assert agent == origin_agent + ' ' + ua2
+
+            ua3 = '  ua3   ua2 ua1  ua4  '
+            context.append_user_agent(ua3)  # Env modifies ua with extra spaces, duplicate ua except ua4.
+            agent = context.get_user_agent()
+            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
+
+            ua4 = 'ua1 ua2'  #
+            context.append_user_agent(ua4)  # Env modifies ua with extra spaces, duplicate ua but not be added.
+            agent = context.get_user_agent()
+            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
+
+            ua5 = 'ua2 ua4 ua5    '
+            context.append_user_agent(ua5)  # Env modifies ua with extra spaces, duplicate ua except ua5.
+            agent = context.get_user_agent()
+            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3 + ' ' + ua5
+        except Exception as e:
+            raise e
+        finally:
+            context['user_agent'] = default_ua
+
+    def test_extra_spaces_ua(self):
+        context = OperationContext.get_instance()
+        default_ua = context.get('user_agent', '')
+
+        try:
+            origin_agent = context.get_user_agent()
+            ua1 = '    ua1   ua2   ua3    '
+            context.append_user_agent(ua1)
+            # context['user_agent'] = ua1,
+            # Due to concurrent running of tests, this assignment will cause overwrite of promptflow-sdk/0.0.1,
+            # resulting in test failure
+            assert context.get_user_agent() == origin_agent + ' ' + ua1
+
+            ua2 = 'ua4      ua5      ua6      '
+            context.append_user_agent(ua2)
+            assert context.get_user_agent() == origin_agent + ' ' + ua1 + ' ' + ua2
+        except Exception as e:
+            raise e
+        finally:
+            context['user_agent'] = default_ua
+
+    def test_ua_covered(self):
+        context = OperationContext.get_instance()
+        default_ua = context.get('user_agent', '')
+        try:
+            PFClient()
+            assert SDK_USER_AGENT in context.get_user_agent()
+
+            context["user_agent"] = 'test_agent'
+            assert SDK_USER_AGENT not in context.get_user_agent()
+        except Exception as e:
+            raise e
+        finally:
+            context['user_agent'] = default_ua

@@ -11,9 +11,8 @@ from unittest.mock import MagicMock, patch
 import pydash
 import pytest
 
-from promptflow import load_run, PFClient
+from promptflow import load_run
 from promptflow._constants import PF_USER_AGENT
-from promptflow._sdk._user_agent import USER_AGENT as SDK_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension
@@ -258,74 +257,3 @@ class TestTelemetry:
         # 1 and last call is public call
         assert first_sdk_calls[0] is True
         assert first_sdk_calls[-1] is True
-
-    def test_duplicate_ua(self):
-        context = OperationContext.get_instance()
-        default_ua = context.get('user_agent', '')
-
-        try:
-            ua1 = 'ua1 ua2 ua3'
-            # context['user_agent'] = ua1,
-            # Due to concurrent running of tests, this assignment will cause overwrite of promptflow-sdk/0.0.1,
-            # resulting in test failure
-            context.append_user_agent(ua1)  # Add fixed UA
-            origin_agent = context.get_user_agent()
-
-            ua2 = '    ua3   ua2  ua1'
-            context.append_user_agent(ua2)  # Env configuration ua with extra spaces, duplicate ua.
-            agent = context.get_user_agent()
-            assert agent == origin_agent + ' ' + ua2
-
-            ua3 = '  ua3   ua2 ua1  ua4  '
-            context.append_user_agent(ua3)  # Env modifies ua with extra spaces, duplicate ua except ua4.
-            agent = context.get_user_agent()
-            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
-
-            ua4 = 'ua1 ua2'  #
-            context.append_user_agent(ua4)  # Env modifies ua with extra spaces, duplicate ua but not be added.
-            agent = context.get_user_agent()
-            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3
-
-            ua5 = 'ua2 ua4 ua5    '
-            context.append_user_agent(ua5)  # Env modifies ua with extra spaces, duplicate ua except ua5.
-            agent = context.get_user_agent()
-            assert agent == origin_agent + ' ' + ua2 + ' ' + ua3 + ' ' + ua5
-        except Exception as e:
-            raise e
-        finally:
-            context['user_agent'] = default_ua
-
-    def test_extra_spaces_ua(self):
-        context = OperationContext.get_instance()
-        default_ua = context.get('user_agent', '')
-
-        try:
-            origin_agent = context.get_user_agent()
-            ua1 = '    ua1   ua2   ua3    '
-            context.append_user_agent(ua1)
-            # context['user_agent'] = ua1,
-            # Due to concurrent running of tests, this assignment will cause overwrite of promptflow-sdk/0.0.1,
-            # resulting in test failure
-            assert context.get_user_agent() == origin_agent + ' ' + ua1
-
-            ua2 = 'ua4      ua5      ua6      '
-            context.append_user_agent(ua2)
-            assert context.get_user_agent() == origin_agent + ' ' + ua1 + ' ' + ua2
-        except Exception as e:
-            raise e
-        finally:
-            context['user_agent'] = default_ua
-
-    def test_ua_covered(self):
-        context = OperationContext.get_instance()
-        default_ua = context.get('user_agent', '')
-        try:
-            PFClient()
-            assert SDK_USER_AGENT in context.get_user_agent()
-
-            context["user_agent"] = 'test_agent'
-            assert SDK_USER_AGENT not in context.get_user_agent()
-        except Exception as e:
-            raise e
-        finally:
-            context['user_agent'] = default_ua

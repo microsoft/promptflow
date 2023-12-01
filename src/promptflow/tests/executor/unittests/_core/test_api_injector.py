@@ -266,7 +266,7 @@ def test_get_aoai_telemetry_headers():
             assert "_" not in key
 
         # assert that the headers are correct
-        assert headers[USER_AGENT_HEADER] == f"test-user-agent promptflow/{VERSION}"
+        assert headers[USER_AGENT_HEADER] == f"promptflow/{VERSION} test-user-agent"
         assert headers[f"{PROMPTFLOW_PREFIX}flow-id"] == "test-flow-id"
         assert headers[f"{PROMPTFLOW_PREFIX}root-run-id"] == "test-root-run-id"
         assert headers[f"{PROMPTFLOW_PREFIX}index"] == "1"
