@@ -1,4 +1,5 @@
 from collections import namedtuple
+from importlib.metadata import version
 from types import GeneratorType
 from unittest.mock import patch
 
@@ -21,6 +22,8 @@ from promptflow.exceptions import UserErrorException
 from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.embedding import embedding
 
+IS_LEGACY_OPENAI = version("openai").startswith("0.")
+
 
 @pytest.mark.unittest
 def test_inject_operation_headers():
@@ -28,17 +31,24 @@ def test_inject_operation_headers():
     def f(**kwargs):
         return kwargs
 
+    if IS_LEGACY_OPENAI:
+        headers = "headers"
+        kwargs_1 = {"headers": {"a": 1, "b": 2}}
+        kwargs_2 = {"headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
+    else:
+        headers = "extra_headers"
+        kwargs_1 = {"extra_headers": {"a": 1, "b": 2}}
+        kwargs_2 = {"extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
+
     injected_headers = get_aoai_telemetry_headers()
-    assert f(a=1, b=2) == {"a": 1, "b": 2, "extra_headers": injected_headers}
+    assert f(a=1, b=2) == {"a": 1, "b": 2, headers: injected_headers}
 
     merged_headers = {**injected_headers, "a": 1, "b": 2}
-    assert f(extra_headers={"a": 1, "b": 2}) == {"extra_headers": merged_headers}
+    assert f(**kwargs_1) == {headers: merged_headers}
 
     aoai_tools_headers = injected_headers.copy()
     aoai_tools_headers.update({"ms-azure-ai-promptflow-called-from": "aoai-tool"})
-    assert f(
-        extra_headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"}
-    ) == {"extra_headers": aoai_tools_headers}
+    assert f(**kwargs_2) == {headers: aoai_tools_headers}
 
 
 @pytest.mark.unittest
@@ -55,16 +65,27 @@ def test_aoai_generator_proxy():
             # stream parameter is false or not given, return a string
             return "This is a returned string"
 
-    with patch("openai.resources.Completions.create", new=mock_aoai), patch(
-        "openai.resources.chat.Completions.create", new=mock_aoai
-    ), patch("openai.resources.Embeddings.create", new=mock_aoai):
+    if IS_LEGACY_OPENAI:
+        apis = ["openai.Completion.create", "openai.ChatCompletion.create", "openai.Embedding.create"]
+    else:
+        apis = [
+            "openai.resources.Completions.create",
+            "openai.resources.chat.Completions.create",
+            "openai.resources.Embeddings.create"
+        ]
+
+    with patch(apis[0], new=mock_aoai), patch(apis[1], new=mock_aoai), patch(apis[2], new=mock_aoai):
         Tracer.start_tracing("mock_run_id")
         inject_openai_api()
 
-        return_string = openai.resources.Completions.create(stream=False)
-        assert return_string == "This is a returned string"
+        if IS_LEGACY_OPENAI:
+            return_string = openai.Completion.create(stream=False)
+            return_generator = openai.Completion.create(stream=True)
+        else:
+            return_string = openai.resources.Completions.create(stream=False)
+            return_generator = openai.resources.Completions.create(stream=True)
 
-        return_generator = openai.resources.Completions.create(stream=True)
+        assert return_string == "This is a returned string"
         assert isinstance(return_generator, GeneratorType)
 
         for _ in return_generator:
@@ -82,26 +103,41 @@ def test_aoai_generator_proxy():
 
 @pytest.mark.unittest
 def test_aoai_call_inject():
-    def mock_aoai(**kwargs):
-        return kwargs.get("extra_headers")
+    if IS_LEGACY_OPENAI:
+        headers = "headers"
+        apis = ["openai.Completion.create", "openai.ChatCompletion.create", "openai.Embedding.create"]
+    else:
+        headers = "extra_headers"
+        apis = [
+            "openai.resources.Completions.create",
+            "openai.resources.chat.Completions.create",
+            "openai.resources.Embeddings.create"
+        ]
 
-    with patch("openai.resources.Completions.create", new=mock_aoai), patch(
-        "openai.resources.chat.Completions.create", new=mock_aoai
-    ), patch("openai.resources.Embeddings.create", new=mock_aoai):
+    def mock_aoai(**kwargs):
+        return kwargs.get(headers)
+
+    with patch(apis[0], new=mock_aoai), patch(apis[1], new=mock_aoai), patch(apis[2], new=mock_aoai):
         inject_openai_api()
         injected_headers = get_aoai_telemetry_headers()
 
-        return_headers = openai.resources.Completions.create(extra_headers=None)
-        assert return_headers is not None
-        assert injected_headers.items() <= return_headers.items()
+        if IS_LEGACY_OPENAI:
+            return_headers_1 = openai.Completion.create(headers=None)
+            return_headers_2 = openai.ChatCompletion.create(headers="abc")
+            return_headers_3 = openai.Embedding.create(headers=1)
+        else:
+            return_headers_1 = openai.resources.Completions.create(extra_headers=None)
+            return_headers_2 = openai.resources.chat.Completions.create(extra_headers="abc")
+            return_headers_3 = openai.resources.Embeddings.create(extra_headers=1)
 
-        return_headers = openai.resources.chat.Completions.create(extra_headers="abc")
-        assert return_headers is not None
-        assert injected_headers.items() <= return_headers.items()
+        assert return_headers_1 is not None
+        assert injected_headers.items() <= return_headers_1.items()
 
-        return_headers = openai.resources.Embeddings.create(extra_headers=1)
-        assert return_headers is not None
-        assert injected_headers.items() <= return_headers.items()
+        assert return_headers_2 is not None
+        assert injected_headers.items() <= return_headers_2.items()
+
+        assert return_headers_3 is not None
+        assert injected_headers.items() <= return_headers_3.items()
 
 
 @pytest.mark.unittest
@@ -199,6 +235,32 @@ def test_availabe_openai_apis(removed_api, expected_apis):
 
     if removed_api:
         with patch(f"openai.resources.{removed_api}", new=None):
+            validate_api_set(expected_apis)
+    else:
+        validate_api_set(expected_apis)
+
+
+@pytest.mark.skipif(not IS_LEGACY_OPENAI, reason="Skip on openai>=1.0.0")
+@pytest.mark.parametrize(
+    "removed_api, expected_apis",
+    [
+        (None, {"Completion", "ChatCompletion", "Embedding"}),
+        ("ChatCompletion", {"Completion", "Embedding"}),
+        ("Embedding", {"Completion", "ChatCompletion"}),
+    ],
+)
+def test_availabe_openai_apis_for_legacy_openai(removed_api, expected_apis):
+    def validate_api_set(expected_apis):
+        available_apis = available_openai_apis()
+        generated_apis = set()
+        for api in available_apis:
+            assert hasattr(api, "create")
+            generated_apis.add(f"{api.__name__}")
+        print(generated_apis)
+        assert generated_apis == expected_apis
+
+    if removed_api:
+        with patch(f"openai.{removed_api}", new=None):
             validate_api_set(expected_apis)
     else:
         validate_api_set(expected_apis)
