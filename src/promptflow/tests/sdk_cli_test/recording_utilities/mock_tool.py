@@ -151,3 +151,8 @@ def mock_tool(
             setattr(new_f, STREAMING_OPTION_PARAMETER_ATTR, streaming_option_parameter)
 
         return new_f
+
+    # enable use decorator without "()" if all arguments are default values
+    if func is not None:
+        return tool_decorator(func)
+    return tool_decorator
