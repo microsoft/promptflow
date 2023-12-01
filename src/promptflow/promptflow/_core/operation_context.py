@@ -1,11 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import os
 from contextvars import ContextVar
 from typing import Dict, Mapping
 
-from promptflow._constants import USER_AGENT, PF_USER_AGENT
 from promptflow._version import VERSION
 
 
