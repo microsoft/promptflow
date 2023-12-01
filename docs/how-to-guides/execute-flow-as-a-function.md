@@ -1,3 +1,5 @@
+# Execute flow as a function
+
 # Set global configs
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).

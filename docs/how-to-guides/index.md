@@ -16,5 +16,6 @@ manage-connections
 manage-runs
 set-global-configs
 develop-a-tool/index
+execute-flow-as-a-function
 faq
 ```
