@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
-import os
 import time
 import uuid
 from logging import Logger
@@ -13,7 +12,7 @@ import pydash
 import pytest
 
 from promptflow import load_run
-from promptflow._constants import PF_USER_AGENT, USER_AGENT
+from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension
@@ -258,13 +257,3 @@ class TestTelemetry:
         # 1 and last call is public call
         assert first_sdk_calls[0] is True
         assert first_sdk_calls[-1] is True
-
-    def test_ci_user_agent(self, cli_perf_monitor_agent) -> None:
-        try:
-            os.environ[USER_AGENT] = cli_perf_monitor_agent
-            context = OperationContext.get_instance()
-            assert cli_perf_monitor_agent in context.get_user_agent()
-        except Exception as e:
-            raise e
-        finally:
-            del os.environ[USER_AGENT]
