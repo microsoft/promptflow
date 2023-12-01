@@ -125,8 +125,6 @@ class OperationContext(Dict):
         else:
             self.user_agent = user_agent
 
-        self.user_agent = self.user_agent
-
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
 
