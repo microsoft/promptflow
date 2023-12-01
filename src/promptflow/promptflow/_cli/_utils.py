@@ -128,9 +128,7 @@ def get_credentials_for_cli():
     return credential
 
 
-def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
-    from azure.ai.ml import MLClient
-
+def get_client_info_for_cli(subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
     if not (subscription_id and resource_group_name and workspace_name):
         workspace_triad = get_workspace_triad_from_local()
         subscription_id = subscription_id or workspace_triad.subscription_id
@@ -142,6 +140,15 @@ def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str 
         subscription_id = subscription_id or os.getenv("AZUREML_ARM_SUBSCRIPTION")
         resource_group_name = resource_group_name or os.getenv("AZUREML_ARM_RESOURCEGROUP")
 
+    return subscription_id, resource_group_name, workspace_name
+
+
+def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
+    from azure.ai.ml import MLClient
+
+    subscription_id, resource_group_name, workspace_name = get_client_info_for_cli(
+        subscription_id=subscription_id, resource_group_name=resource_group_name, workspace_name=workspace_name
+    )
     missing_fields = []
     for key in ["workspace_name", "subscription_id", "resource_group_name"]:
         if not locals()[key]:

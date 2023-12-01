@@ -6,7 +6,7 @@ import json
 import time
 
 from promptflow._cli._user_agent import USER_AGENT
-from promptflow._cli._utils import _get_cli_activity_name
+from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli
 from promptflow._telemetry.activity import ActivityType, log_activity
 from promptflow._telemetry.telemetry import get_telemetry_logger
 
@@ -90,10 +90,15 @@ def get_parser_args(argv):
 
 def _get_workspace_info(args):
     try:
+        subscription_id, resource_group_name, workspace_name = get_client_info_for_cli(
+            subscription_id=args.subscription,
+            resource_group_name=args.resource_group,
+            workspace_name=args.workspace_name,
+        )
         return {
-            "subscription_id": args.subscription,
-            "resource_group_name": args.resource_group,
-            "workspace_name": args.workspace_name,
+            "subscription_id": subscription_id,
+            "resource_group_name": resource_group_name,
+            "workspace_name": workspace_name,
         }
     except Exception:
         # fall back to empty dict if workspace info is not available
