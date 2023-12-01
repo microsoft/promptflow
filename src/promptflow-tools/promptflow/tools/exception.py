@@ -122,11 +122,6 @@ class InvalidConnectionType(ToolValidationError):
     pass
 
 
-class InvalidMaxTokens(ToolValidationError):
-    """Base exception raised when max_tokens <= 0."""
-    pass
-
-
 class SerpAPISystemError(SystemErrorException):
     """Base exception raised when failed to call serp api with system error."""
 

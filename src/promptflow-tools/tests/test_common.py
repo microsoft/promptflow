@@ -153,17 +153,3 @@ class TestCommon:
     def test_convert_to_chat_list(self, input_data, expected_output):
         actual_result = convert_to_chat_list(input_data)
         assert actual_result == expected_output
-
-    @pytest.mark.parametrize(
-        "max_tokens, error_message",
-        [
-            (0, "max_tokens 0 is less than the minimum of 1."),
-            (-1, "max_tokens -1 is less than the minimum of 1.")
-        ]
-    )
-    def test_chat_api_invalid_max_tokens(self, max_tokens, error_message):
-        error_codes = "UserError/ToolValidationError/InvalidMaxTokens"
-        with pytest.raises(InvalidMaxTokens) as exc_info:
-            validate_max_tokens(max_tokens)
-        assert error_message == exc_info.value.message
-        assert exc_info.value.error_codes == error_codes.split("/")
