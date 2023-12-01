@@ -25,7 +25,6 @@ REQUIRES = [
     "httpx>=0.25.1",  # used to send http requests asynchronously
     "openai",  # promptflow._core.api_injector
     "flask>=2.2.3,<4.0.0",  # Serving endpoint requirements
-    "flask-restx>=1.2.0,<2.0.0",  # Serving endpoint requirements
     "sqlalchemy>=1.4.48,<3.0.0",  # sqlite requirements
     # note that pandas 1.5.3 is the only version to test in ci before promptflow 0.1.0b7 is released
     # and pandas 2.x.x will be the only version to test in ci after that.
@@ -84,6 +83,9 @@ setup(
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
         ],
         "executable": ["pyinstaller>=5.13.2", "streamlit>=1.26.0", "streamlit-quill<0.1.0", "bs4"],
+        "pfs": [
+            "flask-restx>=1.2.0,<2.0.0",
+        ],
     },
     packages=find_packages(),
     entry_points={
