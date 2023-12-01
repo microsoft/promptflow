@@ -3,7 +3,7 @@ import json
 import re
 import sys
 import time
-from typing import List, Mapping, Set
+from typing import List, Mapping
 
 from jinja2 import Template
 from openai import APIConnectionError, APIStatusError, OpenAIError, RateLimitError, APITimeoutError
@@ -27,12 +27,12 @@ class ChatInputList(list):
         return "\n".join(map(str, self))
 
 
-def validate_role(role: str, valid_roles: Set[str] = None):
+def validate_role(role: str, valid_roles: List[str] = None):
     if not valid_roles:
-        valid_roles = {"system", "user", "assistant", "function"}
+        valid_roles = ["assistant", "function", "user", "system"]
 
     if role not in valid_roles:
-        valid_roles_str = ','.join(sorted([f'\'{role}:\\n\''for role in valid_roles]))
+        valid_roles_str = ','.join([f'\'{role}:\\n\'' for role in valid_roles])
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
             f"lines as role delimiters: {valid_roles_str}. Current parsed role '{role}'"

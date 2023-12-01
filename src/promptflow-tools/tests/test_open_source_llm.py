@@ -29,8 +29,7 @@ def validate_response(response):
 @pytest.fixture
 def verify_service_endpoints(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
     if not open_source_llm_ws_service_connection:
-        # pytest.skip("Service Credential not available")
-        raise Exception(f"open_source_llm_ws_service_connection:{open_source_llm_ws_service_connection}")
+        pytest.skip("Service Credential not available")
     print("open_source_llm_ws_service_connection completed")
     required_env_vars = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME",
                          "AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_CLIENT_SECRET"]
@@ -209,7 +208,7 @@ user:
             LlamaContentFormatter.parse_chat(bad_chat_prompt)
         assert exc_info.value.message == (
             "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-            + "lines as role delimiters: 'assistant:\\n','system:\\n','user:\\n'. Current parsed role 'in the context "
+            + "lines as role delimiters: 'assistant:\\n','user:\\n','system:\\n'. Current parsed role 'in the context "
             + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
             + "Completion API, please select the appropriate API type and deployment name. If you do intend to use "
             + "the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in "
@@ -221,7 +220,7 @@ user:
             LlamaContentFormatter.parse_chat(self.completion_prompt)
         assert exc_info.value.message == (
             "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-            + "lines as role delimiters: 'assistant:\\n','system:\\n','user:\\n'. Current parsed role 'in the context "
+            + "lines as role delimiters: 'assistant:\\n','user:\\n','system:\\n'. Current parsed role 'in the context "
             + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
             + "Completion API, please select the appropriate API type and deployment name. If you do intend to use the "
             + "Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
