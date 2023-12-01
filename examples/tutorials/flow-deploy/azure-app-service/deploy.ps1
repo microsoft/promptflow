@@ -104,7 +104,6 @@ if ($Registry.Contains("azurecr.io")) {
     $ImageTag = $AcrImageTag
 }
 else {
-    Write-Host "Make sure you have docker account login!!!"
     Write-Host "***************************************************\n"
     Write-Host "* WARN: Make sure you have docker account login!!!*\n"
     Write-Host "***************************************************\n"
