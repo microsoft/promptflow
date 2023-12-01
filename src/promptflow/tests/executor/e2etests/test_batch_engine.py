@@ -64,7 +64,7 @@ def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestBatch:
-    def test_batch_storage(self, dev_connections):
+    def test_batch_storage(self, dev_connections, recording_injection):
         mem_run_storage = MemoryRunStorage()
         run_id = str(uuid.uuid4())
         inputs_mapping = {"url": "${data.url}"}
@@ -100,7 +100,7 @@ class TestBatch:
             ),
         ],
     )
-    def test_batch_run(self, flow_folder, inputs_mapping, dev_connections):
+    def test_batch_run(self, flow_folder, inputs_mapping, dev_connections, recording_injection):
         batch_result, output_dir = submit_batch_run(
             flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
         )
@@ -119,7 +119,7 @@ class TestBatch:
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
 
-    def test_batch_run_then_eval(self, dev_connections):
+    def test_batch_run_then_eval(self, dev_connections, recording_injection):
         batch_resutls, output_dir = submit_batch_run(
             SAMPLE_FLOW, {"url": "${data.url}"}, connections=dev_connections, return_output_dir=True
         )
@@ -176,7 +176,7 @@ class TestBatch:
             {"line_number": 6, "output": 7},
         ]
 
-    def test_batch_with_openai_metrics(self, dev_connections):
+    def test_batch_with_openai_metrics(self, dev_connections, recording_injection):
         inputs_mapping = {"url": "${data.url}"}
         batch_result, output_dir = submit_batch_run(
             SAMPLE_FLOW, inputs_mapping, connections=dev_connections, return_output_dir=True
@@ -184,9 +184,10 @@ class TestBatch:
         nlines = get_batch_inputs_line(SAMPLE_FLOW)
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert len(outputs) == nlines
-        assert batch_result.system_metrics.total_tokens > 0
-        assert batch_result.system_metrics.prompt_tokens > 0
-        assert batch_result.system_metrics.completion_tokens > 0
+        # system metrics tokens equal to 0 when recording history/replaying is triggered.
+        assert batch_result.system_metrics.total_tokens >= 0
+        assert batch_result.system_metrics.prompt_tokens >= 0
+        assert batch_result.system_metrics.completion_tokens >= 0
 
     def test_batch_with_default_input(self):
         mem_run_storage = MemoryRunStorage()

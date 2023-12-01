@@ -76,7 +76,7 @@ class TestLineExecutionProcessPool:
             SAMPLE_FLOW,
         ],
     )
-    def test_line_execution_process_pool(self, flow_folder, dev_connections):
+    def test_line_execution_process_pool(self, flow_folder, dev_connections, recording_injection):
         log_path = str(Path(mkdtemp()) / "test.log")
         log_context_initializer = LogContext(log_path).get_initializer()
         log_context = log_context_initializer()

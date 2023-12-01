@@ -2,6 +2,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
+from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 
 from promptflow.batch import BatchEngine
 from promptflow.batch._result import BatchResult
@@ -9,6 +10,10 @@ from promptflow.batch._result import BatchResult
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
 
 
+@pytest.mark.skipif(
+    is_record() or is_replay(),
+    reason="record doesn't support this test",
+)
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestLangchain:

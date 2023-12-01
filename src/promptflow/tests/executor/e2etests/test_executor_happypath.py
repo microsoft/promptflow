@@ -2,6 +2,7 @@ import multiprocessing
 from types import GeneratorType
 
 import pytest
+from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
@@ -60,7 +61,7 @@ class TestExecutor:
             "async_tools_with_sync_tools",
         ],
     )
-    def test_executor_exec_line(self, flow_folder, dev_connections):
+    def test_executor_exec_line(self, flow_folder, dev_connections, recording_injection):
         self.skip_serp(flow_folder, dev_connections)
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(self.get_line_inputs())
@@ -90,7 +91,9 @@ class TestExecutor:
             ("script_with_import", "node1", {"text": "text"}, None),
         ],
     )
-    def test_executor_exec_node(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections):
+    def test_executor_exec_node(
+        self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections, recording_injection
+    ):
         self.skip_serp(flow_folder, dev_connections)
         yaml_file = get_yaml_file(flow_folder)
         run_info = FlowExecutor.load_and_exec_node(
@@ -107,13 +110,16 @@ class TestExecutor:
         assert run_info.node == node_name
         assert run_info.system_metrics["duration"] >= 0
 
-    def test_executor_exec_node_with_llm_node(self, dev_connections):
+    @pytest.mark.skipif(
+        is_replay() or is_record(), reason="Pickle behaves incorrectly in spawn mode, recording disabled"
+    )
+    def test_executor_exec_node_with_llm_node(self, dev_connections, recording_injection):
         # Run the test in a new process to ensure the openai api is injected correctly for the single node run
         context = multiprocessing.get_context("spawn")
         queue = context.Queue()
         process = context.Process(
             target=exec_node_within_process,
-            args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True)
+            args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True),
         )
         process.start()
         process.join()
@@ -121,6 +127,7 @@ class TestExecutor:
         if not queue.empty():
             raise queue.get()
 
+    @pytest.mark.skipif(is_replay() or is_record(), reason="Resolve tool error cannot record")
     def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
         executor = FlowExecutor.create(
@@ -208,7 +215,7 @@ class TestExecutor:
             "web_classification",
         ],
     )
-    def test_executor_creation_with_default_variants(self, flow_folder, dev_connections):
+    def test_executor_creation_with_default_variants(self, flow_folder, dev_connections, recording_injection):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(self.get_line_inputs())
         assert flow_result.run_info.status == Status.Completed
@@ -250,7 +257,7 @@ def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependenc
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=connections,
-            raise_ex=raise_ex
+            raise_ex=raise_ex,
         )
         assert len(result.api_calls) == 1
         # Assert llm single node run contains openai traces
