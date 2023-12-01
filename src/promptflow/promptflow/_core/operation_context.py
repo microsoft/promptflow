@@ -18,7 +18,6 @@ class OperationContext(Dict):
 
     _CONTEXT_KEY = "operation_context"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
-    _USER_AGENT = "user_agent"
 
     @classmethod
     def get_instance(cls):

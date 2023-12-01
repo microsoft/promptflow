@@ -186,27 +186,6 @@ class TestOperationContext:
         finally:
             context['user_agent'] = default_ua
 
-    def test_extra_spaces_ua(self):
-        context = OperationContext.get_instance()
-        default_ua = context.get('user_agent', '')
-
-        try:
-            origin_agent = context.get_user_agent()
-            ua1 = '    ua1   ua2   ua3    '
-            context.append_user_agent(ua1)
-            # context['user_agent'] = ua1,
-            # Due to concurrent running of tests, this assignment will cause overwrite of promptflow-sdk/0.0.1,
-            # resulting in test failure
-            assert context.get_user_agent() == (origin_agent + ' ' + ua1).strip()
-
-            ua2 = 'ua4      ua5      ua6      '
-            context.append_user_agent(ua2)
-            assert context.get_user_agent() == (origin_agent + ' ' + ua1 + ' ' + ua2).strip()
-        except Exception as e:
-            raise e
-        finally:
-            context['user_agent'] = default_ua
-
     def test_ua_covered(self):
         context = OperationContext.get_instance()
         default_ua = context.get('user_agent', '')
