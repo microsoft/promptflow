@@ -18,7 +18,7 @@ def set_env(cli_perf_monitor_agent):
     assert cli_perf_monitor_agent in context.get_user_agent()
     yield
     context.delete_user_agent(cli_perf_monitor_agent)
-    assert cli_perf_monitor_agent in context.get_user_agent()
+    assert CLI_USER_AGENT in context.get_user_agent()
 
 
 def run_cli_command(cmd, time_limit=3600):
