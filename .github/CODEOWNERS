@@ -1,10 +1,8 @@
 * @microsoft/prompt-flow-approvers
 /src/promptflow/promptflow/_core/ @microsoft/promptflow-execution
-/src/promptflow/promptflow/_internal/ @microsoft/promptflow-execution
-/src/promptflow/promptflow/_utils/ @microsoft/promptflow-execution
+src/promptflow/promptflow/_internal/ @microsoft/promptflow-execution
 /src/promptflow/promptflow/batch/ @microsoft/promptflow-execution
-/src/promptflow/promptflow/contracts/ @microsoft/promptflow-execution
 /src/promptflow/promptflow/executor/ @microsoft/promptflow-execution
-/src/promptflow/promptflow/integrations/ @microsoft/promptflow-execution
+src/promptflow/promptflow/integrations/ @microsoft/promptflow-execution
 /src/promptflow/promptflow/storage/ @microsoft/promptflow-execution
 /src/promptflow/tests/executor/ @microsoft/promptflow-execution
