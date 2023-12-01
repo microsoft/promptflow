@@ -43,9 +43,9 @@ Test coverage is crucial for maintaining code quality. Please adhere to the foll
 
 - **Comprehensive Testing**: Include unit tests and e2e tests for any new functionality introduced.
 
-- **Exception Testing**: Make sure to incorporate unit tests for all exceptions. These tests should verify status codes, error messages, and other important values. For reference, you can check out test_exceptions.py.
+- **Exception Testing**: Make sure to incorporate unit tests for all exceptions. These tests should verify status codes, error messages, and other important values. For reference, you can check out [TestHandleOpenAIError](https://github.com/microsoft/promptflow/blob/main/src/promptflow-tools/tests/test_handle_openai_error.py).
 
-- **VSCode Testing**: If you're adding a new built-in tool, make sure to test your tool within the VSCode environment prior to submitting your PR. For more guidance on this, refer to test_tool_in_vscode.md.
+- **VSCode Testing**: If you're adding a new built-in tool, make sure to test your tool within the VSCode environment prior to submitting your PR. For more guidance on this, refer to [Use your tool from VSCode Extension](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
 
 
 ### Documentation
@@ -54,13 +54,8 @@ Ensure to include documentation for your new built-in tool, following the guidel
 
 - **Code Alignment**: The documentation should accurately reflect the current state of your code. Ensure that all described functionalities and behaviors match with your implemented code.
 
-- Comprehensive Coverage: The documentation should be exhaustive, covering all aspects of the tool including its purpose, functionalities, and usage.
-Functional Links: Verify that all embedded links within the documentation are functioning properly, leading to the correct resources or references.
+- **Functional Links**: Verify that all embedded links within the documentation are functioning properly, leading to the correct resources or references.
 
-- Rectify all typos and grammatical errors in the documentation.
-- Ensure the documentation aligns with the current state of your code.
-- The documentation should be comprehensive, covering all aspects of the tool.
-- Confirm that all links within the documentation are functioning properly.
 
 
 
