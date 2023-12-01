@@ -51,8 +51,8 @@ if (!$ImageTag) {
 
 # check if : in image_tag
 if (!$ImageTag.Contains(":")) {
-    version="v$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-    image_tag="${ImageTag}:${version}"
+    $version="v$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    $image_tag="${ImageTag}:${version}"
 }
 
 Write-Host "image_tag: $ImageTag"
@@ -105,9 +105,9 @@ if ($Registry.Contains("azurecr.io")) {
 }
 else {
     Write-Host "Make sure you have docker account login!!!"
-    printf "***************************************************\n"
-    printf "* WARN: Make sure you have docker account login!!!*\n"
-    printf "***************************************************\n"
+    Write-Host "***************************************************\n"
+    Write-Host "* WARN: Make sure you have docker account login!!!*\n"
+    Write-Host "***************************************************\n"
 
     $DockerImageTag = $Registry + "/" + $ImageTag
 

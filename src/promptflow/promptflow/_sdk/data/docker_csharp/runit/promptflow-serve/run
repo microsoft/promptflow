@@ -1,0 +1,5 @@
+#! /bin/bash
+
+echo "start promptflow serving"
+cd /flow
+dotnet Promptflow.DotnetService.dll -p "8080" -y "flow.dag.yaml" -a "." -c "" -l "" -s
