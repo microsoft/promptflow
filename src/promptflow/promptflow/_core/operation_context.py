@@ -104,11 +104,12 @@ class OperationContext(Dict):
 
         def parts():
             if "user_agent" in self:
-                yield self.get('user_agent', '').strip()
+                yield self.get("user_agent")
             yield f"promptflow/{VERSION}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
-        return " ".join(parts()).strip()
+        ua = " ".join(parts()).strip()
+        return ua
 
     def append_user_agent(self, user_agent: str):
         """Append the user agent string.
@@ -119,18 +120,16 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        agents = self.get('user_agent', '').split(' ')
-        user_agents = set(user_agent.split(' '))
-        distinct_agents = []
-        for user_agent in user_agents:
-            if user_agent not in agents and user_agent != '':
-                distinct_agents.append(user_agent)
-
-        self['user_agent'] = ' '.join(agents).join(distinct_agents)
+        if "user_agent" in self:
+            if user_agent not in self.user_agent:
+                self.user_agent = f"{self.user_agent} {user_agent}"
+        else:
+            self.user_agent = user_agent
+        self.user_agent = self.user_agent
 
     def delete_user_agent(self, user_agent: str):
         if user_agent in self.get('user_agent', ''):
-            self['user_agent'] = self['user_agent'].replace(user_agent, '').replace('  ', ' ')
+            self['user_agent'] = self['user_agent'].replace(user_agent, '')
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
