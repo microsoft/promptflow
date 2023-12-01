@@ -19,7 +19,7 @@ Use this [workflow](https://github.com/microsoft/promptflow/actions/workflows/to
   > [!NOTE] After triggering the workflow, kindly request approval from Promptflow Support before proceeding further.
 
 ## PR check-in criteria
-We provide a set of criteria that you can use to review your own code before submitting your pull request.
+Here's a friendly heads-up! We've got some criteria for you to self-review your code changes. It's a great way to double-check your work and make sure everything is in order before you share it. Happy coding!
 
 ### Maintain code quality
 The code you submit in your pull request should adhere to the following guidelines:
