@@ -304,5 +304,4 @@ class TestTelemetry:
 
         context["user_agent"] = 'test_agent'
         assert SDK_USER_AGENT not in context.get_user_agent()
-
-
+        

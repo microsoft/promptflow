@@ -1,3 +1,4 @@
+import contextlib
 import multiprocessing
 import sys
 import timeit
@@ -8,6 +9,17 @@ from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E4
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+@contextlib.contextmanager
+def check_ua():
+    cli_perf_monitor_agent = "perf_monitor/1.0"
+    context = OperationContext.get_instance()
+    context.append_user_agent(cli_perf_monitor_agent)
+    assert cli_perf_monitor_agent in context.get_user_agent()
+    yield
+    context.delete_user_agent(cli_perf_monitor_agent)
+    assert CLI_USER_AGENT in context.get_user_agent()
 
 
 def run_cli_command(cmd, time_limit=3600):
@@ -24,18 +36,11 @@ def run_cli_command(cmd, time_limit=3600):
         get_fun.return_value._to_dict.return_value = {"name": "test_run"}
         restore_fun.return_value._to_dict.return_value = {"name": "test_run"}
 
-        cli_perf_monitor_agent = "perf_monitor/1.0"
-        context = OperationContext.get_instance()
-        context.append_user_agent(cli_perf_monitor_agent)
-        assert cli_perf_monitor_agent in context.get_user_agent()
-
         sys.argv = list(cmd)
         st = timeit.default_timer()
-        main()
+        with check_ua():
+            main()
         ed = timeit.default_timer()
-
-        context.delete_user_agent(cli_perf_monitor_agent)
-        assert CLI_USER_AGENT in context.get_user_agent()
 
         print(f"{cmd}, \nTotal time: {ed - st}s")
         context = OperationContext.get_instance()

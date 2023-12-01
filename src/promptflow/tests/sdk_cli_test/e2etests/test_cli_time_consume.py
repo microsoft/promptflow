@@ -16,24 +16,26 @@ CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
+@contextlib.contextmanager
+def check_ua():
+    cli_perf_monitor_agent = "perf_monitor/1.0"
+    context = OperationContext.get_instance()
+    context.append_user_agent(cli_perf_monitor_agent)
+    assert cli_perf_monitor_agent in context.get_user_agent()
+    yield
+    context.delete_user_agent(cli_perf_monitor_agent)
+    assert CLI_USER_AGENT in context.get_user_agent()
+
+
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
     from promptflow._cli._pf.entry import main
     sys.argv = list(cmd)
     output = io.StringIO()
 
-    cli_perf_monitor_agent = "perf_monitor/1.0"
-    context = OperationContext.get_instance()
-    context.append_user_agent(cli_perf_monitor_agent)
-    assert cli_perf_monitor_agent in context.get_user_agent()
-
     st = timeit.default_timer()
-    with contextlib.redirect_stdout(output):
+    with contextlib.redirect_stdout(output), check_ua():
         main()
     ed = timeit.default_timer()
-
-    context.delete_user_agent(cli_perf_monitor_agent)
-    assert CLI_USER_AGENT in context.get_user_agent()
-
     print(f"{cmd}, \n Total time: {ed - st}s")
     context = OperationContext.get_instance()
     print("request id: ", context.get("request_id"))
