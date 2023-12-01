@@ -60,10 +60,7 @@ class OperationContext(Dict):
         if value is not None and not isinstance(value, (int, float, str, bool)):
             raise TypeError("Value must be a primitive")
         # set the item in the data attribute
-        if name == self._USER_AGENT:
-            self[name] = value.strip()
-        else:
-            self[name] = value
+        self[name] = value
 
     def __getattr__(self, name):
         """Get the attribute.
@@ -77,9 +74,7 @@ class OperationContext(Dict):
         Returns:
             int, float, str, bool, or None: The value of the attribute.
         """
-        if name == self._USER_AGENT:
-            return self.get_user_agent()
-        elif name in self:
+        if name in self:
             return self[name]
         else:
             super().__getattribute__(name)
@@ -109,16 +104,13 @@ class OperationContext(Dict):
             str: The user agent string.
         """
 
-        # Be careful not to use "self.user_agent" as it will recursively call get_user_agent in __getattr__
-        user_agents = self.get(self._USER_AGENT, '').split(' ')
-        promptflow_agent = f'promptflow/{VERSION}'
-        env_user_agents = os.environ.get(USER_AGENT, '').split(' ')
-        env_pf_user_agents = os.environ.get(PF_USER_AGENT, '').split(' ')
-
-        agents = {*user_agents, promptflow_agent, *env_user_agents, *env_pf_user_agents}
+        def parts():
+            if "user_agent" in self:
+                yield self.get('user_agent', '').strip()
+            yield f"promptflow/{VERSION}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
-        return " ".join(agents).strip()
+        return " ".join(parts()).strip()
 
     def append_user_agent(self, user_agent: str):
         """Append the user agent string.
@@ -129,12 +121,14 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        agent = self.get(self._USER_AGENT, '')
-        user_agent = user_agent.strip()
-        # Repeated addition cannot be completely avoided, but repeated addition of identical uas can be avoided.
-        # Completely avoid duplication within 'get_user_agent' function.
-        if user_agent not in agent:
-            self[self._USER_AGENT] = f"{agent} {user_agent}".strip()
+        agents = self.get('user_agent', '').split(' ')
+        user_agents = set(user_agent.split(' '))
+        distinct_agents = []
+        for user_agent in user_agents:
+            if user_agent not in agents and user_agent != '':
+                distinct_agents.append(user_agent)
+
+        self['user_agent'] = ' '.join(agents).join(distinct_agents)
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.
