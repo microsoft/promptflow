@@ -4,10 +4,10 @@
 import logging
 
 from flask import Blueprint, Flask, jsonify
-from flask_restx import Api
 from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
+from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.connection import api as connection_api
 from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
