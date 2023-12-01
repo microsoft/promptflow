@@ -19,11 +19,9 @@ Use this [workflow](https://github.com/microsoft/promptflow/actions/workflows/to
   > [!NOTE] After triggering the workflow, kindly request approval from Promptflow Support before proceeding further.
 
 ## PR check-in criteria
-When you submit your pull request, ensure it has a specific title and includes a detailed PR description with necessary screenshots of the tool verification result. This can help simplify our review process.
+We provide a set of criteria that you can use to review your own code before submitting your pull request.
 
-Additionally, your PR should also meet the following criteria:
-
-### Code quality
+### Maintain code quality
 The code you submit in your pull request should adhere to the following guidelines:
 - **Maintain clean code**: The code should be clean, easy to understand, and well-structured to promote readability and maintainability.
 
@@ -38,7 +36,7 @@ The code you submit in your pull request should adhere to the following guidelin
 - **Implement effective error handling**: Good error handling is critical for troubleshooting customer issues and analyzing key metrics. Follow the guidelines provided in the [Error Handling Guideline](https://msdata.visualstudio.com/Vienna/_git/PromptFlow?path=/docs/error_handling_guidance.md&_a=preview) and reference the [exception.py](https://github.com/microsoft/promptflow/blob/main/src/promptflow-tools/promptflow/tools/exception.py) file for examples.
 
 
-### Test coverage
+### Ensure high test coverage
 Test coverage is crucial for maintaining code quality. Please adhere to the following guidelines:
 
 - **Comprehensive Testing**: Include unit tests and e2e tests for any new functionality introduced.
@@ -48,7 +46,7 @@ Test coverage is crucial for maintaining code quality. Please adhere to the foll
 - **VSCode Testing**: If you're adding a new built-in tool, make sure to test your tool within the VSCode environment prior to submitting your PR. For more guidance on this, refer to [Use your tool from VSCode Extension](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
 
 
-### Documentation
+### Add Documents
 Ensure to include documentation for your new built-in tool, following the guidelines below:
 - **Error-Free Content**: Rectify all typographical and grammatical errors in the documentation. This will ensure clarity and readability.
 
