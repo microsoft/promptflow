@@ -109,19 +109,21 @@ class OperationContext(Dict):
             str: The user agent string.
         """
 
-        def parts():
-            # Be careful not to use "self.user_agent" as it will recursively call get_user_agent in __getattr__
-            agent = self.get(self._USER_AGENT, '')
-            yield agent
-            promptflow_agent = f"promptflow/{VERSION}"
-            yield promptflow_agent if promptflow_agent not in agent else ''
-            user_agent = os.environ.get(USER_AGENT, '').strip()
-            yield user_agent if user_agent not in agent else ''
-            pf_user_agent = os.environ.get(PF_USER_AGENT, '').strip()
-            yield pf_user_agent if pf_user_agent not in agent else ''
+        # Be careful not to use "self.user_agent" as it will recursively call get_user_agent in __getattr__
+        user_agent = self.get(self._USER_AGENT, '')
+        promptflow_agent = f'promptflow/{VERSION}'
+        env_user_agent = os.environ.get(USER_AGENT, '').strip()
+        env_pf_user_agent = os.environ.get(PF_USER_AGENT, '').strip()
+
+        agents = set(user_agent.split(' '))
+        agents.update(
+            *promptflow_agent.split(' '),
+            *env_user_agent.split(' '),
+            *env_pf_user_agent.split(' ')
+        )
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
-        ua = " ".join(parts()).strip()
+        ua = " ".join(agents).strip()
         return ua
 
     def append_user_agent(self, user_agent: str):
