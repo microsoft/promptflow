@@ -58,7 +58,7 @@ Browse the app at Overview and see the test page:
 ![img](assets/test_page.png)
 
 You can also test the app by sending a POST request to the app like:
-```bash
+```shell
 curl http://<Default-domain-of-app-service>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
 ```
 
