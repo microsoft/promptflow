@@ -4,7 +4,7 @@ inputs:
     default: Please describe this image.
   input_image:
     type: image
-    default: data/img1.jpg
+    default: https://developer.microsoft.com/_devcom/images/logo-ms-social.png
 outputs:
   answer:
     type: string
