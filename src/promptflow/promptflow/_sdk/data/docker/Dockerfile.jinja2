@@ -12,10 +12,12 @@ WORKDIR /
 
 {% if env.python_requirements_txt %}
 COPY ./flow/{{env.python_requirements_txt}} /flow/{{env.python_requirements_txt}}
-{% end %}
+{% endif %}
 
 # create conda environment
 {% if env.conda_file %}
+COPY ./flow/{{env.conda_file}} /flow/{{env.conda_file}}
+
 RUN conda create -f flow/{{env.conda_file}} -q && \
 {% else %}
 RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
