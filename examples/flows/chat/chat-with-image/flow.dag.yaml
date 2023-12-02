@@ -7,6 +7,9 @@ inputs:
     is_chat_history: true
   question:
     type: list
+    default:
+     - How many colors can you see?
+     - {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/logo-ms-social.png"} 
     is_chat_input: true
 outputs:
   answer:
