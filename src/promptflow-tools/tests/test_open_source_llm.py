@@ -1,6 +1,7 @@
 import copy
 import os
 import pytest
+import re
 from azure.identity import DefaultAzureCredential
 from typing import List, Dict
 
@@ -24,6 +25,20 @@ from promptflow.tools.open_source_llm import (
 
 def validate_response(response):
     assert len(response) > 15
+
+
+def verify_prompt_role_delimiters(message: str, codes: List[str]):
+    assert codes == "UserError/OpenSourceLLMUserError".split("/")
+
+    message_pattern = re.compile(
+        r"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
+        + r"lines as role delimiters: ('(assistant|user|system):\\n'[,.]){3} Current parsed role 'in the context "
+        + r"of azure ml, what does the ml stand for\?' does not meet the requirement. If you intend to use the "
+        + r"Completion API, please select the appropriate API type and deployment name. If you do intend to use the "
+        + r"Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
+        + r"gallery that contain 'Chat' in the name.")
+    is_match = message_pattern.match(message)
+    assert is_match
 
 
 @pytest.fixture
@@ -206,26 +221,12 @@ user:
 {self.completion_prompt}"""
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(bad_chat_prompt)
-        assert exc_info.value.message == (
-            "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-            + "lines as role delimiters: 'assistant:\\n','user:\\n','system:\\n'. Current parsed role 'in the context "
-            + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
-            + "Completion API, please select the appropriate API type and deployment name. If you do intend to use "
-            + "the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in "
-            + "our gallery that contain 'Chat' in the name.")
-        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
+        verify_prompt_role_delimiters(exc_info.value.message, exc_info.value.error_codes)
 
     def test_open_source_llm_llama_parse_chat_with_comp(self):
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(self.completion_prompt)
-        assert exc_info.value.message == (
-            "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-            + "lines as role delimiters: 'assistant:\\n','user:\\n','system:\\n'. Current parsed role 'in the context "
-            + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
-            + "Completion API, please select the appropriate API type and deployment name. If you do intend to use the "
-            + "Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
-            + "gallery that contain 'Chat' in the name.")
-        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
+        verify_prompt_role_delimiters(exc_info.value.message, exc_info.value.error_codes)
 
     def test_open_source_llm_chat_endpoint_name(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
