@@ -7,7 +7,8 @@ Azure Content Safety is a content moderation service developed by Microsoft that
 - For AzureML users, the tool is installed in default image, you can use the tool without extra installation.
 - For local users,
   `pip install promptflow-tools`
-  Content Safety (Text) tool is now incorporated into the latest `promptflow-tools` package. If you have previously installed the package `promptflow-contentsafety`, please uninstall it to avoid the duplication in your local tool list.
+> [!NOTE]
+> Content Safety (Text) tool is now incorporated into the latest `promptflow-tools` package. If you have previously installed the package `promptflow-contentsafety`, please uninstall it to avoid the duplication in your local tool list.
   
 ## Prerequisites
 
