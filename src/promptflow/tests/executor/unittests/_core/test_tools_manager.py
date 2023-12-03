@@ -3,18 +3,20 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from mock import MagicMock
 from ruamel.yaml import YAML
 
 from promptflow import tool
-from promptflow._core._errors import NotSupported, PackageToolNotFoundError
+from promptflow._core._errors import InputTypeMismatch, NotSupported, PackageToolNotFoundError
 from promptflow._core.tools_manager import (
+    BuiltinsManager,
     NodeSourcePathEmpty,
     ToolLoader,
     collect_package_tools,
     collect_package_tools_and_connections,
     gen_tool_by_source,
 )
-from promptflow.contracts.flow import Node, ToolSource, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
 
@@ -80,6 +82,36 @@ class TestToolLoader:
             tool_loader.load_tool_for_node(node)
             assert str(ex.value) == msg
 
+    def test_load_tool_for_package_node_with_legacy_tool_id(self, mocker):
+        package_tools = {
+            "new_tool_1": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_1"]
+            ).serialize(),
+            "new_tool_2": Tool(
+                name="new tool 1", type=ToolType.PYTHON, inputs={}, deprecated_tools=["old_tool_2"]
+            ).serialize(),
+            "old_tool_2": Tool(name="old tool 2", type=ToolType.PYTHON, inputs={}).serialize(),
+        }
+        mocker.patch("promptflow._core.tools_manager.collect_package_tools", return_value=package_tools)
+        tool_loader = ToolLoader(working_dir="test_working_dir", package_tool_keys=list(package_tools.keys()))
+        node_with_legacy_tool: Node = Node(
+            name="test_legacy_tool",
+            tool="old_tool_1",
+            inputs={},
+            type=ToolType.PYTHON,
+            source=ToolSource(type=ToolSourceType.Package, tool="old_tool_1"),
+        )
+        assert tool_loader.load_tool_for_node(node_with_legacy_tool).name == "new tool 1"
+
+        node_with_legacy_tool_but_in_package_tools: Node = Node(
+            name="test_legacy_tool_but_in_package_tools",
+            tool="old_tool_2",
+            inputs={},
+            type=ToolType.PYTHON,
+            source=ToolSource(type=ToolSourceType.Package, tool="old_tool_2"),
+        )
+        assert tool_loader.load_tool_for_node(node_with_legacy_tool_but_in_package_tools).name == "old tool 2"
+
     def test_load_tool_for_script_node(self):
         working_dir = Path(__file__).parent
         tool_loader = ToolLoader(working_dir=working_dir)
@@ -137,6 +169,11 @@ class TestToolsManager:
         with pytest.raises(error_code) as ex:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
         assert str(ex.value) == error_message
+
+    def test_collect_package_tools_if_node_source_tool_is_legacy(self):
+        legacy_node_source_tools = ["content_safety_text.tools.content_safety_text_tool.analyze_text"]
+        package_tools = collect_package_tools(legacy_node_source_tools)
+        assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
@@ -213,3 +250,52 @@ class TestToolsManager:
         with patch("promptflow._cli._utils.get_workspace_triad_from_local", return_value=mocked_ws_triple):
             result = _gen_dynamic_list({"func_path": func_path, "func_kwargs": func_kwargs})
             assert len(result) == 2
+
+
+@pytest.mark.unittest
+class TestBuiltinsManager:
+    def test_load_tool_from_module(
+        self,
+    ):
+        # Test case 1: When class_name is None
+        module = MagicMock()
+        tool_name = "test_tool"
+        module_name = "test_module"
+        class_name = None
+        method_name = "test_method"
+        node_inputs = {"input1": InputAssignment(value_type=InputValueType.LITERAL, value="value1")}
+
+        # Mock the behavior of the module and class
+        module.test_method = MagicMock()
+
+        # Call the method
+        api, init_inputs = BuiltinsManager._load_tool_from_module(
+            module, tool_name, module_name, class_name, method_name, node_inputs
+        )
+
+        # Assertions
+        assert api == module.test_method
+        assert init_inputs == {}
+
+        # Non literal input for init parameter will raise exception.
+        module = MagicMock()
+        tool_name = "test_tool"
+        module_name = "test_module"
+        class_name = "TestClass"
+        method_name = "test_method"
+        node_inputs = {"input1": InputAssignment(value_type=InputValueType.FLOW_INPUT, value="value1")}
+
+        # Mock the behavior of the module and class
+        module.TestClass = MagicMock()
+        module.TestClass.get_initialize_inputs = MagicMock(return_value=["input1"])
+        module.TestClass.get_required_initialize_inputs = MagicMock(return_value=["input1"])
+        module.TestClass.test_method = MagicMock()
+
+        # Call the method
+        with pytest.raises(InputTypeMismatch) as ex:
+            BuiltinsManager._load_tool_from_module(module, tool_name, module_name, class_name, method_name, node_inputs)
+        expected_message = (
+            "Invalid input for 'test_tool': Initialization input 'input1' requires a literal value, "
+            "but ${flow.value1} was received."
+        )
+        assert expected_message == str(ex.value)

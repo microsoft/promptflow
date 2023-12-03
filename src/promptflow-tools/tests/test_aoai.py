@@ -135,16 +135,14 @@ class TestAOAI:
         conn_dict = {"api_key": "dummy", "api_base": "base", "api_version": "dummy_ver", "api_type": "azure"}
         conn = AzureOpenAIConnection(**conn_dict)
 
-        def mock_completion(**kwargs):
-            assert kwargs["engine"] == deployment_name
+        def mock_completion(self, **kwargs):
+            assert kwargs["model"] == deployment_name
             for k, v in expected.items():
-                assert kwargs[k] == v, f"Expect {k} to be {v}, but got {kwargs[k]}"
-            for k, v in conn_dict.items():
                 assert kwargs[k] == v, f"Expect {k} to be {v}, but got {kwargs[k]}"
             text = kwargs["prompt"]
             return AttrDict({"choices": [AttrDict({"text": text})]})
 
-        with patch("openai.Completion.create", new=mock_completion):
+        with patch("openai.resources.Completions.create", new=mock_completion):
             prompt = "dummy_prompt"
             result = completion(connection=conn, prompt=prompt, deployment_name=deployment_name, **params)
             assert result == prompt

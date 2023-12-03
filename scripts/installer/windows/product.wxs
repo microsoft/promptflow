@@ -1,14 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <?define ProductVersion="1.0.0.0" ?>
+    <?define ProductVersion="$(env.CLI_VERSION)" ?>
 
     <?define ProductName = "promptflow" ?>
-    <?define ProductDescription = "Command-line tools for promptflow." ?>
+    <?define ProductDescription = "Command-line tools for prompt flow." ?>
     <?define ProductAuthor = "Microsoft Corporation" ?>
     <?define ProductResources = ".\resources\" ?>
     <?define UpgradeCode32 = "8b748161-e07a-48f2-8cdf-401480df4694" ?>
-    <?define PromptflowServiceGuid = "d9363a28-693c-4b12-bf0a-30e4b37e9951" ?>
 
     <?if $(var.Platform) = "x64" ?>
     <?define PromptflowCliRegistryGuid = "0efd984f-9eec-425b-b230-a3994b69649a" ?>
@@ -86,6 +85,29 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
+        <CustomAction Id="InstallPromptFlowService"
+            Directory="DynamicCliDir"
+            Execute="commit"
+            Impersonate="no"
+            ExeCommand="cmd.exe /c SC CREATE PromptFlowService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown binPath= &quot;\&quot;%ProgramFiles%\promptflow\pfsvc.exe\&quot;&quot;"
+            Return="check" />
+        <CustomAction Id="StartPromptFlowService"
+            Directory="DynamicCliDir"
+            Execute="commit"
+            ExeCommand="PowerShell.exe -WindowStyle hidden Start-Process -FilePath pfs -NoNewWindow -Wait"
+            Return="asyncNoWait" />
+        <CustomAction Id="UninstallPromptFlowService"
+            Directory="DynamicCliDir"
+            Execute="deferred"
+            Impersonate="no"
+            ExeCommand="cmd.exe /c SC DELETE PromptService"
+            Return="ignore" />
+        <InstallExecuteSequence>
+            <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
+            <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
+            <Custom Action="UninstallPromptFlowService" Before="InstallFinalize">REMOVE="ALL"</Custom>
+        </InstallExecuteSequence>
+
     </Product>
 
     <Fragment>
@@ -131,11 +153,6 @@
                                Type="string"
                                Value="$(var.ProductVersion)"
                                KeyPath="yes"/>
-            </Component>
-            <Component Id="PromptflowService" Directory="DynamicCliDir" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="PromptflowServiceEXE" Source="scripts\dist\promptflow\pfs.exe" KeyPath="yes" />
-                <ServiceInstall Id="ServiceInstaller" Name="PromptflowService" DisplayName="Prompt Flow Service" Description="Provides run and connection management for prompt flow" Start="auto" Type="ownProcess" ErrorControl="normal" />
-                <ServiceControl Id="StartService" Start="install" Stop="both" Remove="uninstall" Name="PromptflowService" Wait="no" />
             </Component>
 
         </ComponentGroup>

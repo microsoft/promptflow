@@ -50,7 +50,12 @@ def add_param_yes(parser):
     )
 
 
-def add_param_flow_name(parser):
+def add_param_ua(parser):
+    # suppress user agent for now since it's only used in vscode extension
+    parser.add_argument("--user-agent", help=argparse.SUPPRESS)
+
+
+def add_param_flow_display_name(parser):
     parser.add_argument("--flow", type=str, required=True, help="the flow name to create.")
 
 
@@ -293,6 +298,9 @@ def add_param_config(parser):
 
 
 logging_params = [add_param_verbose, add_param_debug]
+base_params = logging_params + [
+    add_param_ua,
+]
 
 
 def add_param_archived_only(parser):
@@ -338,4 +346,14 @@ def add_param_flow_type(parser):
             f"The type of the flow. Available values are {FlowType.get_all_values()}. "
             f"Default to be None, which means all types included."
         ),
+    )
+
+
+def add_param_flow_name(parser):
+    parser.add_argument(
+        "-n",
+        "--name",
+        type=str,
+        required=True,
+        help="The name of the flow.",
     )

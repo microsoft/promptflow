@@ -35,8 +35,6 @@ from promptflow._sdk._utils import (
 )
 from promptflow._utils.load_data import load_data
 
-from ..recording_utilities import RecordStorage
-
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
 
@@ -90,6 +88,21 @@ class TestUtils:
         assert connections["test_connection"]["value"]["api_key"] == "KEY"
         assert connections["test_connection"]["value"]["api_base"] == "BASE"
         assert connections["test_custom_connection"]["value"]["key"] == "CUSTOM_VALUE"
+
+        # test bad cases
+        connections = {
+            "test_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"none_value": None, "integer_value": 1, "float_value": 1.0, "dict_value": {}},
+            },
+        }
+        resolve_connections_environment_variable_reference(connections)
+        assert connections["test_connection"]["value"] == {
+            "none_value": None,
+            "integer_value": 1,
+            "float_value": 1.0,
+            "dict_value": {},
+        }
 
     def test_override_connection_config_with_environment_variable(self):
         connections = {
@@ -160,7 +173,6 @@ class TestUtils:
             result = _generate_connections_dir()
             assert result == expected_result
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="No connection in replay mode")
     def test_refresh_connections_dir(self):
         from promptflow._core.tools_manager import collect_package_tools_and_connections
 

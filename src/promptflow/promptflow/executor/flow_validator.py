@@ -33,24 +33,6 @@ class FlowValidator:
         aggregation_nodes = set(node.name for node in flow.nodes if node.aggregation)
         for n in flow.nodes:
             inputs_list = [i for i in n.inputs.values()]
-            if n.skip:
-                if n.aggregation and (
-                    (
-                        n.skip.condition.value_type == InputValueType.NODE_REFERENCE
-                        and n.skip.condition.value not in aggregation_nodes
-                    )
-                    or (
-                        n.skip.return_value.value_type == InputValueType.NODE_REFERENCE
-                        and n.skip.return_value.value not in aggregation_nodes
-                    )
-                ):
-                    msg_format = (
-                        "Invalid node definitions found in the flow graph. Non-aggregation nodes cannot be "
-                        "referenced in the skip config of the aggregation node '{node_name}'. Please review "
-                        "and rectify the node reference."
-                    )
-                    raise InvalidNodeReference(message_format=msg_format, node_name=n.name)
-                inputs_list.extend([n.skip.condition, n.skip.return_value])
             if n.activate:
                 if (
                     n.aggregation
@@ -171,7 +153,7 @@ class FlowValidator:
                 message_format=msg_format,
                 flow_input_info=flow_input_info,
                 input_value=input_value,
-                value_type=expected_type,
+                value_type=expected_type.value if hasattr(expected_type, "value") else expected_type,
                 error_type_and_message=error_type_and_message,
             ) from e
         except Exception as e:
@@ -182,8 +164,9 @@ class FlowValidator:
                 "does not match the expected type '{expected_type}'. Please change flow input type "
                 "or adjust the input value in your input data."
             )
+            expected_type_value = expected_type.value if hasattr(expected_type, "value") else expected_type
             raise InputTypeError(
-                message_format=msg_format, flow_input_info=flow_input_info, expected_type=expected_type
+                message_format=msg_format, flow_input_info=flow_input_info, expected_type=expected_type_value
             ) from e
 
     @staticmethod
@@ -295,7 +278,7 @@ class FlowValidator:
                         message_format=msg_format,
                         input_name=k,
                         node_name=node.name,
-                        expected_type=flow.inputs[v.value].type,
+                        expected_type=flow.inputs[v.value].type.value,
                     ) from e
         return updated_inputs
 
@@ -383,3 +366,11 @@ class FlowValidator:
                     continue
             updated_outputs[k] = v
         return updated_outputs
+
+    @staticmethod
+    def ensure_flow_valid_in_batch_mode(flow: Flow):
+        if not flow.inputs:
+            message = (
+                "The input for flow cannot be empty in batch mode. Please review your flow and provide valid inputs."
+            )
+            raise InputNotFound(message=message)

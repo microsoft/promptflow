@@ -12,6 +12,7 @@ def mock_chat(chat_history: list, question: list):
     for item in question:
         if isinstance(item, Image):
             res.append(item)
+    res.append("text response")
     return res
 
 

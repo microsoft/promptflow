@@ -20,6 +20,18 @@
     max-width: 70em;
 }
 
+html[data-theme="light"] {
+    --header-announcement-color: #fff070;
+}
+
+html[data-theme="dark"] {
+    --header-announcement-color: #4d4d00;
+}
+
+.bd-header-announcement {
+    background: var(--header-announcement-color);
+}
+
 /* (A) LIGHTBOX BACKGROUND */
 #lightbox {
     /* (A1) COVERS FULLSCREEN */

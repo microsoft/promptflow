@@ -9,7 +9,7 @@ on:
     - cron: "17 21 * * *" # Every day starting at 5:17 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_getstarted_flowasfunction.yml ]
+    paths: [ examples/**, .github/workflows/samples_getstarted_flowasfunction.yml, '!examples/flows/integrations/**' ]
   workflow_dispatch:
 
 env:
@@ -20,9 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Generate config.json
+        uses: actions/checkout@v4
+      - name: Generate config.json for canary workspace (scheduled runs only)
+        if: github.event_name == 'schedule'
         run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
+      - name: Generate config.json for production workspace
+        if: github.event_name != 'schedule'
+        run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -43,7 +47,7 @@ jobs:
       - name: Test Notebook
         working-directory: examples/tutorials/get-started
         run: |
-          papermill -k python flow-as-function.ipynb flow-as-function.output.ipynb
+          papermill -k python flow-as-function.ipynb flow-as-function.output.ipynb -p api_key ${{ secrets.AOAI_API_KEY_TEST }} -p api_base ${{ secrets.AOAI_API_ENDPOINT_TEST }} -p api_version 2023-07-01-preview
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3

@@ -8,8 +8,6 @@ from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow.exceptions import UserErrorException
 
-from ..recording_utilities import RecordStorage
-
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -22,7 +20,7 @@ _client = PFClient()
 
 
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "recording_injection"
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
 )
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
@@ -37,7 +35,6 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Doesn't support strong type in replay")
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
@@ -96,7 +93,6 @@ class TestFlowTest:
         result = _client.test(flow=flow_path, inputs={"input_param": "Hello World!"}, node="my_script_tool")
         assert result == "connection_value is MyCustomConnection: True"
 
-    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Stream not supported in replay mode")
     def test_pf_test_with_streaming_output(self):
         flow_path = Path(f"{FLOWS_DIR}/chat_flow_with_stream_output")
         result = _client.test(flow=flow_path)
@@ -202,3 +198,9 @@ class TestFlowTest:
     def test_pf_test_with_non_english_input(self):
         result = _client.test(flow=f"{FLOWS_DIR}/flow_with_non_english_input")
         assert result["output"] == "Hello 日本語"
+
+    def test_pf_node_test_with_dict_input(self):
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input").absolute()
+        inputs = {"get_dict_val.output.value": {"key": "value"}}
+        result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
+        assert result.status.value == "Completed"

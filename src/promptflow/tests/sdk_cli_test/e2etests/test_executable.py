@@ -6,7 +6,6 @@ from pathlib import Path
 import mock
 import pytest
 
-from ..recording_utilities import RecordStorage
 from .test_cli import run_pf_command
 
 FLOWS_DIR = "./tests/test_configs/flows"
@@ -15,7 +14,6 @@ CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-@pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="Missing executable deps in replay mode")
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.cli_test
 @pytest.mark.e2etest
