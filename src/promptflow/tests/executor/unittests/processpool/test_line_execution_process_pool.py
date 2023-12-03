@@ -278,6 +278,7 @@ class TestLineExecutionProcessPool:
             is_set_environ_pf_worker_count,
             pf_worker_count,
             n_process):
+        os.environ.pop("PF_WORKER_COUNT", None)  # Delete the environment variable if it exists
         if is_set_environ_pf_worker_count:
             os.environ["PF_WORKER_COUNT"] = pf_worker_count
         executor = FlowExecutor.create(
@@ -332,6 +333,7 @@ class TestLineExecutionProcessPool:
         available_max_worker_count,
         n_process
     ):
+        os.environ.pop("PF_WORKER_COUNT", None)  # Delete the environment variable if it exists
         os.environ["PF_BATCH_METHOD"] = "spawn"
         if is_set_environ_pf_worker_count:
             os.environ["PF_WORKER_COUNT"] = pf_worker_count
