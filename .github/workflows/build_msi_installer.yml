@@ -137,8 +137,8 @@ jobs:
 
       - name: Check if version input is valid and upload JSON file
         run: |
-          $version = "${{ steps.get-version.outputs.version }}"
-          $downloaded_version = "${{ steps.download-json.outputs.downloaded_version }}"
+          $version = [Version]"${{ steps.get-version.outputs.version }}"
+          $downloaded_version = [Version]"${{ steps.download-json.outputs.downloaded_version }}"
           if ($version -like '1.*' -and $version -gt $downloaded_version){
             $jsonContent = @{
               "promptflow" = $version
