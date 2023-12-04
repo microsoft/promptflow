@@ -70,7 +70,9 @@ class OpenAIMetricsCalculator:
             if isinstance(output, dict):
                 model = output.get("model")
             else:
-                model = output[0].model if len(output) > 0 else None
+                model = output[0].model if len(output) > 0 and hasattr(output[0], "model") else None
+            if not model:
+                model = inputs.get("model")
         if not model:
             raise CalculatingMetricsError(
                 "Cannot get a valid model to calculate metrics. "
