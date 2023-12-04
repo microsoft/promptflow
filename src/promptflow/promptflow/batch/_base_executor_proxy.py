@@ -12,7 +12,7 @@ import httpx
 from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._errors import ExecutorServiceUnhealthy
-from promptflow.exceptions import PromptflowException
+from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -72,14 +72,19 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         index: Optional[int] = None,
         run_id: Optional[str] = None,
     ) -> LineResult:
+        start_time = datetime.utcnow()
         # ensure service health
-        await self.ensure_executor_health()
+        await self._ensure_executor_health()
         # call execution api to get line results
         url = self.api_endpoint + "/Execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        response = self.process_http_response(response)
+        # process the response
+        response, has_error = self._process_http_response(response)
+        if has_error:
+            run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, response)
+            return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
         return LineResult.deserialize(response)
 
     async def exec_aggregation_async(
@@ -89,33 +94,38 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         # ensure service health
-        await self.ensure_executor_health()
+        await self._ensure_executor_health()
         # call aggregation api to get aggregation result
         async with httpx.AsyncClient() as client:
             url = self.api_endpoint + "/Aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        response = self.process_http_response(response)
+        response, _ = self._process_http_response(response)
         return AggregationResult.deserialize(response)
 
-    def process_http_response(self, response: httpx.Response, is_aggregation: bool = False):
+    def _process_http_response(self, response: httpx.Response):
+        """Process the http response from the executor service
+
+        :param response: the http response from the executor service
+        :type response: httpx.Response
+        :return: the response json and a bool value indicating whether there is an error in the line execution
+        :rtype: dict, bool
+        """
         status_code = response.status_code
         if status_code == 200:
-            return response.json()
+            return response.json(), False
         else:
-            bulk_logger.error(
-                f"Error when calling executor API, status code: {response.status_code}, error: {response.text}"
-            )
+            bulk_logger.error(f"Error when calling executor API, status code: {status_code}, error: {response.text}")
             try:
                 error_response = response.json()
-                return error_response
+                if "error" in error_response:
+                    return error_response["error"], True
+                return error_response, True
             except JSONDecodeError:
                 # TODO: add more error handling
-                raise PromptflowException(
-                    f"Error when calling executor API, response: {response}, error: {response.text}"
-                )
+                return response.text, True
 
-    async def ensure_executor_health(self):
+    async def _ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
 
         During testing, we observed that the executor service started quickly on Windows.
