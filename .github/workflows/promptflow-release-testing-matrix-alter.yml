@@ -1,5 +1,8 @@
 name: promptflow-release-testing-matrix
 on:
+  pull_request:
+    branches:
+      - main
   workflow_call:
   workflow_dispatch:
     inputs:
@@ -91,6 +94,11 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
+    - name: Check if sdk cli test could be collected
+      shell: pwsh
+      working-directory: ${{ github.workspace }}
+      run: |
+        python ${{ github.workspace }}/scripts/building/get_output_via_markers.py -m pytest -p vscode_pytest --collect-only src/promptflow/tests/sdk_cli_test/
     - name: Run SDK CLI Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
@@ -131,7 +139,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        pythonVersion: ['3.8', '3.9', '3.10']
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
@@ -190,7 +198,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        pythonVersion: ['3.8', '3.9', '3.10']
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
