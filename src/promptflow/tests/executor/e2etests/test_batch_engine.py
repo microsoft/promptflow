@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from tempfile import mkdtemp
 
+import multiprocessing
 import pytest
 
 from promptflow._utils.utils import dump_list_to_jsonl
@@ -33,6 +34,32 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=connections)
     await asyncio.sleep(1)
     return batch_result
+
+
+def run_spawn_mode_batch_run_in_subprocess(flow_folder, inputs_mapping, dev_connections):
+    original_pf_batch_method = os.environ.get("PF_BATCH_METHOD")
+    os.environ["PF_BATCH_METHOD"] = "spawn"
+    batch_result, output_dir = submit_batch_run(
+        flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
+    )
+
+    assert isinstance(batch_result, BatchResult)
+    nlines = get_batch_inputs_line(flow_folder)
+    assert batch_result.total_lines == nlines
+    assert batch_result.completed_lines == nlines
+    assert batch_result.start_time < batch_result.end_time
+    assert batch_result.system_metrics.duration > 0
+
+    outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+    assert len(outputs) == nlines
+    for i, output in enumerate(outputs):
+        assert isinstance(output, dict)
+        assert "line_number" in output, f"line_number is not in {i}th output {output}"
+        assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+    if original_pf_batch_method is None:
+        os.environ.pop("PF_BATCH_METHOD", None)
+    else:
+        os.environ["PF_BATCH_METHOD"] = original_pf_batch_method
 
 
 def submit_batch_run(
@@ -142,25 +169,10 @@ class TestBatch:
         ],
     )
     def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
-        os.environ["PF_BATCH_METHOD"] = "spawn"
-        batch_result, output_dir = submit_batch_run(
-            flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
-        )
-
-        assert isinstance(batch_result, BatchResult)
-        nlines = get_batch_inputs_line(flow_folder)
-        assert batch_result.total_lines == nlines
-        assert batch_result.completed_lines == nlines
-        assert batch_result.start_time < batch_result.end_time
-        assert batch_result.system_metrics.duration > 0
-
-        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
-        assert len(outputs) == nlines
-        for i, output in enumerate(outputs):
-            assert isinstance(output, dict)
-            assert "line_number" in output, f"line_number is not in {i}th output {output}"
-            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-        os.environ.pop("PF_BATCH_METHOD", None)
+        p = multiprocessing.Process(target=run_spawn_mode_batch_run_in_subprocess,
+                                    args=(flow_folder, inputs_mapping, dev_connections))
+        p.start()
+        p.join()
 
     def test_batch_run_then_eval(self, dev_connections):
         batch_resutls, output_dir = submit_batch_run(
