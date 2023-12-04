@@ -95,6 +95,7 @@ jobs:
       run: |
         gci env:* | sort-object name
         pip install langchain
+        pip uninstall pytest-xdist -y
         # numexpr is required by langchain in e2e tests.
         pip install numexpr
         pytest src/promptflow/tests/executor/e2etests -vv -ra `
