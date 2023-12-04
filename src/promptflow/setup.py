@@ -46,7 +46,7 @@ REQUIRES = [
     "waitress>=2.1.2,<3.0.0",  # used to serve local service
     "opencensus-ext-azure<2.0.0",  # configure opencensus to send telemetry to azure monitor
     "ruamel.yaml>=0.17.35,<1.0.0",  # used to generate connection templates with preserved comments
-    "pyarrow>=9.0.0,<15.0.0",  # used to read parquet file with pandas.read_parquet
+    "pyarrow>=14.0.1,<15.0.0",  # used to read parquet file with pandas.read_parquet
     "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
 ]
