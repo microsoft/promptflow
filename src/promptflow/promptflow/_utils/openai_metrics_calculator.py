@@ -50,7 +50,13 @@ class OpenAIMetricsCalculator:
             )
 
         name = api_call.get("name")
-        # Support both legacy version of openai and openai v1 api
+        # Support both legacy api and OpenAI v1 api
+        # Legacy api:
+        #   https://github.com/openai/openai-python/blob/v0.28.1/openai/api_resources/chat_completion.py
+        #   https://github.com/openai/openai-python/blob/v0.28.1/openai/api_resources/completion.py
+        # OpenAI v1 api:
+        #   https://github.com/openai/openai-python/blob/main/src/openai/resources/chat/completions.py
+        #   https://github.com/openai/openai-python/blob/main/src/openai/resources/completions.py
         if (
             name == "openai.api_resources.chat_completion.ChatCompletion.create"
             or name == "openai.resources.chat.completions.Completions.create"  # openai v1
