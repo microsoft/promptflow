@@ -97,7 +97,7 @@ jobs:
         pip install langchain
         # numexpr is required by langchain in e2e tests.
         pip install numexpr
-        pytest src/promptflow/tests/executor/e2etests -n auto --dist loadfile -vv -ra `
+        pytest src/promptflow/tests/executor/e2etests -vv -ra `
         --junitxml=test-results.xml --cov=promptflow --cov-report=term --cov-report=xml --cov-report=html `
         --cov-config=src/promptflow/tests/executor/.coveragerc --log-level=info --log-format="%(asctime)s %(levelname)s %(message)s" --log-date-format="[%Y-%m-%d %H:%M:%S]" `
         --durations=5
