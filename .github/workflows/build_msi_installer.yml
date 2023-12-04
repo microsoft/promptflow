@@ -131,14 +131,21 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Download JSON file from Azure Blob Storage
+        run: |
+          az storage blob download --account-name promptflowartifact --container-name msi-installer --name latest_version.json --file downloaded_version.json
+          $downloaded_version=$(python -c "import json; new_version = json.load(open('downloaded_version.json'))['promptflow']")
+          echo "::set-output name=downloaded_version::downloaded_version"
+
       - name: Check if version input is valid and upload JSON file
         run: |
           $version = "${{ steps.get-version.outputs.version }}"
-          if ($version -like '1.*') {
+          if ($version -like '1.*' -and $version -gt $downloaded_version){
             $jsonContent = @{
               "promptflow" = $version
             } | ConvertTo-Json -Depth 100
             $jsonContent | Out-File -FilePath latest_version.json -Encoding UTF8
+            
             Write-Output "Created latest_version.json with version: $version"
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "latest_version.json" --name "latest_version.json" --overwrite
           } else {
