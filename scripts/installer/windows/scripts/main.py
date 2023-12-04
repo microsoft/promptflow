@@ -15,6 +15,7 @@ def command_pfs():
 
 if __name__ == "__main__":
     command = sys.argv[1] if len(sys.argv) > 1 else None
+    sys.argv = sys.argv[1:]
     if command == 'pf':
         command_pf()
     elif command == 'pfazure':
