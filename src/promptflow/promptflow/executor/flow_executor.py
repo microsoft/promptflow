@@ -132,11 +132,11 @@ class FlowExecutor:
             try:
                 pf_worker_count = os.environ.get("PF_WORKER_COUNT")
                 if pf_worker_count is None:
-                    self._pf_worker_count = pf_worker_count
+                    self._use_default_worker_count = True
                     worker_count = self._DEFAULT_WORKER_COUNT
                 else:
-                    self._pf_worker_count = int(pf_worker_count)
-                    worker_count = self._pf_worker_count
+                    self._use_default_worker_count = False
+                    worker_count = int(pf_worker_count)
                 self._worker_count = worker_count
             except Exception:
                 self._worker_count = self._DEFAULT_WORKER_COUNT

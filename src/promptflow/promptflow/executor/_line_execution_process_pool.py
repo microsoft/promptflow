@@ -152,7 +152,7 @@ class LineExecutionProcessPool:
         self._worker_count = flow_executor._worker_count
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
         self._DEFAULT_WORKER_COUNT = flow_executor._DEFAULT_WORKER_COUNT
-        self._pf_worker_count = flow_executor._pf_worker_count
+        self._use_default_worker_count = flow_executor._use_default_worker_count
         sys_start_methods = multiprocessing.get_all_start_methods()
         if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
             bulk_logger.warning(
@@ -199,37 +199,41 @@ class LineExecutionProcessPool:
         # Starting a new process in non-fork mode requires to allocate memory. Determine the maximum number of processes
         # based on available memory to avoid memory bursting.
         if not self._use_fork:
-            available_max_worker_count = get_available_max_worker_count()
-            if self._pf_worker_count is None:
-                self._n_process = min(self._worker_count, self._nlines, available_max_worker_count)
+            estimated_available_worker_count = get_available_max_worker_count()
+            if self._use_default_worker_count:
+                self._n_process = min(self._worker_count, self._nlines, estimated_available_worker_count)
                 bulk_logger.info(
                     f"Not using fork, and the environment variable PF_WORKER_COUNT is not set. Calculate the current "
                     f"system available memory divided by process memory, and take the minimum value of this value: "
-                    f"{available_max_worker_count}, the default value for worker_count: {self._DEFAULT_WORKER_COUNT} "
-                    f"and the row count: {self._nlines} as the final number of processes. process count: "
-                    f"{self._n_process}")
+                    f"{estimated_available_worker_count}, the default value for worker_count: "
+                    f"{self._DEFAULT_WORKER_COUNT} and the row count: {self._nlines} as the final number of processes. "
+                    f"process count: {self._n_process}")
             else:
-                self._n_process = self._pf_worker_count
-                if available_max_worker_count < self._pf_worker_count:
+                self._n_process = self._worker_count
+                if estimated_available_worker_count < self._worker_count:
                     bulk_logger.warning(
                         f"The maximum number of processes calculated based on the system available memory "
-                        f"is {available_max_worker_count}, and the PF_WORKER_COUNT is set to {self._pf_worker_count}. "
-                        f"Use the PF_WORKER_COUNT:{self._pf_worker_count} as the final number of processes. "
+                        f"is {estimated_available_worker_count}, and the PF_WORKER_COUNT is set to {self._worker_count}. "
+                        f"Use the PF_WORKER_COUNT:{self._worker_count} as the final number of processes. "
                         f"process count: {self._n_process}")
                 else:
                     bulk_logger.info(
-                        f"PF_WORKER_COUNT:{self._pf_worker_count}, process count: {self._n_process}")
+                        f"The number of processes has been explicitly set to {self._worker_count} by the "
+                        f"environment variable PF_WORKER_COUNT. This value will determine the degree of parallelism of "
+                        f"the process. process count: {self._n_process}")
         else:
-            if self._pf_worker_count is None:
+            if self._use_default_worker_count:
                 self._n_process = min(self._worker_count, self._nlines)
                 bulk_logger.info(
                     f"Using fork, and the environment variable PF_WORKER_COUNT is not set. The number of processes is "
                     f"determined by the lesser of the default value for worker_count {self._DEFAULT_WORKER_COUNT} and "
                     f"the row count: {self._nlines}. process count: {self._n_process}")
             else:
-                self._n_process = self._pf_worker_count
+                self._n_process = self._worker_count
                 bulk_logger.info(
-                    f"PF_WORKER_COUNT:{self._pf_worker_count}, process count: {self._n_process}")
+                    f"The number of processes has been explicitly set to {self._worker_count} by the "
+                    f"environment variable PF_WORKER_COUNT. This value will determine the degree of parallelism of "
+                    f"the process. process count: {self._n_process}")
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
 
@@ -571,20 +575,22 @@ def get_available_max_worker_count():
     process = psutil.Process(pid)
     process_memory_info = process.memory_info()
     process_memory = process_memory_info.rss / (1024 * 1024)  # in MB
-    available_max_worker_count = math.floor((available_memory) / process_memory)
-    if available_max_worker_count < 1:
+    estimated_available_worker_count = math.floor((available_memory) / process_memory)
+    if estimated_available_worker_count < 1:
         # TODO: For the case of vector db, Optimize execution logic
         # 1. Let the main process not consume memory because it does not actually invoke
         # 2. When the degree of parallelism is 1, main process executes the task directly and not
         #  create the child process
-        bulk_logger.warning(f"Available max worker count {available_max_worker_count} is less than 1, set it to 1.")
-        available_max_worker_count = 1
+        bulk_logger.warning(
+            f"Available max worker count {estimated_available_worker_count} is less than 1, set it to 1.")
+        estimated_available_worker_count = 1
     bulk_logger.info(
-        f"""Process {pid} current available memory is {process_memory},
-        memory consumption of current process is {available_memory},
-        worker count is set to {available_memory}/{process_memory} = {available_max_worker_count}"""
+        f"Process {pid} current available memory is {process_memory}, "
+        f"memory consumption of current process is {available_memory}, "
+        f"the estimated available worker count is {available_memory}/{process_memory} "
+        f"= {estimated_available_worker_count}"
     )
-    return available_max_worker_count
+    return estimated_available_worker_count
 
 
 def get_multiprocessing_context(multiprocessing_start_method=None):
