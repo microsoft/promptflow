@@ -36,9 +36,9 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     return batch_result
 
 
-def run_spawn_mode_batch_run_in_subprocess(flow_folder, inputs_mapping, dev_connections):
+def run_spawn_mode_batch_run_in_subprocess(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
     original_pf_batch_method = os.environ.get("PF_BATCH_METHOD")
-    os.environ["PF_BATCH_METHOD"] = "spawn"
+    os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
         flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
     )
@@ -170,7 +170,34 @@ class TestBatch:
     )
     def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         p = multiprocessing.Process(target=run_spawn_mode_batch_run_in_subprocess,
-                                    args=(flow_folder, inputs_mapping, dev_connections))
+                                    args=("spawn", flow_folder, inputs_mapping, dev_connections))
+        p.start()
+        p.join()
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
+        p = multiprocessing.Process(target=run_spawn_mode_batch_run_in_subprocess,
+                                    args=("forkserver", flow_folder, inputs_mapping, dev_connections))
         p.start()
         p.join()
 
