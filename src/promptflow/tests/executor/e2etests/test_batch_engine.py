@@ -1,6 +1,5 @@
 import asyncio
 import uuid
-import os
 from pathlib import Path
 from tempfile import mkdtemp
 
