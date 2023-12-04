@@ -129,17 +129,14 @@ class FlowExecutor:
         if worker_count is not None:
             self._worker_count = worker_count
         else:
-            try:
-                pf_worker_count = os.environ.get("PF_WORKER_COUNT")
-                if pf_worker_count is None:
-                    self._use_default_worker_count = True
-                    worker_count = self._DEFAULT_WORKER_COUNT
-                else:
-                    self._use_default_worker_count = False
-                    worker_count = int(pf_worker_count)
-                self._worker_count = worker_count
-            except Exception:
-                self._worker_count = self._DEFAULT_WORKER_COUNT
+            worker_count_in_env = load_worker_count_in_env()
+            if worker_count_in_env is None:
+                self._use_default_worker_count = True
+                worker_count = self._DEFAULT_WORKER_COUNT
+            else:
+                self._use_default_worker_count = False
+                worker_count = int(worker_count_in_env)
+            self._worker_count = worker_count
         if self._worker_count <= 0:
             self._worker_count = self._DEFAULT_WORKER_COUNT
         self._run_tracker = run_tracker
@@ -967,6 +964,17 @@ class FlowExecutor:
         """
         for node in self._flow.nodes:
             self._tools_manager.wrap_tool(node.name, wrapper=_ensure_node_result_is_serializable)
+
+
+def load_worker_count_in_env():
+    try:
+        pf_worker_count = os.environ.get("PF_WORKER_COUNT")
+        if pf_worker_count is None:
+            return None
+        else:
+            return int(pf_worker_count)
+    except Exception:
+        return None
 
 
 def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_parameter="stream"):

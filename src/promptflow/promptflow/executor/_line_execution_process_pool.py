@@ -217,10 +217,7 @@ class LineExecutionProcessPool:
                         f"{self._worker_count}. Use the PF_WORKER_COUNT:{self._worker_count} as the final "
                         f"number of processes. process count: {self._n_process}")
                 else:
-                    bulk_logger.info(
-                        f"The number of processes has been explicitly set to {self._worker_count} by the "
-                        f"environment variable PF_WORKER_COUNT. This value will determine the degree of parallelism of "
-                        f"the process. process count: {self._n_process}")
+                    log_process_count_info(self._worker_count, self._n_process)
         else:
             if self._use_default_worker_count:
                 self._n_process = min(self._worker_count, self._nlines)
@@ -230,10 +227,7 @@ class LineExecutionProcessPool:
                     f"the row count: {self._nlines}. process count: {self._n_process}")
             else:
                 self._n_process = self._worker_count
-                bulk_logger.info(
-                    f"The number of processes has been explicitly set to {self._worker_count} by the "
-                    f"environment variable PF_WORKER_COUNT. This value will determine the degree of parallelism of "
-                    f"the process. process count: {self._n_process}")
+                log_process_count_info(self._worker_count, self._n_process)
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
 
@@ -601,3 +595,10 @@ def get_multiprocessing_context(multiprocessing_start_method=None):
     else:
         context = multiprocessing.get_context()
         return context
+
+
+def log_process_count_info(worker_count, process_count):
+    bulk_logger.info(
+        f"The number of processes has been explicitly set to {worker_count} by the "
+        f"environment variable PF_WORKER_COUNT. This value will determine the degree of parallelism of "
+        f"the process. process count: {process_count}")
