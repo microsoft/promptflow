@@ -107,7 +107,7 @@ def raise_promptflow_exception_without_inner_exception():
 TOOL_EXECUTION_ERROR_TRACEBACK = r"""Traceback \(most recent call last\):
   File ".*test_exception_utils.py", line .*, in code_with_bug
     1 / 0
-ZeroDivisionError: division by zero
+(?:    .*\n)?ZeroDivisionError: division by zero
 """
 
 TOOL_EXCEPTION_TRACEBACK = r"""
