@@ -7,6 +7,10 @@ inputs:
     required: false
     default: promptflow_with_extra
     type: string
+  requiredPackages:
+    required: false
+    default: ./dev_requirements.txt
+    type: string
 runs:
   using: composite
   steps:
@@ -21,7 +25,7 @@ runs:
     shell: pwsh
     run: |
       Set-PSDebug -Trace 1
-      pip install -r ./dev_requirements.txt
+      pip install -r requiredPackages
       echo "########### pip list (Before) ###########"
       pip list
       python ./setup.py bdist_wheel
@@ -35,7 +39,7 @@ runs:
     shell: pwsh
     run: |
       Set-PSDebug -Trace 1
-      pip install -r ./dev_requirements.txt
+      pip install -r requiredPackages
       python ./setup.py bdist_wheel
       $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
       pip install $package.FullName
