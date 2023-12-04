@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pytest
 from pytest_mock import MockFixture
+from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 
 from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
@@ -70,13 +71,16 @@ class TestLineExecutionProcessPool:
         )
         return line_execution_process_pool
 
+    @pytest.mark.skipif(
+        is_replay() or is_record(), reason="Trigger a error in multiprocessing. Cannot retrieve recording."
+    )
     @pytest.mark.parametrize(
         "flow_folder",
         [
             SAMPLE_FLOW,
         ],
     )
-    def test_line_execution_process_pool(self, flow_folder, dev_connections, recording_injection):
+    def test_line_execution_process_pool(self, flow_folder, dev_connections):
         log_path = str(Path(mkdtemp()) / "test.log")
         log_context_initializer = LogContext(log_path).get_initializer()
         log_context = log_context_initializer()

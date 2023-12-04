@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 from mock import MagicMock
 from ruamel.yaml import YAML
+from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 
 from promptflow import tool
 from promptflow._core._errors import InputTypeMismatch, NotSupported, PackageToolNotFoundError
@@ -170,6 +171,10 @@ class TestToolsManager:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
         assert str(ex.value) == error_message
 
+    @pytest.mark.skipif(
+        is_record() or is_replay(),
+        reason="record doesn't support this test",
+    )
     def test_collect_package_tools_if_node_source_tool_is_legacy(self):
         legacy_node_source_tools = ["content_safety_text.tools.content_safety_text_tool.analyze_text"]
         package_tools = collect_package_tools(legacy_node_source_tools)
