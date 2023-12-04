@@ -129,7 +129,7 @@ class FlowExecutor:
         if worker_count is not None:
             self._worker_count = worker_count
         else:
-            self.use_default_worker_count, self._worker_count = load_worker_count_in_env(self._DEFAULT_WORKER_COUNT)
+            self._use_default_worker_count, self._worker_count = load_worker_count_in_env(self._DEFAULT_WORKER_COUNT)
         if self._worker_count <= 0:
             logger.warning(
                 f"Invalid worker count: {self._worker_count}. Resetting to default value: {self._DEFAULT_WORKER_COUNT}")
