@@ -18,8 +18,6 @@ on:
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: src/promptflow
-  PYTHONPATH: ${{ github.workspace }}/src/promptflow
-  IS_IN_CI_PIPELINE: "true"
 
 jobs:
   build_msi_installer:
