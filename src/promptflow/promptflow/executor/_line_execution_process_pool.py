@@ -587,7 +587,7 @@ def get_available_max_worker_count():
     bulk_logger.info(
         f"Process {pid} current available memory is {process_memory}, "
         f"memory consumption of current process is {available_memory}, "
-        f"the estimated available worker count is {available_memory}/{process_memory} "
+        f"estimated available worker count is {available_memory}/{process_memory} "
         f"= {estimated_available_worker_count}"
     )
     return estimated_available_worker_count

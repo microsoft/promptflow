@@ -450,6 +450,6 @@ class TestGetAvailableMaxWorkerCount:
                     mock_logger.info.assert_called_with(
                         f"Process {os.getpid()} current available memory is {process_memory}, "
                         f"memory consumption of current process is {available_memory}, "
-                        f"the estimated available worker count is {available_memory}/{process_memory} "
+                        f"estimated available worker count is {available_memory}/{process_memory} "
                         f"= {estimated_available_worker_count}"
                     )
