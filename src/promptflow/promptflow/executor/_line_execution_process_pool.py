@@ -213,9 +213,9 @@ class LineExecutionProcessPool:
                 if estimated_available_worker_count < self._worker_count:
                     bulk_logger.warning(
                         f"The maximum number of processes calculated based on the system available memory "
-                        f"is {estimated_available_worker_count}, and the PF_WORKER_COUNT is set to {self._worker_count}. "
-                        f"Use the PF_WORKER_COUNT:{self._worker_count} as the final number of processes. "
-                        f"process count: {self._n_process}")
+                        f"is {estimated_available_worker_count}, and the PF_WORKER_COUNT is set to "
+                        f"{self._worker_count}. Use the PF_WORKER_COUNT:{self._worker_count} as the final "
+                        f"number of processes. process count: {self._n_process}")
                 else:
                     bulk_logger.info(
                         f"The number of processes has been explicitly set to {self._worker_count} by the "
