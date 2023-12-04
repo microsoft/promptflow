@@ -44,7 +44,7 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
                 "Generate tool meta failed for {tool_type} tool. Jinja parsing failed at line {line_number}: "
                 "{error_type_and_message}"
             ),
-            tool_type=tool_type,
+            tool_type=tool_type.value,
             line_number=e.lineno,
             error_type_and_message=error_type_and_message,
         ) from e
