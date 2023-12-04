@@ -19,7 +19,7 @@ Note that all dependent connections must be created before building as docker.
 The two scripts will do the following things:
 1. Create a resource group if not exists.
 2. Build and push the image to docker registry.
-3. Create an app service plan with the give sku.
+3. Create an app service plan with the given sku.
 4. Create an app with specified name, set the deployment container image to the pushed docker image.
 5. Set up the environment variables for the app.
 
