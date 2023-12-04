@@ -315,12 +315,16 @@ def update_environment_variables_with_connections(built_connections):
 
 
 def _match_env_reference(val: str):
-    val = val.strip()
-    m = re.match(r"^\$\{env:(.+)}$", val)
-    if not m:
+    try:
+        val = val.strip()
+        m = re.match(r"^\$\{env:(.+)}$", val)
+        if not m:
+            return None
+        name = m.groups()[0]
+        return name
+    except Exception:
+        # for exceptions when val is not a string, return
         return None
-    name = m.groups()[0]
-    return name
 
 
 def override_connection_config_with_environment_variable(connections: Dict[str, dict]):
@@ -869,6 +873,7 @@ def setup_user_agent_to_operation_context(user_agent=None):
     """
     from promptflow._core.operation_context import OperationContext
 
+    update_user_agent_from_env_var()
     # Append user agent
     context = OperationContext.get_instance()
     # skip append if empty
@@ -881,6 +886,7 @@ def call_from_extension() -> bool:
     """Return true if current request is from extension."""
     from promptflow._core.operation_context import OperationContext
 
+    update_user_agent_from_env_var()
     context = OperationContext().get_instance()
     return EXTENSION_UA in context.get_user_agent()
 

@@ -6,10 +6,10 @@ import argparse
 import importlib
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import webbrowser
-import subprocess
 from pathlib import Path
 
 from promptflow._cli._params import (
@@ -23,7 +23,7 @@ from promptflow._cli._params import (
     add_param_source,
     add_param_yes,
     add_parser_build,
-    logging_params,
+    base_params,
 )
 from promptflow._cli._pf._init_entry_generators import (
     AzureOpenAIConnectionGenerator,
@@ -37,7 +37,7 @@ from promptflow._cli._pf._init_entry_generators import (
 )
 from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
-from promptflow._constants import FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.logger_utils import LoggerFactory
@@ -111,7 +111,7 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
         add_param_prompt_template,
         add_param_connection,
         add_param_deployment,
-    ] + logging_params
+    ] + base_params
     activate_action(
         name="init",
         description="Creating a flow folder with code/prompts and yaml definitions of the flow.",
@@ -154,7 +154,7 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
             add_param_environment_variables,
             add_param_config,
         ]
-        + logging_params,
+        + base_params,
         subparsers=subparsers,
         help_message="Serving a flow as an endpoint.",
         action_param_name="sub_action",
@@ -227,7 +227,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_multi_modal,
         add_param_ui,
         add_param_config,
-    ] + logging_params
+    ] + base_params
     activate_action(
         name="test",
         description="Test the flow.",
@@ -432,7 +432,7 @@ def serve_flow(args):
     )
     os.environ["PROMPTFLOW_PROJECT_PATH"] = source.absolute().as_posix()
     flow = load_flow(args.source)
-    if "language" in flow.dag and flow.dag["language"] == FlowLanguage.CSharp:
+    if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
         serve_flow_csharp(args, source)
     else:
         serve_flow_python(args, source)
@@ -441,6 +441,7 @@ def serve_flow(args):
 
 def serve_flow_csharp(args, source):
     from promptflow.batch._csharp_executor_proxy import EXECUTOR_SERVICE_DLL
+
     try:
         # Change working directory to model dir
         logger.info(f"Change working directory to model dir {source}")
@@ -458,7 +459,7 @@ def serve_flow_csharp(args, source):
             "",
             "--log_path",
             "",
-            "--serving"
+            "--serving",
         ]
         subprocess.run(command, stdout=sys.stdout, stderr=sys.stderr)
     except KeyboardInterrupt:
@@ -467,6 +468,7 @@ def serve_flow_csharp(args, source):
 
 def serve_flow_python(args, source):
     from promptflow._sdk._serving.app import create_app
+
     static_folder = args.static_folder
     if static_folder:
         static_folder = Path(static_folder).absolute().as_posix()

@@ -17,7 +17,7 @@ The prompt flow CLI collects usage data in order to improve your experience.
 The data is anonymous and does not include commandline argument values.
 The data is collected by Microsoft.
 
-You can change your telemetry settings with `pf configure`.
+You can change your telemetry settings with `pf config`.
 """
 
 WELCOME_MESSAGE = r"""

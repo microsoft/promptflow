@@ -8,7 +8,7 @@ import re
 import shutil
 from pathlib import Path
 
-from promptflow._cli._params import add_param_set_tool_extra_info, logging_params
+from promptflow._cli._params import add_param_set_tool_extra_info, base_params
 from promptflow._cli._pf._init_entry_generators import (
     InitGenerator,
     ManifestGenerator,
@@ -61,7 +61,7 @@ pf tool init --tool tool_name
         add_param_package,
         add_param_tool,
         add_param_set_tool_extra_info,
-    ] + logging_params
+    ] + base_params
     return activate_action(
         name="init",
         description="Creating a tool.",
@@ -86,7 +86,7 @@ pf tool list --flow flow-path
     add_param_flow = lambda parser: parser.add_argument("--flow", type=str, help="the flow directory")  # noqa: E731
     add_params = [
         add_param_flow,
-    ] + logging_params
+    ] + base_params
     return activate_action(
         name="list",
         description="List tools.",

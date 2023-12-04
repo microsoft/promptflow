@@ -6,7 +6,7 @@
 import datetime
 from pathlib import Path
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
@@ -64,7 +64,7 @@ class RunSubmitter:
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
-        if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.CSharp:
+        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
             connections = []
         else:
             with _change_working_dir(flow.code):

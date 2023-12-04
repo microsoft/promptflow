@@ -11,7 +11,7 @@ from typing import Dict, Tuple, Union
 import yaml
 from marshmallow import Schema
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     DEFAULT_ENCODING,
@@ -300,16 +300,11 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         :param kwargs: flow inputs with key word arguments.
         :return:
         """
-        from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
 
-        invoker = FlowContextResolver.resolve(flow=self)
-
-        result = invoker._invoke(
-            data=kwargs,
-        )
+        result = self.invoke(inputs=kwargs)
         return result.output
 
     def invoke(self, inputs: dict) -> "LineResult":
@@ -317,10 +312,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
-        if not self._executable:
-            self._executable = self._init_executable()
-
-        if self._executable.program_language == FlowLanguage.CSharp:
+        if self.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
                 result = submitter.exec_with_inputs(
                     inputs=inputs,

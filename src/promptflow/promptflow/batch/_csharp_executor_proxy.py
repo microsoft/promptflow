@@ -1,13 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import json
 import socket
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -38,8 +39,6 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
-        # TODO: connection_provider_url is not required for local,
-        # will remove it after C# executor marks it as optional
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
@@ -49,10 +48,10 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             flow_file,
             "--assembly_folder",
             ".",
-            "--connection_provider_url",
-            "",
             "--log_path",
             log_path,
+            "--log_level",
+            "Warning",
         ]
         process = subprocess.Popen(command)
         return cls(process, port)
@@ -97,7 +96,11 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         return AggregationResult({}, {}, {})
 
     @classmethod
-    def generate_tool_metadata(cls, flow_dag: dict, working_dir: Path) -> dict:
+    def generate_tool_metadata(cls, working_dir: Path) -> dict:
+        promptflow_folder = working_dir / PROMPT_FLOW_DIR_NAME
+        if promptflow_folder.exists():
+            with open(promptflow_folder / FLOW_TOOLS_JSON, mode="r", encoding=DEFAULT_ENCODING) as f:
+                return json.load(f)
         return {}
 
     @classmethod

@@ -14,6 +14,7 @@ from dataclasses import asdict
 from pathlib import Path
 from traceback import TracebackException
 
+from jinja2 import TemplateSyntaxError
 from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported
@@ -36,6 +37,17 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
     tool_type = ToolType.PROMPT if prompt_only else ToolType.LLM
     try:
         inputs = get_inputs_for_prompt_template(content)
+    except TemplateSyntaxError as e:
+        error_type_and_message = f"({e.__class__.__name__}) {e}"
+        raise JinjaParsingError(
+            message_format=(
+                "Generate tool meta failed for {tool_type} tool. Jinja parsing failed at line {line_number}: "
+                "{error_type_and_message}"
+            ),
+            tool_type=tool_type.value,
+            line_number=e.lineno,
+            error_type_and_message=error_type_and_message,
+        ) from e
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise JinjaParsingError(

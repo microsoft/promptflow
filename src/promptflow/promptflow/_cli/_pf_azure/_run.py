@@ -17,7 +17,7 @@ from promptflow._cli._params import (
     add_param_run_name,
     add_param_set,
     add_param_verbose,
-    logging_params,
+    base_params,
 )
 from promptflow._cli._pf._run import _parse_metadata_args, add_run_create_common, create_run
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
@@ -109,7 +109,7 @@ pfazure run list --output table
         add_param_include_archived,
         add_param_output_format,
         _set_workspace_argument_for_subparsers,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="list",
@@ -154,7 +154,7 @@ pfazure run show --name <name>
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="show",
@@ -190,7 +190,7 @@ pfazure run show-details --name <name>
         add_param_max_results,
         add_param_run_name,
         add_param_all_results,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="show-details",
@@ -214,7 +214,7 @@ pfazure run show-metrics --name <name>
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="show-metrics",
@@ -232,7 +232,7 @@ def add_parser_run_cancel(subparsers):
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="cancel",
@@ -267,7 +267,7 @@ pfazure run visualize --names "<name1>, <name2>"
         add_param_name,
         add_param_html_path,
         _set_workspace_argument_for_subparsers,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="visualize",
@@ -291,7 +291,7 @@ pfazure run archive -n <name>
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="archive",
@@ -315,7 +315,7 @@ pfazure run restore -n <name>
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="restore",
@@ -340,7 +340,7 @@ pfazure run update --name <name> --set display_name="<display-name>" description
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
         add_param_set,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="update",

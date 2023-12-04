@@ -1,4 +1,3 @@
-import pkg_resources
 from pathlib import Path
 from tempfile import mkdtemp
 
@@ -22,10 +21,6 @@ class TestLangchain:
         ],
     )
     def test_batch_with_langchain(self, flow_folder, inputs_mapping, dev_connections):
-        if flow_folder.startswith("openai"):
-            if pkg_resources.get_distribution("openai").version.startswith("1."):
-                pytest.skip("test needs to be upgraded to adapt to openai>=1.0.0")
-
         batch_engine = BatchEngine(
             get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
         )

@@ -2,9 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import asyncio
 import uuid
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
@@ -14,6 +12,7 @@ from httpx import ConnectError
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -135,21 +134,9 @@ class BatchEngine:
             output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
             # run flow in batch mode
             with _change_working_dir(self._working_dir):
-                # When run in an async environment (e.g., in a notebook), because each thread allows only one event
-                # loop, using asyncio.run directly leads to a RuntimeError ("asyncio.run() cannot be called from a
-                # running event loop").
-                #
-                # To address this issue, we add a check for the event loop here. If the current thread already has an
-                # event loop, we run _exec_batch in a new thread; otherwise, we run it in the current thread.
-                if self._has_running_loop():
-                    with ThreadPoolExecutor(1) as executor:
-                        return executor.submit(
-                            lambda: asyncio.run(
-                                self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
-                            )
-                        ).result()
-                else:
-                    return asyncio.run(self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure))
+                return async_run_allowing_running_loop(
+                    self._exec_batch, batch_inputs, run_id, output_dir, raise_on_line_failure
+                )
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
             if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
@@ -269,16 +256,3 @@ class BatchEngine:
         """Persist outputs to json line file in output directory"""
         output_file = output_dir / OUTPUT_FILE_NAME
         dump_list_to_jsonl(output_file, outputs)
-
-    def _has_running_loop(self) -> bool:
-        """Check if the current thread has a running event loop."""
-        # When using asyncio.get_running_loop(), a RuntimeError is raised if there is no running event loop.
-        # So, we use a try-catch block to determine whether there is currently an event loop in place.
-        #
-        # Note that this is the only way to check whether there is a running loop now, see:
-        # https://docs.python.org/3/library/asyncio-eventloop.html?highlight=get_running_loop#asyncio.get_running_loop
-        try:
-            asyncio.get_running_loop()
-            return True
-        except RuntimeError:
-            return False

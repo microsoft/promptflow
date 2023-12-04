@@ -89,6 +89,21 @@ class TestUtils:
         assert connections["test_connection"]["value"]["api_base"] == "BASE"
         assert connections["test_custom_connection"]["value"]["key"] == "CUSTOM_VALUE"
 
+        # test bad cases
+        connections = {
+            "test_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"none_value": None, "integer_value": 1, "float_value": 1.0, "dict_value": {}},
+            },
+        }
+        resolve_connections_environment_variable_reference(connections)
+        assert connections["test_connection"]["value"] == {
+            "none_value": None,
+            "integer_value": 1,
+            "float_value": 1.0,
+            "dict_value": {},
+        }
+
     def test_override_connection_config_with_environment_variable(self):
         connections = {
             "test_connection": {
