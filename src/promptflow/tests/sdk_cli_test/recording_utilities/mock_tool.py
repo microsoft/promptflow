@@ -32,7 +32,27 @@ def _prepare_input_dict(func, func_wo_partial, args, kwargs):
     return input_dict
 
 
+def _replace_tool_rule(func_wo_partial):
+    global recording_array
+    if func_wo_partial.__qualname__.startswith("AzureOpenAI"):
+        return True
+    elif func_wo_partial.__qualname__.startswith("OpenAI"):
+        return True
+    elif func_wo_partial.__module__ == "promptflow.tools.aoai":
+        return True
+    elif func_wo_partial.__module__ == "promptflow.tools.openai_gpt4v":
+        return True
+    elif func_wo_partial.__module__ == "promptflow.tools.openai":
+        return True
+    elif func_wo_partial.__qualname__ in recording_array:
+        return True
+    else:
+        return False
+
+
 def mock_tool(original_tool):
+    global recording_array
+
     def tool(
         func=None,
         *args_mock,
@@ -43,30 +63,8 @@ def mock_tool(original_tool):
         streaming_option_parameter=None,
         **kwargs_mock,
     ):
-        if func.__name__ == "partial":
-            func_wo_partial = func.func
-        else:
-            func_wo_partial = func
-
-        if (
-            not func_wo_partial.__qualname__.startswith("AzureOpenAI")
-            and not func_wo_partial.__qualname__.startswith("OpenAI")
-            and func_wo_partial.__qualname__ not in recording_array
-        ):
-            return original_tool(
-                func,
-                *args_mock,
-                name=name,
-                description=description,
-                type=type,
-                input_settings=input_settings,
-                **kwargs_mock,
-            )
-
         def tool_decorator(func):
             from promptflow.exceptions import UserErrorException
-
-            global recording_array
 
             if inspect.iscoroutinefunction(func):
 
@@ -167,7 +165,30 @@ def mock_tool(original_tool):
 
         # enable use decorator without "()" if all arguments are default values
         if func is not None:
+            if func.__name__ == "partial":
+                func_wo_partial = func.func
+            else:
+                func_wo_partial = func
+
+            if not _replace_tool_rule(func_wo_partial):
+                return original_tool(
+                    func,
+                    *args_mock,
+                    name=name,
+                    description=description,
+                    type=type,
+                    input_settings=input_settings,
+                    **kwargs_mock,
+                )
             return tool_decorator(func)
-        return tool_decorator
+        return original_tool(  # no recording for @tool(name="func_name")
+            func,
+            *args_mock,
+            name=name,
+            description=description,
+            type=type,
+            input_settings=input_settings,
+            **kwargs_mock,
+        )
 
     return tool

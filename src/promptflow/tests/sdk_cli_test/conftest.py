@@ -156,8 +156,10 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
     from promptflow._core.tool import tool as original_tool
 
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-        mocker.patch("promptflow._core.tool.tool", mock_tool(original_tool))
-        mocker.patch("promptflow._internal.tool", mock_tool(original_tool))
+        mocked_tool = mock_tool(original_tool)
+        mocker.patch("promptflow._core.tool.tool", mocked_tool)
+        mocker.patch("promptflow._internal.tool", mocked_tool)
+        mocker.patch("promptflow.tool", mocked_tool)
     try:
         yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
     finally:
