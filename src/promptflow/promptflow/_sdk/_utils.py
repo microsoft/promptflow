@@ -713,12 +713,6 @@ def _gen_dynamic_list(function_config: Dict) -> List:
 
 
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
-    import imp
-
-    import pkg_resources
-
-    imp.reload(pkg_resources)
-
     from promptflow._core.tools_manager import collect_package_tools
 
     return collect_package_tools(keys=keys)

@@ -62,17 +62,30 @@ def collect_tools_from_directory(base_dir) -> dict:
     return tools
 
 
+def _get_entry_points_by_group(group):
+    # lazy load to improve performance for scenarios that don't need to load package tools
+    import importlib.metadata
+
+    # In python3.10 and later, the entry_points() method returns a SelectableView of EntryPoint objects,
+    # which allows us to select entry points by group. In the previous versions, the entry_points() method
+    # returns a dictionary-like object, we can use group name directly as a key.
+    entry_points = importlib.metadata.entry_points()
+    if isinstance(entry_points, list):
+        return entry_points.select(group=group)
+    else:
+        return entry_points.get(group, [])
+
+
 def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools from all installed packages."""
-    # lazy load to improve performance for scenarios that don't need to load package tools
-    import pkg_resources
-
     all_package_tools = {}
     if keys is not None:
         keys = set(keys)
-    for entry_point in pkg_resources.iter_entry_points(group=PACKAGE_TOOLS_ENTRY):
+
+    entry_points = _get_entry_points_by_group(PACKAGE_TOOLS_ENTRY)
+    for entry_point in entry_points:
         try:
-            list_tool_func = entry_point.resolve()
+            list_tool_func = entry_point.load()
             package_tools = list_tool_func()
             for identifier, tool in package_tools.items():
                 #  Only load required tools to avoid unnecessary loading when keys is provided
@@ -84,12 +97,12 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
                 m = tool["module"]
                 importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.project_name
+                tool["package"] = entry_point.dist.metadata['Name']
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
         except Exception as e:
             msg = (
-                f"Failed to load tools from package {entry_point.dist.project_name}: {e},"
+                f"Failed to load tools from package {entry_point.dist.metadata['Name']}: {e},"
                 + f" traceback: {traceback.format_exc()}"
             )
             module_logger.warning(msg)
@@ -98,17 +111,15 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
 def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools and custom strong type connections from all installed packages."""
-    # lazy load to improve performance for scenarios that don't need to load package tools
-    import pkg_resources
-
     all_package_tools = {}
     all_package_connection_specs = {}
     all_package_connection_templates = {}
     if keys is not None:
         keys = set(keys)
-    for entry_point in pkg_resources.iter_entry_points(group=PACKAGE_TOOLS_ENTRY):
+    entry_points = _get_entry_points_by_group(PACKAGE_TOOLS_ENTRY)
+    for entry_point in entry_points:
         try:
-            list_tool_func = entry_point.resolve()
+            list_tool_func = entry_point.load()
             package_tools = list_tool_func()
             for identifier, tool in package_tools.items():
                 #  Only load required tools to avoid unnecessary loading when keys is provided
@@ -116,7 +127,7 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     continue
                 m = tool["module"]
                 module = importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.project_name
+                tool["package"] = entry_point.dist.metadata['Name']
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
 
@@ -133,15 +144,15 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     for cls in custom_strong_type_connections_classes:
                         identifier = f"{cls.__module__}.{cls.__name__}"
                         connection_spec = generate_custom_strong_type_connection_spec(
-                            cls, entry_point.dist.project_name, entry_point.dist.version
+                            cls, entry_point.dist.metadata['Name'], entry_point.dist.version
                         )
                         all_package_connection_specs[identifier] = connection_spec
                         all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
-                            cls, connection_spec, entry_point.dist.project_name, entry_point.dist.version
+                            cls, connection_spec, entry_point.dist.metadata['Name'], entry_point.dist.version
                         )
         except Exception as e:
             msg = (
-                f"Failed to load tools from package {entry_point.dist.project_name}: {e},"
+                f"Failed to load tools from package {entry_point.dist.metadata['Name']}: {e},"
                 + f" traceback: {traceback.format_exc()}"
             )
             module_logger.warning(msg)
