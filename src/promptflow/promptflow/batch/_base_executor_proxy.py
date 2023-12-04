@@ -81,11 +81,11 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
         # process the response
-        response, has_error = self._process_http_response(response)
-        if has_error:
-            run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, response)
+        result = self._process_http_response(response)
+        if response.status_code != 200:
+            run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
             return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
-        return LineResult.deserialize(response)
+        return LineResult.deserialize(result)
 
     async def exec_aggregation_async(
         self,
@@ -100,30 +100,23 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             url = self.api_endpoint + "/Aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        response, _ = self._process_http_response(response)
-        return AggregationResult.deserialize(response)
+        result = self._process_http_response(response)
+        return AggregationResult.deserialize(result)
 
     def _process_http_response(self, response: httpx.Response):
-        """Process the http response from the executor service
-
-        :param response: the http response from the executor service
-        :type response: httpx.Response
-        :return: the response json and a bool value indicating whether there is an error in the line execution
-        :rtype: dict, bool
-        """
-        status_code = response.status_code
-        if status_code == 200:
-            return response.json(), False
+        if response.status_code == 200:
+            return response.json()
         else:
-            bulk_logger.error(f"Error when calling executor API, status code: {status_code}, error: {response.text}")
+            bulk_logger.error(
+                f"Error when calling executor API, status code: {response.status_code}, error: {response.text}"
+            )
             try:
                 error_response = response.json()
                 if "error" in error_response:
-                    return error_response["error"], True
-                return error_response, True
+                    return error_response["error"]
+                return error_response
             except JSONDecodeError:
-                # TODO: add more error handling
-                return response.text, True
+                return response.text
 
     async def _ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
