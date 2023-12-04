@@ -141,7 +141,7 @@ class TestBatch:
             ),
         ],
     )
-    def test_batch_run_in_spawn_mode(self, flow_folder, inputs_mapping, dev_connections):
+    def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         os.environ["PF_BATCH_METHOD"] = "spawn"
         batch_result, output_dir = submit_batch_run(
             flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
