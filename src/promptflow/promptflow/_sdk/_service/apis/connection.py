@@ -5,9 +5,9 @@
 import inspect
 
 from flask import jsonify, request
-from flask_restx import Namespace, Resource, fields
 
 from promptflow._sdk._errors import ConnectionNotFoundError
+from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import local_user_only
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
