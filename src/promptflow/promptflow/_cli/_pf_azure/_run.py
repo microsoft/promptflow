@@ -13,6 +13,7 @@ from promptflow._cli._params import (
     add_param_debug,
     add_param_include_archived,
     add_param_max_results,
+    add_param_output,
     add_param_output_format,
     add_param_run_name,
     add_param_set,
@@ -52,6 +53,7 @@ def add_parser_run(subparsers):
     add_parser_run_archive(subparsers)
     add_parser_run_restore(subparsers)
     add_parser_run_update(subparsers)
+    add_parser_run_download(subparsers)
     run_parser.set_defaults(action="run")
 
 
@@ -353,6 +355,31 @@ pfazure run update --name <name> --set display_name="<display-name>" description
     )
 
 
+def add_parser_run_download(subparsers):
+    """Add run download parser to the pfazure subparsers."""
+    epilog = """
+Example:
+
+# Download a run data to local:
+pfazure run download --name <name> --output <output-folder-path>
+"""
+    add_params = [
+        add_param_run_name,
+        add_param_output,
+        _set_workspace_argument_for_subparsers,
+    ] + base_params
+
+    activate_action(
+        name="download",
+        description="A CLI tool to download a run.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Download a run.",
+        action_param_name="sub_action",
+    )
+
+
 def dispatch_run_commands(args: argparse.Namespace):
     if args.sub_action == "create":
         pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
@@ -403,6 +430,8 @@ def dispatch_run_commands(args: argparse.Namespace):
         restore_run(args.subscription, args.resource_group, args.workspace_name, args.name)
     elif args.sub_action == "update":
         update_run(args.subscription, args.resource_group, args.workspace_name, args.name, params=args.params_override)
+    elif args.sub_action == "download":
+        download_run(args)
 
 
 @exception_handler("List runs")
@@ -529,3 +558,9 @@ def update_run(
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
     run = pf.runs.update(run=run_name, display_name=display_name, description=description, tags=tags)
     print(json.dumps(run._to_dict(), indent=4))
+
+
+@exception_handler("Download run")
+def download_run(args: argparse.Namespace):
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    pf.runs.download(run=args.name, output_folder=args.output)

@@ -162,7 +162,7 @@ def add_param_env(parser):
 
 
 def add_param_output(parser):
-    parser.add_argument("--output", type=str, default="outputs", help="the output directory to store the results.")
+    parser.add_argument("-o", "--output", type=str, help="the output directory to store the results.")
 
 
 def add_param_flow(parser):

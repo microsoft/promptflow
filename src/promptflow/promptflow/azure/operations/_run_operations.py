@@ -1022,10 +1022,11 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             )
         run_folder.mkdir(parents=True)
 
-        run_downloader = AsyncRunDownloader(run=run, run_ops=self, output_folder=output_folder)
+        run_downloader = AsyncRunDownloader(run=run, run_ops=self, output_folder=run_folder)
         if platform.system().lower() == "windows":
             # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
             # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(run_downloader.download())
+        logger.info(f"Successfully downloaded run {run!r} to {run_folder.resolve().as_posix()!r}.")
         return run_folder.resolve().as_posix()

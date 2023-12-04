@@ -72,7 +72,7 @@ class AsyncRunDownloader:
         except Exception as e:
             raise RunOperationError(f"Failed to download run {self.run!r}. Error: {e}") from e
 
-        return Path(self.output_folder / self.run).resolve().as_posix()
+        return self.output_folder.resolve().as_posix()
 
     async def _download_run_input_output_and_snapshot(self, httpx_client: httpx.AsyncClient):
         run_data = await self._get_run_data_from_run_history(httpx_client)
@@ -134,7 +134,7 @@ class AsyncRunDownloader:
         """Download the run metrics."""
         logger.debug("Downloading run metrics.")
         metrics = self.run_ops.get_metrics(self.run)
-        with open(self.output_folder / self.run / self.LOCAL_METRICS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+        with open(self.output_folder / self.LOCAL_METRICS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(metrics, f, ensure_ascii=False)
         logger.debug("Downloaded run metrics.")
 
@@ -144,7 +144,7 @@ class AsyncRunDownloader:
         input_path = input_data.split("/paths/")[-1]
         original_path = Path(input_path)
         # rename the input data to "inputs.<ext>" when downloading to local
-        local_path = Path(self.output_folder / self.run / f"{self.LOCAL_INPUT_FILE_STEM}{original_path.suffix}")
+        local_path = Path(self.output_folder / f"{self.LOCAL_INPUT_FILE_STEM}{original_path.suffix}")
         blob_client = container_client.get_blob_client(input_path)
         await self._download_single_blob(blob_client, local_path)
 
@@ -159,7 +159,7 @@ class AsyncRunDownloader:
         """Download the blob data from the data path."""
         logger.debug("Downloading all blobs from data path prefix '%s'", asset_path)
         if local_folder is None:
-            local_folder = Path(self.output_folder / self.run)
+            local_folder = self.output_folder
 
         tasks = []
         async for blob in container_client.list_blobs(name_starts_with=asset_path):
@@ -172,7 +172,7 @@ class AsyncRunDownloader:
     async def _download_single_blob(self, blob_client, local_path: Optional[Path] = None):
         """Download a single blob."""
         if local_path is None:
-            local_path = Path(self.output_folder / self.run / blob_client.blob_name)
+            local_path = Path(self.output_folder / blob_client.blob_name)
         elif local_path.exists():
             raise UserErrorException(f"Local file {local_path.resolve().as_posix()!r} already exists.")
 
@@ -180,7 +180,7 @@ class AsyncRunDownloader:
         for item in self.IGNORED_PATTERN:
             if item in blob_client.blob_name:
                 logger.warning(
-                    "Ignoring blob '%s' because it matches the ignored pattern '%s'", blob_client.blob_name, item
+                    "Ignoring file '%s' because it matches the ignored pattern '%s'", local_path.as_posix(), item
                 )
                 return None
 
@@ -204,7 +204,7 @@ class AsyncRunDownloader:
             blob_name = url.split(self.datastore.container_name)[-1].lstrip("/")
             blob_client = container_client.get_blob_client(blob_name)
             relative_path = url.split(self.run)[-1].lstrip("/")
-            local_path = Path(self.output_folder / self.run / self.LOCAL_SNAPSHOT_FOLDER / relative_path)
+            local_path = Path(self.output_folder / self.LOCAL_SNAPSHOT_FOLDER / relative_path)
             tasks.append(self._download_single_blob(blob_client, local_path))
         await asyncio.gather(*tasks)
 
@@ -260,6 +260,6 @@ class AsyncRunDownloader:
         logger.debug("Downloading run logs.")
         logs = self.run_ops._get_log(self.run)
 
-        with open(self.output_folder / self.run / self.LOCAL_LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+        with open(self.output_folder / self.LOCAL_LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(logs)
         logger.debug("Downloaded run logs.")

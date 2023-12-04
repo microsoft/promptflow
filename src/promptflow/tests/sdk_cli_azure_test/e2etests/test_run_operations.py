@@ -786,6 +786,7 @@ class TestFlowRun:
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
+    @pytest.mark.skipif(condition=not is_live(), reason="need to fix recording")
     def test_download_run(self, pf):
         run = "c619f648-c809-4545-9f94-f67b0a680706"
 
