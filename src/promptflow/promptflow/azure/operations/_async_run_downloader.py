@@ -53,9 +53,11 @@ class AsyncRunDownloader:
             # Source: https://github.com/encode/httpx/issues/1331
             async with httpx.AsyncClient(verify=False) as client:
 
-                tasks = [
+                async_tasks = [
                     # put async functions in tasks to run in coroutines
                     self._download_run_input_output_and_snapshot(client),
+                ]
+                sync_tasks = [
                     # below functions are actually synchronous functions in order to reuse code,
                     # the execution time of these functions should be shorter than the above async functions
                     # so it won't increase the total execution time.
@@ -65,6 +67,7 @@ class AsyncRunDownloader:
                     self._download_run_metrics(),
                     self._download_run_logs(),
                 ]
+                tasks = async_tasks + sync_tasks
                 await asyncio.gather(*tasks)
         except Exception as e:
             raise RunOperationError(f"Failed to download run {self.run!r}. Error: {e}") from e
@@ -141,7 +144,7 @@ class AsyncRunDownloader:
         input_path = input_data.split("/paths/")[-1]
         original_path = Path(input_path)
         # rename the input data to "inputs.<ext>" when downloading to local
-        local_path = Path(self.output_folder / self.run / f"{self.LOCAL_INPUT_FILE_STEM}.{original_path.suffix}")
+        local_path = Path(self.output_folder / self.run / f"{self.LOCAL_INPUT_FILE_STEM}{original_path.suffix}")
         blob_client = container_client.get_blob_client(input_path)
         await self._download_single_blob(blob_client, local_path)
 
@@ -256,7 +259,6 @@ class AsyncRunDownloader:
         """Download the run logs."""
         logger.debug("Downloading run logs.")
         logs = self.run_ops._get_log(self.run)
-        # formatted_logs = logs.splitlines()
 
         with open(self.output_folder / self.run / self.LOCAL_LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(logs)

@@ -334,7 +334,7 @@ def add_parser_run_update(subparsers):
 Example:
 
 # Update a run metadata:
-pf run update --name <name> --set display_name="<display-name>" description="<description>" tags.key="<value>"
+pfazure run update --name <name> --set display_name="<display-name>" description="<description>" tags.key="<value>"
 """
     add_params = [
         _set_workspace_argument_for_subparsers,

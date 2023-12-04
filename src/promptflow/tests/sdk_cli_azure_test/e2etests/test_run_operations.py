@@ -18,6 +18,7 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
+from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -785,9 +786,18 @@ class TestFlowRun:
 
     def test_download_run(self, pf):
         run = "c619f648-c809-4545-9f94-f67b0a680706"
+
+        expected_files = [
+            AsyncRunDownloader.LOCAL_LOGS_FILE_NAME,
+            AsyncRunDownloader.LOCAL_METRICS_FILE_NAME,
+            f"{AsyncRunDownloader.LOCAL_INPUT_FILE_STEM}.jsonl",
+            f"{AsyncRunDownloader.LOCAL_SNAPSHOT_FOLDER}/flow.dag.yaml",
+        ]
+
         with TemporaryDirectory() as tmp_dir:
             pf.runs.download(run=run, output_folder=tmp_dir)
-            assert Path(Path(tmp_dir) / run).is_dir()
+            for file in expected_files:
+                assert Path(tmp_dir, run, file).exists()
 
 
 # separate some tests as they cannot use the fixture that mocks the aml-user-token
