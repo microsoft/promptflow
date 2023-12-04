@@ -125,8 +125,17 @@ class RecordStorage(object):
     def _load_file(self) -> None:
         local_content = self.cached_items.get(self._record_file_str, None)
         if not local_content:
-            lock = FileLock(self.record_file.parent / "record_file.lock")
-            with lock:
+            if RecordStorage.is_recording_mode():
+                lock = FileLock(self.record_file.parent / "record_file.lock")
+                with lock:
+                    if not self.exists_record_file(self.record_file.parent, self.record_file.parts[-1]):
+                        return
+                    self.cached_items[self._record_file_str] = {}
+                    saved_dict = shelve.open(self._record_file_str, "r", writeback=False)
+                    for key, value in saved_dict.items():
+                        self.cached_items[self._record_file_str][key] = value
+                    saved_dict.close()
+            else:
                 if not self.exists_record_file(self.record_file.parent, self.record_file.parts[-1]):
                     return
                 self.cached_items[self._record_file_str] = {}

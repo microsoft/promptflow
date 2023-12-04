@@ -97,13 +97,10 @@ jobs:
         pip install langchain
         # numexpr is required by langchain in e2e tests.
         pip install numexpr
-        python scripts/building/run_coverage_tests.py `
-          -p ${{ env.testWorkingDirectory }}/promptflow `
-          -t ${{ env.testWorkingDirectory }}/tests/executor/e2etests `
-          -l eastus `
-          -m "all" `
-          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc `
-          --disable-cov-branch
+        pytest tests/executor/e2etests -n auto --dist loadfile -vv -ra `
+        --junitxml=test-results.xml --cov=promptflow --cov-report=term --cov-report=xml --cov-report=html `
+        --cov-config=tests/executor/.coveragerc --log-level=info --log-format="%(asctime)s %(levelname)s %(message)s" --log-date-format="[%Y-%m-%d %H:%M:%S]" `
+        --durations=5
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
