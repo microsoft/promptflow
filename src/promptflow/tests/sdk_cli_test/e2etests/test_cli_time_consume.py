@@ -25,6 +25,7 @@ def run_cli_command(cmd, time_limit=3600, result_queue=None):
     st = timeit.default_timer()
     with contextlib.redirect_stdout(output), mock.patch.object(
             OperationContext, "get_user_agent") as get_user_agent_fun:
+        # Don't change get_user_agent_fun.return_value, dashboard needs to use.
         get_user_agent_fun.return_value = f"{CLI_USER_AGENT} promptflow/{VERSION} perf_monitor/1.0"
         main()
     ed = timeit.default_timer()
@@ -49,8 +50,7 @@ def subprocess_run_cli_command(cmd, time_limit=3600):
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
-@pytest.mark.cli_test
-@pytest.mark.e2etest
+@pytest.mark.perf_monitor_test
 class TestCliTimeConsume:
     def test_pf_run_create(self, time_limit=35) -> None:
         res = subprocess_run_cli_command(

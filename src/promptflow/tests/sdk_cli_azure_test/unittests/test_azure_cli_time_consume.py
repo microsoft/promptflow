@@ -28,6 +28,7 @@ def run_cli_command(cmd, time_limit=3600):
         sys.argv = list(cmd)
         st = timeit.default_timer()
         with mock.patch.object(OperationContext, "get_user_agent") as get_user_agent_fun:
+            # Don't change get_user_agent_fun.return_value, dashboard needs to use.
             get_user_agent_fun.return_value = f"{CLI_USER_AGENT} promptflow/{VERSION} perf_monitor/1.0"
             main()
         ed = timeit.default_timer()
@@ -56,7 +57,7 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
 
 
 @pytest.mark.usefixtures("mock_get_azure_pf_client")
-@pytest.mark.unittest
+@pytest.mark.perf_monitor_test
 class TestAzureCliTimeConsume:
     def test_pfazure_run_create(self, operation_scope_args, time_limit=30):
         run_cli_command(

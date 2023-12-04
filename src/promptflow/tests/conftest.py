@@ -205,8 +205,3 @@ def runtime_name() -> str:
 @pytest.fixture
 def registry_name() -> str:
     return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)
-
-
-@pytest.fixture(scope="session")
-def cli_perf_monitor_agent() -> str:
-    return CLI_PERF_MONITOR_AGENT
