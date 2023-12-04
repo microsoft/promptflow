@@ -56,7 +56,7 @@ def is_telemetry_enabled():
 
 
 def get_telemetry_logger():
-    from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
+    from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 
     current_logger = logging.getLogger(PROMPTFLOW_LOGGER_NAMESPACE)
     # avoid telemetry log appearing in higher level loggers
