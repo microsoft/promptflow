@@ -89,4 +89,4 @@ Reference our [sample](https://github.com/microsoft/promptflow/blob/main/example
 Learn more about:
 
 - [Flow as a function sample](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/flow-as-function.ipynb)
-- [Deploy a flow](./deploy-a-flow/)
+- [Deploy a flow](./deploy-a-flow/index.md)
