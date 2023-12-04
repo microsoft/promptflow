@@ -72,6 +72,8 @@ jobs:
         run: |
           if ($env:INPUT_VERSION) {
             $version=$env:INPUT_VERSION
+            $haha=$(python -c "import promptflow; print(promptflow.__version__)")
+            echo "haha version: $haha"
           } else {
             $prefix = 0
             $year = [int](Get-Date -Format "yy")
