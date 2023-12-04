@@ -5,7 +5,7 @@ import logging
 
 from promptflow._sdk._configuration import Configuration
 
-PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._telemetry"
+PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._sdk._telemetry"
 
 
 class TelemetryMixin(object):
