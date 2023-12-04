@@ -827,3 +827,9 @@ class TestFlowRunRelatedToAMLToken:
                 column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
                 runtime=runtime,
             )
+
+    def test_download_run(self, pf):
+        run = "c619f648-c809-4545-9f94-f67b0a680706"
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run, output_folder=tmp_dir)
+            assert Path(Path(tmp_dir) / run).is_dir()

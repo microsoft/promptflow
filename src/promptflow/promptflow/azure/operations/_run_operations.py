@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
 import concurrent
 import copy
 import hashlib
@@ -12,6 +13,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import requests
@@ -58,7 +60,9 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential
+from promptflow.azure.operations._async_run_downloader import RunDownloader
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
@@ -109,7 +113,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
-        self._workspace_default_datastore = self._datastore_operations.get_default().name
+        self._workspace_default_datastore = self._datastore_operations.get_default()
 
     @property
     def _data_operations(self):
@@ -761,7 +765,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 self._operation_scope,
                 self._datastore_operations,
                 test_data,
-                datastore_name=self._workspace_default_datastore,
+                datastore_name=self._workspace_default_datastore.name,
                 show_progress=self._show_progress,
             )
             if data_type == AssetTypes.URI_FOLDER and test_data and not test_data.endswith("/"):
@@ -994,3 +998,33 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         workspace_id = self._workspace._workspace_id
         location = self._workspace.location
         return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{run._flow_name}"
+
+    def download(self, run: Union[str, Run], output_folder: Optional[Union[str, Path]] = None) -> str:
+        """Download the data of a run, including input, output, snapshot and other run information.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :param output_folder: The output directory
+        :type output_folder: Optional[str]
+        :return: The run directory path
+        :rtype: str
+        """
+        import platform
+
+        run = Run._validate_and_return_run_name(run)
+        output_directory = Path(".") if output_folder is None else Path(output_folder)
+
+        run_folder = output_directory / run
+        if run_folder.exists():
+            raise UserErrorException(
+                f"Run folder {run_folder.resolve().as_posix()!r} already exists, please specify a new output path."
+            )
+        run_folder.mkdir(parents=True)
+
+        run_downloader = RunDownloader(run=run, run_ops=self, output_folder=output_folder)
+        if platform.system().lower() == "windows":
+            # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
+            # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        asyncio.run(run_downloader.download())
+        return run_folder.resolve().as_posix()
