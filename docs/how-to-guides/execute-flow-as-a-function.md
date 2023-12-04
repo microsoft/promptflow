@@ -7,7 +7,7 @@ This is an experimental feature, and may change at any time. Learn [more](faq.md
 ## Overview
 
 Promptflow allows you to load a flow and use it as a function in your code.
-This feature is useful when building a service on top of a flow, reference [here](../../examples/tutorials/flow-deploy/create-service-with-flow/) for a simple example service with flow function consumption.
+This feature is useful when building a service on top of a flow, reference [here](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/flow-deploy/create-service-with-flow) for a simple example service with flow function consumption.
 
 ## Load an invoke the flow function
 
@@ -82,11 +82,11 @@ for r in result["answer"]:
 
 ```
 
-Reference our [sample](../../examples/tutorials/get-started/flow-as-function.ipynb) for usage.
+Reference our [sample](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/flow-as-function.ipynb) for usage.
 
 ## Next steps
 
 Learn more about:
 
-- [Flow as a function sample](../../examples/tutorials/get-started/flow-as-function.ipynb)
-- [Deploy a flow](../deploy-a-flow/index.md)
+- [Flow as a function sample](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/flow-as-function.ipynb)
+- [Deploy a flow](./deploy-a-flow/)
