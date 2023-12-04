@@ -36,9 +36,7 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     return batch_result
 
 
-def run_spawn_mode_batch_run_in_subprocess(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
-    original_pf_batch_method = os.environ.get("PF_BATCH_METHOD")
-    os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
+def run_batch_in_spawn_or_forkserver(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
     batch_result, output_dir = submit_batch_run(
         flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
     )
@@ -56,10 +54,6 @@ def run_spawn_mode_batch_run_in_subprocess(multiprocessing_start_method, flow_fo
         assert isinstance(output, dict)
         assert "line_number" in output, f"line_number is not in {i}th output {output}"
         assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-    if original_pf_batch_method is None:
-        os.environ.pop("PF_BATCH_METHOD", None)
-    else:
-        os.environ["PF_BATCH_METHOD"] = original_pf_batch_method
 
 
 def submit_batch_run(
@@ -169,7 +163,7 @@ class TestBatch:
         ],
     )
     def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
-        p = multiprocessing.Process(target=run_spawn_mode_batch_run_in_subprocess,
+        p = multiprocessing.Process(target=run_batch_in_spawn_or_forkserver,
                                     args=("spawn", flow_folder, inputs_mapping, dev_connections))
         p.start()
         p.join()
@@ -196,7 +190,7 @@ class TestBatch:
         ],
     )
     def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
-        p = multiprocessing.Process(target=run_spawn_mode_batch_run_in_subprocess,
+        p = multiprocessing.Process(target=run_batch_in_spawn_or_forkserver,
                                     args=("forkserver", flow_folder, inputs_mapping, dev_connections))
         p.start()
         p.join()
