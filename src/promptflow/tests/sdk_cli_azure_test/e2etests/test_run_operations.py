@@ -783,6 +783,12 @@ class TestFlowRun:
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
+    def test_download_run(self, pf):
+        run = "c619f648-c809-4545-9f94-f67b0a680706"
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run, output_folder=tmp_dir)
+            assert Path(Path(tmp_dir) / run).is_dir()
+
 
 # separate some tests as they cannot use the fixture that mocks the aml-user-token
 @pytest.mark.skipif(condition=not is_live(), reason="aml-user-token will be mocked")
@@ -827,9 +833,3 @@ class TestFlowRunRelatedToAMLToken:
                 column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
                 runtime=runtime,
             )
-
-    def test_download_run(self, pf):
-        run = "c619f648-c809-4545-9f94-f67b0a680706"
-        with TemporaryDirectory() as tmp_dir:
-            pf.runs.download(run=run, output_folder=tmp_dir)
-            assert Path(Path(tmp_dir) / run).is_dir()

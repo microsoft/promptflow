@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from pathlib import Path
 from typing import Optional, Union
@@ -6,7 +7,7 @@ from typing import Optional, Union
 import httpx
 from azure.storage.blob.aio import BlobServiceClient
 
-from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._constants import DEFAULT_ENCODING, LOGGER_NAME
 from promptflow._sdk._errors import RunNotFoundError, RunOperationError
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.exceptions import UserErrorException
@@ -14,7 +15,7 @@ from promptflow.exceptions import UserErrorException
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
-class RunDownloader:
+class AsyncRunDownloader:
     """Download run results from the service asynchronously.
 
     :param run: The run id.
@@ -26,6 +27,10 @@ class RunDownloader:
     """
 
     LOCAL_SNAPSHOT_FOLDER = "snapshot"
+    LOCAL_INPUT_FILE_STEM = "inputs"
+    LOCAL_METRICS_FILE_NAME = "metrics.json"
+    LOCAL_LOGS_FILE_NAME = "logs.txt"
+
     IGNORED_PATTERN = ["__pycache__"]
 
     def __init__(self, run: str, run_ops: "RunOperations", output_folder: Union[str, Path]) -> None:
@@ -47,9 +52,18 @@ class RunDownloader:
             # pass verify=False to client to disable SSL verification.
             # Source: https://github.com/encode/httpx/issues/1331
             async with httpx.AsyncClient(verify=False) as client:
+
                 tasks = [
+                    # put async functions in tasks to run in coroutines
                     self._download_run_input_output_and_snapshot(client),
-                    self._download_run_metrics(client),
+                    # below functions are actually synchronous functions in order to reuse code,
+                    # the execution time of these functions should be shorter than the above async functions
+                    # so it won't increase the total execution time.
+                    # the reason we still put them in the tasks is, on one hand the code is more consistent and
+                    # we can use asyncio.gather() to wait for all tasks to finish, on the other hand, we can
+                    # also evaluate below functions to be shorter than the async functions with the help of logs
+                    self._download_run_metrics(),
+                    self._download_run_logs(),
                 ]
                 await asyncio.gather(*tasks)
         except Exception as e:
@@ -111,9 +125,15 @@ class RunDownloader:
                 f"Failed to get run from service. Code: {response.status_code}, text: {response.text}"
             )
 
-    async def _download_run_metrics(self, client: httpx.AsyncClient):
+    async def _download_run_metrics(
+        self,
+    ):
         """Download the run metrics."""
-        pass
+        logger.debug("Downloading run metrics.")
+        metrics = self.run_ops.get_metrics(self.run)
+        with open(self.output_folder / self.run / self.LOCAL_METRICS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(metrics, f, ensure_ascii=False)
+        logger.debug("Downloaded run metrics.")
 
     async def _download_input_data(self, container_client, input_data):
         """Download the input data."""
@@ -121,7 +141,7 @@ class RunDownloader:
         input_path = input_data.split("/paths/")[-1]
         original_path = Path(input_path)
         # rename the input data to "inputs.<ext>" when downloading to local
-        local_path = Path(self.output_folder / self.run / f"inputs.{original_path.suffix}")
+        local_path = Path(self.output_folder / self.run / f"{self.LOCAL_INPUT_FILE_STEM}.{original_path.suffix}")
         blob_client = container_client.get_blob_client(input_path)
         await self._download_single_blob(blob_client, local_path)
 
@@ -231,3 +251,13 @@ class RunDownloader:
             urls += self._parse_snapshot_response(value)
 
         return urls
+
+    async def _download_run_logs(self):
+        """Download the run logs."""
+        logger.debug("Downloading run logs.")
+        logs = self.run_ops._get_log(self.run)
+        # formatted_logs = logs.splitlines()
+
+        with open(self.output_folder / self.run / self.LOCAL_LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+            f.write(logs)
+        logger.debug("Downloaded run logs.")

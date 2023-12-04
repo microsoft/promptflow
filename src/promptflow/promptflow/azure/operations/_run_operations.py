@@ -60,7 +60,7 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential
-from promptflow.azure.operations._async_run_downloader import RunDownloader
+from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
 from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.exceptions import UserErrorException
 
@@ -1021,10 +1021,10 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             )
         run_folder.mkdir(parents=True)
 
-        run_downloader = RunDownloader(run=run, run_ops=self, output_folder=output_folder)
+        run_downloader = AsyncRunDownloader(run=run, run_ops=self, output_folder=output_folder)
         if platform.system().lower() == "windows":
-            # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
             # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
+            # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(run_downloader.download())
         return run_folder.resolve().as_posix()
