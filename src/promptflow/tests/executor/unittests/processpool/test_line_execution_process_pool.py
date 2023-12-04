@@ -278,7 +278,6 @@ class TestLineExecutionProcessPool:
             is_set_environ_pf_worker_count,
             pf_worker_count,
             n_process):
-        os.environ.pop("PF_WORKER_COUNT", None)  # Delete the environment variable if it exists
         if is_set_environ_pf_worker_count:
             os.environ["PF_WORKER_COUNT"] = pf_worker_count
         executor = FlowExecutor.create(
@@ -307,6 +306,7 @@ class TestLineExecutionProcessPool:
                         f"Using fork, and the environment variable PF_WORKER_COUNT is not set. The number of processes "
                         f"is determined by the lesser of the default value for worker_count "
                         f"{pool._DEFAULT_WORKER_COUNT} and the row count: {nlines}. process count: {n_process}")
+        os.environ.pop("PF_WORKER_COUNT", None)  # Delete the environment variable if it exists
 
     @pytest.mark.parametrize(
         (
@@ -333,7 +333,6 @@ class TestLineExecutionProcessPool:
         available_max_worker_count,
         n_process
     ):
-        os.environ.pop("PF_WORKER_COUNT", None)  # Delete the environment variable if it exists
         os.environ["PF_BATCH_METHOD"] = "spawn"
         if is_set_environ_pf_worker_count:
             os.environ["PF_WORKER_COUNT"] = pf_worker_count
@@ -375,3 +374,4 @@ class TestLineExecutionProcessPool:
                                 f"value of this value: {available_max_worker_count}, the default value for worker_count"
                                 f": {pool._DEFAULT_WORKER_COUNT} and the row count: {nlines} as the final number of "
                                 f"processes. process count: {n_process}")
+        os.environ.pop("PF_WORKER_COUNT", None)  # Delete the environment variable if it exists
