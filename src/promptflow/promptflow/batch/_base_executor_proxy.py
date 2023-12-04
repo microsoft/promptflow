@@ -112,9 +112,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             )
             try:
                 error_response = response.json()
-                if "error" in error_response:
-                    return error_response["error"]
-                return error_response
+                return error_response["error"] if "error" in error_response else error_response
             except JSONDecodeError:
                 return response.text
 
