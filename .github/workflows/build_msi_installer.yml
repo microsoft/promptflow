@@ -132,7 +132,7 @@ jobs:
         id: download-json
         run: |
           az storage blob download --account-name promptflowartifact --container-name msi-installer --name latest_version.json --file downloaded_version.json
-          $downloaded_version=$(python -c "import json; new_version = json.load(open('downloaded_version.json'))['promptflow']")
+          $downloaded_version=$(python -c "import json; new_version = json.load(open('downloaded_version.json'))['promptflow']; print(new_version);")
           echo "::set-output name=downloaded_version::$downloaded_version"
 
       - name: Check if version input is valid and upload JSON file
