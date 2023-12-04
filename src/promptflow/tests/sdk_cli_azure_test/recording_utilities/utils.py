@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import json
 import os
 import re
 from dataclasses import dataclass
@@ -155,6 +156,53 @@ def sanitize_username(value: str) -> str:
         flags=re.IGNORECASE,
     )
     return value
+
+
+def sanitize_flow_asset_id(value: str) -> str:
+    # input: azureml://locations/<region>/workspaces/<workspace-id>/flows/<flow-id>
+    # sanitize those with angle brackets
+    sanitized_region = re.sub(
+        r"/(locations)/[^/]+",
+        r"/\1/{}".format(SanitizedValues.REGION),
+        value,
+        flags=re.IGNORECASE,
+    )
+    sanitized_workspace_id = re.sub(
+        r"/(workspaces)/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        r"/\1/{}".format(SanitizedValues.WORKSPACE_ID),
+        sanitized_region,
+        flags=re.IGNORECASE,
+    )
+    sanitized_flow_id = re.sub(
+        r"/(flows)/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        r"/\1/{}/".format(SanitizedValues.FLOW_ID),
+        sanitized_workspace_id,
+        flags=re.IGNORECASE,
+    )
+    return sanitized_flow_id
+
+
+def sanitize_pfs_body(body: str) -> str:
+    # sanitize workspace triad for longhand syntax asset, e.g. "batchDataInput.dataUri"
+    body = sanitize_azure_workspace_triad(body)
+    body_dict = json.loads(body)
+    # /BulkRuns/submit
+    if "runtimeName" in body_dict:
+        body_dict["runtimeName"] = SanitizedValues.RUNTIME_NAME
+    if "sessionId" in body_dict:
+        body_dict["sessionId"] = SanitizedValues.SESSION_ID
+    if "flowLineageId" in body:
+        body_dict["flowLineageId"] = SanitizedValues.FLOW_LINEAGE_ID
+    if "flowDefinitionResourceId" in body_dict:
+        body_dict["flowDefinitionResourceId"] = sanitize_flow_asset_id(body_dict["flowDefinitionResourceId"])
+    # PFS will help handle this field, so client does not need to pass this value
+    if "runExperimentName" in body:
+        body_dict["runExperimentName"] = ""
+    return json.dumps(body_dict)
+
+
+def sanitize_email(value: str) -> str:
+    return re.sub(r"([\w\.-]+)@([\w\.-]+)", r"{}@\2".format(SanitizedValues.EMAIL_USERNAME), value)
 
 
 def _is_json_payload(headers: Dict, key: str) -> bool:

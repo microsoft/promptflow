@@ -9,8 +9,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
@@ -23,7 +23,7 @@ interactions:
       cache-control:
       - no-cache
       content-length:
-      - '3519'
+      - '3630'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.030'
+      - '0.023'
     status:
       code: 200
       message: OK
@@ -53,8 +53,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.133'
+      - '0.092'
     status:
       code: 200
       message: OK
@@ -122,17 +122,17 @@ interactions:
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Zhen
         Ruan", "upn": null}, "userId": "8471f65f-aa0e-4cde-b219-0ba7a1c148bf", "token":
         null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
-        103, "statusRevision": 2, "runUuid": "fab99b4a-07c2-4c77-8ee3-3d3a47102b4a",
+        7042, "statusRevision": 2, "runUuid": "fab99b4a-07c2-4c77-8ee3-3d3a47102b4a",
         "parentRunUuid": "1b1db1ed-46ed-4106-bf87-52e3c423b395", "rootRunUuid": "1b1db1ed-46ed-4106-bf87-52e3c423b395",
         "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:41.1688602",
         "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "4e60fbf3-0338-41a8-bed5-fc341be556f8",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "lastModifiedUtc": "2023-10-18T09:21:32.8226253+00:00", "duration":
+        "upn": null}, "lastModifiedUtc": "2023-11-29T09:00:37.8272869+00:00", "duration":
         "00:00:41.1688602", "cancelationReason": null, "currentAttemptId": 1, "runId":
         "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74", "parentRunId": "9bafbd52-da0f-44ca-b40c-b0ce912f083c",
-        "experimentId": "ad8dde3a-73f1-49bc-ae71-c7c9b2dc1b9f", "status": "Completed",
+        "experimentId": "00000000-0000-0000-0000-000000000000", "status": "Completed",
         "startTimeUtc": "2023-06-26T03:23:05.7657269+00:00", "endTimeUtc": "2023-06-26T03:23:46.9345871+00:00",
         "scheduleId": null, "displayName": "test_display_name_test_mark", "name":
         null, "dataContainerId": "dcid.4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74", "description":
@@ -156,7 +156,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '3617'
+      - '3618'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -168,7 +168,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.073'
+      - '0.066'
     status:
       code: 200
       message: OK
@@ -198,17 +198,17 @@ interactions:
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Zhen
         Ruan", "upn": null}, "userId": "8471f65f-aa0e-4cde-b219-0ba7a1c148bf", "token":
         null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
-        103, "statusRevision": 2, "runUuid": "fab99b4a-07c2-4c77-8ee3-3d3a47102b4a",
+        7042, "statusRevision": 2, "runUuid": "fab99b4a-07c2-4c77-8ee3-3d3a47102b4a",
         "parentRunUuid": "1b1db1ed-46ed-4106-bf87-52e3c423b395", "rootRunUuid": "1b1db1ed-46ed-4106-bf87-52e3c423b395",
         "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:41.1688602",
         "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "4e60fbf3-0338-41a8-bed5-fc341be556f8",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "lastModifiedUtc": "2023-10-18T09:21:37.3705009+00:00", "duration":
+        "upn": null}, "lastModifiedUtc": "2023-11-29T09:00:42.017693+00:00", "duration":
         "00:00:41.1688602", "cancelationReason": null, "currentAttemptId": 1, "runId":
         "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74", "parentRunId": "9bafbd52-da0f-44ca-b40c-b0ce912f083c",
-        "experimentId": "ad8dde3a-73f1-49bc-ae71-c7c9b2dc1b9f", "status": "Completed",
+        "experimentId": "00000000-0000-0000-0000-000000000000", "status": "Completed",
         "startTimeUtc": "2023-06-26T03:23:05.7657269+00:00", "endTimeUtc": "2023-06-26T03:23:46.9345871+00:00",
         "scheduleId": null, "displayName": "test_display_name_test_mark", "name":
         null, "dataContainerId": "dcid.4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74", "description":
@@ -244,7 +244,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.075'
+      - '0.065'
     status:
       code: 200
       message: OK
@@ -275,14 +275,14 @@ interactions:
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Zhen
         Ruan", "upn": null}, "userId": "8471f65f-aa0e-4cde-b219-0ba7a1c148bf", "token":
         null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
-        103, "statusRevision": 2, "runUuid": "fab99b4a-07c2-4c77-8ee3-3d3a47102b4a",
+        7042, "statusRevision": 2, "runUuid": "fab99b4a-07c2-4c77-8ee3-3d3a47102b4a",
         "parentRunUuid": "1b1db1ed-46ed-4106-bf87-52e3c423b395", "rootRunUuid": "1b1db1ed-46ed-4106-bf87-52e3c423b395",
         "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:41.1688602",
         "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "4e60fbf3-0338-41a8-bed5-fc341be556f8",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "lastModifiedUtc": "2023-10-18T09:21:32.8226253+00:00", "duration":
+        "upn": null}, "lastModifiedUtc": "2023-11-29T09:00:37.8272869+00:00", "duration":
         "00:00:41.1688602", "cancelationReason": null, "currentAttemptId": 1, "runId":
         "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74", "parentRunId": "9bafbd52-da0f-44ca-b40c-b0ce912f083c",
         "experimentId": "ad8dde3a-73f1-49bc-ae71-c7c9b2dc1b9f", "status": "Completed",
@@ -495,7 +495,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '21285'
+      - '21286'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -507,7 +507,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.051'
+      - '0.036'
     status:
       code: 200
       message: OK

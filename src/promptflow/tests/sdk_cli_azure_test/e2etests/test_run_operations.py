@@ -4,11 +4,13 @@
 
 import json
 import shutil
+from logging import Logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
+import pydash
 import pytest
 
 from promptflow._sdk._constants import RunStatus
@@ -782,6 +784,64 @@ class TestFlowRun:
             workspace=mock_workspace, credential=MagicMock(), operation_scope=MagicMock()
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
+
+    def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
+        from azure.core.exceptions import HttpResponseError
+
+        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
+        from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+
+        request_ids = set()
+
+        def fake_submit(*args, **kwargs):
+            headers = kwargs.get("headers", None)
+            request_id_in_headers = headers["x-ms-client-request-id"]
+            # request id in headers should be same with request id in service caller
+            assert request_id_in_headers == pf.runs._service_caller._request_id
+            # request id in request is same request id in collected logs
+            assert request_id_in_headers in request_ids
+            raise HttpResponseError("customized error message.")
+
+        def check_inner_call(*args, **kwargs):
+            if "extra" in kwargs:
+                request_id = pydash.get(kwargs, "extra.custom_dimensions.request_id")
+                request_ids.add(request_id)
+
+        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_request, patch.object(
+            Logger, "info"
+        ) as mock_logger:
+            mock_logger.side_effect = check_inner_call
+            mock_request.side_effect = fake_submit
+            with pytest.raises(FlowRequestException) as e:
+                pf.run(
+                    flow=f"{FLOWS_DIR}/print_env_var",
+                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                    runtime=runtime,
+                    name=randstr("name1"),
+                )
+            # request id in service caller is same request id in collected logs
+            assert pf.runs._service_caller._request_id in request_ids
+            # only 1 request id generated in logs
+            assert len(request_ids) == 1
+            # request id should be included in FlowRequestException
+            assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
+
+            old_request_id = request_ids.pop()
+            with pytest.raises(FlowRequestException) as e:
+                pf.run(
+                    flow=f"{FLOWS_DIR}/print_env_var",
+                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                    runtime=runtime,
+                    name=randstr("name1"),
+                )
+            # request id in service caller is same request id in collected logs
+            assert pf.runs._service_caller._request_id in request_ids
+            # request id is not same with before
+            assert old_request_id not in request_ids
+            # only 1 request id generated in logs
+            assert len(request_ids) == 1
+            # request id should be included in FlowRequestException
+            assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
 
 # separate some tests as they cannot use the fixture that mocks the aml-user-token

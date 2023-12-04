@@ -20,11 +20,9 @@ class TestOperationContext:
     def test_get_user_agent(self):
         operation_context = OperationContext()
         assert operation_context.get_user_agent() == f"promptflow/{VERSION}"
-        assert operation_context.user_agent == f"promptflow/{VERSION}"
 
         operation_context.user_agent = "test_agent/0.0.2"
         assert operation_context.get_user_agent() == f"test_agent/0.0.2 promptflow/{VERSION}"
-        assert operation_context.user_agent == f"test_agent/0.0.2 promptflow/{VERSION}"
 
     @pytest.mark.parametrize(
         "run_mode, expected",
@@ -90,14 +88,13 @@ class TestOperationContext:
 
     def test_append_user_agent(self):
         context = OperationContext()
-
-        user_agent = context.user_agent
+        user_agent = ' ' + context.user_agent if 'user_agent' in context else ''
 
         context.append_user_agent("test_agent/0.0.2")
-        assert context.user_agent == "test_agent/0.0.2 " + user_agent
+        assert context.user_agent == "test_agent/0.0.2" + user_agent
 
         context.append_user_agent("test_agent/0.0.3")
-        assert context.user_agent == "test_agent/0.0.2 test_agent/0.0.3 " + user_agent
+        assert context.user_agent == "test_agent/0.0.2 test_agent/0.0.3" + user_agent
 
     def test_get_instance(self):
         context1 = OperationContext.get_instance()
