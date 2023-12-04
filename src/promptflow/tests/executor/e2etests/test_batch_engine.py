@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+import os
 from pathlib import Path
 from tempfile import mkdtemp
 
@@ -118,6 +119,48 @@ class TestBatch:
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_batch_run_in_spawn_mode(self, flow_folder, inputs_mapping, dev_connections):
+        os.environ["PF_BATCH_METHOD"] = "spawn"
+        batch_result, output_dir = submit_batch_run(
+            flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
+        )
+
+        assert isinstance(batch_result, BatchResult)
+        nlines = get_batch_inputs_line(flow_folder)
+        assert batch_result.total_lines == nlines
+        assert batch_result.completed_lines == nlines
+        assert batch_result.start_time < batch_result.end_time
+        assert batch_result.system_metrics.duration > 0
+
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == nlines
+        for i, output in enumerate(outputs):
+            assert isinstance(output, dict)
+            assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+        os.environ.pop("PF_BATCH_METHOD", None)
 
     def test_batch_run_then_eval(self, dev_connections):
         batch_resutls, output_dir = submit_batch_run(
