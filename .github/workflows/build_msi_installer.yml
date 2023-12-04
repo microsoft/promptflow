@@ -48,8 +48,6 @@ jobs:
 
       - name: Python Setup
         uses: "./.github/actions/step_create_python_environment"
-        with:
-          pipFilePath: src/promptflow/msi_requirements.txt
 
       - name: Setup and Install dev promptflow
         if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
@@ -57,7 +55,6 @@ jobs:
         with:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
-          requiredPackages: ./msi_requirements.txt
 
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
