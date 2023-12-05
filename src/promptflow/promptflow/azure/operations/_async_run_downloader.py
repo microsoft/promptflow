@@ -183,7 +183,7 @@ class AsyncRunDownloader:
 
     async def _download_snapshot(self, httpx_client: httpx.AsyncClient, container_client, snapshot_id):
         """Download the flow snapshot."""
-        snapshot_urls = await self._get_flow_snapshot_sas_token(httpx_client, snapshot_id)
+        snapshot_urls = await self._get_flow_snapshot_urls(httpx_client, snapshot_id)
 
         logger.debug("Downloading all snapshot blobs from snapshot urls.")
         tasks = []
@@ -195,7 +195,7 @@ class AsyncRunDownloader:
             tasks.append(self._download_single_blob(blob_client, local_path))
         await asyncio.gather(*tasks)
 
-    async def _get_flow_snapshot_sas_token(self, httpx_client: httpx.AsyncClient, snapshot_id):
+    async def _get_flow_snapshot_urls(self, httpx_client: httpx.AsyncClient, snapshot_id):
         logger.debug("Getting flow snapshot blob urls from snapshot id with calling to content service.")
         headers = self.run_ops._get_headers()
         endpoint = self.run_ops._run_history_endpoint_url.replace("/history/v1.0", "/content/v2.0")
