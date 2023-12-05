@@ -19,8 +19,12 @@ def recording_array_reset():
     recording_array = ["fetch_text_content_from_url", "my_python_tool"]
 
 
-def _prepare_input_dict(func, func_wo_partial, args, kwargs):
+def _prepare_input_dict(func, args, kwargs):
     """Prepare input dict for record storage"""
+    if func.__name__ == "partial":
+        func_wo_partial = func.func
+    else:
+        func_wo_partial = func
     input_dict = {}
     for key in kwargs:
         input_dict[key] = kwargs[key]
@@ -34,9 +38,13 @@ def _prepare_input_dict(func, func_wo_partial, args, kwargs):
     return input_dict
 
 
-def _replace_tool_rule(func_wo_partial):
+def _replace_tool_rule(func):
     """Replace tool with the following rules."""
     global recording_array
+    if func.__name__ == "partial":
+        func_wo_partial = func.func
+    else:
+        func_wo_partial = func
     if func_wo_partial.__qualname__.startswith("AzureOpenAI"):
         return True
     elif func_wo_partial.__qualname__.startswith("OpenAI"):
@@ -53,6 +61,36 @@ def _replace_tool_rule(func_wo_partial):
         return False
 
 
+def call_func(func, args, kwargs):
+    input_dict = _prepare_input_dict(func, args, kwargs)
+    if RecordStorage.is_replaying_mode():
+        return RecordStorage.get_instance().get_record(input_dict)
+    # Record mode will record item to record file
+    elif RecordStorage.is_recording_mode():
+        try:
+            # prevent recording the same item twice
+            obj = RecordStorage.get_instance().get_record(input_dict)
+        except (RecordItemMissingException, RecordFileMissingException):
+            # recording the item
+            obj = RecordStorage.get_instance().set_record(input_dict, func(*args, **kwargs))
+    return obj
+
+
+async def call_func_async(func, args, kwargs):
+    input_dict = _prepare_input_dict(func, args, kwargs)
+    if RecordStorage.is_replaying_mode():
+        return RecordStorage.get_instance().get_record(input_dict)
+    # Record mode will record item to record file
+    elif RecordStorage.is_recording_mode():
+        try:
+            # prevent recording the same item twice
+            obj = RecordStorage.get_instance().get_record(input_dict)
+        except (RecordItemMissingException, RecordFileMissingException):
+            # recording the item
+            obj = RecordStorage.get_instance().set_record(input_dict, await func(*args, **kwargs))
+    return obj
+
+
 def mock_tool(original_tool):
     """
     Basically this is the original tool decorator.
@@ -67,7 +105,6 @@ def mock_tool(original_tool):
 
     Actually it needn't to be such a long function, but tool decorator should not trigger a long stack trace.
     """
-    global recording_array
 
     def tool(
         func=None,
@@ -88,37 +125,11 @@ def mock_tool(original_tool):
                 async def decorated_tool(*args, **kwargs):
                     from promptflow._core.tracer import Tracer
 
-                    input_dict = _prepare_input_dict(func, func_wo_partial, args, kwargs)
-
                     if Tracer.active_instance() is None:
-                        # Replay mode will direct return item from record file, same as below.
-                        if RecordStorage.is_replaying_mode():
-                            return RecordStorage.get_instance().get_record(input_dict)
-                        # Record mode will record item to record file
-                        elif RecordStorage.is_recording_mode():
-                            try:
-                                # prevent recording the same item twice
-                                obj = RecordStorage.get_instance().get_record(input_dict)
-                            except (RecordItemMissingException, RecordFileMissingException):
-                                # recording the item
-                                obj = RecordStorage.get_instance().set_record(input_dict, await func(*args, **kwargs))
-                            return obj
-                        else:
-                            # record mode is not enabled, just call the function
-                            return func(*args, **kwargs)
+                        return await call_func_async(func, args, kwargs)
                     try:
                         Tracer.push_tool(func, args, kwargs)
-                        if RecordStorage.is_replaying_mode():
-                            return RecordStorage.get_instance().get_record(input_dict)
-                        elif RecordStorage.is_recording_mode():
-                            try:
-                                output = RecordStorage.get_instance().get_record(input_dict)
-                            except (RecordItemMissingException, RecordFileMissingException):
-                                output = RecordStorage.get_instance().set_record(
-                                    input_dict, await func(*args, **kwargs)
-                                )
-                        else:
-                            output = await func(*args, **kwargs)
+                        output = await call_func_async(func, args, kwargs)
                         return Tracer.pop(output)
                     except Exception as e:
                         Tracer.pop(None, e)
@@ -131,31 +142,11 @@ def mock_tool(original_tool):
                 def decorated_tool(*args, **kwargs):
                     from promptflow._core.tracer import Tracer
 
-                    input_dict = _prepare_input_dict(func, func_wo_partial, args, kwargs)
-
                     if Tracer.active_instance() is None:
-                        if RecordStorage.is_replaying_mode():
-                            return RecordStorage.get_instance().get_record(input_dict)
-                        elif RecordStorage.is_recording_mode():
-                            try:
-                                obj = RecordStorage.get_instance().get_record(input_dict)
-                            except (RecordItemMissingException, RecordFileMissingException):
-                                obj = RecordStorage.get_instance().set_record(input_dict, func(*args, **kwargs))
-                            return obj
-                        else:
-                            # record mode is not enabled, just call the function
-                            return func(*args, **kwargs)
+                        return call_func(func, args, kwargs)
                     try:
                         Tracer.push_tool(func, args, kwargs)
-                        if RecordStorage.is_replaying_mode():
-                            return RecordStorage.get_instance().get_record(input_dict)
-                        elif RecordStorage.is_recording_mode():
-                            try:
-                                output = RecordStorage.get_instance().get_record(input_dict)
-                            except (RecordItemMissingException, RecordFileMissingException):
-                                output = RecordStorage.get_instance().set_record(input_dict, func(*args, **kwargs))
-                        else:
-                            output = func(*args, **kwargs)
+                        output = call_func(func, args, kwargs)
                         return Tracer.pop(output)
                     except Exception as e:
                         Tracer.pop(None, e)
@@ -181,12 +172,7 @@ def mock_tool(original_tool):
 
         # tool replacements.
         if func is not None:
-            if func.__name__ == "partial":
-                func_wo_partial = func.func
-            else:
-                func_wo_partial = func
-
-            if not _replace_tool_rule(func_wo_partial):
+            if not _replace_tool_rule(func):
                 return original_tool(
                     func,
                     *args_mock,
