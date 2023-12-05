@@ -15,10 +15,15 @@ from promptflow import load_run
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._telemetry import (
+    ActivityType,
+    PromptFlowSDKLogHandler,
+    get_appinsights_log_handler,
+    get_telemetry_logger,
+    is_telemetry_enabled,
+    log_activity,
+)
 from promptflow._sdk._utils import call_from_extension
-from promptflow._telemetry.activity import ActivityType, log_activity
-from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
-from promptflow._telemetry.telemetry import get_telemetry_logger, is_telemetry_enabled
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD

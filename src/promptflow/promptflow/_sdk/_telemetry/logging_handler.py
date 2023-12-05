@@ -17,7 +17,7 @@ def get_appinsights_log_handler():
     """
     Enable the OpenCensus logging handler for specified logger and instrumentation key to send info to AppInsights.
     """
-    from promptflow._telemetry.telemetry import is_telemetry_enabled
+    from promptflow._sdk._telemetry.telemetry import is_telemetry_enabled
 
     try:
 
