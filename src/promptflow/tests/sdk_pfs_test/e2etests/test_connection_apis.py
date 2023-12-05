@@ -4,6 +4,7 @@
 
 import uuid
 
+import mock
 import pytest
 
 from promptflow import PFClient
@@ -44,3 +45,17 @@ class TestConnectionAPIs:
     def test_get_connection_specs(self, pfs_op: PFSOperations) -> None:
         specs = pfs_op.get_connection_specs(status_code=200).json
         assert len(specs) > 1
+
+    def test_get_connection_by_provicer(self, pfs_op, subscription_id, resource_group_name, workspace_name):
+        target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
+        provider_url_target = "promptflow._sdk.operations._local_azure_connection_operations." \
+                              "LocalAzureConnectionOperations._extract_workspace"
+        mock_provider_url = (subscription_id, resource_group_name, workspace_name)
+        with mock.patch(target) as mocked_config, mock.patch(provider_url_target) as mocked_provider_url:
+            mocked_config.return_value = "azureml"
+            mocked_provider_url.return_value = mock_provider_url
+            connections = pfs_op.list_connections().json
+            assert len(connections) > 0
+
+            connection = pfs_op.get_connection(name=connections[0]["name"]).json
+            assert connection["name"] == connections[0]["name"]
