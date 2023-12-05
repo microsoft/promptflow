@@ -177,6 +177,7 @@ class TestBatch:
         ]
 
     def test_batch_with_openai_metrics(self, dev_connections, recording_injection):
+        recording_status, _ = recording_injection
         inputs_mapping = {"url": "${data.url}"}
         batch_result, output_dir = submit_batch_run(
             SAMPLE_FLOW, inputs_mapping, connections=dev_connections, return_output_dir=True
@@ -185,9 +186,14 @@ class TestBatch:
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert len(outputs) == nlines
         # system metrics tokens equal to 0 when recording history/replaying is triggered.
-        assert batch_result.system_metrics.total_tokens >= 0
-        assert batch_result.system_metrics.prompt_tokens >= 0
-        assert batch_result.system_metrics.completion_tokens >= 0
+        if recording_status is True:
+            assert batch_result.system_metrics.total_tokens == 0
+            assert batch_result.system_metrics.prompt_tokens == 0
+            assert batch_result.system_metrics.completion_tokens == 0
+        else:
+            assert batch_result.system_metrics.total_tokens > 0
+            assert batch_result.system_metrics.prompt_tokens > 0
+            assert batch_result.system_metrics.completion_tokens > 0
 
     def test_batch_with_default_input(self):
         mem_run_storage = MemoryRunStorage()
