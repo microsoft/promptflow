@@ -310,7 +310,7 @@ class TestAzureCli:
                 assert kwargs["custom_dimensions"]["subscription_id"] == subscription_id
             yield None
 
-        with patch("promptflow._telemetry.activity.log_activity") as mock_log_activity:
+        with patch("promptflow._sdk._telemetry.activity.log_activity") as mock_log_activity:
             mock_log_activity.side_effect = check_workspace_info
             run_pf_command(
                 "run",

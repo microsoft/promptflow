@@ -14,8 +14,8 @@ import pydash
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
-from promptflow._telemetry.activity import request_id_context
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._sdk._telemetry import request_id_context
+from promptflow._sdk._telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
