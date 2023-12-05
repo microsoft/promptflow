@@ -53,10 +53,6 @@ jobs:
           setupType: ${{ env.packageSetupType }}
           scriptPath: ${{ env.testWorkingDirectory }}
 
-      - name: Get number of CPU cores
-        uses: SimenB/github-actions-cpu-cores@v1
-        id: cpu-cores
-
       - name: Azure login
         uses: azure/login@v1
         with:
