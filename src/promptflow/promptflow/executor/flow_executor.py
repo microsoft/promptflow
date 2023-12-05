@@ -130,10 +130,6 @@ class FlowExecutor:
             self._worker_count = worker_count
         else:
             self._use_default_worker_count, self._worker_count = load_worker_count_in_env(self._DEFAULT_WORKER_COUNT)
-        if self._worker_count <= 0:
-            logger.warning(
-                f"Invalid worker count: {self._worker_count}. Resetting to default value: {self._DEFAULT_WORKER_COUNT}")
-            self._worker_count = self._DEFAULT_WORKER_COUNT
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
@@ -972,6 +968,12 @@ def load_worker_count_in_env(DEFAULT_WORKER_COUNT):
             worker_count = int(pf_worker_count)
     except Exception as e:
         logger.warning(f"Failed to convert PF_WORKER_COUNT '{pf_worker_count}' to an integer: {e}")
+        use_default_worker_count = True
+        worker_count = DEFAULT_WORKER_COUNT
+
+    if worker_count <= 0:
+        logger.warning(
+            f"Invalid worker count: {worker_count}. Resetting to default value: {DEFAULT_WORKER_COUNT}")
         use_default_worker_count = True
         worker_count = DEFAULT_WORKER_COUNT
 
