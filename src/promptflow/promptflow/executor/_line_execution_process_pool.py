@@ -506,7 +506,6 @@ def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSto
         run_tracker=run_tracker,
         cache_manager=flow_executor._cache_manager,
         loaded_tools=flow_executor._loaded_tools,
-        worker_count=flow_executor._worker_count,
         raise_ex=False,
         line_timeout_sec=flow_executor._line_timeout_sec,
     )
