@@ -65,6 +65,13 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         """
         raise NotImplementedError()
 
+    def get_api_path(self, is_aggregation: bool = False) -> str:
+        """Get the execution and aggregation api path of the executor service."""
+        if is_aggregation:
+            return self.api_endpoint + "/Aggregation"
+        else:
+            return self.api_endpoint + "/Execution"
+
     async def exec_line_async(
         self,
         inputs: Mapping[str, Any],
@@ -74,7 +81,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         # ensure service health
         await self.ensure_executor_health()
         # call execution api to get line results
-        url = self.api_endpoint + "/Execution"
+        url = self.get_api_path()
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
@@ -91,7 +98,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         await self.ensure_executor_health()
         # call aggregation api to get aggregation result
         async with httpx.AsyncClient() as client:
-            url = self.api_endpoint + "/Aggregation"
+            url = self.get_api_path(is_aggregation=True)
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
         response = self.process_http_response(response)
