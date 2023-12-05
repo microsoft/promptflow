@@ -1,6 +1,5 @@
-# execute tests in src/promptflow/tests/sdk_cli_azure_test
-# when pull_request triggers, use replay test mode
-# otherwise (schedule/workflow_disptach), use live test mode
+# execute tests in src/promptflow/tests/sdk_cli_azure_test, src/promptflow/tests/sdk_cli_test with mark perf_monitor_test
+# when pull_request triggers, use live mode
 
 name: sdk-cli-perf-monitor-test
 
@@ -78,4 +77,6 @@ jobs:
             -p promptflow `
             -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
             -l eastus `
-            -m "perf_monitor_test"
+            -m "perf_monitor_test" `
+            -n ${{ steps.cpu-cores.outputs.count }} `
+            --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
