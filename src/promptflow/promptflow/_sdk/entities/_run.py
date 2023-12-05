@@ -319,7 +319,7 @@ class Run(YAMLTranslatableMixin):
         """Dump current run entity to local DB."""
         self._to_orm_object().dump()
 
-    def _to_dict(self):
+    def _to_dict(self, *, exclude_additional_info: bool = False, exclude_debug_info: bool = False):
         from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
         properties = self.properties
@@ -371,6 +371,11 @@ class Run(YAMLTranslatableMixin):
                 result[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._input_run_portal_url
             if self._error:
                 result["error"] = self._error
+        if "error" in result:
+            if exclude_additional_info:
+                result["error"].pop("additionalInfo", None)
+            if exclude_debug_info:
+                result["error"].pop("debugInfo", None)
         return result
 
     @classmethod
