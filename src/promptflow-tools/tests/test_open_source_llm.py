@@ -119,14 +119,14 @@ user:
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
-            endpoint=self.gpt2_connection)
+            endpoint_name=self.gpt2_connection)
         validate_response(response)
 
     def test_open_source_llm_completion_with_deploy(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
-            endpoint=self.gpt2_connection,
+            endpoint_name=self.gpt2_connection,
             deployment_name="gpt2-9")
         validate_response(response)
 
@@ -134,14 +134,14 @@ user:
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            endpoint=self.gpt2_connection)
+            endpoint_name=self.gpt2_connection)
         validate_response(response)
 
     def test_open_source_llm_chat_with_deploy(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            endpoint=self.gpt2_connection,
+            endpoint_name=self.gpt2_connection,
             deployment_name="gpt2-9")
         validate_response(response)
 
@@ -149,7 +149,7 @@ user:
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            endpoint=self.gpt2_connection,
+            endpoint_name=self.gpt2_connection,
             max_new_tokens=2)
         # GPT-2 doesn't take this parameter
         validate_response(response)
@@ -233,7 +233,7 @@ user:
             response = self.stateless_os_llm.call(
                 self.chat_prompt,
                 API.CHAT,
-                endpoint=f"onlineEndpoint/{endpoint_name}")
+                endpoint_name=f"onlineEndpoint/{endpoint_name}")
             validate_response(response)
 
     def test_open_source_llm_chat_endpoint_name_with_deployment(self, chat_endpoints_provider):
@@ -242,7 +242,7 @@ user:
                 response = self.stateless_os_llm.call(
                     self.chat_prompt,
                     API.CHAT,
-                    endpoint=f"onlineEndpoint/{endpoint_name}",
+                    endpoint_name=f"onlineEndpoint/{endpoint_name}",
                     deployment_name=deployment_name)
                 validate_response(response)
 
@@ -251,7 +251,7 @@ user:
             response = self.stateless_os_llm.call(
                 self.completion_prompt,
                 API.COMPLETION,
-                endpoint=f"onlineEndpoint/{endpoint_name}")
+                endpoint_name=f"onlineEndpoint/{endpoint_name}")
             validate_response(response)
 
     def test_open_source_llm_completion_endpoint_name_with_deployment(self, completion_endpoints_provider):
@@ -260,29 +260,26 @@ user:
                 response = self.stateless_os_llm.call(
                     self.completion_prompt,
                     API.COMPLETION,
-                    endpoint=f"onlineEndpoint/{endpoint_name}",
+                    endpoint_name=f"onlineEndpoint/{endpoint_name}",
                     deployment_name=deployment_name)
                 validate_response(response)
 
     def test_open_source_llm_llama_chat(self, verify_service_endpoints):
-        response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint=self.llama_connection)
+        response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint_name=self.llama_connection)
         validate_response(response)
 
     def test_open_source_llm_llama_serverless(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            endpoint=self.llama_serverless_connection)
+            endpoint_name=self.llama_serverless_connection)
         validate_response(response)
 
     def test_open_source_llm_llama_chat_history(self, verify_service_endpoints):
-        chat_history_prompt = """user:
+        chat_history_prompt = """system:
 * Given the following conversation history and the users next question, answer the next question.
-If the conversation is irrelevant or empty, just restate the original question.
-Do not add more details than necessary to the question.
-
-assistant:
-skip
+* If the conversation is irrelevant or empty, acknowledge and ask for more input.
+* Do not add more details than necessary to the question.
 
 chat history:
 {% for item in chat_history %}
@@ -298,7 +295,7 @@ user:
         response = self.stateless_os_llm.call(
             chat_history_prompt,
             API.CHAT,
-            endpoint=self.llama_connection,
+            endpoint_name=self.llama_connection,
             chat_history=[
                 {
                     "inputs":
@@ -439,7 +436,7 @@ user:
             response = self.stateless_os_llm.call(
                 prompt,
                 api_type,
-                endpoint=endpoint['value'],
+                endpoint_name=endpoint['value'],
                 max_new_tokens=10,
                 model_kwargs={})
             validate_response(response)
@@ -460,7 +457,7 @@ user:
                 response = self.stateless_os_llm.call(
                     prompt,
                     api_type,
-                    endpoint=endpoint['value'],
+                    endpoint_name=endpoint['value'],
                     deployment_name=deployment['value'],
                     max_new_tokens=10,
                     model_kwargs={})

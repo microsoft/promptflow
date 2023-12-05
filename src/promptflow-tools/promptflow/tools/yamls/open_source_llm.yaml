@@ -8,7 +8,6 @@ promptflow.tools.open_source_llm.OpenSourceLLM.call:
   function: call
   inputs:
     endpoint_name:
-      default: "-- please enter an endpoint name --"
       type:
       - string
       dynamic_list:

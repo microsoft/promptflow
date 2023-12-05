@@ -1135,7 +1135,7 @@ If using kwargs, the following values must be set: endpoint_uri, endpoint_key, a
         self,
         prompt: PromptTemplate,
         api: API,
-        endpoint: str,
+        endpoint_name: str,
         deployment_name: Optional[str] = None,
         temperature: Optional[float] = 1.0,
         max_new_tokens: Optional[int] = 500,
@@ -1149,14 +1149,14 @@ If using kwargs, the following values must be set: endpoint_uri, endpoint_key, a
             if not deployment_name or deployment_name == DEPLOYMENT_DEFAULT:
                 deployment_name = None
 
-        print(f"Executing Open Source LLM Tool for endpoint: '{endpoint}', deployment: '{deployment_name}'",
+        print(f"Executing Open Source LLM Tool for endpoint: '{endpoint_name}', deployment: '{deployment_name}'",
               file=sys.stdout)
 
         (endpoint_uri, endpoint_key, model_family) = self.get_endpoint_details(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION", None),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP", None),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME", None),
-            endpoint=endpoint,
+            endpoint=endpoint_name,
             api_type=api,
             deployment_name=deployment_name,
             **kwargs)
