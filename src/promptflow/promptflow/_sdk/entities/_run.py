@@ -348,6 +348,10 @@ class Run(YAMLTranslatableMixin):
             # add exception part if any
             exception_dict = local_storage.load_exception()
             if exception_dict:
+                if exclude_additional_info:
+                    exception_dict.pop("additionalInfo", None)
+                if exclude_debug_info:
+                    exception_dict.pop("debugInfo", None)
                 result["error"] = exception_dict
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             result["creation_context"] = self._creation_context
@@ -371,11 +375,10 @@ class Run(YAMLTranslatableMixin):
                 result[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._input_run_portal_url
             if self._error:
                 result["error"] = self._error
-        if "error" in result:
-            if exclude_additional_info:
-                result["error"].pop("additionalInfo", None)
-            if exclude_debug_info:
-                result["error"].pop("debugInfo", None)
+                if exclude_additional_info:
+                    result["error"]["error"].pop("additionalInfo", None)
+                if exclude_debug_info:
+                    result["error"]["error"].pop("debugInfo", None)
         return result
 
     @classmethod
