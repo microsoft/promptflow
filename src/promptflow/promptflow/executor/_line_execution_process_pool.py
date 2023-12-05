@@ -409,7 +409,7 @@ class LineExecutionProcessPool:
         estimated_available_worker_count = get_available_max_worker_count() if not self._use_fork else None
         if worker_count is not None and worker_count > 0:
             bulk_logger.info(
-                f"Process count set to {worker_count} based on 'PF_WORKER_COUNT' environment variable.")
+                f"Process count set to {worker_count} based on the 'PF_WORKER_COUNT' environment variable.")
             if not self._use_fork and estimated_available_worker_count < worker_count:
                 bulk_logger.warning(
                     f"The estimated available worker count calculated based on the system available memory "
@@ -420,20 +420,20 @@ class LineExecutionProcessPool:
             worker_count = min(self._DEFAULT_WORKER_COUNT, self._nlines)
             if not self._use_fork:
                 worker_count = min(worker_count, estimated_available_worker_count)
-                bulk_logger.info("Not using fork to create new process")
+                bulk_logger.info("Not using fork to create new process.")
                 bulk_logger.info(
                     "The environment variable PF_WORKER_COUNT is not set or invalid. Calculate the worker count based "
-                    "on the currently memory usage")
+                    "on the currently memory usage.")
                 bulk_logger.info(
                     f"Calculated process count ({worker_count}) by taking the minimum value among estimated process "
                     f"count ({estimated_available_worker_count}), the row count ({self._nlines}) and the default "
                     f"worker count ({self._DEFAULT_WORKER_COUNT}).")
                 return worker_count
             else:
-                bulk_logger.info("Using fork to create new process")
+                bulk_logger.info("Using fork to create new process.")
                 bulk_logger.info(
                     f"Calculated process count ({worker_count}) by taking the minimum value among the "
-                    f"default worker_count ({self._DEFAULT_WORKER_COUNT}) and the row count ({self._nlines})")
+                    f"default worker_count ({self._DEFAULT_WORKER_COUNT}) and the row count ({self._nlines}).")
                 return worker_count
 
 
