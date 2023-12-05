@@ -34,9 +34,9 @@ REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
 ENDPOINT_REQUIRED_ENV_VARS = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME"]
 
 
-def handle_online_endpoint_error(max_retries: int = 3,
-                                 initial_delay: float = 1,
-                                 exponential_base: float = 2):
+def handle_online_endpoint_error(max_retries: int = 5,
+                                 initial_delay: float = 2,
+                                 exponential_base: float = 3):
     def deco_retry(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -776,7 +776,7 @@ class GPT2ContentFormatter(ContentFormatterBase):
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         input_str = json.dumps(
             {
-                "inputs": {"input_string": [ContentFormatterBase.escape_special_characters(prompt)]},
+                "input_data": {"input_string": [ContentFormatterBase.escape_special_characters(prompt)]},
                 "parameters": model_kwargs,
             }
         )

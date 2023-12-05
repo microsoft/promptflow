@@ -127,7 +127,7 @@ user:
             self.completion_prompt,
             API.COMPLETION,
             endpoint_name=self.gpt2_connection,
-            deployment_name="gpt2-9")
+            deployment_name="gpt2-10")
         validate_response(response)
 
     def test_open_source_llm_chat(self, verify_service_endpoints):
@@ -142,7 +142,7 @@ user:
             self.chat_prompt,
             API.CHAT,
             endpoint_name=self.gpt2_connection,
-            deployment_name="gpt2-9")
+            deployment_name="gpt2-10")
         validate_response(response)
 
     def test_open_source_llm_chat_with_max_length(self, verify_service_endpoints):
