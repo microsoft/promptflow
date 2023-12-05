@@ -283,6 +283,13 @@ class RunOperations(TelemetryMixin):
 
             local_storage = LocalStorageOperations(run)
             detail = local_storage.load_detail()
+            # ad-hoc step: make logs field empty to avoid too big HTML file
+            # we don't provide logs view in visualization page for now
+            # when we enable, we will save those big data (e.g. logs) in separate file(s)
+            # JS load can be faster than static HTML
+            for i in range(len(detail["node_runs"])):
+                detail["node_runs"][i]["logs"] = {"stdout": "", "stderr": ""}
+
             metadata = RunMetadata(
                 name=run.name,
                 display_name=run.display_name,
