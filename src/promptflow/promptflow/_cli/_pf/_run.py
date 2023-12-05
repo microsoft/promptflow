@@ -458,6 +458,7 @@ def list_runs(
         max_results=max_results,
         list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
+    # hide additional info and debug info in run list for better user experience
     json_list = [run._to_dict(exclude_additional_info=True, exclude_debug_info=True) for run in runs]
     _output_result_list_with_format(result_list=json_list, output_format=output)
     return runs

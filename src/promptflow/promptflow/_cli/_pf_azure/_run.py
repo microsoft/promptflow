@@ -430,6 +430,7 @@ def list_runs(
 
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
     runs = pf.runs.list(max_results=max_results, list_view_type=list_view_type)
+    # hide additional info and debug info in run list for better user experience
     run_list = [run._to_dict(exclude_additional_info=True, exclude_debug_info=True) for run in runs]
     _output_result_list_with_format(result_list=run_list, output_format=output)
     return runs
