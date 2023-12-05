@@ -130,6 +130,11 @@ class BatchEngine:
             batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
             # resolve output dir
             output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
+            # check if the batch run is canceled
+            if self._is_canceled:
+                return BatchResult.create(
+                    self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
+                )
             # run flow in batch mode
             with _change_working_dir(self._working_dir):
                 return async_run_allowing_running_loop(
@@ -175,13 +180,14 @@ class BatchEngine:
         else:
             line_results = await self._exec_batch_internal(batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
+        # execute aggregation nodes
+        aggr_results = await self._exec_aggregation(batch_inputs, line_results, run_id)
+
         # check if the batch run is canceled
         if self._is_canceled:
             return BatchResult.create(
-                self._start_time, datetime.utcnow(), line_results, AggregationResult({}, {}, {}), status=Status.Canceled
+                self._start_time, datetime.utcnow(), line_results, aggr_results, status=Status.Canceled
             )
-        # execute aggregation nodes
-        aggr_results = await self._exec_aggregation_internal(batch_inputs, line_results, run_id)
 
         # persist outputs to output dir
         outputs = [
@@ -202,10 +208,14 @@ class BatchEngine:
         total_lines = len(batch_inputs)
         pending = [self._create_exec_line_task(line_inputs, i, run_id) for i, line_inputs in enumerate(batch_inputs)]
         while len(line_results) < total_lines and not self._is_canceled:
-            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-            line_results.extend([task.result() for task in done])
-            # log the progress of the batch run
-            log_progress(self._start_time, bulk_logger, len(line_results), total_lines)
+            try:
+                done, pending = await asyncio.wait(pending, timeout=1, return_when=asyncio.FIRST_COMPLETED)
+                line_results.extend([task.result() for task in done])
+                # log the progress of the batch run
+                log_progress(self._start_time, bulk_logger, len(line_results), total_lines)
+            except asyncio.TimeoutError:
+                # ignore timeout error and continue to wait
+                pass
         if self._is_canceled:
             for task in pending:
                 task.cancel()
@@ -219,6 +229,26 @@ class BatchEngine:
     ):
         task = self._executor_proxy.exec_line_async(inputs, index, run_id)
         return asyncio.get_event_loop().create_task(task)
+
+    async def _exec_aggregation(
+        self,
+        batch_inputs: List[dict],
+        line_results: List[LineResult],
+        run_id: Optional[str] = None,
+    ):
+        aggr_result = AggregationResult({}, {}, {})
+        task = asyncio.get_event_loop().create_task(self._exec_aggregation_internal(batch_inputs, line_results, run_id))
+        while not task.done() and not self._is_canceled:
+            try:
+                await asyncio.wait_for(task, timeout=1)
+            except asyncio.TimeoutError:
+                # ignore timeout error and continue to wait
+                pass
+        if self._is_canceled:
+            task.cancel()
+        else:
+            aggr_result = task.result()
+        return aggr_result
 
     async def _exec_aggregation_internal(
         self,
