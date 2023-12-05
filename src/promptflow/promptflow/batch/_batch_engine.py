@@ -8,8 +8,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from httpx import ConnectError
-
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
@@ -26,7 +24,6 @@ from promptflow._utils.utils import dump_list_to_jsonl, log_progress, resolve_di
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
-from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -140,12 +137,7 @@ class BatchEngine:
                 )
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
-            if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
-                bulk_logger.warning("The batch run may have been canceled or encountered other issues.")
-                return BatchResult.create(
-                    self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
-                )
-            elif isinstance(e, PromptflowException):
+            if isinstance(e, PromptflowException):
                 raise e
             else:
                 # For unexpected error, we need to wrap it to SystemErrorException.
@@ -177,11 +169,18 @@ class BatchEngine:
             apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
         ]
         run_id = run_id or str(uuid.uuid4())
+        # execute line
         if isinstance(self._executor_proxy, PythonExecutorProxy):
             line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
         else:
             line_results = await self._exec_batch_internal(batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
+        # check if the batch run is canceled
+        if self._is_canceled:
+            return BatchResult.create(
+                self._start_time, datetime.utcnow(), line_results, AggregationResult({}, {}, {}), status=Status.Canceled
+            )
+        # execute aggregation nodes
         aggr_results = await self._exec_aggregation_internal(batch_inputs, line_results, run_id)
 
         # persist outputs to output dir
@@ -191,10 +190,8 @@ class BatchEngine:
             if r.run_info.status == Status.Completed
         ]
         self._persist_outputs(outputs, output_dir)
-
         # summary some infos from line results and aggr results to batch result
-        self._end_time = datetime.utcnow()
-        return BatchResult.create(self._start_time, self._end_time, line_results, aggr_results)
+        return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_results)
 
     async def _exec_batch_internal(
         self,
