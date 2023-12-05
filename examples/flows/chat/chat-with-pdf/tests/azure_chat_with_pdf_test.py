@@ -3,6 +3,7 @@ import promptflow.azure as azure
 from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
 from base_test import BaseTest
 import os
+from promptflow._sdk._errors import InvalidRunStatusError
 
 
 class TestChatWithPDFAzure(BaseTest):
@@ -94,13 +95,11 @@ class TestChatWithPDFAzure(BaseTest):
                 "chat_history": "${data.chat_history}",
             },
             runtime=self.runtime,
+            stream=False,
         )
 
-        self.pf.stream(run)  # wait for completion
-
-        self.assertEqual(run.status, "Failed")
-        with self.assertRaises(Exception):
-            _ = self.pf.get_details(run)
+        with self.assertRaises(InvalidRunStatusError):
+            self.pf.stream(run)  # wait for completion
 
 
 if __name__ == "__main__":
