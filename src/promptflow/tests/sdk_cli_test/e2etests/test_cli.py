@@ -1044,9 +1044,10 @@ class TestCli:
         logger.propagate = True
 
         def validate_log(log_msg, prefix, expect_dict):
-            log_inputs = json.loads(log_msg[len(prefix) :].replace("'", '"'))
-            assert prefix in log_msg
-            assert expect_dict == log_inputs
+            assert False, "[Debug_Validate_Log]" + log_msg[len(prefix) :].replace("'", '"')
+            #log_inputs = json.loads(log_msg[len(prefix) :].replace("'", '"'))
+            #assert prefix in log_msg
+            #assert expect_dict == log_inputs
 
         with caplog.at_level(level=logging.INFO, logger=LOGGER_NAME):
             run_pf_command(
