@@ -436,17 +436,6 @@ class LineExecutionProcessPool:
                     f"default worker_count ({self._DEFAULT_WORKER_COUNT}) and the row count ({self._nlines})")
                 return worker_count
 
-    def _log_process_count_info(self):
-        bulk_logger.info(
-            f"Process count set to {self._worker_count} based on 'PF_WORKER_COUNT' environment variable.")
-        if not self._use_fork:
-            estimated_available_worker_count = get_available_max_worker_count()
-            if estimated_available_worker_count < self._worker_count:
-                bulk_logger.warning(
-                    f"The estimated available worker count calculated based on the system available memory "
-                    f"is {estimated_available_worker_count}, but the PF_WORKER_COUNT is set to "
-                    f"{self._worker_count}. This may affect optimal memory usage and performance. ")
-
 
 def _exec_line(
     executor: FlowExecutor,
