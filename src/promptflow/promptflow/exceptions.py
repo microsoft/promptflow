@@ -11,6 +11,7 @@ class ErrorTarget(str, Enum):
     """The target of the error, indicates which part of the system the error occurs."""
 
     EXECUTOR = "Executor"
+    BATCH = "Batch"
     FLOW_EXECUTOR = "FlowExecutor"
     NODE_EXECUTOR = "NodeExecutor"
     TOOL = "Tool"

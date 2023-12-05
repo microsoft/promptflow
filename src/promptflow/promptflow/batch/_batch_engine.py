@@ -150,7 +150,7 @@ class BatchEngine:
                 # For unexpected error, we need to wrap it to SystemErrorException.
                 # This allows us to see the stack trace inside.
                 unexpected_error = UnexpectedError(
-                    target=ErrorTarget.EXECUTOR,
+                    target=ErrorTarget.BATCH,
                     message_format=(
                         "Unexpected error occurred while executing the batch run. The error details: {error_message}."
                     ),
