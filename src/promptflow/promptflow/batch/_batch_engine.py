@@ -200,14 +200,14 @@ class BatchEngine:
     ) -> List[LineResult]:
         line_results = []
         total_lines = len(batch_inputs)
-        exec_tasks = [self._create_exec_line_task(line_inputs, i, run_id) for i, line_inputs in enumerate(batch_inputs)]
+        pending = [self._create_exec_line_task(line_inputs, i, run_id) for i, line_inputs in enumerate(batch_inputs)]
         while len(line_results) < total_lines and not self._is_canceled:
-            done, exec_tasks = await asyncio.wait(exec_tasks, return_when=asyncio.FIRST_COMPLETED)
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             line_results.extend([task.result() for task in done])
             # log the progress of the batch run
             log_progress(self._start_time, bulk_logger, len(line_results), total_lines)
         if self._is_canceled:
-            for task in exec_tasks:
+            for task in pending:
                 task.cancel()
         return sorted(line_results, key=lambda r: r.run_info.index)
 
