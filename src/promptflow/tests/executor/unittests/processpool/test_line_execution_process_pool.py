@@ -82,14 +82,12 @@ def test_fork_mode_parallelism_in_subprocess(
             assert pool._n_process == n_process
             if is_set_environ_pf_worker_count:
                 mock_logger.info.assert_called_with(
-                    f"The number of processes has been explicitly set to {pf_worker_count} by the "
-                    f"environment variable PF_WORKER_COUNT. This value will determine the degree of "
-                    f"parallelism of the process. process count: {n_process}")
+                    f"Process count set to {pf_worker_count} based on 'PF_WORKER_COUNT' environment variable.")
             else:
                 mock_logger.info.assert_called_with(
-                    f"Using fork, and the environment variable PF_WORKER_COUNT is not set. The number of processes "
-                    f"is determined by the lesser of the default value for worker_count "
-                    f"{pool._DEFAULT_WORKER_COUNT} and the row count: {nlines}. process count: {n_process}")
+                    f"Using fork, the environment variable PF_WORKER_COUNT is not set. Take the "
+                    f"minimum value among the default value for worker_count {pool._worker_count} and "
+                    f"the row count: {nlines}. Process count: {n_process}")
 
 
 @pytest.mark.skip("This is a subprocess function used for testing and cannot be tested alone.")
@@ -129,22 +127,20 @@ def test_spawn_mode_parallelism_in_subprocess(
                     assert pool._n_process == n_process
                     if is_set_environ_pf_worker_count and is_calculation_smaller_than_set:
                         mock_logger.warning.assert_called_with(
-                            f"The maximum number of processes calculated based on the system available memory "
-                            f"is {available_max_worker_count}, and the PF_WORKER_COUNT is set to {pf_worker_count}"
-                            f". Use the PF_WORKER_COUNT:{pf_worker_count} as the final number of processes. "
-                            f"process count: {n_process}")
+                            f"The estimated available worker count calculated based on the system available memory "
+                            f"is {available_max_worker_count}, but the PF_WORKER_COUNT is set to "
+                            f"{pf_worker_count}. This may affect optimal memory usage and performance. "
+                            f"Process count: {n_process}")
                     elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
                         mock_logger.info.assert_called_with(
-                            f"The number of processes has been explicitly set to {pf_worker_count} by the "
-                            f"environment variable PF_WORKER_COUNT. This value will determine the degree of "
-                            f"parallelism of the process. process count: {n_process}")
+                            f"Process count set to {pf_worker_count} based on 'PF_WORKER_COUNT' environment variable.")
                     elif not is_set_environ_pf_worker_count:
                         mock_logger.info.assert_called_with(
-                            f"Not using fork, and the environment variable PF_WORKER_COUNT is not set. Calculate "
-                            f"the current system available memory divided by process memory, and take the minimum "
-                            f"value of this value: {available_max_worker_count}, the default value for worker_count"
-                            f": {pool._DEFAULT_WORKER_COUNT} and the row count: {nlines} as the final number of "
-                            f"processes. process count: {n_process}")
+                            f"Not using fork, the environment variable PF_WORKER_COUNT is not set. Calculate the "
+                            f"estimated available worker count based on the current system available memory and "
+                            f"process memory. Take the minimum value among the calculated value: "
+                            f"{available_max_worker_count}, the default value for worker_count: {pool._worker_count}, "
+                            f"and the row count: {nlines}. Process count: {n_process}")
 
 
 @pytest.mark.unittest
