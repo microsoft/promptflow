@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 from pytest_mock import MockFixture
 
-from promptflow._utils.logger_utils import LogContext
+from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
@@ -81,13 +81,14 @@ def test_fork_mode_parallelism_in_subprocess(
         ) as pool:
             assert pool._n_process == n_process
             if is_set_environ_pf_worker_count:
-                mock_logger.info.assert_called_with(
+                mock_logger.info.assert_any_call(
                     f"Process count set to {pf_worker_count} based on 'PF_WORKER_COUNT' environment variable.")
             else:
-                mock_logger.info.assert_called_with(
-                    f"Using fork, the environment variable PF_WORKER_COUNT is not set. Take the "
-                    f"minimum value among the default value for worker_count {pool._worker_count} and "
-                    f"the row count: {nlines}. Process count: {n_process}")
+                mock_logger.info.assert_any_call("Using fork to create new process")
+                mock_logger.info.assert_any_call(
+                    f"Calculated process count ({n_process}) by taking the minimum value among the the "
+                    f"default value for worker_count ({pool._worker_count}) and the row count ({nlines})"
+                )
 
 
 @pytest.mark.skip("This is a subprocess function used for testing and cannot be tested alone.")
@@ -97,7 +98,7 @@ def test_spawn_mode_parallelism_in_subprocess(
         is_set_environ_pf_worker_count,
         is_calculation_smaller_than_set,
         pf_worker_count,
-        available_max_worker_count,
+        estimated_available_worker_count,
         n_process
 ):
     os.environ["PF_BATCH_METHOD"] = "spawn"
@@ -126,26 +127,30 @@ def test_spawn_mode_parallelism_in_subprocess(
                 ) as pool:
                     assert pool._n_process == n_process
                     if is_set_environ_pf_worker_count and is_calculation_smaller_than_set:
-                        mock_logger.warning.assert_called_with(
+                        mock_logger.info.assert_any_call(
+                            f"Process count set to {pf_worker_count} based on 'PF_WORKER_COUNT' environment variable.")
+                        mock_logger.warning.assert_any_call(
                             f"The estimated available worker count calculated based on the system available memory "
-                            f"is {available_max_worker_count}, but the PF_WORKER_COUNT is set to "
-                            f"{pf_worker_count}. This may affect optimal memory usage and performance. "
-                            f"Process count: {n_process}")
+                            f"is {estimated_available_worker_count}, but the PF_WORKER_COUNT is set to "
+                            f"{pf_worker_count}. This may affect optimal memory usage and performance. ")
                     elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
-                        mock_logger.info.assert_called_with(
+                        mock_logger.info.assert_any_call(
                             f"Process count set to {pf_worker_count} based on 'PF_WORKER_COUNT' environment variable.")
                     elif not is_set_environ_pf_worker_count:
-                        mock_logger.info.assert_called_with(
-                            f"Not using fork, the environment variable PF_WORKER_COUNT is not set. Calculate the "
-                            f"estimated available worker count based on the current system available memory and "
-                            f"process memory. Take the minimum value among the calculated value: "
-                            f"{available_max_worker_count}, the default value for worker_count: {pool._worker_count}, "
-                            f"and the row count: {nlines}. Process count: {n_process}")
+                        mock_logger.info.assert_any_call("Not using fork to create new process")
+                        mock_logger.info.assert_any_call(
+                            "The environment variable PF_WORKER_COUNT is not set or invalid. Calculate the worker "
+                            "count based on the currently memory usage"
+                        )
+                        mock_logger.info.assert_any_call(
+                            f"Calculated process count ({n_process}) by taking the minimum value among estimated "
+                            f"process count ({estimated_available_worker_count}), the row count ({nlines}) and the "
+                            f"default worker count ({pool._worker_count})."
+                        )
 
 
 @pytest.mark.unittest
 class TestLineExecutionProcessPool:
-
     def create_line_execution_process_pool(self, dev_connections):
         executor = FlowExecutor.create(
             get_yaml_file(SAMPLE_FLOW),
@@ -373,14 +378,16 @@ class TestLineExecutionProcessPool:
             is_set_environ_pf_worker_count,
             pf_worker_count,
             n_process):
-        p = multiprocessing.Process(target=test_fork_mode_parallelism_in_subprocess,
-                                    args=(dev_connections,
-                                          flow_folder,
-                                          is_set_environ_pf_worker_count,
-                                          pf_worker_count,
-                                          n_process))
+        p = multiprocessing.Process(
+            target=test_fork_mode_parallelism_in_subprocess,
+            args=(dev_connections,
+                  flow_folder,
+                  is_set_environ_pf_worker_count,
+                  pf_worker_count,
+                  n_process))
         p.start()
         p.join()
+        assert p.exitcode == 0
 
     @pytest.mark.parametrize(
         (
@@ -388,7 +395,7 @@ class TestLineExecutionProcessPool:
             "is_set_environ_pf_worker_count",
             "is_calculation_smaller_than_set",
             "pf_worker_count",
-            "available_max_worker_count",
+            "estimated_available_worker_count",
             "n_process"
         ),
         [
@@ -404,27 +411,45 @@ class TestLineExecutionProcessPool:
         is_set_environ_pf_worker_count,
         is_calculation_smaller_than_set,
         pf_worker_count,
-        available_max_worker_count,
+        estimated_available_worker_count,
         n_process
     ):
-        p = multiprocessing.Process(target=test_spawn_mode_parallelism_in_subprocess,
-                                    args=(dev_connections,
-                                          flow_folder,
-                                          is_set_environ_pf_worker_count,
-                                          is_calculation_smaller_than_set,
-                                          pf_worker_count,
-                                          available_max_worker_count,
-                                          n_process))
+        p = multiprocessing.Process(
+            target=test_spawn_mode_parallelism_in_subprocess,
+            args=(dev_connections,
+                  flow_folder,
+                  is_set_environ_pf_worker_count,
+                  is_calculation_smaller_than_set,
+                  pf_worker_count,
+                  estimated_available_worker_count,
+                  n_process))
         p.start()
         p.join()
+        assert p.exitcode == 0
+
+    @pytest.mark.parametrize("env_var, expected_use_default, expected_worker_count", [
+        ({}, True, 16),
+        ({'PF_WORKER_COUNT': '5'}, False, 5),
+        ({'PF_WORKER_COUNT': 'invalid'}, True, 16),
+        ({'PF_WORKER_COUNT': '0'}, True, 16)
+    ])
+    def test_worker_count_setting(self, dev_connections, env_var, expected_use_default, expected_worker_count):
+        with patch.dict(os.environ, env_var), patch.object(bulk_logger, 'warning') as mock_warning:
+            line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
+
+            if 'invalid' in env_var.get('PF_WORKER_COUNT', '') or '0' in env_var.get('PF_WORKER_COUNT', ''):
+                mock_warning.assert_called()
+
+            assert line_execution_process_pool._use_default_worker_count == expected_use_default
+            assert line_execution_process_pool._worker_count == expected_worker_count
 
 
 class TestGetAvailableMaxWorkerCount:
     @pytest.mark.parametrize(
         "available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count",
         [
-            (128.0, 64.0, 2, 2),  # available_memory > 0
-            (0.0, 64.0, 1, 0),     # available_memory = 0
+            (128.0, 64.0, 2, 2.0),  # available_memory/process_memory > 1
+            (63.0, 64.0, 1, 1),   # available_memory/process_memory < 1
         ],
     )
     def test_get_available_max_worker_count(
@@ -444,8 +469,8 @@ class TestGetAvailableMaxWorkerCount:
                             "set it to 1."
                         )
                     mock_logger.info.assert_called_with(
-                        f"Process {os.getpid()} current available memory is {process_memory}, "
-                        f"memory consumption of current process is {available_memory}, "
+                        f"Current system's available memory is {available_memory}MB, "
+                        f"memory consumption of current process is {process_memory}MB, "
                         f"estimated available worker count is {available_memory}/{process_memory} "
-                        f"= {estimated_available_worker_count}"
+                        f"= {actual_calculate_worker_count}"
                     )

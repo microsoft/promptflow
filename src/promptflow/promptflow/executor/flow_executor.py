@@ -5,7 +5,6 @@ import asyncio
 import copy
 import functools
 import inspect
-import os
 import uuid
 from pathlib import Path
 from threading import current_thread
@@ -88,7 +87,6 @@ class FlowExecutor:
         cache_manager: AbstractCacheManager,
         loaded_tools: Mapping[str, Callable],
         *,
-        worker_count=None,
         raise_ex: bool = False,
         working_dir=None,
         line_timeout_sec=LINE_TIMEOUT_SEC,
@@ -106,8 +104,6 @@ class FlowExecutor:
         :type cache_manager: ~promptflow._core.cache_manager.AbstractCacheManager
         :param loaded_tools: A mapping of tool names to their corresponding functions.
         :type loaded_tools: Mapping[str, Callable]
-        :param worker_count: The number of workers to use for parallel execution of the Flow.
-        :type worker_count: int or None
         :param raise_ex: Whether to raise an exception if an error occurs during execution.
         :type raise_ex: bool
         :param working_dir: The working directory to use for execution.
@@ -126,10 +122,6 @@ class FlowExecutor:
         self._connections = connections
         self._aggregation_inputs_references = get_aggregation_inputs_properties(flow)
         self._aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
-        if worker_count is not None:
-            self._worker_count = worker_count
-        else:
-            self._use_default_worker_count, self._worker_count = load_worker_count_in_env(self._DEFAULT_WORKER_COUNT)
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
@@ -955,29 +947,6 @@ class FlowExecutor:
         """
         for node in self._flow.nodes:
             self._tools_manager.wrap_tool(node.name, wrapper=_ensure_node_result_is_serializable)
-
-
-def load_worker_count_in_env(DEFAULT_WORKER_COUNT):
-    try:
-        pf_worker_count = os.environ.get("PF_WORKER_COUNT")
-        if pf_worker_count is None:
-            use_default_worker_count = True
-            worker_count = DEFAULT_WORKER_COUNT
-        else:
-            use_default_worker_count = False
-            worker_count = int(pf_worker_count)
-    except Exception as e:
-        logger.warning(f"Failed to convert PF_WORKER_COUNT '{pf_worker_count}' to an integer: {e}")
-        use_default_worker_count = True
-        worker_count = DEFAULT_WORKER_COUNT
-
-    if worker_count <= 0:
-        logger.warning(
-            f"Invalid worker count: {worker_count}. Resetting to default value: {DEFAULT_WORKER_COUNT}")
-        use_default_worker_count = True
-        worker_count = DEFAULT_WORKER_COUNT
-
-    return use_default_worker_count, worker_count
 
 
 def _inject_stream_options(should_stream: Callable[[], bool], streaming_option_parameter="stream"):

@@ -1,7 +1,6 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
-import os
 
 from promptflow import tool
 from promptflow.contracts.flow import FlowInputDefinition
@@ -12,9 +11,7 @@ from promptflow.executor.flow_executor import (
     _ensure_node_result_is_serializable,
     _inject_stream_options,
     enable_streaming_for_llm_tool,
-    load_worker_count_in_env
 )
-from promptflow._utils.logger_utils import logger
 from promptflow.tools.aoai import chat, completion
 from promptflow.tools.embedding import embedding
 
@@ -181,31 +178,3 @@ class TestEnsureNodeResultIsSerializable:
     def test_non_streaming_tool_should_not_be_affected(self):
         func = _ensure_node_result_is_serializable(non_streaming_tool)
         assert func() == 1
-
-
-class TestLoadWorkerCountInEnv:
-    def test_no_env_var_set(self):
-        with patch.dict(os.environ, {}, clear=True):
-            use_default, worker_count = load_worker_count_in_env(4)
-            assert use_default is True
-            assert worker_count == 4
-
-    def test_valid_integer_env_var(self):
-        with patch.dict(os.environ, {'PF_WORKER_COUNT': '5'}):
-            use_default, worker_count = load_worker_count_in_env(4)
-            assert use_default is False
-            assert worker_count == 5
-
-    def test_invalid_non_integer_env_var(self):
-        with patch.dict(os.environ, {'PF_WORKER_COUNT': 'invalid'}), patch.object(logger, 'warning') as mock_warning:
-            use_default, worker_count = load_worker_count_in_env(4)
-            mock_warning.assert_called()
-            assert use_default is True
-            assert worker_count == 4
-
-    def test_invalid_non_positive_integer_env_var(self):
-        with patch.dict(os.environ, {'PF_WORKER_COUNT': '0'}), patch.object(logger, 'warning') as mock_warning:
-            use_default, worker_count = load_worker_count_in_env(4)
-            mock_warning.assert_called()
-            assert use_default is True
-            assert worker_count == 4
