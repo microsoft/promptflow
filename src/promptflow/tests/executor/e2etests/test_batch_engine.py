@@ -186,6 +186,7 @@ class TestBatch:
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert len(outputs) == nlines
         # system metrics tokens equal to 0 when recording history/replaying is triggered.
+        # TODO: Recording system metric in recording.
         if recording_status is True:
             assert batch_result.system_metrics.total_tokens == 0
             assert batch_result.system_metrics.prompt_tokens == 0
