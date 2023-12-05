@@ -10,6 +10,8 @@ from typing import Any, Mapping, Optional
 import httpx
 
 from promptflow._constants import LINE_TIMEOUT_SEC
+from promptflow._core._errors import UnexpectedError
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
@@ -107,14 +109,16 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         if response.status_code == 200:
             return response.json()
         else:
-            bulk_logger.error(
-                f"Error when calling executor API, status code: {response.status_code}, error: {response.text}"
-            )
+            error_message = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
+            bulk_logger.error(error_message.format(status_code=response.status_code, error=response.text))
             try:
                 error_response = response.json()
-                return error_response["error"] if "error" in error_response else error_response
+                return error_response["error"]
             except JSONDecodeError:
-                return response.text
+                unexpected_error = UnexpectedError(
+                    message_format=error_message, status_code=response.status_code, error=response.text
+                )
+                return ExceptionPresenter.create(unexpected_error).to_dict()
 
     async def _ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
