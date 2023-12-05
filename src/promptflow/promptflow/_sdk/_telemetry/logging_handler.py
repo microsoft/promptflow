@@ -43,6 +43,7 @@ def get_appinsights_log_handler():
 
 def get_scrubbed_cloud_role():
     """Create cloud role for telemetry, will scrub user script name and only leave extension."""
+    default = "Unknown Application"
     known_scripts = [
         "pfs",
         "pfutil.py",
@@ -53,15 +54,22 @@ def get_scrubbed_cloud_role():
         "app.py",
         "python -m unittest",
         "pytest",
-        "gunicorn" "ipykernel_launcher.py",
+        "gunicorn",
+        "ipykernel_launcher.py",
         "jupyter-notebook",
         "jupyter-lab",
-        "python" "Python Application",
+        "python",
+        default,
     ]
-    cloud_role = os.path.basename(sys.argv[0]) or "Python Application"
-    if cloud_role not in known_scripts:
-        ext = os.path.splitext(cloud_role)[1]
-        cloud_role = "***" + ext
+
+    try:
+        cloud_role = os.path.basename(sys.argv[0]) or default
+        if cloud_role not in known_scripts:
+            ext = os.path.splitext(cloud_role)[1]
+            cloud_role = "***" + ext
+    except Exception:
+        # fallback to default cloud role if failed to scrub
+        cloud_role = default
     return cloud_role
 
 
@@ -117,7 +125,7 @@ class PromptFlowSDKLogHandler(AzureEventHandler):
 
         envelope = super().log_record_to_envelope(record=record)
         # scrub data before sending to appinsights
-        envelope.tags["ai.operation.role"] = get_cloud_role()
+        envelope.tags["ai.operation.role"] = get_scrubbed_cloud_role()
         envelope.tags.pop("ai.cloud.roleInstance", None)
         envelope.tags.pop("ai.device.id", None)
         return envelope
