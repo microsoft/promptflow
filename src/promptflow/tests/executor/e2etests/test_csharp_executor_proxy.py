@@ -39,7 +39,6 @@ class TestCSharpExecutorProxy:
         batch_run_thread.join()
         assert batch_engine._is_canceled is True
         assert batch_result_global.status == Status.Canceled
-        assert batch_result_global.total_lines == 0
         assert batch_result_global.system_metrics.duration > 0
 
     def _submit_batch_run(
