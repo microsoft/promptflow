@@ -59,6 +59,7 @@ def get_scrubbed_cloud_role():
         "jupyter-notebook",
         "jupyter-lab",
         "python",
+        "_jb_pytest_runner.py",
         default,
     ]
 
@@ -125,7 +126,8 @@ class PromptFlowSDKLogHandler(AzureEventHandler):
 
         envelope = super().log_record_to_envelope(record=record)
         # scrub data before sending to appinsights
-        envelope.tags["ai.operation.role"] = get_scrubbed_cloud_role()
+        role = get_scrubbed_cloud_role()
+        envelope.tags["ai.cloud.role"] = role
         envelope.tags.pop("ai.cloud.roleInstance", None)
         envelope.tags.pop("ai.device.id", None)
         return envelope
