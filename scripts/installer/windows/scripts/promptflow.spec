@@ -49,7 +49,7 @@ main_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    contents_directory=None,
+    contents_directory='.',
     icon='../resources/logo32.ico',
     version="./version_info.txt",
 )
@@ -86,7 +86,7 @@ pfsvc_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    contents_directory=None,
+    contents_directory='.',
     icon='../resources/logo32.ico',
     version="./version_info.txt",
 )
