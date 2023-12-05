@@ -1,23 +1,15 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
-
 # Copy and modified from vscode source code.
 
 import json
 import os
 import pathlib
-import sys
 import traceback
+from typing import Any, Dict, List, Optional, Union
+from typing_extensions import Literal, TypedDict
 
 import pytest
-
-script_dir = pathlib.Path(__file__).parent.parent
-sys.path.append(os.fspath(script_dir))
-sys.path.append(os.fspath(script_dir / "lib" / "python"))
-
-from typing import Any, Dict, List, Optional, Union
-
-from typing_extensions import Literal, TypedDict
 
 
 class TestData(TypedDict):
@@ -75,7 +67,7 @@ def pytest_exception_interact(node, call, report):
     # call.excinfo.exconly() returns the exception as a string.
     # See if it is during discovery or execution.
     # if discovery, then add the error to error logs.
-    if type(report) == pytest.CollectReport:
+    if isinstance(report, pytest.CollectReport):
         if call.excinfo and call.excinfo.typename != "AssertionError":
             if report.outcome == "skipped" and "SkipTest" in str(call):
                 return
@@ -102,7 +94,6 @@ def pytest_exception_interact(node, call, report):
             )
             collected_test = testRunResultDict()
             collected_test[node_id] = item_result
-            cwd = pathlib.Path.cwd()
 
 
 def pytest_keyboard_interrupt(excinfo):
@@ -230,16 +221,9 @@ def pytest_sessionfinish(session, exitstatus):
         "in discovery? ",
         IS_DISCOVERY,
     )
-    cwd = pathlib.Path.cwd()
     if IS_DISCOVERY:
         if not (exitstatus == 0 or exitstatus == 1 or exitstatus == 5):
-            errorNode: TestNode = {
-                "name": "",
-                "path": cwd,
-                "type_": "error",
-                "children": [],
-                "id_": "",
-            }
+            pass
         try:
             session_node: Union[TestNode, None] = build_test_tree(session)
             if not session_node:
@@ -251,21 +235,13 @@ def pytest_sessionfinish(session, exitstatus):
             ERRORS.append(
                 f"Error Occurred, traceback: {(traceback.format_exc() if e.__traceback__ else '')}"
             )
-            errorNode: TestNode = {
-                "name": "",
-                "path": cwd,
-                "type_": "error",
-                "children": [],
-                "id_": "",
-            }
     else:
         if exitstatus == 0 or exitstatus == 1:
-            exitstatus_bool = "success"
+            pass
         else:
             ERRORS.append(
                 f"Pytest exited with error status: {exitstatus}, {ERROR_MESSAGE_CONST[exitstatus]}"
             )
-            exitstatus_bool = "error"
 
 
 def build_test_tree(session: pytest.Session) -> TestNode:
@@ -365,7 +341,7 @@ def build_nested_folders(
     Keyword arguments:
     file_module -- the created module for the file we  are nesting.
     file_node -- the file node that we are building the nested folders for.
-    created_files_folders_dict -- Dictionary of all the folders and files that have been created where the key is the path.
+    created_files_folders_dict -- Dictionary of all the folders and files that have been created.
     session -- the pytest session object.
     """
     prev_folder_node = file_node

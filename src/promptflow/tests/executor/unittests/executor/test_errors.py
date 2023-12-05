@@ -9,12 +9,12 @@ def code_with_bug():
     1 / 0
 
 
-def raise_resolve_tool_error(func, target=None, module=None):
+def raise_resolve_tool_error(func, target: ErrorTarget = None, module=None):
     try:
         func()
     except Exception as e:
         if target:
-            raise ResolveToolError(node_name="MyTool", target=target, module=module) from e
+            raise ResolveToolError(node_name="MyTool", target=target.value, module=module) from e
         raise ResolveToolError(node_name="MyTool") from e
 
 
