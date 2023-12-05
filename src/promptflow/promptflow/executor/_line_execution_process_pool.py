@@ -151,8 +151,8 @@ class LineExecutionProcessPool:
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
         # _worker_count: The number of workers to use for parallel execution of the Flow.
-        # _use_default_worker_count: Whether to use the default worker count.
-        self._use_default_worker_count, self._worker_count = self.load_worker_count_in_env()
+        # _is_pf_worker_count_set_and_valid: Whether to use the default worker count.
+        self._is_pf_worker_count_set_and_valid, self._worker_count = self.load_worker_count_in_env()
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
         sys_start_methods = multiprocessing.get_all_start_methods()
         if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
@@ -199,7 +199,7 @@ class LineExecutionProcessPool:
         self._inputs_queue = Queue()
         # Starting a new process in non-fork mode requires to allocate memory. Determine the maximum number of processes
         # based on available memory to avoid memory bursting.
-        if self._use_default_worker_count:
+        if not self._is_pf_worker_count_set_and_valid:
             self._n_process = self._determine_worker_count()
         else:
             self._n_process = self._worker_count
@@ -430,31 +430,31 @@ class LineExecutionProcessPool:
             n_process = min(self._worker_count, self._nlines)
             bulk_logger.info("Using fork to create new process")
             bulk_logger.info(
-                f"Calculated process count ({n_process}) by taking the minimum value among the the "
-                f"default value for worker_count ({self._worker_count}) and the row count ({self._nlines})")
+                f"Calculated process count ({n_process}) by taking the minimum value among the "
+                f"default worker_count ({self._worker_count}) and the row count ({self._nlines})")
             return n_process
 
     def load_worker_count_in_env(self):
         try:
             pf_worker_count = os.environ.get("PF_WORKER_COUNT")
             if pf_worker_count is None:
-                use_default_worker_count = True
+                is_pf_worker_count_set_and_valid = False
                 worker_count = self._DEFAULT_WORKER_COUNT
             else:
-                use_default_worker_count = False
+                is_pf_worker_count_set_and_valid = True
                 worker_count = int(pf_worker_count)
         except Exception as e:
             bulk_logger.warning(f"Failed to convert PF_WORKER_COUNT '{pf_worker_count}' to an integer: {e}")
-            use_default_worker_count = True
+            is_pf_worker_count_set_and_valid = False
             worker_count = self._DEFAULT_WORKER_COUNT
 
         if worker_count <= 0:
             bulk_logger.warning(
                 f"Invalid worker count: {worker_count}. Resetting to default value: {self._DEFAULT_WORKER_COUNT}")
-            use_default_worker_count = True
+            is_pf_worker_count_set_and_valid = False
             worker_count = self._DEFAULT_WORKER_COUNT
 
-        return use_default_worker_count, worker_count
+        return is_pf_worker_count_set_and_valid, worker_count
 
     def _log_process_count_info(self):
         bulk_logger.info(
@@ -600,7 +600,7 @@ def get_available_max_worker_count():
     process = psutil.Process(pid)
     process_memory_info = process.memory_info()
     process_memory = process_memory_info.rss / (1024 * 1024)  # in MB
-    estimated_available_worker_count = available_memory // process_memory
+    estimated_available_worker_count = int(available_memory // process_memory)
     if estimated_available_worker_count < 1:
         # TODO: For the case of vector db, Optimize execution logic
         # 1. Let the main process not consume memory because it does not actually invoke

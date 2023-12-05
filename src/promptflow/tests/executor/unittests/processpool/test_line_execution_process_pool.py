@@ -86,8 +86,8 @@ def test_fork_mode_parallelism_in_subprocess(
             else:
                 mock_logger.info.assert_any_call("Using fork to create new process")
                 mock_logger.info.assert_any_call(
-                    f"Calculated process count ({n_process}) by taking the minimum value among the the "
-                    f"default value for worker_count ({pool._worker_count}) and the row count ({nlines})"
+                    f"Calculated process count ({n_process}) by taking the minimum value among the "
+                    f"default worker_count ({pool._worker_count}) and the row count ({nlines})"
                 )
 
 
@@ -428,10 +428,10 @@ class TestLineExecutionProcessPool:
         assert p.exitcode == 0
 
     @pytest.mark.parametrize("env_var, expected_use_default, expected_worker_count", [
-        ({}, True, 16),
-        ({'PF_WORKER_COUNT': '5'}, False, 5),
-        ({'PF_WORKER_COUNT': 'invalid'}, True, 16),
-        ({'PF_WORKER_COUNT': '0'}, True, 16)
+        ({}, False, 16),
+        ({'PF_WORKER_COUNT': '5'}, True, 5),
+        ({'PF_WORKER_COUNT': 'invalid'}, False, 16),
+        ({'PF_WORKER_COUNT': '0'}, False, 16)
     ])
     def test_worker_count_setting(self, dev_connections, env_var, expected_use_default, expected_worker_count):
         with patch.dict(os.environ, env_var), patch.object(bulk_logger, 'warning') as mock_warning:
@@ -440,7 +440,7 @@ class TestLineExecutionProcessPool:
             if 'invalid' in env_var.get('PF_WORKER_COUNT', '') or '0' in env_var.get('PF_WORKER_COUNT', ''):
                 mock_warning.assert_called()
 
-            assert line_execution_process_pool._use_default_worker_count == expected_use_default
+            assert line_execution_process_pool._is_pf_worker_count_set_and_valid == expected_use_default
             assert line_execution_process_pool._worker_count == expected_worker_count
 
 
@@ -448,7 +448,7 @@ class TestGetAvailableMaxWorkerCount:
     @pytest.mark.parametrize(
         "available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count",
         [
-            (128.0, 64.0, 2, 2.0),  # available_memory/process_memory > 1
+            (128.0, 64.0, 2, 2),  # available_memory/process_memory > 1
             (63.0, 64.0, 1, 1),   # available_memory/process_memory < 1
         ],
     )
