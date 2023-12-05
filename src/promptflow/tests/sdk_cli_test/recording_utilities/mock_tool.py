@@ -5,6 +5,7 @@ from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
 
 from .record_storage import RecordFileMissingException, RecordItemMissingException, RecordStorage
 
+# recording array is a global variable to store the function names that need to be recorded
 recording_array = ["fetch_text_content_from_url", "my_python_tool"]
 
 
@@ -19,6 +20,7 @@ def recording_array_reset():
 
 
 def _prepare_input_dict(func, func_wo_partial, args, kwargs):
+    """Prepare input dict for record storage"""
     input_dict = {}
     for key in kwargs:
         input_dict[key] = kwargs[key]
@@ -33,6 +35,7 @@ def _prepare_input_dict(func, func_wo_partial, args, kwargs):
 
 
 def _replace_tool_rule(func_wo_partial):
+    """Replace tool with the following rules."""
     global recording_array
     if func_wo_partial.__qualname__.startswith("AzureOpenAI"):
         return True
@@ -51,6 +54,19 @@ def _replace_tool_rule(func_wo_partial):
 
 
 def mock_tool(original_tool):
+    """
+    Basically this is the original tool decorator.
+
+    The key modification is, at every func(*args, **argv) call. There is a surrounding record/replay logic:
+        if replay:
+            return replay:
+        elif record:
+            if recorded:
+                return recorded
+            call func(*args, **argv) and record the result
+
+    Actually it needn't to be such a long function, but tool decorator should not trigger a long stack trace.
+    """
     global recording_array
 
     def tool(
@@ -163,7 +179,7 @@ def mock_tool(original_tool):
 
             return new_f
 
-        # enable use decorator without "()" if all arguments are default values
+        # tool replacements.
         if func is not None:
             if func.__name__ == "partial":
                 func_wo_partial = func.func
