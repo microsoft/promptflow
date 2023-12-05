@@ -182,13 +182,11 @@ class BatchEngine:
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
         # execute aggregation nodes
         aggr_results = await self._exec_aggregation(batch_inputs, line_results, run_id)
-
         # check if the batch run is canceled
         if self._is_canceled:
             return BatchResult.create(
                 self._start_time, datetime.utcnow(), line_results, aggr_results, status=Status.Canceled
             )
-
         # persist outputs to output dir
         outputs = [
             {LINE_NUMBER_KEY: r.run_info.index, **r.output}
@@ -216,6 +214,7 @@ class BatchEngine:
             except asyncio.TimeoutError:
                 # ignore timeout error and continue to wait
                 pass
+
         if self._is_canceled:
             for task in pending:
                 task.cancel()
@@ -244,6 +243,7 @@ class BatchEngine:
             except asyncio.TimeoutError:
                 # ignore timeout error and continue to wait
                 pass
+
         if self._is_canceled:
             task.cancel()
         else:
