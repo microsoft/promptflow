@@ -166,6 +166,7 @@ class TestBatch:
                                     args=("spawn", flow_folder, inputs_mapping, dev_connections))
         p.start()
         p.join()
+        assert p.exitcode == 0
 
     @pytest.mark.parametrize(
         "flow_folder, inputs_mapping",
@@ -193,6 +194,7 @@ class TestBatch:
                                     args=("forkserver", flow_folder, inputs_mapping, dev_connections))
         p.start()
         p.join()
+        assert p.exitcode == 0
 
     def test_batch_run_then_eval(self, dev_connections):
         batch_resutls, output_dir = submit_batch_run(
