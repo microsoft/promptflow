@@ -1025,3 +1025,15 @@ class TestFlowRun:
             local_storage = LocalStorageOperations(run=run)
             expected_output_path_prefix = (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / run.name).resolve().as_posix()
             assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
+
+    def test_failed_run_to_dict_exclude(self, pf):
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/failed_flow",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"text": "${data.url}"},
+        )
+        default = failed_run._to_dict()
+        # CLI will exclude additional info and debug info
+        exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
+        assert "additionalInfo" in default["error"] and "additionalInfo" not in exclude["error"]
+        assert "debugInfo" in default["error"] and "debugInfo" not in exclude["error"]

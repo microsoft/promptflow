@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import json
 import shutil
 from logging import Logger
@@ -356,6 +357,14 @@ class TestFlowRun:
         pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950", raise_on_error=False)
         out, _ = capfd.readouterr()
         assert "Input 'question' in line 0 is not provided for flow 'Simple_mock_answer'." in out
+
+    def test_failed_run_to_dict_exclude(self, pf):
+        failed_run = pf.runs.get(run="3dfd077a-f071-443e-9c4e-d41531710950")
+        # Azure run object reference a dict, use deepcopy to avoid unexpected modification
+        default = copy.deepcopy(failed_run._to_dict())
+        exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
+        assert "additionalInfo" in default["error"]["error"] and "additionalInfo" not in exclude["error"]["error"]
+        assert "debugInfo" in default["error"]["error"] and "debugInfo" not in exclude["error"]["error"]
 
     @pytest.mark.skipif(
         condition=not is_live(),
