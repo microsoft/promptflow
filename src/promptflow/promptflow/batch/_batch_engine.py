@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -146,15 +147,11 @@ class BatchEngine:
                 )
             raise e
         finally:
-            # destroy executor proxy if the batch run is not cancelled
-            # TODO: add a lock to avoid destroy proxy twice
-            if not self._is_canceled:
-                self._executor_proxy.destroy()
+            self._executor_proxy.destroy()
 
     def cancel(self):
         """Cancel the batch run"""
         self._is_canceled = True
-        self._executor_proxy.destroy()
 
     async def _exec_batch(
         self,
@@ -194,17 +191,25 @@ class BatchEngine:
     ) -> List[LineResult]:
         line_results = []
         total_lines = len(batch_inputs)
-        # TODO: concurrent calls to exec_line instead of for loop
-        for i, each_line_input in enumerate(batch_inputs):
-            # TODO: catch line run failed to avoid one line break others
-            line_result = await self._executor_proxy.exec_line_async(each_line_input, i, run_id=run_id)
-            for node_run in line_result.node_run_infos.values():
-                self._storage.persist_node_run(node_run)
-            self._storage.persist_flow_run(line_result.run_info)
-            line_results.append(line_result)
+        exec_tasks = [self._create_exec_line_task(line_inputs, i, run_id) for i, line_inputs in enumerate(batch_inputs)]
+        while len(line_results) < total_lines and not self._is_canceled:
+            done, exec_tasks = await asyncio.wait(exec_tasks, return_when=asyncio.FIRST_COMPLETED)
+            line_results.extend([task.result() for task in done])
             # log the progress of the batch run
             log_progress(self._start_time, bulk_logger, len(line_results), total_lines)
-        return line_results
+        if self._is_canceled:
+            for task in exec_tasks:
+                task.cancel()
+        return sorted(line_results, key=lambda r: r.run_info.index)
+
+    def _create_exec_line_task(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+    ):
+        task = self._executor_proxy.exec_line_async(inputs, index, run_id)
+        return asyncio.get_event_loop().create_task(task)
 
     async def _exec_aggregation_internal(
         self,
