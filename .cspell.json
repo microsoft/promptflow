@@ -77,7 +77,8 @@
     "pfbytes",
     "Apim",
     "junit",
-    "nunit"
+    "nunit",
+    "fspath"
   ],
   "ignoreWords": [
     "openmpi",

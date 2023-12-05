@@ -44,17 +44,6 @@ class VSCodePytestError(Exception):
 ERRORS = []
 
 
-def pytest_internalerror(excrepr, excinfo):
-    """A pytest hook that is called when an internal error occurs.
-
-    Keyword arguments:
-    excrepr -- the exception representation.
-    excinfo -- the exception information of type ExceptionInfo.
-    """
-    # call.excinfo.exconly() returns the exception as a string.
-    ERRORS.append(excinfo.exconly() + "\n Check Python Test Logs for more details.")
-
-
 def pytest_exception_interact(node, call, report):
     """A pytest hook that is called when an exception is raised which could be handled.
 
