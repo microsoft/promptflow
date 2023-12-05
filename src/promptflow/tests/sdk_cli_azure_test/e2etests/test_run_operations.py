@@ -35,8 +35,10 @@ FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
+# TODO(2770419): make this dynamic created during migrate live test to canary
+FAILED_RUN_NAME_EASTUS = "3dfd077a-f071-443e-9c4e-d41531710950"
 
-# TODO(2528577): we should run these test with recording mode.
+
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures(
@@ -352,14 +354,14 @@ class TestFlowRun:
     def test_stream_failed_run_logs(self, pf, capfd: pytest.CaptureFixture):
         # (default) raise_on_error=True
         with pytest.raises(InvalidRunStatusError):
-            pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
+            pf.stream(run=FAILED_RUN_NAME_EASTUS)
         # raise_on_error=False
-        pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950", raise_on_error=False)
+        pf.stream(run=FAILED_RUN_NAME_EASTUS, raise_on_error=False)
         out, _ = capfd.readouterr()
         assert "Input 'question' in line 0 is not provided for flow 'Simple_mock_answer'." in out
 
     def test_failed_run_to_dict_exclude(self, pf):
-        failed_run = pf.runs.get(run="3dfd077a-f071-443e-9c4e-d41531710950")
+        failed_run = pf.runs.get(run=FAILED_RUN_NAME_EASTUS)
         # Azure run object reference a dict, use deepcopy to avoid unexpected modification
         default = copy.deepcopy(failed_run._to_dict())
         exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
