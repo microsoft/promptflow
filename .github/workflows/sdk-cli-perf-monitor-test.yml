@@ -6,8 +6,9 @@ name: sdk-cli-perf-monitor-test
 
 on:
   pull_request:
-    branches:
-      - main
+    paths:
+      - src/promptflow/**
+      - scripts/building/**
 
   schedule:
     - cron: "0 */6 * * *"  # Run every 6 hours
