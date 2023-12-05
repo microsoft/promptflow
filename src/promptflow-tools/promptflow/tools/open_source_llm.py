@@ -1033,8 +1033,9 @@ class OpenSourceLLM(ToolProvider):
                                 ep.endpoint_key,
                                 d.model_family)
 
-        message = """Invalid endpoint and deployment values.
-Please ensure endpoint name and deployment names are correct, and the deployment was successfull."""
+        message = f"""Invalid endpoint and deployment values.
+Please ensure endpoint name and deployment names are correct, and the deployment was successfull.
+Could not find endpoint: {endpoint_name} and deployment: {deployment_name}"""
         raise OpenSourceLLMUserError(message=message)
 
     def sanitize_endpoint_url(self,
