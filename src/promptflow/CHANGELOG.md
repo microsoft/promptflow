@@ -5,6 +5,7 @@
 ### Bugs Fixed
 
 - [SDK/CLI] Removing telemetry warning when running commands.
+- Empty node stdout & stderr to avoid large visualize HTML.
 
 ## 1.1.1 (2023.12.1)
 
