@@ -75,6 +75,4 @@ jobs:
             -p promptflow `
             -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
             -l eastus `
-            -m "perf_monitor_test" `
-            -n ${{ steps.cpu-cores.outputs.count }} `
-            --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
+            -m "perf_monitor_test"
