@@ -24,5 +24,5 @@ class TestBatchEngine:
         assert isinstance(e.value.inner_exception, Exception)
         assert e.value.error_codes == ["SystemError", "UnexpectedError"]
         assert (
-            e.value.message == "Unexpected error occurred while executing the batch run. The error details: test error."
+            e.value.message == "Unexpected error occurred while executing the batch run. Error: (Exception) test error."
         )

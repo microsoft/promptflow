@@ -152,9 +152,9 @@ class BatchEngine:
                 unexpected_error = UnexpectedError(
                     target=ErrorTarget.BATCH,
                     message_format=(
-                        "Unexpected error occurred while executing the batch run. The error details: {error_message}."
+                        "Unexpected error occurred while executing the batch run. Error: {error_type_and_message}."
                     ),
-                    error_message=str(e),
+                    error_type_and_message=f"({e.__class__.__name__}) {e}",
                 )
                 raise unexpected_error from e
         finally:
