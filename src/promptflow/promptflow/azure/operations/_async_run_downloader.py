@@ -54,7 +54,7 @@ class AsyncRunDownloader:
 
                 async_tasks = [
                     # put async functions in tasks to run in coroutines
-                    self._download_run_input_output_and_snapshot(client),
+                    self._download_artifacts_and_snapshot(client),
                 ]
                 sync_tasks = [
                     # below functions are actually synchronous functions in order to reuse code,
@@ -73,7 +73,7 @@ class AsyncRunDownloader:
 
         return self.output_folder.resolve().as_posix()
 
-    async def _download_run_input_output_and_snapshot(self, httpx_client: httpx.AsyncClient):
+    async def _download_artifacts_and_snapshot(self, httpx_client: httpx.AsyncClient):
         run_data = await self._get_run_data_from_run_history(httpx_client)
 
         logger.debug("Parsing run data from run history to get necessary information.")
