@@ -2,6 +2,9 @@
 
 ## 1.2.0 (upcoming)
 
+### Features Added
+- [SDK/CLI] Support `pfazure run download` to download run data from Azure AI.
+
 ### Bugs Fixed
 
 - [SDK/CLI] Removing telemetry warning when running commands.

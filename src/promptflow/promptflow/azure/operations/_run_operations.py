@@ -9,6 +9,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -1000,26 +1001,35 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         location = self._workspace.location
         return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{run._flow_name}"
 
-    def download(self, run: Union[str, Run], output_folder: Optional[Union[str, Path]] = None) -> str:
+    def download(
+        self, run: Union[str, Run], output: Optional[Union[str, Path]] = None, overwrite: Optional[bool] = False
+    ) -> str:
         """Download the data of a run, including input, output, snapshot and other run information.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
-        :param output_folder: The output directory
-        :type output_folder: Optional[str]
+        :param output: The output directory. Default to be current working directory if not specified.
+        :type output: Optional[str]
+        :param overwrite: Whether to overwrite the existing run folder. Default to be False.
+        :type overwrite: Optional[bool]
         :return: The run directory path
         :rtype: str
         """
         import platform
 
         run = Run._validate_and_return_run_name(run)
-        output_directory = Path(".") if output_folder is None else Path(output_folder)
+        output_directory = Path(".") if output is None else Path(output)
 
         run_folder = output_directory / run
         if run_folder.exists():
-            raise UserErrorException(
-                f"Run folder {run_folder.resolve().as_posix()!r} already exists, please specify a new output path."
-            )
+            if overwrite is True:
+                logger.warning("Removing existing run folder %r.", run_folder.resolve().as_posix())
+                shutil.rmtree(run_folder)
+            else:
+                raise UserErrorException(
+                    f"Run folder {run_folder.resolve().as_posix()!r} already exists, please specify a new output path "
+                    f"or set the overwrite flag to be true."
+                )
         run_folder.mkdir(parents=True)
 
         run_downloader = AsyncRunDownloader(run=run, run_ops=self, output_folder=run_folder)
@@ -1028,5 +1038,5 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(run_downloader.download())
-        logger.info(f"Successfully downloaded run {run!r} to {run_folder.resolve().as_posix()!r}.")
+        print(f"Successfully downloaded run {run!r} to {run_folder.resolve().as_posix()!r}.")
         return run_folder.resolve().as_posix()

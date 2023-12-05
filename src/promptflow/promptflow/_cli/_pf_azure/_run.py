@@ -15,6 +15,7 @@ from promptflow._cli._params import (
     add_param_max_results,
     add_param_output,
     add_param_output_format,
+    add_param_overwrite,
     add_param_run_name,
     add_param_set,
     add_param_verbose,
@@ -366,6 +367,7 @@ pfazure run download --name <name> --output <output-folder-path>
     add_params = [
         add_param_run_name,
         add_param_output,
+        add_param_overwrite,
         _set_workspace_argument_for_subparsers,
     ] + base_params
 
@@ -563,4 +565,4 @@ def update_run(
 @exception_handler("Download run")
 def download_run(args: argparse.Namespace):
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
-    pf.runs.download(run=args.name, output_folder=args.output)
+    pf.runs.download(run=args.name, output=args.output, overwrite=args.overwrite)

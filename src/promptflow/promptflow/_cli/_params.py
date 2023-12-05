@@ -56,20 +56,20 @@ def add_param_ua(parser):
 
 
 def add_param_flow_display_name(parser):
-    parser.add_argument("--flow", type=str, required=True, help="the flow name to create.")
+    parser.add_argument("--flow", type=str, required=True, help="The flow name to create.")
 
 
 def add_param_entry(parser):
-    parser.add_argument("--entry", type=str, help="the entry file.")
+    parser.add_argument("--entry", type=str, help="The entry file.")
 
 
 def add_param_function(parser):
-    parser.add_argument("--function", type=str, help="the function name in entry file.")
+    parser.add_argument("--function", type=str, help="The function name in entry file.")
 
 
 def add_param_prompt_template(parser):
     parser.add_argument(
-        "--prompt-template", action=AppendToDictAction, help="the prompt template parameter and assignment.", nargs="+"
+        "--prompt-template", action=AppendToDictAction, help="The prompt template parameter and assignment.", nargs="+"
     )
 
 
@@ -146,58 +146,30 @@ def add_param_inputs(parser):
     )
 
 
-def add_param_input(parser):
-    parser.add_argument(
-        "--input", type=str, required=True, help="the input file path. Note that we accept jsonl file only for now."
-    )
-
-
 def add_param_env(parser):
     parser.add_argument(
         "--env",
         type=str,
         default=None,
-        help="the dotenv file path containing the environment variables to be used in the flow.",
+        help="The dotenv file path containing the environment variables to be used in the flow.",
     )
 
 
 def add_param_output(parser):
-    parser.add_argument("-o", "--output", type=str, help="the output directory to store the results.")
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="The output directory to store the results. Default to be current working directory if not specified.",
+    )
 
 
-def add_param_flow(parser):
-    parser.add_argument("--flow", type=str, required=True, help="the evaluation flow to be used.")
+def add_param_overwrite(parser):
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite the existing results.")
 
 
 def add_param_source(parser):
     parser.add_argument("--source", type=str, required=True, help="The flow or run source to be used.")
-
-
-def add_param_bulk_run_output(parser):
-    parser.add_argument("--bulk-run-output", type=str, help="the output directory of the bulk run.")
-
-
-def add_param_eval_output(parser):
-    parser.add_argument("--eval-output", type=str, help="the output file path of the evaluation result.")
-
-
-def add_param_column_mapping(parser):
-    parser.add_argument(
-        "--column-mapping", type=str, required=True, help="the column mapping to be used in the evaluation."
-    )
-
-
-def add_param_runtime(parser):
-    parser.add_argument(
-        "--runtime",
-        type=str,
-        default="local",
-        help="Name of your runtime in Azure ML workspace, will run in cloud when runtime is not none.",
-    )
-
-
-def add_param_connection(parser):
-    parser.add_argument("--connection", type=str, help="Name of your connection in Azure ML workspace.")
 
 
 def add_param_run_name(parser):
@@ -206,16 +178,6 @@ def add_param_run_name(parser):
 
 def add_param_connection_name(parser):
     parser.add_argument("-n", "--name", type=str, help="Name of the connection to create.")
-
-
-def add_param_variants(parser):
-    parser.add_argument(
-        "--variants",
-        type=str,
-        nargs="+",
-        help="the variant run ids to be used in the evaluation. Note that we only support one variant for now.",
-        default=[],
-    )
 
 
 def add_param_max_results(parser):

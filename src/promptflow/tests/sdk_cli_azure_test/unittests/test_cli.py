@@ -333,6 +333,7 @@ class TestAzureCli:
             "test_run",
             "--output",
             "fake_output_dir",
+            "--overwrite",
             *operation_scope_args,
         )
         mocked.assert_called_once()
