@@ -56,8 +56,7 @@ jobs:
         uses: SimenB/github-actions-cpu-cores@v1
         id: cpu-cores
 
-      - name: Azure login (non pull_request workflow)
-        if: github.event_name != 'pull_request'
+      - name: Azure login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
