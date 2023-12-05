@@ -4,7 +4,8 @@ from PyInstaller.utils.hooks import copy_metadata
 
 datas = [('../resources/CLI_LICENSE.rtf', '.'), ('../../../../src/promptflow/NOTICE.txt', '.'),
 ('../../../../src/promptflow/promptflow/_sdk/data/executable/', './promptflow/_sdk/data/executable/'),
-('../../../../src/promptflow-tools/promptflow/tools/', './promptflow/tools/')]
+('../../../../src/promptflow-tools/promptflow/tools/', './promptflow/tools/'),
+('./pf.cmd', '.'), ('./pfs.cmd', '.'), ('./pfazure.cmd', '.')]
 
 datas += collect_data_files('streamlit')
 datas += copy_metadata('streamlit')
@@ -12,11 +13,6 @@ datas += collect_data_files('streamlit_quill')
 datas += collect_data_files('promptflow')
 hidden_imports = ['streamlit.runtime.scriptrunner.magic_funcs']
 
-cmd_datas = [
-    ('./pf.cmd', '.'),
-    ('./pfs.cmd', '.'),
-    ('./pfazure.cmd', '.')
-]
 service_hidden_imports = ['win32timezone']
 
 block_cipher = None
@@ -53,6 +49,7 @@ main_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    contents_directory=None,
     icon='../resources/logo32.ico',
     version="./version_info.txt",
 )
@@ -89,6 +86,7 @@ pfsvc_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    contents_directory=None,
     icon='../resources/logo32.ico',
     version="./version_info.txt",
 )
@@ -97,7 +95,7 @@ coll = COLLECT(
     main_exe,
     main_a.binaries,
     main_a.zipfiles,
-    main_a.datas + cmd_datas,
+    main_a.datas,
     pfsvc_exe,
     pfsvc_a.binaries,
     pfsvc_a.zipfiles,
