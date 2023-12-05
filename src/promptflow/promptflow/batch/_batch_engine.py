@@ -30,7 +30,7 @@ from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
-from promptflow.exceptions import PromptflowException
+from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -139,12 +139,24 @@ class BatchEngine:
                 )
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
-            if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
-                bulk_logger.warning("The batch run may have been canceled or encountered other issues.")
-                return BatchResult.create(
-                    self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
+            if isinstance(e, PromptflowException):
+                if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
+                    bulk_logger.warning("The batch run may have been canceled or encountered other issues.")
+                    return BatchResult.create(
+                        self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
+                    )
+                raise e
+            else:
+                # For unexpected error, we need to wrap it to SystemErrorException.
+                # This allows us to see the stack trace inside.
+                unexpected_error = SystemErrorException(
+                    target=ErrorTarget.EXECUTOR,
+                    message_format=(
+                        "Unexpected error occurred while executing the batch run. The error details: {error_message}."
+                    ),
+                    error_message=str(e),
                 )
-            raise e
+                raise unexpected_error from e
         finally:
             # destroy executor proxy if the batch run is not cancelled
             # TODO: add a lock to avoid destroy proxy twice
