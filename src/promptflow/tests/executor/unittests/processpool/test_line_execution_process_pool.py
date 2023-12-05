@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 from pytest_mock import MockFixture
 
-from promptflow._utils.logger_utils import LogContext, bulk_logger
+from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
@@ -87,7 +87,7 @@ def test_fork_mode_parallelism_in_subprocess(
                 mock_logger.info.assert_any_call("Using fork to create new process")
                 mock_logger.info.assert_any_call(
                     f"Calculated process count ({n_process}) by taking the minimum value among the "
-                    f"default worker_count ({pool._worker_count}) and the row count ({nlines})"
+                    f"default worker_count ({pool._DEFAULT_WORKER_COUNT}) and the row count ({nlines})"
                 )
 
 
@@ -145,7 +145,7 @@ def test_spawn_mode_parallelism_in_subprocess(
                         mock_logger.info.assert_any_call(
                             f"Calculated process count ({n_process}) by taking the minimum value among estimated "
                             f"process count ({estimated_available_worker_count}), the row count ({nlines}) and the "
-                            f"default worker count ({pool._worker_count})."
+                            f"default worker count ({pool._DEFAULT_WORKER_COUNT})."
                         )
 
 
@@ -426,22 +426,6 @@ class TestLineExecutionProcessPool:
         p.start()
         p.join()
         assert p.exitcode == 0
-
-    @pytest.mark.parametrize("env_var, expected_use_default, expected_worker_count", [
-        ({}, False, 16),
-        ({'PF_WORKER_COUNT': '5'}, True, 5),
-        ({'PF_WORKER_COUNT': 'invalid'}, False, 16),
-        ({'PF_WORKER_COUNT': '0'}, False, 16)
-    ])
-    def test_worker_count_setting(self, dev_connections, env_var, expected_use_default, expected_worker_count):
-        with patch.dict(os.environ, env_var), patch.object(bulk_logger, 'warning') as mock_warning:
-            line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
-
-            if 'invalid' in env_var.get('PF_WORKER_COUNT', '') or '0' in env_var.get('PF_WORKER_COUNT', ''):
-                mock_warning.assert_called()
-
-            assert line_execution_process_pool._is_pf_worker_count_set_and_valid == expected_use_default
-            assert line_execution_process_pool._worker_count == expected_worker_count
 
 
 class TestGetAvailableMaxWorkerCount:
