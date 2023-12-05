@@ -3,6 +3,10 @@ inputs:
     type: string
     default: hello world
     is_chat_input: false
+  stream:
+    type: bool
+    default: false
+    is_chat_input: false
 outputs:
   joke:
     type: string
@@ -28,6 +32,7 @@ nodes:
     max_tokens: 256
     presence_penalty: 0
     frequency_penalty: 0
+    stream: ${inputs.stream}
     topic: ${inputs.topic}
   provider: AzureOpenAI
   connection: azure_open_ai_connection
