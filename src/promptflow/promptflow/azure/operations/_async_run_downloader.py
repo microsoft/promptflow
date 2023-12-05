@@ -27,7 +27,6 @@ class AsyncRunDownloader:
     """
 
     LOCAL_SNAPSHOT_FOLDER = "snapshot"
-    LOCAL_INPUT_FILE_STEM = "inputs"
     LOCAL_METRICS_FILE_NAME = "metrics.json"
     LOCAL_LOGS_FILE_NAME = "logs.txt"
 
@@ -80,7 +79,6 @@ class AsyncRunDownloader:
         logger.debug("Parsing run data from run history to get necessary information.")
         # extract necessary information from run data
         snapshot_id = run_data["runMetadata"]["properties"]["azureml.promptflow.snapshot_id"]
-        input_data_path = run_data["runMetadata"]["properties"]["azureml.promptflow.input_data"]
         output_data = run_data["runMetadata"]["outputs"].get("debug_info", None)
         if output_data is None:
             logger.warning(
@@ -99,8 +97,7 @@ class AsyncRunDownloader:
 
             async with container_client:
                 tasks = [
-                    self._download_input_data(container_client, input_data_path),
-                    self._download_output_data(httpx_client, container_client, output_asset_id),
+                    self._download_flow_artifacts(httpx_client, container_client, output_asset_id),
                     self._download_snapshot(httpx_client, container_client, snapshot_id),
                 ]
                 await asyncio.gather(*tasks)
@@ -138,17 +135,7 @@ class AsyncRunDownloader:
             json.dump(metrics, f, ensure_ascii=False)
         logger.debug("Downloaded run metrics.")
 
-    async def _download_input_data(self, container_client, input_data):
-        """Download the input data."""
-        logger.debug("Getting input data with container client.")
-        input_path = input_data.split("/paths/")[-1]
-        original_path = Path(input_path)
-        # rename the input data to "inputs.<ext>" when downloading to local
-        local_path = Path(self.output_folder / f"{self.LOCAL_INPUT_FILE_STEM}{original_path.suffix}")
-        blob_client = container_client.get_blob_client(input_path)
-        await self._download_single_blob(blob_client, local_path)
-
-    async def _download_output_data(self, httpx_client: httpx.AsyncClient, container_client, output_data):
+    async def _download_flow_artifacts(self, httpx_client: httpx.AsyncClient, container_client, output_data):
         """Download the output data."""
         asset_path = await self._get_asset_path(httpx_client, output_data)
         await self._download_blob_folder_from_asset_path(container_client, asset_path)

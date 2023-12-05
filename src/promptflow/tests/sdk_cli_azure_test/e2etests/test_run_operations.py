@@ -793,12 +793,11 @@ class TestFlowRun:
         expected_files = [
             AsyncRunDownloader.LOCAL_LOGS_FILE_NAME,
             AsyncRunDownloader.LOCAL_METRICS_FILE_NAME,
-            f"{AsyncRunDownloader.LOCAL_INPUT_FILE_STEM}.jsonl",
             f"{AsyncRunDownloader.LOCAL_SNAPSHOT_FOLDER}/flow.dag.yaml",
         ]
 
         with TemporaryDirectory() as tmp_dir:
-            pf.runs.download(run=run, output_folder=tmp_dir)
+            pf.runs.download(run=run, output=tmp_dir)
             for file in expected_files:
                 assert Path(tmp_dir, run, file).exists()
 
