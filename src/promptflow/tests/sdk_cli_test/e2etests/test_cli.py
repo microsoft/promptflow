@@ -1419,7 +1419,7 @@ class TestCli:
         run_pf_command("tool", "list")
         outerr = capsys.readouterr()
         tools_dict = json.loads(outerr.out)
-        package_tool_name = "promptflow.tools.open_source_llm.OpenSourceLLM.call"
+        package_tool_name = "promptflow.tools.embedding.embedding"
         assert package_tool_name in tools_dict["package"]
 
         # List flow tools and package tools
