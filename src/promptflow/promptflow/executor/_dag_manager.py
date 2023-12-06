@@ -69,7 +69,7 @@ class DAGManager:
                 # If the parameter has no default value, the input will be set to None so that function will not fail.
                 else:
                     logger.warning(
-                        f"The node '{i.value}' referenced by the input '{name}' of the node '{node.name}' "
+                        f"The node '{i.value}' referenced by the input '{name}' of the current node '{node.name}' "
                         "has been bypassed, and no default value is set. Will use 'None' as the value for this input."
                     )
                     results[name] = None
