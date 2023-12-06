@@ -10,7 +10,7 @@ HINT_ACTIVITY_NAME = ["pf.flows.test", "pf.runs.create_or_update", "pfazure.flow
                       "pfazure.runs.create_or_update"]
 
 
-def _get_local_versions():
+def get_local_versions():
     # get locally installed versions
     from promptflow import __version__ as promptflow_version
 
@@ -22,7 +22,7 @@ def get_cached_latest_versions(cached_versions):
     """ Get the latest versions from a cached file"""
     import datetime
 
-    versions = _get_local_versions()
+    versions = get_local_versions()
     if VERSION_UPDATE_TIME in cached_versions:
         version_update_time = datetime.datetime.strptime(cached_versions[VERSION_UPDATE_TIME], '%Y-%m-%d %H:%M:%S.%f')
         if datetime.datetime.now() < version_update_time + datetime.timedelta(days=1):
@@ -30,13 +30,13 @@ def get_cached_latest_versions(cached_versions):
             if cache_versions and cache_versions['local'] == versions['local']:
                 return cache_versions.copy(), True, False
 
-    versions, success = _update_latest_from_pypi(versions)
+    versions, success = update_latest_from_pypi(versions)
     cached_versions['versions'] = versions
     cached_versions[VERSION_UPDATE_TIME] = str(datetime.datetime.now())
     return versions.copy(), success, True
 
 
-def _update_latest_from_pypi(versions):
+def update_latest_from_pypi(versions):
     success = True
     version = get_latest_version_from_pypi(CLI_PACKAGE_NAME)
     if version is None:
