@@ -150,7 +150,6 @@ class Run(YAMLTranslatableMixin):
         self._lineage_id = None
         if self._use_remote_flow:
             self._flow_name = parse_remote_flow_pattern(flow)
-            self._experiment_name = self._flow_name
             self._lineage_id = self._flow_name
         # default run name: flow directory name + timestamp
         self.name = name or self._generate_run_name()
