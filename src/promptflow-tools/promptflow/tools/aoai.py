@@ -121,6 +121,7 @@ class AzureOpenAI(ToolProvider):
         # function_call can be of type str or dict.
         function_call: object = None,
         functions: list = None,
+        response_format: str = None,
         **kwargs,
     ) -> [str, dict]:
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
@@ -141,7 +142,8 @@ class AzureOpenAI(ToolProvider):
             "frequency_penalty": float(frequency_penalty),
             "logit_bias": logit_bias,
             "user": user,
-            "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
+            "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"},
+            "response_format": {"type": response_format} if response_format is not None else None
         }
         if functions is not None:
             validate_functions(functions)
@@ -214,6 +216,7 @@ def chat(
     user: str = "",
     function_call: object = None,
     functions: list = None,
+    response_format: str = None,
     **kwargs,
 ) -> str:
     # chat model is not available in azure openai, so need to set the environment variable.
@@ -232,5 +235,6 @@ def chat(
         user=user,
         function_call=function_call,
         functions=functions,
+        response_format=response_format,
         **kwargs,
     )
