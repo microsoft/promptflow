@@ -76,7 +76,6 @@
             <!-- User Interface -->
         <WixVariable Id="WixUILicenseRtf" Value="$(var.ProductResources)CLI_LICENSE.rtf"/>
 
-        <UIRef Id="WixUI_Minimal"/>
         <UIRef Id="WixUI_ErrorProgressText"/>
 
         <!-- Show message to restart any terminals only if the PATH is changed -->
