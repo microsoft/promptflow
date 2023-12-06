@@ -6,6 +6,7 @@
 
 - [SDK/CLI] Removing telemetry warning when running commands.
 - Empty node stdout & stderr to avoid large visualize HTML.
+- Hide unnecessary fields in run list for better readability.
 
 ## 1.1.1 (2023.12.1)
 
