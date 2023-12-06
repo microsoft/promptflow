@@ -13,14 +13,15 @@ jobs:
     steps:
       - uses: actions/stale@v8
         with:
+          exempt-issue-labels: 'long-term'  # syntax: <label1>,<label2>
           # stale issue/pull request
-          stale-issue-message: "Hi, we're sending this friendly reminder because we haven't heard back from you in 7 days. We need more information about this issue to help address it. Please be sure to give us your input."
+          stale-issue-message: "Hi, we're sending this friendly reminder because we haven't heard back from you in 30 days. We need more information about this issue to help address it. Please be sure to give us your input."
           stale-issue-label: 'no-recent-activity'
           stale-pr-message: "Hi, thank you for your interest in helping to improve the prompt flow experience and for your contribution. We've noticed that there hasn't been recent engagement on this pull request. If this is still an active work stream, please let us know by pushing some changes or leaving a comment."
           stale-pr-label: 'no-recent-activity'
-          days-before-issue-stale: 7
+          days-before-issue-stale: 30
           days-before-pr-stale: 7
           # # close issue/pull request
           # close-pr-message: 'Hi, thank you for your contribution. Since there hasn't been recent engagement, we're going to close this out.'
-          # days-before-issue-close: 14
+          # days-before-issue-close: 7
           # days-before-pr-close: 7
