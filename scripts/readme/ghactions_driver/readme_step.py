@@ -283,7 +283,7 @@ class ReadmeStepsManage:
         schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
         if "tutorials" in workflow_name:
-            path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml ]"
+            path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml, '!examples/flows/integrations/**' ]"
         else:
             if "web_classification" in workflow_name:
                 path_filter = (
