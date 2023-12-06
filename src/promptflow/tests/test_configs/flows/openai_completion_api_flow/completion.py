@@ -40,7 +40,7 @@ def completion(connection: AzureOpenAIConnection, prompt: str, stream: bool) -> 
     else:
         completion = get_client(connection).completions.create(
             prompt=prompt,
-            model="gpt-35-turbo",
+            model="text-ada-001",
             max_tokens=256,
             temperature=0.8,
             top_p=1.0,
