@@ -108,7 +108,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     # make another function for special cases.
     with open(place_to_write.resolve(), "w") as f:
         f.write(content)
-    print(f"Write workflow: {place_to_write.resolve()}")    
+    print(f"Write workflow: {place_to_write.resolve()}")
     output_telemetry.workflow_name = workflow_name
     output_telemetry.name = name
     output_telemetry.gh_working_dir = gh_working_dir
