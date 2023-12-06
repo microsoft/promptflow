@@ -142,7 +142,7 @@ class ToolResolver:
                 raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
             elif node.type is ToolType.PROMPT:
                 return self._resolve_prompt_node(node)
-            elif node.type is ToolType.LLM:
+            elif node.type is ToolType.LLM or node.type is ToolType.MODEL_LLM:
                 return self._resolve_llm_node(node, convert_input_types=convert_input_types)
             elif node.type is ToolType.CUSTOM_LLM:
                 if node.source.type == ToolSourceType.PackageWithPrompt:

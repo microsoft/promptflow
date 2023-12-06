@@ -315,7 +315,7 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
     name = file.stem
     if tool_type == ToolType.PYTHON:
         return generate_python_meta_dict(name, content, path)
-    elif tool_type == ToolType.LLM:
+    elif tool_type == ToolType.LLM or tool_type == ToolType.MODEL_LLM:
         return generate_prompt_meta_dict(name, content, source=path)
     elif tool_type == ToolType.PROMPT:
         return generate_prompt_meta_dict(name, content, prompt_only=True, source=path)
@@ -327,7 +327,7 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
                 "Please choose from available types: {supported_tool_types} and try again."
             ),
             tool_type=tool_type.value,
-            supported_tool_types=",".join([ToolType.PYTHON, ToolType.LLM, ToolType.PROMPT]),
+            supported_tool_types=",".join([ToolType.PYTHON, ToolType.LLM, ToolType.PROMPT, ToolType.MODEL_LLM]),
         )
 
 
