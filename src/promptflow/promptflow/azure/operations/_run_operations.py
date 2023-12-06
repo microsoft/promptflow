@@ -51,6 +51,7 @@ from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_re
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import (
@@ -1045,15 +1046,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-        # when running in notebook, there is already a running event loop, we need to handle this case
-        try:
-            asyncio.get_running_loop()  # Triggers RuntimeError if no running event loop
-            # Create a separate thread so we can block before returning
-            with ThreadPoolExecutor(1) as pool:
-                pool.submit(lambda: asyncio.run(run_downloader.download())).result()
-        except RuntimeError:  # 'RuntimeError: There is no current event loop...'
-            asyncio.run(run_downloader.download())
-
+        async_run_allowing_running_loop(asyncio.run(run_downloader.download()))
         result_path = run_folder.resolve().as_posix()
         logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
         return result_path
