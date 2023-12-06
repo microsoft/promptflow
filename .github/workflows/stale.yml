@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/stale@v8
         with:
+          operations-per-run: 256
           exempt-issue-labels: 'long-term'  # syntax: <label1>,<label2>
           # stale issue/pull request
           stale-issue-message: "Hi, we're sending this friendly reminder because we haven't heard back from you in 30 days. We need more information about this issue to help address it. Please be sure to give us your input."
