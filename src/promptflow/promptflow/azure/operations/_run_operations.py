@@ -47,10 +47,9 @@ from promptflow._sdk._constants import (
     RunStatus,
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
+from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import LoggerFactory

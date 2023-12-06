@@ -36,10 +36,9 @@ from promptflow._sdk._constants import (
     ListViewType,
 )
 from promptflow._sdk._errors import FlowOperationError
+from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk._vendor._asset_utils import traverse_directory
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
