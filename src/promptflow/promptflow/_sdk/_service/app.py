@@ -39,10 +39,12 @@ def create_app():
         log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
         log_file.touch(mode=read_write_by_user(), exist_ok=True)
         handler = logging.FileHandler(filename=log_file)
+        formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
+        handler.setFormatter(formatter)
         app.logger.addHandler(handler)
 
         # Basic error handler
-        @app.errorhandler(Exception)
+        @api.errorhandler(Exception)
         def handle_exception(e):
             if isinstance(e, HTTPException):
                 return e
@@ -51,6 +53,6 @@ def create_app():
                 error_info = e.message
             else:
                 error_info = str(e)
-            return jsonify({"error_message": f"Internal Server Error, {error_info}"}), 500
+            return {"message": "Internal Server Error", "error_message": error_info}, 500
 
     return app, api

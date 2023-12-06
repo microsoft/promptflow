@@ -7,6 +7,7 @@ import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
+import yaml
 from flask import Response, jsonify, make_response, request
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
@@ -73,18 +74,18 @@ class RunSubmit(Resource):
             run_name = run._generate_run_name()
             run_dict["name"] = run_name
         with tempfile.TemporaryDirectory() as temp_dir:
-            run_file = Path(temp_dir) / "batch_run.json"
+            run_file = Path(temp_dir) / "batch_run.yaml"
             with open(run_file, "w") as f:
-                json.dump(run_dict, f)
+                yaml.safe_dump(run_dict, f)
             cmd = f"pf run create --file {run_file}"
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            _, stderr = process.communicate()
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            stdout, _ = process.communicate()
             if process.returncode == 0:
                 run_op = RunOperations()
                 run = run_op.get(name=run_name)
                 return jsonify(run._to_dict())
             else:
-                raise Exception(f"Create batch run failed: {stderr}")
+                raise Exception(f"Create batch run failed: {stdout.decode('utf-8')}")
 
 
 @api.route("/<string:name>")
