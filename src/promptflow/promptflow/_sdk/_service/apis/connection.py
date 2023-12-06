@@ -8,12 +8,11 @@ from flask import jsonify, request
 
 import promptflow._sdk.schemas._connection as connection
 from promptflow._sdk._errors import ConnectionNotFoundError
-from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import local_user_only
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
-from promptflow._utils.context_utils import _change_working_dir
+from promptflow._sdk._configuration import Configuration
 
 api = Namespace("Connections", description="Connections Management")
 
@@ -53,13 +52,12 @@ connection_spec_model = api.model(
 )
 
 
-def get_connection_operation(working_directory=None):
-    if working_directory:
-        with _change_working_dir(working_directory):
-            client = PFClient()
-    else:
-        client = PFClient()
-    return client.connections
+def _get_connection_operation(working_directory=None):
+    from promptflow._sdk._utils import get_connection_operation
+
+    connection_provider = Configuration().get_connection_provider(path=working_directory)
+    connection_operation = get_connection_operation(connection_provider)
+    return connection_operation
 
 
 @api.errorhandler(ConnectionNotFoundError)
@@ -75,7 +73,7 @@ class ConnectionList(Resource):
     @local_user_only
     def get(self):
         args = working_directory_parser.parse_args()
-        connection_op = get_connection_operation(args.working_directory)
+        connection_op = _get_connection_operation(args.working_directory)
         # parse query parameters
         max_results = request.args.get("max_results", default=50, type=int)
         all_results = request.args.get("all_results", default=False, type=bool)
@@ -93,7 +91,7 @@ class Connection(Resource):
     @local_user_only
     def get(self, name: str):
         args = working_directory_parser.parse_args()
-        connection_op = get_connection_operation(args.working_directory)
+        connection_op = _get_connection_operation(args.working_directory)
         connection = connection_op.get(name=name, raise_error=True)
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)
@@ -136,7 +134,7 @@ class ConnectionWithSecret(Resource):
     @local_user_only
     def get(self, name: str):
         args = working_directory_parser.parse_args()
-        connection_op = get_connection_operation(args.working_directory)
+        connection_op = _get_connection_operation(args.working_directory)
         connection = connection_op.get(name=name, with_secrets=True, raise_error=True)
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)

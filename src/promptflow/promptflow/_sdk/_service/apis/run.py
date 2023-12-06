@@ -75,7 +75,7 @@ class RunSubmit(Resource):
             run_dict["name"] = run_name
         with tempfile.TemporaryDirectory() as temp_dir:
             run_file = Path(temp_dir) / "batch_run.yaml"
-            with open(run_file, "w") as f:
+            with open(run_file, "w", encoding="utf-8") as f:
                 yaml.safe_dump(run_dict, f)
             cmd = f"pf run create --file {run_file}"
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

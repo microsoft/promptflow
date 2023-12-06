@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+from logging.handlers import RotatingFileHandler
 
 from flask import Blueprint, Flask, jsonify
 from werkzeug.exceptions import HTTPException
@@ -15,7 +16,7 @@ from promptflow.exceptions import UserErrorException
 
 
 def heartbeat():
-    response = {"sdk_version": get_promptflow_sdk_version()}
+    response = {"promptflow": get_promptflow_sdk_version()}
     return jsonify(response)
 
 
@@ -38,7 +39,8 @@ def create_app():
         app.logger.setLevel(logging.INFO)
         log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
         log_file.touch(mode=read_write_by_user(), exist_ok=True)
-        handler = logging.FileHandler(filename=log_file)
+        # Create a rotating file handler with a max size of 1 MB and keeping up to 1 backup files
+        handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=1)
         formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
         handler.setFormatter(formatter)
         app.logger.addHandler(handler)
