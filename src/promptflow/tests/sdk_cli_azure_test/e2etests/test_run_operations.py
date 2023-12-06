@@ -21,7 +21,6 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
-from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -799,6 +798,8 @@ class TestFlowRun:
 
     @pytest.mark.skipif(condition=not is_live(), reason="need to fix recording")
     def test_download_run(self, pf):
+        from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
+
         run = "c619f648-c809-4545-9f94-f67b0a680706"
 
         expected_files = [

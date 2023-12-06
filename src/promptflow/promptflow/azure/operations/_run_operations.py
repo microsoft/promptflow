@@ -64,7 +64,6 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential
-from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
 from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.exceptions import UserErrorException
 
@@ -1020,6 +1019,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         """
         import platform
 
+        from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
+
         run = Run._validate_and_return_run_name(run)
         if output is None:
             # default to be "~/.promptflow/.runs" folder
@@ -1045,7 +1046,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-        async_run_allowing_running_loop(asyncio.run(run_downloader.download()))
+        async_run_allowing_running_loop(run_downloader.download)
         result_path = run_folder.resolve().as_posix()
         logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
         return result_path
