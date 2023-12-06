@@ -1,3 +1,4 @@
+import os
 import asyncio
 import uuid
 from pathlib import Path
@@ -36,6 +37,7 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
 
 
 def run_batch_in_spawn_or_forkserver(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+    os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
         flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
     )
