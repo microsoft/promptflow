@@ -17,12 +17,15 @@ env:
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
 jobs:
+  id:
+    runs-on: ubuntu-latest
+    steps:
+      - name: workflow run id - ${{ inputs.id }}
+        run: |
+          echo "workflow run id: ${{ inputs.id }}"
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: workflow run id - ${{ inputs.id }}
-      run: |
-        echo "workflow run id: ${{ inputs.id }}"
     - name: checkout
       uses: actions/checkout@v4
     - name: Python Setup - 3.9
@@ -64,7 +67,7 @@ jobs:
           echo "PROMPT_FLOW_TEST_MODE=replay"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
         }
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Display and Set Environment Variables
       run:
         env | sort >> $GITHUB_OUTPUT
@@ -153,7 +156,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Display and Set Environment Variables
       run:
         env | sort >> $GITHUB_OUTPUT
@@ -212,7 +215,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Display and Set Environment Variables
       run:
         env | sort >> $GITHUB_OUTPUT
