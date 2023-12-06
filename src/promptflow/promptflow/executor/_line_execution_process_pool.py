@@ -411,7 +411,7 @@ class LineExecutionProcessPool:
         # based on available memory to avoid memory bursting.
         estimated_available_worker_count = get_available_max_worker_count() if not self._use_fork else None
 
-        # If the environment variable PF_WORKER_COUNT exists ant valid, use the value as the worker_count.
+        # If the environment variable PF_WORKER_COUNT exists and valid, use the value as the worker_count.
         if worker_count is not None and worker_count > 0:
             self._log_set_worker_count(worker_count, estimated_available_worker_count)
             return worker_count
