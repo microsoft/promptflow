@@ -2,7 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
-import time
+import os
+import sys
 import uuid
 from logging import Logger
 from typing import Callable
@@ -15,6 +16,7 @@ from promptflow import load_run
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._telemetry import (
     ActivityType,
     PromptFlowSDKLogHandler,
@@ -87,39 +89,61 @@ class TestTelemetry:
         context.user_agent = context.user_agent.replace("prompt-flow-extension/1.0.0", "")
 
     def test_custom_event(self, pf):
-        from opencensus.ext.azure.log_exporter import AzureEventHandler
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
 
         def log_event(*args, **kwargs):
-            record = kwargs.get("record", None)
+            record = args[0]
             assert record.custom_dimensions is not None
-            assert isinstance(record.custom_dimensions, dict)
-            assert record.custom_dimensions.keys() == {
-                "request_id",
-                "activity_name",
-                "activity_type",
-                "subscription_id",
-                "resource_group_name",
-                "workspace_name",
-                "completion_status",
-                "duration_ms",
-                "level",
-                "python_version",
-                "user_agent",
-                "installation_id",
-            }
-            assert record.msg.startswith("pfazure.runs.get")
-
-        with patch.object(AzureEventHandler, "log_record_to_envelope") as mock_log:
-            mock_log.side_effect = log_event
-            try:
-                pf.runs.get("not_exist")
-            except Exception:
-                pass
             logger = get_telemetry_logger()
             handler = logger.handlers[0]
             assert isinstance(handler, PromptFlowSDKLogHandler)
-            # sleep a while to make sure log thread can finish.
-            time.sleep(20)
+            envelope = handler.log_record_to_envelope(record)
+            custom_dimensions = pydash.get(envelope, "data.baseData.properties")
+            assert isinstance(custom_dimensions, dict)
+            # Note: need privacy review if we add new fields.
+            if "start" in record.message:
+                assert custom_dimensions.keys() == {
+                    "request_id",
+                    "activity_name",
+                    "activity_type",
+                    "subscription_id",
+                    "resource_group_name",
+                    "workspace_name",
+                    "level",
+                    "python_version",
+                    "user_agent",
+                    "installation_id",
+                    "first_call",
+                    "from_ci",
+                }
+            elif "complete" in record.message:
+                assert custom_dimensions.keys() == {
+                    "request_id",
+                    "activity_name",
+                    "activity_type",
+                    "subscription_id",
+                    "resource_group_name",
+                    "workspace_name",
+                    "completion_status",
+                    "duration_ms",
+                    "level",
+                    "python_version",
+                    "user_agent",
+                    "installation_id",
+                    "first_call",
+                    "from_ci",
+                }
+            else:
+                raise ValueError("Invalid message: {}".format(record.message))
+            assert record.message.startswith("pfazure.runs.get")
+
+        with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+            mock_logger.side_effect = log_event
+            # mock_error_logger.side_effect = log_event
+            try:
+                pf.runs.get("not_exist")
+            except RunNotFoundError:
+                pass
 
     def test_default_logging_behavior(self):
         assert is_telemetry_enabled() is True
@@ -262,3 +286,31 @@ class TestTelemetry:
         # 1 and last call is public call
         assert first_sdk_calls[0] is True
         assert first_sdk_calls[-1] is True
+
+    def test_scrub_fields(self):
+        from promptflow import PFClient
+
+        pf = PFClient()
+
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+
+        def log_event(*args, **kwargs):
+            record = args[0]
+            assert record.custom_dimensions is not None
+            logger = get_telemetry_logger()
+            handler = logger.handlers[0]
+            assert isinstance(handler, PromptFlowSDKLogHandler)
+            envelope = handler.log_record_to_envelope(record)
+            # device name removed
+            assert "ai.cloud.roleInstance" not in envelope.tags
+            assert "ai.device.id" not in envelope.tags
+            # role not scrubbed for test scenario
+            assert envelope.tags["ai.cloud.role"] == os.path.basename(sys.argv[0])
+
+        with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+            mock_logger.side_effect = log_event
+            # mock_error_logger.side_effect = log_event
+            try:
+                pf.runs.get("not_exist")
+            except RunNotFoundError:
+                pass
