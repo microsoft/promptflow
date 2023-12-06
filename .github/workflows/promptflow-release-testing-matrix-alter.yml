@@ -142,7 +142,7 @@ jobs:
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+        name: promptflow_sdk_cli_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
         path: ${{ github.workspace }}/*.xml
   promptflow_sdk_cli_azure_tests:
     needs: build
@@ -202,7 +202,7 @@ jobs:
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+        name: promptflow_sdk_cli_azure_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
         path: ${{ github.workspace }}/*.xml
   promptflow_executor_tests:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' || github.event_name == 'pull_request' }}
@@ -261,7 +261,7 @@ jobs:
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
+        name: promptflow_executor_tests Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
         path: ${{ github.workspace }}/*.xml
   publish-test-results:
     name: "Publish Tests Results"
