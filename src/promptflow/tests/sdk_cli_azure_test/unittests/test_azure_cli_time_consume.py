@@ -1,35 +1,14 @@
-import contextlib
 import multiprocessing
 import sys
 import timeit
 from unittest import mock
 import pytest
+from promptflow import VERSION
 from promptflow._core.operation_context import OperationContext
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
-
-
-@contextlib.contextmanager
-def check_ua():
-    cli_perf_monitor_agent = "perf_monitor/1.0"
-    default_context = OperationContext.get_instance()
-    try:
-        instance = OperationContext()
-        OperationContext._current_context.set(instance)
-
-        context = OperationContext.get_instance()
-        context.append_user_agent(cli_perf_monitor_agent)
-        assert cli_perf_monitor_agent in context.get_user_agent()
-        yield
-        assert CLI_USER_AGENT in context.get_user_agent()
-    except Exception as e:
-        raise e
-    finally:
-        OperationContext._current_context.set(default_context)
-        context = OperationContext.get_instance()
-        assert cli_perf_monitor_agent not in context.get_user_agent()
 
 
 def run_cli_command(cmd, time_limit=3600):
@@ -48,13 +27,13 @@ def run_cli_command(cmd, time_limit=3600):
 
         sys.argv = list(cmd)
         st = timeit.default_timer()
-        with check_ua():
+        with mock.patch.object(OperationContext, "get_user_agent") as get_user_agent_fun:
+            # Don't change get_user_agent_fun.return_value, dashboard needs to use.
+            get_user_agent_fun.return_value = f"{CLI_USER_AGENT} promptflow/{VERSION} perf_monitor/1.0"
             main()
         ed = timeit.default_timer()
 
         print(f"{cmd}, \nTotal time: {ed - st}s")
-        context = OperationContext.get_instance()
-        print("request id: ", context.get("request_id"))
         assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
 
 
@@ -78,7 +57,7 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
 
 
 @pytest.mark.usefixtures("mock_get_azure_pf_client")
-@pytest.mark.unittest
+@pytest.mark.perf_monitor_test
 class TestAzureCliTimeConsume:
     def test_pfazure_run_create(self, operation_scope_args, time_limit=30):
         run_cli_command(

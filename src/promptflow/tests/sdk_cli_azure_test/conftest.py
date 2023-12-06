@@ -178,7 +178,7 @@ def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], s
 @pytest.fixture(autouse=not is_live())
 def mock_appinsights_log_handler(mocker: MockerFixture) -> None:
     dummy_logger = logging.getLogger("dummy")
-    mocker.patch("promptflow._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
+    mocker.patch("promptflow._sdk._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
     return
 
 

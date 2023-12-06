@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from _constants import (
+    CLI_PERF_MONITOR_AGENT,
     CONNECTION_FILE,
     DEFAULT_REGISTRY_NAME,
     DEFAULT_RESOURCE_GROUP_NAME,
@@ -15,7 +16,6 @@ from _constants import (
     DEFAULT_SUBSCRIPTION_ID,
     DEFAULT_WORKSPACE_NAME,
     ENV_FILE,
-    CLI_PERF_MONITOR_AGENT,
 )
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
@@ -205,8 +205,3 @@ def runtime_name() -> str:
 @pytest.fixture
 def registry_name() -> str:
     return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)
-
-
-@pytest.fixture(scope="session")
-def cli_perf_monitor_agent() -> str:
-    return CLI_PERF_MONITOR_AGENT

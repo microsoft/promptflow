@@ -19,6 +19,7 @@ from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOL
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
+from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
@@ -31,8 +32,6 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
 
@@ -370,8 +369,8 @@ class FlowOperations(TelemetryMixin):
         *,
         output_dir: Path,
     ):
-        from promptflow.contracts.flow import Flow as ExecutableFlow
         from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
+        from promptflow.contracts.flow import Flow as ExecutableFlow
 
         executable = ExecutableFlow.from_yaml(
             flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent.absolute()
@@ -578,7 +577,7 @@ class FlowOperations(TelemetryMixin):
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
-            update_flow_tools_json=False if is_csharp_flow else True
+            update_flow_tools_json=False if is_csharp_flow else True,
         )
 
         if flow_only:
