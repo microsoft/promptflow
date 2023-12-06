@@ -56,16 +56,6 @@ jobs:
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
-    - name: set test mode
-      shell: pwsh
-      run: |
-        # Windows support of multiprocessing is different from other platforms, mock injections is not working properly in replay mode.
-        # Mac is not stable in replaying test.
-        if (("${{ matrix.os }}" -eq "windows-latest") -or ("${{ matrix.os }}" -eq "macos-latest")) {
-          echo "PROMPT_FLOW_TEST_MODE=live"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-        } else {
-          echo "PROMPT_FLOW_TEST_MODE=replay"  | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-        }
     - name: checkout
       uses: actions/checkout@v4
     - name: Display and Set Environment Variables
@@ -152,7 +142,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     env:
-      PROMPT_FLOW_TEST_MODE: "replay"
+      PROMPT_FLOW_TEST_MODE: "live"
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
