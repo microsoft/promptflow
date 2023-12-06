@@ -2,6 +2,7 @@ import os
 import unittest
 import promptflow
 from base_test import BaseTest
+from promptflow._sdk._errors import InvalidRunStatusError
 
 
 class TestChatWithPDF(BaseTest):
@@ -74,23 +75,23 @@ class TestChatWithPDF(BaseTest):
         data_path = os.path.join(
             self.flow_path, "data/invalid-data-missing-column.jsonl"
         )
-        run = self.create_chat_run(
-            column_mapping={
-                "question": "${data.question}",
-            },
-            data=data_path
-        )
-        self.assertEqual(run.status, "Failed")
+        with self.assertRaises(InvalidRunStatusError):
+            self.create_chat_run(
+                column_mapping={
+                    "question": "${data.question}",
+                },
+                data=data_path
+            )
 
     def test_bulk_run_invalid_mapping(self):
-        run = self.create_chat_run(
-            column_mapping={
-                "question": "${data.question_not_exist}",
-                "pdf_url": "${data.pdf_url}",
-                "chat_history": "${data.chat_history}",
-            }
-        )
-        self.assertEqual(run.status, "Failed")
+        with self.assertRaises(InvalidRunStatusError):
+            self.create_chat_run(
+                column_mapping={
+                    "question": "${data.question_not_exist}",
+                    "pdf_url": "${data.pdf_url}",
+                    "chat_history": "${data.chat_history}",
+                }
+            )
 
 
 if __name__ == "__main__":
