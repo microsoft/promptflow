@@ -1114,6 +1114,40 @@ class TestCli:
                     expect_dict=expected_input,
                 )
 
+    def test_flow_test_inputs_unknown_checks(
+        self, caplog
+    ):
+        logger = logging.getLogger(LOGGER_NAME)
+        logger.propagate = True
+
+        def validate_log(log_msg, prefix, expect_dict):
+            assert False, "[Debug_Validate_Log]" + log_msg
+            #log_inputs = json.loads(log_msg[len(prefix) :].replace("'", '"'))
+            #assert prefix in log_msg
+            #assert expect_dict == log_inputs
+
+        with caplog.at_level(level=logging.INFO, logger=LOGGER_NAME):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                f"inputs.url={TARGET_URL}",
+                "unknown_input=unknown_val",
+                "--node",
+                "fetch_text_content_from_url",
+            )
+            log_msg = ""
+            for record in caplog.records:
+                log_msg += record.message + '\n'
+
+            validate_log(
+                prefix="Unknown input(s) of fetch_text_content_from_url: ",
+                log_msg=log_msg,
+                expect_dict={"unknown_input": "unknown_val"}
+            )
+
     def test_flow_build(self):
         source = f"{FLOWS_DIR}/web_classification_with_additional_include/flow.dag.yaml"
         output_path = "dist"
