@@ -589,14 +589,16 @@ def get_available_max_worker_count():
         # 2. When the degree of parallelism is 1, main process executes the task directly and not
         #  create the child process
         bulk_logger.warning(
-            f"Available max worker count {estimated_available_worker_count} is less than 1, set it to 1.")
+            f"Current system's available memory is {available_memory}MB, less than the memory "
+            f"{process_memory}MB required by the process. The maximum available worker count is 1.")
         estimated_available_worker_count = 1
-    bulk_logger.info(
-        f"Current system's available memory is {available_memory}MB, "
-        f"memory consumption of current process is {process_memory}MB, "
-        f"estimated available worker count is {available_memory}/{process_memory} "
-        f"= {estimated_available_worker_count}"
-    )
+    else:
+        bulk_logger.info(
+            f"Current system's available memory is {available_memory}MB, "
+            f"memory consumption of current process is {process_memory}MB, "
+            f"estimated available worker count is {available_memory}/{process_memory} "
+            f"= {estimated_available_worker_count}"
+        )
     return estimated_available_worker_count
 
 
