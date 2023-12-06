@@ -171,7 +171,7 @@ def variant_overwrite_context(
             overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
             overwrite_flow(flow_dag, overrides)
             flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
-            flow = Flow(code=flow_dir_path, path=flow_path)
+            flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
             yield flow
 
 
@@ -198,7 +198,20 @@ class SubmitterHelper:
         )
 
     @staticmethod
-    def resolve_connection_names_from_tool_meta(tools_meta: dict):
+    def resolve_connection_names_from_tool_meta(tools_meta: dict, flow_dag: dict,):
+        connection_names = set({})
+        tool_names = set({})
+        if tools_meta:
+            packages = tools_meta.get("package", {})
+            for key, pkg in packages.items():
+                inputs = pkg.get("inputs", {})
+                if "connection" in inputs and inputs["connection"].get("type", []) == ["object"]:
+                    tool_names.add(key)
+            nodes = flow_dag.get("nodes", [])
+            for node in nodes:
+                if node.get("source", {}).get("tool", "") in tool_names:
+                    connection_names.add(node["inputs"]["connection"])
+            return list(connection_names)
         return []
 
     @classmethod

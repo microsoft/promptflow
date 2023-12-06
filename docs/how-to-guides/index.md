@@ -10,6 +10,7 @@ init-and-test-a-flow
 add-conditional-control-to-a-flow
 run-and-evaluate-a-flow/index
 tune-prompts-with-variants
+execute-flow-as-a-function
 deploy-a-flow/index
 enable-streaming-mode
 manage-connections

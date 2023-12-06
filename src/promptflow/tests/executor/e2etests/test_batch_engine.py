@@ -1,27 +1,26 @@
+import asyncio
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.utils import dump_list_to_jsonl
-from promptflow.batch import BatchEngine
+from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._errors import EmptyInputsData
-from promptflow.contracts.run_info import FlowRunInfo
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo
+from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
-from promptflow.executor._result import BatchResult, LineResult
-from promptflow.storage import AbstractRunStorage
 
 from ..utils import (
+    MemoryRunStorage,
     get_flow_expected_metrics,
     get_flow_expected_status_summary,
     get_flow_folder,
     get_flow_inputs_file,
     get_flow_sample_inputs,
     get_yaml_file,
+    load_jsonl,
 )
 
 SAMPLE_FLOW = "web_classification_no_variants"
@@ -29,18 +28,10 @@ SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
 
 
-class MemoryRunStorage(AbstractRunStorage):
-    def __init__(self):
-        self._node_runs = {}
-        self._flow_runs = {}
-
-    def persist_flow_run(self, run_info: FlowRunInfo):
-        run_info.result = None
-        self._flow_runs[run_info.run_id] = run_info
-
-    def persist_node_run(self, run_info: NodeRunInfo):
-        run_info.result = None
-        self._node_runs[run_info.run_id] = run_info
+async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
+    batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=connections)
+    await asyncio.sleep(1)
+    return batch_result
 
 
 def submit_batch_run(
@@ -82,19 +73,11 @@ class TestBatch:
         )
 
         nlines = get_batch_inputs_line(SAMPLE_FLOW)
-        msg = f"Only {len(batch_result.line_results)}/{nlines} lines are returned."
-        assert len(batch_result.line_results) == nlines, msg
-        for line_result in batch_result.line_results:
-            flow_run_info = line_result.run_info
-            msg = f"Flow run {flow_run_info.run_id} is not persisted in memory storage."
-            assert flow_run_info.run_id in mem_run_storage._flow_runs, msg
-            for node_name, node_run_info in line_result.node_run_infos.items():
-                msg = f"Node run {node_run_info.run_id} is not persisted in memory storage."
-                assert node_run_info.run_id in mem_run_storage._node_runs, msg
-                run_info_in_mem = mem_run_storage._node_runs[node_run_info.run_id]
-                assert serialize(node_run_info) == serialize(run_info_in_mem)
-                msg = f"Node run name {node_run_info.node} is not correct, expected {node_name}"
-                assert mem_run_storage._node_runs[node_run_info.run_id].node == node_name
+        assert batch_result.total_lines == nlines
+        assert batch_result.completed_lines == nlines
+        assert len(mem_run_storage._flow_runs) == nlines
+        assert all(flow_run_info.status == Status.Completed for flow_run_info in mem_run_storage._flow_runs.values())
+        assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
 
     @pytest.mark.parametrize(
         "flow_folder, inputs_mapping",
@@ -118,27 +101,30 @@ class TestBatch:
         ],
     )
     def test_batch_run(self, flow_folder, inputs_mapping, dev_connections):
-        batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
+        batch_result, output_dir = submit_batch_run(
+            flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
+        )
+
         assert isinstance(batch_result, BatchResult)
         nlines = get_batch_inputs_line(flow_folder)
-        msg = f"Bulk result only has {len(batch_result.line_results)}/{nlines} outputs"
-        assert len(batch_result.outputs) == nlines, msg
-        for i, output in enumerate(batch_result.outputs):
+        assert batch_result.total_lines == nlines
+        assert batch_result.completed_lines == nlines
+        assert batch_result.start_time < batch_result.end_time
+        assert batch_result.system_metrics.duration > 0
+
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == nlines
+        for i, output in enumerate(outputs):
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-        msg = f"Bulk result only has {len(batch_result.line_results)}/{nlines} line results"
-        assert len(batch_result.outputs) == nlines, msg
-        for i, line_result in enumerate(batch_result.line_results):
-            assert isinstance(line_result, LineResult)
-            assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
     def test_batch_run_then_eval(self, dev_connections):
         batch_resutls, output_dir = submit_batch_run(
             SAMPLE_FLOW, {"url": "${data.url}"}, connections=dev_connections, return_output_dir=True
         )
         nlines = get_batch_inputs_line(SAMPLE_FLOW)
-        assert len(batch_resutls.outputs) == nlines
+        assert batch_resutls.completed_lines == nlines
 
         input_dirs = {"data": get_flow_inputs_file(SAMPLE_FLOW, file_name="samples.json"), "run.outputs": output_dir}
         inputs_mapping = {
@@ -147,7 +133,7 @@ class TestBatch:
             "prediction": "${run.outputs.category}",
         }
         eval_result = submit_batch_run(SAMPLE_EVAL_FLOW, inputs_mapping, input_dirs=input_dirs)
-        assert len(eval_result.outputs) == nlines, f"Only {len(eval_result.outputs)}/{nlines} outputs are returned."
+        assert eval_result.completed_lines == nlines, f"Only returned {eval_result.completed_lines}/{nlines} outputs."
         assert len(eval_result.metrics) > 0, "No metrics are returned."
         assert eval_result.metrics["accuracy"] == 0, f"Accuracy should be 0, got {eval_result.metrics}."
 
@@ -162,50 +148,63 @@ class TestBatch:
         assert isinstance(batch_results, BatchResult)
         assert isinstance(batch_results.metrics, dict)
         assert batch_results.metrics == get_flow_expected_metrics(flow_folder)
-        status_summary = batch_results.get_status_summary()
-        assert status_summary == get_flow_expected_status_summary(flow_folder)
+        assert batch_results.total_lines == batch_results.completed_lines
+        assert batch_results.node_status == get_flow_expected_status_summary(flow_folder)
 
     def test_batch_with_partial_failure(self, dev_connections):
         flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
         inputs_mapping = {"idx": "${data.idx}", "mod": "${data.mod}", "mod_2": "${data.mod_2}"}
         batch_results = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
         assert isinstance(batch_results, BatchResult)
-        status_summary = batch_results.get_status_summary()
-        assert status_summary == get_flow_expected_status_summary(flow_folder)
+        assert batch_results.total_lines == 10
+        assert batch_results.completed_lines == 5
+        assert batch_results.failed_lines == 5
+        assert batch_results.node_status == get_flow_expected_status_summary(flow_folder)
 
     def test_batch_with_line_number(self, dev_connections):
         flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
         input_dirs = {"data": "inputs/data.jsonl", "output": "inputs/output.jsonl"}
         inputs_mapping = {"idx": "${output.idx}", "mod": "${data.mod}", "mod_2": "${data.mod_2}"}
-        batch_results = submit_batch_run(
-            flow_folder, inputs_mapping, input_dirs=input_dirs, connections=dev_connections
+        batch_results, output_dir = submit_batch_run(
+            flow_folder, inputs_mapping, input_dirs=input_dirs, connections=dev_connections, return_output_dir=True
         )
         assert isinstance(batch_results, BatchResult)
-        assert len(batch_results.outputs) == 2
-        assert batch_results.outputs == [
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == 2
+        assert outputs == [
             {"line_number": 0, "output": 1},
             {"line_number": 6, "output": 7},
         ]
 
     def test_batch_with_openai_metrics(self, dev_connections):
         inputs_mapping = {"url": "${data.url}"}
-        batch_result = submit_batch_run(SAMPLE_FLOW, inputs_mapping, connections=dev_connections)
+        batch_result, output_dir = submit_batch_run(
+            SAMPLE_FLOW, inputs_mapping, connections=dev_connections, return_output_dir=True
+        )
         nlines = get_batch_inputs_line(SAMPLE_FLOW)
-        assert len(batch_result.outputs) == nlines
-        openai_metrics = batch_result.get_openai_metrics()
-        assert "total_tokens" in openai_metrics
-        assert openai_metrics["total_tokens"] > 0
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == nlines
+        assert batch_result.system_metrics.total_tokens > 0
+        assert batch_result.system_metrics.prompt_tokens > 0
+        assert batch_result.system_metrics.completion_tokens > 0
 
     def test_batch_with_default_input(self):
+        mem_run_storage = MemoryRunStorage()
         default_input_value = "input value from default"
         inputs_mapping = {"text": "${data.text}"}
-        batch_result = submit_batch_run("default_input", inputs_mapping)
+        batch_result, output_dir = submit_batch_run(
+            "default_input", inputs_mapping, storage=mem_run_storage, return_output_dir=True
+        )
+        assert batch_result.total_lines == batch_result.completed_lines
 
-        assert batch_result.line_results[0].run_info.status == Status.Completed
-        assert batch_result.line_results[0].output["output"] == default_input_value
-        bulk_aggregate_node = batch_result.aggr_results.node_run_infos["aggregate_node"]
-        assert bulk_aggregate_node.status == Status.Completed
-        assert bulk_aggregate_node.output == [default_input_value]
+        outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+        assert len(outputs) == 1
+        assert outputs[0]["output"] == default_input_value
+        assert all(
+            node_run_info.status == Status.Completed and node_run_info.output == [default_input_value]
+            for node_run_info in mem_run_storage._node_runs.values()
+            if node_run_info.node == "aggregate_node"
+        )
 
     @pytest.mark.parametrize(
         "flow_folder, batch_input, expected_type",
@@ -216,12 +215,16 @@ class TestBatch:
         ],
     )
     def test_batch_run_line_result(self, flow_folder, batch_input, expected_type):
+        mem_run_storage = MemoryRunStorage()
         input_file = Path(mkdtemp()) / "inputs.jsonl"
         dump_list_to_jsonl(input_file, batch_input)
         input_dirs = {"data": input_file}
         inputs_mapping = {"text": "${data.text}"}
-        batch_results = submit_batch_run(flow_folder, inputs_mapping, input_dirs=input_dirs)
-        assert type(batch_results.line_results[0].run_info.inputs["text"]) is expected_type
+        batch_results = submit_batch_run(flow_folder, inputs_mapping, input_dirs=input_dirs, storage=mem_run_storage)
+        assert isinstance(batch_results, BatchResult)
+        assert all(
+            type(flow_run_info.inputs["text"]) is expected_type for flow_run_info in mem_run_storage._flow_runs.values()
+        )
 
     @pytest.mark.parametrize(
         "flow_folder, input_mapping, error_class, error_message",
@@ -245,3 +248,10 @@ class TestBatch:
         with pytest.raises(error_class) as e:
             submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
         assert error_message in e.value.message
+
+    def test_batch_run_in_existing_loop(self, dev_connections):
+        flow_folder = "prompt_tools"
+        inputs_mapping = {"text": "${data.text}"}
+        batch_result = asyncio.run(async_submit_batch_run(flow_folder, inputs_mapping, dev_connections))
+        assert isinstance(batch_result, BatchResult)
+        assert batch_result.total_lines == batch_result.completed_lines

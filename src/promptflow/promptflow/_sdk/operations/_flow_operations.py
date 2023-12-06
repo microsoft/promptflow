@@ -14,9 +14,12 @@ from typing import Dict, Iterable, List, Tuple, Union
 
 import yaml
 
-from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, LOCAL_MGMT_DB_PATH
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
+from promptflow._sdk._submitter.utils import SubmitterHelper
+from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
@@ -27,9 +30,8 @@ from promptflow._sdk._utils import (
     generate_random_string,
     parse_variant,
 )
+from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
 
@@ -130,7 +132,7 @@ class FlowOperations(TelemetryMixin):
         from promptflow._constants import FlowLanguage
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
 
-        if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.Csharp:
+        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
                 is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
                 flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
@@ -367,6 +369,7 @@ class FlowOperations(TelemetryMixin):
         *,
         output_dir: Path,
     ):
+        from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
         executable = ExecutableFlow.from_yaml(
@@ -374,10 +377,23 @@ class FlowOperations(TelemetryMixin):
         )
 
         with _change_working_dir(flow_dag_path.parent):
-            return self._migrate_connections(
-                connection_names=executable.get_connection_names(),
-                output_dir=output_dir,
-            )
+            if executable.program_language == FlowLanguage.CSharp:
+                connection_names = SubmitterHelper.resolve_connection_names_from_tool_meta(
+                    tools_meta=CSharpExecutorProxy.generate_tool_metadata(
+                        working_dir=flow_dag_path.parent.absolute(),
+                    ),
+                    flow_dag=executable.serialize(),
+                )
+
+                return self._migrate_connections(
+                    connection_names=connection_names,
+                    output_dir=output_dir,
+                )
+            else:
+                return self._migrate_connections(
+                    connection_names=executable.get_connection_names(),
+                    output_dir=output_dir,
+                )
 
     def _build_flow(
         self,
@@ -416,6 +432,7 @@ class FlowOperations(TelemetryMixin):
         env_var_names: List[str],
         connection_paths: List[Path],
         flow_name: str,
+        is_csharp_flow: bool = False,
     ):
         (output_dir / "settings.json").write_text(
             data=json.dumps({env_var_name: "" for env_var_name in env_var_names}, indent=2),
@@ -425,8 +442,12 @@ class FlowOperations(TelemetryMixin):
         environment_config = self._build_environment_config(flow_dag_path)
 
         # TODO: make below strings constants
+        if is_csharp_flow:
+            source = Path(__file__).parent.parent / "data" / "docker_csharp"
+        else:
+            source = Path(__file__).parent.parent / "data" / "docker"
         copy_tree_respect_template_and_ignore_file(
-            source=Path(__file__).parent.parent / "data" / "docker",
+            source=source,
             target=output_dir,
             render_context={
                 "env": environment_config,
@@ -531,10 +552,11 @@ class FlowOperations(TelemetryMixin):
         :return: no return
         :rtype: None
         """
-        output_dir = Path(output)
+        output_dir = Path(output).absolute()
         output_dir.mkdir(parents=True, exist_ok=True)
 
         flow = load_flow(flow)
+        is_csharp_flow = flow.dag.get(LANGUAGE_KEY, "") == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
             raise ValueError(f"Unsupported export format: {format}")
@@ -555,6 +577,7 @@ class FlowOperations(TelemetryMixin):
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
+            update_flow_tools_json=False if is_csharp_flow else True,
         )
 
         if flow_only:
@@ -573,6 +596,7 @@ class FlowOperations(TelemetryMixin):
                 connection_paths=connection_paths,
                 flow_name=flow.name,
                 env_var_names=env_var_names,
+                is_csharp_flow=is_csharp_flow,
             )
         elif format == "executable":
             self._build_as_executable(
@@ -609,18 +633,18 @@ class FlowOperations(TelemetryMixin):
         :rtype: ValidationResult
         """
 
-        flow = load_flow(source=flow)
+        flow_entity: ProtectedFlow = load_flow(source=flow)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
-        validation_result = flow._validate()
+        validation_result = flow_entity._validate()
 
         source_path_mapping = {}
         flow_tools, tools_errors = self._generate_tools_meta(
-            flow=flow.flow_dag_path,
+            flow=flow_entity.flow_dag_path,
             source_path_mapping=source_path_mapping,
         )
 
-        flow.tools_meta_path.write_text(
+        flow_entity.tools_meta_path.write_text(
             data=json.dumps(flow_tools, indent=4),
             encoding=DEFAULT_ENCODING,
         )
@@ -634,21 +658,23 @@ class FlowOperations(TelemetryMixin):
                     )
 
         # flow in control plane is read-only, so resolve location makes sense even in SDK experience
-        validation_result.resolve_location_for_diagnostics(flow.flow_dag_path)
+        validation_result.resolve_location_for_diagnostics(flow_entity.flow_dag_path.as_posix())
 
-        flow._try_raise(
+        flow_entity._try_raise(
             validation_result,
             raise_error=raise_error,
         )
 
         return validation_result
 
+    @monitor_operation(activity_name="pf.flows._generate_tools_meta", activity_type=ActivityType.INTERNALCALL)
     def _generate_tools_meta(
         self,
         flow: Union[str, PathLike],
         *,
         source_name: str = None,
         source_path_mapping: Dict[str, List[str]] = None,
+        timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
     ) -> Tuple[dict, dict]:
         """Generate flow tools meta for a specific flow or a specific node in the flow.
 
@@ -663,12 +689,14 @@ class FlowOperations(TelemetryMixin):
         :param source_name: source name to generate tools meta. If not specified, generate tools meta for all sources.
         :type source_name: str
         :param source_path_mapping: If passed in None, do nothing; if passed in a dict, will record all reference yaml
-                                    paths for each source.
+                                    paths for each source in the dict passed in.
         :type source_path_mapping: Dict[str, List[str]]
+        :param timeout: timeout for generating tools meta
+        :type timeout: int
         :return: dict of tools meta and dict of tools errors
         :rtype: Tuple[dict, dict]
         """
-        flow = load_flow(source=flow)
+        flow: ProtectedFlow = load_flow(source=flow)
 
         with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(
@@ -679,6 +707,7 @@ class FlowOperations(TelemetryMixin):
                 target_source=source_name,
                 used_packages_only=True,
                 source_path_mapping=source_path_mapping,
+                timeout=timeout,
             )
 
         flow_tools_meta = flow_tools.pop("code", {})

@@ -17,7 +17,7 @@ from promptflow._cli._params import (
     add_param_run_name,
     add_param_set,
     add_param_verbose,
-    logging_params,
+    base_params,
 )
 from promptflow._cli._pf._run import _parse_metadata_args, add_run_create_common, create_run
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
@@ -62,8 +62,12 @@ Example:
 # Create a run with YAML file:
 pfazure run create -f <yaml-filename>
 # Create a run from flow directory and reference a run:
-pfazure run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
-"""
+pfazure run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream
+# Create a run from existing workspace flow
+pfazure run create --flow azureml:<flow-name> --data <path-to-data-file> --column-mapping <key-value-pair>
+# Create a run from existing registry flow
+pfazure run create --flow azureml://registries/<registry-name>/models/<flow-name>/versions/<version> --data <path-to-data-file> --column-mapping <key-value-pair>
+"""  # noqa: E501
 
     def add_param_data(parser):
         # cloud pf can also accept remote data
@@ -105,7 +109,7 @@ pfazure run list --output table
         add_param_include_archived,
         add_param_output_format,
         _set_workspace_argument_for_subparsers,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="list",
@@ -150,7 +154,7 @@ pfazure run show --name <name>
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="show",
@@ -186,7 +190,7 @@ pfazure run show-details --name <name>
         add_param_max_results,
         add_param_run_name,
         add_param_all_results,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="show-details",
@@ -210,7 +214,7 @@ pfazure run show-metrics --name <name>
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="show-metrics",
@@ -228,7 +232,7 @@ def add_parser_run_cancel(subparsers):
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="cancel",
@@ -263,7 +267,7 @@ pfazure run visualize --names "<name1>, <name2>"
         add_param_name,
         add_param_html_path,
         _set_workspace_argument_for_subparsers,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="visualize",
@@ -287,7 +291,7 @@ pfazure run archive -n <name>
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="archive",
@@ -311,7 +315,7 @@ pfazure run restore -n <name>
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="restore",
@@ -336,7 +340,7 @@ pf run update --name <name> --set display_name="<display-name>" description="<de
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
         add_param_set,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="update",
@@ -426,7 +430,8 @@ def list_runs(
 
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
     runs = pf.runs.list(max_results=max_results, list_view_type=list_view_type)
-    run_list = [run._to_dict() for run in runs]
+    # hide additional info and debug info in run list for better user experience
+    run_list = [run._to_dict(exclude_additional_info=True, exclude_debug_info=True) for run in runs]
     _output_result_list_with_format(result_list=run_list, output_format=output)
     return runs
 

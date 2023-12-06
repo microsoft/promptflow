@@ -14,7 +14,13 @@ from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import yaml
 
-from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError, ToolLoadError
+from promptflow._core._errors import (
+    InputTypeMismatch,
+    MissingRequiredInputs,
+    NotSupported,
+    PackageToolNotFoundError,
+    ToolLoadError,
+)
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
@@ -27,9 +33,9 @@ from promptflow._utils.connection_utils import (
     generate_custom_strong_type_connection_template,
 )
 from promptflow._utils.tool_utils import (
+    _DEPRECATED_TOOLS,
     DynamicListError,
     RetrieveToolFuncResultError,
-    _DEPRECATED_TOOLS,
     _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_tool_definition,
@@ -185,16 +191,13 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
                     "Please choose from the available types: {supported_types}. "
                     "If you need further assistance, kindly contact support."
                 ),
-                tool_type=tool_type,
+                tool_type=tool_type.value if hasattr(tool_type, "value") else tool_type,
                 supported_types=",".join([ToolType.PYTHON, ToolType.PROMPT, ToolType.LLM]),
             )
 
 
 def retrieve_tool_func_result(
-    func_call_scenario: str,
-    func_path: str,
-    func_input_params_dict: Dict,
-    ws_triple_dict: Dict[str, str] = {}
+    func_call_scenario: str, func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}
 ):
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
@@ -277,9 +280,15 @@ class BuiltinsManager:
             if k not in init_inputs:
                 continue
             if v.value_type != InputValueType.LITERAL:
-                raise ValueError(
-                    f"Input {k!r} for tool '{tool_name}' only supports literal values for initialization,"
-                    + f" got {v.serialize()!r}"
+                raise InputTypeMismatch(
+                    message_format=(
+                        "Invalid input for '{tool_name}': Initialization input '{input_name}' requires a literal "
+                        "value, but {input_value} was received."
+                    ),
+                    tool_name=tool_name,
+                    input_name=k,
+                    input_value=v.serialize(),
+                    target=ErrorTarget.EXECUTOR,
                 )
             init_inputs_values[k] = v.value
         missing_inputs = set(provider_class.get_required_initialize_inputs()) - set(init_inputs_values)

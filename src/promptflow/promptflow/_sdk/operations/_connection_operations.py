@@ -6,10 +6,9 @@ from typing import List
 
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._orm import Connection as ORMConnection
+from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
 
 
 class ConnectionOperations(TelemetryMixin):

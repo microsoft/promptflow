@@ -20,7 +20,7 @@ Trigger the [workflow](https://github.com/microsoft/promptflow/actions/workflows
 5. We recommend creating a clean virtual Python environment and installing all dependencies using src/promptflow/setup.py.
    - `python -m venv venv`
    - `venv\Scripts\activate`
-   - `pip install promptflow[azure,executable] promptflow-tools`
+   - `pip install promptflow[azure,executable,pfs] promptflow-tools`
 
 
 ### Building

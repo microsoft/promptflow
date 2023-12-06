@@ -1,19 +1,30 @@
-import asyncio
-import datetime
-import sys
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+import json
+import socket
+import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from promptflow._utils.context_utils import _change_working_dir
-from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
-from promptflow.contracts.run_info import FlowRunInfo, Status
+from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
+EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
+EXECUTOR_SERVICE_DLL = "Promptflow.DotnetService.dll"
 
-class CsharpExecutorProxy(AbstractExecutorProxy):
-    def __init__(self, executor):
-        self._executor = executor
+
+class CSharpExecutorProxy(APIBasedExecutorProxy):
+    def __init__(self, process: subprocess.Popen, port: str):
+        self._process = process
+        self._port = port
+
+    @property
+    def api_endpoint(self) -> str:
+        return EXECUTOR_SERVICE_DOMAIN + self._port
 
     @classmethod
     def create(
@@ -23,71 +34,27 @@ class CsharpExecutorProxy(AbstractExecutorProxy):
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
-    ) -> "AbstractExecutorProxy":
+        **kwargs,
+    ) -> "CSharpExecutorProxy":
         """Create a new executor"""
-        working_dir = working_dir or flow_file.parent
-
-        from pythonnet import load
-
-        # pythonnet.load must be called before import clr
-        load("coreclr")
-        import clr
-
-        with _change_working_dir(working_dir):
-            sys.path.append(working_dir.as_posix())
-            clr.AddReference("Promptflow")
-            sys.path.pop()
-            from Promptflow.Executor import YamlExecutor
-
-            connection_provider_url = ""
-            executor = YamlExecutor(
-                flow_file.read_text(encoding="utf-8"), connection_provider_url, working_dir.as_posix()
-            )
-            return cls(executor)
-
-    def destroy(self):
-        """Destroy the executor"""
-        pass
-
-    def exec_line(
-        self,
-        inputs: Mapping[str, Any],
-        index: Optional[int] = None,
-        run_id: Optional[str] = None,
-    ) -> LineResult:
-        start_time = datetime.datetime.now()
-        from System import Object, String
-        from System.Collections.Generic import Dictionary
-
-        csharp_inputs = Dictionary[String, Object]()
-        for key, value in inputs.items():
-            csharp_inputs[key] = value
-        task = self._executor.ExecuteAsync(csharp_inputs)
-        task_result = task.Result
-
-        output = {}
-        for key in task_result.Keys:
-            output[key] = task_result[key]
-        return LineResult(
-            output=output,
-            aggregation_inputs={},
-            node_run_infos={},
-            run_info=FlowRunInfo(
-                run_id="test",
-                status=Status.Completed,
-                error={},
-                inputs=inputs,
-                output=output,
-                metrics={},
-                request=None,
-                parent_run_id="test",
-                root_run_id="test",
-                source_run_id="test",
-                flow_id="test",
-                start_time=start_time,
-                end_time=datetime.datetime.now(),
-            ),
-        )
+        port = cls.find_available_port()
+        log_path = kwargs.get("log_path", "")
+        command = [
+            "dotnet",
+            EXECUTOR_SERVICE_DLL,
+            "-p",
+            port,
+            "--yaml_path",
+            flow_file,
+            "--assembly_folder",
+            ".",
+            "--log_path",
+            log_path,
+            "--log_level",
+            "Warning",
+        ]
+        process = subprocess.Popen(command)
+        return cls(process, port)
 
     async def exec_line_async(
         self,
@@ -95,10 +62,30 @@ class CsharpExecutorProxy(AbstractExecutorProxy):
         index: Optional[int] = None,
         run_id: Optional[str] = None,
     ) -> LineResult:
-        """Execute a line"""
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, self.exec_line, inputs, index, run_id)
-        return result
+        line_result = await super().exec_line_async(inputs, index, run_id)
+        # TODO: check if we should ask C# executor to keep unmatched inputs, although it's not so straightforward
+        #   for executor service to do so.
+        # local_storage_operations.load_inputs_and_outputs now have an assumption that there is an extra
+        # line_number key in the inputs.
+        # This key will be appended to the inputs in below call stack:
+        # BatchEngine.run =>
+        # BatchInputsProcessor.process_batch_inputs =>
+        # ... =>
+        # BatchInputsProcessor._merge_input_dicts_by_line
+        # For python, it will be kept in the returned line_result.run_info.inputs
+        # For csharp, it will be dropped by executor service for now
+        # Append it here for now to make behavior consistent among ExecutorProxy.
+        line_result.run_info.inputs[LINE_NUMBER_KEY] = index
+        return line_result
+
+    def destroy(self):
+        """Destroy the executor"""
+        if self._process and self._process.poll() is None:
+            self._process.terminate()
+            try:
+                self._process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self._process.kill()
 
     async def exec_aggregation_async(
         self,
@@ -106,8 +93,20 @@ class CsharpExecutorProxy(AbstractExecutorProxy):
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        return AggregationResult(output={}, metrics={}, node_run_infos={})
+        return AggregationResult({}, {}, {})
 
     @classmethod
-    def generate_tool_metadata(cls, flow_dag: dict, working_dir: Path) -> dict:
+    def generate_tool_metadata(cls, working_dir: Path) -> dict:
+        promptflow_folder = working_dir / PROMPT_FLOW_DIR_NAME
+        if promptflow_folder.exists():
+            with open(promptflow_folder / FLOW_TOOLS_JSON, mode="r", encoding=DEFAULT_ENCODING) as f:
+                return json.load(f)
         return {}
+
+    @classmethod
+    def find_available_port(cls) -> str:
+        """Find an available port on localhost"""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("localhost", 0))
+            _, port = s.getsockname()
+            return str(port)

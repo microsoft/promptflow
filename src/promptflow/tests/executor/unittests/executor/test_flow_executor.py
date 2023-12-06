@@ -12,7 +12,8 @@ from promptflow.executor.flow_executor import (
     _inject_stream_options,
     enable_streaming_for_llm_tool,
 )
-from promptflow.tools.aoai import AzureOpenAI, chat, completion
+from promptflow.tools.aoai import chat, completion
+from promptflow.tools.embedding import embedding
 
 
 @pytest.mark.unittest
@@ -57,6 +58,17 @@ class TestFlowExecutor:
             ),
             (
                 {
+                    "input_from_default": FlowInputDefinition(type=ValueType.BOOL, default=False),
+                },
+                {"another_key": ["input_value", "input_value"]},
+                {},
+                {
+                    "input_from_default": [False, False],
+                    "another_key": ["input_value", "input_value"],
+                },
+            ),
+            (
+                {
                     "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
                 },
                 {},
@@ -90,7 +102,7 @@ class TestEnableStreamForLLMTool:
         [
             (completion, True),
             (chat, True),
-            (AzureOpenAI.embedding, False),
+            (embedding, False),
         ],
     )
     def test_enable_stream_for_llm_tool(self, tool, should_be_wrapped):
@@ -185,7 +197,7 @@ class TestGetAvailableMaxWorkerCount:
             mock_mem.return_value.available = available_memory * 1024 * 1024
             with patch("psutil.Process") as mock_process:
                 mock_process.return_value.memory_info.return_value.rss = process_memory * 1024 * 1024
-                with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
+                with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
                     mock_logger.warning.return_value = None
                     max_worker_count = get_available_max_worker_count()
                     assert max_worker_count == expected_max_worker_count

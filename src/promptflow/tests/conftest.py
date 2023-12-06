@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from _constants import (
     CONNECTION_FILE,
+    DEFAULT_REGISTRY_NAME,
     DEFAULT_RESOURCE_GROUP_NAME,
     DEFAULT_RUNTIME_NAME,
     DEFAULT_SUBSCRIPTION_ID,
@@ -29,6 +30,11 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow.connections import AzureOpenAIConnection
 
 load_dotenv()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def modify_work_directory():
+    os.chdir(Path(__file__).parent.parent.absolute())
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -193,3 +199,8 @@ def workspace_name() -> str:
 @pytest.fixture
 def runtime_name() -> str:
     return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)
+
+
+@pytest.fixture
+def registry_name() -> str:
+    return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)
