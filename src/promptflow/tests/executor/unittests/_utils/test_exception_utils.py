@@ -627,7 +627,7 @@ class TestExceptions:
         assert e.reference_code == ErrorTarget.TOOL
         module = "promptflow_vectordb.tool.faiss_index_loopup"
         e.module = module
-        assert e.reference_code == f"{ErrorTarget.TOOL}/{module}"
+        assert e.reference_code == f"{ErrorTarget.TOOL.value}/{module}"
 
     @pytest.mark.parametrize(
         "func_that_raises_exception",
