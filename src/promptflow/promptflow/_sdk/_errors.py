@@ -93,7 +93,7 @@ class RunOperationParameterError(PromptflowException):
 
 
 class RunOperationError(PromptflowException):
-    """Exception raised when flow operation failed."""
+    """Exception raised when run operation failed."""
 
     pass
 

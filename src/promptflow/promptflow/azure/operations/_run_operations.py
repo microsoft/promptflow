@@ -1001,6 +1001,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         location = self._workspace.location
         return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{run._flow_name}"
 
+    @monitor_operation(activity_name="pfazure.runs.download", activity_type=ActivityType.PUBLICAPI)
     def download(
         self, run: Union[str, Run], output: Optional[Union[str, Path]] = None, overwrite: Optional[bool] = False
     ) -> str:
@@ -1037,6 +1038,16 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
             # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        asyncio.run(run_downloader.download())
-        print(f"Successfully downloaded run {run!r} to {run_folder.resolve().as_posix()!r}.")
-        return run_folder.resolve().as_posix()
+
+        # when running in notebook, there is already a running event loop, we need to handle this case
+        try:
+            asyncio.get_running_loop()  # Triggers RuntimeError if no running event loop
+            # Create a separate thread so we can block before returning
+            with ThreadPoolExecutor(1) as pool:
+                pool.submit(lambda: asyncio.run(run_downloader.download())).result()
+        except RuntimeError:  # 'RuntimeError: There is no current event loop...'
+            asyncio.run(run_downloader.download())
+
+        result_path = run_folder.resolve().as_posix()
+        logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
+        return result_path
