@@ -4,7 +4,7 @@
 import datetime
 import json
 
-from promptflow._constants import CLI_PACKAGE_NAME, VERSION_UPDATE_TIME, PF_VERSION_CHECK
+from promptflow._constants import VERSION_UPDATE_TIME, PF_VERSION_CHECK, CLI_PACKAGE_NAME
 
 HINT_ACTIVITY_NAME = ["pf.flows.test", "pf.runs.create_or_update", "pfazure.flows.create_or_update",
                       "pfazure.runs.create_or_update"]
@@ -14,7 +14,7 @@ def _get_local_versions():
     # get locally installed versions
     from promptflow import __version__ as promptflow_version
 
-    versions = {CLI_PACKAGE_NAME: {'local': promptflow_version}}
+    versions = {'local': promptflow_version}
     return versions
 
 
@@ -27,7 +27,7 @@ def get_cached_latest_versions(cached_versions):
         version_update_time = datetime.datetime.strptime(cached_versions[VERSION_UPDATE_TIME], '%Y-%m-%d %H:%M:%S.%f')
         if datetime.datetime.now() < version_update_time + datetime.timedelta(days=1):
             cache_versions = cached_versions['versions'] if 'versions' in cached_versions else {}
-            if cache_versions and cache_versions[CLI_PACKAGE_NAME]['local'] == versions[CLI_PACKAGE_NAME]['local']:
+            if cache_versions and cache_versions['local'] == versions['local']:
                 return cache_versions.copy(), True, False
 
     versions, success = _update_latest_from_pypi(versions)
@@ -42,7 +42,7 @@ def _update_latest_from_pypi(versions):
     if version is None:
         success = False
     else:
-        versions[CLI_PACKAGE_NAME]['pypi'] = version
+        versions['pypi'] = version
     return versions, success
 
 def get_latest_version_from_pypi(package_name):
@@ -82,7 +82,7 @@ def hint_for_update():
         _, success, is_updated = get_cached_latest_versions(cached_versions)
         from packaging.version import parse
         if success:
-            if parse(cached_versions['versions'][CLI_PACKAGE_NAME]['local']) < parse(cached_versions['versions'][CLI_PACKAGE_NAME]['pypi']):
+            if parse(cached_versions['versions']['local']) < parse(cached_versions['versions']['pypi']):
                 print_yellow_warning("New prompt flow version available. Running 'pip install --upgrade promptflow' "
                                      "to update.")
         else:
