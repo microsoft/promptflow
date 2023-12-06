@@ -32,7 +32,7 @@
     <?endif ?>
 
     <Product Id="*" Name="$(var.ProductName) ($(var.Architecture))" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductAuthor)" UpgradeCode="$(var.UpgradeCode)">
-        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perUser" />
 
         <Upgrade Id="$(var.UpgradeCode)">
           <UpgradeVersion Property="WIX_UPGRADE_DETECTED" Maximum="$(var.ProductVersion)" IncludeMaximum="no" MigrateFeatures="yes" />
@@ -100,12 +100,19 @@
             Directory="DynamicCliDir"
             Execute="deferred"
             Impersonate="no"
-            ExeCommand="cmd.exe /c SC DELETE PromptService"
+            ExeCommand="cmd.exe /c SC DELETE PromptFlowService"
+            Return="ignore" />
+        <CustomAction Id="ClearRegistrySettings"
+            Directory="DynamicCliDir"
+            Execute="deferred"
+            Impersonate="no"
+            ExeCommand="cmd.exe /c REG DELETE HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PromptflowService /f"
             Return="ignore" />
         <InstallExecuteSequence>
             <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
-            <Custom Action="UninstallPromptFlowService" Before="InstallFinalize">REMOVE="ALL"</Custom>
+            <Custom Action="UninstallPromptFlowService" After="InstallFinalize">REMOVE~="ALL"</Custom>
+            <Custom Action="ClearRegistrySettings" After="InstallInitialize">REMOVE~="ALL"</Custom>
         </InstallExecuteSequence>
 
     </Product>
@@ -131,7 +138,7 @@
                      Permanent="no"
                      Part="first"
                      Action="set"
-                     System="yes" />
+                     System="no" />
                 <CreateFolder />
             </Component>
             <Component Id="PromptflowCliRegistry"
