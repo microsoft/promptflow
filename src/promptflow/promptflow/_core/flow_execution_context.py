@@ -10,7 +10,7 @@ import time
 import uuid
 from contextvars import ContextVar
 from logging import WARNING
-from typing import Callable, Optional
+from typing import Callable
 
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
@@ -21,7 +21,6 @@ from promptflow._utils.utils import generate_elapsed_time_messages
 from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
 from promptflow.exceptions import PromptflowException
-from promptflow.executor._tool_invoker import AssistantToolInvoker
 
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
@@ -39,7 +38,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         name,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
-        connections: Optional[dict] = None,
         run_id=None,
         flow_id=None,
         line_number=None,
@@ -48,12 +46,10 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._name = name
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
-        self._connections = connections
         self._run_id = run_id or str(uuid.uuid4())
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
         self._variant_id = variant_id
-        self._tool_invoker = AssistantToolInvoker.start_invoker(connections=connections)
 
     def copy(self):
         return FlowExecutionContext(

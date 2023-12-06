@@ -442,7 +442,7 @@ class ToolLoader:
             raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
 
     def load_tool_for_package_node(self, node: Node) -> Tool:
-        self.load_tool_for_package(node.source.tool)
+        return self.load_tool_for_package(node.source.tool)
 
     def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Callable, Tool]:
         if node.source.path is None:

@@ -21,9 +21,9 @@ class DefaultToolInvoker(ToolInvoker):
         return f(*args, **kwargs)  # Do nothing
 
 
-class AssistantToolInvoker(ThreadLocalSingleton):
-    CONTEXT_VAR_NAME = "Invoker"
-    context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
+class AssistantToolInvoker(ToolInvoker):
+    # CONTEXT_VAR_NAME = "Invoker"
+    # context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
     def __init__(self, connections: Optional[dict] = None):
         self._connections = connections
@@ -32,7 +32,7 @@ class AssistantToolInvoker(ThreadLocalSingleton):
     @classmethod
     def start_invoker(cls, connections: dict):
         invoker = cls(connections)
-        invoker._activate_in_context()
+        cls.activate(invoker)
 
     @classmethod
     def load_tools(cls, tools: list):

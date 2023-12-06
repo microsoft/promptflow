@@ -11,7 +11,6 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
-from promptflow._core._errors import NotSupported
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping

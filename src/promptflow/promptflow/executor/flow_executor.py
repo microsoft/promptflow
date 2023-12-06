@@ -3,12 +3,10 @@
 # ---------------------------------------------------------
 import asyncio
 import copy
-import docutils.nodes
 import functools
 import inspect
 import os
 import uuid
-from docutils.core import publish_doctree
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
@@ -25,7 +23,7 @@ from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolInvoker
-from promptflow._core.tools_manager import ToolLoader, ToolsManager
+from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -35,10 +33,9 @@ from promptflow._utils.execution_utils import (
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
-from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node, ToolSource
+from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
@@ -48,6 +45,7 @@ from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_FLOW,
     FlowNodesScheduler,
 )
+from promptflow.executor._tool_invoker import AssistantToolInvoker
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
@@ -368,8 +366,8 @@ class FlowExecutor:
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
-                connections=connections,
             )
+            invoker = AssistantToolInvoker.start_invoker(connections=connections)
 
             try:
                 if inspect.iscoroutinefunction(resolved_node.callable):
@@ -621,10 +619,10 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
-            connections=self._connections,
             run_id=run_id,
             flow_id=self._flow_id,
         )
+        invoker = AssistantToolInvoker.start_invoker(connections=self._connections)
         metrics = {}
 
         def _log_metric(key, value):
@@ -796,12 +794,12 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
-            connections=self._connections,
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
             variant_id=variant_id,
         )
+        invker = AssistantToolInvoker.start_invoker(connections=self._connections)
         output = {}
         aggregation_inputs = {}
         try:
