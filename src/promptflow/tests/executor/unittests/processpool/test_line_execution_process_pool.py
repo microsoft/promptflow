@@ -82,11 +82,12 @@ def test_fork_mode_parallelism_in_subprocess(
             assert pool._n_process == n_process
             if is_set_environ_pf_worker_count:
                 mock_logger.info.assert_any_call(
-                    f"Process count set to {pf_worker_count} based on the 'PF_WORKER_COUNT' environment variable.")
+                    f"Set process count to {pf_worker_count} with the environment "
+                    f"variable 'PF_WORKER_COUNT'.")
             else:
                 mock_logger.info.assert_any_call("Using fork to create new process.")
                 mock_logger.info.assert_any_call(
-                    f"Calculated process count ({n_process}) by taking the minimum value among the "
+                    f"Set process count to ({n_process}) by taking the minimum value among the "
                     f"default worker_count ({pool._DEFAULT_WORKER_COUNT}) and the row count ({nlines})."
                 )
 
@@ -128,16 +129,16 @@ def test_spawn_mode_parallelism_in_subprocess(
                     assert pool._n_process == n_process
                     if is_set_environ_pf_worker_count and is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
-                            f"Process count set to {pf_worker_count} based on the 'PF_WORKER_COUNT' "
-                            f"environment variable.")
+                            f"Set process count to {pf_worker_count} with the environment "
+                            f"variable 'PF_WORKER_COUNT'.")
                         mock_logger.warning.assert_any_call(
-                            f"The estimated available worker count calculated based on the system available memory "
-                            f"is {estimated_available_worker_count}, but the PF_WORKER_COUNT is set to "
-                            f"{pf_worker_count}. This may affect optimal memory usage and performance.")
+                            f"The current process count({pf_worker_count}) is larger than recommended process count"
+                            f"({estimated_available_worker_count}) that estimated by system available memory. This may "
+                            f"cause memory exhaustion")
                     elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
-                            f"Process count set to {pf_worker_count} based on the 'PF_WORKER_COUNT' "
-                            f"environment variable.")
+                            f"Set process count to {pf_worker_count} with the environment "
+                            f"variable 'PF_WORKER_COUNT'.")
                     elif not is_set_environ_pf_worker_count:
                         mock_logger.info.assert_any_call("Not using fork to create new process.")
                         mock_logger.info.assert_any_call(
@@ -145,7 +146,7 @@ def test_spawn_mode_parallelism_in_subprocess(
                             "count based on the currently memory usage."
                         )
                         mock_logger.info.assert_any_call(
-                            f"Calculated process count ({n_process}) by taking the minimum value among estimated "
+                            f"Set process count to ({n_process}) by taking the minimum value among estimated "
                             f"process count ({estimated_available_worker_count}), the row count ({nlines}) and the "
                             f"default worker count ({pool._DEFAULT_WORKER_COUNT})."
                         )
