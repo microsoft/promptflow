@@ -163,6 +163,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
+        loaded_tools: Optional[list] = None
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -193,6 +194,7 @@ class FlowExecutor:
             raise_ex=raise_ex,
             node_override=node_override,
             line_timeout_sec=line_timeout_sec,
+            loaded_tools=loaded_tools
         )
 
     @classmethod
@@ -207,19 +209,24 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
+        loaded_tools: Optional[list] = None
     ):
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
-        package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
-
-        with _change_working_dir(working_dir):
-            resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
-        flow = Flow(
-            flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
-        )
+        if loaded_tools:
+            flow = Flow(
+                flow.id, flow.name, [r.node for r in loaded_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
+            )
+        else:
+            package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
+            tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+            with _change_working_dir(working_dir):
+                resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
+            flow = Flow(
+                flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
+            )
         # ensure_flow_valid including validation + resolve
         # Todo: 1) split pure validation + resolve from below method 2) provide completed validation()
         flow = FlowValidator._validate_nodes_topology(flow)

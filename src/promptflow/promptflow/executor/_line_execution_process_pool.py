@@ -30,6 +30,8 @@ from promptflow.executor._errors import LineExecutionTimeoutError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
+from ._preloaded_resolved_tools import preloaded_obj
+from . import _shared_vars
 
 
 def signal_handler(signum, frame):
@@ -159,12 +161,31 @@ class LineExecutionProcessPool:
             )
             bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
             multiprocessing_start_method = None
+        elif ((multiprocessing_start_method == "fork" or
+               multiprocessing.get_start_method() == "fork") and
+              "forkserver" in sys_start_methods):
+            bulk_logger.info(
+                "Current method is 'fork' and 'forkserver' is available. Set start method to 'forkserver'.")
+            multiprocessing_start_method = "forkserver"
         self.context = get_multiprocessing_context(multiprocessing_start_method)
         use_fork = self.context.get_start_method() == "fork"
+        use_forkserver = self.context.get_start_method() == "forkserver"
         # When using fork, we use this method to create the executor to avoid reloading the flow
         # which will introduce a lot more memory.
         if use_fork:
             self._executor_creation_func = partial(create_executor_fork, flow_executor=flow_executor)
+        elif use_forkserver:
+            _shared_vars.flow_file = flow_executor._flow_file
+            _shared_vars.connections = flow_executor._connections
+            _shared_vars.working_dir = flow_executor._working_dir
+
+            self._executor_creation_func = partial(
+                FlowExecutor.create,
+                flow_file=flow_executor._flow_file,
+                connections=flow_executor._connections,
+                working_dir=flow_executor._working_dir,
+                raise_ex=False,
+            )
         elif flow_executor._flow_file:
             self._executor_creation_func = partial(
                 FlowExecutor.create,
@@ -355,6 +376,8 @@ class LineExecutionProcessPool:
             ),
         ):
             try:
+                if self.context.get_start_method() == "forkserver":
+                    self.context.set_forkserver_preload(['_preloaded_resolved_tools'])
                 # The variable 'async_result' here is not the actual result of the batch run
                 # but an AsyncResult object that can be used to check if the execution are finished
                 # The actual results of the batch run are stored in 'result_list'
@@ -518,7 +541,8 @@ def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSto
 
 def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
     run_storage = QueueRunStorage(output_queue)
-    executor: FlowExecutor = executor_creation_func(storage=run_storage)
+    loaded_tools = preloaded_obj.tools
+    executor: FlowExecutor = executor_creation_func(storage=run_storage, loaded_tools=loaded_tools)
 
     # Wait for the start signal message
     input_queue.get()
