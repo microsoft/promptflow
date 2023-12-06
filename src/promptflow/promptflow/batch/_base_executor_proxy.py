@@ -107,11 +107,13 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
 
     def _process_http_response(self, response: httpx.Response):
         if response.status_code == 200:
+            # if the status code is 200, the response is the json dict of a line result
             return response.json()
         else:
             error_message = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
             bulk_logger.error(error_message.format(status_code=response.status_code, error=response.text))
             try:
+                # if the status code is not 200, the response is the json dict of an error or unexpected error
                 error_response = response.json()
                 return error_response["error"]
             except JSONDecodeError:
