@@ -13,11 +13,26 @@ You can use json parser to parse the output.
 
 ```bash
 nohup python simple_score.py & 
+# Note: added this to run in our CI pipeline, not needed for user.
 sleep 10
 ```
 
 ## 2. Test the service with request
 
+Executing the following command to send a request to execute a flow.
+
 ```bash
 curl -X POST http://127.0.0.1:5000/score --header "Content-Type: application/json" --data '{"flow_input": "some_flow_input", "node_input": "some_node_input"}'
 ```
+
+Sample output of the request:
+
+```json
+{
+  "output": {
+    "value": "some_flow_input"
+  }
+}
+```
+
+Reference [here](./simple_score.py) for more.
