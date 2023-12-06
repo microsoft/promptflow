@@ -133,7 +133,7 @@ def test_spawn_mode_parallelism_in_subprocess(
                         mock_logger.warning.assert_any_call(
                             f"The estimated available worker count calculated based on the system available memory "
                             f"is {estimated_available_worker_count}, but the PF_WORKER_COUNT is set to "
-                            f"{pf_worker_count}. This may affect optimal memory usage and performance. ")
+                            f"{pf_worker_count}. This may affect optimal memory usage and performance.")
                     elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
                             f"Process count set to {pf_worker_count} based on the 'PF_WORKER_COUNT' "
