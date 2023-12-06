@@ -426,7 +426,7 @@ class LineExecutionProcessPool:
             f"Set process count to {worker_count} with the environment variable 'PF_WORKER_COUNT'.")
         if estimated_available_worker_count is not None and estimated_available_worker_count < worker_count:
             bulk_logger.warning(
-                f"The current process count({worker_count}) is larger than recommended process count"
+                f"The current process count ({worker_count}) is larger than recommended process count "
                 f"({estimated_available_worker_count}) that estimated by system available memory. This may "
                 f"cause memory exhaustion")
 

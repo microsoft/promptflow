@@ -132,7 +132,7 @@ def test_spawn_mode_parallelism_in_subprocess(
                             f"Set process count to {pf_worker_count} with the environment "
                             f"variable 'PF_WORKER_COUNT'.")
                         mock_logger.warning.assert_any_call(
-                            f"The current process count({pf_worker_count}) is larger than recommended process count"
+                            f"The current process count ({pf_worker_count}) is larger than recommended process count "
                             f"({estimated_available_worker_count}) that estimated by system available memory. This may "
                             f"cause memory exhaustion")
                     elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
