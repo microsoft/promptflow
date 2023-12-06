@@ -1,40 +1,36 @@
 import contextlib
 import io
-import os
 import sys
 import tempfile
 import timeit
 import uuid
 from pathlib import Path
-
+from unittest import mock
 import pytest
 import multiprocessing
+from promptflow import VERSION
 from promptflow._core.operation_context import OperationContext
-from promptflow._constants import USER_AGENT
+from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 
 FLOWS_DIR = "./tests/test_configs/flows"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-@pytest.fixture(autouse=True)
-def set_env(cli_perf_monitor_agent):
-    os.environ[USER_AGENT] = cli_perf_monitor_agent
-    yield
-    del os.environ[USER_AGENT]
-
-
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
     from promptflow._cli._pf.entry import main
     sys.argv = list(cmd)
     output = io.StringIO()
+
     st = timeit.default_timer()
-    with contextlib.redirect_stdout(output):
+    with contextlib.redirect_stdout(output), mock.patch.object(
+            OperationContext, "get_user_agent") as get_user_agent_fun:
+        # Don't change get_user_agent_fun.return_value, dashboard needs to use.
+        get_user_agent_fun.return_value = f"{CLI_USER_AGENT} promptflow/{VERSION} perf_monitor/1.0"
         main()
     ed = timeit.default_timer()
+
     print(f"{cmd}, \n Total time: {ed - st}s")
-    context = OperationContext.get_instance()
-    print("request id: ", context.get("request_id"))
     assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
     res_value = output.getvalue()
     if result_queue:
@@ -54,8 +50,7 @@ def subprocess_run_cli_command(cmd, time_limit=3600):
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
-@pytest.mark.cli_test
-@pytest.mark.e2etest
+@pytest.mark.perf_monitor_test
 class TestCliTimeConsume:
     def test_pf_run_create(self, time_limit=35) -> None:
         res = subprocess_run_cli_command(

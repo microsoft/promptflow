@@ -6,9 +6,8 @@ import json
 import time
 
 from promptflow._cli._user_agent import USER_AGENT
-from promptflow._cli._utils import _get_cli_activity_name
-from promptflow._telemetry.activity import ActivityType, log_activity
-from promptflow._telemetry.telemetry import get_telemetry_logger
+from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli
+from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 
 # Log the start time
 start_time = time.perf_counter()
@@ -88,6 +87,23 @@ def get_parser_args(argv):
     return parser.prog, parser.parse_args(argv)
 
 
+def _get_workspace_info(args):
+    try:
+        subscription_id, resource_group_name, workspace_name = get_client_info_for_cli(
+            subscription_id=args.subscription,
+            resource_group_name=args.resource_group,
+            workspace_name=args.workspace_name,
+        )
+        return {
+            "subscription_id": subscription_id,
+            "resource_group_name": resource_group_name,
+            "workspace_name": workspace_name,
+        }
+    except Exception:
+        # fall back to empty dict if workspace info is not available
+        return {}
+
+
 def entry(argv):
     """
     Control plane CLI tools for promptflow cloud version.
@@ -96,7 +112,13 @@ def entry(argv):
     if hasattr(args, "user_agent"):
         setup_user_agent_to_operation_context(args.user_agent)
     logger = get_telemetry_logger()
-    with log_activity(logger, _get_cli_activity_name(cli=prog, args=args), activity_type=ActivityType.PUBLICAPI):
+    custom_dimensions = _get_workspace_info(args)
+    with log_activity(
+        logger,
+        _get_cli_activity_name(cli=prog, args=args),
+        activity_type=ActivityType.PUBLICAPI,
+        custom_dimensions=custom_dimensions,
+    ):
         run_command(args)
 
 

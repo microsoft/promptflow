@@ -5,6 +5,17 @@
 ### Bugs Fixed
 
 - [SDK/CLI] Removing telemetry warning when running commands.
+- Empty node stdout & stderr to avoid large visualize HTML.
+- Hide unnecessary fields in run list for better readability.
+
+## 1.1.1 (2023.12.1)
+
+### Bugs Fixed
+
+- [SDK/CLI] Fix compatibility issue with `semantic-kernel==0.4.0.dev0` and `azure-ai-ml==1.12.0`.
+- [SDK/CLI] Add back workspace information in CLI telemetry.
+- [SDK/CLI] Disable the feature to customize user agent in CLI to avoid changes on operation context.
+- Fix openai metrics calculator to adapt openai v1.
 
 ## 1.1.0 (2023.11.30)
 

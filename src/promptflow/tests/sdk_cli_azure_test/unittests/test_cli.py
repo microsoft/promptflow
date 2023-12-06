@@ -1,7 +1,8 @@
+import contextlib
 import os
 import sys
 from typing import List
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -276,3 +277,46 @@ class TestAzureCli:
             *operation_scope_args,
         )
         mocked.assert_called_once()
+
+    def test_run_telemetry(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+    ):
+        from promptflow.azure.operations._run_operations import RunOperations
+
+        mocked_run = MagicMock()
+        mocked_run._to_dict.return_value = {"name": "test_run"}
+        mocked = mocker.patch.object(RunOperations, "list")
+        # list_runs will print the run list, so we need to mock the return value
+        mocked.return_value = [mocked_run]
+        mocker.patch.dict(
+            os.environ,
+            {
+                "AZUREML_ARM_WORKSPACE_NAME": workspace_name,
+                "AZUREML_ARM_SUBSCRIPTION": subscription_id,
+                "AZUREML_ARM_RESOURCEGROUP": resource_group_name,
+            },
+        )
+
+        @contextlib.contextmanager
+        def check_workspace_info(*args, **kwargs):
+            if "custom_dimensions" in kwargs:
+                assert kwargs["custom_dimensions"]["workspace_name"] == workspace_name
+                assert kwargs["custom_dimensions"]["resource_group_name"] == resource_group_name
+                assert kwargs["custom_dimensions"]["subscription_id"] == subscription_id
+            yield None
+
+        with patch("promptflow._sdk._telemetry.activity.log_activity") as mock_log_activity:
+            mock_log_activity.side_effect = check_workspace_info
+            run_pf_command(
+                "run",
+                "list",
+                "--max-results",
+                "10",
+                "--include-archived",
+                *operation_scope_args,
+            )

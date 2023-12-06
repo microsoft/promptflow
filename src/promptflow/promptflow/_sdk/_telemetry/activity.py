@@ -7,7 +7,7 @@ import uuid
 from contextvars import ContextVar
 from datetime import datetime
 
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._sdk._telemetry.telemetry import TelemetryMixin
 
 
 class ActivityType(object):
@@ -62,7 +62,6 @@ def log_activity(
 
     context = OperationContext.get_instance()
     user_agent = context.get_user_agent()
-    # TODO(2699383): use same request id with service caller
     request_id = request_id_context.get()
     if not request_id:
         # public function call
@@ -152,7 +151,7 @@ def monitor_operation(
     def monitor(f):
         @functools.wraps(f)
         def wrapper(self, *args, **kwargs):
-            from promptflow._telemetry.telemetry import get_telemetry_logger
+            from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 
             logger = get_telemetry_logger()
 
