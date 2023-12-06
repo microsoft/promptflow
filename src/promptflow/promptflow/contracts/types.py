@@ -30,17 +30,13 @@ class FilePath(str):
 
 
 @dataclass
-class AssistantOverride:
+class AssistantDefinition:
     """This class is used to hint a parameter is an assistant override."""
 
     def __init__(self, value: dict):
         self.model = value["module"]
         self.instructions = value["instructions"]
         self.tools = value["tools"]
-        self.resolved_tools = None
-
-    def set_resolved_tools(self, tools):
-        self.resolved_tools = tools
 
     def serialize(self):
         return {

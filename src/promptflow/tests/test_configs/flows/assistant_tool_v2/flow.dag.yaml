@@ -5,37 +5,6 @@ inputs:
   assistant_id:
     type: string
     default: asst_yWhdFYoCS1UatnRRQZGY85aL
-  assistant_override:
-    type: assistant_override
-    default:
-      module: gpt-4-1106-preview
-      instructions: You are a helpful assistant.
-      tools:
-      - type: promptflow_tool
-        tool_type: python
-        source:
-          type: code
-          path: get_all_clothes.py
-      - type: promptflow_tool
-        tool_type: python
-        source:
-          type: code
-          path: get_calorie.py
-      - type: promptflow_tool
-        tool_type: python
-        source:
-          type: code
-          path: get_current_location.py
-      - type: promptflow_tool
-        tool_type: python
-        source:
-          type: code
-          path: get_current_weather.py
-      - type: promptflow_tool
-        tool_type: python
-        source:
-          type: code
-          path: multiply.py
 outputs:
   assistant_output:
     type: string
@@ -50,4 +19,4 @@ nodes:
     conn: openai_connection
     content: ${inputs.content}
     assistant_id: ${inputs.assistant_id}
-    assistant_override: ${inputs.assistant_override}
+    assistant_definition: assistant_definition.yaml

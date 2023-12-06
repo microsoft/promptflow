@@ -364,6 +364,7 @@ class FlowExecutor:
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
+                connections=connections,
             )
 
             try:
@@ -616,6 +617,7 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
+            connections=self._connections,
             run_id=run_id,
             flow_id=self._flow_id,
         )
@@ -790,6 +792,7 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
+            connections=self._connections,
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
@@ -801,7 +804,7 @@ class FlowExecutor:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             inputs = load_multimedia_data(self._flow.inputs, inputs)
-            inputs = self.load_assistant_tools(self._flow.inputs, inputs)
+            # inputs = self.load_assistant_tools(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
@@ -824,59 +827,6 @@ class FlowExecutor:
         node_run_infos = run_tracker.collect_child_node_runs(line_run_id)
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)
-
-    def load_assistant_tools(self, inputs: Dict[str, FlowInputDefinition], line_inputs: dict):
-        updated_inputs = dict(line_inputs or {})
-        for key, value in inputs.items():
-            if value.type == ValueType.ASSISTANT_OVERRIDE:
-                updated_tools = []
-                for tool in updated_inputs[key].tools:
-                    if tool["type"] != "promptflow_tool":
-                        continue
-                    node = Node(name="assistant_node", tool="assistant_tool", inputs={}, source=ToolSource(path=tool["source"]["path"]))
-                    resolved_tool = self._tool_resolver._resolve_script_node(node)
-                    description = self.get_structred_description(resolved_tool.callable.__name__, resolved_tool.definition.description)
-                    updated_tools.append({resolved_tool.definition.function: {"callable": resolved_tool.callable, "description": description}})
-                updated_inputs[key].set_resolved_tools(updated_tools)
-        return updated_inputs
-
-    def get_structred_description(self, func_name: str, docstring: str):
-        doctree = publish_doctree(docstring)
-        params = {}
-
-        for field in doctree.traverse(docutils.nodes.field):
-            field_name = field[0].astext()
-            field_body = field[1].astext()
-
-            if field_name.startswith("param"):
-                param_name = field_name.split(' ')[1]
-                if param_name not in params:
-                    params[param_name] = {}
-                params[param_name]["description"] = field_body
-            if field_name.startswith("type"):
-                param_name = field_name.split(' ')[1]
-                if param_name not in params:
-                    params[param_name] = {}
-                params[param_name]["type"] = self._convert_type(field_body)
-
-        return {
-            "type": "function",
-            "function": {
-                "name": func_name,
-                "description": doctree[0].astext(),
-                "parameters": {
-                    "type": "object",
-                    "properties": params,
-                    "required": list(params.keys())
-                }
-            }
-        }
-
-    def _convert_type(self, type: str):
-        if type == "str":
-            return "string"
-        if type == "int":
-            return "number"
 
     def _extract_outputs(self, nodes_outputs, bypassed_nodes, flow_inputs):
         outputs = {}

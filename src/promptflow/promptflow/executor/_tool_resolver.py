@@ -5,11 +5,13 @@
 import copy
 import inspect
 import types
+import yaml
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from promptflow._core._errors import NotSupported
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
@@ -18,7 +20,7 @@ from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_pro
 from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
-from promptflow.contracts.types import PromptTemplate
+from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -106,6 +108,9 @@ class ToolResolver:
                     updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
             elif value_type == ValueType.IMAGE:
                 updated_inputs[k].value = create_image(v.value)
+            elif value_type == ValueType.ASSISTANT_DEFINITION:
+                definition = self._load_json_from_file(v.value, k, node.name)
+                updated_inputs[k].value = AssistantDefinition(definition)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
@@ -157,6 +162,19 @@ class ToolResolver:
             if isinstance(e, PromptflowException) and e.target != ErrorTarget.UNKNOWN:
                 raise ResolveToolError(node_name=node.name, target=e.target, module=e.module) from e
             raise ResolveToolError(node_name=node.name) from e
+
+    def _load_json_from_file(self, path: str, input_name: str, node_name: str) -> str:
+        if path is None or not (self._working_dir / path).is_file():
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Node input '{input_name}' path '{source_path}' is invalid on node '{node_name}'.",
+                input_name=input_name,
+                source_path=path if path is not None else None,
+                node_name=node_name,
+            )
+        file = self._working_dir / path
+        with open(file, "r", encoding="utf-8") as file:
+            return yaml.safe_load(file)
 
     def _load_source_content(self, node: Node) -> str:
         source = node.source

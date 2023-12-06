@@ -433,38 +433,43 @@ class ToolLoader:
             raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
 
     def load_tool_for_package_node(self, node: Node) -> Tool:
-        if node.source.tool in self._package_tools:
-            return Tool.deserialize(self._package_tools[node.source.tool])
-
-        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
-        # If found, load the tool with the new tool ID for backward compatibility.
-        if node.source.tool in self._deprecated_tools:
-            new_tool_id = self._deprecated_tools[node.source.tool]
-            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
-            module_logger.warning(
-                f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead."
-            )
-            return Tool.deserialize(self._package_tools[new_tool_id])
-
-        raise PackageToolNotFoundError(
-            f"Package tool '{node.source.tool}' is not found in the current environment. "
-            f"All available package tools are: {list(self._package_tools.keys())}.",
-            target=ErrorTarget.EXECUTOR,
-        )
+        self.load_tool_for_package(node.source.tool)
 
     def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Callable, Tool]:
         if node.source.path is None:
             raise UserErrorException(f"Node {node.name} does not have source path defined.")
-        path = node.source.path
-        m = load_python_module_from_file(self._working_dir / path)
-        if m is None:
-            raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-        f, init_inputs = collect_tool_function_in_module(m)
-        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
+        return self._load_tool_for_source_path(node.source.path)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"
         return BuiltinsManager._load_llm_api(api_name)
+
+    def load_tool_for_package(self, package: str) -> Tool:
+        if package in self._package_tools:
+            return Tool.deserialize(self._package_tools[package])
+
+        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
+        # If found, load the tool with the new tool ID for backward compatibility.
+        if package in self._deprecated_tools:
+            new_tool_id = self._deprecated_tools[package]
+            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
+            module_logger.warning(
+                f"Tool ID '{package}' is deprecated. Please use '{new_tool_id}' instead."
+            )
+            return Tool.deserialize(self._package_tools[new_tool_id])
+
+        raise PackageToolNotFoundError(
+            f"Package tool '{package}' is not found in the current environment. "
+            f"All available package tools are: {list(self._package_tools.keys())}.",
+            target=ErrorTarget.EXECUTOR,
+        )
+
+    def _load_tool_for_source_path(self, source_path: str) -> Tuple[types.ModuleType, Callable, Tool]:
+        m = load_python_module_from_file(self._working_dir / source_path)
+        if m is None:
+            raise CustomToolSourceLoadError(f"Cannot load module from {source_path}.")
+        f, init_inputs = collect_tool_function_in_module(m)
+        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 
 
 builtins = {}
