@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from datetime import datetime
 
 from promptflow._telemetry.telemetry import TelemetryMixin
-
+from promptflow._utils.version_hint_utils import hint_for_update, HINT_ACTIVITY_NAME
 
 class ActivityType(object):
     """The type of activity (code) monitored.
@@ -158,7 +158,11 @@ def monitor_operation(
             custom_dimensions.update(extract_telemetry_info(self))
 
             with log_activity(logger, activity_name, activity_type, custom_dimensions):
-                return f(self, *args, **kwargs)
+                try:
+                    return f(self, *args, **kwargs)
+                finally:
+                    if activity_name in HINT_ACTIVITY_NAME:
+                        hint_for_update()
 
         return wrapper
 

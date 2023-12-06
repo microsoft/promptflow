@@ -38,3 +38,7 @@ class AvailableIDE:
 
 USER_AGENT = "USER_AGENT"
 PF_USER_AGENT = "PF_USER_AGENT"
+
+CLI_PACKAGE_NAME = 'promptflow'
+VERSION_UPDATE_TIME = 'update_time'
+PF_VERSION_CHECK = "pf_version_check.json"
