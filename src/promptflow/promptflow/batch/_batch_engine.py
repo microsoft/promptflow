@@ -30,7 +30,7 @@ from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
-from promptflow.exceptions import PromptflowException
+from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -144,7 +144,19 @@ class BatchEngine:
                 return BatchResult.create(
                     self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
                 )
-            raise e
+            elif isinstance(e, PromptflowException):
+                raise e
+            else:
+                # For unexpected error, we need to wrap it to SystemErrorException.
+                # This allows us to see the stack trace inside.
+                unexpected_error = UnexpectedError(
+                    target=ErrorTarget.BATCH,
+                    message_format=(
+                        "Unexpected error occurred while executing the batch run. Error: {error_type_and_message}."
+                    ),
+                    error_type_and_message=f"({e.__class__.__name__}) {e}",
+                )
+                raise unexpected_error from e
         finally:
             # destroy executor proxy if the batch run is not cancelled
             # TODO: add a lock to avoid destroy proxy twice
