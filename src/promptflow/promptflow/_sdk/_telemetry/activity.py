@@ -7,8 +7,11 @@ import uuid
 from contextvars import ContextVar
 from datetime import datetime
 
-from promptflow._telemetry.telemetry import TelemetryMixin
+
+from promptflow._sdk._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.version_hint_utils import hint_for_update, HINT_ACTIVITY_NAME
+
+
 
 class ActivityType(object):
     """The type of activity (code) monitored.
@@ -151,7 +154,7 @@ def monitor_operation(
     def monitor(f):
         @functools.wraps(f)
         def wrapper(self, *args, **kwargs):
-            from promptflow._telemetry.telemetry import get_telemetry_logger
+            from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
 
             logger = get_telemetry_logger()
 
