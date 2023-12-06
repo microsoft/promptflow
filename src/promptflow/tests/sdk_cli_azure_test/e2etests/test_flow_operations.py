@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from promptflow._sdk._errors import FlowOperationError
+from promptflow.azure._entities._flow import Flow
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 from ..recording_utilities import is_live
@@ -24,13 +25,11 @@ data_dir = tests_root_dir / "test_configs/datas"
     "vcr_recording",
 )
 class TestFlow:
-    def test_create_flow(self, created_flow):
-        from promptflow.azure._entities._flow import Flow
-
+    def test_create_flow(self, created_flow: Flow):
         # most of the assertions are in the fixture itself
         assert isinstance(created_flow, Flow)
 
-    def test_get_flow(self, pf, created_flow):
+    def test_get_flow(self, pf, created_flow: Flow):
         result = pf.flows.get(name=created_flow.name)
 
         # assert created flow is the same as the one retrieved

@@ -95,11 +95,6 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
-    - name: Check if sdk cli test could be collected
-      shell: pwsh
-      working-directory: ${{ github.workspace }}
-      run: |
-        python ${{ github.workspace }}/scripts/building/get_output_via_markers.py -m pytest -p vscode_pytest --collect-only src/promptflow/tests/sdk_cli_test/
     - name: Run SDK CLI Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}

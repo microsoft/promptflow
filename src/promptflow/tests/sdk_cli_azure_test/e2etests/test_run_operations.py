@@ -19,6 +19,8 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunN
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow.azure import PFClient
+from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -122,7 +124,9 @@ class TestFlowRun:
         eval_run = pf.runs.stream(run=eval_run.name)
         assert eval_run.status == RunStatus.COMPLETED
 
-    def test_run_bulk_with_remote_flow(self, pf, runtime: str, randstr: Callable[[str], str], created_flow):
+    def test_run_bulk_with_remote_flow(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str], created_flow: Flow
+    ):
         """Test run bulk with remote workspace flow."""
         name = randstr("name")
         run = pf.run(
@@ -135,7 +139,9 @@ class TestFlowRun:
         assert isinstance(run, Run)
         assert run.name == name
 
-    def test_run_bulk_with_registry_flow(self, pf, runtime: str, randstr: Callable[[str], str], registry_name: str):
+    def test_run_bulk_with_registry_flow(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str], registry_name: str
+    ):
         """Test run bulk with remote registry flow."""
         name = randstr("name")
         run = pf.run(
