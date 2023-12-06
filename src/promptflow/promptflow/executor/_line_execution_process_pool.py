@@ -434,7 +434,7 @@ class LineExecutionProcessPool:
         worker_count = min(self._DEFAULT_WORKER_COUNT, self._nlines)
         bulk_logger.info("Using fork to create new process.")
         bulk_logger.info(
-            f"Set process count to ({worker_count}) by taking the minimum value among the "
+            f"Set process count to {worker_count} by taking the minimum value among the "
             f"default worker_count ({self._DEFAULT_WORKER_COUNT}) and the row count ({self._nlines}).")
         return worker_count
 
@@ -445,7 +445,7 @@ class LineExecutionProcessPool:
             "The environment variable PF_WORKER_COUNT is not set or invalid. Calculate the worker count based "
             "on the currently memory usage.")
         bulk_logger.info(
-            f"Set process count to ({worker_count}) by taking the minimum value among estimated process "
+            f"Set process count to {worker_count} by taking the minimum value among estimated process "
             f"count ({estimated_available_worker_count}), the row count ({self._nlines}) and the default "
             f"worker count ({self._DEFAULT_WORKER_COUNT}).")
         return worker_count

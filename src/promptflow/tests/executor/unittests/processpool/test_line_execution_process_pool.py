@@ -87,7 +87,7 @@ def test_fork_mode_parallelism_in_subprocess(
             else:
                 mock_logger.info.assert_any_call("Using fork to create new process.")
                 mock_logger.info.assert_any_call(
-                    f"Set process count to ({n_process}) by taking the minimum value among the "
+                    f"Set process count to {n_process} by taking the minimum value among the "
                     f"default worker_count ({pool._DEFAULT_WORKER_COUNT}) and the row count ({nlines})."
                 )
 
@@ -146,7 +146,7 @@ def test_spawn_mode_parallelism_in_subprocess(
                             "count based on the currently memory usage."
                         )
                         mock_logger.info.assert_any_call(
-                            f"Set process count to ({n_process}) by taking the minimum value among estimated "
+                            f"Set process count to {n_process} by taking the minimum value among estimated "
                             f"process count ({estimated_available_worker_count}), the row count ({nlines}) and the "
                             f"default worker count ({pool._DEFAULT_WORKER_COUNT})."
                         )
