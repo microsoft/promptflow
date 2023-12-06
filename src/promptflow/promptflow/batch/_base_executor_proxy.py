@@ -129,11 +129,11 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         waiting_health_timeout = 5
         start_time = datetime.utcnow()
         while (datetime.utcnow() - start_time).seconds < waiting_health_timeout:
-            if await self.check_health():
+            if await self._check_health():
                 return
         raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
-    async def check_health(self):
+    async def _check_health(self):
         try:
             health_url = self.api_endpoint + "/health"
             async with httpx.AsyncClient() as client:
