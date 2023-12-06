@@ -36,6 +36,8 @@ from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
+    PROMPT_FLOW_DIR_NAME,
+    PROMPT_FLOW_RUNS_DIR_NAME,
     REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
@@ -1009,7 +1011,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
-        :param output: The output directory. Default to be current working directory if not specified.
+        :param output: The output directory. Default to be default to be "~/.promptflow/.runs" folder.
         :type output: Optional[str]
         :param overwrite: Whether to overwrite the existing run folder. Default to be False.
         :type overwrite: Optional[bool]
@@ -1019,7 +1021,11 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         import platform
 
         run = Run._validate_and_return_run_name(run)
-        output_directory = Path(".") if output is None else Path(output)
+        if output is None:
+            # default to be "~/.promptflow/.runs" folder
+            output_directory = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_RUNS_DIR_NAME
+        else:
+            output_directory = Path(output)
 
         run_folder = output_directory / run
         if run_folder.exists():
