@@ -45,6 +45,7 @@ def _update_latest_from_pypi(versions):
         versions['pypi'] = version
     return versions, success
 
+
 def get_latest_version_from_pypi(package_name):
     try:
         import requests
@@ -72,7 +73,6 @@ def hint_for_update():
             cached_versions = json.load(f)
         except json.decoder.JSONDecodeError:
             cached_versions = {}
-
 
     version_update_time = datetime.datetime.strptime(
         cached_versions[VERSION_UPDATE_TIME],

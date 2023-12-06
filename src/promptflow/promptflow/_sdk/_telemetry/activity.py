@@ -12,7 +12,6 @@ from promptflow._sdk._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.version_hint_utils import hint_for_update, HINT_ACTIVITY_NAME
 
 
-
 class ActivityType(object):
     """The type of activity (code) monitored.
 
