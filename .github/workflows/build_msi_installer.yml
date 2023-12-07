@@ -38,7 +38,7 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
-           msbuild-version: '14.0.23107.0'
+           vs-version: '[16.4,16.5)'
 
       - name: Install WIX Toolset
         shell:  pwsh
