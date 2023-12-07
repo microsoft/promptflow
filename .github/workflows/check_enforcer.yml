@@ -14,10 +14,11 @@ jobs:
         id: summarize_check_status
         shell: pwsh
         run: |
-          $first_commit = ${{ github.sha }}
+          set 
+          $first_commit = "${{ github.sha }}"
           $diff_commit = 'main'
           $github_repository = 'microsoft/promptflow'
-          $first_commit_hash = $(git rev-parse $first_commit)
+          $first_commit_hash = "$(git rev-parse $first_commit)"
           
           
           function get_diffs() {
