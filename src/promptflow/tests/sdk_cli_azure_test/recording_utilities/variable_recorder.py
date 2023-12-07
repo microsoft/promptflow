@@ -25,9 +25,14 @@ class VariableRecorder:
         return request
 
     def sanitize_response(self, response: Dict) -> Dict:
-        response["body"]["string"] = response["body"]["string"].decode("utf-8")
-        response["body"]["string"] = self._sanitize(response["body"]["string"])
-        response["body"]["string"] = response["body"]["string"].encode("utf-8")
+        # sync response: .body.string, bytes, need decode/encode
+        # async response: .content, string; no action needed
+        if "body" in response:
+            response["body"]["string"] = response["body"]["string"].decode("utf-8")
+            response["body"]["string"] = self._sanitize(response["body"]["string"])
+            response["body"]["string"] = response["body"]["string"].encode("utf-8")
+        else:
+            response["content"] = self._sanitize(response["content"])
         return response
 
     def _sanitize(self, value: str) -> str:
