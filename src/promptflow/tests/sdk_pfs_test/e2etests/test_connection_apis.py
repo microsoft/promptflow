@@ -59,10 +59,10 @@ class TestConnectionAPIs:
         with mock.patch(target) as mocked_config, mock.patch(provider_url_target) as mocked_provider_url:
             mocked_config.return_value = "azureml"
             mocked_provider_url.return_value = mock_provider_url
-            connections = pfs_op.list_connections().json
+            connections = pfs_op.list_connections(status_code=200).json
             assert len(connections) > 0
 
-            connection = pfs_op.get_connection(name=connections[0]["name"]).json
+            connection = pfs_op.get_connection(name=connections[0]["name"], status_code=200).json
             assert connection["name"] == connections[0]["name"]
 
         target = "promptflow._sdk._pf_client.Configuration.get_config"
@@ -78,8 +78,9 @@ class TestConnectionAPIs:
                 json.dump(config, f)
             with mock.patch(target) as mocked_config:
                 mocked_config.return_value = "azureml"
-                connections = pfs_op.list_connections_by_provider(working_dir=temp).json
+                connections = pfs_op.list_connections_by_provider(working_dir=temp, status_code=200).json
                 assert len(connections) > 0
 
-                connection = pfs_op.get_connections_by_provider(name=connections[0]["name"], working_dir=temp).json
+                connection = pfs_op.get_connections_by_provider(
+                    name=connections[0]["name"], working_dir=temp, status_code=200).json
                 assert connection["name"] == connections[0]["name"]
