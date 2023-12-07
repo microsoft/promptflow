@@ -82,7 +82,7 @@ class MockCSharpExecutorProxy(CSharpExecutorProxy):
     ) -> "MockCSharpExecutorProxy":
         """Create a new executor"""
         port = cls.find_available_port()
-        process = multiprocessing.Process(target=run_executor_server, args=(port,))
+        process = multiprocessing.Process(target=run_executor_server, args=(int(port),))
         process.start()
         return cls(process, port)
 

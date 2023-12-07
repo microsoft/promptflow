@@ -9,7 +9,7 @@ on:
     - cron: "44 20 * * *" # Every day starting at 4:44 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/chat/chat-with-pdf/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_chatwithpdf_chatwithpdfazure.yml ]
+    paths: [ examples/flows/chat/chat-with-pdf/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_chatwithpdf_chatwithpdfazure.yml, '!examples/flows/integrations/**' ]
   workflow_dispatch:
 
 env:
