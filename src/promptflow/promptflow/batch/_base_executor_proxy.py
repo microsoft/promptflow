@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 from datetime import datetime
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -109,13 +110,19 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             # if the status code is 200, the response is the json dict of a line result
             return response.json()
         else:
-            # if the status code is not 200, we wrap it in an UnexpectedError and return the related error dict
+            # if the status code is not 200, log the error
             message_format = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
             bulk_logger.error(message_format.format(status_code=response.status_code, error=response.text))
-            unexpected_error = UnexpectedError(
-                message_format=message_format, status_code=response.status_code, error=response.text
-            )
-            return ExceptionPresenter.create(unexpected_error).to_dict()
+            # if response can be parsed as json, return the error dict
+            # otherwise, wrap the error in an UnexpectedError and return the error dict
+            try:
+                error_dict = response.json()
+                return error_dict["error"]
+            except JSONDecodeError:
+                unexpected_error = UnexpectedError(
+                    message_format=message_format, status_code=response.status_code, error=response.text
+                )
+                return ExceptionPresenter.create(unexpected_error).to_dict()
 
     async def _ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
