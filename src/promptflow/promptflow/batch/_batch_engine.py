@@ -226,7 +226,7 @@ class BatchEngine:
 
         while completed_line < total_lines:
             try:
-                async with asyncio.Semaphore(3):
+                async with asyncio.Semaphore(10):
                     done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
                     self._line_results.extend([task.result() for task in done])
                     # log the progress of the batch run
@@ -257,7 +257,6 @@ class BatchEngine:
         batch_inputs: List[dict],
         run_id: Optional[str] = None,
     ):
-        aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(self._exec_aggregation_internal(batch_inputs, run_id))
         aggr_result = await task
         return aggr_result
