@@ -65,6 +65,11 @@ jobs:
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
 
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
     - name: Run Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
