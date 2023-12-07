@@ -53,6 +53,7 @@ class TestCSharpExecutorProxy:
         assert batch_engine._is_canceled is True
         assert batch_result_global.status == Status.Canceled
         assert batch_result_global.system_metrics.duration > 0
+        # there exists some completed lines before the cancellation
         assert batch_result_global.total_lines > 0
 
     def _submit_batch_run(
