@@ -18,7 +18,7 @@ def test_langchain_traces(question: str, conn: AzureOpenAIConnection):
 
     llm = AzureOpenAI(
         temperature=0.7,
-        deployment_name="gpt-35-turbo",
+        deployment_name="text-ada-001",
     )
     tools = load_tools(["llm-math"], llm=llm)
     agent = initialize_agent(
