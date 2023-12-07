@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import json
 import shutil
 from logging import Logger
@@ -34,8 +35,10 @@ FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
+# TODO(2770419): make this dynamic created during migrate live test to canary
+FAILED_RUN_NAME_EASTUS = "3dfd077a-f071-443e-9c4e-d41531710950"
 
-# TODO(2528577): we should run these test with recording mode.
+
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures(
@@ -351,11 +354,19 @@ class TestFlowRun:
     def test_stream_failed_run_logs(self, pf, capfd: pytest.CaptureFixture):
         # (default) raise_on_error=True
         with pytest.raises(InvalidRunStatusError):
-            pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
+            pf.stream(run=FAILED_RUN_NAME_EASTUS)
         # raise_on_error=False
-        pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950", raise_on_error=False)
+        pf.stream(run=FAILED_RUN_NAME_EASTUS, raise_on_error=False)
         out, _ = capfd.readouterr()
         assert "Input 'question' in line 0 is not provided for flow 'Simple_mock_answer'." in out
+
+    def test_failed_run_to_dict_exclude(self, pf):
+        failed_run = pf.runs.get(run=FAILED_RUN_NAME_EASTUS)
+        # Azure run object reference a dict, use deepcopy to avoid unexpected modification
+        default = copy.deepcopy(failed_run._to_dict())
+        exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
+        assert "additionalInfo" in default["error"]["error"] and "additionalInfo" not in exclude["error"]["error"]
+        assert "debugInfo" in default["error"]["error"] and "debugInfo" not in exclude["error"]["error"]
 
     @pytest.mark.skipif(
         condition=not is_live(),
@@ -784,6 +795,23 @@ class TestFlowRun:
             workspace=mock_workspace, credential=MagicMock(), operation_scope=MagicMock()
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
+
+    @pytest.mark.skipif(condition=not is_live(), reason="need to fix recording")
+    def test_download_run(self, pf):
+        from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
+
+        run = "c619f648-c809-4545-9f94-f67b0a680706"
+
+        expected_files = [
+            AsyncRunDownloader.LOCAL_LOGS_FILE_NAME,
+            AsyncRunDownloader.LOCAL_METRICS_FILE_NAME,
+            f"{AsyncRunDownloader.LOCAL_SNAPSHOT_FOLDER}/flow.dag.yaml",
+        ]
+
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, run, file).exists()
 
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError
