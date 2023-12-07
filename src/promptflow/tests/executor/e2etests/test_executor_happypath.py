@@ -110,9 +110,9 @@ class TestExecutor:
         assert run_info.node == node_name
         assert run_info.system_metrics["duration"] >= 0
 
-    @pytest.mark.skipif(
-        is_replay() or is_record(), reason="Pickle behaves incorrectly in spawn mode, recording disabled"
-    )
+    # @pytest.mark.skipif(
+    #     is_replay() or is_record(), reason="Pickle behaves incorrectly in spawn mode, recording disabled"
+    # )
     def test_executor_exec_node_with_llm_node(self, dev_connections, recording_injection):
         # Run the test in a new process to ensure the openai api is injected correctly for the single node run
         context = multiprocessing.get_context("spawn")
