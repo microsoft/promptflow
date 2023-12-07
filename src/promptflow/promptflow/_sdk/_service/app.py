@@ -9,9 +9,9 @@ from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
 from promptflow._sdk._service import Api
-from promptflow._sdk._service.utils.utils import FormattedException
 from promptflow._sdk._service.apis.connection import api as connection_api
 from promptflow._sdk._service.apis.run import api as run_api
+from promptflow._sdk._service.utils.utils import FormattedException
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
 
 
@@ -49,9 +49,14 @@ def create_app():
         @api.errorhandler(Exception)
         def handle_exception(e):
             from dataclasses import asdict
+
             if isinstance(e, HTTPException):
                 return asdict(FormattedException(e), dict_factory=lambda x: {k: v for (k, v) in x if v}), e.code
             app.logger.error(e, exc_info=True, stack_info=True)
-            return asdict(FormattedException(e), dict_factory=lambda x: {k: v for (k, v) in x if v}), 500
+            formatted_exception = FormattedException(e)
+            return (
+                asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v}),
+                formatted_exception.status_code,
+            )
 
     return app, api
