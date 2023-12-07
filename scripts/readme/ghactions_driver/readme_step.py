@@ -266,11 +266,16 @@ class ReadmeStepsManage:
         Get the base directory of the git repo
         """
         if ReadmeStepsManage.repo_base_dir == "":
-            ReadmeStepsManage.repo_base_dir = (
-                subprocess.check_output(["git", "rev-parse", "--show-toplevel"])
-                .decode("utf-8")
-                .strip()
-            )
+            try:
+                ReadmeStepsManage.repo_base_dir = (
+                    subprocess.check_output(["git", "rev-parse", "--show-toplevel"])
+                    .decode("utf-8")
+                    .strip()
+                )
+                raise Exception("Not in git repo")
+            except Exception:
+                ReadmeStepsManage.repo_base_dir = Path(__file__).parent.parent.parent.parent.resolve()
+                print(ReadmeStepsManage.repo_base_dir)
         return ReadmeStepsManage.repo_base_dir
 
     @staticmethod
