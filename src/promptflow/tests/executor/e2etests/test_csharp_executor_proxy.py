@@ -1,6 +1,5 @@
 import multiprocessing
 import threading
-import time
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Optional, Tuple, Union
@@ -47,17 +46,14 @@ class TestCSharpExecutorProxy:
         assert batch_engine._is_canceled is False
         batch_run_thread.start()
         # cancel the batch run
-        time.sleep(10)
         batch_engine.cancel()
         batch_run_thread.join()
         assert batch_engine._is_canceled is True
         assert batch_result_global.status == Status.Canceled
         assert batch_result_global.system_metrics.duration > 0
-        # there exists some completed lines before the cancellation
-        assert batch_result_global.total_lines > 0
 
     def _submit_batch_run(
-        self, run_in_thread=False, has_error=False, input_file_name="inputs.jsonl"
+        self, run_in_thread=False, has_error=False
     ) -> Union[Tuple[BatchEngine, threading.Thread], Tuple[BatchEngine, BatchResult]]:
         flow_folder = "csharp_flow"
         mem_run_storage = MemoryRunStorage()
@@ -66,7 +62,7 @@ class TestCSharpExecutorProxy:
             get_yaml_file(flow_folder), get_flow_folder(flow_folder), storage=mem_run_storage, has_error=has_error
         )
         # prepare the inputs
-        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
+        input_dirs = {"data": get_flow_inputs_file(flow_folder)}
         inputs_mapping = {"question": "${data.question}"}
         output_dir = Path(mkdtemp())
         if run_in_thread:

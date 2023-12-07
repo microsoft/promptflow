@@ -1,6 +1,4 @@
-import asyncio
 import json
-import random
 from functools import partial
 
 from aiohttp import web
@@ -24,7 +22,6 @@ async def _handle_health(request: web.Request):
 async def _handle_execution(request: web.Request, has_error=False):
     try:
         request = await request.json()
-        await asyncio.sleep(random.uniform(0, 3))
         return _get_execution_result(request, has_error=has_error)
     except json.JSONDecodeError:
         return web.Response(status=400, text="Bad Request: Invalid JSON")
