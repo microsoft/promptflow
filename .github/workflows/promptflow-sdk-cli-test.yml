@@ -132,7 +132,7 @@ jobs:
       with:
         name: Test Results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
         path: |
-          ${{ env.testWorkingDirectory }}/*.xml
+          ${{ github.workspace }}/*.xml
           ${{ env.testWorkingDirectory }}/htmlcov/
   publish-test-results:
     name: "Publish Tests Results"
