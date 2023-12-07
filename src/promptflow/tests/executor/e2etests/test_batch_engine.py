@@ -143,57 +143,73 @@ class TestBatch:
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
 
     @pytest.mark.parametrize(
-        "flow_folder, inputs_mapping",
+        "multiprocessing_start_method, flow_folder, inputs_mapping",
         [
             (
+                "spawn",
                 SAMPLE_FLOW,
                 {"url": "${data.url}"},
             ),
             (
+                "spawn",
                 "prompt_tools",
                 {"text": "${data.text}"},
             ),
             (
+                "spawn",
                 "script_with___file__",
                 {"text": "${data.text}"},
             ),
             (
+                "spawn",
                 "sample_flow_with_functions",
                 {"question": "${data.question}"},
             ),
         ],
     )
-    def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
-        p = multiprocessing.Process(target=run_batch_in_spawn_or_forkserver,
-                                    args=("spawn", flow_folder, inputs_mapping, dev_connections))
+    def test_spawn_mode_batch_run(
+            self, multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+        if multiprocessing_start_method not in multiprocessing.get_all_start_methods():
+            pytest.skip(f"Unsupported start method: {multiprocessing_start_method}")
+        p = multiprocessing.Process(
+            target=run_batch_in_spawn_or_forkserver,
+            args=(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections))
         p.start()
         p.join()
         assert p.exitcode == 0
 
     @pytest.mark.parametrize(
-        "flow_folder, inputs_mapping",
+        "multiprocessing_start_method, flow_folder, inputs_mapping",
         [
             (
+                "forkserver",
                 SAMPLE_FLOW,
                 {"url": "${data.url}"},
             ),
             (
+                "forkserver",
                 "prompt_tools",
                 {"text": "${data.text}"},
             ),
             (
+                "forkserver",
                 "script_with___file__",
                 {"text": "${data.text}"},
             ),
             (
+                "forkserver",
                 "sample_flow_with_functions",
                 {"question": "${data.question}"},
             ),
         ],
     )
-    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
-        p = multiprocessing.Process(target=run_batch_in_spawn_or_forkserver,
-                                    args=("forkserver", flow_folder, inputs_mapping, dev_connections))
+    def test_forkserver_mode_batch_run(
+            self, multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+        if multiprocessing_start_method not in multiprocessing.get_all_start_methods():
+            pytest.skip(f"Unsupported start method: {multiprocessing_start_method}")
+        p = multiprocessing.Process(
+            target=run_batch_in_spawn_or_forkserver,
+            args=(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections))
         p.start()
         p.join()
         assert p.exitcode == 0
