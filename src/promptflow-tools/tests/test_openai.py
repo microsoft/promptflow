@@ -129,3 +129,23 @@ class TestOpenAI:
             )
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
+
+    def test_openai_chat_with_not_support_response_format_model(
+            self,
+            open_ai_connection,
+            example_prompt_template,
+            chat_history
+    ):
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            chat(
+                connection=open_ai_connection,
+                prompt=example_prompt_template,
+                model="gpt-3.5-turbo",
+                temperature=0,
+                user_input="Write a slogan for product X, please reponse with json.",
+                chat_history=chat_history,
+                response_format="json_object"
+            )
+        error_message = "\'response_format\' of type \'json_object\' is not supported with this model."
+        assert error_message in exc_info.value.message
+        assert exc_info.value.error_codes == "UserError/OpenAIError/BadRequestError".split("/")

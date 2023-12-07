@@ -1,0 +1,21 @@
+Collecting openai
+  Obtaining dependency information for openai from https://files.pythonhosted.org/packages/3e/d3/309769dad11d5f75b81c7252d9dc849ed440d0921215e759af169054f3b6/openai-1.3.7-py3-none-any.whl.metadata
+  Using cached openai-1.3.7-py3-none-any.whl.metadata (17 kB)
+Requirement already satisfied: anyio<4,>=3.5.0 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from openai) (3.7.1)
+Requirement already satisfied: distro<2,>=1.7.0 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from openai) (1.8.0)
+Requirement already satisfied: httpx<1,>=0.23.0 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from openai) (0.25.1)
+Requirement already satisfied: pydantic<3,>=1.9.0 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from openai) (2.5.0)
+Requirement already satisfied: sniffio in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from openai) (1.3.0)
+Requirement already satisfied: tqdm>4 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from openai) (4.66.1)
+Requirement already satisfied: typing-extensions<5,>=4.5 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from openai) (4.8.0)
+Requirement already satisfied: idna>=2.8 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from anyio<4,>=3.5.0->openai) (3.4)
+Requirement already satisfied: exceptiongroup in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from anyio<4,>=3.5.0->openai) (1.1.3)
+Requirement already satisfied: certifi in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from httpx<1,>=0.23.0->openai) (2023.7.22)
+Requirement already satisfied: httpcore in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from httpx<1,>=0.23.0->openai) (1.0.2)
+Requirement already satisfied: annotated-types>=0.4.0 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from pydantic<3,>=1.9.0->openai) (0.6.0)
+Requirement already satisfied: pydantic-core==2.14.1 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from pydantic<3,>=1.9.0->openai) (2.14.1)
+Requirement already satisfied: colorama in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from tqdm>4->openai) (0.4.6)
+Requirement already satisfied: h11<0.15,>=0.13 in c:\users\chesi\documents\anaconda3.7\envs\pf\lib\site-packages (from httpcore->httpx<1,>=0.23.0->openai) (0.14.0)
+Using cached openai-1.3.7-py3-none-any.whl (221 kB)
+Installing collected packages: openai
+Successfully installed openai-1.3.7
