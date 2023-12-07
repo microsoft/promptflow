@@ -268,7 +268,7 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
 
 
 @pytest.fixture
-def mock_vcrpy_for_async_http_request() -> None:
+def mock_vcrpy_for_httpx() -> None:
     # there is a known issue in vcrpy handling httpx response: https://github.com/kevin1024/vcrpy/pull/591
     # the related code change has not been merged, so we need such a fixture for patch
     # in short, you will always need this if you have async network traffic

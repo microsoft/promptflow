@@ -234,3 +234,10 @@ def is_json_payload_response(response: Dict) -> bool:
     headers = response.get("headers")
     # PFAzureIntegrationTestRecording will lower keys in response headers
     return _is_json_payload(headers, key="content-type")
+
+
+def is_httpx_response(response: Dict) -> bool:
+    # different from other stubs in vcrpy, httpx response uses "content" instead of "body"
+    # this leads to different handle logic to response
+    # so we need a utility to check if a response is from httpx
+    return "content" in response
