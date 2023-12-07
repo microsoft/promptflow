@@ -19,7 +19,6 @@ jobs:
         run: |
           Set-PSDebug -Trace 1
           $first_commit = "${{ github.sha }}"
-          $diff_commit = 'main'
           $github_repository = 'microsoft/promptflow'
           $first_commit_hash = "$(git rev-parse $first_commit)"
           
@@ -27,7 +26,7 @@ jobs:
           function get_diffs() {
           
               $need_to_check = New-Object System.Collections.Generic.HashSet[string]
-              git diff --name-only $first_commit $diff_commit | ForEach-Object {
+              git diff --name-only HEAD main | ForEach-Object {
                   if ($_.Contains("src/promptflow")) {
                       $need_to_check.Add("sdk_cli")
                   }
