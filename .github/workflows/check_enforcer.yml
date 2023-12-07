@@ -14,7 +14,7 @@ jobs:
         id: summarize_check_status
         shell: pwsh
         run: |
-          set 
+          Set-PSDebug -Trace 1
           $first_commit = "${{ github.sha }}"
           $diff_commit = 'main'
           $github_repository = 'microsoft/promptflow'
