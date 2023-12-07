@@ -255,18 +255,16 @@ class BatchEngine:
     async def _exec_aggregation(
         self,
         batch_inputs: List[dict],
-        line_results: List[LineResult],
         run_id: Optional[str] = None,
     ):
         aggr_result = AggregationResult({}, {}, {})
-        task = asyncio.create_task(self._exec_aggregation_internal(batch_inputs, line_results, run_id))
+        task = asyncio.create_task(self._exec_aggregation_internal(batch_inputs, run_id))
         aggr_result = await task
         return aggr_result
 
     async def _exec_aggregation_internal(
         self,
         batch_inputs: List[dict],
-        line_results: List[LineResult],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
@@ -275,7 +273,7 @@ class BatchEngine:
 
         bulk_logger.info("Executing aggregation nodes...")
 
-        run_infos = [r.run_info for r in line_results]
+        run_infos = [r.run_info for r in self._line_results]
         succeeded = [i for i, r in enumerate(run_infos) if r.status == Status.Completed]
 
         succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
@@ -286,7 +284,7 @@ class BatchEngine:
         succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
 
         aggregation_inputs = transpose(
-            [result.aggregation_inputs for result in line_results],
+            [result.aggregation_inputs for result in self._line_results],
             keys=get_aggregation_inputs_properties(self._flow),
         )
         succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
