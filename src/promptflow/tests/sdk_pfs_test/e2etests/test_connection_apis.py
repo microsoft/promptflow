@@ -2,7 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import json
+import tempfile
 import uuid
+from pathlib import Path
 
 import mock
 import pytest
@@ -48,8 +51,10 @@ class TestConnectionAPIs:
 
     def test_get_connection_by_provicer(self, pfs_op, subscription_id, resource_group_name, workspace_name):
         target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
-        provider_url_target = "promptflow._sdk.operations._local_azure_connection_operations." \
-                              "LocalAzureConnectionOperations._extract_workspace"
+        provider_url_target = (
+            "promptflow._sdk.operations._local_azure_connection_operations."
+            "LocalAzureConnectionOperations._extract_workspace"
+        )
         mock_provider_url = (subscription_id, resource_group_name, workspace_name)
         with mock.patch(target) as mocked_config, mock.patch(provider_url_target) as mocked_provider_url:
             mocked_config.return_value = "azureml"
@@ -59,3 +64,22 @@ class TestConnectionAPIs:
 
             connection = pfs_op.get_connection(name=connections[0]["name"]).json
             assert connection["name"] == connections[0]["name"]
+
+        target = "promptflow._sdk._pf_client.Configuration.get_config"
+        with tempfile.TemporaryDirectory() as temp:
+            config_file = Path(temp) / ".azureml" / "config.json"
+            config_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(config_file, "w") as f:
+                config = {
+                    "subscription_id": subscription_id,
+                    "resource_group": resource_group_name,
+                    "workspace_name": workspace_name,
+                }
+                json.dump(config, f)
+            with mock.patch(target) as mocked_config:
+                mocked_config.return_value = "azureml"
+                connections = pfs_op.list_connections_by_provider(working_dir=temp).json
+                assert len(connections) > 0
+
+                connection = pfs_op.get_connections_by_provider(name=connections[0]["name"], working_dir=temp).json
+                assert connection["name"] == connections[0]["name"]

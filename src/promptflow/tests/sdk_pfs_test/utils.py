@@ -34,8 +34,26 @@ class PFSOperations:
             assert status_code == response.status_code
         return response
 
+    def list_connections_by_provider(self, working_dir, status_code=None):
+        response = self._client.get(
+            f"{self.CONNECTION_URL_PREFIX}/", data={"working_directory": working_dir}, headers=self.remote_user_header()
+        )
+        if status_code:
+            assert status_code == response.status_code
+        return response
+
     def get_connection(self, name: str, status_code=None):
         response = self._client.get(f"{self.CONNECTION_URL_PREFIX}/{name}", headers=self.remote_user_header())
+        if status_code:
+            assert status_code == response.status_code
+        return response
+
+    def get_connections_by_provider(self, name: str, working_dir, status_code=None):
+        response = self._client.get(
+            f"{self.CONNECTION_URL_PREFIX}/{name}",
+            query_string={"working_directory": working_dir},
+            headers=self.remote_user_header(),
+        )
         if status_code:
             assert status_code == response.status_code
         return response

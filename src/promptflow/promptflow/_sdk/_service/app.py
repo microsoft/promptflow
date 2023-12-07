@@ -46,10 +46,10 @@ def create_app():
         app.logger.addHandler(handler)
 
         # Basic error handler
-        @api.errorhandler(Exception)
+        @app.errorhandler(Exception)
         def handle_exception(e):
             if isinstance(e, HTTPException):
-                return e
+                raise e
             app.logger.error(e, exc_info=True, stack_info=True)
             if isinstance(e, UserErrorException):
                 error_info = e.message
