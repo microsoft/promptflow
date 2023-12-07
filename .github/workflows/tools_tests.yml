@@ -35,6 +35,7 @@ jobs:
           else
             pip install -r ./src/promptflow-tools/requirements.txt
           fi
+          pip list
       - name: Generate configs
         run: |
           python ./scripts/tool/generate_connection_config.py --tenant_id ${{ secrets.TENANT_ID }} --client_id ${{ secrets.CLIENT_ID }} --client_secret ${{ secrets.CLIENT_SECRET }}
