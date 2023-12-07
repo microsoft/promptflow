@@ -1,4 +1,6 @@
+import asyncio
 import json
+import random
 
 from aiohttp import web
 
@@ -20,6 +22,7 @@ async def _handle_execution(request: web.Request):
     try:
         request = await request.json()
         response_data = _get_line_result_dict(request)
+        await asyncio.sleep(random.uniform(0, 10))
         return web.json_response(response_data)
     except json.JSONDecodeError:
         return web.Response(status=400, text="Bad Request: Invalid JSON")
