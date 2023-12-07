@@ -59,7 +59,7 @@ def test_fork_mode_parallelism_in_subprocess(
         is_set_environ_pf_worker_count,
         pf_worker_count,
         n_process):
-
+    os.environ["PF_BATCH_METHOD"] = "fork"
     if is_set_environ_pf_worker_count:
         os.environ["PF_WORKER_COUNT"] = pf_worker_count
     executor = FlowExecutor.create(
