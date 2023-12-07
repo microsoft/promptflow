@@ -32,8 +32,8 @@ def verify_prompt_role_delimiters(message: str, codes: List[str]):
 
     message_pattern = re.compile(
         r"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-        + r"lines as role delimiters: ('(assistant|user|system):\\n'[,.]){3} Current parsed role 'in the context "
-        + r"of azure ml, what does the ml stand for\?' does not meet the requirement. If you intend to use the "
+        + r"lines as role delimiters: ('(assistant|user|system):\\n'[,.]){3} Current parsed role 'the quick brown"
+        + r" fox' does not meet the requirement. If you intend to use the "
         + r"Completion API, please select the appropriate API type and deployment name. If you do intend to use the "
         + r"Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
         + r"gallery that contain 'Chat' in the name.")

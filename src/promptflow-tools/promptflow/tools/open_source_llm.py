@@ -627,33 +627,6 @@ def list_deployment_names(subscription_id: str,
     )
 
 
-def format_generic_response_payload(output: bytes, response_key: str) -> str:
-    response_json = json.loads(output)
-    try:
-        if response_key is None:
-            return response_json[0]
-        else:
-            return response_json[0][response_key]
-    except KeyError as e:
-        if response_key is None:
-            message = f"""Expected the response to fit the following schema:
-`[
-    <text>
-]`
-Instead, received {response_json} and access failed at key `{e}`.
-"""
-        else:
-            message = f"""Expected the response to fit the following schema:
-`[
-    {{
-        "{response_key}": <text>
-    }}
-]`
-Instead, received {response_json} and access failed at key `{e}`.
-"""
-        raise OpenSourceLLMUserError(message=message)
-
-
 def get_model_type(deployment_model: str) -> str:
     m = re.match(r'azureml://registries/[^/]+/models/([^/]+)/versions/', deployment_model)
     if m is None:
