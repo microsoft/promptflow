@@ -96,7 +96,7 @@ class MockCSharpExecutorProxy(CSharpExecutorProxy):
         process = multiprocessing.Process(
             target=run_executor_server,
             args=(
-                port,
+                int(port),
                 has_error,
             ),
         )
