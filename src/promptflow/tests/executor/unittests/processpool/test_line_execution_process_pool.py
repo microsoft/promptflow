@@ -150,7 +150,8 @@ def test_spawn_mode_parallelism_in_subprocess(
                             "estimated_worker_count_based_on_memory_usage": estimated_available_worker_count
                         }
                         mock_logger.info.assert_any_call(
-                            f"Set process count to {n_process} by taking the minimum value among the factors of {factors}."
+                            f"Set process count to {n_process} by taking the minimum value among the factors "
+                            f"of {factors}."
                         )
 
 
