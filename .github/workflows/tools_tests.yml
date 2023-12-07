@@ -1,6 +1,6 @@
 name: tools_tests
 on:
-  pull_request:
+  pull_request_target:
     paths:
       - src/promptflow-tools/**
       - '**tools_tests.yml'
@@ -13,7 +13,7 @@ jobs:
     timeout-minutes: 30
     env:
       # PF_SOURCE is "main" or "package", means the source of pf code
-      PF_SOURCE: "package"
+      PF_SOURCE: "main"
 
     steps:
       - name: Check for dockerenv file
