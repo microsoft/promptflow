@@ -4,7 +4,13 @@ on:
     - cron: "40 20 * * *" # Every day starting at 4:40 BJT
   pull_request_target:
     paths:
-      - src/promptflow/**
+      - /src/promptflow/promptflow/_core/**
+      - /src/promptflow/promptflow/_internal/**
+      - /src/promptflow/promptflow/batch/**
+      - /src/promptflow/promptflow/executor/**
+      - /src/promptflow/promptflow/integrations/**
+      - /src/promptflow/promptflow/storage/**
+      - /src/promptflow/tests/executor/**
       - scripts/building/**
       - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
