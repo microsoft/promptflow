@@ -406,12 +406,10 @@ class LineExecutionProcessPool:
 
     def _determine_worker_count(self):
         worker_count = get_int_env_var("PF_WORKER_COUNT")
-        estimated_available_worker_count = None
 
-        if not self._use_fork:
-            # Starting a new process in non-fork mode requires to allocate memory. Calculate the maximum number of
-            # processes based on available memory to avoid memory bursting.
-            estimated_available_worker_count = get_available_max_worker_count()
+        # Starting a new process in non-fork mode requires to allocate memory. Calculate the maximum number of processes
+        # based on available memory to avoid memory bursting.
+        estimated_available_worker_count = get_available_max_worker_count() if not self._use_fork else None
 
         # If the environment variable PF_WORKER_COUNT exists and valid, use the value as the worker_count.
         if worker_count is not None and worker_count > 0:
