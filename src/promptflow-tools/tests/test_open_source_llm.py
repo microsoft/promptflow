@@ -108,9 +108,12 @@ class TestOpenSourceLLM:
     gpt2_connection = "connection/gpt2_connection"
     llama_connection = "connection/llama_chat_connection"
     llama_serverless_connection = "connection/llama_chat_serverless"
-    completion_prompt = "In the context of Azure ML, what does the ML stand for?"
+    completion_prompt = "The quick brown fox"
     chat_prompt = """system:
-You are a AI which helps Customers answer questions.
+* You are a AI which helps Customers complete a sentence.
+* Your answer should complete the provided prompt.
+* Your answer should be followed by a discussion of the meaning.
+* The discussion part of your answer must be long and detailed.
 
 user:
 """ + completion_prompt
@@ -150,7 +153,7 @@ user:
             self.chat_prompt,
             API.CHAT,
             endpoint_name=self.gpt2_connection,
-            max_new_tokens=2)
+            max_new_tokens=30)
         # GPT-2 doesn't take this parameter
         validate_response(response)
 
@@ -437,7 +440,7 @@ user:
                 prompt,
                 api_type,
                 endpoint_name=endpoint['value'],
-                max_new_tokens=10,
+                max_new_tokens=30,
                 model_kwargs={})
             validate_response(response)
 
@@ -459,7 +462,7 @@ user:
                     api_type,
                     endpoint_name=endpoint['value'],
                     deployment_name=deployment['value'],
-                    max_new_tokens=10,
+                    max_new_tokens=30,
                     model_kwargs={})
                 validate_response(response)
 

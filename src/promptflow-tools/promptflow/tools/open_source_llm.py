@@ -701,6 +701,9 @@ class ModelFamily(str, Enum):
         return None
 
 
+STANDARD_CONTRACT_MODELS = [ModelFamily.DOLLY, ModelFamily.GPT2, ModelFamily.FALCON]
+
+
 class API(str, Enum):
     CHAT = "chat"
     COMPLETION = "completion"
@@ -895,11 +898,7 @@ class ContentFormatterFactory:
                 return ServerlessLlamaContentFormatter(chat_history=chat_history, api=api)
             else:
                 return LlamaContentFormatter(chat_history=chat_history, api=api)
-        elif model_family == ModelFamily.DOLLY:
-            return MIRCompleteFormatter()
-        elif model_family == ModelFamily.GPT2:
-            return MIRCompleteFormatter()
-        elif model_family == ModelFamily.FALCON:
+        elif model_family in STANDARD_CONTRACT_MODELS:
             return MIRCompleteFormatter()
 
 
