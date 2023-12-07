@@ -796,6 +796,23 @@ class TestFlowRun:
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
+    @pytest.mark.skipif(condition=not is_live(), reason="need to fix recording")
+    def test_download_run(self, pf):
+        from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
+
+        run = "c619f648-c809-4545-9f94-f67b0a680706"
+
+        expected_files = [
+            AsyncRunDownloader.LOCAL_LOGS_FILE_NAME,
+            AsyncRunDownloader.LOCAL_METRICS_FILE_NAME,
+            f"{AsyncRunDownloader.LOCAL_SNAPSHOT_FOLDER}/flow.dag.yaml",
+        ]
+
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, run, file).exists()
+
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError
 
