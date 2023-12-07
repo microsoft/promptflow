@@ -52,14 +52,13 @@ def get_bulk_inputs(nlinee=4, flow_folder="", sample_inputs_file="", return_dict
     return [get_line_inputs() for _ in range(nlinee)]
 
 
-@pytest.mark.skip("This is a subprocess function used for testing and cannot be tested alone.")
-def test_fork_mode_parallelism_in_subprocess(
+def execute_in_fork_mode_subprocess(
         dev_connections,
         flow_folder,
         is_set_environ_pf_worker_count,
         pf_worker_count,
         n_process):
-
+    os.environ["PF_BATCH_METHOD"] = "fork"
     if is_set_environ_pf_worker_count:
         os.environ["PF_WORKER_COUNT"] = pf_worker_count
     executor = FlowExecutor.create(
@@ -95,8 +94,7 @@ def test_fork_mode_parallelism_in_subprocess(
                 )
 
 
-@pytest.mark.skip("This is a subprocess function used for testing and cannot be tested alone.")
-def test_spawn_mode_parallelism_in_subprocess(
+def execute_in_spawn_mode_subprocess(
         dev_connections,
         flow_folder,
         is_set_environ_pf_worker_count,
@@ -387,7 +385,7 @@ class TestLineExecutionProcessPool:
         if "fork" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: fork")
         p = multiprocessing.Process(
-            target=test_fork_mode_parallelism_in_subprocess,
+            target=execute_in_fork_mode_subprocess,
             args=(dev_connections,
                   flow_folder,
                   is_set_environ_pf_worker_count,
@@ -425,7 +423,7 @@ class TestLineExecutionProcessPool:
         if "spawn" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: spawn")
         p = multiprocessing.Process(
-            target=test_spawn_mode_parallelism_in_subprocess,
+            target=execute_in_spawn_mode_subprocess,
             args=(dev_connections,
                   flow_folder,
                   is_set_environ_pf_worker_count,
