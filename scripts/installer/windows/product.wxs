@@ -99,8 +99,7 @@
     <Fragment>
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="$(var.ProgramFilesFolder)" Name="PFiles">
-                <Directory Id="Company" Name="Microsoft" />
-                    <Directory Id="DynamicCliDir" Name="promptflow" />
+                <Directory Id="DynamicCliDir" Name="promptflow" />
             </Directory>
         </Directory>
 
