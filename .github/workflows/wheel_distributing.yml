@@ -26,7 +26,8 @@ on:
       PackageVersion:
         description: 'The version of the package'
         value: ${{ jobs.sdk_release.outputs.PackageVersion }}
-
+env:
+  versionPath: 'src/promptflow-tools/promptflow/version.txt'
 jobs:
   sdk_release:
     runs-on: ubuntu-latest
@@ -51,9 +52,20 @@ jobs:
         id: override_version
         if: github.event_name == 'push'
         run: |
-          echo "VERSION = \"0.0.${{ github.run_number }}\"" > src/${{ inputs.SourceFolderName }}/promptflow/version.txt
-          echo "VERSION: 0.0.${{ github.run_number }}"
-          echo "version=0.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          latest_version=$(cat 'src/promptflow-tools/promptflow/version.txt' |  grep -oP '(?<=VERSION = ")[^"]*')
+          echo "latest promptflow-tools version: $latest_version"
+
+          pip install bump2version
+          cp scripts/promptflow_tools_release/.bumpversion.cfg ./
+          echo $latest_version > version.txt
+          bump2version minor --current-version $latest_version
+          next_release_version=$(head -n 1 version.txt)
+          echo "next promptflow-tools version: $next_release_version"
+
+          version="${next_release_version}rc${{ github.run_number }}"
+          echo "VERSION = \"${version}\"" > src/${{ inputs.SourceFolderName }}/promptflow/version.txt
+          echo "VERSION: ${version}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Set up conda environment
         uses: conda-incubator/setup-miniconda@v2
