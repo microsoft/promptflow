@@ -26,7 +26,7 @@ jobs:
           function get_diffs() {
           
               $need_to_check = New-Object System.Collections.Generic.HashSet[string]
-              git diff --name-only HEAD main | ForEach-Object {
+              git diff --name-only HEAD origin/main | ForEach-Object {
                   if ($_.Contains("src/promptflow")) {
                       $need_to_check.Add("sdk_cli")
                   }
