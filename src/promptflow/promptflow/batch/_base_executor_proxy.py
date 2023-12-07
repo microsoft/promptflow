@@ -118,7 +118,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             try:
                 error_dict = response.json()
                 return error_dict["error"]
-            except JSONDecodeError:
+            except (JSONDecodeError, KeyError):
                 unexpected_error = UnexpectedError(
                     message_format=message_format, status_code=response.status_code, error=response.text
                 )
