@@ -796,7 +796,6 @@ class TestFlowRun:
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
-    @pytest.mark.usefixtures("mock_vcrpy_for_httpx")
     def test_download_run(self, pf):
         from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
 
