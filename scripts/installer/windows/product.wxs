@@ -85,37 +85,35 @@
         </InstallUISequence>
 
         <CustomAction Id="StartPromptFlowService"
-            Directory="DynamicCliDir"
+            Directory="APPLICATIONFOLDER"
             Execute="commit"
             ExeCommand="PowerShell.exe -WindowStyle hidden Start-Process -FilePath pfs -NoNewWindow -Wait"
             Return="asyncNoWait" />
         <InstallExecuteSequence>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
-
     </Product>
 
     <Fragment>
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="$(var.ProgramFilesFolder)" Name="PFiles">
-                <Directory Id="DynamicCliDir" Name="promptflow" />
+                <Directory Id="APPLICATIONFOLDER" Name="promptflow" />
             </Directory>
         </Directory>
 
-        <Property Id="WIXUI_INSTALLDIR" Value="DynamicCliDir" />
-        <UIRef Id="WixUI_InstallDir" />
+        <UIRef Id="WixUI_Advanced" />
     </Fragment>
 
     <Fragment>
         <ComponentGroup Id="PromptflowCliSettingsGroup">
-            <Component Id="RemovePromptflowFolder" Directory="DynamicCliDir" Guid="$(var.RemovePromptflowFolderGuid)">
-                <RemoveFolder Id="DynamicCliDir" On="uninstall" />
+            <Component Id="RemovePromptflowFolder" Directory="APPLICATIONFOLDER" Guid="$(var.RemovePromptflowFolderGuid)">
+                <RemoveFolder Id="APPLICATIONFOLDER" On="uninstall" />
             </Component>
 
-            <Component Id="PromptflowSystemPath" Directory="DynamicCliDir" Guid="$(var.PromptflowSystemPathGuid)">
+            <Component Id="PromptflowSystemPath" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowSystemPathGuid)">
                 <Environment Id="PromptflowAddedToPATH"
                      Name="PATH"
-                     Value="[DynamicCliDir]"
+                     Value="[APPLICATIONFOLDER]"
                      Permanent="no"
                      Part="first"
                      Action="set"
@@ -123,7 +121,7 @@
                 <CreateFolder />
             </Component>
             <Component Id="PromptflowCliVersion"
-                       Directory="DynamicCliDir"
+                       Directory="APPLICATIONFOLDER"
                        Guid="$(var.PromptflowCliVersionGuid)">
                 <RegistryValue Root="HKCU"
                                Key="Software\Microsoft\$(var.ProductName)"
