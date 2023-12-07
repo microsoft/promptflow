@@ -22,6 +22,7 @@ jobs:
           $first_commit = "${{ github.sha }}"
           $github_repository = 'microsoft/promptflow'
           $first_commit_hash = "$(git rev-parse $first_commit)"
+          $head_hash = "$(git rev-parse HEAD)"
           
           
           function get_diffs() {
@@ -66,7 +67,7 @@ jobs:
                   }
           
                   # Get pipeline status.
-                  $valid_status_array = $(gh api /repos/$github_repository/commits/$first_commit_hash/check-runs) `
+                  $valid_status_array = $(gh api /repos/$github_repository/commits/$head_hash/check-runs) `
                   | ConvertFrom-Json `
                   | Select-Object -ExpandProperty check_runs `
                   | Where-Object {
