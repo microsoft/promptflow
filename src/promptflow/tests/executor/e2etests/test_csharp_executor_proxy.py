@@ -41,11 +41,13 @@ class TestCSharpExecutorProxy:
 
     def test_batch_cancel(self):
         # use a thread to submit a batch run
-        batch_engine, batch_run_thread = self._submit_batch_run(run_in_thread=True)
+        batch_engine, batch_run_thread = self._submit_batch_run(
+            run_in_thread=True, input_file_name="large_inputs.jsonl"
+        )
         assert batch_engine._is_canceled is False
         batch_run_thread.start()
         # cancel the batch run
-        time.sleep(5)
+        time.sleep(10)
         batch_engine.cancel()
         batch_run_thread.join()
         assert batch_engine._is_canceled is True
@@ -54,7 +56,7 @@ class TestCSharpExecutorProxy:
         assert batch_result_global.total_lines > 0
 
     def _submit_batch_run(
-        self, run_in_thread=False, has_error=False
+        self, run_in_thread=False, has_error=False, input_file_name="inputs.jsonl"
     ) -> Union[Tuple[BatchEngine, threading.Thread], Tuple[BatchEngine, BatchResult]]:
         flow_folder = "csharp_flow"
         mem_run_storage = MemoryRunStorage()
@@ -63,7 +65,7 @@ class TestCSharpExecutorProxy:
             get_yaml_file(flow_folder), get_flow_folder(flow_folder), storage=mem_run_storage, has_error=has_error
         )
         # prepare the inputs
-        input_dirs = {"data": get_flow_inputs_file(flow_folder)}
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
         inputs_mapping = {"question": "${data.question}"}
         output_dir = Path(mkdtemp())
         if run_in_thread:
