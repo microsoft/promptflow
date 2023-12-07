@@ -50,10 +50,18 @@ class MockDatastore:
     """Mock Datastore class for `DatastoreOperations.get_default().name`."""
 
     name: str
+    account_name: str
+    container_name: str
+    endpoint: str
 
 
 def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
-    return MockDatastore(name="workspaceblobstore")
+    return MockDatastore(
+        name="workspaceblobstore",
+        account_name=SanitizedValues.FAKE_ACCOUNT_NAME,
+        container_name=SanitizedValues.FAKE_CONTAINER_NAME,
+        endpoint="core.windows.net",
+    )
 
 
 def mock_workspace_get(*args, **kwargs):
