@@ -40,7 +40,7 @@ pf connection show --name openai_connection
 pf flow test --flow . 
 
 # run chat flow with new question
-pf flow test --flow . --inputs question="[\"How many colors can you see?\", {\"data:image/png;url\": \"https://developer.microsoft.com/_devcom/images/logo-ms-social.png\"}]"
+pf flow test --flow . --inputs question='["How many colors can you see?", {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/logo-ms-social.png"}]'
 
 # start a interactive chat session in CLI
 pf flow test --flow . --interactive

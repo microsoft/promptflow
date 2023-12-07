@@ -26,7 +26,7 @@ Go to "Prompt flow" "Connections" tab. Click on "Create" button, and create an "
 pf flow test --flow .
 
 # test with flow inputs
-pf flow test --flow . --inputs question="How many colors can you see?" input_image="{\"data:image/png;url\": \"https://developer.microsoft.com/_devcom/images/logo-ms-social.png\"}"
+pf flow test --flow . --inputs question="How many colors can you see?" input_image="https://developer.microsoft.com/_devcom/images/logo-ms-social.png"
 
 ```
 
