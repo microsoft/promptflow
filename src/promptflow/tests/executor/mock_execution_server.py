@@ -9,7 +9,7 @@ def run_executor_server(port):
     app.router.add_post("/Execution", _handle_execution)
 
     print(f"Starting server on port {port}")
-    web.run_app(app, host="localhost", port=port)
+    web.run_app(app, host="127.0.0.1", port=port)
 
 
 async def _handle_health(request: web.Request):
