@@ -1,6 +1,6 @@
-import asyncio
 import multiprocessing
 import threading
+import time
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Optional, Tuple, Union
@@ -39,14 +39,13 @@ class TestCSharpExecutorProxy:
         assert batch_result.failed_lines == 1
         assert batch_result.system_metrics.duration > 0
 
-    @pytest.mark.asyncio
-    async def test_batch_cancel(self):
+    def test_batch_cancel(self):
         # use a thread to submit a batch run
         batch_engine, batch_run_thread = self._submit_batch_run(run_in_thread=True)
         assert batch_engine._is_canceled is False
         batch_run_thread.start()
         # cancel the batch run
-        await asyncio.sleep(5)
+        time.sleep(5)
         batch_engine.cancel()
         batch_run_thread.join()
         assert batch_engine._is_canceled is True
