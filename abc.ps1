@@ -1,4 +1,4 @@
-$first_commit = 'yigao/abc' # github.sha
+$first_commit = 'yigao/enforcer_fix' # github.sha
 $diff_commit = 'main'
 $github_repository = 'microsoft/promptflow'
 $first_commit_hash = 'a1bfd6865ac8a52a0af9f8a3c723055e287f9780' #git rev-parse $first_commit
@@ -8,16 +8,9 @@ function get_diffs() {
 
     $need_to_check = New-Object System.Collections.Generic.HashSet[string]
     git diff --name-only $first_commit $diff_commit | ForEach-Object {
-        if ($_ -icontains "src/promptflow") {
+        if ($_.Contains("src/promptflow")) {
             $need_to_check.Add("sdk_cli")
         }
-    }
-
-    function check_conclusion {
-        param(
-            [string]$conclusion
-        )
-        
     }
 
     $failed_reason =  ""
