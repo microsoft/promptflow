@@ -35,6 +35,7 @@ Setup connections to provisioned resources in prompt flow.
 | top_p                  | float       | the probability of using the top choice from the generated tokens. Default is 1.               | No       |
 | presence\_penalty      | float       | value that controls the model's behavior with regards to repeating phrases. Default is 0.      | No       |
 | frequency\_penalty     | float       | value that controls the model's behavior with regards to generating rare phrases. Default is 0. | No       |
+| response_format        | string      | an object specifying the format that the model must output. Default is null.                   | No       |
 
 ## Outputs
 
