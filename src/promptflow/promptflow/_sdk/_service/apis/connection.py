@@ -7,12 +7,11 @@ import inspect
 from flask import jsonify, request
 
 import promptflow._sdk.schemas._connection as connection
-from promptflow._sdk._errors import ConnectionNotFoundError
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import local_user_only
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
-from promptflow._sdk._configuration import Configuration
 
 api = Namespace("Connections", description="Connections Management")
 
@@ -58,12 +57,6 @@ def _get_connection_operation(working_directory=None):
     connection_provider = Configuration().get_connection_provider(path=working_directory)
     connection_operation = get_connection_operation(connection_provider)
     return connection_operation
-
-
-@api.errorhandler(ConnectionNotFoundError)
-def handle_connection_not_found_exception(error):
-    api.logger.warning(f"Raise ConnectionNotFoundError, {error.message}")
-    return {"error_message": error.message}, 404
 
 
 @api.route("/")

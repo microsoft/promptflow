@@ -11,7 +11,6 @@ import yaml
 from flask import Response, jsonify, make_response, request
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
-from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -33,12 +32,6 @@ visualize_parser.add_argument("html", type=str, location="form", required=False)
 # Response model of run operation
 dict_field = api.schema_model("RunDict", {"additionalProperties": True, "type": "object"})
 list_field = api.schema_model("RunList", {"type": "array", "items": {"$ref": "#/definitions/RunDict"}})
-
-
-@api.errorhandler(RunNotFoundError)
-def handle_run_not_found_exception(error):
-    api.logger.warning(f"Raise RunNotFoundError, {error.message}")
-    return {"error_message": error.message}, 404
 
 
 @api.route("/")

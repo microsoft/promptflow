@@ -9,10 +9,10 @@ from werkzeug.exceptions import HTTPException
 
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
 from promptflow._sdk._service import Api
+from promptflow._sdk._service.utils.utils import FormattedException
 from promptflow._sdk._service.apis.connection import api as connection_api
 from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
-from promptflow.exceptions import UserErrorException
 
 
 def heartbeat():
@@ -46,15 +46,12 @@ def create_app():
         app.logger.addHandler(handler)
 
         # Basic error handler
-        @app.errorhandler(Exception)
+        @api.errorhandler(Exception)
         def handle_exception(e):
+            from dataclasses import asdict
             if isinstance(e, HTTPException):
-                raise e
+                return asdict(FormattedException(e), dict_factory=lambda x: {k: v for (k, v) in x if v}), e.code
             app.logger.error(e, exc_info=True, stack_info=True)
-            if isinstance(e, UserErrorException):
-                error_info = e.message
-            else:
-                error_info = str(e)
-            return {"message": "Internal Server Error", "error_message": error_info}, 500
+            return asdict(FormattedException(e), dict_factory=lambda x: {k: v for (k, v) in x if v}), 500
 
     return app, api
