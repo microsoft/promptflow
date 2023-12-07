@@ -10,8 +10,8 @@ jobs:
   check-enforcer:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - run: git fetch origin main
       - name: Summarize check status
         id: summarize_check_status
         working-directory: ${{ github.workspace }}
