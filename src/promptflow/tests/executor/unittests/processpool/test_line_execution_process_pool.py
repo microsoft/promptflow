@@ -384,6 +384,8 @@ class TestLineExecutionProcessPool:
             is_set_environ_pf_worker_count,
             pf_worker_count,
             n_process):
+        if "fork" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: fork")
         p = multiprocessing.Process(
             target=test_fork_mode_parallelism_in_subprocess,
             args=(dev_connections,
@@ -410,7 +412,7 @@ class TestLineExecutionProcessPool:
             (SAMPLE_FLOW, False, True, None, 2, 2)
         ],
     )
-    def test_process_pool_parallelism_in_non_spawn_mode(
+    def test_process_pool_parallelism_in_spawn_mode(
         self,
         dev_connections,
         flow_folder,
@@ -420,6 +422,8 @@ class TestLineExecutionProcessPool:
         estimated_available_worker_count,
         n_process
     ):
+        if "spawn" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: spawn")
         p = multiprocessing.Process(
             target=test_spawn_mode_parallelism_in_subprocess,
             args=(dev_connections,
