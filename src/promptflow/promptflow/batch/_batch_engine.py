@@ -172,17 +172,13 @@ class BatchEngine:
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
         task = asyncio.create_task(self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure))
-        while not task.done() and not self._is_canceled:
-            try:
-                await asyncio.wait_for(asyncio.shield(task), timeout=1)
-            except asyncio.TimeoutError:
-                # ignore timeout error
-                pass
-        if self._is_canceled:
-            task.cancel()
-            return BatchResult.create(
-                self._start_time, datetime.utcnow(), self._line_results, self._aggr_results, status=Status.Canceled
-            )
+        while not task.done():
+            await asyncio.sleep(1)
+            if self._is_canceled:
+                task.cancel()
+                return BatchResult.create(
+                    self._start_time, datetime.utcnow(), self._line_results, self._aggr_results, status=Status.Canceled
+                )
         return task.result()
 
     async def _exec_batch(

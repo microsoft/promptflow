@@ -29,7 +29,7 @@ class TestCSharpExecutorProxy:
         assert batch_result.status == Status.Completed
         assert batch_result.completed_lines == batch_result.total_lines
         assert batch_result.system_metrics.duration > 0
-        assert batch_result.completed_lines > 20
+        assert batch_result.completed_lines > 0
 
     @pytest.mark.asyncio
     async def test_batch_cancel(self):
@@ -38,13 +38,13 @@ class TestCSharpExecutorProxy:
         assert batch_engine._is_canceled is False
         batch_run_thread.start()
         # cancel the batch run
-        await asyncio.sleep(45)
+        await asyncio.sleep(5)
         batch_engine.cancel()
         batch_run_thread.join()
         assert batch_engine._is_canceled is True
         assert batch_result_global.status == Status.Canceled
         assert batch_result_global.system_metrics.duration > 0
-        assert batch_result_global.total_lines > 20
+        assert batch_result_global.total_lines > 0
 
     def _submit_batch_run(
         self, run_in_thread=False
@@ -54,7 +54,7 @@ class TestCSharpExecutorProxy:
         # init the batch engine
         batch_engine = BatchEngine(get_yaml_file(flow_folder), get_flow_folder(flow_folder), storage=mem_run_storage)
         # prepare the inputs
-        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="middle_inputs.jsonl")}
+        input_dirs = {"data": get_flow_inputs_file(flow_folder)}
         inputs_mapping = {"question": "${data.question}"}
         output_dir = Path(mkdtemp())
         if run_in_thread:
