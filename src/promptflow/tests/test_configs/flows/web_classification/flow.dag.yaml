@@ -33,7 +33,7 @@ nodes:
     type: code
     path: classify_with_llm.jinja2
   inputs:
-    deployment_name: gpt-35-turbo
+    deployment_name: text-ada-001
     suffix: ''
     max_tokens: '128'
     temperature: '0.1'
@@ -70,7 +70,7 @@ node_variants:
             type: code
             path: summarize_text_content.jinja2
           inputs:
-            deployment_name: gpt-35-turbo
+            deployment_name: text-ada-001
             suffix: ''
             max_tokens: '128'
             temperature: '0.2'
@@ -94,7 +94,7 @@ node_variants:
             type: code
             path: summarize_text_content__variant_1.jinja2
           inputs:
-            deployment_name: gpt-35-turbo
+            deployment_name: text-ada-001
             suffix: ''
             max_tokens: '256'
             temperature: '0.3'
