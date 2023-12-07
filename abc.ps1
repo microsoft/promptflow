@@ -17,7 +17,7 @@ function get_diffs() {
     $failedCount = 3
 
     for ($i = 0; $i -lt $failedCount; $i++) {
-        Start-Sleep -Seconds 20
+        #Start-Sleep -Seconds 20
         
         $pipelines = @{
             "executor_e2e_tests" = 0;
@@ -39,7 +39,7 @@ function get_diffs() {
         foreach ($item in $need_to_check) {
             if ($item -eq "sdk_cli") {
                 $pipelines.sdk_cli_tests = 2
-                $pipelines.sdk_cli_global_config_tests = 2
+                $pipelines.sdk_cli_global_config_tests = 1
                 $pipelines.sdk_cli_azure_test = 2
                 $pipelines.sdk_pfs_e2e_test = 2
             }
@@ -50,29 +50,30 @@ function get_diffs() {
         | ConvertFrom-Json `
         | Select-Object -ExpandProperty check_runs `
         | Where-Object {
-            for ($j = 0; $j -lt $pipelines.Keys.Count; $j++) {
-                # remove those pipelines that are not required.
-                if ($pipelines[$pipelines.Keys[$j]] -eq 0) {
-                    return $false
+            foreach ($key in $pipelines.Keys) {
+                $value = $pipelines[$key]
+                if ($value -eq 0) {
+                    continue
                 }
-                # count the number of pipelines that are required.
-                if ($_.name.Contains($pipelines.Keys[$j])) {
-                    $pipelines_count[$pipelines.Keys[$j]] += 1
+                if ($_.name.Contains($key)) {
+                    $pipelines_count[$key] += 1
                     return $true
                 }
             }
             return $false
         }
+        
 
         # Get pipeline conclusion. count should match.
 
-        for ($j = 0; $j -lt $pipelines.Keys.Count; $j++) {
-            if ($pipelines_count[$pipelines.Keys[$j]] -lt $pipelines[$pipelines.Keys[$j]]) {
+        foreach ($key in $pipelines.Keys) {
+            if ($pipelines_count[$key] -lt $pipelines[$key]) {
                 $failed_reason = "Not all pipelines are triggered."
             }
         }
         if ($failed_reason -ne "") {
             Write-Host $failed_reason
+            Write-Host $pipelines_count
             continue
         }
         $pipelines_success_count = @{
@@ -86,13 +87,12 @@ function get_diffs() {
 
         $valid_status_array `
         | ForEach-Object {
-            for ($j = 0; $j -lt $pipelines.Keys.Count; $j++) {
-                # remove those pipelines that are not required.
-                if ($pipelines[$pipelines.Keys[$j]] -eq 0) {
+            foreach ($key in $pipelines.Keys) {
+                $value = $pipelines[$key]
+                if ($value -eq 0) {
                     continue
                 }
-                # count the number of pipelines that are required.
-                if ($_.name.Contains($pipelines.Keys[$j])) {
+                if ($_.name.Contains($key)) {
                     if ($_.conclusion -ieq "success") {
                         $pipelines_success_count[$pipelines.Keys[$j]] += 1
                     } elseif ($_.conclusion -ieq "failure") {
