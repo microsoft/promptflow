@@ -770,44 +770,12 @@ class ContentFormatterBase:
         """
 
 
-class GPT2ContentFormatter(ContentFormatterBase):
-    """Content handler for LLMs from the OSS catalog."""
-
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
-        input_str = json.dumps(
-            {
-                "input_data": {"input_string": [ContentFormatterBase.escape_special_characters(prompt)]},
-                "parameters": model_kwargs,
-            }
-        )
-        return input_str
-
-    def format_response_payload(self, output: bytes) -> str:
-        return format_generic_response_payload(output, response_key="0")
-
-
-class HFContentFormatter(ContentFormatterBase):
+class MIRCompleteFormatter(ContentFormatterBase):
     """Content handler for LLMs from the HuggingFace catalog."""
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         input_str = json.dumps(
             {
-                "inputs": [ContentFormatterBase.escape_special_characters(prompt)],
-                "parameters": model_kwargs,
-            }
-        )
-        return input_str
-
-    def format_response_payload(self, output: bytes) -> str:
-        return format_generic_response_payload(output, response_key="generated_text")
-
-
-class DollyContentFormatter(ContentFormatterBase):
-    """Content handler for the Dolly-v2-12b model"""
-
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
-        input_str = json.dumps(
-            {
                 "input_data": {"input_string": [ContentFormatterBase.escape_special_characters(prompt)]},
                 "parameters": model_kwargs,
             }
@@ -815,7 +783,18 @@ class DollyContentFormatter(ContentFormatterBase):
         return input_str
 
     def format_response_payload(self, output: bytes) -> str:
-        return format_generic_response_payload(output, response_key=None)
+        """These models only support generation - expect a single output style"""
+        response_json = json.loads(output)
+
+        if len(response_json) > 0 and "0" in response_json[0]:
+            if "0" in response_json[0]:
+                return response_json[0]["0"]
+        elif "output" in response_json:
+            return response_json["output"]
+
+        error_message = f"Unexpected response format. Response: {response_json}"
+        print(error_message, file=sys.stderr)
+        raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
 
 class LlamaContentFormatter(ContentFormatterBase):
@@ -917,11 +896,11 @@ class ContentFormatterFactory:
             else:
                 return LlamaContentFormatter(chat_history=chat_history, api=api)
         elif model_family == ModelFamily.DOLLY:
-            return DollyContentFormatter()
+            return MIRCompleteFormatter()
         elif model_family == ModelFamily.GPT2:
-            return GPT2ContentFormatter()
+            return MIRCompleteFormatter()
         elif model_family == ModelFamily.FALCON:
-            return HFContentFormatter()
+            return MIRCompleteFormatter()
 
 
 class AzureMLOnlineEndpoint:
