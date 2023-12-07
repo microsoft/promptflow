@@ -24,9 +24,8 @@ async def _handle_health(request: web.Request):
 async def _handle_execution(request: web.Request, has_error=False):
     try:
         request = await request.json()
-        response_data = _get_execution_result(request, has_error=has_error)
-        await asyncio.sleep(random.uniform(0, 10))
-        return web.json_response(response_data)
+        await asyncio.sleep(random.uniform(0, 5))
+        return _get_execution_result(request, has_error=has_error)
     except json.JSONDecodeError:
         return web.Response(status=400, text="Bad Request: Invalid JSON")
 
