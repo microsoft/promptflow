@@ -421,17 +421,15 @@ class LineExecutionProcessPool:
         factors = {
             "default_worker_count": self._DEFAULT_WORKER_COUNT,
             "row_count": self._nlines,
+            "estimated_worker_count_based_on_memory_usage": estimated_available_worker_count,
         }
 
-        if estimated_available_worker_count is not None and estimated_available_worker_count > 0:
-            factors.update({
-                "estimated_worker_count_based_on_memory_usage": estimated_available_worker_count,
-            })
+        valid_factors = {k: v for k, v in factors.items() if v is not None and v > 0}
 
         # Take the minimum value as the result
-        worker_count = min(factors.values())
+        worker_count = min(valid_factors.values())
         bulk_logger.info(
-            f"Set process count to {worker_count} by taking the minimum value among the factors of {factors}.")
+            f"Set process count to {worker_count} by taking the minimum value among the factors of {valid_factors}.")
         return worker_count
 
     def _log_set_worker_count(self, worker_count, estimated_available_worker_count):
