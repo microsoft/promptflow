@@ -66,7 +66,7 @@ Take [customer-intent-extraction](https://github.com/microsoft/promptflow/tree/m
 
 ![init_output](../media/how-to-guides/init-and-test-a-flow/flow_init_output.png)
 
-In this case, promptflow CLI generates `flow.dag.json`, `.promptflow/tools.json`  and `extract_intent_tool.py`, it is a python tool in the flow.
+In this case, promptflow CLI generates `flow.dag.json`, `.promptflow/flow.tools.json`  and `extract_intent_tool.py`, it is a python tool in the flow.
 
 ![init_files](../media/how-to-guides/init-and-test-a-flow/flow_init_files.png)
 ## Test a flow
