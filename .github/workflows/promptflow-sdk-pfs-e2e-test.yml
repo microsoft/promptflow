@@ -26,6 +26,7 @@ jobs:
     steps:
       - run: true
   sdk_pfs_e2e_test:
+    needs: authorize
     strategy:
       fail-fast: false
       matrix:
