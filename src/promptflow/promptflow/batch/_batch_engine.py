@@ -34,7 +34,7 @@ from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
-DEFAULT_CONCURRENCY = 16
+DEFAULT_CONCURRENCY = 10
 
 
 class BatchEngine:
