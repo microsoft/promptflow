@@ -16,6 +16,7 @@ from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType
+from promptflow._sdk._utils import get_client_user_agent
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
@@ -77,14 +78,17 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
     from promptflow.azure import PFClient
 
     if is_replay():
-        yield get_pf_client_for_replay()
+        client = get_pf_client_for_replay()
     else:
-        yield PFClient(
+        client = PFClient(
             credential=get_cred(),
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
         )
+    assert "promptflow-sdk" in get_client_user_agent()
+    assert "promptflow/" not in get_client_user_agent()
+    yield client
 
 
 @pytest.fixture()
