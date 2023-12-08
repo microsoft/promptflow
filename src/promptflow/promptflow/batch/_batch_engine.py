@@ -137,7 +137,7 @@ class BatchEngine:
             # run flow in batch mode
             with _change_working_dir(self._working_dir):
                 return async_run_allowing_running_loop(
-                    self._run, batch_inputs, run_id, output_dir, raise_on_line_failure
+                    self._exec_in_task, batch_inputs, run_id, output_dir, raise_on_line_failure
                 )
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
@@ -160,7 +160,7 @@ class BatchEngine:
         """Cancel the batch run"""
         self._is_canceled = True
 
-    async def _run(
+    async def _exec_in_task(
         self,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
