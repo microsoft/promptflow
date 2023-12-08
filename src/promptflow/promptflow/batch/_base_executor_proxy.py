@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
@@ -119,6 +120,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         while (datetime.utcnow() - start_time).seconds < waiting_health_timeout:
             if await self._check_health():
                 return
+            # wait for 1s to prevent calling the API too frequently
+            await asyncio.sleep(1)
         raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
     def _process_http_response(self, response: httpx.Response):
