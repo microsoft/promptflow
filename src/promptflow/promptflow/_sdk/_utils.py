@@ -880,7 +880,7 @@ def get_client_user_agent(user_agent=None):
     if user_agent:
         context.append_user_agent(user_agent)
     # directly get from context since client side won't need promptflow/xxx.
-    return context.get(USER_AGENT_KEY)
+    return context.get(USER_AGENT_KEY, "")
 
 
 def setup_user_agent_to_operation_context(user_agent):
