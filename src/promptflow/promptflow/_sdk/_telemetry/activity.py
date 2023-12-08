@@ -127,15 +127,15 @@ def extract_telemetry_info(self):
 
 
 def update_activity_name(activity_name, kwargs=None, args=None):
-    """Update activity name according to kwargs. For flow test, we want to know if it's node run."""
+    """Update activity name according to kwargs. For flow test, we want to know if it's node test."""
     if activity_name == "pf.flows.test":
         # SDK
         if kwargs.get("node", None):
-            activity_name = "pf.flows.node_run"
+            activity_name = "pf.flows.node_test"
     elif activity_name == "pf.flow.test":
         # CLI
         if getattr(args, "node", None):
-            activity_name = "pf.flow.node_run"
+            activity_name = "pf.flow.node_test"
     return activity_name
 
 
