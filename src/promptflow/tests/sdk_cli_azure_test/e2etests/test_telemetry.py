@@ -60,6 +60,7 @@ def extension_consent_config_overwrite(val):
 
 
 RUNS_DIR = "./tests/test_configs/runs"
+FLOWS_DIR = "./tests/test_configs/flows"
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -314,3 +315,30 @@ class TestTelemetry:
                 pf.runs.get("not_exist")
             except RunNotFoundError:
                 pass
+
+    def test_different_event_for_node_run(self):
+        from promptflow import PFClient
+
+        pf = PFClient()
+
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+
+        def assert_node_run(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flows.node_run")
+            assert record.custom_dimensions["activity_name"] == "pf.flows.node_run"
+
+        with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+            mock_logger.side_effect = assert_node_run
+
+            pf.flows.test(f"{FLOWS_DIR}/print_env_var", node="print_env", inputs={"key": "API_BASE"})
+
+        def assert_flow_test(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flows.test")
+            assert record.custom_dimensions["activity_name"] == "pf.flows.test"
+
+        with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+            mock_logger.side_effect = assert_flow_test
+
+            pf.flows.test(f"{FLOWS_DIR}/print_env_var", inputs={"key": "API_BASE"})
