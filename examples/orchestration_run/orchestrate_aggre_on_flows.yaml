@@ -13,6 +13,13 @@ flows:
       temperature: 0.5
       ground_truth: ${data.ground_truth}
       prediction: ${main.outputs.chat_output}
+      aggregations:
+        avg_similarity:
+          op: AVG
+          input: ${eval_flow1.outputs.score}
+        p95_similarity:
+          op: p95
+          input: ${eval_flow1.outputs.score}
   eval_flow2:
     flow: ../evaluation/asserts.yaml
     column_mapping: # inputs
@@ -20,17 +27,10 @@ flows:
       answer: ${main.outputs.chat_output}
     connections:
       node1.connection: open_ai_connection  # Override flow node connection
-
-aggregations:
-  avg_similarity:
-    op: AVG
-    input: ${eval_flow1.outputs.score}
-  p95_similarity:
-    op: p95
-    input: ${eval_flow1.outputs.score}
-  pass_rate_asserts:
-    source:
-      type: code
-      path: pass_rate.py
-    inputs:
-      results: ${eval_flow2.outputs}  # Aggregated list of flow output lines
+    aggregations:
+      pass_rate_asserts:
+        source:
+          type: code
+          path: pass_rate.py
+        inputs:
+          results: ${eval_flow2.outputs}  # Aggregated list of flow output lines

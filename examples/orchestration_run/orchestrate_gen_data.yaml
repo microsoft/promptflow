@@ -16,7 +16,7 @@ flows:
       ground_truth: ${data_gen.outputs.ground_truth}
       prediction: ${main.outputs.chat_output}
   eval_flow2:
-    flow: ../evaluation/assets.yaml
+    flow: ../evaluation/asserts.yaml
     column_mapping: # inputs
       asserts: ${data_gen.outputs.asserts}
       answer: ${main.outputs.chat_output}
@@ -33,6 +33,6 @@ aggregations:
   avg_asserts:
     source:
       type: code
-      path: agg.py
+      path: pass_rate.py
     inputs:
-      results: ${eval_flow2.outputs.score}  # Aggregated list of flow output lines
+      results: ${eval_flow2.outputs}  # Aggregated list of flow output lines
