@@ -88,7 +88,7 @@
 
         <CustomAction Id="StartPromptFlowService"
             Directory="APPLICATIONFOLDER"
-            Execute="commit"
+            Execute="deferred"
             ExeCommand="PowerShell.exe -WindowStyle hidden Start-Process -FilePath pfs -NoNewWindow -Wait -RedirectStandardOutput $(var.LogOutputFile) -RedirectStandardError $(var.LogErrorFile)"
             Return="asyncNoWait" />
         <InstallExecuteSequence>
