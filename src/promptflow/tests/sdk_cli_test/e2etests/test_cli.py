@@ -10,7 +10,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import List, Dict
+from typing import Dict, List
 from unittest.mock import patch
 
 import mock
@@ -79,7 +79,7 @@ class TestCli:
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
-    def test_basic_flow_run_batch_and_eval(self, capfd) -> None:
+    def test_basic_flow_run_batch_and_eval(self, capfd, local_client) -> None:
         run_id = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -91,6 +91,8 @@ class TestCli:
             "--name",
             run_id,
         )
+        run = local_client.runs.get(name=run_id)
+        raise Exception(f"chengbin check: {json.dumps(run)}")
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
@@ -1026,7 +1028,7 @@ class TestCli:
                 "Required input(s) ['key'] are missing for \"print_env\".",
                 id="missing_required_node_inputs",
             ),
-        ]
+        ],
     )
     def test_flow_test_inputs_missing(self, capsys, caplog, extra_args: List[str], expected_err: str):
         with pytest.raises(SystemExit):
@@ -1072,10 +1074,7 @@ class TestCli:
                 ],
                 [
                     {"unknown_input": "unknown_val"},
-                    {
-                        "fetch_url": TARGET_URL,
-                        "unknown_input": "unknown_val"
-                    },
+                    {"fetch_url": TARGET_URL, "unknown_input": "unknown_val"},
                 ],
                 [
                     "Unknown input(s) of fetch_text_content_from_url: ",
@@ -1083,7 +1082,7 @@ class TestCli:
                 ],
                 id="unknown_inputs_node",
             ),
-        ]
+        ],
     )
     def test_flow_test_inputs_unknown(
         self, caplog, extra_args: List[str], expected_inputs: List[Dict[str, str]], expected_log_prefixes: List[str]
@@ -1097,13 +1096,7 @@ class TestCli:
             assert expect_dict == log_inputs
 
         with caplog.at_level(level=logging.INFO, logger=LOGGER_NAME):
-            run_pf_command(
-                "flow",
-                "test",
-                "--flow",
-                f"{FLOWS_DIR}/web_classification",
-                *extra_args
-            )
+            run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/web_classification", *extra_args)
             for (log, expected_input, expected_log_prefix) in zip(
                 caplog.records, expected_inputs, expected_log_prefixes
             ):
