@@ -8,6 +8,7 @@ from contextvars import ContextVar
 from datetime import datetime
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
+from promptflow._sdk._utils import get_client_user_agent
 
 
 class ActivityType(object):
@@ -55,13 +56,10 @@ def log_activity(
     :type custom_dimensions: dict
     :return: None
     """
-    from promptflow._core.operation_context import OperationContext
-
     if not custom_dimensions:
         custom_dimensions = {}
 
-    context = OperationContext.get_instance()
-    user_agent = context.get_user_agent()
+    user_agent = get_client_user_agent()
     request_id = request_id_context.get()
     if not request_id:
         # public function call
