@@ -126,6 +126,19 @@ def extract_telemetry_info(self):
     return result
 
 
+def update_activity_name(activity_name, kwargs=None, args=None):
+    """Update activity name according to kwargs. For flow test, we want to know if it's node run."""
+    if activity_name == "pf.flows.test":
+        # SDK
+        if "node" in kwargs:
+            activity_name = "pf.flows.node_run"
+    elif activity_name == "pf.flow.test":
+        # CLI
+        if "--node" in args:
+            activity_name = "pf.flow.node_run"
+    return activity_name
+
+
 def monitor_operation(
     activity_name,
     activity_type=ActivityType.INTERNALCALL,
@@ -156,8 +169,9 @@ def monitor_operation(
             logger = get_telemetry_logger()
 
             custom_dimensions.update(extract_telemetry_info(self))
-
-            with log_activity(logger, activity_name, activity_type, custom_dimensions):
+            # update activity name according to kwargs.
+            _activity_name = update_activity_name(activity_name, kwargs=kwargs)
+            with log_activity(logger, _activity_name, activity_type, custom_dimensions):
                 return f(self, *args, **kwargs)
 
         return wrapper
