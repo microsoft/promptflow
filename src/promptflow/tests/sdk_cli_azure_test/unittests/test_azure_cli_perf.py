@@ -1,5 +1,6 @@
 import sys
 import timeit
+from typing import Callable
 from unittest import mock
 import pytest
 from promptflow import VERSION
@@ -45,7 +46,8 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
     "vcr_recording",
 )
 class TestAzureCliPerf:
-    def test_pfazure_run_create(self, operation_scope_args, runtime: str, time_limit=30):
+    def test_pfazure_run_create(self, operation_scope_args, runtime: str, randstr: Callable[[str], str], time_limit=30):
+        name = randstr("name")
         run_cli_command(
             cmd=(
                 "pfazure",
@@ -56,7 +58,7 @@ class TestAzureCliPerf:
                 "--data",
                 f"{DATAS_DIR}/print_input_flow.jsonl",
                 "--name",
-                "test_create_flow",
+                name,
                 "--runtime",
                 runtime,
                 *operation_scope_args,

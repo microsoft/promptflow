@@ -47,7 +47,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.086'
+      - '0.071'
     status:
       code: 200
       message: OK
@@ -90,7 +90,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.171'
+      - '0.098'
     status:
       code: 200
       message: OK
@@ -106,7 +106,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.13.0 Python/3.9.17 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Fri, 08 Dec 2023 08:54:30 GMT
+      - Fri, 08 Dec 2023 09:27:23 GMT
       x-ms-version:
       - '2021-08-06'
     method: HEAD
@@ -156,7 +156,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.13.0 Python/3.9.17 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Fri, 08 Dec 2023 08:54:31 GMT
+      - Fri, 08 Dec 2023 09:27:24 GMT
       x-ms-version:
       - '2021-08-06'
     method: HEAD
@@ -226,7 +226,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.076'
+      - '0.106'
     status:
       code: 200
       message: OK
@@ -269,7 +269,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.087'
+      - '0.080'
     status:
       code: 200
       message: OK
@@ -285,11 +285,11 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.13.0 Python/3.9.17 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Fri, 08 Dec 2023 08:54:33 GMT
+      - Fri, 08 Dec 2023 09:27:30 GMT
       x-ms-version:
       - '2021-08-06'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/print_input_flow/.promptflow/flow.detail.json
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/print_input_flow/flow.dag.yaml
   response:
     body:
       string: ''
@@ -297,13 +297,13 @@ interactions:
       accept-ranges:
       - bytes
       content-length:
-      - '3089'
+      - '238'
       content-md5:
-      - pnbRFo+aNMJlz2fq4BNe9A==
+      - g6eojZlNZcUGTvvyK1WJEg==
       content-type:
       - application/octet-stream
       last-modified:
-      - Fri, 08 Dec 2023 08:51:51 GMT
+      - Fri, 08 Dec 2023 09:20:37 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -311,9 +311,9 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Fri, 08 Dec 2023 08:51:51 GMT
+      - Fri, 08 Dec 2023 09:07:11 GMT
       x-ms-meta-name:
-      - 922176fd-7cbd-48e3-b654-5fb53bdb72e3
+      - 02f81cba-05f8-4029-a241-59bedaee9024
       x-ms-meta-upload_status:
       - completed
       x-ms-meta-version:
@@ -335,11 +335,11 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.13.0 Python/3.9.17 (Windows-10-10.0.22621-SP0)
       x-ms-date:
-      - Fri, 08 Dec 2023 08:54:34 GMT
+      - Fri, 08 Dec 2023 09:27:31 GMT
       x-ms-version:
       - '2021-08-06'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/print_input_flow/.promptflow/flow.detail.json
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/print_input_flow/flow.dag.yaml
   response:
     body:
       string: ''
@@ -362,9 +362,9 @@ interactions:
       "pfazure", "ai.device.locale": "zh_CN", "ai.device.osVersion": "10.0.22621",
       "ai.device.type": "Other", "ai.internal.sdkVersion": "py3.9.17:oc0.11.2:ext1.1.9",
       "ai.operation.id": "00000000000000000000000000000000", "ai.operation.parentId":
-      "|00000000000000000000000000000000.0000000000000000."}, "time": "2023-12-08T08:54:28.094750Z",
+      "|00000000000000000000000000000000.0000000000000000."}, "time": "2023-12-08T09:27:20.430864Z",
       "name": "Microsoft.ApplicationInsights.Event", "data": {"baseData": {"name":
-      "pfazure.run.create.start", "properties": {"request_id": "5b814ad8-d159-40ab-9ac2-563d6eb9dac7",
+      "pfazure.run.create.start", "properties": {"request_id": "2e6221c6-b584-4515-a93f-d6471830fc6b",
       "first_call": true, "activity_name": "pfazure.run.create", "activity_type":
       "PublicApi", "user_agent": "promptflow-cli/0.0.1 promptflow/0.0.1 perf_monitor/1.0",
       "subscription_id": "96aede12-2f73-41cb-b983-6d11a904839b", "resource_group_name":
@@ -412,7 +412,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-ms-session-id:
-      - E1CE7FFF-BB7E-4C12-911A-D383520A5578
+      - 0A6295F4-8797-41FD-8214-E3B48E1EBA4A
     status:
       code: 307
       message: 'Ingestion is allowed only from stamp specific endpoint - Location:
@@ -422,9 +422,9 @@ interactions:
       "pfazure", "ai.device.locale": "zh_CN", "ai.device.osVersion": "10.0.22621",
       "ai.device.type": "Other", "ai.internal.sdkVersion": "py3.9.17:oc0.11.2:ext1.1.9",
       "ai.operation.id": "00000000000000000000000000000000", "ai.operation.parentId":
-      "|00000000000000000000000000000000.0000000000000000."}, "time": "2023-12-08T08:54:28.094750Z",
+      "|00000000000000000000000000000000.0000000000000000."}, "time": "2023-12-08T09:27:20.430864Z",
       "name": "Microsoft.ApplicationInsights.Event", "data": {"baseData": {"name":
-      "pfazure.run.create.start", "properties": {"request_id": "5b814ad8-d159-40ab-9ac2-563d6eb9dac7",
+      "pfazure.run.create.start", "properties": {"request_id": "2e6221c6-b584-4515-a93f-d6471830fc6b",
       "first_call": true, "activity_name": "pfazure.run.create", "activity_type":
       "PublicApi", "user_agent": "promptflow-cli/0.0.1 promptflow/0.0.1 perf_monitor/1.0",
       "subscription_id": "96aede12-2f73-41cb-b983-6d11a904839b", "resource_group_name":
@@ -461,15 +461,15 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-id:
-      - 9dd1a252-c81f-4ccb-bcc7-dc63d5bc1d7f
+      - 401631c5-a20c-4a20-b202-f37939ae48c8
     status:
       code: 200
       message: OK
 - request:
     body: '{"flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
       "LocalUpload/000000000000000000000000000000000000/print_input_flow/flow.dag.yaml",
-      "runId": "test_create_flow", "runDisplayName": "test_create_flow", "runExperimentName":
-      "", "batchDataInput": {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/print_input_flow.jsonl"},
+      "runId": "name", "runDisplayName": "name", "runExperimentName": "", "batchDataInput":
+      {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/print_input_flow.jsonl"},
       "inputsMapping": {}, "connections": {}, "environmentVariables": {}, "runtimeName":
       "fake-runtime-name", "sessionId": "000000000000000000000000000000000000000000000000",
       "flowLineageId": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -482,7 +482,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '716'
+      - '756'
       Content-Type:
       - application/json
       User-Agent:
@@ -492,12 +492,12 @@ interactions:
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/submit
   response:
     body:
-      string: '"test_create_flow"'
+      string: '"name"'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '18'
+      - '38'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -505,13 +505,13 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '9.857'
+      - '7.440'
     status:
       code: 200
       message: OK
 - request:
-    body: '{"runId": "test_create_flow", "selectRunMetadata": true, "selectRunDefinition":
-      true, "selectJobSpecification": true}'
+    body: '{"runId": "name", "selectRunMetadata": true, "selectRunDefinition": true,
+      "selectJobSpecification": true}'
     headers:
       Accept:
       - '*/*'
@@ -520,7 +520,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '117'
+      - '137'
       Content-Type:
       - application/json
       User-Agent:
@@ -529,37 +529,36 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1702025682, "rootRunId": "test_create_flow",
-        "createdUtc": "2023-12-08T08:54:42.1430611+00:00", "createdBy": {"userObjectId":
-        "00000000-0000-0000-0000-000000000000", "userPuId": "10032001A114F500", "userIdp":
-        null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
-        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Chenyang
-        Zhang", "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token":
-        null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
-        3, "statusRevision": 1, "runUuid": "db7ac074-2971-4580-a265-b6ac04374e73",
-        "parentRunUuid": null, "rootRunUuid": "db7ac074-2971-4580-a265-b6ac04374e73",
-        "lastStartTimeUtc": null, "currentComputeTime": "00:00:00", "computeDuration":
-        null, "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+      string: '{"runMetadata": {"runNumber": 1702027658, "rootRunId": "name", "createdUtc":
+        "2023-12-08T09:27:38.2895155+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": "10032001A114F500", "userIdp": null, "userAltSecId": null, "userIss":
         "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
         "00000000-0000-0000-0000-000000000000", "userName": "Chenyang Zhang", "upn":
-        null}, "lastModifiedUtc": "2023-12-08T08:54:47.1216743+00:00", "duration":
-        null, "cancelationReason": null, "currentAttemptId": 1, "runId": "test_create_flow",
-        "parentRunId": null, "experimentId": "3285bc8b-1f69-4803-bf44-4770e5b43a04",
-        "status": "Preparing", "startTimeUtc": null, "endTimeUtc": null, "scheduleId":
-        null, "displayName": "test_create_flow", "name": null, "dataContainerId":
-        "dcid.test_create_flow", "description": null, "hidden": false, "runType":
-        "azureml.promptflow.FlowRun", "runTypeV2": {"orchestrator": null, "traits":
-        [], "attribution": "PromptFlow", "computeType": "AmlcDsi"}, "properties":
-        {"azureml.promptflow.runtime_name": "perf_monitor", "azureml.promptflow.runtime_version":
+        null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null, "tokenExpiryTimeUtc":
+        null, "error": null, "warnings": null, "revision": 3, "statusRevision": 1,
+        "runUuid": "f2b7274f-dacb-4337-8369-642e9dbab642", "parentRunUuid": null,
+        "rootRunUuid": "f2b7274f-dacb-4337-8369-642e9dbab642", "lastStartTimeUtc":
+        null, "currentComputeTime": "00:00:00", "computeDuration": null, "effectiveStartTimeUtc":
+        null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+        "userPuId": "10032001A114F500", "userIdp": null, "userAltSecId": null, "userIss":
+        "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Chenyang Zhang", "upn":
+        null}, "lastModifiedUtc": "2023-12-08T09:27:41.5041941+00:00", "duration":
+        null, "cancelationReason": null, "currentAttemptId": 1, "runId": "name", "parentRunId":
+        null, "experimentId": "3285bc8b-1f69-4803-bf44-4770e5b43a04", "status": "Preparing",
+        "startTimeUtc": null, "endTimeUtc": null, "scheduleId": null, "displayName":
+        "name", "name": null, "dataContainerId": "dcid.name", "description": null,
+        "hidden": false, "runType": "azureml.promptflow.FlowRun", "runTypeV2": {"orchestrator":
+        null, "traits": [], "attribution": "PromptFlow", "computeType": "AmlcDsi"},
+        "properties": {"azureml.promptflow.runtime_name": "perf_monitor", "azureml.promptflow.runtime_version":
         "20231204.v4", "azureml.promptflow.definition_file_name": "flow.dag.yaml",
         "azureml.promptflow.session_id": "96c35660d759b526cb14cf69bbb56fcaa90c05a778b147b4",
         "azureml.promptflow.flow_lineage_id": "fcb01d4faf8f2137f9d142cc1f3f22ecdf3d485e1435c4c971ff0ee09077f1b5",
         "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
-        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/18409a762ee10d09831261bf3833e37f/print_input_flow/flow.dag.yaml",
+        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/52675845d616ad8b41db77e9ba9e9d4a/print_input_flow/flow.dag.yaml",
         "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/80d5ca5a93c8c6ea7c2fcdf1cd4b9d07/print_input_flow.jsonl",
         "_azureml.evaluation_run": "promptflow.BatchRun", "azureml.promptflow.snapshot_id":
-        "3d3e758d-e860-4d36-ad5c-b34a45a0b9b6"}, "parameters": {}, "actionUris": {},
+        "759abbd4-3368-4bff-aa66-104bf25021db"}, "parameters": {}, "actionUris": {},
         "scriptName": null, "target": null, "uniqueChildRunComputeTargets": [], "tags":
         {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
         [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
@@ -892,7 +891,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '46369'
+      - '46449'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -904,7 +903,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.040'
+      - '0.071'
     status:
       code: 200
       message: OK
