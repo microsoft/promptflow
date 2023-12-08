@@ -1,6 +1,6 @@
 # Q&A Evaluation:
 
-The Q&A RAG (Retrieval Augmented Generation) evaluation flow will evaluate the Q&A RAG systems by leveraging the state-of-the-art Large Language Models (LLM) to measure the quality and safety of your responses . Utilizing GPT model to assist with measurements aims to achieve a high agreement with human evaluations compared to traditional mathematical measurements.
+This is a flow evaluating the Q&A RAG (Retrieval Augmented Generation) systems by leveraging the state-of-the-art Large Language Models (LLM) to measure the quality and safety of responses. Utilizing GPT model to assist with measurements aims to achieve a high agreement with human evaluations compared to traditional mathematical measurements.
 
 ## What you will learn
 
