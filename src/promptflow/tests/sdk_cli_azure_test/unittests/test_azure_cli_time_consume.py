@@ -1,4 +1,3 @@
-import multiprocessing
 import sys
 import timeit
 from unittest import mock
@@ -13,35 +12,17 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 def run_cli_command(cmd, time_limit=3600):
     from promptflow._cli._pf_azure.entry import main
-    from promptflow.azure.operations._run_operations import RunOperations
 
-    with mock.patch.object(RunOperations, "create_or_update") as create_or_update_fun, mock.patch.object(
-        RunOperations, "update"
-    ) as update_fun, mock.patch.object(RunOperations, "get") as get_fun, mock.patch.object(
-        RunOperations, "restore"
-    ) as restore_fun:
-        create_or_update_fun.return_value._to_dict.return_value = {"name": "test_run"}
-        update_fun.return_value._to_dict.return_value = {"name": "test_run"}
-        get_fun.return_value._to_dict.return_value = {"name": "test_run"}
-        restore_fun.return_value._to_dict.return_value = {"name": "test_run"}
+    sys.argv = list(cmd)
+    st = timeit.default_timer()
+    with mock.patch.object(OperationContext, "get_user_agent") as get_user_agent_fun:
+        # Don't change get_user_agent_fun.return_value, dashboard needs to use.
+        get_user_agent_fun.return_value = f"{CLI_USER_AGENT} promptflow/{VERSION} perf_monitor/1.0"
+        main()
+    ed = timeit.default_timer()
 
-        sys.argv = list(cmd)
-        st = timeit.default_timer()
-        with mock.patch.object(OperationContext, "get_user_agent") as get_user_agent_fun:
-            # Don't change get_user_agent_fun.return_value, dashboard needs to use.
-            get_user_agent_fun.return_value = f"{CLI_USER_AGENT} promptflow/{VERSION} perf_monitor/1.0"
-            main()
-        ed = timeit.default_timer()
-
-        print(f"{cmd}, \nTotal time: {ed - st}s")
-        assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
-
-
-def subprocess_run_cli_command(cmd, time_limit=3600):
-    process = multiprocessing.Process(target=run_cli_command, args=(cmd,), kwargs={"time_limit": time_limit})
-    process.start()
-    process.join()
-    assert process.exitcode == 0
+    print(f"{cmd}, \nTotal time: {ed - st}s")
+    assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
 
 
 @pytest.fixture
@@ -56,10 +37,15 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
     ]
 
 
-@pytest.mark.usefixtures("mock_get_azure_pf_client")
 @pytest.mark.perf_monitor_test
+@pytest.mark.usefixtures(
+    "mock_get_azure_pf_client",
+    "mock_set_headers_with_user_aml_token",
+    "single_worker_thread_pool",
+    "vcr_recording",
+)
 class TestAzureCliTimeConsume:
-    def test_pfazure_run_create(self, operation_scope_args, time_limit=30):
+    def test_pfazure_run_create(self, operation_scope_args, runtime: str, time_limit=30):
         run_cli_command(
             cmd=(
                 "pfazure",
@@ -69,6 +55,10 @@ class TestAzureCliTimeConsume:
                 f"{FLOWS_DIR}/print_input_flow",
                 "--data",
                 f"{DATAS_DIR}/print_input_flow.jsonl",
+                "--name",
+                "test_run",
+                "--runtime",
+                runtime,
                 *operation_scope_args,
             ),
             time_limit=time_limit,
