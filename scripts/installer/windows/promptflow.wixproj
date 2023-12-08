@@ -68,5 +68,6 @@
   </Target>
   <Target Name="BeforeBuild">
     <HeatDirectory Directory="$(PromptflowSource)" ToolPath="$(WixToolPath)" AutogenerateGuids="true" ComponentGroupName="PromptflowCliComponentGroup" SuppressRootDirectory="true" DirectoryRefId="APPLICATIONFOLDER" OutputFile="out\promptflow.wxs" PreprocessorVariable="var.PromptflowSource" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -Command Write-Host 'Executing PowerShell script'; powershell -ExecutionPolicy Bypass -File 'heat_post_process.ps1';" />
   </Target>
 </Project>
