@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import asyncio
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -13,6 +12,7 @@ from httpx import ConnectError
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -30,7 +30,7 @@ from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
-from promptflow.exceptions import PromptflowException
+from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -130,11 +130,13 @@ class BatchEngine:
             # resolve input data from input dirs and apply inputs mapping
             batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
             batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
-            # run flow in batch mode
+            # resolve output dir
             output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
+            # run flow in batch mode
             with _change_working_dir(self._working_dir):
-                batch_result = self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure)
-            return batch_result
+                return async_run_allowing_running_loop(
+                    self._exec_batch, batch_inputs, run_id, output_dir, raise_on_line_failure
+                )
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
             if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
@@ -142,7 +144,19 @@ class BatchEngine:
                 return BatchResult.create(
                     self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
                 )
-            raise e
+            elif isinstance(e, PromptflowException):
+                raise e
+            else:
+                # For unexpected error, we need to wrap it to SystemErrorException.
+                # This allows us to see the stack trace inside.
+                unexpected_error = UnexpectedError(
+                    target=ErrorTarget.BATCH,
+                    message_format=(
+                        "Unexpected error occurred while executing the batch run. Error: {error_type_and_message}."
+                    ),
+                    error_type_and_message=f"({e.__class__.__name__}) {e}",
+                )
+                raise unexpected_error from e
         finally:
             # destroy executor proxy if the batch run is not cancelled
             # TODO: add a lock to avoid destroy proxy twice
@@ -154,7 +168,7 @@ class BatchEngine:
         self._is_canceled = True
         self._executor_proxy.destroy()
 
-    def _exec_batch(
+    async def _exec_batch(
         self,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
@@ -169,9 +183,9 @@ class BatchEngine:
         if isinstance(self._executor_proxy, PythonExecutorProxy):
             line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
         else:
-            line_results = asyncio.run(self._exec_batch_internal(batch_inputs, run_id))
+            line_results = await self._exec_batch_internal(batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-        aggr_results = asyncio.run(self._exec_aggregation_internal(batch_inputs, line_results, run_id))
+        aggr_results = await self._exec_aggregation_internal(batch_inputs, line_results, run_id)
 
         # persist outputs to output dir
         outputs = [

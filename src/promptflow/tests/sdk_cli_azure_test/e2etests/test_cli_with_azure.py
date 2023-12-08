@@ -1,13 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import contextlib
 import os
 import sys
 import uuid
 from typing import Callable
 
 import pytest
+from mock.mock import patch
 
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
@@ -168,3 +169,28 @@ class TestCliWithAzure:
             user_agent = context.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
             assert ua_dict.keys() == {"promptflow-sdk", "promptflow", "promptflow-cli"}
+
+    def test_cli_telemetry(self, pf, runtime: str, randstr: Callable[[str], str]) -> None:
+        name = randstr("name")
+
+        @contextlib.contextmanager
+        def check_workspace_info(*args, **kwargs):
+            if "custom_dimensions" in kwargs:
+                assert kwargs["custom_dimensions"]["workspace_name"] == pf._ml_client.workspace_name
+                assert kwargs["custom_dimensions"]["resource_group_name"] == pf._ml_client.resource_group_name
+                assert kwargs["custom_dimensions"]["subscription_id"] == pf._ml_client.subscription_id
+            yield None
+
+        with patch("promptflow._sdk._telemetry.activity.log_activity") as mock_log_activity:
+            mock_log_activity.side_effect = check_workspace_info
+            run_pf_command(
+                "run",
+                "create",
+                "--file",
+                f"{RUNS_DIR}/run_with_env.yaml",
+                "--set",
+                f"runtime={runtime}",
+                "--name",
+                name,
+                pf=pf,
+            )

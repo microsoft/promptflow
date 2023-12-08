@@ -4,12 +4,11 @@
 
 import argparse
 import json
-import logging
 import re
 import shutil
 from pathlib import Path
 
-from promptflow._cli._params import add_param_set_tool_extra_info, logging_params
+from promptflow._cli._params import add_param_set_tool_extra_info, base_params
 from promptflow._cli._pf._init_entry_generators import (
     InitGenerator,
     ManifestGenerator,
@@ -21,9 +20,10 @@ from promptflow._cli._pf._init_entry_generators import (
 from promptflow._cli._utils import activate_action, exception_handler, list_of_dict_to_dict
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.exceptions import UserErrorException
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 def add_tool_parser(subparsers):
@@ -61,7 +61,7 @@ pf tool init --tool tool_name
         add_param_package,
         add_param_tool,
         add_param_set_tool_extra_info,
-    ] + logging_params
+    ] + base_params
     return activate_action(
         name="init",
         description="Creating a tool.",
@@ -86,7 +86,7 @@ pf tool list --flow flow-path
     add_param_flow = lambda parser: parser.add_argument("--flow", type=str, help="the flow directory")  # noqa: E731
     add_params = [
         add_param_flow,
-    ] + logging_params
+    ] + base_params
     return activate_action(
         name="list",
         description="List tools.",

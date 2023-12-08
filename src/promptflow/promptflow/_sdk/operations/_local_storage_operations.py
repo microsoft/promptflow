@@ -30,7 +30,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
-from promptflow._utils.logger_utils import LogContext
+from promptflow._utils.logger_utils import LogContext, LoggerFactory
 from promptflow._utils.multimedia_utils import get_file_reference_encoder
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -41,7 +41,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 from promptflow.storage import AbstractRunStorage
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 RunInputs = NewType("RunInputs", Dict[str, List[Any]])
 RunOutputs = NewType("RunOutputs", Dict[str, List[Any]])
@@ -444,7 +444,7 @@ class LocalStorageOperations(AbstractRunStorage):
                 outputs = pd.read_json(f, orient="records", lines=True)
                 # if all line runs are failed, no need to fill
                 if len(outputs) > 0:
-                    outputs = self._outputs_padding(outputs, inputs["line_number"].tolist())
+                    outputs = self._outputs_padding(outputs, inputs[LINE_NUMBER].tolist())
                     outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                     outputs = outputs.set_index(LINE_NUMBER)
         return inputs, outputs

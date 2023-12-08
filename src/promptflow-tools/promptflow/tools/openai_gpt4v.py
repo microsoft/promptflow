@@ -26,7 +26,6 @@ class OpenAI(ToolProvider):
         model: str = "gpt-4-vision-preview",
         temperature: float = 1.0,
         top_p: float = 1.0,
-        n: int = 1,
         # stream is a hidden to the end user, it is only supposed to be set by the executor.
         stream: bool = False,
         stop: list = None,
@@ -49,7 +48,7 @@ class OpenAI(ToolProvider):
             "messages": messages,
             "temperature": temperature,
             "top_p": top_p,
-            "n": n,
+            "n": 1,
             "stream": stream,
             "presence_penalty": presence_penalty,
             "frequency_penalty": frequency_penalty,
@@ -57,7 +56,7 @@ class OpenAI(ToolProvider):
 
         if stop:
             params["stop"] = stop
-        if max_tokens:
+        if max_tokens is not None:
             params["max_tokens"] = max_tokens
 
         completion = self._client.chat.completions.create(**params)

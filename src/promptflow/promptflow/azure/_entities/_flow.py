@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import logging
 import os.path
 from contextlib import contextmanager
 from os import PathLike
@@ -12,13 +11,13 @@ from promptflow._sdk._constants import DAG_FILE_NAME, SERVICE_FLOW_TYPE_2_CLIENT
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
 
 from ..._sdk._utils import PromptflowIgnoreFile, load_yaml, remove_empty_element_from_dict
+from ..._utils.logger_utils import LoggerFactory
 from .._constants._flow import DEFAULT_STORAGE
 from .._restclient.flow.models import FlowDto
 
 # pylint: disable=redefined-builtin, unused-argument, f-string-without-interpolation
 
-
-logger = logging.getLogger(__name__)
+logger = LoggerFactory.get_logger(__name__)
 
 
 class Flow(AdditionalIncludesMixin):

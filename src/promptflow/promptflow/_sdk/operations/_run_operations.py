@@ -3,13 +3,15 @@
 # ---------------------------------------------------------
 
 import copy
-import logging
 import os.path
 import sys
 import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
+import yaml
+
+from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
@@ -20,18 +22,18 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
+from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import incremental_print, print_red_error, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
-from promptflow.contracts._run_management import RunMetadata, RunVisualization
+from promptflow._utils.logger_utils import LoggerFactory
+from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization, VisualizationConfig
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class RunOperations(TelemetryMixin):
@@ -270,7 +272,9 @@ class RunOperations(TelemetryMixin):
         return local_storage.load_metrics()
 
     def _visualize(self, runs: List[Run], html_path: Optional[str] = None) -> None:
-        details, metadatas = [], []
+        details: List[RunDetail] = []
+        metadatas: List[RunMetadata] = []
+        configs: List[VisualizationConfig] = []
         for run in runs:
             # check run status first
             # if run status is not compeleted, there might be unexpected error during parse data
@@ -279,6 +283,13 @@ class RunOperations(TelemetryMixin):
 
             local_storage = LocalStorageOperations(run)
             detail = local_storage.load_detail()
+            # ad-hoc step: make logs field empty to avoid too big HTML file
+            # we don't provide logs view in visualization page for now
+            # when we enable, we will save those big data (e.g. logs) in separate file(s)
+            # JS load can be faster than static HTML
+            for i in range(len(detail["node_runs"])):
+                detail["node_runs"][i]["logs"] = {"stdout": "", "stderr": ""}
+
             metadata = RunMetadata(
                 name=run.name,
                 display_name=run.display_name,
@@ -293,7 +304,20 @@ class RunOperations(TelemetryMixin):
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
-        data_for_visualize = RunVisualization(detail=details, metadata=metadatas)
+            # TODO: add language to run metadata
+            flow_dag = yaml.safe_load(metadata.dag)
+            configs.append(
+                VisualizationConfig(
+                    [AvailableIDE.VS_CODE]
+                    if flow_dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.Python
+                    else [AvailableIDE.VS]
+                )
+            )
+        data_for_visualize = RunVisualization(
+            detail=details,
+            metadata=metadatas,
+            config=configs,
+        )
         html_string = generate_html_string(asdict(data_for_visualize))
         # if html_path is specified, not open it in webbrowser(as it comes from VSC)
         dump_html(html_string, html_path=html_path, open_html=html_path is None)

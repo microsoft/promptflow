@@ -2,8 +2,10 @@ import multiprocessing
 import sys
 import timeit
 from unittest import mock
-
 import pytest
+from promptflow import VERSION
+from promptflow._core.operation_context import OperationContext
+from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -25,8 +27,12 @@ def run_cli_command(cmd, time_limit=3600):
 
         sys.argv = list(cmd)
         st = timeit.default_timer()
-        main()
+        with mock.patch.object(OperationContext, "get_user_agent") as get_user_agent_fun:
+            # Don't change get_user_agent_fun.return_value, dashboard needs to use.
+            get_user_agent_fun.return_value = f"{CLI_USER_AGENT} promptflow/{VERSION} perf_monitor/1.0"
+            main()
         ed = timeit.default_timer()
+
         print(f"{cmd}, \nTotal time: {ed - st}s")
         assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
 
@@ -51,7 +57,7 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
 
 
 @pytest.mark.usefixtures("mock_get_azure_pf_client")
-@pytest.mark.unittest
+@pytest.mark.perf_monitor_test
 class TestAzureCliTimeConsume:
     def test_pfazure_run_create(self, operation_scope_args, time_limit=30):
         run_cli_command(

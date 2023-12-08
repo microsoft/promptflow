@@ -337,7 +337,7 @@ class RunTracker(ThreadLocalSingleton):
             traces.extend(node_run_info.api_calls or [])
         return traces
 
-    OPENAI_AGGREGATE_METRICS = ["total_tokens"]
+    OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
 
     def collect_metrics(self, run_infos: List[RunInfo], aggregate_metrics: List[str] = []):
         if not aggregate_metrics:

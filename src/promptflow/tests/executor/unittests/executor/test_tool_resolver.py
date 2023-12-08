@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 
 import pytest
+from jinja2 import TemplateSyntaxError
 
 from promptflow._core.tools_manager import ToolLoader
 from promptflow._internal import tool
@@ -161,10 +162,22 @@ class TestToolResolver:
         assert isinstance(exec_info.value.inner_exception, NodeInputValidationError)
         assert "These inputs are duplicated" in exec_info.value.message
 
-    @pytest.mark.skipif(
-        condition=(sys.version_info.major == 3 and sys.version_info.minor == 11),
-        reason="BUG 2709800: known issue on enum in Python 3.11",
-    )
+    def test_resolve_tool_by_node_with_invalid_template(self, resolver, mocker):
+        node = mocker.Mock(tool=None, inputs={})
+        node.name = "node"
+        node.type = ToolType.PROMPT
+        mocker.patch.object(resolver, "_load_source_content", return_value="{{current context}}")
+
+        with pytest.raises(ResolveToolError) as exec_info:
+            resolver.resolve_tool_by_node(node)
+
+        assert isinstance(exec_info.value.inner_exception, TemplateSyntaxError)
+        expected_message = (
+            "Tool load failed in 'node': Jinja parsing failed at line 1: "
+            "(TemplateSyntaxError) expected token 'end of print statement', got 'context'"
+        )
+        assert expected_message in exec_info.value.message
+
     def test_ensure_node_inputs_type(self):
         # Case 1: conn_name not in connections, should raise conn_name not found error
         tool = Tool(name="mock", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})

@@ -6,13 +6,14 @@ import pytest
 from flask.app import Flask
 
 from promptflow import PFClient
-from promptflow._sdk._service.app import create_app
 
 from .utils import PFSOperations
 
 
 @pytest.fixture
 def app() -> Flask:
+    from promptflow._sdk._service.app import create_app
+
     app, _ = create_app()
     app.config.update({"TESTING": True})
     yield app

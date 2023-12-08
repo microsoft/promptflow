@@ -137,5 +137,4 @@ node_variants:
           api: completion
           module: promptflow.tools.aoai
 additional_includes:
-  - ../external_files/convert_to_dict.py
   - ../external_files/fetch_text_content_from_url.py

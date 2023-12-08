@@ -8,12 +8,14 @@
 
 import json
 import logging
+import os
 import sys
 from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
 from typing import List, Optional
 
+from promptflow._constants import PF_LOGGING_LEVEL
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_mode import RunMode
@@ -166,8 +168,21 @@ class FileHandlerConcurrentWrapper(logging.Handler):
         self._context_var.set(None)
 
 
+valid_logging_level = {"CRITICAL", "FATAL", "ERROR", "WARN", "WARNING", "INFO", "DEBUG", "NOTSET"}
+
+
+def get_pf_logging_level(default=logging.INFO):
+    logging_level = os.environ.get(PF_LOGGING_LEVEL, logging.INFO)
+    if logging_level not in valid_logging_level:
+        # Fall back to info if user input is invalid.
+        logging_level = default
+    return logging_level
+
+
 def get_logger(name: str) -> logging.Logger:
+    """Get logger used during execution."""
     logger = logging.Logger(name)
+    logger.setLevel(get_pf_logging_level())
     logger.addHandler(FileHandlerConcurrentWrapper())
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT))
@@ -314,3 +329,38 @@ def scrub_credentials(s: str):
                 if credential_scrubber:
                     return credential_scrubber.scrub(s)
     return CredentialScrubber().scrub(s)
+
+
+class LoggerFactory:
+    @staticmethod
+    def get_logger(name: str, verbosity: int = logging.INFO, target_stdout: bool = False):
+        logger = logging.getLogger(name)
+        logger.propagate = False
+        # Set default logger level to debug, we are using handler level to control log by default
+        logger.setLevel(logging.DEBUG)
+        # Use env var at first, then use verbosity
+        verbosity = get_pf_logging_level(default=None) or verbosity
+        if not LoggerFactory._find_handler(logger, logging.StreamHandler):
+            LoggerFactory._add_handler(logger, verbosity, target_stdout)
+        # TODO: Find a more elegant way to set the logging level for azure.core.pipeline.policies._universal
+        azure_logger = logging.getLogger("azure.core.pipeline.policies._universal")
+        azure_logger.setLevel(logging.DEBUG)
+        LoggerFactory._add_handler(azure_logger, logging.DEBUG, target_stdout)
+        return logger
+
+    @staticmethod
+    def _find_handler(logger: logging.Logger, handler_type: type) -> Optional[logging.Handler]:
+        for log_handler in logger.handlers:
+            if isinstance(log_handler, handler_type):
+                return log_handler
+        return None
+
+    @staticmethod
+    def _add_handler(logger: logging.Logger, verbosity: int, target_stdout: bool = False) -> None:
+        # set target_stdout=True can log data into sys.stdout instead of default sys.stderr, in this way
+        # logger info and python print result can be synchronized
+        handler = logging.StreamHandler(stream=sys.stdout) if target_stdout else logging.StreamHandler()
+        formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
+        handler.setFormatter(formatter)
+        handler.setLevel(verbosity)
+        logger.addHandler(handler)

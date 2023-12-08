@@ -7,11 +7,11 @@ import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
+import yaml
 from flask import Response, jsonify, make_response, request
-from flask_restx import Namespace, Resource, fields
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
-from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
@@ -32,12 +32,6 @@ visualize_parser.add_argument("html", type=str, location="form", required=False)
 # Response model of run operation
 dict_field = api.schema_model("RunDict", {"additionalProperties": True, "type": "object"})
 list_field = api.schema_model("RunList", {"type": "array", "items": {"$ref": "#/definitions/RunDict"}})
-
-
-@api.errorhandler(RunNotFoundError)
-def handle_run_not_found_exception(error):
-    api.logger.warning(f"Raise RunNotFoundError, {error.message}")
-    return {"error_message": error.message}, 404
 
 
 @api.route("/")
@@ -73,18 +67,18 @@ class RunSubmit(Resource):
             run_name = run._generate_run_name()
             run_dict["name"] = run_name
         with tempfile.TemporaryDirectory() as temp_dir:
-            run_file = Path(temp_dir) / "batch_run.json"
-            with open(run_file, "w") as f:
-                json.dump(run_dict, f)
+            run_file = Path(temp_dir) / "batch_run.yaml"
+            with open(run_file, "w", encoding="utf-8") as f:
+                yaml.safe_dump(run_dict, f)
             cmd = f"pf run create --file {run_file}"
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            _, stderr = process.communicate()
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            stdout, _ = process.communicate()
             if process.returncode == 0:
                 run_op = RunOperations()
                 run = run_op.get(name=run_name)
                 return jsonify(run._to_dict())
             else:
-                raise Exception(f"Create batch run failed: {stderr}")
+                raise Exception(f"Create batch run failed: {stdout.decode('utf-8')}")
 
 
 @api.route("/<string:name>")

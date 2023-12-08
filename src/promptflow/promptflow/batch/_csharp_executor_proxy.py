@@ -1,14 +1,16 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import json
 import socket
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
-from promptflow.executor._result import AggregationResult
+from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
@@ -37,8 +39,6 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
-        # TODO: connection_provider_url is not required for local,
-        # will remove it after C# executor marks it as optional
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
@@ -48,13 +48,35 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             flow_file,
             "--assembly_folder",
             ".",
-            "--connection_provider_url",
-            "",
             "--log_path",
             log_path,
+            "--log_level",
+            "Warning",
         ]
         process = subprocess.Popen(command)
         return cls(process, port)
+
+    async def exec_line_async(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+    ) -> LineResult:
+        line_result = await super().exec_line_async(inputs, index, run_id)
+        # TODO: check if we should ask C# executor to keep unmatched inputs, although it's not so straightforward
+        #   for executor service to do so.
+        # local_storage_operations.load_inputs_and_outputs now have an assumption that there is an extra
+        # line_number key in the inputs.
+        # This key will be appended to the inputs in below call stack:
+        # BatchEngine.run =>
+        # BatchInputsProcessor.process_batch_inputs =>
+        # ... =>
+        # BatchInputsProcessor._merge_input_dicts_by_line
+        # For python, it will be kept in the returned line_result.run_info.inputs
+        # For csharp, it will be dropped by executor service for now
+        # Append it here for now to make behavior consistent among ExecutorProxy.
+        line_result.run_info.inputs[LINE_NUMBER_KEY] = index
+        return line_result
 
     def destroy(self):
         """Destroy the executor"""
@@ -74,7 +96,11 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         return AggregationResult({}, {}, {})
 
     @classmethod
-    def generate_tool_metadata(cls, flow_dag: dict, working_dir: Path) -> dict:
+    def generate_tool_metadata(cls, working_dir: Path) -> dict:
+        promptflow_folder = working_dir / PROMPT_FLOW_DIR_NAME
+        if promptflow_folder.exists():
+            with open(promptflow_folder / FLOW_TOOLS_JSON, mode="r", encoding=DEFAULT_ENCODING) as f:
+                return json.load(f)
         return {}
 
     @classmethod

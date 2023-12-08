@@ -2,13 +2,16 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import json
 import shutil
+from logging import Logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
+import pydash
 import pytest
 
 from promptflow._sdk._constants import RunStatus
@@ -32,8 +35,10 @@ FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
+# TODO(2770419): make this dynamic created during migrate live test to canary
+FAILED_RUN_NAME_EASTUS = "3dfd077a-f071-443e-9c4e-d41531710950"
 
-# TODO(2528577): we should run these test with recording mode.
+
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures(
@@ -349,11 +354,19 @@ class TestFlowRun:
     def test_stream_failed_run_logs(self, pf, capfd: pytest.CaptureFixture):
         # (default) raise_on_error=True
         with pytest.raises(InvalidRunStatusError):
-            pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
+            pf.stream(run=FAILED_RUN_NAME_EASTUS)
         # raise_on_error=False
-        pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950", raise_on_error=False)
+        pf.stream(run=FAILED_RUN_NAME_EASTUS, raise_on_error=False)
         out, _ = capfd.readouterr()
         assert "Input 'question' in line 0 is not provided for flow 'Simple_mock_answer'." in out
+
+    def test_failed_run_to_dict_exclude(self, pf):
+        failed_run = pf.runs.get(run=FAILED_RUN_NAME_EASTUS)
+        # Azure run object reference a dict, use deepcopy to avoid unexpected modification
+        default = copy.deepcopy(failed_run._to_dict())
+        exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
+        assert "additionalInfo" in default["error"]["error"] and "additionalInfo" not in exclude["error"]["error"]
+        assert "debugInfo" in default["error"]["error"] and "debugInfo" not in exclude["error"]["error"]
 
     @pytest.mark.skipif(
         condition=not is_live(),
@@ -782,6 +795,81 @@ class TestFlowRun:
             workspace=mock_workspace, credential=MagicMock(), operation_scope=MagicMock()
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
+
+    @pytest.mark.skipif(condition=not is_live(), reason="need to fix recording")
+    def test_download_run(self, pf):
+        from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
+
+        run = "c619f648-c809-4545-9f94-f67b0a680706"
+
+        expected_files = [
+            AsyncRunDownloader.LOCAL_LOGS_FILE_NAME,
+            AsyncRunDownloader.LOCAL_METRICS_FILE_NAME,
+            f"{AsyncRunDownloader.LOCAL_SNAPSHOT_FOLDER}/flow.dag.yaml",
+        ]
+
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, run, file).exists()
+
+    def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
+        from azure.core.exceptions import HttpResponseError
+
+        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
+        from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+
+        request_ids = set()
+
+        def fake_submit(*args, **kwargs):
+            headers = kwargs.get("headers", None)
+            request_id_in_headers = headers["x-ms-client-request-id"]
+            # request id in headers should be same with request id in service caller
+            assert request_id_in_headers == pf.runs._service_caller._request_id
+            # request id in request is same request id in collected logs
+            assert request_id_in_headers in request_ids
+            raise HttpResponseError("customized error message.")
+
+        def check_inner_call(*args, **kwargs):
+            if "extra" in kwargs:
+                request_id = pydash.get(kwargs, "extra.custom_dimensions.request_id")
+                request_ids.add(request_id)
+
+        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_request, patch.object(
+            Logger, "info"
+        ) as mock_logger:
+            mock_logger.side_effect = check_inner_call
+            mock_request.side_effect = fake_submit
+            with pytest.raises(FlowRequestException) as e:
+                pf.run(
+                    flow=f"{FLOWS_DIR}/print_env_var",
+                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                    runtime=runtime,
+                    name=randstr("name1"),
+                )
+            # request id in service caller is same request id in collected logs
+            assert pf.runs._service_caller._request_id in request_ids
+            # only 1 request id generated in logs
+            assert len(request_ids) == 1
+            # request id should be included in FlowRequestException
+            assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
+
+            old_request_id = request_ids.pop()
+            with pytest.raises(FlowRequestException) as e:
+                pf.run(
+                    flow=f"{FLOWS_DIR}/print_env_var",
+                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                    runtime=runtime,
+                    name=randstr("name1"),
+                )
+            # request id in service caller is same request id in collected logs
+            assert pf.runs._service_caller._request_id in request_ids
+            # request id is not same with before
+            assert old_request_id not in request_ids
+            # only 1 request id generated in logs
+            assert len(request_ids) == 1
+            # request id should be included in FlowRequestException
+            assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
 
 # separate some tests as they cannot use the fixture that mocks the aml-user-token
