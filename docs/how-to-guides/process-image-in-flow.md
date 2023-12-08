@@ -9,10 +9,10 @@ Image class is a subclass of `bytes`, thus you can access the binary data by dir
 Set the type of flow input to `image` and promptflow will treat it as an image.
 
 ## Reference image in prompt template
-In prompt templates that support image (e.g. in OpenAI-GPT-4V tool), using markdown syntax to denote that a template input is an image: `![image]({{test_image}})`. In this case, `test_image` will be substituted with base64 or source_url (if set) before sending to LLM model.
+In prompt templates that support image (e.g. in OpenAI GPT-4V tool), using markdown syntax to denote that a template input is an image: `![image]({{test_image}})`. In this case, `test_image` will be substituted with base64 or source_url (if set) before sending to LLM model.
 
 ## Serialization/Deserialization
-Promptflow uses a special dict to preprent image.
+Promptflow uses a special dict to representnt image.
 `{"data:image/<mime-type>;<representation>": "<value>"}`
 
 - `<mime-type>` can be html standard [mime](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) image types. Setting it to specific type can help previewing the image correctly, or it can be `*` for unknown type.
@@ -35,6 +35,8 @@ Promptflow uses a special dict to preprent image.
 
         {"data:image/png;path": "./my-image.png"}
 
+Please note that `path` representation is not supported in Deployment scenario.
+
 ## Batch Input data
 Batch input data containing image can be of 2 formats:
 1. The same jsonl format of regular batch input, except that some column may be seriliazed image data or composite data type (dict/list) containing images. The serialized images can only be Url or Base64. E.g.
@@ -42,7 +44,7 @@ Batch input data containing image can be of 2 formats:
     {"question": "How many colors are there in the image?", "input_image": {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/logo-ms-social.png"}}
     {"question": "What's this image about?", "input_image": {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/404.png"}}
     ```
-2. A folder containing a jsonl file under root path, which contains serialized image in File Reference format. The reference file are stored in the folder and there relative path to the root path is used as path in the file reference. Here is a sample batch input:
+2. A folder containing a jsonl file under root path, which contains serialized image in File Reference format. The referenced file are stored in the folder and their relative path to the root path is used as path in the file reference. Here is a sample batch input, note that the name of `input.jsonl` is arbitrary as long as it's a jsonl file:
     ```
     BatchInputFolder
     |----input.jsonl
