@@ -5,9 +5,10 @@ import tempfile
 import timeit
 import uuid
 from pathlib import Path
-
+from unittest import mock
 import pytest
 import multiprocessing
+from promptflow import VERSION
 from promptflow._core.operation_context import OperationContext
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 
@@ -16,39 +17,20 @@ CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-@contextlib.contextmanager
-def check_ua():
-    cli_perf_monitor_agent = "perf_monitor/1.0"
-    default_context = OperationContext.get_instance()
-    try:
-        instance = OperationContext()
-        OperationContext._current_context.set(instance)
-
-        context = OperationContext.get_instance()
-        context.append_user_agent(cli_perf_monitor_agent)
-        assert cli_perf_monitor_agent in context.get_user_agent()
-        yield
-        assert CLI_USER_AGENT in context.get_user_agent()
-    except Exception as e:
-        raise e
-    finally:
-        OperationContext._current_context.set(default_context)
-        context = OperationContext.get_instance()
-        assert cli_perf_monitor_agent not in context.get_user_agent()
-
-
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
     from promptflow._cli._pf.entry import main
     sys.argv = list(cmd)
     output = io.StringIO()
 
     st = timeit.default_timer()
-    with contextlib.redirect_stdout(output), check_ua():
+    with contextlib.redirect_stdout(output), mock.patch.object(
+            OperationContext, "get_user_agent") as get_user_agent_fun:
+        # Don't change get_user_agent_fun.return_value, dashboard needs to use.
+        get_user_agent_fun.return_value = f"{CLI_USER_AGENT} promptflow/{VERSION} perf_monitor/1.0"
         main()
     ed = timeit.default_timer()
+
     print(f"{cmd}, \n Total time: {ed - st}s")
-    context = OperationContext.get_instance()
-    print("request id: ", context.get("request_id"))
     assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
     res_value = output.getvalue()
     if result_queue:
@@ -68,8 +50,7 @@ def subprocess_run_cli_command(cmd, time_limit=3600):
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
-@pytest.mark.cli_test
-@pytest.mark.e2etest
+@pytest.mark.perf_monitor_test
 class TestCliTimeConsume:
     def test_pf_run_create(self, time_limit=35) -> None:
         res = subprocess_run_cli_command(

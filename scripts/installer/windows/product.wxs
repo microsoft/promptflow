@@ -89,7 +89,7 @@
             Directory="DynamicCliDir"
             Execute="commit"
             Impersonate="no"
-            ExeCommand="cmd.exe /c SC CREATE PromptFlowService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown binPath= &quot;\&quot;%ProgramFiles%\promptflow\pfsvc.exe\&quot;&quot;"
+            ExeCommand="cmd.exe /c SC CREATE PromptFlowService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown binPath= &quot;\&quot;%ProgramFiles%\promptflow\pfsvc.bat\&quot;&quot;"
             Return="check" />
         <CustomAction Id="StartPromptFlowService"
             Directory="DynamicCliDir"
