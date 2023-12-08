@@ -1,0 +1,36 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OrchestrationRun.schema.json
+
+data: data.jsonl
+
+flows:
+  main:
+    flow: flow_directory
+    column_mapping:
+      question: ${data.question}
+  eval_flow1:
+    flow: ../evaluation/similarity.yaml
+    column_mapping:
+      temperature: 0.5
+      ground_truth: ${data.ground_truth}
+      prediction: ${main.outputs.chat_output}
+  eval_flow2:
+    flow: ../evaluation/assets.yaml
+    column_mapping: # inputs
+      asserts: ${data.asserts}
+      answer: ${main.outputs.chat_output}
+    connections:
+      node1.connection: open_ai_connection  # Override flow node connection
+
+aggregations:
+  avg_similarity:
+    op: AVG
+    input: ${eval_flow1.outputs.score}
+  p95_similarity:
+    op: p95
+    input: ${eval_flow1.outputs.score}
+  avg_asserts:
+    source:
+      type: code
+      path: agg.py
+    inputs:
+      results: ${eval_flow2.outputs.score}  # Aggregated list of flow output lines
