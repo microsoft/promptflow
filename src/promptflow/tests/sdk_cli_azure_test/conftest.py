@@ -265,3 +265,22 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     assert result.path.endswith(f"/promptflow/{flow_display_name}/flow.dag.yaml")
 
     yield result
+
+
+@pytest.fixture(autouse=not is_live())
+def mock_vcrpy_for_httpx() -> None:
+    # there is a known issue in vcrpy handling httpx response: https://github.com/kevin1024/vcrpy/pull/591
+    # the related code change has not been merged, so we need such a fixture for patch
+    def _transform_headers(httpx_response):
+        out = {}
+        for key, var in httpx_response.headers.raw:
+            decoded_key = key.decode("utf-8")
+            decoded_var = var.decode("utf-8")
+            if decoded_key.lower() == "content-encoding" and decoded_var in ("gzip", "deflate"):
+                continue
+            out.setdefault(decoded_key, [])
+            out[decoded_key].append(decoded_var)
+        return out
+
+    with patch("vcr.stubs.httpx_stubs._transform_headers", new=_transform_headers):
+        yield

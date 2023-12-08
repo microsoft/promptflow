@@ -16,5 +16,5 @@ class TestGeneralAPIs:
         assert response.status_code == 200
         response_json = response.json
         assert isinstance(response_json, dict)
-        assert "sdk_version" in response_json
-        assert response_json["sdk_version"] == get_promptflow_sdk_version()
+        assert "promptflow" in response_json
+        assert response_json["promptflow"] == get_promptflow_sdk_version()
