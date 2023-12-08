@@ -124,15 +124,15 @@
                 <CreateFolder />
             </Component>
 
-            <Component Id="pfs.bat" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="pfs.bat" Source="scripts\pfs.bat" KeyPath="yes" Checksum="yes"/>
+            <Component Id="startup.bat" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
+                <File Id="startup.bat" Source="scripts\startup.bat" KeyPath="yes" Checksum="yes"/>
             </Component>
 
             <Component Id="ApplicationShortcut" Directory="StartupFolder" Guid="$(var.PromptflowCliRegistryGuid)">
                 <Shortcut Id="ApplicationStartMenuShortcut"
                           Name="Prompt flow service"
                           Description="Prompt Flow Service"
-                          Target="[#pfs.bat]"
+                          Target="[#startup.bat]"
                           WorkingDirectory="APPLICATIONFOLDER"
                           Advertise="no" />
                 <RemoveFile Id="CleanUpShortCut" Directory="StartupFolder" Name="Prompt flow service" On="uninstall"/>
