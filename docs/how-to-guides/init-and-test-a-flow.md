@@ -1,4 +1,4 @@
-# Initialize and test a flow
+l# Initialize and test a flow
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
@@ -66,7 +66,7 @@ Take [customer-intent-extraction](https://github.com/microsoft/promptflow/tree/m
 
 ![init_output](../media/how-to-guides/init-and-test-a-flow/flow_init_output.png)
 
-In this case, promptflow CLI generates `flow.dag.json`, `.promptflow/tools.json`  and `extract_intent_tool.py`, it is a python tool in the flow.
+In this case, promptflow CLI generates `flow.dag.yaml`, `.promptflow/flow.tools.json`  and `extract_intent_tool.py`, it is a python tool in the flow.
 
 ![init_files](../media/how-to-guides/init-and-test-a-flow/flow_init_files.png)
 ## Test a flow
@@ -163,7 +163,7 @@ You can use the action either on the default yaml editor or the visual editor to
 
 ### Test a single node in the flow
 
-Customer can test a single python node in the flow. It will use customer provides date or the default value of the node as input. It will only use customer specified node to execute with the input.
+Customer can test a single python node in the flow. It will use customer provides data or the default value of the node as input. It will only use customer specified node to execute with the input.
 
 ::::{tab-set}
 :::{tab-item} CLI
