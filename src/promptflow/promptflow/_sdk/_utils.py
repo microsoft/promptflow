@@ -1051,9 +1051,8 @@ def interactive_credential_disabled():
 
 def is_from_cli():
     from promptflow._cli._user_agent import USER_AGENT as CLI_UA
-    from promptflow._core.operation_context import OperationContext
 
-    return CLI_UA in OperationContext.get_instance().get_client_user_agent()
+    return CLI_UA in get_client_user_agent()
 
 
 def is_url(value: Union[PathLike, str]) -> bool:
