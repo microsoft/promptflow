@@ -154,6 +154,8 @@ class LineExecutionProcessPool:
         self._validate_inputs = validate_inputs
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
         sys_start_methods = multiprocessing.get_all_start_methods()
+        current_start_method = multiprocessing_start_method or multiprocessing.get_start_method()
+
         if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
             bulk_logger.warning(
                 f"Failed to set start method to '{multiprocessing_start_method}', "
@@ -161,9 +163,7 @@ class LineExecutionProcessPool:
             )
             bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
             multiprocessing_start_method = None
-        elif ((multiprocessing_start_method == "fork" or
-               multiprocessing.get_start_method() == "fork") and
-              "forkserver" in sys_start_methods):
+        elif (current_start_method == "fork" and "forkserver" in sys_start_methods):
             bulk_logger.info(
                 "Current method is 'fork' and 'forkserver' is available. Set start method to 'forkserver'.")
             multiprocessing_start_method = "forkserver"
