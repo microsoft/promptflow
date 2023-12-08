@@ -290,20 +290,11 @@ class ReadmeStepsManage:
         if "tutorials" in workflow_name:
             path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml, '!examples/flows/integrations/**' ]"
         else:
-            if "web_classification" in workflow_name:
-                path_filter = (
-                    f"[ {ReadmeSteps.working_dir}/**, "
-                    + "examples/*requirements.txt, "
-                    + "examples/flows/standard/flow-with-additional-includes/**, "
-                    + "examples/flows/standard/flow-with-symlinks/** ,"
-                    + f".github/workflows/{workflow_name}.yml ]"
-                )
-            else:
-                path_filter = (
-                    f"[ {ReadmeSteps.working_dir}/**, "
-                    + "examples/*requirements.txt, "
-                    + f".github/workflows/{workflow_name}.yml ]"
-                )
+            path_filter = (
+                f"[ {ReadmeSteps.working_dir}/**, "
+                + "examples/*requirements.txt, "
+                + f".github/workflows/{workflow_name}.yml ]"
+            )
         replacements = {
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
