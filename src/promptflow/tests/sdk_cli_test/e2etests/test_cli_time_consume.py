@@ -60,7 +60,7 @@ def subprocess_run_cli_command(cmd, time_limit=3600):
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
 @pytest.mark.perf_monitor_test
 class TestCliTimeConsume:
-    def test_pf_run_create(self, time_limit=10) -> None:
+    def test_pf_run_create(self, time_limit=8) -> None:
         res = subprocess_run_cli_command(
             cmd=(
                 "pf",
@@ -76,7 +76,7 @@ class TestCliTimeConsume:
 
         assert "Completed" in res
 
-    def test_pf_run_update(self, time_limit=10) -> None:
+    def test_pf_run_update(self, time_limit=8) -> None:
         run_name = str(uuid.uuid4())
         run_cli_command(
             cmd=(
@@ -99,7 +99,7 @@ class TestCliTimeConsume:
 
         assert "Completed" in res
 
-    def test_pf_flow_test(self, time_limit=10):
+    def test_pf_flow_test(self, time_limit=8):
         subprocess_run_cli_command(
             cmd=(
                 "pf",
@@ -115,7 +115,7 @@ class TestCliTimeConsume:
         output_path = Path(FLOWS_DIR) / "print_input_flow" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
 
-    def test_pf_flow_build(self, time_limit=10):
+    def test_pf_flow_build(self, time_limit=8):
         with tempfile.TemporaryDirectory() as temp_dir:
             subprocess_run_cli_command(
                 cmd=(
@@ -132,7 +132,7 @@ class TestCliTimeConsume:
                 time_limit=time_limit,
             )
 
-    def test_pf_connection_create(self, time_limit=10):
+    def test_pf_connection_create(self, time_limit=8):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
         res = subprocess_run_cli_command(
             cmd=(
@@ -149,7 +149,7 @@ class TestCliTimeConsume:
 
         assert "api_type" in res
 
-    def test_pf_connection_list(self, time_limit=10):
+    def test_pf_connection_list(self, time_limit=8):
         name = "connection_list"
         res = run_cli_command(
             cmd=(

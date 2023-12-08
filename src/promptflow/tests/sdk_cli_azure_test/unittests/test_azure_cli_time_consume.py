@@ -66,7 +66,7 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
 @pytest.mark.usefixtures("mock_get_azure_pf_client")
 @pytest.mark.perf_monitor_test
 class TestAzureCliTimeConsume:
-    def test_pfazure_run_create(self, operation_scope_args, time_limit=10):
+    def test_pfazure_run_create(self, operation_scope_args, time_limit=8):
         run_cli_command(
             cmd=(
                 "pfazure",
@@ -81,7 +81,7 @@ class TestAzureCliTimeConsume:
             time_limit=time_limit,
         )
 
-    def test_pfazure_run_update(self, operation_scope_args, time_limit=10):
+    def test_pfazure_run_update(self, operation_scope_args, time_limit=8):
         run_cli_command(
             cmd=(
                 "pfazure",
@@ -98,7 +98,7 @@ class TestAzureCliTimeConsume:
             time_limit=time_limit,
         )
 
-    def test_run_restore(self, operation_scope_args, time_limit=10):
+    def test_run_restore(self, operation_scope_args, time_limit=8):
         run_cli_command(
             cmd=(
                 "pfazure",
