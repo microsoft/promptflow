@@ -1,6 +1,7 @@
 interactions:
 - request:
-    body: '{"hidden": false}'
+    body: '{"displayName": "test_run", "description": "test_description", "tags":
+      {"key1": "value1"}}'
     headers:
       Accept:
       - '*/*'
@@ -9,7 +10,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '17'
+      - '90'
       Content-Type:
       - application/json
       User-Agent:
@@ -24,23 +25,23 @@ interactions:
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Chenyang
         Zhang", "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token":
         null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
-        6, "statusRevision": 3, "runUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
+        7, "statusRevision": 3, "runUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
         "parentRunUuid": null, "rootRunUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
         "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:03.8575617",
         "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": "10032001A114F500", "userIdp": null, "userAltSecId": null, "userIss":
         "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
         "00000000-0000-0000-0000-000000000000", "userName": "Chenyang Zhang", "upn":
-        "username@microsoft.com"}, "lastModifiedUtc": "2023-12-08T08:40:03.7181877+00:00",
+        "username@microsoft.com"}, "lastModifiedUtc": "2023-12-08T08:56:01.2628137+00:00",
         "duration": "00:00:03.8575617", "cancelationReason": null, "currentAttemptId":
         1, "runId": "test_run", "parentRunId": null, "experimentId": "00000000-0000-0000-0000-000000000000",
         "status": "Completed", "startTimeUtc": "2023-12-08T08:29:56.3873783+00:00",
         "endTimeUtc": "2023-12-08T08:30:00.24494+00:00", "scheduleId": null, "displayName":
         "test_run", "name": null, "dataContainerId": "dcid.test_run", "description":
-        null, "hidden": false, "runType": "azureml.promptflow.FlowRun", "runTypeV2":
-        {"orchestrator": null, "traits": [], "attribution": "PromptFlow", "computeType":
-        "AmlcDsi"}, "properties": {"azureml.promptflow.runtime_name": "perf_monitor",
-        "azureml.promptflow.runtime_version": "20231204.v4", "azureml.promptflow.definition_file_name":
+        "test_description", "hidden": false, "runType": "azureml.promptflow.FlowRun",
+        "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
+        "computeType": "AmlcDsi"}, "properties": {"azureml.promptflow.runtime_name":
+        "perf_monitor", "azureml.promptflow.runtime_version": "20231204.v4", "azureml.promptflow.definition_file_name":
         "flow.dag.yaml", "azureml.promptflow.session_id": "96c35660d759b526cb14cf69bbb56fcaa90c05a778b147b4",
         "azureml.promptflow.flow_lineage_id": "fcb01d4faf8f2137f9d142cc1f3f22ecdf3d485e1435c4c971ff0ee09077f1b5",
         "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
@@ -50,17 +51,17 @@ interactions:
         "44bc3252-4181-4429-b0ac-df2315b73157", "azureml.promptflow.total_tokens":
         "0", "_azureml.evaluate_artifacts": "[{\"path\": \"instance_results.jsonl\",
         \"type\": \"table\"}]"}, "parameters": {}, "actionUris": {}, "scriptName":
-        null, "target": null, "uniqueChildRunComputeTargets": [], "tags": {}, "settings":
-        {}, "services": {}, "inputDatasets": [], "outputDatasets": [], "runDefinition":
-        null, "jobSpecification": null, "primaryMetricName": null, "createdFrom":
-        null, "cancelUri": null, "completeUri": null, "diagnosticsUri": null, "computeRequest":
-        null, "compute": null, "retainForLifetimeOfWorkspace": false, "queueingInfo":
-        null, "inputs": null, "outputs": null}'
+        null, "target": null, "uniqueChildRunComputeTargets": [], "tags": {"key1":
+        "value1"}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
+        [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
+        null, "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
+        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        false, "queueingInfo": null, "inputs": null, "outputs": null}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '3562'
+      - '3600'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -72,7 +73,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.071'
+      - '0.084'
     status:
       code: 200
       message: OK
@@ -103,23 +104,23 @@ interactions:
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Chenyang
         Zhang", "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token":
         null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
-        6, "statusRevision": 3, "runUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
+        7, "statusRevision": 3, "runUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
         "parentRunUuid": null, "rootRunUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
         "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:03.8575617",
         "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": "10032001A114F500", "userIdp": null, "userAltSecId": null, "userIss":
         "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
         "00000000-0000-0000-0000-000000000000", "userName": "Chenyang Zhang", "upn":
-        "username@microsoft.com"}, "lastModifiedUtc": "2023-12-08T08:29:59.1440638+00:00",
+        "username@microsoft.com"}, "lastModifiedUtc": "2023-12-08T08:44:04.9130973+00:00",
         "duration": "00:00:03.8575617", "cancelationReason": null, "currentAttemptId":
         1, "runId": "test_run", "parentRunId": null, "experimentId": "3285bc8b-1f69-4803-bf44-4770e5b43a04",
         "status": "Completed", "startTimeUtc": "2023-12-08T08:29:56.3873783+00:00",
         "endTimeUtc": "2023-12-08T08:30:00.24494+00:00", "scheduleId": null, "displayName":
         "test_run", "name": null, "dataContainerId": "dcid.test_run", "description":
-        null, "hidden": false, "runType": "azureml.promptflow.FlowRun", "runTypeV2":
-        {"orchestrator": null, "traits": [], "attribution": "PromptFlow", "computeType":
-        "AmlcDsi"}, "properties": {"azureml.promptflow.runtime_name": "perf_monitor",
-        "azureml.promptflow.runtime_version": "20231204.v4", "azureml.promptflow.definition_file_name":
+        "test_description", "hidden": false, "runType": "azureml.promptflow.FlowRun",
+        "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
+        "computeType": "AmlcDsi"}, "properties": {"azureml.promptflow.runtime_name":
+        "perf_monitor", "azureml.promptflow.runtime_version": "20231204.v4", "azureml.promptflow.definition_file_name":
         "flow.dag.yaml", "azureml.promptflow.session_id": "96c35660d759b526cb14cf69bbb56fcaa90c05a778b147b4",
         "azureml.promptflow.flow_lineage_id": "fcb01d4faf8f2137f9d142cc1f3f22ecdf3d485e1435c4c971ff0ee09077f1b5",
         "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
@@ -129,12 +130,13 @@ interactions:
         "44bc3252-4181-4429-b0ac-df2315b73157", "azureml.promptflow.total_tokens":
         "0", "_azureml.evaluate_artifacts": "[{\"path\": \"instance_results.jsonl\",
         \"type\": \"table\"}]"}, "parameters": {}, "actionUris": {}, "scriptName":
-        null, "target": null, "uniqueChildRunComputeTargets": [], "tags": {}, "settings":
-        {}, "services": {}, "inputDatasets": [], "outputDatasets": [], "runDefinition":
-        null, "jobSpecification": null, "primaryMetricName": null, "createdFrom":
-        null, "cancelUri": null, "completeUri": null, "diagnosticsUri": null, "computeRequest":
-        null, "compute": null, "retainForLifetimeOfWorkspace": false, "queueingInfo":
-        null, "inputs": null, "outputs": {"debug_info": {"assetId": "azureml://locations/eastus/workspaces/00000/data/azureml_test_run_output_data_debug_info/versions/1",
+        null, "target": null, "uniqueChildRunComputeTargets": [], "tags": {"key1":
+        "value1"}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
+        [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
+        null, "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
+        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        false, "queueingInfo": null, "inputs": null, "outputs": {"debug_info": {"assetId":
+        "azureml://locations/eastus/workspaces/00000/data/azureml_test_run_output_data_debug_info/versions/1",
         "type": "UriFolder"}, "flow_outputs": {"assetId": "azureml://locations/eastus/workspaces/00000/data/azureml_test_run_output_data_flow_outputs/versions/1",
         "type": "UriFolder"}}}, "runDefinition": {"Nodes": [{"Name": "print_input",
         "Type": "python", "Source": {"Type": "code", "Tool": null, "Path": "print_input.py"},
@@ -462,7 +464,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '47019'
+      - '47061'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -474,7 +476,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.070'
+      - '0.052'
     status:
       code: 200
       message: OK

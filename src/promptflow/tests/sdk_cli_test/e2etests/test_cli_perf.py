@@ -51,7 +51,7 @@ def subprocess_run_cli_command(cmd, time_limit=3600):
 
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
 @pytest.mark.perf_monitor_test
-class TestCliTimeConsume:
+class TestCliPerf:
     def test_pf_run_create(self, time_limit=35) -> None:
         res = subprocess_run_cli_command(
             cmd=(

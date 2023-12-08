@@ -44,7 +44,7 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
     "single_worker_thread_pool",
     "vcr_recording",
 )
-class TestAzureCliTimeConsume:
+class TestAzureCliPerf:
     def test_pfazure_run_create(self, operation_scope_args, runtime: str, time_limit=30):
         run_cli_command(
             cmd=(
@@ -56,7 +56,7 @@ class TestAzureCliTimeConsume:
                 "--data",
                 f"{DATAS_DIR}/print_input_flow.jsonl",
                 "--name",
-                "test_run",
+                "test_create_flow",
                 "--runtime",
                 runtime,
                 *operation_scope_args,
