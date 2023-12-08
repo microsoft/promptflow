@@ -99,7 +99,7 @@ class AsyncNodesScheduler:
             task = context.invoke_tool_async(node, f, kwargs)
         else:
             task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
-        return asyncio.get_event_loop().create_task(task)
+        return asyncio.create_task(task)
 
     @staticmethod
     def _invoke_sync_tool(context, node, f, kwargs):
@@ -119,6 +119,6 @@ class AsyncNodesScheduler:
         f,
         kwargs,
     ):
-        return await asyncio.get_event_loop().run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             executor, AsyncNodesScheduler._invoke_sync_tool, context, node, f, kwargs
         )
