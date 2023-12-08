@@ -92,7 +92,7 @@ class TestCli:
             run_id,
         )
         run = local_client.runs.get(name=run_id)
-        raise Exception(f"chengbin check: {json.dumps(run)}")
+        raise Exception(f"chengbin check: {run._to_dict()}")
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
