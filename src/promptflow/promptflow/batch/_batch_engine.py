@@ -144,8 +144,7 @@ class BatchEngine:
             if isinstance(e, PromptflowException):
                 raise e
             else:
-                # For unexpected error, we need to wrap it to SystemErrorException.
-                # This allows us to see the stack trace inside.
+                # for unexpected error, we need to wrap it to SystemErrorException to allow us to see the stack trace.
                 unexpected_error = UnexpectedError(
                     target=ErrorTarget.BATCH,
                     message_format=(
@@ -168,7 +167,6 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
-        # create a task to execute batch run
         task = asyncio.create_task(self._exec(batch_inputs, run_id, output_dir, raise_on_line_failure))
         while not task.done():
             # check whether the task is completed or canceled every 1s
@@ -213,7 +211,7 @@ class BatchEngine:
             return BatchResult.create(self._start_time, datetime.utcnow(), self._line_results, self._aggr_results)
         except asyncio.CancelledError:
             # If the batch run is canceled, log it and ignore the exception.
-            bulk_logger.info("The batch run is canceled.")
+            bulk_logger.warning("The batch run is canceled.")
 
     async def _exec_batch(
         self,
@@ -232,7 +230,6 @@ class BatchEngine:
                 async with asyncio.Semaphore(DEFAULT_CONCURRENCY):
                     done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
                     self._line_results.extend([task.result() for task in done])
-                    # log the progress of the batch run
                     log_progress(
                         self._start_time,
                         bulk_logger,
@@ -242,7 +239,6 @@ class BatchEngine:
                     )
                     completed_line = len(self._line_results)
             except asyncio.CancelledError:
-                # If the batch run is canceled, break out of the while loop.
                 break
         return sorted(self._line_results, key=lambda r: r.run_info.index)
 
