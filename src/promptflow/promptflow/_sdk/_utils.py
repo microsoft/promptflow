@@ -52,6 +52,7 @@ from promptflow._sdk._constants import (
     REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     USE_VARIANTS,
+    USER_AGENT_KEY,
     VARIANTS,
     CommonYamlFields,
     ConnectionProvider,
@@ -866,30 +867,37 @@ def update_user_agent_from_env_var():
         OperationContext.get_instance().append_user_agent(os.environ[PF_USER_AGENT])
 
 
-def setup_user_agent_to_operation_context(user_agent=None):
+def get_client_user_agent(user_agent=None):
+    """Get client user agent from OperationContext.
+
+    For client scenario, ua won't include promptflow/xxx.
+
+    """
+    from promptflow._core.operation_context import OperationContext
+
+    context = OperationContext.get_instance()
+    # skip append if empty
+    if user_agent:
+        context.append_user_agent(user_agent)
+    # directly get from context since client side won't need promptflow/xxx.
+    return context.get(USER_AGENT_KEY)
+
+
+def setup_user_agent_to_operation_context(user_agent):
     """Setup user agent to OperationContext.
     For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
     For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
     For calls from SDK, ua will be like: promptflow-sdk/
     """
-    from promptflow._core.operation_context import OperationContext
-
     update_user_agent_from_env_var()
-    # Append user agent
-    context = OperationContext.get_instance()
-    # skip append if empty
-    if user_agent:
-        context.append_user_agent(user_agent)
-    return context.get_client_user_agent()
+    return get_client_user_agent(user_agent=user_agent)
 
 
 def call_from_extension() -> bool:
     """Return true if current request is from extension."""
-    from promptflow._core.operation_context import OperationContext
-
     update_user_agent_from_env_var()
-    context = OperationContext().get_instance()
-    return EXTENSION_UA in context.get_client_user_agent()
+    user_agent = get_client_user_agent()
+    return EXTENSION_UA in user_agent
 
 
 def generate_random_string(length: int = 6) -> str:
