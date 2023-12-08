@@ -50,10 +50,18 @@ class MockDatastore:
     """Mock Datastore class for `DatastoreOperations.get_default().name`."""
 
     name: str
+    account_name: str
+    container_name: str
+    endpoint: str
 
 
 def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
-    return MockDatastore(name="workspaceblobstore")
+    return MockDatastore(
+        name="workspaceblobstore",
+        account_name=SanitizedValues.FAKE_ACCOUNT_NAME,
+        container_name=SanitizedValues.FAKE_CONTAINER_NAME,
+        endpoint="core.windows.net",
+    )
 
 
 def mock_workspace_get(*args, **kwargs):
@@ -226,3 +234,10 @@ def is_json_payload_response(response: Dict) -> bool:
     headers = response.get("headers")
     # PFAzureIntegrationTestRecording will lower keys in response headers
     return _is_json_payload(headers, key="content-type")
+
+
+def is_httpx_response(response: Dict) -> bool:
+    # different from other stubs in vcrpy, httpx response uses "content" instead of "body"
+    # this leads to different handle logic to response
+    # so we need a utility to check if a response is from httpx
+    return "content" in response
