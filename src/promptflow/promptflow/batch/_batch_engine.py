@@ -94,9 +94,6 @@ class BatchEngine:
         self._storage = storage
         # set it to True when the batch run is canceled
         self._is_canceled = False
-        # initialize the line results and aggregation results
-        self._line_results: List[LineResult] = []
-        self._aggr_results = AggregationResult({}, {}, {})
 
     def run(
         self,
@@ -167,7 +164,14 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
-        task = asyncio.create_task(self._exec(batch_inputs, run_id, output_dir, raise_on_line_failure))
+        # If the batch run is canceled, asyncio.CancelledError will be raised and no results will be returned,
+        # so we pass empty line results list and aggr results and update them in _exec so that when the batch
+        # run is canceled we can get the current completed line results and aggr results.
+        line_results: List[LineResult] = []
+        aggr_result = AggregationResult({}, {}, {})
+        task = asyncio.create_task(
+            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
+        )
         while not task.done():
             # check whether the task is completed or canceled every 1s
             await asyncio.sleep(1)
@@ -175,12 +179,14 @@ class BatchEngine:
                 task.cancel()
                 # use current completed line results and aggregation results to create a BatchResult
                 return BatchResult.create(
-                    self._start_time, datetime.utcnow(), self._line_results, self._aggr_results, status=Status.Canceled
+                    self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
                 )
         return task.result()
 
     async def _exec(
         self,
+        line_results: List[LineResult],
+        aggr_result: AggregationResult,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
@@ -195,27 +201,28 @@ class BatchEngine:
             run_id = run_id or str(uuid.uuid4())
             # execute lines
             if isinstance(self._executor_proxy, PythonExecutorProxy):
-                self._line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
+                line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
             else:
-                self._line_results = await self._exec_batch(batch_inputs, run_id)
-            handle_line_failures([r.run_info for r in self._line_results], raise_on_line_failure)
+                await self._exec_batch(line_results, batch_inputs, run_id)
+            handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
             # execute aggregation nodes
-            self._aggr_results = await self._exec_aggregation(batch_inputs, self._line_results, run_id)
+            aggr_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
             # persist outputs to output dir
             outputs = [
                 {LINE_NUMBER_KEY: r.run_info.index, **r.output}
-                for r in self._line_results
+                for r in line_results
                 if r.run_info.status == Status.Completed
             ]
             self._persist_outputs(outputs, output_dir)
             # summary some infos from line results and aggr results to batch result
-            return BatchResult.create(self._start_time, datetime.utcnow(), self._line_results, self._aggr_results)
+            return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result)
         except asyncio.CancelledError:
             # If the batch run is canceled, log it and ignore the exception.
             bulk_logger.warning("The batch run is canceled.")
 
     async def _exec_batch(
         self,
+        line_results: List[LineResult],
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
@@ -232,18 +239,17 @@ class BatchEngine:
                     done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
                     completed_line_results = [task.result() for task in done]
                     self._persist_run_info(completed_line_results)
-                    self._line_results.extend(completed_line_results)
+                    line_results.extend(completed_line_results)
                     log_progress(
                         self._start_time,
                         bulk_logger,
-                        len(self._line_results),
+                        len(line_results),
                         total_lines,
                         last_log_count=completed_line,
                     )
-                    completed_line = len(self._line_results)
+                    completed_line = len(line_results)
             except asyncio.CancelledError:
                 break
-        return sorted(self._line_results, key=lambda r: r.run_info.index)
 
     async def _exec_aggregation(
         self,
@@ -273,11 +279,11 @@ class BatchEngine:
         )
         succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
-            aggr_results = await self._executor_proxy.exec_aggregation_async(
+            aggr_result = await self._executor_proxy.exec_aggregation_async(
                 succeeded_inputs, succeeded_aggregation_inputs, run_id
             )
             bulk_logger.info("Finish executing aggregation nodes.")
-            return aggr_results
+            return aggr_result
         except PromptflowException as e:
             # For PromptflowException, we already do classification, so throw directly.
             raise e
