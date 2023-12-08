@@ -78,7 +78,7 @@ nodes:
     path: convert_to_dict.py
   inputs:
     input_str: ${classify_with_llm.output}
-- name: open_source_llm_tool
+- name: open_model_llm_tool
   type: custom_llm
   source:
     type: package_with_prompt

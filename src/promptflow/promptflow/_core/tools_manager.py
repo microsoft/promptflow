@@ -182,7 +182,7 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
             return generate_python_tool(name, content, source=str(working_dir / source.path))
         elif tool_type == ToolType.PROMPT:
             return generate_prompt_tool(name, content, prompt_only=True)
-        elif tool_type == ToolType.LLM or tool_type == ToolType.MODEL_LLM:
+        elif tool_type == ToolType.LLM:
             return generate_prompt_tool(name, content)
         else:
             raise NotSupported(
@@ -192,7 +192,7 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
                     "If you need further assistance, kindly contact support."
                 ),
                 tool_type=tool_type.value if hasattr(tool_type, "value") else tool_type,
-                supported_types=",".join([ToolType.PYTHON, ToolType.PROMPT, ToolType.LLM, ToolType.MODEL_LLM]),
+                supported_types=",".join([ToolType.PYTHON, ToolType.PROMPT, ToolType.LLM]),
             )
 
 
