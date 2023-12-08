@@ -187,6 +187,7 @@ class BatchEngine:
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
         try:
+            await self._executor_proxy.ensure_executor_health()
             # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
             batch_inputs = [
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
