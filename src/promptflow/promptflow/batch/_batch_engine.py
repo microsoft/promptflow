@@ -34,6 +34,7 @@ from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
+DEFAULT_CONCURRENCY = 16
 
 
 class BatchEngine:
@@ -93,6 +94,7 @@ class BatchEngine:
         self._storage = storage
         # set it to True when the batch run is canceled
         self._is_canceled = False
+        # initialize the line results and aggregation results
         self._line_results: List[LineResult] = []
         self._aggr_results = AggregationResult({}, {}, {})
 
@@ -132,15 +134,10 @@ class BatchEngine:
             batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
             # resolve output dir
             output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
-            # check if the batch run is canceled
-            if self._is_canceled:
-                return BatchResult.create(
-                    self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
-                )
             # run flow in batch mode
             with _change_working_dir(self._working_dir):
                 return async_run_allowing_running_loop(
-                    self._exec, batch_inputs, run_id, output_dir, raise_on_line_failure
+                    self._run, batch_inputs, run_id, output_dir, raise_on_line_failure
                 )
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
@@ -164,24 +161,27 @@ class BatchEngine:
         """Cancel the batch run"""
         self._is_canceled = True
 
-    async def _exec(
+    async def _run(
         self,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
-        task = asyncio.create_task(self._exec_batch(batch_inputs, run_id, output_dir, raise_on_line_failure))
+        # create a task to execute batch run
+        task = asyncio.create_task(self._exec(batch_inputs, run_id, output_dir, raise_on_line_failure))
         while not task.done():
+            # check whether the task is completed or canceled every 1s
             await asyncio.sleep(1)
             if self._is_canceled:
                 task.cancel()
+                # use current completed line results and aggregation results to create a BatchResult
                 return BatchResult.create(
                     self._start_time, datetime.utcnow(), self._line_results, self._aggr_results, status=Status.Canceled
                 )
         return task.result()
 
-    async def _exec_batch(
+    async def _exec(
         self,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
@@ -198,7 +198,7 @@ class BatchEngine:
             if isinstance(self._executor_proxy, PythonExecutorProxy):
                 self._line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
             else:
-                self._line_results = await self._exec_batch_internal(batch_inputs, run_id)
+                self._line_results = await self._exec_batch(batch_inputs, run_id)
             handle_line_failures([r.run_info for r in self._line_results], raise_on_line_failure)
             # execute aggregation nodes
             self._aggr_results = await self._exec_aggregation(batch_inputs, run_id)
@@ -215,18 +215,21 @@ class BatchEngine:
             # If the batch run is canceled, log it and ignore the exception.
             bulk_logger.info("The batch run is canceled.")
 
-    async def _exec_batch_internal(
+    async def _exec_batch(
         self,
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
         total_lines = len(batch_inputs)
         completed_line = 0
-        pending = [self._create_exec_line_task(line_inputs, i, run_id) for i, line_inputs in enumerate(batch_inputs)]
+        pending = [
+            asyncio.create_task(self._executor_proxy.exec_line_async(line_inputs, i, run_id))
+            for i, line_inputs in enumerate(batch_inputs)
+        ]
 
         while completed_line < total_lines:
             try:
-                async with asyncio.Semaphore(10):
+                async with asyncio.Semaphore(DEFAULT_CONCURRENCY):
                     done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
                     self._line_results.extend([task.result() for task in done])
                     # log the progress of the batch run
@@ -243,25 +246,7 @@ class BatchEngine:
                 break
         return sorted(self._line_results, key=lambda r: r.run_info.index)
 
-    def _create_exec_line_task(
-        self,
-        inputs: Mapping[str, Any],
-        index: Optional[int] = None,
-        run_id: Optional[str] = None,
-    ):
-        task = self._executor_proxy.exec_line_async(inputs, index, run_id)
-        return asyncio.create_task(task)
-
     async def _exec_aggregation(
-        self,
-        batch_inputs: List[dict],
-        run_id: Optional[str] = None,
-    ):
-        task = asyncio.create_task(self._exec_aggregation_internal(batch_inputs, run_id))
-        aggr_result = await task
-        return aggr_result
-
-    async def _exec_aggregation_internal(
         self,
         batch_inputs: List[dict],
         run_id: Optional[str] = None,
