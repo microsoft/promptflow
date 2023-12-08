@@ -18,6 +18,12 @@ promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
       type:
         - AzureOpenAIConnection
     deployment_name:
+      enabled_by: connection
+      enabled_by_type: [AzureOpenAIConnection]
+      capabilities:
+        completion: false
+        chat_completion: true
+        embeddings: false
       type:
         - string
     temperature:
