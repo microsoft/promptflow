@@ -130,11 +130,11 @@ def update_activity_name(activity_name, kwargs=None, args=None):
     """Update activity name according to kwargs. For flow test, we want to know if it's node run."""
     if activity_name == "pf.flows.test":
         # SDK
-        if "node" in kwargs:
+        if kwargs.get("node", None):
             activity_name = "pf.flows.node_run"
     elif activity_name == "pf.flow.test":
         # CLI
-        if "--node" in args:
+        if getattr(args, "node", None):
             activity_name = "pf.flow.node_run"
     return activity_name
 
