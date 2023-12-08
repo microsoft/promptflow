@@ -230,7 +230,9 @@ class BatchEngine:
             try:
                 async with asyncio.Semaphore(DEFAULT_CONCURRENCY):
                     done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-                    self._line_results.extend([task.result() for task in done])
+                    completed_line_results = [task.result() for task in done]
+                    self._persist_run_info(completed_line_results)
+                    self._line_results.extend(completed_line_results)
                     log_progress(
                         self._start_time,
                         bulk_logger,
@@ -288,6 +290,13 @@ class BatchEngine:
                 ),
                 error_type_and_message=error_type_and_message,
             ) from e
+
+    def _persist_run_info(self, line_results: List[LineResult]):
+        """Persist node run infos and flow run info in line result to storage"""
+        for line_result in line_results:
+            for node_run in line_result.node_run_infos.values():
+                self._storage.persist_node_run(node_run)
+            self._storage.persist_flow_run(line_result.run_info)
 
     def _persist_outputs(self, outputs: List[Mapping[str, Any]], output_dir: Path):
         """Persist outputs to json line file in output directory"""
