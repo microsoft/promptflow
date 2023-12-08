@@ -32,7 +32,7 @@ promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
       type:
         - double
     max_tokens:
-      default: ""
+      default: 512
       type:
         - int
     stop:
