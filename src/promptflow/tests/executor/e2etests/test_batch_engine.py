@@ -1,4 +1,6 @@
 import asyncio
+import multiprocessing
+import os
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
@@ -32,6 +34,27 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=connections)
     await asyncio.sleep(1)
     return batch_result
+
+
+def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+    os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
+    batch_result, output_dir = submit_batch_run(
+        flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
+    )
+
+    assert isinstance(batch_result, BatchResult)
+    nlines = get_batch_inputs_line(flow_folder)
+    assert batch_result.total_lines == nlines
+    assert batch_result.completed_lines == nlines
+    assert batch_result.start_time < batch_result.end_time
+    assert batch_result.system_metrics.duration > 0
+
+    outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+    assert len(outputs) == nlines
+    for i, output in enumerate(outputs):
+        assert isinstance(output, dict)
+        assert "line_number" in output, f"line_number is not in {i}th output {output}"
+        assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
 
 
 def submit_batch_run(
@@ -119,6 +142,68 @@ class TestBatch:
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
 
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections, recording_injection):
+        if "spawn" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: spawn")
+        p = multiprocessing.Process(
+            target=run_batch_with_start_method, args=("spawn", flow_folder, inputs_mapping, dev_connections)
+        )
+        p.start()
+        p.join()
+        assert p.exitcode == 0
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections, recording_injection):
+        if "forkserver" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: forkserver")
+        p = multiprocessing.Process(
+            target=run_batch_with_start_method, args=("forkserver", flow_folder, inputs_mapping, dev_connections)
+        )
+        p.start()
+        p.join()
+        assert p.exitcode == 0
+
     def test_batch_run_then_eval(self, dev_connections, recording_injection):
         batch_resutls, output_dir = submit_batch_run(
             SAMPLE_FLOW, {"url": "${data.url}"}, connections=dev_connections, return_output_dir=True
@@ -137,7 +222,7 @@ class TestBatch:
         assert len(eval_result.metrics) > 0, "No metrics are returned."
         assert eval_result.metrics["accuracy"] == 0, f"Accuracy should be 0, got {eval_result.metrics}."
 
-    def test_batch_with_metrics(self, dev_connections):
+    def test_batch_with_metrics(self, dev_connections, recording_injection):
         flow_folder = SAMPLE_EVAL_FLOW
         inputs_mapping = {
             "variant_id": "${data.variant_id}",
@@ -151,7 +236,7 @@ class TestBatch:
         assert batch_results.total_lines == batch_results.completed_lines
         assert batch_results.node_status == get_flow_expected_status_summary(flow_folder)
 
-    def test_batch_with_partial_failure(self, dev_connections):
+    def test_batch_with_partial_failure(self, dev_connections, recording_injection):
         flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
         inputs_mapping = {"idx": "${data.idx}", "mod": "${data.mod}", "mod_2": "${data.mod_2}"}
         batch_results = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
@@ -161,7 +246,7 @@ class TestBatch:
         assert batch_results.failed_lines == 5
         assert batch_results.node_status == get_flow_expected_status_summary(flow_folder)
 
-    def test_batch_with_line_number(self, dev_connections):
+    def test_batch_with_line_number(self, dev_connections, recording_injection):
         flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
         input_dirs = {"data": "inputs/data.jsonl", "output": "inputs/output.jsonl"}
         inputs_mapping = {"idx": "${output.idx}", "mod": "${data.mod}", "mod_2": "${data.mod_2}"}
@@ -185,8 +270,6 @@ class TestBatch:
         nlines = get_batch_inputs_line(SAMPLE_FLOW)
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert len(outputs) == nlines
-        # system metrics tokens equal to 0 when recording history/replaying is triggered.
-        # TODO: Recording system metric in recording.
         if recording_status is True:
             assert batch_result.system_metrics.total_tokens == 0
             assert batch_result.system_metrics.prompt_tokens == 0
@@ -196,7 +279,7 @@ class TestBatch:
             assert batch_result.system_metrics.prompt_tokens > 0
             assert batch_result.system_metrics.completion_tokens > 0
 
-    def test_batch_with_default_input(self):
+    def test_batch_with_default_input(self, recording_injection):
         mem_run_storage = MemoryRunStorage()
         default_input_value = "input value from default"
         inputs_mapping = {"text": "${data.text}"}
@@ -222,7 +305,7 @@ class TestBatch:
             ("simple_aggregation", [{"text": "3.0"}], str),
         ],
     )
-    def test_batch_run_line_result(self, flow_folder, batch_input, expected_type):
+    def test_batch_run_line_result(self, flow_folder, batch_input, expected_type, recording_injection):
         mem_run_storage = MemoryRunStorage()
         input_file = Path(mkdtemp()) / "inputs.jsonl"
         dump_list_to_jsonl(input_file, batch_input)
@@ -252,12 +335,12 @@ class TestBatch:
             ),
         ],
     )
-    def test_batch_run_failure(self, flow_folder, input_mapping, error_class, error_message):
+    def test_batch_run_failure(self, flow_folder, input_mapping, error_class, error_message, recording_injection):
         with pytest.raises(error_class) as e:
             submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
         assert error_message in e.value.message
 
-    def test_batch_run_in_existing_loop(self, dev_connections):
+    def test_batch_run_in_existing_loop(self, dev_connections, recording_injection):
         flow_folder = "prompt_tools"
         inputs_mapping = {"text": "${data.text}"}
         batch_result = asyncio.run(async_submit_batch_run(flow_folder, inputs_mapping, dev_connections))
