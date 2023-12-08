@@ -125,7 +125,7 @@
             </Component>
 
             <Component Id="pfs.bat" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="pfs.bat" Source="$(var.PromptflowSource)\pfs.bat" KeyPath="yes" Checksum="yes"/>
+                <File Id="pfs.bat" Source="scripts\pfs.bat" KeyPath="yes" Checksum="yes"/>
             </Component>
 
             <Component Id="ApplicationShortcut" Directory="StartupFolder" Guid="$(var.PromptflowCliRegistryGuid)">

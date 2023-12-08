@@ -5,7 +5,7 @@ from PyInstaller.utils.hooks import copy_metadata
 datas = [('../resources/CLI_LICENSE.rtf', '.'), ('../../../../src/promptflow/NOTICE.txt', '.'),
 ('../../../../src/promptflow/promptflow/_sdk/data/executable/', './promptflow/_sdk/data/executable/'),
 ('../../../../src/promptflow-tools/promptflow/tools/', './promptflow/tools/'),
-('./pf.bat', '.'), ('./pfs.bat', '.'), ('./pfazure.bat', '.'), ('./pfsvc.bat', '.')]
+('./pf.bat', '.'), ('./pfazure.bat', '.'), ('./pfsvc.bat', '.')]
 
 datas += collect_data_files('streamlit')
 datas += copy_metadata('streamlit')
