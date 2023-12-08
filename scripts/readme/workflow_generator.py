@@ -60,7 +60,10 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     if "tutorials" in gh_working_dir:
         path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml, '!examples/flows/integrations/**' ]"
     else:
-        path_filter = f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml ]"
+        path_filter = (
+            f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml, "
+            "'!examples/flows/integrations/**' ]"
+        )
 
     if "chatwithpdf" in workflow_name:
         template_pdf = env.get_template("pdf_workflow.yml.jinja2")

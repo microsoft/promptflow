@@ -258,3 +258,33 @@ class TestHandleOpenAIError:
         msg = "Completion API is a legacy api and is going to be deprecated soon. " \
               "Please change to use Chat API for current model."
         assert msg in exc_info.value.message
+
+    @pytest.mark.parametrize(
+        "max_tokens, error_message, error_codes, exception",
+        [
+            (0, "0 is less than the minimum of 1", "UserError/OpenAIError/BadRequestError", WrappedOpenAIError),
+            (-1, "-1 is less than the minimum of 1", "UserError/OpenAIError/BadRequestError", WrappedOpenAIError),
+            ("asd", "ValueError: invalid literal for int()", "UserError/LLMError", LLMError)
+        ]
+    )
+    def test_aoai_invalid_max_tokens(
+            self,
+            azure_open_ai_connection,
+            example_prompt_template,
+            chat_history,
+            max_tokens,
+            error_message,
+            error_codes,
+            exception):
+        with pytest.raises(exception) as exc_info:
+            chat(
+                connection=azure_open_ai_connection,
+                prompt=example_prompt_template,
+                deployment_name="gpt-35-turbo",
+                max_tokens=max_tokens,
+                temperature=0,
+                user_input="Write a slogan for product X",
+                chat_history=chat_history,
+            )
+        assert error_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")

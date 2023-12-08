@@ -13,7 +13,9 @@ from promptflow._cli._params import (
     add_param_debug,
     add_param_include_archived,
     add_param_max_results,
+    add_param_output,
     add_param_output_format,
+    add_param_overwrite,
     add_param_run_name,
     add_param_set,
     add_param_verbose,
@@ -52,6 +54,7 @@ def add_parser_run(subparsers):
     add_parser_run_archive(subparsers)
     add_parser_run_restore(subparsers)
     add_parser_run_update(subparsers)
+    add_parser_run_download(subparsers)
     run_parser.set_defaults(action="run")
 
 
@@ -334,7 +337,7 @@ def add_parser_run_update(subparsers):
 Example:
 
 # Update a run metadata:
-pf run update --name <name> --set display_name="<display-name>" description="<description>" tags.key="<value>"
+pfazure run update --name <name> --set display_name="<display-name>" description="<description>" tags.key="<value>"
 """
     add_params = [
         _set_workspace_argument_for_subparsers,
@@ -349,6 +352,32 @@ pf run update --name <name> --set display_name="<display-name>" description="<de
         add_params=add_params,
         subparsers=subparsers,
         help_message="Update a run.",
+        action_param_name="sub_action",
+    )
+
+
+def add_parser_run_download(subparsers):
+    """Add run download parser to the pfazure subparsers."""
+    epilog = """
+Example:
+
+# Download a run data to local:
+pfazure run download --name <name> --output <output-folder-path>
+"""
+    add_params = [
+        add_param_run_name,
+        add_param_output,
+        add_param_overwrite,
+        _set_workspace_argument_for_subparsers,
+    ] + base_params
+
+    activate_action(
+        name="download",
+        description="A CLI tool to download a run.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Download a run.",
         action_param_name="sub_action",
     )
 
@@ -403,6 +432,8 @@ def dispatch_run_commands(args: argparse.Namespace):
         restore_run(args.subscription, args.resource_group, args.workspace_name, args.name)
     elif args.sub_action == "update":
         update_run(args.subscription, args.resource_group, args.workspace_name, args.name, params=args.params_override)
+    elif args.sub_action == "download":
+        download_run(args)
 
 
 @exception_handler("List runs")
@@ -430,7 +461,8 @@ def list_runs(
 
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
     runs = pf.runs.list(max_results=max_results, list_view_type=list_view_type)
-    run_list = [run._to_dict() for run in runs]
+    # hide additional info and debug info in run list for better user experience
+    run_list = [run._to_dict(exclude_additional_info=True, exclude_debug_info=True) for run in runs]
     _output_result_list_with_format(result_list=run_list, output_format=output)
     return runs
 
@@ -529,3 +561,9 @@ def update_run(
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
     run = pf.runs.update(run=run_name, display_name=display_name, description=description, tags=tags)
     print(json.dumps(run._to_dict(), indent=4))
+
+
+@exception_handler("Download run")
+def download_run(args: argparse.Namespace):
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    pf.runs.download(run=args.name, output=args.output, overwrite=args.overwrite)

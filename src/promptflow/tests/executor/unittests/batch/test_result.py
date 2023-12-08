@@ -10,7 +10,7 @@ from promptflow.executor._result import AggregationResult, LineResult
 
 
 def get_api_call(type, name, inputs={}, output={}, children=None):
-    return {"type": type, "name": f"_._.{name}._", "inputs": inputs, "output": output, "children": children}
+    return {"type": type, "name": name, "inputs": inputs, "output": output, "children": children}
 
 
 @pytest.mark.unittest
@@ -98,32 +98,41 @@ class TestBatchResult:
         }
 
     def test_system_metrics(self):
+        from openai.types.completion import Completion, CompletionChoice
+
         line_dict = {0: {"node_0": Status.Completed}}
         aggr_dict = {"aggr_0": Status.Completed}
 
         api_call_1 = get_api_call(
             "LLM",
-            "Completion",
-            inputs={"prompt": "Please tell me a joke.", "api_type": "azure", "engine": "text-davinci-003"},
+            "openai.resources.completions.Completions.create",
+            inputs={"prompt": "Please tell me a joke.", "model": "text-davinci-003"},
             output={"choices": [{"text": "text"}]},
         )
         api_call_2 = get_api_call(
             "LLM",
-            "Completion",
+            "openai.resources.completions.Completions.create",
             inputs={
                 "prompt": ["Please tell me a joke.", "Please tell me a joke about fruit."],
-                "api_type": "azure",
-                "engine": "text-davinci-003",
+                "model": "text-davinci-003",
             },
-            output=[{"choices": [{"text": "text"}]}, {"choices": [{"text": "text"}]}],
+            output=[
+                Completion(
+                    choices=[CompletionChoice(text="text", finish_reason="stop", index=0, logprobs=None)],
+                    id="id", created=0, model="model", object="text_completion"
+                ),
+                Completion(
+                    choices=[CompletionChoice(text="text", finish_reason="stop", index=0, logprobs=None)],
+                    id="id", created=0, model="model", object="text_completion"
+                ),
+            ],
         )
         line_api_calls = get_api_call("Chain", "Chain", children=[api_call_1, api_call_2])
         aggr_api_call = get_api_call(
             "LLM",
-            "ChatCompletion",
+            "openai.resources.chat.completions.Completions.create",
             inputs={
                 "messages": [{"system": "You are a helpful assistant.", "user": "Please tell me a joke."}],
-                "api_type": "openai",
                 "model": "gpt-35-turbo",
             },
             output={"choices": [{"message": {"content": "content"}}]},

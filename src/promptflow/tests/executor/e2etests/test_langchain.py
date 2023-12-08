@@ -1,4 +1,3 @@
-from importlib.metadata import version
 from pathlib import Path
 from tempfile import mkdtemp
 
@@ -10,10 +9,6 @@ from promptflow.batch._result import BatchResult
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file
 
 
-@pytest.mark.skipif(
-    version("openai").startswith("1."),
-    reason="test needs to be upgraded to adapt to openai>=1.0.0",
-)
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestLangchain:

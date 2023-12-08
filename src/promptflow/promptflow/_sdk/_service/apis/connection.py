@@ -5,16 +5,19 @@
 import inspect
 
 from flask import jsonify, request
-from flask_restx import Namespace, Resource, fields
 
-from promptflow._sdk._errors import ConnectionNotFoundError
+import promptflow._sdk.schemas._connection as connection
+from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import local_user_only
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
-import promptflow._sdk.schemas._connection as connection
-
 
 api = Namespace("Connections", description="Connections Management")
+
+# azure connection
+working_directory_parser = api.parser()
+working_directory_parser.add_argument("working_directory", type=str, location="form", required=False)
 
 # Response model of list connections
 list_connection_field = api.model(
@@ -23,9 +26,9 @@ list_connection_field = api.model(
         "name": fields.String,
         "type": fields.String,
         "module": fields.String,
-        "expiry_time": fields.DateTime(),
-        "created_date": fields.DateTime(),
-        "last_modified_date": fields.DateTime(),
+        "expiry_time": fields.String,
+        "created_date": fields.String,
+        "last_modified_date": fields.String,
     },
 )
 # Response model of connection operation
@@ -48,19 +51,22 @@ connection_spec_model = api.model(
 )
 
 
-@api.errorhandler(ConnectionNotFoundError)
-def handle_connection_not_found_exception(error):
-    api.logger.warning(f"Raise ConnectionNotFoundError, {error.message}")
-    return {"error_message": error.message}, 404
+def _get_connection_operation(working_directory=None):
+    from promptflow._sdk._utils import get_connection_operation
+
+    connection_provider = Configuration().get_connection_provider(path=working_directory)
+    connection_operation = get_connection_operation(connection_provider)
+    return connection_operation
 
 
 @api.route("/")
 class ConnectionList(Resource):
-    @api.doc(description="List all connection")
+    @api.doc(parser=working_directory_parser, description="List all connection")
     @api.marshal_with(list_connection_field, skip_none=True, as_list=True)
     @local_user_only
     def get(self):
-        connection_op = ConnectionOperations()
+        args = working_directory_parser.parse_args()
+        connection_op = _get_connection_operation(args.working_directory)
         # parse query parameters
         max_results = request.args.get("max_results", default=50, type=int)
         all_results = request.args.get("all_results", default=False, type=bool)
@@ -73,11 +79,12 @@ class ConnectionList(Resource):
 @api.route("/<string:name>")
 @api.param("name", "The connection name.")
 class Connection(Resource):
-    @api.doc(description="Get connection")
+    @api.doc(parser=working_directory_parser, description="Get connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def get(self, name: str):
-        connection_op = ConnectionOperations()
+        args = working_directory_parser.parse_args()
+        connection_op = _get_connection_operation(args.working_directory)
         connection = connection_op.get(name=name, raise_error=True)
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)
@@ -115,11 +122,12 @@ class Connection(Resource):
 
 @api.route("/<string:name>/listsecrets")
 class ConnectionWithSecret(Resource):
-    @api.doc(description="Get connection with secret")
+    @api.doc(parser=working_directory_parser, description="Get connection with secret")
     @api.response(code=200, description="Connection details with secret", model=dict_field)
     @local_user_only
     def get(self, name: str):
-        connection_op = ConnectionOperations()
+        args = working_directory_parser.parse_args()
+        connection_op = _get_connection_operation(args.working_directory)
         connection = connection_op.get(name=name, with_secrets=True, raise_error=True)
         connection_dict = connection._to_dict()
         return jsonify(connection_dict)

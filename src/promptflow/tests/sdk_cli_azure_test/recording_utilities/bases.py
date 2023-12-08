@@ -19,13 +19,22 @@ from .processors import (
     AzureResourceProcessor,
     AzureWorkspaceTriadProcessor,
     DropProcessor,
+    EmailProcessor,
     IndexServiceProcessor,
     PFSProcessor,
     RecordingProcessor,
     StorageProcessor,
     UserInfoProcessor,
 )
-from .utils import is_json_payload_request, is_live, is_record, is_replay, sanitize_pfs_body, sanitize_upload_hash
+from .utils import (
+    is_httpx_response,
+    is_json_payload_request,
+    is_live,
+    is_record,
+    is_replay,
+    sanitize_pfs_body,
+    sanitize_upload_hash,
+)
 from .variable_recorder import VariableRecorder
 
 
@@ -118,7 +127,17 @@ class PFAzureIntegrationTestRecording:
         if is_live():
             return response
 
-        response["body"]["string"] = response["body"]["string"].decode("utf-8")
+        # httpx and non-httpx responses have different structure
+        # non-httpx has .body.string, while httpx has .content
+        # in our sanitizers (processors) logic, we only handle .body.string
+        # so make httpx align non-httpx for less code change
+        is_httpx = is_httpx_response(response)
+        if is_httpx:
+            body_string = response.pop("content")
+            response["body"] = {"string": body_string}
+        else:
+            response["body"]["string"] = response["body"]["string"].decode("utf-8")
+
         if is_record():
             # lower and filter some headers
             headers = {}
@@ -130,7 +149,21 @@ class PFAzureIntegrationTestRecording:
             for processor in self.recording_processors:
                 response = processor.process_response(response)
 
-        response["body"]["string"] = response["body"]["string"].encode("utf-8")
+        if is_httpx:
+            response["content"] = response["body"]["string"]
+            if not is_replay():
+                response.pop("body")
+                if isinstance(response["content"], bytes):
+                    response["content"] = response["content"].decode("utf-8")
+            else:
+                # vcrpy does not handle well with httpx, so we need some transformations
+                # otherwise, replay tests will break during init VCR response instance
+                response["status"] = {"code": response["status_code"], "message": ""}
+                if isinstance(response["body"]["string"], str):
+                    response["body"]["string"] = response["body"]["string"].encode("utf-8")
+        else:
+            response["body"]["string"] = response["body"]["string"].encode("utf-8")
+
         return response
 
     def _get_recording_processors(self) -> List[RecordingProcessor]:
@@ -140,6 +173,7 @@ class PFAzureIntegrationTestRecording:
             AzureResourceProcessor(),
             AzureWorkspaceTriadProcessor(),
             DropProcessor(),
+            EmailProcessor(),
             IndexServiceProcessor(),
             PFSProcessor(),
             StorageProcessor(),
@@ -228,6 +262,17 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         return
 
     def _custom_request_path_matcher(self, r1: Request, r2: Request) -> bool:
+        # NOTE: orders of below conditions matter, please modify with caution
+        # in run download scenario, observed below wired path: https://<xxx>/https://<yyy>/<remaining>
+        # as we don't have append/replace logic, it might result from Azure blob client,
+        # which is hard to patch; therefore, hack this in matcher (here)
+        # https:// should appear in path, so it's safe to use this as a condition
+        if "https://" in r1.path:
+            _path = str(r1.path)
+            endpoint = ".blob.core.windows.net/"
+            duplicate_path = _path[_path.index(endpoint) + len(endpoint) :]
+            path_for_compare = _path[: _path.index("https://")] + duplicate_path[duplicate_path.index("/") + 1 :]
+            return path_for_compare == r2.path
         # for blob storage request, sanitize the upload hash in path
         if r1.host == r2.host and r1.host == SanitizedValues.BLOB_STORAGE_REQUEST_HOST:
             return sanitize_upload_hash(r1.path) == r2.path

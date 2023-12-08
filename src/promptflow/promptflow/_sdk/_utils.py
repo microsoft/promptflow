@@ -54,6 +54,7 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
+    ConnectionProvider,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -873,6 +874,7 @@ def setup_user_agent_to_operation_context(user_agent=None):
     """
     from promptflow._core.operation_context import OperationContext
 
+    update_user_agent_from_env_var()
     # Append user agent
     context = OperationContext.get_instance()
     # skip append if empty
@@ -885,6 +887,7 @@ def call_from_extension() -> bool:
     """Return true if current request is from extension."""
     from promptflow._core.operation_context import OperationContext
 
+    update_user_agent_from_env_var()
     context = OperationContext().get_instance()
     return EXTENSION_UA in context.get_client_user_agent()
 
@@ -1090,3 +1093,20 @@ def parse_remote_flow_pattern(flow: object) -> str:
             raise UserErrorException(error_message)
         flow_name = match.groups()[0]
     return flow_name
+
+
+def get_connection_operation(connection_provider: str):
+    logger = LoggerFactory.get_logger(LOGGER_NAME)
+    if connection_provider == ConnectionProvider.LOCAL.value:
+        from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+        logger.debug("PFClient using local connection operations.")
+        connection_operation = ConnectionOperations()
+    elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+        from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+        logger.debug("PFClient using local azure connection operations.")
+        connection_operation = LocalAzureConnectionOperations(connection_provider)
+    else:
+        raise ValueError(f"Unsupported connection provider: {connection_provider}")
+    return connection_operation

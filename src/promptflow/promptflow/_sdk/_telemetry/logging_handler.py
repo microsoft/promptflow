@@ -2,7 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+import os
 import platform
+import sys
 
 from opencensus.ext.azure.log_exporter import AzureEventHandler
 
@@ -17,7 +19,7 @@ def get_appinsights_log_handler():
     """
     Enable the OpenCensus logging handler for specified logger and instrumentation key to send info to AppInsights.
     """
-    from promptflow._telemetry.telemetry import is_telemetry_enabled
+    from promptflow._sdk._telemetry.telemetry import is_telemetry_enabled
 
     try:
 
@@ -37,6 +39,39 @@ def get_appinsights_log_handler():
     except Exception:  # pylint: disable=broad-except
         # ignore any exceptions, telemetry collection errors shouldn't block an operation
         return logging.NullHandler()
+
+
+def get_scrubbed_cloud_role():
+    """Create cloud role for telemetry, will scrub user script name and only leave extension."""
+    default = "Unknown Application"
+    known_scripts = [
+        "pfs",
+        "pfutil.py",
+        "pf",
+        "pfazure",
+        "pf.exe",
+        "pfazure.exe",
+        "app.py",
+        "python -m unittest",
+        "pytest",
+        "gunicorn",
+        "ipykernel_launcher.py",
+        "jupyter-notebook",
+        "jupyter-lab",
+        "python",
+        "_jb_pytest_runner.py",
+        default,
+    ]
+
+    try:
+        cloud_role = os.path.basename(sys.argv[0]) or default
+        if cloud_role not in known_scripts:
+            ext = os.path.splitext(cloud_role)[1]
+            cloud_role = "***" + ext
+    except Exception:
+        # fallback to default cloud role if failed to scrub
+        cloud_role = default
+    return cloud_role
 
 
 # cspell:ignore AzureMLSDKLogHandler
@@ -89,7 +124,13 @@ class PromptFlowSDKLogHandler(AzureEventHandler):
         else:
             record.custom_dimensions = custom_dimensions
 
-        return super().log_record_to_envelope(record=record)
+        envelope = super().log_record_to_envelope(record=record)
+        # scrub data before sending to appinsights
+        role = get_scrubbed_cloud_role()
+        envelope.tags["ai.cloud.role"] = role
+        envelope.tags.pop("ai.cloud.roleInstance", None)
+        envelope.tags.pop("ai.device.id", None)
+        return envelope
 
     @classmethod
     def disable_telemetry_logger(cls):

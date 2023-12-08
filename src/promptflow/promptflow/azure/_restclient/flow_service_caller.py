@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 """service_caller.py, module for interacting with the AzureML service."""
 import json
-import logging
 import os
 import sys
 import time
@@ -15,7 +14,8 @@ import pydash
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._sdk._telemetry import request_id_context
+from promptflow._sdk._telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
@@ -35,7 +35,7 @@ class RequestTelemetryMixin(TelemetryMixin):
 
     def __init__(self):
         super().__init__()
-        self._request_id = str(uuid.uuid4())
+        self._refresh_request_id_for_telemetry()
         self._from_cli = False
 
     def _get_telemetry_values(self, *args, **kwargs):
@@ -45,7 +45,8 @@ class RequestTelemetryMixin(TelemetryMixin):
         self._from_cli = True
 
     def _refresh_request_id_for_telemetry(self):
-        self._request_id = str(uuid.uuid4())
+        # refresh request id from current request id context
+        self._request_id = request_id_context.get() or str(uuid.uuid4())
 
 
 def _request_wrapper():
