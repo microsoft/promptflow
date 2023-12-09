@@ -7,11 +7,11 @@ from unittest.mock import patch
 import time
 
 
-def executor_creation_func(storage):
+def executor_creation_func(storage, preloaded_tools):
     pass
 
 
-def executor_creation_func_timeout(storage):
+def executor_creation_func_timeout(storage, preloaded_tools):
     time.sleep(60)
     pass
 

@@ -217,7 +217,8 @@ class FlowExecutor:
         flow = flow._apply_default_node_variants()
         if preloaded_tools:
             flow = Flow(
-                flow.id, flow.name, [r.node for r in preloaded_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
+                flow.id, flow.name, [r.node for r in preloaded_tools],
+                inputs=flow.inputs, outputs=flow.outputs, tools=[]
             )
             resolved_tools = preloaded_tools
         else:
