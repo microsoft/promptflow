@@ -542,8 +542,8 @@ interactions:
         false, "is_multi_select": false, "generated_by": null, "input_type": "default"}},
         "Outputs": null, "Description": "Use an Open Source model from the Azure Model
         catalog, deployed to an AzureML Online Endpoint for LLM Chat or Completion
-        API calls.", "connection_type": null, "Module": "promptflow.tools.open_model_llm",
-        "class_name": "OpenModelLLM", "Source": null, "LkgCode": null, "Code": null,
+        API calls.", "connection_type": null, "Module": "promptflow.tools.open_source_llm",
+        "class_name": "OpenSourceLLM", "Source": null, "LkgCode": null, "Code": null,
         "Function": "call", "action_type": null, "provider_config": null, "function_config":
         null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
         "promptflow-tools", "package_version": "0.1.0b8", "default_prompt": null,
