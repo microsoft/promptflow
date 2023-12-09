@@ -163,7 +163,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
-        loaded_tools: Optional[list] = None
+        preloaded_tools: Optional[list] = None
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -194,7 +194,7 @@ class FlowExecutor:
             raise_ex=raise_ex,
             node_override=node_override,
             line_timeout_sec=line_timeout_sec,
-            loaded_tools=loaded_tools
+            preloaded_tools=preloaded_tools
         )
 
     @classmethod
@@ -209,16 +209,17 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
-        loaded_tools: Optional[list] = None
+        preloaded_tools: Optional[list] = None
     ):
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
-        if loaded_tools:
+        if preloaded_tools:
             flow = Flow(
-                flow.id, flow.name, [r.node for r in loaded_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
+                flow.id, flow.name, [r.node for r in preloaded_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
             )
+            resolved_tools = preloaded_tools
         else:
             package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
             tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
