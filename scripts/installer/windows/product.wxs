@@ -8,8 +8,6 @@
     <?define ProductAuthor = "Microsoft Corporation" ?>
     <?define ProductResources = ".\resources\" ?>
     <?define UpgradeCode32 = "8b748161-e07a-48f2-8cdf-401480df4694" ?>
-    <?define LogOutputFile = "pfslogoutputfile.txt" ?>
-    <?define LogErrorFile = "pfslogerrorfile.txt" ?>
 
     <?if $(var.Platform) = "x64" ?>
     <?define PromptflowCliRegistryGuid = "0efd984f-9eec-425b-b230-a3994b69649a" ?>
@@ -89,7 +87,7 @@
         <CustomAction Id="StartPromptFlowService"
             Directory="APPLICATIONFOLDER"
             Execute="deferred"
-            ExeCommand="PowerShell.exe -WindowStyle hidden Start-Process -FilePath pfs -NoNewWindow -Wait -RedirectStandardOutput $(var.LogOutputFile) -RedirectStandardError $(var.LogErrorFile)"
+            ExeCommand="wscript.exe run.vbs"
             Return="asyncNoWait" />
         <InstallExecuteSequence>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
@@ -124,15 +122,15 @@
                 <CreateFolder />
             </Component>
 
-            <Component Id="startup.bat" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="startup.bat" Source="scripts\startup.bat" KeyPath="yes" Checksum="yes"/>
+            <Component Id="run.vbs" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
+                <File Id="run.vbs" Source="scripts\run.vbs" KeyPath="yes" Checksum="yes"/>
             </Component>
 
             <Component Id="ApplicationShortcut" Directory="StartupFolder" Guid="$(var.PromptflowCliRegistryGuid)">
                 <Shortcut Id="ApplicationStartMenuShortcut"
                           Name="Prompt flow service"
                           Description="Prompt Flow Service"
-                          Target="[#startup.bat]"
+                          Target="[#run.vbs]"
                           WorkingDirectory="APPLICATIONFOLDER"
                           Advertise="no" />
                 <RemoveFile Id="CleanUpShortCut" Directory="StartupFolder" Name="Prompt flow service" On="uninstall"/>
