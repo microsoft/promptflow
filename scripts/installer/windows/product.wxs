@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <?define ProductVersion="$(env.CLI_VERSION)" ?>
+    <?define ProductVersion="0.0.9" ?>
 
     <?define ProductName = "promptflow" ?>
     <?define ProductDescription = "Command-line tools for prompt flow." ?>
@@ -87,10 +87,10 @@
         <CustomAction Id="StartPromptFlowService"
             Directory="APPLICATIONFOLDER"
             Execute="deferred"
-            ExeCommand="wscript.exe run.vbs"
+            ExeCommand="wscript.exe promptflow_service.vbs"
             Return="asyncNoWait" />
         <InstallExecuteSequence>
-            <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
+            <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
     </Product>
 
@@ -122,17 +122,19 @@
                 <CreateFolder />
             </Component>
 
-            <Component Id="run.vbs" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="run.vbs" Source="scripts\run.vbs" KeyPath="yes" Checksum="yes"/>
+            <Component Id="promptflow_service.vbs" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
+                <File Id="promptflow_service.vbs" Source="scripts\promptflow_service.vbs" KeyPath="yes" Checksum="yes"/>
             </Component>
 
             <Component Id="ApplicationShortcut" Directory="StartupFolder" Guid="$(var.PromptflowCliRegistryGuid)">
                 <Shortcut Id="ApplicationStartMenuShortcut"
                           Name="Prompt flow service"
                           Description="Prompt Flow Service"
-                          Target="[#run.vbs]"
+                          Target="[#promptflow_service.vbs]"
                           WorkingDirectory="APPLICATIONFOLDER"
-                          Advertise="no" />
+                          Advertise="no">
+                          <Icon Id="PromptflowServiceIcon" SourceFile="$(var.ProductResources)logo32.ico" />
+                </Shortcut>
                 <RemoveFile Id="CleanUpShortCut" Directory="StartupFolder" Name="Prompt flow service" On="uninstall"/>
                 <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="createAndRemoveOnUninstall">
                     <RegistryValue Name="installed" Type="integer" Value="1" />
