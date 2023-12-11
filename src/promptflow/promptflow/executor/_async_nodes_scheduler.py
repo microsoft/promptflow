@@ -74,4 +74,4 @@ class AsyncNodesScheduler:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         task = context.invoke_tool_async(node, f, kwargs)
-        return asyncio.create_task(task)
+        return asyncio.get_event_loop().create_task(task)
