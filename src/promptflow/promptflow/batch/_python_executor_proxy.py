@@ -31,7 +31,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         **kwargs,
     ) -> "PythonExecutorProxy":
         # TODO: Raise error if connections is None
-        flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage)
+        flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
         signal.signal(signal.SIGINT, signal_handler)
         return cls(flow_executor)
 
