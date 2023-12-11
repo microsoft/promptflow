@@ -1,8 +1,10 @@
+import os
 import asyncio
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
 
+import multiprocessing
 import pytest
 
 from promptflow._utils.utils import dump_list_to_jsonl
@@ -32,6 +34,27 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=connections)
     await asyncio.sleep(1)
     return batch_result
+
+
+def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+    os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
+    batch_result, output_dir = submit_batch_run(
+        flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
+    )
+
+    assert isinstance(batch_result, BatchResult)
+    nlines = get_batch_inputs_line(flow_folder)
+    assert batch_result.total_lines == nlines
+    assert batch_result.completed_lines == nlines
+    assert batch_result.start_time < batch_result.end_time
+    assert batch_result.system_metrics.duration > 0
+
+    outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+    assert len(outputs) == nlines
+    for i, output in enumerate(outputs):
+        assert isinstance(output, dict)
+        assert "line_number" in output, f"line_number is not in {i}th output {output}"
+        assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
 
 
 def submit_batch_run(
@@ -118,6 +141,70 @@ class TestBatch:
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_spawn_mode_batch_run(
+            self, flow_folder, inputs_mapping, dev_connections):
+        if "spawn" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: spawn")
+        p = multiprocessing.Process(
+            target=run_batch_with_start_method,
+            args=("spawn", flow_folder, inputs_mapping, dev_connections))
+        p.start()
+        p.join()
+        assert p.exitcode == 0
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_forkserver_mode_batch_run(
+            self, flow_folder, inputs_mapping, dev_connections):
+        if "forkserver" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: forkserver")
+        p = multiprocessing.Process(
+            target=run_batch_with_start_method,
+            args=("forkserver", flow_folder, inputs_mapping, dev_connections))
+        p.start()
+        p.join()
+        assert p.exitcode == 0
 
     def test_batch_run_then_eval(self, dev_connections):
         batch_resutls, output_dir = submit_batch_run(

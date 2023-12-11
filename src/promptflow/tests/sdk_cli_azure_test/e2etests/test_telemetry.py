@@ -304,8 +304,8 @@ class TestTelemetry:
             # device name removed
             assert "ai.cloud.roleInstance" not in envelope.tags
             assert "ai.device.id" not in envelope.tags
-            # role not scrubbed for test scenario
-            assert envelope.tags["ai.cloud.role"] == os.path.basename(sys.argv[0])
+            # role name should be scrubbed or kept in whitelist
+            assert envelope.tags["ai.cloud.role"] in [os.path.basename(sys.argv[0]), "***"]
 
         with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
             mock_logger.side_effect = log_event
