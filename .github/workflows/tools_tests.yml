@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     name: Tool Test
     timeout-minutes: 30
+    env:
+      DEPENDENCY_SOURCE_MODE: ${{ secrets.DEPENDENCY_SOURCE_MODE }}
 
     steps:
       - name: Check for dockerenv file
@@ -22,12 +24,12 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: Setup
         run: |
-          echo "DEPENDENCY_SOURCE_MODE ${{ secrets.DEPENDENCY_SOURCE_MODE }}"
+          echo "DEPENDENCY_SOURCE_MODE $DEPENDENCY_SOURCE_MODE"
           python -m pip install --upgrade pip
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
           # "DEPENDENCY_SOURCE_MODE" is "main" or "package", means the dependency source of code
-          if [ "${{ env.DEPENDENCY_SOURCE_MODE }}" = "main" ]; then
+          if [ "$DEPENDENCY_SOURCE_MODE" = "main" ]; then
             python ./scripts/building/dev_setup.py --promptflow-extra-deps azure
             pip install google-search-results==2.4.1
             pip install openai>=1.0.0
