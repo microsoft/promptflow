@@ -117,6 +117,14 @@
                 <RemoveFolder Id="APPLICATIONFOLDER" On="uninstall" />
             </Component>
 
+            <Component Id="RemoveRegistry" Directory="StartupFolder" Guid="$(var.RemoveRegistryGuid)">
+                <RemoveRegistryKey Id="RemovePromptflowRegistry" Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="removeOnUninstall"/>
+            </Component>
+
+            <Component Id="RemoveShortcutComponent" Directory="StartupFolder" Guid="$(var.RemoveShortcutGuid)">
+                <RemoveFile Id="RemoveShortcut" Name="pfs.lnk" On="uninstall" />
+            </Component>
+
             <Component Id="PromptflowSystemPath" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowSystemPathGuid)">
                 <Environment Id="PromptflowAddedToPATH"
                      Name="PATH"
@@ -145,14 +153,6 @@
                     <RegistryValue Name="installed" Type="integer" Value="1" />
                     <RegistryValue Name="version" Type="string" Value="$(var.ProductVersion)" KeyPath="yes"/>
                 </RegistryKey>
-            </Component>
-
-            <Component Id="RemoveRegistry" Directory="StartupFolder" Guid="$(var.RemoveRegistryGuid)">
-                <RemoveRegistryKey Id="RemovePromptflowRegistry" Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="removeOnUninstall"/>
-            </Component>
-
-            <Component Id="RemoveShortcutComponent" Directory="StartupFolder" Guid="$(var.RemoveShortcutGuid)">
-                <RemoveFile Id="RemoveShortcut" Name="pfs.lnk" On="uninstall" />
             </Component>
 
         </ComponentGroup>
