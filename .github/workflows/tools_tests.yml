@@ -25,8 +25,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
-          # PF_SOURCE is "main" or "package", means the source of pf code
-          if [ "${{ github.PF_SOURCE }}" = "main" ]; then
+          # "DEPENDENCY_SOURCE_MODE" is "main" or "package", means the dependency source of code
+          if [ "${{ github.DEPENDENCY_SOURCE_MODE }}" = "main" ]; then
             python ./scripts/building/dev_setup.py --promptflow-extra-deps azure
             pip install google-search-results==2.4.1
             pip install openai>=1.0.0
@@ -40,7 +40,7 @@ jobs:
 
       - name: Run tests
         run: |
-          if [ "${{ github.PF_SOURCE }}" = "main" ]; then
+          if [ "${{ github.DEPENDENCY_SOURCE_MODE }}" = "main" ]; then
             export PYTHONPATH=./src/promptflow
           fi
           pytest ./src/promptflow-tools/tests
