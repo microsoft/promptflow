@@ -341,3 +341,10 @@ class AzureFlowSource:
     LOCAL = "local"
     PF_SERVICE = "pf_service"
     INDEX = "index"
+
+
+class DownloadedRun:
+    SNAPSHOT_FOLDER = LocalStorageFilenames.SNAPSHOT_FOLDER
+    METRICS_FILE_NAME = LocalStorageFilenames.METRICS
+    LOGS_FILE_NAME = LocalStorageFilenames.LOG
+    RUN_METADATA_FILE_NAME = "run_metadata.json"

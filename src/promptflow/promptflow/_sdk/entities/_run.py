@@ -16,6 +16,7 @@ from dateutil import parser as date_parser
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    DEFAULT_ENCODING,
     DEFAULT_VARIANT,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     FLOW_RESOURCE_ID_PREFIX,
@@ -28,6 +29,7 @@ from promptflow._sdk._constants import (
     TIMESTAMP_MACRO,
     VARIANT_ID_MACRO,
     AzureRunTypes,
+    DownloadedRun,
     FlowRunProperties,
     RestRunTypes,
     RunDataKeys,
@@ -641,16 +643,26 @@ class Run(YAMLTranslatableMixin):
         """Load run from run record source folder."""
         source = Path(source)
         params_override = params_override or {}
-        if not source.exists() or not source.is_dir():
-            raise UserErrorException(f"Invalid run source: {source!r}. Expecting a valid run source folder.")
+
+        run_metadata_file = source / DownloadedRun.RUN_METADATA_FILE_NAME
+        if not run_metadata_file.exists():
+            raise UserErrorException(
+                f"Invalid run source: {source!r}. Expecting a valid run source folder with {run_metadata_file!r}."
+            )
+        # extract run info from source folder
+        with open(source / DownloadedRun.RUN_METADATA_FILE_NAME, encoding=DEFAULT_ENCODING) as f:
+            run_info = json.load(f)
 
         return cls(
             name=source.name,
             source=source,
             run_source=RunInfoSources.EXISTING_RUN,
-            status=RunStatus.COMPLETED,  # failed run shall not be created in this way
-            display_name=params_override.get("display_name", source.name),
-            description=params_override.get("description", None),
-            tags=params_override.get("tags", None),
+            status=run_info["status"],  # currently only support completed run
+            display_name=params_override.get("display_name", run_info.get("display_name", source.name)),
+            description=params_override.get("description", run_info.get("description", "")),
+            tags=params_override.get("tags", run_info.get("tags", {})),
+            created_on=datetime.datetime.fromisoformat(run_info["created_on"]),
+            start_time=datetime.datetime.fromisoformat(run_info["start_time"]),
+            end_time=datetime.datetime.fromisoformat(run_info["end_time"]),
             **kwargs,
         )

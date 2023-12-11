@@ -123,17 +123,15 @@ class RunOperations(TelemetryMixin):
             ) from e
 
     def _print_run_summary(self, run: Run) -> None:
-        # print run summary if they run is not from existing run folder
-        if run._run_source != RunInfoSources.EXISTING_RUN:
-            print("======= Run Summary =======\n")
-            duration = str(run._end_time - run._created_on)
-            print(
-                f'Run name: "{run.name}"\n'
-                f'Run status: "{run.status}"\n'
-                f'Start time: "{run._created_on}"\n'
-                f'Duration: "{duration}"\n'
-                f'Output path: "{run._output_path}"\n'
-            )
+        print("======= Run Summary =======\n")
+        duration = str(run._end_time - run._created_on)
+        print(
+            f'Run name: "{run.name}"\n'
+            f'Run status: "{run.status}"\n'
+            f'Start time: "{run._created_on}"\n'
+            f'Duration: "{duration}"\n'
+            f'Output path: "{run._output_path}"\n'
+        )
 
     @monitor_operation(activity_name="pf.runs.stream", activity_type=ActivityType.PUBLICAPI)
     def stream(self, name: Union[str, Run], raise_on_error: bool = True) -> Run:

@@ -9,7 +9,7 @@ from typing import Optional, Union
 import httpx
 from azure.storage.blob.aio import BlobServiceClient
 
-from promptflow._sdk._constants import DEFAULT_ENCODING, LOGGER_NAME
+from promptflow._sdk._constants import DEFAULT_ENCODING, LOGGER_NAME, DownloadedRun
 from promptflow._sdk._errors import RunNotFoundError, RunOperationError
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.exceptions import UserErrorException
@@ -27,11 +27,6 @@ class AsyncRunDownloader:
     :param output_folder: The output folder to save the run results.
     :type output_folder: Union[Path, str]
     """
-
-    LOCAL_SNAPSHOT_FOLDER = "snapshot"
-    LOCAL_METRICS_FILE_NAME = "metrics.json"
-    LOCAL_LOGS_FILE_NAME = "logs.txt"
-    LOCAL_RUN_METADATA = "run_metadata.json"
 
     IGNORED_PATTERN = ["__pycache__"]
 
@@ -128,7 +123,7 @@ class AsyncRunDownloader:
         """Download the run metrics."""
         logger.debug("Downloading run metrics.")
         metrics = self.run_ops.get_metrics(self.run)
-        with open(self.output_folder / self.LOCAL_METRICS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+        with open(self.output_folder / DownloadedRun.METRICS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(metrics, f, ensure_ascii=False)
         logger.debug("Downloaded run metrics.")
 
@@ -188,7 +183,7 @@ class AsyncRunDownloader:
             blob_name = url.split(self.datastore.container_name)[-1].lstrip("/")
             blob_client = container_client.get_blob_client(blob_name)
             relative_path = url.split(self.run)[-1].lstrip("/")
-            local_path = Path(self.output_folder / self.LOCAL_SNAPSHOT_FOLDER / relative_path)
+            local_path = Path(self.output_folder / DownloadedRun.SNAPSHOT_FOLDER / relative_path)
             tasks.append(self._download_single_blob(blob_client, local_path))
         await asyncio.gather(*tasks)
 
@@ -244,7 +239,7 @@ class AsyncRunDownloader:
         logger.debug("Downloading run logs.")
         logs = self.run_ops._get_log(self.run)
 
-        with open(self.output_folder / self.LOCAL_LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+        with open(self.output_folder / DownloadedRun.LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(logs)
         logger.debug("Downloaded run logs.")
 
@@ -253,7 +248,7 @@ class AsyncRunDownloader:
         logger.debug("Downloading run metadata.")
         run = self.run_ops.get(self.run)
 
-        with open(self.output_folder / self.LOCAL_RUN_METADATA, "w", encoding=DEFAULT_ENCODING) as f:
+        with open(self.output_folder / DownloadedRun.RUN_METADATA_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(run._to_dict(), f, ensure_ascii=False)
         logger.debug("Downloaded run metadata.")
 
