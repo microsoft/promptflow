@@ -117,13 +117,8 @@
                 <RemoveFolder Id="APPLICATIONFOLDER" On="uninstall" />
             </Component>
 
-            <Component Id="RemoveRegistry" Directory="APPLICATIONFOLDER" Guid="$(var.RemoveRegistryGuid)">
-                <RemoveRegistryKey Id="APPLICATIONFOLDER" Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="removeOnUninstall"/>
-            </Component>
-
             <Component Id="RemoveShortcutComponent" Directory="APPLICATIONFOLDER" Guid="$(var.RemoveShortcutGuid)">
                 <RemoveFile Id="RemoveShortcut" Directory="StartupFolder" Name="pfs.lnk" On="uninstall" />
-                <CreateFolder />
             </Component>
 
             <Component Id="PromptflowSystemPath" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowSystemPathGuid)">
