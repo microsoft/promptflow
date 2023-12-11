@@ -802,6 +802,7 @@ class TestFlowRun:
         run = "c619f648-c809-4545-9f94-f67b0a680706"
 
         expected_files = [
+            AsyncRunDownloader.LOCAL_RUN_METADATA,
             AsyncRunDownloader.LOCAL_LOGS_FILE_NAME,
             AsyncRunDownloader.LOCAL_METRICS_FILE_NAME,
             f"{AsyncRunDownloader.LOCAL_SNAPSHOT_FOLDER}/flow.dag.yaml",

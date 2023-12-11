@@ -1,4 +1,6 @@
 import asyncio
+import contextvars
+import functools
 import json
 import logging
 from pathlib import Path
@@ -29,6 +31,7 @@ class AsyncRunDownloader:
     LOCAL_SNAPSHOT_FOLDER = "snapshot"
     LOCAL_METRICS_FILE_NAME = "metrics.json"
     LOCAL_LOGS_FILE_NAME = "logs.txt"
+    LOCAL_RUN_METADATA = "run_metadata.json"
 
     IGNORED_PATTERN = ["__pycache__"]
 
@@ -52,21 +55,15 @@ class AsyncRunDownloader:
             # Source: https://github.com/encode/httpx/issues/1331
             async with httpx.AsyncClient(verify=False) as client:
 
-                async_tasks = [
+                tasks = [
                     # put async functions in tasks to run in coroutines
                     self._download_artifacts_and_snapshot(client),
+                    # below functions are actually synchronous functions in order to reuse code
+                    # and use thread pool to avoid blocking the event loop
+                    self.to_thread(self._download_run_metrics),
+                    self.to_thread(self._download_run_logs),
+                    self.to_thread(self._download_run_metadata),
                 ]
-                sync_tasks = [
-                    # below functions are actually synchronous functions in order to reuse code,
-                    # the execution time of these functions should be shorter than the above async functions
-                    # so it won't increase the total execution time.
-                    # the reason we still put them in the tasks is, on one hand the code is more consistent and
-                    # we can use asyncio.gather() to wait for all tasks to finish, on the other hand, we can
-                    # also evaluate below functions to be shorter than the async functions with the help of logs
-                    self._download_run_metrics(),
-                    self._download_run_logs(),
-                ]
-                tasks = async_tasks + sync_tasks
                 await asyncio.gather(*tasks)
         except Exception as e:
             raise RunOperationError(f"Failed to download run {self.run!r}. Error: {e}") from e
@@ -125,7 +122,7 @@ class AsyncRunDownloader:
                 f"Failed to get run from service. Code: {response.status_code}, text: {response.text}"
             )
 
-    async def _download_run_metrics(
+    def _download_run_metrics(
         self,
     ):
         """Download the run metrics."""
@@ -242,7 +239,7 @@ class AsyncRunDownloader:
 
         return urls
 
-    async def _download_run_logs(self):
+    def _download_run_logs(self):
         """Download the run logs."""
         logger.debug("Downloading run logs.")
         logs = self.run_ops._get_log(self.run)
@@ -250,3 +247,21 @@ class AsyncRunDownloader:
         with open(self.output_folder / self.LOCAL_LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(logs)
         logger.debug("Downloaded run logs.")
+
+    def _download_run_metadata(self):
+        """Download the run metadata."""
+        logger.debug("Downloading run metadata.")
+        run = self.run_ops.get(self.run)
+
+        with open(self.output_folder / self.LOCAL_RUN_METADATA, "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(run._to_dict(), f, ensure_ascii=False)
+        logger.debug("Downloaded run metadata.")
+
+    @staticmethod
+    async def to_thread(func, /, *args, **kwargs):
+        # this is copied from asyncio.to_thread() in Python 3.9
+        # as it is not available in Python 3.8, which is the minimum supported version of promptflow
+        loop = asyncio.get_running_loop()
+        ctx = contextvars.copy_context()
+        func_call = functools.partial(ctx.run, func, *args, **kwargs)
+        return await loop.run_in_executor(None, func_call)
