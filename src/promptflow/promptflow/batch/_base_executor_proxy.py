@@ -59,7 +59,7 @@ class AbstractExecutorProxy:
         raise NotImplementedError()
 
     async def ensure_executor_health(self):
-        """Ensure the executor service is healthy before calling the API to get the results"""
+        """Ensure the executor service is healthy before execution"""
         pass
 
 
