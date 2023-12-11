@@ -6,7 +6,7 @@ from openai import AsyncOpenAI
 from promptflow import tool
 from promptflow.connections import OpenAIConnection
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
-from promptflow.executor._tool_invoker import AssistantToolInvoker
+from promptflow.executor._tool_invoker import DefaultToolInvoker
 
 
 @tool
@@ -18,7 +18,7 @@ async def oai_assistant(conn: OpenAIConnection, content: PromptTemplate, assista
         role="user",
         content=content,
     )
-    invoker = AssistantToolInvoker.load_tools(assistant_definition.tools)
+    invoker = DefaultToolInvoker.load_assistant_tools(assistant_definition.tools)
     run = await cli.beta.threads.runs.create(
         thread_id=thread.id, assistant_id=assistant_id,
         instructions=assistant_definition.instructions,
@@ -34,7 +34,7 @@ async def oai_assistant(conn: OpenAIConnection, content: PromptTemplate, assista
             tool_calls = run.required_action.submit_tool_outputs.tool_calls
             tool_outputs = []
             for tool_call in tool_calls:
-                output = invoker.invoke_tool(tool_call.function.name, json.loads(tool_call.function.arguments))
+                output = invoker.invoke_assistant_tool(tool_call.function.name, json.loads(tool_call.function.arguments))
                 tool_outputs.append({
                     "tool_call_id": tool_call.id,
                     "output": str(output),

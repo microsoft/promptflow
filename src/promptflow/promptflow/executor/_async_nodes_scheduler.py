@@ -6,12 +6,12 @@ import asyncio
 from asyncio import Task
 from typing import Any, Dict, List, Tuple
 
-from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.logger_utils import flow_logger
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
+from promptflow.executor._tool_invoker import DefaultToolInvoker
 
 
 class AsyncNodesScheduler:
@@ -28,14 +28,14 @@ class AsyncNodesScheduler:
         self,
         nodes: List[Node],
         inputs: Dict[str, Any],
-        context: FlowExecutionContext,
+        invoker: DefaultToolInvoker,
     ) -> Tuple[dict, dict]:
         flow_logger.info(f"Start to run {len(nodes)} nodes with the current event loop.")
         dag_manager = DAGManager(nodes, inputs)
-        task2nodes = self._execute_nodes(dag_manager, context)
+        task2nodes = self._execute_nodes(dag_manager, invoker)
         while not dag_manager.completed():
             task2nodes = await self._wait_and_complete_nodes(task2nodes, dag_manager)
-            submitted_tasks2nodes = self._execute_nodes(dag_manager, context)
+            submitted_tasks2nodes = self._execute_nodes(dag_manager, invoker)
             task2nodes.update(submitted_tasks2nodes)
         for node in dag_manager.bypassed_nodes:
             dag_manager.completed_nodes_outputs[node] = None
@@ -54,24 +54,24 @@ class AsyncNodesScheduler:
     def _execute_nodes(
         self,
         dag_manager: DAGManager,
-        context: FlowExecutionContext,
+        invoker: DefaultToolInvoker,
     ) -> Dict[Task, Node]:
         # Bypass nodes and update node run info until there are no nodes to bypass
         nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
             for node in nodes_to_bypass:
-                context.bypass_node(node)
+                invoker.bypass_node(node)
             nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         # Create tasks for ready nodes
-        return {self._create_node_task(node, dag_manager, context): node for node in dag_manager.pop_ready_nodes()}
+        return {self._create_node_task(node, dag_manager, invoker): node for node in dag_manager.pop_ready_nodes()}
 
     def _create_node_task(
         self,
         node: Node,
         dag_manager: DAGManager,
-        context: FlowExecutionContext,
+        invoker: DefaultToolInvoker,
     ) -> Task:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
-        task = context.invoke_tool_async(node, f, kwargs)
+        task = invoker.invoke_tool_async(node, f, kwargs)
         return asyncio.get_event_loop().create_task(task)

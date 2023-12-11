@@ -16,7 +16,6 @@ import yaml
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
-from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
@@ -44,7 +43,7 @@ from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_FLOW,
     FlowNodesScheduler,
 )
-from promptflow.executor._tool_invoker import AssistantToolInvoker
+from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
@@ -234,7 +233,7 @@ class FlowExecutor:
 
         cache_manager = AbstractCacheManager.init_from_env()
 
-        ToolInvoker.activate(DefaultToolInvoker())
+        # ToolInvoker.activate(DefaultToolInvoker())
 
         return FlowExecutor(
             flow=flow,
@@ -347,21 +346,20 @@ class FlowExecutor:
         storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
-            # Will generate node run in context
-            context = FlowExecutionContext(
+            invoker = DefaultToolInvoker.start_invoker(
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
+                connections=connections
             )
-            invoker = AssistantToolInvoker.start_invoker(connections=connections)
 
             try:
                 if inspect.iscoroutinefunction(resolved_node.callable):
                     asyncio.run(
-                        context.invoke_tool_async(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs),
+                        invoker.invoke_tool_async(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs),
                     )
                 else:
-                    context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
+                    invoker.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
             except Exception:
                 if raise_ex:  # Only raise exception when raise_ex is True
                     raise
@@ -601,14 +599,14 @@ class FlowExecutor:
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
         run_tracker = self._run_tracker
-        context = FlowExecutionContext(
+        invoker = DefaultToolInvoker.start_invoker(
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
+            connections=self._connections,
             run_id=run_id,
-            flow_id=self._flow_id,
+            flow_id=self._flow_id
         )
-        invoker = AssistantToolInvoker.start_invoker(connections=self._connections)
         metrics = {}
 
         def _log_metric(key, value):
@@ -616,7 +614,7 @@ class FlowExecutor:
 
         add_metric_logger(_log_metric)
         try:
-            self._submit_to_scheduler(context, inputs, nodes)
+            self._submit_to_scheduler(invoker, inputs, nodes)
             node_run_infos = run_tracker.collect_child_node_runs(run_id)
             # Output is set as an empty dict, because the aggregation outputs story is not finalized.
             return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
@@ -776,16 +774,16 @@ class FlowExecutor:
             index=line_number,
             variant_id=variant_id,
         )
-        context = FlowExecutionContext(
+        invoker = DefaultToolInvoker.start_invoker(
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
+            connections=self._connections,
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
-            variant_id=variant_id,
+            variant_id=variant_id
         )
-        invker = AssistantToolInvoker.start_invoker(connections=self._connections)
         output = {}
         aggregation_inputs = {}
         try:
@@ -795,7 +793,7 @@ class FlowExecutor:
             # inputs = self.load_assistant_tools(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
-            output, nodes_outputs = self._traverse_nodes(inputs, context)
+            output, nodes_outputs = self._traverse_nodes(inputs, invoker)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
             generator_output_nodes = [
@@ -870,7 +868,7 @@ class FlowExecutor:
             )
         return outputs
 
-    def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
+    def _traverse_nodes(self, inputs, invoker: DefaultToolInvoker) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
@@ -878,10 +876,10 @@ class FlowExecutor:
         if should_use_async:
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
+            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, invoker))
         else:
             flow_logger.info("Start executing nodes in thread pool mode.")
-            nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+            nodes_outputs, bypassed_nodes = self._submit_to_scheduler(invoker, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
@@ -892,7 +890,7 @@ class FlowExecutor:
 
         return outputs
 
-    def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
+    def _submit_to_scheduler(self, context: DefaultToolInvoker, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):
             raise UnexpectedError(
                 message_format=(
