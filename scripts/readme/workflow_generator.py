@@ -8,6 +8,7 @@ import hashlib
 import json
 from jinja2 import Environment, FileSystemLoader
 from ghactions_driver.readme_step import ReadmeStepsManage
+from ghactions_driver.resource_resolver import resolve_tutorial_resource
 from ghactions_driver.telemetry_obj import Telemetry
 
 
@@ -58,7 +59,9 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
     if "tutorials" in gh_working_dir:
-        path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml, '!examples/flows/integrations/**' ]"
+        # for tutorials, require text file with same name to identify resources
+        resource_path = Path(ReadmeStepsManage.git_base_dir()) / str(notebook).replace(".ipynb", ".txt")
+        path_filter = resolve_tutorial_resource(workflow_name, resource_path.resolve())
     else:
         path_filter = (
             f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml, "

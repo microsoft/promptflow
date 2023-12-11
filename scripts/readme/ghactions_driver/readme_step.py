@@ -290,31 +290,10 @@ class ReadmeStepsManage:
         if "tutorials" in workflow_name:
             # for tutorial READMEs, require resources.txt to identify resources
             resource_path = Path(ReadmeStepsManage.git_base_dir()) / ReadmeSteps.working_dir / "resources.txt"
-            resource_path = resource_path.resolve()
-            if not resource_path.is_file():
-                raise FileNotFoundError(f"Please declare tutorial resources in {resource_path.as_posix()!r}.")
-            path_filter_list = []
-            resources = resource_path.read_text(encoding="utf-8").split("\n")
-            for resource in resources:
-                # skip empty line
-                if len(resource) == 0:
-                    continue
-                # validate resource path exists
-                resource_path = (Path(ReadmeStepsManage.git_base_dir()) / resource).resolve()
-                if not resource_path.exists():
-                    raise FileNotFoundError("Please declare tutorial resources path whose base is the git repo root.")
-                elif resource_path.is_file():
-                    path_filter_list.append(resource)
-                else:
-                    path_filter_list.append(f"{resource}/**")
-            # append workflow file itself
-            path_filter_list.append(f".github/workflows/{workflow_name}.yml")
-            # manually add examples/requirements.txt if not exists
-            # we need to trigger all examples' workflows for verification during release promptflow
-            examples_req = "examples/requirements.txt"
-            if examples_req not in path_filter_list:
-                path_filter_list.append(examples_req)
-            path_filter = "[ " + ", ".join(path_filter_list) + " ]"
+            # local import to avoid circular import
+            from .resource_resolver import resolve_tutorial_resource
+
+            path_filter = resolve_tutorial_resource(workflow_name, resource_path.resolve())
         else:
             if "flow_with_additional_includes" in workflow_name or "flow_with_symlinks" in workflow_name:
                 # these two flows have dependencies on flow web-classification
