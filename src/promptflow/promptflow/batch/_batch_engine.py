@@ -164,7 +164,7 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
-        # If the batch run is canceled, asyncio.CancelledError will be raised and no results will be returned,
+        # if the batch run is canceled, asyncio.CancelledError will be raised and no results will be returned,
         # so we pass empty line results list and aggr results and update them in _exec so that when the batch
         # run is canceled we can get the current completed line results and aggr results.
         line_results: List[LineResult] = []
@@ -287,10 +287,15 @@ class BatchEngine:
             aggr_result = await self._executor_proxy.exec_aggregation_async(
                 succeeded_inputs, succeeded_aggregation_inputs, run_id
             )
+            # if the flow language is python, we have already persisted node run infos during execution.
+            # so we should persist node run infos in aggr_result for other languages.
+            if not isinstance(self._executor_proxy, PythonExecutorProxy):
+                for node_run in aggr_result.node_run_infos.values():
+                    self._storage.persist_node_run(node_run)
             bulk_logger.info("Finish executing aggregation nodes.")
             return aggr_result
         except PromptflowException as e:
-            # For PromptflowException, we already do classification, so throw directly.
+            # for PromptflowException, we already do classification, so throw directly.
             raise e
         except Exception as e:
             error_type_and_message = f"({e.__class__.__name__}) {e}"
