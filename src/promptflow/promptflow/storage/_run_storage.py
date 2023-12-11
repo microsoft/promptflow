@@ -103,4 +103,4 @@ class DefaultRunStorage(AbstractRunStorage):
         else:
             pfbytes_file_reference_encoder = None
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
-        return _process_recursively(value, process_funcs=serialization_funcs)
+        return _process_recursively(value, process_funcs=serialization_funcs, inplace=True)

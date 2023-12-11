@@ -20,7 +20,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
 from promptflow._utils.thread_utils import RepeatLogTimer
-from promptflow._utils.utils import log_progress, set_context, get_int_env_var
+from promptflow._utils.utils import get_int_env_var, log_progress, set_context
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
@@ -300,7 +300,7 @@ class LineExecutionProcessPool:
 
     def _persist_images(self, value):
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
-        return _process_recursively(value, process_funcs=serialization_funcs)
+        return _process_recursively(value, process_funcs=serialization_funcs, inplace=True)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         bulk_logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
@@ -429,17 +429,18 @@ class LineExecutionProcessPool:
         # Take the minimum value as the result
         worker_count = min(valid_factors.values())
         bulk_logger.info(
-            f"Set process count to {worker_count} by taking the minimum value among the factors of {valid_factors}.")
+            f"Set process count to {worker_count} by taking the minimum value among the factors of {valid_factors}."
+        )
         return worker_count
 
     def _log_set_worker_count(self, worker_count, estimated_available_worker_count):
-        bulk_logger.info(
-            f"Set process count to {worker_count} with the environment variable 'PF_WORKER_COUNT'.")
+        bulk_logger.info(f"Set process count to {worker_count} with the environment variable 'PF_WORKER_COUNT'.")
         if estimated_available_worker_count is not None and estimated_available_worker_count < worker_count:
             bulk_logger.warning(
                 f"The current process count ({worker_count}) is larger than recommended process count "
                 f"({estimated_available_worker_count}) that estimated by system available memory. This may "
-                f"cause memory exhaustion")
+                f"cause memory exhaustion"
+            )
 
 
 def _exec_line(
@@ -581,7 +582,8 @@ def get_available_max_worker_count():
         #  create the child process
         bulk_logger.warning(
             f"Current system's available memory is {available_memory}MB, less than the memory "
-            f"{process_memory}MB required by the process. The maximum available worker count is 1.")
+            f"{process_memory}MB required by the process. The maximum available worker count is 1."
+        )
         estimated_available_worker_count = 1
     else:
         bulk_logger.info(

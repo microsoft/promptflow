@@ -48,7 +48,9 @@ class TestExecutorTraces:
 
     def get_chat_input(stream):
         return {
-            "question": "What is the capital of the United States of America?", "chat_history": [], "stream": stream
+            "question": "What is the capital of the United States of America?",
+            "chat_history": [],
+            "stream": stream,
         }
 
     def get_comletion_input(stream):
@@ -63,7 +65,7 @@ class TestExecutorTraces:
             ("openai_completion_api_flow", get_comletion_input(True)),
             ("llm_tool", {"topic": "Hello", "stream": False}),
             ("llm_tool", {"topic": "Hello", "stream": True}),
-        ]
+        ],
     )
     def test_executor_openai_api_flow(self, flow_folder, inputs, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
@@ -110,16 +112,18 @@ class TestExecutorTraces:
 
         tool_trace = flow_result.run_info.api_calls[0]
         output = tool_trace.get("output")
+
         assert isinstance(output, list)
-        assert not output
-        answer = flow_result.output.get("answer")
         if allow_generator_output:
-            assert isinstance(answer, GeneratorType)
+            assert not output
+            answer_gen = flow_result.output.get("answer")
+            assert isinstance(answer_gen, GeneratorType)
             # Consume the generator and validate that it generates some text
             try:
-                generated_text = next(answer)
+                generated_text = next(answer_gen)
                 assert isinstance(generated_text, str)
             except StopIteration:
                 assert False, "Generator did not generate any text"
         else:
-            assert answer == "Echo-Thisisatest"
+            assert output
+            assert all(isinstance(item, str) for item in output)
