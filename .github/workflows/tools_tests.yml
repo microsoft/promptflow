@@ -26,8 +26,8 @@ jobs:
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
           # "DEPENDENCY_SOURCE_MODE" is "main" or "package", means the dependency source of code
-          echo ${{ env.DEPENDENCY_SOURCE_MODE }}
-          if [ "${{ env.DEPENDENCY_SOURCE_MODE }}" = "main" ]; then
+          echo "${{ secrets.DEPENDENCY_SOURCE_MODE }}"
+          if [ "${{ secrets.DEPENDENCY_SOURCE_MODE }}" = "main" ]; then
             python ./scripts/building/dev_setup.py --promptflow-extra-deps azure
             pip install google-search-results==2.4.1
             pip install openai>=1.0.0
@@ -41,7 +41,7 @@ jobs:
 
       - name: Run tests
         run: |
-          if [ "${{ env.DEPENDENCY_SOURCE_MODE }}" = "main" ]; then
+          if [ "${{ secrets.DEPENDENCY_SOURCE_MODE }}" = "main" ]; then
             export PYTHONPATH=./src/promptflow
           fi
           pytest ./src/promptflow-tools/tests
