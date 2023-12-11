@@ -91,17 +91,17 @@ class TestOpenAI:
             temperature=0,
             user_input="Write a slogan for product X, please reponse with json.",
             chat_history=chat_history,
-            response_format="json_object"
+            response_format={"type": "json_object"}
         )
         assert "Product X".lower() in result.lower()
 
     @pytest.mark.parametrize(
         "response_format, user_input, error_message, error_codes, exception",
         [
-            ("json", "Write a slogan for product X, please reponse with json.",
+            ({"type": "json"}, "Write a slogan for product X, please reponse with json.",
              "\'json\' is not one of [\'json_object\', \'text\']", "UserError/OpenAIError/BadRequestError",
              WrappedOpenAIError),
-            ("json_object", "Write a slogan for product X",
+            ({"type": "json_object"}, "Write a slogan for product X",
              "\'messages\' must contain the word \'json\' in some form", "UserError/OpenAIError/BadRequestError",
              WrappedOpenAIError)
         ]
@@ -144,8 +144,8 @@ class TestOpenAI:
                 temperature=0,
                 user_input="Write a slogan for product X, please reponse with json.",
                 chat_history=chat_history,
-                response_format="json_object"
+                response_format={"type": "json_object"}
             )
-        error_message = "\'response_format\' of type \'json_object\' is not supported with this model."
+        error_message = "Current model does not support the `response_format` parameter."
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == "UserError/OpenAIError/BadRequestError".split("/")

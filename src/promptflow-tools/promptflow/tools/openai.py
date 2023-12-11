@@ -115,7 +115,7 @@ class OpenAI(ToolProvider):
         # function_call can be of type str or dict.
         function_call: object = None,
         functions: list = None,
-        response_format: str = None,
+        response_format: object = None,
         **kwargs
     ) -> [str, dict]:
         chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
@@ -135,7 +135,7 @@ class OpenAI(ToolProvider):
             "frequency_penalty": float(frequency_penalty),
             "logit_bias": logit_bias,
             "user": user,
-            "response_format": {"type": response_format} if response_format is not None else None
+            "response_format": response_format
         }
 
         if functions is not None:
@@ -209,7 +209,7 @@ def chat(
     user: str = "",
     function_call: object = None,
     functions: list = None,
-    response_format: str = None,
+    response_format: object = None,
     **kwargs
 ) -> [str, dict]:
     return OpenAI(connection).chat(
