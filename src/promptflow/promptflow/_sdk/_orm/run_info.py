@@ -168,3 +168,5 @@ class RunInfo(Base):
             if run_info is not None:
                 session.delete(run_info)
                 session.commit()
+            else:
+                raise RunNotFoundError(f"Run name {name!r} cannot be found.")

@@ -1043,12 +1043,13 @@ class TestFlowRun:
         run_name = "web_classification_variant_0_20231205_120253_104100"
 
         # clean the run if exists
-        try:
-            from promptflow._sdk._orm import RunInfo as ORMRun
+        from promptflow._cli._utils import _try_delete_existing_run_record
 
-            ORMRun.delete(run_name)
-        except Exception:
-            pass
+        _try_delete_existing_run_record(run_name)
+
+        # assert the run doesn't exist
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(run_name)
 
         # create the run with run folder
         run_folder = f"{RUNS_DIR}/{run_name}"

@@ -577,7 +577,13 @@ def create_run(create_func: Callable, args):
 
         run = Run._load(data=run_data, params_override=params_override)
     elif run_source:
-        run = Run._load_from_source(source=run_source, params_override=params_override)
+        display_name, description, tags = _parse_metadata_args(params_override)
+        processed_params = {
+            "display_name": display_name,
+            "description": description,
+            "tags": tags,
+        }
+        run = Run._load_from_source(source=run_source, params_override=processed_params)
     else:
         raise UserErrorException("To create a run, one of [file, flow, source] must be specified.")
     run = create_func(run=run, stream=stream)

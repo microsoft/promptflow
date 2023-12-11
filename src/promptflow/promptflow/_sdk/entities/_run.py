@@ -637,7 +637,7 @@ class Run(YAMLTranslatableMixin):
         return (path / str(self.name)).resolve()
 
     @classmethod
-    def _load_from_source(cls, source: Union[str, Path], params_override=None, **kwargs) -> "Run":
+    def _load_from_source(cls, source: Union[str, Path], params_override: Optional[Dict] = None, **kwargs) -> "Run":
         """Load run from run record source folder."""
         source = Path(source)
         params_override = params_override or {}
