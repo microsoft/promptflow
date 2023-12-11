@@ -647,14 +647,15 @@ class Run(YAMLTranslatableMixin):
         run_metadata_file = source / DownloadedRun.RUN_METADATA_FILE_NAME
         if not run_metadata_file.exists():
             raise UserErrorException(
-                f"Invalid run source: {source!r}. Expecting a valid run source folder with {run_metadata_file!r}."
+                f"Invalid run source: {source!r}. Expecting a valid run source folder with {run_metadata_file!r}. "
+                f"Please make sure the run source is downloaded by 'pfazure run download' command."
             )
         # extract run info from source folder
         with open(source / DownloadedRun.RUN_METADATA_FILE_NAME, encoding=DEFAULT_ENCODING) as f:
             run_info = json.load(f)
 
         return cls(
-            name=source.name,
+            name=run_info["name"],
             source=source,
             run_source=RunInfoSources.EXISTING_RUN,
             status=run_info["status"],  # currently only support completed run
