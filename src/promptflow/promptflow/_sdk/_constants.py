@@ -261,6 +261,7 @@ class RunInfoSources(str, Enum):
     INDEX_SERVICE = "index_service"
     RUN_HISTORY = "run_history"
     MT_SERVICE = "mt_service"
+    EXISTING_RUN = "existing_run"
 
 
 class ConfigValueType(str, Enum):

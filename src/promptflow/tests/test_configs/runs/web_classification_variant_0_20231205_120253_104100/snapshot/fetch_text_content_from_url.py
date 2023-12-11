@@ -6,7 +6,6 @@ from promptflow import tool
 
 @tool
 def fetch_text_content_from_url(url: str):
-    raise ValueError("hod error")
     # Send a request to the URL
     try:
         headers = {

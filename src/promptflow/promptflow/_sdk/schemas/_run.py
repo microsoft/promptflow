@@ -4,7 +4,7 @@
 import os.path
 
 from dotenv import dotenv_values
-from marshmallow import fields, post_load
+from marshmallow import ValidationError, fields, post_load, validates_schema
 
 from promptflow._sdk._utils import is_remote_uri
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
@@ -60,7 +60,10 @@ class RunSchema(YamlFileSchema):
     properties = fields.Dict(keys=fields.Str(), values=fields.Str(allow_none=True))
     # endregion: common fields
 
-    flow = UnionField([LocalPathField(required=True), fields.Str(required=True)])
+    # one of ["flow", "source"] must be specified, it will be validated through function `validate_run_source`
+    flow = UnionField([LocalPathField(), fields.Str()])
+    source = UnionField([LocalPathField(), fields.Str()])
+
     # inputs field
     data = UnionField([LocalPathField(), RemotePathStr()])
     column_mapping = fields.Dict(keys=fields.Str)
@@ -84,3 +87,10 @@ class RunSchema(YamlFileSchema):
     @post_load
     def resolve_dot_env_file(self, data, **kwargs):
         return _resolve_dot_env_file(data, **kwargs)
+
+    @validates_schema
+    def validate_run_source(self, data, **kwargs):
+        flow = data.get("flow", None)
+        source = data.get("source", None)
+        if sum([bool(flow), bool(source)]) != 1:
+            raise ValidationError("For a run object, either 'flow' or 'source' must be specified, but not both.")

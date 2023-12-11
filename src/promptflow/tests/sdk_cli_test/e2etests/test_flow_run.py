@@ -1037,3 +1037,29 @@ class TestFlowRun:
         exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
         assert "additionalInfo" in default["error"] and "additionalInfo" not in exclude["error"]
         assert "debugInfo" in default["error"] and "debugInfo" not in exclude["error"]
+
+    @pytest.mark.skip("TODO: fix pf.visualize")
+    def test_create_run_with_existing_run_folder(self, pf):
+        run_name = "web_classification_variant_0_20231205_120253_104100"
+
+        # clean the run if exists
+        try:
+            from promptflow._sdk._orm import RunInfo as ORMRun
+
+            ORMRun.delete(run_name)
+        except Exception:
+            pass
+
+        # create the run with run folder
+        run_folder = f"{RUNS_DIR}/{run_name}"
+        run = Run._load_from_source(source=run_folder)
+        pf.runs.create_or_update(run)
+
+        # test with other local run operations
+        run = pf.runs.get(run_name)
+        assert run.name == run_name
+
+        details = pf.get_details(run_name)
+        assert details.shape == (3, 5)
+
+        # pf.visualize([run_name])
