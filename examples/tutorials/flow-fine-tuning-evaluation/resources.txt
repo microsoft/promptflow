@@ -1,0 +1,4 @@
+examples/connections/azure_openai.yml
+examples/flows/chat/basic-chat
+examples/flows/chat/chat-math-variant
+examples/flows/evaluation/eval-chat-math

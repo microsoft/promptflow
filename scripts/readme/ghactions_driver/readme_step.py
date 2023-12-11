@@ -309,6 +309,11 @@ class ReadmeStepsManage:
                     path_filter_list.append(f"{resource}/**")
             # append workflow file itself
             path_filter_list.append(f".github/workflows/{workflow_name}.yml")
+            # manually add examples/requirements.txt if not exists
+            # we need to trigger all examples' workflows for verification during release promptflow
+            examples_req = "examples/requirements.txt"
+            if examples_req not in path_filter_list:
+                path_filter_list.append(examples_req)
             path_filter = "[ " + ", ".join(path_filter_list) + " ]"
         else:
             if "flow_with_additional_includes" in workflow_name or "flow_with_symlinks" in workflow_name:
