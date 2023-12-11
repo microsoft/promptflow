@@ -164,7 +164,11 @@ class BatchResult:
             metrics=aggr_result.metrics,
             system_metrics=SystemMetrics.create(start_time, end_time, line_results, aggr_result),
             error_summary=ErrorSummary.create(line_results),
-            aggr_error_summary=BatchResult._get_aggr_error_summary(aggr_result),
+            aggr_error_summary={
+                node_name: node_run_info.error
+                for node_name, node_run_info in aggr_result.node_run_infos.items()
+                if node_run_info.status == Status.Failed
+            },
         )
 
     @staticmethod
@@ -175,14 +179,6 @@ class BatchResult:
             key = f"{node_run_info.node}.{node_run_info.status.value.lower()}"
             node_status[key] = node_status.get(key, 0) + 1
         return node_status
-
-    @staticmethod
-    def _get_aggr_error_summary(aggr_result: AggregationResult):
-        error_list = {}
-        for node_name, node_run_info in aggr_result.node_run_infos.items():
-            if node_run_info.status == Status.Failed:
-                error_list[node_name] = node_run_info.error
-        return error_list
 
 
 def _get_node_run_infos(line_results: List[LineResult], aggr_result: AggregationResult):
