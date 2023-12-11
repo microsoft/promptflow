@@ -1038,8 +1038,8 @@ class TestFlowRun:
         assert "additionalInfo" in default["error"] and "additionalInfo" not in exclude["error"]
         assert "debugInfo" in default["error"] and "debugInfo" not in exclude["error"]
 
-    @pytest.mark.skip("TODO: fix pf.visualize")
     def test_create_run_with_existing_run_folder(self, pf):
+        # TODO: Should use fixture to create an run and download it to be used here.
         run_name = "web_classification_variant_0_20231205_120253_104100"
 
         # clean the run if exists
@@ -1062,4 +1062,10 @@ class TestFlowRun:
         details = pf.get_details(run_name)
         assert details.shape == (3, 5)
 
+        metrics = pf.runs.get_metrics(run_name)
+        assert metrics == {}
+
+        pf.stream(run_name)
+
+        # need to fix the visualize API
         # pf.visualize([run_name])

@@ -241,7 +241,8 @@ class Run(YAMLTranslatableMixin):
             status=str(obj.status),
             data=Path(obj.data).resolve().absolute().as_posix() if obj.data else None,
             properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
-            run_source=obj.run_source or RunInfoSources.LOCAL,  # compatible with old runs, their run_source is local
+            # compatible with old runs, their run_source is empty, treat them as local
+            run_source=obj.run_source or RunInfoSources.LOCAL,
         )
 
     @classmethod

@@ -579,7 +579,7 @@ def create_run(create_func: Callable, args):
     elif run_source:
         run = Run._load_from_source(source=run_source, params_override=params_override)
     else:
-        raise UserErrorException("--flow is required when not using --file.")
+        raise UserErrorException("To create a run, one of [file, flow, source] must be specified.")
     run = create_func(run=run, stream=stream)
     if stream:
         print("\n")  # change new line to show run info
