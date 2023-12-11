@@ -854,33 +854,42 @@ def generate_flow_tools_json(
     return flow_tools
 
 
-def update_user_agent_from_env_var():
-    """Update user agent from env var to OperationContext"""
-    from promptflow._core.operation_context import OperationContext
+class ClientUserAgentUtil:
+    """SDK/CLI side user agent utilities."""
 
-    if USER_AGENT in os.environ:
-        # Append vscode or other user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ[USER_AGENT])
+    @classmethod
+    def _get_context(cls):
+        from promptflow._core.operation_context import OperationContext
 
-    if PF_USER_AGENT in os.environ:
-        # Append promptflow user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ[PF_USER_AGENT])
+        return OperationContext.get_instance()
+
+    @classmethod
+    def get_user_agent(cls):
+        context = cls._get_context()
+        # directly get from context since client side won't need promptflow/xxx.
+        return context.get(USER_AGENT_KEY, "").strip()
+
+    @classmethod
+    def append_user_agent(cls, user_agent: Optional[str]):
+        if not user_agent:
+            return
+        context = cls._get_context()
+        context.append_user_agent(user_agent)
+
+    @classmethod
+    def update_user_agent_from_env_var(cls):
+        for env_name in [USER_AGENT, PF_USER_AGENT]:
+            if env_name in os.environ:
+                cls.append_user_agent(os.environ[env_name])
 
 
-def get_client_user_agent(user_agent=None):
+def get_client_user_agent():
     """Get client user agent from OperationContext.
 
     For client scenario, ua won't include promptflow/xxx.
 
     """
-    from promptflow._core.operation_context import OperationContext
-
-    context = OperationContext.get_instance()
-    # skip append if empty
-    if user_agent:
-        context.append_user_agent(user_agent)
-    # directly get from context since client side won't need promptflow/xxx.
-    return context.get(USER_AGENT_KEY, "").strip()
+    return ClientUserAgentUtil.get_user_agent()
 
 
 def setup_user_agent_to_operation_context(user_agent):
@@ -889,14 +898,15 @@ def setup_user_agent_to_operation_context(user_agent):
     For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
     For calls from SDK, ua will be like: promptflow-sdk/
     """
-    update_user_agent_from_env_var()
-    return get_client_user_agent(user_agent=user_agent)
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    ClientUserAgentUtil.append_user_agent(user_agent)
+    return ClientUserAgentUtil.get_user_agent()
 
 
 def call_from_extension() -> bool:
     """Return true if current request is from extension."""
-    update_user_agent_from_env_var()
-    user_agent = get_client_user_agent()
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    user_agent = ClientUserAgentUtil.get_user_agent()
     return EXTENSION_UA in user_agent
 
 
