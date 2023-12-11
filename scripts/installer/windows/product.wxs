@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <?define ProductVersion="$(env.CLI_VERSION)" ?>
+    <?define ProductVersion="0.1.3" ?>
 
     <?define ProductName = "promptflow" ?>
     <?define ProductDescription = "Command-line tools for prompt flow." ?>
@@ -11,6 +11,8 @@
 
     <?if $(var.Platform) = "x64" ?>
     <?define PromptflowCliRegistryGuid = "0efd984f-9eec-425b-b230-a3994b69649a" ?>
+    <?define RemoveRegistryGuid = "7e5d5197-9e7a-4ee3-bccd-d1f9a5a6d05e" ?>
+    <?define RemoveShortcutGuid = "3a15a9f8-7456-48ab-ae03-d6ba13c62f72" ?>
     <?define PromptflowServiceGuid = "d4e99207-77be-4bdf-a430-b08632c5aa2b" ?>
     <?define PromptflowSystemPathGuid = "4c321045-d4e0-4446-bda4-8c19eaa42af1" ?>
     <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
@@ -20,6 +22,8 @@
 
     <?elseif $(var.Platform) = "x86" ?>
     <?define PromptflowCliRegistryGuid = "7c2c792d-c395-44a1-8222-8e4ea006abb9" ?>
+    <?define RemoveRegistryGuid = "cbe8fdd0-9e0d-4243-b156-8bf6ab9df981" ?>
+    <?define RemoveShortcutGuid = "f5817560-42d6-45ab-803e-7e7fbf1c099a" ?>
     <?define PromptflowServiceGuid = "f706b208-a15d-4ae7-9185-cfcc43656570" ?>
     <?define PromptflowSystemPathGuid = "9661fe6a-ff48-4e7c-a60d-fc34c2d06ef3" ?>
     <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
@@ -99,7 +103,9 @@
             <Directory Id="$(var.ProgramFilesFolder)">
                 <Directory Id="APPLICATIONFOLDER" Name="promptflow" />
             </Directory>
-            <Directory Id="StartupFolder" />
+            <Directory Id="ProgramMenuFolder">
+                <Directory Id="StartupFolder" Name="promptflow"/>
+            </Directory>
         </Directory>
 
         <UIRef Id="WixUI_Advanced" />
@@ -128,20 +134,28 @@
 
             <Component Id="ApplicationShortcut" Directory="StartupFolder" Guid="$(var.PromptflowCliRegistryGuid)">
                 <Shortcut Id="ApplicationStartMenuShortcut"
-                          Name="Prompt flow service"
+                          Name="pfs.lnk"
                           Description="Prompt Flow Service"
                           Target="[#promptflow_service.vbs]"
                           WorkingDirectory="APPLICATIONFOLDER"
                           Advertise="no">
                           <Icon Id="PromptflowServiceIcon" SourceFile="$(var.ProductResources)logo32.ico" />
                 </Shortcut>
-                <RemoveFile Id="CleanUpShortCut" Directory="StartupFolder" Name="Prompt flow service" On="uninstall"/>
-                <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="createAndRemoveOnUninstall">
+<!--                 <RemoveFolder Id="StartupFolder" On="uninstall"/> -->
+                <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)">
                     <RegistryValue Name="installed" Type="integer" Value="1" />
                     <RegistryValue Name="version" Type="string" Value="$(var.ProductVersion)" KeyPath="yes"/>
                 </RegistryKey>
+<!--                 <util:RemoveFolderEx On="uninstall" Property="StartupFolder" /> -->
             </Component>
 
+            <Component Id="RemoveRegistry" Directory="StartupFolder" Guid="$(var.RemoveRegistryGuid)">
+                <RemoveRegistryKey Id="RemovePromptflowRegistry" Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="removeOnUninstall"/>
+            </Component>
+
+            <Component Id="RemoveShortcutComponent" Directory="StartupFolder" Guid="$(var.RemoveShortcutGuid)">
+                <RemoveFile Id="RemoveShortcut" Name="pfs.lnk" On="uninstall" />
+            </Component>
 
         </ComponentGroup>
 
