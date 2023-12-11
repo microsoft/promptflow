@@ -121,7 +121,7 @@ pf run create -f <yaml-filename>
 # Create a run from flow directory and reference a run:
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
 # Create a run from an existing run record folder
-pf run create --source <path-to-flow-directory>
+pf run create --source <path-to-run-folder>
 """
 
     # data for pf has different help doc than pfazure
