@@ -627,33 +627,6 @@ def list_deployment_names(subscription_id: str,
     )
 
 
-def format_generic_response_payload(output: bytes, response_key: str) -> str:
-    response_json = json.loads(output)
-    try:
-        if response_key is None:
-            return response_json[0]
-        else:
-            return response_json[0][response_key]
-    except KeyError as e:
-        if response_key is None:
-            message = f"""Expected the response to fit the following schema:
-`[
-    <text>
-]`
-Instead, received {response_json} and access failed at key `{e}`.
-"""
-        else:
-            message = f"""Expected the response to fit the following schema:
-`[
-    {{
-        "{response_key}": <text>
-    }}
-]`
-Instead, received {response_json} and access failed at key `{e}`.
-"""
-        raise OpenModelLLMUserError(message=message)
-
-
 def get_model_type(deployment_model: str) -> str:
     m = re.match(r'azureml://registries/[^/]+/models/([^/]+)/versions/', deployment_model)
     if m is None:
@@ -699,6 +672,9 @@ class ModelFamily(str, Enum):
             if member.lower() == value:
                 return member
         return None
+
+
+STANDARD_CONTRACT_MODELS = [ModelFamily.DOLLY, ModelFamily.GPT2, ModelFamily.FALCON]
 
 
 class API(str, Enum):
@@ -770,44 +746,12 @@ class ContentFormatterBase:
         """
 
 
-class GPT2ContentFormatter(ContentFormatterBase):
-    """Content handler for LLMs from the OSS catalog."""
-
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
-        input_str = json.dumps(
-            {
-                "input_data": {"input_string": [ContentFormatterBase.escape_special_characters(prompt)]},
-                "parameters": model_kwargs,
-            }
-        )
-        return input_str
-
-    def format_response_payload(self, output: bytes) -> str:
-        return format_generic_response_payload(output, response_key="0")
-
-
-class HFContentFormatter(ContentFormatterBase):
+class MIRCompleteFormatter(ContentFormatterBase):
     """Content handler for LLMs from the HuggingFace catalog."""
 
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         input_str = json.dumps(
             {
-                "inputs": [ContentFormatterBase.escape_special_characters(prompt)],
-                "parameters": model_kwargs,
-            }
-        )
-        return input_str
-
-    def format_response_payload(self, output: bytes) -> str:
-        return format_generic_response_payload(output, response_key="generated_text")
-
-
-class DollyContentFormatter(ContentFormatterBase):
-    """Content handler for the Dolly-v2-12b model"""
-
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
-        input_str = json.dumps(
-            {
                 "input_data": {"input_string": [ContentFormatterBase.escape_special_characters(prompt)]},
                 "parameters": model_kwargs,
             }
@@ -815,7 +759,18 @@ class DollyContentFormatter(ContentFormatterBase):
         return input_str
 
     def format_response_payload(self, output: bytes) -> str:
-        return format_generic_response_payload(output, response_key=None)
+        """These models only support generation - expect a single output style"""
+        response_json = json.loads(output)
+
+        if len(response_json) > 0 and "0" in response_json[0]:
+            if "0" in response_json[0]:
+                return response_json[0]["0"]
+        elif "output" in response_json:
+            return response_json["output"]
+
+        error_message = f"Unexpected response format. Response: {response_json}"
+        print(error_message, file=sys.stderr)
+        raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
 
 class LlamaContentFormatter(ContentFormatterBase):
@@ -916,12 +871,8 @@ class ContentFormatterFactory:
                 return ServerlessLlamaContentFormatter(chat_history=chat_history, api=api)
             else:
                 return LlamaContentFormatter(chat_history=chat_history, api=api)
-        elif model_family == ModelFamily.DOLLY:
-            return DollyContentFormatter()
-        elif model_family == ModelFamily.GPT2:
-            return GPT2ContentFormatter()
-        elif model_family == ModelFamily.FALCON:
-            return HFContentFormatter()
+        elif model_family in STANDARD_CONTRACT_MODELS:
+            return MIRCompleteFormatter()
 
 
 class AzureMLOnlineEndpoint:

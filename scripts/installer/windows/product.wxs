@@ -11,7 +11,7 @@
 
     <?if $(var.Platform) = "x64" ?>
     <?define PromptflowCliRegistryGuid = "0efd984f-9eec-425b-b230-a3994b69649a" ?>
-    <?define PromptflowCliVersionGuid = "d4e99207-77be-4bdf-a430-b08632c5aa2b" ?>
+    <?define PromptflowServiceGuid = "d4e99207-77be-4bdf-a430-b08632c5aa2b" ?>
     <?define PromptflowSystemPathGuid = "4c321045-d4e0-4446-bda4-8c19eaa42af1" ?>
     <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
     <?define RemovePromptflowFolderGuid = "ee843aa5-2b72-4958-be84-53dbac17efc7" ?>
@@ -20,7 +20,7 @@
 
     <?elseif $(var.Platform) = "x86" ?>
     <?define PromptflowCliRegistryGuid = "7c2c792d-c395-44a1-8222-8e4ea006abb9" ?>
-    <?define PromptflowCliVersionGuid = "f706b208-a15d-4ae7-9185-cfcc43656570" ?>
+    <?define PromptflowServiceGuid = "f706b208-a15d-4ae7-9185-cfcc43656570" ?>
     <?define PromptflowSystemPathGuid = "9661fe6a-ff48-4e7c-a60d-fc34c2d06ef3" ?>
     <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
     <?define RemovePromptflowFolderGuid = "588ca5e1-38c6-4659-8b38-762df7ed5b28" ?>
@@ -32,7 +32,7 @@
     <?endif ?>
 
     <Product Id="*" Name="$(var.ProductName) ($(var.Architecture))" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductAuthor)" UpgradeCode="$(var.UpgradeCode)">
-        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perUser" />
 
         <Upgrade Id="$(var.UpgradeCode)">
           <UpgradeVersion Property="WIX_UPGRADE_DETECTED" Maximum="$(var.ProductVersion)" IncludeMaximum="no" MigrateFeatures="yes" />
@@ -64,7 +64,7 @@
         <Property Id="ARPURLUPDATEINFO" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
         <Property Id="MSIFASTINSTALL" Value="7" />
         <Property Id="ApplicationFolderName" Value="promptflow" />
-        <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+        <Property Id="WixAppFolder" Value="WixPerUserFolder" />
 
         <Feature Id="ProductFeature" Title="promptflow" Level="1" AllowAdvertise="no">
             <ComponentGroupRef Id="ProductComponents" />
@@ -76,7 +76,6 @@
             <!-- User Interface -->
         <WixVariable Id="WixUILicenseRtf" Value="$(var.ProductResources)CLI_LICENSE.rtf"/>
 
-        <UIRef Id="WixUI_Minimal"/>
         <UIRef Id="WixUI_ErrorProgressText"/>
 
         <!-- Show message to restart any terminals only if the PATH is changed -->
@@ -85,75 +84,64 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
-        <CustomAction Id="InstallPromptFlowService"
-            Directory="DynamicCliDir"
-            Execute="commit"
-            Impersonate="no"
-            ExeCommand="cmd.exe /c SC CREATE PromptFlowService &quot;displayname=Prompt Flow Service&quot; start=auto type=userown binPath= &quot;\&quot;%ProgramFiles%\promptflow\pfsvc.bat\&quot;&quot;"
-            Return="check" />
         <CustomAction Id="StartPromptFlowService"
-            Directory="DynamicCliDir"
-            Execute="commit"
-            ExeCommand="PowerShell.exe -WindowStyle hidden Start-Process -FilePath pfs -NoNewWindow -Wait"
-            Return="asyncNoWait" />
-        <CustomAction Id="UninstallPromptFlowService"
-            Directory="DynamicCliDir"
+            Directory="APPLICATIONFOLDER"
             Execute="deferred"
-            Impersonate="no"
-            ExeCommand="cmd.exe /c SC DELETE PromptService"
-            Return="ignore" />
+            ExeCommand="wscript.exe promptflow_service.vbs"
+            Return="asyncNoWait" />
         <InstallExecuteSequence>
-            <Custom Action="InstallPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
-            <Custom Action="UninstallPromptFlowService" Before="InstallFinalize">REMOVE="ALL"</Custom>
         </InstallExecuteSequence>
-
     </Product>
 
     <Fragment>
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="$(var.ProgramFilesFolder)">
-                <Directory Id="DynamicCliDir" Name="promptflow" />
+                <Directory Id="APPLICATIONFOLDER" Name="promptflow" />
             </Directory>
+            <Directory Id="StartupFolder" />
         </Directory>
+
+        <UIRef Id="WixUI_Advanced" />
     </Fragment>
 
     <Fragment>
         <ComponentGroup Id="PromptflowCliSettingsGroup">
-            <Component Id="RemovePromptflowFolder" Directory="DynamicCliDir" Guid="$(var.RemovePromptflowFolderGuid)">
-                <RemoveFolder Id="DynamicCliDir" On="uninstall" />
+            <Component Id="RemovePromptflowFolder" Directory="APPLICATIONFOLDER" Guid="$(var.RemovePromptflowFolderGuid)">
+                <RemoveFolder Id="APPLICATIONFOLDER" On="uninstall" />
             </Component>
 
-            <Component Id="PromptflowSystemPath" Directory="DynamicCliDir" Guid="$(var.PromptflowSystemPathGuid)">
+            <Component Id="PromptflowSystemPath" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowSystemPathGuid)">
                 <Environment Id="PromptflowAddedToPATH"
                      Name="PATH"
-                     Value="[DynamicCliDir]"
+                     Value="[APPLICATIONFOLDER]"
                      Permanent="no"
                      Part="first"
                      Action="set"
-                     System="yes" />
+                     System="no" />
                 <CreateFolder />
             </Component>
-            <Component Id="PromptflowCliRegistry"
-                       Directory="DynamicCliDir"
-                       Guid="$(var.PromptflowCliRegistryGuid)">
-                <RegistryValue Root="HKCU"
-                               Key="Software\Microsoft\$(var.ProductName)"
-                               Name="installed"
-                               Type="integer"
-                               Value="1"
-                               KeyPath="yes"/>
+
+            <Component Id="promptflow_service.vbs" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
+                <File Id="promptflow_service.vbs" Source="scripts\promptflow_service.vbs" KeyPath="yes" Checksum="yes"/>
             </Component>
-            <Component Id="PromptflowCliVersion"
-                       Directory="DynamicCliDir"
-                       Guid="$(var.PromptflowCliVersionGuid)">
-                <RegistryValue Root="HKLM"
-                               Key="Software\Microsoft\$(var.ProductName)"
-                               Name="version"
-                               Type="string"
-                               Value="$(var.ProductVersion)"
-                               KeyPath="yes"/>
+
+            <Component Id="ApplicationShortcut" Directory="StartupFolder" Guid="$(var.PromptflowCliRegistryGuid)">
+                <Shortcut Id="ApplicationStartMenuShortcut"
+                          Name="Prompt flow service"
+                          Description="Prompt Flow Service"
+                          Target="[#promptflow_service.vbs]"
+                          WorkingDirectory="APPLICATIONFOLDER"
+                          Advertise="no">
+                          <Icon Id="PromptflowServiceIcon" SourceFile="$(var.ProductResources)logo32.ico" />
+                </Shortcut>
+                <RemoveFile Id="CleanUpShortCut" Directory="StartupFolder" Name="Prompt flow service" On="uninstall"/>
+                <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="createAndRemoveOnUninstall">
+                    <RegistryValue Name="installed" Type="integer" Value="1" />
+                    <RegistryValue Name="version" Type="string" Value="$(var.ProductVersion)" KeyPath="yes"/>
+                </RegistryKey>
             </Component>
+
 
         </ComponentGroup>
 
