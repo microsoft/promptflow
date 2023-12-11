@@ -141,7 +141,7 @@ class AzureOpenAI(ToolProvider):
             "frequency_penalty": float(frequency_penalty),
             "logit_bias": logit_bias,
             "user": user,
-            "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"},
+            "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
         }
         if functions is not None:
             validate_functions(functions)
@@ -232,6 +232,5 @@ def chat(
         user=user,
         function_call=function_call,
         functions=functions,
-        response_format=response_format,
         **kwargs,
     )
