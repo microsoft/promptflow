@@ -63,7 +63,11 @@ def get_latest_version_from_pypi(package_name):
 
 
 def hint_for_update():
-    # check for new version auto-upgrade
+    """
+    Check if there is a new version of prompt flow available every 7 days. IF yes, print a warning message to hint
+    customer to upgrade package.
+    """
+
     from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
     from promptflow._sdk._utils import read_write_by_user, print_yellow_warning
 
@@ -83,8 +87,9 @@ def hint_for_update():
         from packaging.version import parse
         if success:
             if parse(cached_versions['versions']['local']) < parse(cached_versions['versions']['pypi']):
-                print_yellow_warning("New prompt flow version available. Running 'pip install --upgrade promptflow' "
-                                     "to update.")
+                print_yellow_warning("New prompt flow version available: "
+                                     "promptflow-{cached_versions['versions']['pypi']} . "
+                                     "Running 'pip install --upgrade promptflow' to update.")
         else:
             print_yellow_warning("Failed to get the latest version from pypi. Need check Network connection and check "
                                  "if new prompt flow version is available manually.")
