@@ -119,11 +119,17 @@ class TestBatchResult:
             output=[
                 Completion(
                     choices=[CompletionChoice(text="text", finish_reason="stop", index=0, logprobs=None)],
-                    id="id", created=0, model="model", object="text_completion"
+                    id="id",
+                    created=0,
+                    model="model",
+                    object="text_completion",
                 ),
                 Completion(
                     choices=[CompletionChoice(text="text", finish_reason="stop", index=0, logprobs=None)],
-                    id="id", created=0, model="model", object="text_completion"
+                    id="id",
+                    created=0,
+                    model="model",
+                    object="text_completion",
                 ),
             ],
         )
@@ -162,3 +168,19 @@ class TestBatchResult:
         assert batch_result.system_metrics.total_tokens == 0
         assert batch_result.system_metrics.completion_tokens == 0
         assert batch_result.system_metrics.prompt_tokens == 0
+
+    def test_get_aggr_error_summary(self):
+        line_dict = {
+            0: {"node_0": Status.Completed, "node_1": Status.Completed, "node_2": Status.Completed},
+        }
+        aggr_dict = {
+            "aggr_0": Status.Completed,
+            "aggr_1": Status.Failed,
+            "aggr_2": Status.Bypassed,
+            "aggr_4": Status.Failed,
+        }
+        batch_result = self.get_bulk_result(line_dict=line_dict, aggr_dict=aggr_dict)
+        assert batch_result.aggr_error_summary == {
+            "aggr_1": {"code": "UserError", "message": "test message"},
+            "aggr_4": {"code": "UserError", "message": "test message"},
+        }

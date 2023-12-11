@@ -138,6 +138,7 @@ class BatchResult:
     metrics: Mapping[str, str]
     system_metrics: SystemMetrics
     error_summary: ErrorSummary
+    aggr_error_summary: Mapping[str, Any]
 
     @classmethod
     def create(
@@ -163,21 +164,30 @@ class BatchResult:
             metrics=aggr_result.metrics,
             system_metrics=SystemMetrics.create(start_time, end_time, line_results, aggr_result),
             error_summary=ErrorSummary.create(line_results),
+            aggr_error_summary=BatchResult._get_aggr_error_summary(aggr_result),
         )
 
     @staticmethod
-    def _get_node_status(line_results: List[LineResult], aggr_results: AggregationResult):
-        node_run_infos = _get_node_run_infos(line_results, aggr_results)
+    def _get_node_status(line_results: List[LineResult], aggr_result: AggregationResult):
+        node_run_infos = _get_node_run_infos(line_results, aggr_result)
         node_status = {}
         for node_run_info in node_run_infos:
             key = f"{node_run_info.node}.{node_run_info.status.value.lower()}"
             node_status[key] = node_status.get(key, 0) + 1
         return node_status
 
+    @staticmethod
+    def _get_aggr_error_summary(aggr_result: AggregationResult):
+        error_list = {}
+        for node_name, node_run_info in aggr_result.node_run_infos.items():
+            if node_run_info.status == Status.Failed:
+                error_list[node_name] = node_run_info.error
+        return error_list
 
-def _get_node_run_infos(line_results: List[LineResult], aggr_results: AggregationResult):
+
+def _get_node_run_infos(line_results: List[LineResult], aggr_result: AggregationResult):
     line_node_run_infos = (
         node_run_info for line_result in line_results for node_run_info in line_result.node_run_infos.values()
     )
-    aggr_node_run_infos = (node_run_info for node_run_info in aggr_results.node_run_infos.values())
+    aggr_node_run_infos = (node_run_info for node_run_info in aggr_result.node_run_infos.values())
     return chain(line_node_run_infos, aggr_node_run_infos)
