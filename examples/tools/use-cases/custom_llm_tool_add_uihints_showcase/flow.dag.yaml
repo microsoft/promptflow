@@ -1,0 +1,25 @@
+inputs:
+  website_name:
+    type: string
+    default: Microsoft
+  user_name:
+    type: string
+    default: ""
+outputs:
+  output:
+    type: string
+    reference: ${Custom_LLM_Tool_with_UI_Hints.output}
+nodes:
+- name: Custom_LLM_Tool_with_UI_Hints
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: my_tool_package.tools.tool_with_custom_llm_type_add_uihints.my_tool
+    path: prompt_template.jinja2
+  inputs:
+    connection: basic_custom_connection
+    api: my_api
+    endpoint_name: my_endpoint
+    website_name: ${inputs.website_name}
+    user_name: ${inputs.user_name}
+    temperature: 0

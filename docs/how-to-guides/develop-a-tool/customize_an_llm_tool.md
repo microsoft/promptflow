@@ -58,3 +58,39 @@ Follow the steps to [build and install your tool package](create-and-use-tool-pa
 Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/blob/main/examples/tools/use-cases/custom_llm_tool_showcase/flow.dag.yaml) in VS Code extension.  
 - There is a node named "my_custom_llm_tool" with a prompt template file. You can either use an existing file or create a new one as the prompt template file.  
 ![use_my_custom_llm_tool](../../media/how-to-guides/develop-a-tool/use_my_custom_llm_tool.png)
+
+## FAQ
+### Can I customize text box size for my tool inputs?
+Yes, you could refer [this tool example] and add `ui_hints.text_box_size` field in your tool YAML file as below. There are 4 sizes available, arranged from smallest to largest as `xs`, `sm`, `md`, `lg`.
+```yaml
+my_tool_package.tools.tool_with_custom_llm_type_add_uihints.my_tool:
+  name: Custom LLM Tool with UI Hints
+  description: This is a custom LLM tool with UI hints.
+  type: custom_llm
+  module: my_tool_package.tools.tool_with_custom_llm_type_add_uihints
+  function: my_tool
+  inputs:
+    connection:
+      type:
+        - CustomConnection
+      ui_hints:
+        text_box_size: lg
+    endpoint_name:
+      type:
+      - string
+      ui_hints:
+        text_box_size: md
+    api:
+      type:
+      - string
+      ui_hints:
+        text_box_size: sm
+    temperature:
+      default: 1.0
+      type:
+      - double
+      ui_hints:
+        text_box_size: xs
+```
+When use the tool in [this example flow], you could see the sizes of the input text boxes are displayed as the set values.
+![use_custom_llm_tool_with_uihints](../../media/how-to-guides/develop-a-tool/use_custom_llm_tool_with_uihints.png)
