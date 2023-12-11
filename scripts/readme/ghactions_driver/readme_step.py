@@ -266,11 +266,16 @@ class ReadmeStepsManage:
         Get the base directory of the git repo
         """
         if ReadmeStepsManage.repo_base_dir == "":
-            ReadmeStepsManage.repo_base_dir = (
-                subprocess.check_output(["git", "rev-parse", "--show-toplevel"])
-                .decode("utf-8")
-                .strip()
-            )
+            try:
+                ReadmeStepsManage.repo_base_dir = (
+                    subprocess.check_output(["git", "rev-parse", "--show-toplevel"])
+                    .decode("utf-8")
+                    .strip()
+                )
+                raise Exception("Not in git repo")
+            except Exception:
+                ReadmeStepsManage.repo_base_dir = Path(__file__).parent.parent.parent.parent.resolve()
+                print(ReadmeStepsManage.repo_base_dir)
         return ReadmeStepsManage.repo_base_dir
 
     @staticmethod
@@ -283,7 +288,7 @@ class ReadmeStepsManage:
         schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
         if "tutorials" in workflow_name:
-            path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml ]"
+            path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml, '!examples/flows/integrations/**' ]"
         else:
             if "web_classification" in workflow_name:
                 path_filter = (

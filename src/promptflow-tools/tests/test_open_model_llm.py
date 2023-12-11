@@ -6,11 +6,11 @@ from azure.identity import DefaultAzureCredential
 from typing import List, Dict
 
 from promptflow.tools.exception import (
-    OpenSourceLLMUserError,
-    OpenSourceLLMKeyValidationError
+    OpenModelLLMUserError,
+    OpenModelLLMKeyValidationError
 )
-from promptflow.tools.open_source_llm import (
-    OpenSourceLLM,
+from promptflow.tools.open_model_llm import (
+    OpenModelLLM,
     API,
     ContentFormatterBase,
     LlamaContentFormatter,
@@ -28,12 +28,12 @@ def validate_response(response):
 
 
 def verify_prompt_role_delimiters(message: str, codes: List[str]):
-    assert codes == "UserError/OpenSourceLLMUserError".split("/")
+    assert codes == "UserError/OpenModelLLMUserError".split("/")
 
     message_pattern = re.compile(
         r"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-        + r"lines as role delimiters: ('(assistant|user|system):\\n'[,.]){3} Current parsed role 'in the context "
-        + r"of azure ml, what does the ml stand for\?' does not meet the requirement. If you intend to use the "
+        + r"lines as role delimiters: ('(assistant|user|system):\\n'[,.]){3} Current parsed role 'the quick brown"
+        + r" fox' does not meet the requirement. If you intend to use the "
         + r"Completion API, please select the appropriate API type and deployment name. If you do intend to use the "
         + r"Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
         + r"gallery that contain 'Chat' in the name.")
@@ -42,10 +42,10 @@ def verify_prompt_role_delimiters(message: str, codes: List[str]):
 
 
 @pytest.fixture
-def verify_service_endpoints(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
-    if not open_source_llm_ws_service_connection:
+def verify_service_endpoints(open_model_llm_ws_service_connection) -> Dict[str, List[str]]:
+    if not open_model_llm_ws_service_connection:
         pytest.skip("Service Credential not available")
-    print("open_source_llm_ws_service_connection completed")
+    print("open_model_llm_ws_service_connection completed")
     required_env_vars = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME",
                          "AZURE_CLIENT_ID", "AZURE_TENANT_ID", "AZURE_CLIENT_SECRET"]
     for rev in required_env_vars:
@@ -103,26 +103,29 @@ def completion_endpoints_provider(endpoints_provider: Dict[str, List[str]]) -> D
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
-class TestOpenSourceLLM:
-    stateless_os_llm = OpenSourceLLM()
+class TestOpenModelLLM:
+    stateless_os_llm = OpenModelLLM()
     gpt2_connection = "connection/gpt2_connection"
     llama_connection = "connection/llama_chat_connection"
     llama_serverless_connection = "connection/llama_chat_serverless"
-    completion_prompt = "In the context of Azure ML, what does the ML stand for?"
+    completion_prompt = "The quick brown fox"
     chat_prompt = """system:
-You are a AI which helps Customers answer questions.
+* You are a AI which helps Customers complete a sentence.
+* Your answer should complete the provided prompt.
+* Your answer should be followed by a discussion of the meaning.
+* The discussion part of your answer must be long and detailed.
 
 user:
 """ + completion_prompt
 
-    def test_open_source_llm_completion(self, verify_service_endpoints):
+    def test_open_model_llm_completion(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
             endpoint_name=self.gpt2_connection)
         validate_response(response)
 
-    def test_open_source_llm_completion_with_deploy(self, verify_service_endpoints):
+    def test_open_model_llm_completion_with_deploy(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
@@ -130,14 +133,14 @@ user:
             deployment_name="gpt2-10")
         validate_response(response)
 
-    def test_open_source_llm_chat(self, verify_service_endpoints):
+    def test_open_model_llm_chat(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
             endpoint_name=self.gpt2_connection)
         validate_response(response)
 
-    def test_open_source_llm_chat_with_deploy(self, verify_service_endpoints):
+    def test_open_model_llm_chat_with_deploy(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
@@ -145,59 +148,59 @@ user:
             deployment_name="gpt2-10")
         validate_response(response)
 
-    def test_open_source_llm_chat_with_max_length(self, verify_service_endpoints):
+    def test_open_model_llm_chat_with_max_length(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
             endpoint_name=self.gpt2_connection,
-            max_new_tokens=2)
+            max_new_tokens=30)
         # GPT-2 doesn't take this parameter
         validate_response(response)
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_con_url_chat(self, gpt2_custom_connection):
+    def test_open_model_llm_con_url_chat(self, gpt2_custom_connection):
         tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.configs['endpoint_url']
-        with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
+        with pytest.raises(OpenModelLLMKeyValidationError) as exc_info:
             customConnectionsContainer = CustomConnectionsContainer()
             customConnectionsContainer.get_endpoint_from_custom_connection(connection=tmp)
         assert exc_info.value.message == """Required key `endpoint_url` not found in given custom connection.
 Required keys are: endpoint_url,model_family."""
-        assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
+        assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenModelLLMKeyValidationError".split("/")
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_con_key_chat(self, gpt2_custom_connection):
+    def test_open_model_llm_con_key_chat(self, gpt2_custom_connection):
         tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.secrets['endpoint_api_key']
-        with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
+        with pytest.raises(OpenModelLLMKeyValidationError) as exc_info:
             customConnectionsContainer = CustomConnectionsContainer()
             customConnectionsContainer.get_endpoint_from_custom_connection(connection=tmp)
         assert exc_info.value.message == (
             "Required secret key `endpoint_api_key` "
             + """not found in given custom connection.
 Required keys are: endpoint_api_key.""")
-        assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
+        assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenModelLLMKeyValidationError".split("/")
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_con_model_chat(self, gpt2_custom_connection):
+    def test_open_model_llm_con_model_chat(self, gpt2_custom_connection):
         tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.configs['model_family']
-        with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
+        with pytest.raises(OpenModelLLMKeyValidationError) as exc_info:
             customConnectionsContainer = CustomConnectionsContainer()
             customConnectionsContainer.get_endpoint_from_custom_connection(connection=tmp)
         assert exc_info.value.message == """Required key `model_family` not found in given custom connection.
 Required keys are: endpoint_url,model_family."""
-        assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
+        assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenModelLLMKeyValidationError".split("/")
 
-    def test_open_source_llm_escape_chat(self):
+    def test_open_model_llm_escape_chat(self):
         danger = r"The quick \brown fox\tjumped\\over \the \\boy\r\n"
         out_of_danger = ContentFormatterBase.escape_special_characters(danger)
         assert out_of_danger == "The quick \\brown fox\\tjumped\\\\over \\the \\\\boy\\r\\n"
 
-    def test_open_source_llm_llama_parse_chat_with_chat(self):
+    def test_open_model_llm_llama_parse_chat_with_chat(self):
         LlamaContentFormatter.parse_chat(self.chat_prompt)
 
-    def test_open_source_llm_llama_parse_multi_turn(self):
+    def test_open_model_llm_llama_parse_multi_turn(self):
         multi_turn_chat = """user:
 You are a AI which helps Customers answer questions.
 
@@ -211,7 +214,7 @@ Why was that the greatest movie of all time?
 """
         LlamaContentFormatter.parse_chat(multi_turn_chat)
 
-    def test_open_source_llm_llama_parse_ignore_whitespace(self):
+    def test_open_model_llm_llama_parse_ignore_whitespace(self):
         bad_chat_prompt = f"""system:
 You are a AI which helps Customers answer questions.
 
@@ -219,16 +222,16 @@ user:
 
 user:
 {self.completion_prompt}"""
-        with pytest.raises(OpenSourceLLMUserError) as exc_info:
+        with pytest.raises(OpenModelLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(bad_chat_prompt)
         verify_prompt_role_delimiters(exc_info.value.message, exc_info.value.error_codes)
 
-    def test_open_source_llm_llama_parse_chat_with_comp(self):
-        with pytest.raises(OpenSourceLLMUserError) as exc_info:
+    def test_open_model_llm_llama_parse_chat_with_comp(self):
+        with pytest.raises(OpenModelLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(self.completion_prompt)
         verify_prompt_role_delimiters(exc_info.value.message, exc_info.value.error_codes)
 
-    def test_open_source_llm_chat_endpoint_name(self, chat_endpoints_provider):
+    def test_open_model_llm_chat_endpoint_name(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             response = self.stateless_os_llm.call(
                 self.chat_prompt,
@@ -236,7 +239,7 @@ user:
                 endpoint_name=f"onlineEndpoint/{endpoint_name}")
             validate_response(response)
 
-    def test_open_source_llm_chat_endpoint_name_with_deployment(self, chat_endpoints_provider):
+    def test_open_model_llm_chat_endpoint_name_with_deployment(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             for deployment_name in chat_endpoints_provider[endpoint_name]:
                 response = self.stateless_os_llm.call(
@@ -246,7 +249,7 @@ user:
                     deployment_name=deployment_name)
                 validate_response(response)
 
-    def test_open_source_llm_completion_endpoint_name(self, completion_endpoints_provider):
+    def test_open_model_llm_completion_endpoint_name(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             response = self.stateless_os_llm.call(
                 self.completion_prompt,
@@ -254,7 +257,7 @@ user:
                 endpoint_name=f"onlineEndpoint/{endpoint_name}")
             validate_response(response)
 
-    def test_open_source_llm_completion_endpoint_name_with_deployment(self, completion_endpoints_provider):
+    def test_open_model_llm_completion_endpoint_name_with_deployment(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             for deployment_name in completion_endpoints_provider[endpoint_name]:
                 response = self.stateless_os_llm.call(
@@ -264,18 +267,18 @@ user:
                     deployment_name=deployment_name)
                 validate_response(response)
 
-    def test_open_source_llm_llama_chat(self, verify_service_endpoints):
+    def test_open_model_llm_llama_chat(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint_name=self.llama_connection)
         validate_response(response)
 
-    def test_open_source_llm_llama_serverless(self, verify_service_endpoints):
+    def test_open_model_llm_llama_serverless(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
             endpoint_name=self.llama_serverless_connection)
         validate_response(response)
 
-    def test_open_source_llm_llama_chat_history(self, verify_service_endpoints):
+    def test_open_model_llm_llama_chat_history(self, verify_service_endpoints):
         chat_history_prompt = """system:
 * Given the following conversation history and the users next question, answer the next question.
 * If the conversation is irrelevant or empty, acknowledge and ask for more input.
@@ -327,7 +330,7 @@ user:
             chat_input="Sorry I didn't follow, could you say that again?")
         validate_response(response)
 
-    def test_open_source_llm_dynamic_list_ignore_deployment(self, verify_service_endpoints):
+    def test_open_model_llm_dynamic_list_ignore_deployment(self, verify_service_endpoints):
         deployments = list_deployment_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
@@ -352,7 +355,7 @@ user:
         assert len(deployments) == 1
         assert deployments[0]['value'] == 'default'
 
-    def test_open_source_llm_dynamic_list_serverless_test(self, verify_service_endpoints):
+    def test_open_model_llm_dynamic_list_serverless_test(self, verify_service_endpoints):
         subscription_id = os.getenv("AZUREML_ARM_SUBSCRIPTION")
         resource_group_name = os.getenv("AZUREML_ARM_RESOURCEGROUP")
         workspace_name = os.getenv("AZUREML_ARM_WORKSPACE_NAME")
@@ -392,7 +395,7 @@ user:
         assert model_family == "LLaMa"
         assert endpoint_key == eps_keys['primaryKey']
 
-    def test_open_source_llm_dynamic_list_custom_connections_test(self, verify_service_endpoints):
+    def test_open_model_llm_dynamic_list_custom_connections_test(self, verify_service_endpoints):
         custom_container = CustomConnectionsContainer()
         credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
 
@@ -403,7 +406,7 @@ user:
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
         assert len(connections) > 1
 
-    def test_open_source_llm_dynamic_list_happy_path(self, verify_service_endpoints):
+    def test_open_model_llm_dynamic_list_happy_path(self, verify_service_endpoints):
         endpoints = list_endpoint_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
@@ -437,7 +440,7 @@ user:
                 prompt,
                 api_type,
                 endpoint_name=endpoint['value'],
-                max_new_tokens=10,
+                max_new_tokens=30,
                 model_kwargs={})
             validate_response(response)
 
@@ -459,11 +462,11 @@ user:
                     api_type,
                     endpoint_name=endpoint['value'],
                     deployment_name=deployment['value'],
-                    max_new_tokens=10,
+                    max_new_tokens=30,
                     model_kwargs={})
                 validate_response(response)
 
-    def test_open_source_llm_get_model_llama(self):
+    def test_open_model_llm_get_model_llama(self):
         model_assets = [
             "azureml://registries/azureml-meta/models/Llama-2-7b-chat/versions/14",
             "azureml://registries/azureml-meta/models/Llama-2-7b/versions/12",
@@ -476,7 +479,7 @@ user:
         for asset_name in model_assets:
             assert ModelFamily.LLAMA == get_model_type(asset_name)
 
-    def test_open_source_llm_get_model_gpt2(self):
+    def test_open_model_llm_get_model_gpt2(self):
         model_assets = [
             "azureml://registries/azureml-staging/models/gpt2/versions/9",
             "azureml://registries/azureml/models/gpt2/versions/9",
@@ -487,7 +490,7 @@ user:
         for asset_name in model_assets:
             assert ModelFamily.GPT2 == get_model_type(asset_name)
 
-    def test_open_source_llm_get_model_dolly(self):
+    def test_open_model_llm_get_model_dolly(self):
         model_assets = [
             "azureml://registries/azureml/models/databricks-dolly-v2-12b/versions/11"
         ]
@@ -495,7 +498,7 @@ user:
         for asset_name in model_assets:
             assert ModelFamily.DOLLY == get_model_type(asset_name)
 
-    def test_open_source_llm_get_model_falcon(self):
+    def test_open_model_llm_get_model_falcon(self):
         model_assets = [
             "azureml://registries/azureml/models/tiiuae-falcon-40b/versions/2",
             "azureml://registries/azureml/models/tiiuae-falcon-40b/versions/2"
@@ -504,7 +507,7 @@ user:
         for asset_name in model_assets:
             assert ModelFamily.FALCON == get_model_type(asset_name)
 
-    def test_open_source_llm_get_model_failure_cases(self):
+    def test_open_model_llm_get_model_failure_cases(self):
         bad_model_assets = [
             "azureml://registries/azureml-meta/models/CodeLlama-7b-Instruct-hf/versions/3",
             "azureml://registries/azureml-staging/models/gpt-2/versions/9",
