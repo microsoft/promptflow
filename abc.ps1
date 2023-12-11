@@ -1,13 +1,17 @@
-$first_commit = 'yigao/enforcer_fix' # github.sha
-$diff_commit = 'main'
+$first_commit = '98e5f40688c8380d0a5ceedc29e08f1294ce6afe' # github.sha
 $github_repository = 'microsoft/promptflow'
-$first_commit_hash = 'a1bfd6865ac8a52a0af9f8a3c723055e287f9780' #git rev-parse $first_commit
+$first_commit_hash = '98e5f40688c8380d0a5ceedc29e08f1294ce6afe' #git rev-parse $first_commit
 
 
 function get_diffs() {
 
+    $snippet_debug = 1
+
     $need_to_check = New-Object System.Collections.Generic.HashSet[string]
-    git diff --name-only $first_commit $diff_commit | ForEach-Object {
+    git diff --name-only HEAD main | ForEach-Object {
+        if ($snippet_debug -eq 1) {
+            Write-Host "[DEBUG][git diff --name-only HEAD main]$_"
+        }
         if ($_.Contains("src/promptflow")) {
             $need_to_check.Add("sdk_cli")
         }
@@ -50,6 +54,9 @@ function get_diffs() {
         | ConvertFrom-Json `
         | Select-Object -ExpandProperty check_runs `
         | Where-Object {
+            if ($snippet_debug -eq 1) {
+                Write-Host "[DEBUG][check-runs name]$($_.name)"
+            }
             foreach ($key in $pipelines.Keys) {
                 $value = $pipelines[$key]
                 if ($value -eq 0) {
