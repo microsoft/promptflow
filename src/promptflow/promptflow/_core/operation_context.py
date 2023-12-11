@@ -18,6 +18,7 @@ class OperationContext(Dict):
 
     _CONTEXT_KEY = "operation_context"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
+    USER_AGENT_KEY = "user_agent"
 
     @classmethod
     def get_instance(cls):
@@ -102,8 +103,8 @@ class OperationContext(Dict):
         """
 
         def parts():
-            if "user_agent" in self:
-                yield self.get("user_agent")
+            if self.USER_AGENT_KEY in self:
+                yield self.get(self.USER_AGENT_KEY)
             yield f"promptflow/{VERSION}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
@@ -119,7 +120,7 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        if "user_agent" in self:
+        if self.USER_AGENT_KEY in self:
             if user_agent not in self.user_agent:
                 self.user_agent = f"{self.user_agent.strip()} {user_agent.strip()}"
         else:

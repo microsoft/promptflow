@@ -340,6 +340,3 @@ class AzureFlowSource:
     LOCAL = "local"
     PF_SERVICE = "pf_service"
     INDEX = "index"
-
-
-USER_AGENT_KEY = "user_agent"

@@ -52,7 +52,6 @@ from promptflow._sdk._constants import (
     REGISTRY_URI_PREFIX,
     REMOTE_URI_PREFIX,
     USE_VARIANTS,
-    USER_AGENT_KEY,
     VARIANTS,
     CommonYamlFields,
     ConnectionProvider,
@@ -867,7 +866,7 @@ class ClientUserAgentUtil:
     def get_user_agent(cls):
         context = cls._get_context()
         # directly get from context since client side won't need promptflow/xxx.
-        return context.get(USER_AGENT_KEY, "").strip()
+        return context.get(context.USER_AGENT_KEY, "").strip()
 
     @classmethod
     def append_user_agent(cls, user_agent: Optional[str]):
