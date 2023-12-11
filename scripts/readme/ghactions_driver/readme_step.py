@@ -288,12 +288,18 @@ class ReadmeStepsManage:
         schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
         if "tutorials" in workflow_name:
-            # for tutorial READMEs, require resources.txt to identify resources
-            resource_path = Path(ReadmeStepsManage.git_base_dir()) / ReadmeSteps.working_dir / "resources.txt"
+            # markdown filename has some exceptions, special handle here
+            if "chat_with_pdf" in workflow_name:
+                readme_name = "chat-with-pdf.md"
+            elif "fine_tuning_evaluation_promptflow_quality_improvement" in workflow_name:
+                readme_name = "promptflow-quality-improvement.md"
+            else:
+                readme_name = "README.md"
+            readme_path = Path(ReadmeStepsManage.git_base_dir()) / ReadmeSteps.working_dir / readme_name
             # local import to avoid circular import
             from .resource_resolver import resolve_tutorial_resource
 
-            path_filter = resolve_tutorial_resource(workflow_name, resource_path.resolve())
+            path_filter = resolve_tutorial_resource(workflow_name, readme_path.resolve())
         else:
             if "flow_with_additional_includes" in workflow_name or "flow_with_symlinks" in workflow_name:
                 # these two flows have dependencies on flow web-classification

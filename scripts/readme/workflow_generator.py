@@ -59,9 +59,8 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
     if "tutorials" in gh_working_dir:
-        # for tutorials, require text file with same name to identify resources
-        resource_path = Path(ReadmeStepsManage.git_base_dir()) / str(notebook).replace(".ipynb", ".txt")
-        path_filter = resolve_tutorial_resource(workflow_name, resource_path.resolve())
+        notebook_path = Path(ReadmeStepsManage.git_base_dir()) / str(notebook)
+        path_filter = resolve_tutorial_resource(workflow_name, notebook_path.resolve())
     else:
         path_filter = (
             f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml, "

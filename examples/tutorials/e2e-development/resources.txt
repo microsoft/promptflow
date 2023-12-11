@@ -1,2 +1,0 @@
-examples/connections/azure_openai.yml
-examples/flows/chat/chat-with-pdf
