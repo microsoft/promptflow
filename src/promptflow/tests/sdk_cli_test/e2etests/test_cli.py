@@ -1637,3 +1637,35 @@ class TestCli:
                     "--inputs",
                     "key=API_BASE",
                 )
+
+    def test_cli_command_no_sub_command(self, capfd):
+        try:
+            run_pf_command(
+                "run",
+            )
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        # will run pf run -h
+        out, _ = capfd.readouterr()
+        assert "A CLI tool to manage runs for prompt flow." in out
+
+        try:
+            run_pf_command("run", "-h")
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        # will run pf run -h
+        out, _ = capfd.readouterr()
+        assert "A CLI tool to manage runs for prompt flow." in out
+
+    def test_unknown_command(self, capfd):
+        try:
+            run_pf_command(
+                "unknown",
+            )
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        _, err = capfd.readouterr()
+        assert "invalid choice" in err
