@@ -32,7 +32,7 @@ jobs:
 
                 git log -1 | ForEach-Object {
                     if ($_.Contains("Merge")) {
-                        $merge_commit = $_.Split(" ")[-1]
+                        $merge_commit = $_.Split(" ")[-3]
                     }
                 }
 
