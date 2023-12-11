@@ -127,6 +127,8 @@ def main():
         show_privacy_statement()
         show_welcome_message()
         command_args.append("-h")
+    elif len(command_args) == 1:
+        command_args.append("-h")
     setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 
