@@ -24,7 +24,9 @@ jobs:
         run: |
             Set-PSDebug -Trace 1
             $first_commit = "${{ github.sha }}"
-            $github_repository = 'microsoft/promptflow'            
+            $github_repository = 'microsoft/promptflow'
+
+            git log -3
             
             function get_diffs() {
                 $snippet_debug = 1
