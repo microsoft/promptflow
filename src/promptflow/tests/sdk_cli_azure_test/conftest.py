@@ -5,6 +5,7 @@
 import logging
 import os
 import uuid
+import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Callable
@@ -121,6 +122,7 @@ def runtime(runtime_name: str) -> str:
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
+CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 
 
 @pytest.fixture
@@ -140,6 +142,149 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
         }
     )
     return app.test_client()
+
+
+@pytest.fixture
+def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
+    from promptflow._sdk._serving.app import create_app as create_serving_app
+    from promptflow._sdk._serving.utils import encode_dict
+    from promptflow._core.connection_manager import ConnectionManager
+    import json
+
+    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
+    connection_manager = ConnectionManager(connection_dict)
+
+    model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_ENCODED_CONNECTIONS": encode_dict(connection_manager.to_connections_dict())})  # noqa: E501
+    app = create_serving_app(
+        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+        extension_type="azureml",
+    )
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
+def flow_serving_client_with_prt_config_env(mocker: MockerFixture, subscription_id, resource_group_name, workspace_name):
+    from promptflow._sdk._serving.app import create_app as create_serving_app
+
+    model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(
+        os.environ,
+        {
+            "PRT_CONFIG_OVERRIDE": f"deployment.subscription_id={subscription_id},"
+            f"deployment.resource_group={resource_group_name},"
+            f"deployment.workspace_name={workspace_name},"
+            "app.port=8088",
+        },
+    )
+    app = create_serving_app(
+        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+        extension_type="azureml",
+    )
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
+def flow_serving_client_with_connection_provider_env(mocker: MockerFixture, remote_workspace_resource_id):
+    from promptflow._sdk._serving.app import create_app as create_serving_app
+
+    model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_CONNECTION_PROVIDER": remote_workspace_resource_id})
+    app = create_serving_app(
+        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+        extension_type="azureml",
+    )
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
+def flow_serving_client_with_aml_resource_id_env(mocker: MockerFixture, remote_workspace_resource_id):
+    from promptflow._sdk._serving.app import create_app as create_serving_app
+
+    aml_resource_id = "{}/onlineEndpoints/{}/deployments/{}".format(remote_workspace_resource_id, "myendpoint", "blue")
+    model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(os.environ, {"AML_DEPLOYMENT_RESOURCE_ID": aml_resource_id})
+    app = create_serving_app(
+        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+        extension_type="azureml",
+    )
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+def create_serving_client_with_connections(
+    model_name, mocker: MockerFixture, connections: dict = {}
+):
+    from promptflow._sdk._serving.app import create_app as create_serving_app
+
+    model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(
+        os.environ,
+        {
+            **connections,
+        },
+    )
+    app = create_serving_app(extension_type="azureml")
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
+def serving_client_with_connection_name_override(mocker: MockerFixture, remote_workspace_resource_id):
+    connections = {
+        "aoai_connection": "azure_open_ai_connection",
+        "PROMPTFLOW_CONNECTION_PROVIDER": remote_workspace_resource_id
+    }
+    return create_serving_client_with_connections("llm_connection_override", mocker, connections)
+
+
+@pytest.fixture
+def serving_client_with_connection_data_override(mocker: MockerFixture, remote_workspace_resource_id):
+    model_name = "llm_connection_override"
+    model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute()
+    # load arm connection template
+    connection_arm_template = json.loads(model_path.joinpath("connection_arm_template.json").read_text())
+    # load local connection info
+    connections = json.loads(Path(CONNECTION_FILE).read_text())
+    aoai_connection = connections["azure_open_ai_connection"]
+    connection_arm_template["properties"]["credentials"]["key"] = aoai_connection["value"]["api_key"]
+    connection_arm_template["properties"]["target"] = aoai_connection["value"]["api_base"]
+    connection_arm_template["properties"]["metadata"]["ApiVersion"] = aoai_connection["value"]["api_version"]
+    override_data = json.dumps(connection_arm_template)
+    connections = {
+        "aoai_connection": override_data,
+        "PROMPTFLOW_CONNECTION_PROVIDER": remote_workspace_resource_id
+    }
+    return create_serving_client_with_connections(model_name, mocker, connections)
+
 
 
 @pytest.fixture

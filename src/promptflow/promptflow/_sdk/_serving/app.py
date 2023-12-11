@@ -45,9 +45,7 @@ class PromptflowServingApp(Flask):
             logger.info(f"Environment variable keys: {self.environment_variables.keys()}")
 
             # default to local, can be override when creating the app
-            extension_type = kwargs.get("extension_type", ExtensionType.Default.value)
-            self.extension_type = ExtensionType(extension_type.lower())
-            self.extension = ExtensionFactory.create_extension(self.extension_type, logger, **kwargs)
+            self.extension = ExtensionFactory.create_extension(logger, **kwargs)
 
             self.flow_invoker: FlowInvoker = None
             # parse promptflow project path

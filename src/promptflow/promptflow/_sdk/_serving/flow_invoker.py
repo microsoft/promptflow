@@ -87,11 +87,13 @@ class FlowInvoker:
         connection_provider = "local" if connection_provider is None else connection_provider
         if isinstance(connection_provider, str):
             logger.info(f"Getting connections from pf client with provider {connection_provider}...")
+            connections_to_ignore = list(self.connections.keys())
+            connections_to_ignore.extend(self.connections_name_overrides.values())
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             connections = get_local_connections_from_executable(
                 executable=self._executable_flow,
                 client=PFClient(config={"connection.provider": connection_provider}),
-                connections_to_ignore=list(self.connections.keys()),
+                connections_to_ignore=connections_to_ignore,
                 # fetch connections with overrided name
                 connections_to_add=list(self.connections_name_overrides.keys()),
             )

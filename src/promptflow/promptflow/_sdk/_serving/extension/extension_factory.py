@@ -17,8 +17,11 @@ class ExtensionFactory:
     """ExtensionFactory is used to create extension based on extension type."""
 
     @staticmethod
-    def create_extension(extension_type: ExtensionType, logger, **kwargs) -> AppExtension:
+    def create_extension(logger, **kwargs) -> AppExtension:
         """Create extension based on extension type."""
+        extension_type_str = kwargs.get("extension_type", ExtensionType.Default.value)
+        extension_type = ExtensionType(extension_type_str.lower())
+
         if extension_type == ExtensionType.AzureML:
             from promptflow._sdk._serving.extension.azureml_extension import AzureMLExtension
 

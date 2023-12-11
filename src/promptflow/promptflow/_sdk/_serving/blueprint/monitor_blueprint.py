@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 
 from flask import Blueprint, current_app as app, request
-from promptflow._sdk._serving.flow_monitor import FlowMonitor
+from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
 
 
 def is_monitoring_enabled() -> bool:

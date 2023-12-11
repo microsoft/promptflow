@@ -3,9 +3,9 @@
 # ---------------------------------------------------------
 
 import time
-from promptflow._sdk._serving.data_collector import FlowDataCollector
-from promptflow._sdk._serving.streaming_monitor import StreamingMonitor
-from promptflow._sdk._serving.metrics import MetricsRecorder, ResponseType
+from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
+from promptflow._sdk._serving.monitor.streaming_monitor import StreamingMonitor
+from promptflow._sdk._serving.monitor.metrics import MetricsRecorder, ResponseType
 from promptflow._sdk._serving.utils import streaming_response_required, get_cost_up_to_now
 from promptflow._sdk._serving.flow_result import FlowResult
 from promptflow._utils.exception_utils import ErrorResponse

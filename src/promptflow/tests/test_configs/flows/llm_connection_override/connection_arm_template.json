@@ -1,0 +1,31 @@
+{
+    "id": "/subscriptions/xxxx/resourceGroups/xxx/providers/Microsoft.MachineLearningServices/workspaces/xxx/connections/azure_open_ai_connection",
+    "name": "azure_open_ai_connection",
+    "type": "Microsoft.MachineLearningServices/workspaces/connections",
+    "properties": {
+        "authType": "ApiKey",
+        "credentials": {
+            "key": "api_key"
+        },
+        "category": "AzureOpenAI",
+        "expiryTime": null,
+        "target": "api_base",
+        "createdByWorkspaceArmId": null,
+        "isSharedToAll": false,
+        "sharedUserList": [],
+        "metadata": {
+            "azureml.flow.connection_type": "AzureOpenAI",
+            "azureml.flow.module": "promptflow.connections",
+            "ApiType": "azure",
+            "ApiVersion": "2023-03-15-preview"
+        }
+    },
+    "systemData": {
+        "createdAt": "2023-06-14T09:40:51.1117116Z",
+        "createdBy": "test@microsoft.com",
+        "createdByType": "User",
+        "lastModifiedAt": "2023-06-14T09:40:51.1117116Z",
+        "lastModifiedBy": "test@microsoft.com",
+        "lastModifiedByType": "User"
+    }
+}

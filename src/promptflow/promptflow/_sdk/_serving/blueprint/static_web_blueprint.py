@@ -12,7 +12,7 @@ def construct_staticweb_blueprint(static_folder):
     """Construct static web blueprint."""
     staticweb_blueprint = Blueprint('staticweb_blueprint', __name__, static_folder=static_folder)
 
-    @staticweb_blueprint.route("/", defaults={"path": ""}, methods=["GET", "POST"])
+    @staticweb_blueprint.route("/", methods=["GET", "POST"])
     def home():
         """Show the home page."""
         index_path = Path(static_folder) / "index.html"

@@ -10,13 +10,14 @@ from pathlib import Path
 from promptflow._sdk._configuration import Configuration
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
-from promptflow._sdk._serving.metrics import MetricsRecorder
-from promptflow._sdk._serving.flow_monitor import FlowMonitor
+from promptflow._sdk._serving.monitor.metrics import MetricsRecorder
+from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
+from promptflow._sdk._serving.utils import get_pf_serving_env
 from promptflow._sdk._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
 from promptflow._sdk._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
 
 USER_AGENT = f"promptflow-local-serving/{VERSION}"
-DEFAULT_STATIC_PATH = Path(__file__).parent / "static"
+DEFAULT_STATIC_PATH = Path(__file__).parent.parent / "static"
 
 
 class AppExtension(ABC):
@@ -25,34 +26,56 @@ class AppExtension(ABC):
 
     @abstractmethod
     def get_flow_project_path(self) -> str:
+        """Get flow project path."""
         pass
 
     @abstractmethod
     def get_flow_name(self) -> str:
+        """Get flow name."""
         pass
 
     @abstractmethod
     def get_connection_provider(self) -> str:
+        """Get connection provider."""
         pass
 
     @abstractmethod
     def get_blueprints(self):
+        """Get blueprints for current extension."""
         pass
 
     def get_override_connections(self, flow: Flow) -> (dict, dict):
+        """
+        Get override connections for current extension.
+
+        :param flow: The flow to execute.
+        :type flow: ~promptflow._sdk.entities._flow.Flow
+        :return: The override connections, first dict is for the overrided connection data, second dict is for the overrided connection name.  # noqa: E501
+        :rtype: (dict, dict)
+        """
         return {}, {}
 
     def raise_ex_on_invoker_initialization_failure(self, ex: Exception):
+        """
+        whether to raise exception when initializing flow invoker failed.
+
+        :param ex: The exception when initializing flow invoker.
+        :type ex: Exception
+        :return: Whether to raise exception when initializing flow invoker failed.
+        """
         return True
 
     def get_user_agent(self) -> str:
+        """Get user agent used for current extension."""
         return USER_AGENT
 
-    def get_extra_metrics_dimensions(self):
+    def get_metrics_common_dimensions(self):
+        """Get common dimensions for metrics if exist."""
         return self._get_common_dimensions_from_env()
 
     def get_flow_monitor(self) -> FlowMonitor:
-        extra_dimensions = self.get_extra_metrics_dimensions()
+        """Get flow monitor for current extension."""
+        extra_dimensions = self.get_metrics_common_dimensions()
         metrics_recorder = MetricsRecorder(common_dimensions=extra_dimensions)
         # default no data collector, no app insights metric exporter
         return FlowMonitor(self.logger, self.get_flow_name(), None, metrics_recorder=metrics_recorder)
@@ -86,6 +109,7 @@ class AppExtension(ABC):
 
 
 class DefaultAppExtension(AppExtension):
+    """default app extension for local serve."""
     def __init__(self, logger, **kwargs):
         self.logger = logger
         static_folder = kwargs.get("static_folder", None)

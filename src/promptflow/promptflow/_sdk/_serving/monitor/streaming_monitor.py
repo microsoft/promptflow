@@ -4,7 +4,7 @@
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._serving.utils import get_cost_up_to_now
-from promptflow._sdk._serving.metrics import ResponseType
+from promptflow._sdk._serving.monitor.metrics import ResponseType
 from promptflow._utils.logger_utils import LoggerFactory
 
 logger = LoggerFactory.get_logger(LOGGER_NAME)
