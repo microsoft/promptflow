@@ -311,11 +311,21 @@ class ReadmeStepsManage:
             path_filter_list.append(f".github/workflows/{workflow_name}.yml")
             path_filter = "[ " + ", ".join(path_filter_list) + " ]"
         else:
-            path_filter = (
-                f"[ {ReadmeSteps.working_dir}/**, "
-                + "examples/*requirements.txt, "
-                + f".github/workflows/{workflow_name}.yml ]"
-            )
+            if "flow-with-additional-includes" in workflow_name or "flow-with-symlinks" in workflow_name:
+                # these two flows have dependencies on flow web-classification
+                # so corresponding workflows should also listen to changes in web-classification
+                path_filter = (
+                    f"[ {ReadmeSteps.working_dir}/**, "
+                    + "examples/*requirements.txt, "
+                    + "examples/flows/standard/web-classification/**, "
+                    + f".github/workflows/{workflow_name}.yml ]"
+                )
+            else:
+                path_filter = (
+                    f"[ {ReadmeSteps.working_dir}/**, "
+                    + "examples/*requirements.txt, "
+                    + f".github/workflows/{workflow_name}.yml ]"
+                )
         replacements = {
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
