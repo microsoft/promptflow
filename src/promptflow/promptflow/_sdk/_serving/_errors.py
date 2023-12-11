@@ -29,6 +29,18 @@ class UnsupportedConnectionProvider(FlowConnectionError):
         )
 
 
+class MissingConnectionProvider(FlowConnectionError):
+    pass
+
+
+class InvalidConnectionDataError(FlowConnectionError):
+    def __init__(self, connection_name):
+        super().__init__(
+            message_format="Invalid connection data detected while overriding connection {connection_name}.",
+            connection_name=connection_name,
+            target=ErrorTarget.FLOW_INVOKER)
+
+
 class UnexpectedConnectionProviderReturn(FlowConnectionError):
     pass
 

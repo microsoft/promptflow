@@ -3,6 +3,9 @@
 # ---------------------------------------------------------
 import json
 import os
+import time
+import base64
+import zlib
 
 from flask import jsonify, request
 
@@ -34,7 +37,7 @@ def load_request_data(flow, raw_data, logger):
         elif isinstance(raw_data, str):
             input = raw_data
         default_key = list(flow.inputs.keys())[0]
-        logger.info(f"Promptflow executor received non json data: {input}, default key: {default_key}")
+        logger.debug(f"Promptflow executor received non json data: {input}, default key: {default_key}")
         data = {default_key: input}
     return data
 
@@ -53,7 +56,7 @@ def validate_request_data(flow, data):
 
 def streaming_response_required():
     """Check if streaming response is required."""
-    return "text/event-stream" in request.accept_mimetypes.values()
+    return "text/event-stream" in request.accept_mimetypes.values()  
 
 
 def get_sample_json(project_path, logger):
@@ -91,3 +94,46 @@ def handle_error_to_response(e, logger):
     if isinstance(e, NotAcceptable):
         response_code = 406
     return jsonify(resp.to_simplified_dict()), response_code
+
+
+def get_pf_serving_env(env_key: str):
+    if len(env_key) == 0:
+        return None
+    value = os.getenv(env_key, None)
+    if value is None and env_key.startswith("PROMPTFLOW_"):
+        value = os.getenv(env_key.replace("PROMPTFLOW_", "PF_"), None)
+    return value
+
+
+def get_cost_up_to_now(start_time: float):
+    return (time.time() - start_time) * 1000
+
+
+def enable_monitoring(func):
+    func._enable_monitoring = True
+    return func
+
+
+def normalize_connection_name(connection_name: str):
+    return connection_name.replace(" ", "_")
+
+
+def decode_dict(data: str) -> dict:
+    # str -> bytes
+    data = data.encode()
+    zipped_conns = base64.b64decode(data)
+    # gzip decode
+    conns_data = zlib.decompress(zipped_conns, 16 + zlib.MAX_WBITS)
+    return json.loads(conns_data.decode())
+
+
+def encode_dict(data: dict) -> str:
+    # json encode
+    data = json.dumps(data)
+    # gzip compress
+    gzip_compress = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
+    zipped_data = gzip_compress.compress(data.encode()) + gzip_compress.flush()
+    # base64 encode
+    b64_data = base64.b64encode(zipped_data)
+    # bytes -> str
+    return b64_data.decode()
