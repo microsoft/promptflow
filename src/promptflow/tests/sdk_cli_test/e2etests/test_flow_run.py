@@ -1058,14 +1058,9 @@ class TestFlowRun:
         # test with other local run operations
         run = pf.runs.get(run_name)
         assert run.name == run_name
-
         details = pf.get_details(run_name)
         assert details.shape == (3, 5)
-
         metrics = pf.runs.get_metrics(run_name)
         assert metrics == {}
-
         pf.stream(run_name)
-
-        # need to fix the visualize API
-        # pf.visualize([run_name])
+        pf.visualize([run_name])

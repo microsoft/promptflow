@@ -317,7 +317,7 @@ class RunOperations(TelemetryMixin):
                 name=run.name,
                 display_name=run.display_name,
                 create_time=run.created_on,
-                flow_path=run.properties[FlowRunProperties.FLOW_PATH],
+                flow_path=run.properties.get(FlowRunProperties.FLOW_PATH, None),
                 output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,
