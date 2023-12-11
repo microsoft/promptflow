@@ -4,7 +4,7 @@
 import pytest
 
 from promptflow import PFClient
-from promptflow._sdk._utils import get_client_user_agent
+from promptflow._sdk._utils import ClientUserAgentUtil
 
 
 @pytest.mark.sdk_test
@@ -12,5 +12,5 @@ from promptflow._sdk._utils import get_client_user_agent
 class TestPFClient:
     def test_pf_client_user_agent(self):
         PFClient()
-        assert "promptflow-sdk" in get_client_user_agent()
-        assert "promptflow/" not in get_client_user_agent()
+        assert "promptflow-sdk" in ClientUserAgentUtil.get_user_agent()
+        assert "promptflow/" not in ClientUserAgentUtil.get_user_agent()

@@ -22,7 +22,7 @@ from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
-from promptflow._sdk._utils import get_client_user_agent
+from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -1558,7 +1558,7 @@ class TestCli:
                     "--name",
                     "not_exist",
                 )
-        user_agent = get_client_user_agent()
+        user_agent = ClientUserAgentUtil.get_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
         assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli"}
 
@@ -1594,7 +1594,7 @@ class TestCli:
                 "--user-agent",
                 "a/1.0.0 b/2.0",
             )
-        user_agent = get_client_user_agent()
+        user_agent = ClientUserAgentUtil.get_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
         assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "a", "b"}
         context.user_agent = ""

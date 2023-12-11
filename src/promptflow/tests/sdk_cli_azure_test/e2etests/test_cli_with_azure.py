@@ -12,7 +12,7 @@ from mock.mock import patch
 
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._utils import get_client_user_agent
+from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._sdk.entities import Run
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 from promptflow.azure import PFClient
@@ -167,7 +167,7 @@ class TestCliWithAzure:
                     "not_exist",
                     pf=pf,
                 )
-            user_agent = get_client_user_agent()
+            user_agent = ClientUserAgentUtil.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
             assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli"}
 

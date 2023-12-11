@@ -882,23 +882,15 @@ class ClientUserAgentUtil:
                 cls.append_user_agent(os.environ[env_name])
 
 
-def get_client_user_agent():
-    """Get client user agent from OperationContext.
-
-    For client scenario, ua won't include promptflow/xxx.
-
-    """
-    return ClientUserAgentUtil.get_user_agent()
-
-
 def setup_user_agent_to_operation_context(user_agent):
     """Setup user agent to OperationContext.
     For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
     For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
     For calls from SDK, ua will be like: promptflow-sdk/
     """
-    ClientUserAgentUtil.update_user_agent_from_env_var()
+    # add user added UA after SDK/CLI
     ClientUserAgentUtil.append_user_agent(user_agent)
+    ClientUserAgentUtil.update_user_agent_from_env_var()
     return ClientUserAgentUtil.get_user_agent()
 
 
@@ -1061,7 +1053,7 @@ def interactive_credential_disabled():
 def is_from_cli():
     from promptflow._cli._user_agent import USER_AGENT as CLI_UA
 
-    return CLI_UA in get_client_user_agent()
+    return CLI_UA in ClientUserAgentUtil.get_user_agent()
 
 
 def is_url(value: Union[PathLike, str]) -> bool:
