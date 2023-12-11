@@ -32,13 +32,13 @@ jobs:
                 }
 
                 if ($snippet_debug -eq 1) {
-                    echo "[DEBUG][merge_commit]$merge_commit" >> $env:GITHUB_OUTPUT
+                    echo "merge_commit $merge_commit" >> $env:GITHUB_OUTPUT
                 }
             
                 $need_to_check = New-Object System.Collections.Generic.HashSet[string]
                 git diff --name-only HEAD origin/main | ForEach-Object {
                     if ($snippet_debug -eq 1) {
-                        echo "[DEBUG][git diff --name-only HEAD main]$_" >> $env:GITHUB_OUTPUT
+                        echo "git diff --name-only HEAD main $_" >> $env:GITHUB_OUTPUT
                     }
                     if ($_.Contains("src/promptflow")) {
                         $need_to_check.Add("sdk_cli")
@@ -85,7 +85,7 @@ jobs:
                     | Select-Object -ExpandProperty check_suites `
                     | ForEach-Object {
                         if ($snippet_debug -eq 1) {
-                            echo "[DEBUG][check-suites id]$($_.id)" >> $env:GITHUB_OUTPUT
+                            echo "check-suites id $($_.id)" >> $env:GITHUB_OUTPUT
                         }
                         $suite_id = $_.id
                         $(gh api /repos/microsoft/promptflow/check-suites/$suite_id/check-runs) `
@@ -93,7 +93,7 @@ jobs:
                         | Select-Object -ExpandProperty check_runs `
                         | ForEach-Object {
                             if ($snippet_debug -eq 1) {
-                                echo "[DEBUG][check-runs name]$($_.name)" >> $env:GITHUB_OUTPUT
+                                echo "check runs name $($_.name)" >> $env:GITHUB_OUTPUT
                             }
                             foreach ($key in $pipelines.Keys) {
                                 $value = $pipelines[$key]
@@ -119,7 +119,7 @@ jobs:
                     if ($failed_reason -ne "") {
                         echo "$failed_reason" >> $env:GITHUB_OUTPUT
                         if ($snippet_debug -eq 1) {
-                            echo "[DEBUG][pipelines_count]" >> $env:GITHUB_OUTPUT
+                            echo "pipelines_count" >> $env:GITHUB_OUTPUT
                             $pipelines_count.GetEnumerator() | ForEach-Object {
                                 echo "  $($_.Key): $($_.Value)" >> $env:GITHUB_OUTPUT
                             }
@@ -154,7 +154,7 @@ jobs:
                         }
                     }
                     if ($snippet_debug -eq 1) {
-                        echo "[DEBUG][pipelines_count]" >> $env:GITHUB_OUTPUT
+                        echo "pipelines_count" >> $env:GITHUB_OUTPUT
                         $pipelines_count.GetEnumerator() | ForEach-Object {
                             echo "  $($_.Key): $($_.Value)" >> $env:GITHUB_OUTPUT
                         }
