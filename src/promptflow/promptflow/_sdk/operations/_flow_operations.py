@@ -365,10 +365,11 @@ class FlowOperations(TelemetryMixin):
 
     def _export_flow_connections(
         self,
-        flow: ProtectedFlow,
+        flow_dag_path: Path,
         *,
         output_dir: Path,
     ):
+        flow: ProtectedFlow = load_flow(flow_dag_path)
         with _change_working_dir(flow.code):
             if flow.language == FlowLanguage.CSharp:
                 from promptflow.batch import CSharpExecutorProxy
@@ -583,7 +584,7 @@ class FlowOperations(TelemetryMixin):
 
         # use new flow dag path below as origin one may miss additional includes
         connection_paths, env_var_names = self._export_flow_connections(
-            flow=flow,
+            flow_dag_path=new_flow_dag_path,
             output_dir=output_dir / "connections",
         )
 

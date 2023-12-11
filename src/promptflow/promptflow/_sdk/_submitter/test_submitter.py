@@ -413,12 +413,12 @@ class TestSubmitterViaProxy(TestSubmitter):
         from promptflow._constants import LINE_NUMBER_KEY
 
         if not connections:
-            connections = SubmitterHelper.get_used_connection_names(
+            connections = SubmitterHelper.resolve_used_connections(
+                flow=self.flow,
                 tools_meta=CSharpExecutorProxy.get_tool_metadata(
                     flow_file=self.flow.flow_dag_path,
                     working_dir=self.flow.code,
                 ),
-                flow_dag=self.flow.dag,
             )
         credential_list = ConnectionManager(connections).get_secret_list()
 
@@ -469,12 +469,12 @@ class TestSubmitterViaProxy(TestSubmitter):
     def exec_with_inputs(self, inputs):
         from promptflow._constants import LINE_NUMBER_KEY
 
-        connections = SubmitterHelper.get_used_connection_names(
+        connections = SubmitterHelper.resolve_used_connections(
+            flow=self.flow,
             tools_meta=CSharpExecutorProxy.get_tool_metadata(
                 flow_file=self.flow.path,
                 working_dir=self.flow.code,
             ),
-            flow_dag=self.flow.dag,
         )
         storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
         flow_executor = CSharpExecutorProxy.create(
