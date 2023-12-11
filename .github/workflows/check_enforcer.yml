@@ -75,7 +75,7 @@ jobs:
                     
                     foreach ($item in $need_to_check) {
                         if ($item -eq "sdk_cli") {
-                            $pipelines.sdk_cli_tests = 2
+                            $pipelines.sdk_cli_tests = 4
                             $pipelines.sdk_cli_global_config_tests = 1
                             $pipelines.sdk_cli_azure_test = 2
                             $pipelines.sdk_pfs_e2e_test = 2
@@ -83,24 +83,34 @@ jobs:
                     }
             
                     # Get pipeline status.
-                    $valid_status_array = $(gh api /repos/$github_repository/commits/$merge_commit/check-runs) `
+                    $valid_status_array = @()
+
+                    $(gh api /repos/microsoft/promptflow/commits/87e997055c52e858a63f9bc2ada64fba6e1b63ea/check-suites) `
                     | ConvertFrom-Json `
-                    | Select-Object -ExpandProperty check_runs `
-                    | Where-Object {
+                    | Select-Object -ExpandProperty check_suites `
+                    | ForEach-Object {
                         if ($snippet_debug -eq 1) {
-                            Write-Host "[DEBUG][check-runs name]$($_.name)"
+                            Write-Host "[DEBUG][check-suites id]$($_.id)"
                         }
-                        foreach ($key in $pipelines.Keys) {
-                            $value = $pipelines[$key]
-                            if ($value -eq 0) {
-                                continue
+                        $suite_id = $_.id
+                        $(gh api /repos/microsoft/promptflow/check-suites/$suite_id/check-runs) `
+                        | ConvertFrom-Json `
+                        | Select-Object -ExpandProperty check_runs `
+                        | ForEach-Object {
+                            if ($snippet_debug -eq 1) {
+                                Write-Host "[DEBUG][check-runs name]$($_.name)"
                             }
-                            if ($_.name.Contains($key)) {
-                                $pipelines_count[$key] += 1
-                                return $true
+                            foreach ($key in $pipelines.Keys) {
+                                $value = $pipelines[$key]
+                                if ($value -eq 0) {
+                                    continue
+                                }
+                                if ($_.name.Contains($key)) {
+                                    $pipelines_count[$key] += 1
+                                    $valid_status_array += $_
+                                }
                             }
                         }
-                        return $false
                     }
                     
             
@@ -137,7 +147,7 @@ jobs:
                             }
                             if ($_.name.Contains($key)) {
                                 if ($_.conclusion -ieq "success") {
-                                    $pipelines_success_count[$pipelines.Keys[$j]] += 1
+                                    $pipelines_success_count[$key] += 1
                                 } elseif ($_.conclusion -ieq "failure") {
                                     $failed_reason = "Required pipelines are not successful."
                                 } else {
