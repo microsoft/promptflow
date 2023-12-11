@@ -119,7 +119,6 @@
 
             <Component Id="RemoveRegistry" Directory="APPLICATIONFOLDER" Guid="$(var.RemoveRegistryGuid)">
                 <RemoveRegistryKey Id="RemovePromptflowRegistry" Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="removeOnUninstall"/>
-                <CreateFolder />
             </Component>
 
             <Component Id="RemoveShortcutComponent" Directory="APPLICATIONFOLDER" Guid="$(var.RemoveShortcutGuid)">
@@ -155,6 +154,7 @@
                     <RegistryValue Name="installed" Type="integer" Value="1" />
                     <RegistryValue Name="version" Type="string" Value="$(var.ProductVersion)" KeyPath="yes"/>
                 </RegistryKey>
+                <RemoveRegistryKey Id="RemovePromptflowRegistry" Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="removeOnUninstall"/>
             </Component>
 
         </ComponentGroup>
