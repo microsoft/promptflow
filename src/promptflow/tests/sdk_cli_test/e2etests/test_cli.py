@@ -1669,3 +1669,35 @@ class TestCli:
         assert run.display_name == uuid_str
         assert run.description == uuid_str
         assert run.tags["tag1"] == uuid_str
+
+    def test_cli_command_no_sub_command(self, capfd):
+        try:
+            run_pf_command(
+                "run",
+            )
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        # will run pf run -h
+        out, _ = capfd.readouterr()
+        assert "A CLI tool to manage runs for prompt flow." in out
+
+        try:
+            run_pf_command("run", "-h")
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        # will run pf run -h
+        out, _ = capfd.readouterr()
+        assert "A CLI tool to manage runs for prompt flow." in out
+
+    def test_unknown_command(self, capfd):
+        try:
+            run_pf_command(
+                "unknown",
+            )
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        _, err = capfd.readouterr()
+        assert "invalid choice" in err
