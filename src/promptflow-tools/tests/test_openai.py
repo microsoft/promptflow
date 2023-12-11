@@ -103,6 +103,10 @@ class TestOpenAI:
              WrappedOpenAIError),
             ({"type": "json_object"}, "Write a slogan for product X",
              "\'messages\' must contain the word \'json\' in some form", "UserError/OpenAIError/BadRequestError",
+             WrappedOpenAIError),
+            ({"types": "json_object"}, "Write a slogan for product X",
+             "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}",
+             "UserError/OpenAIError/BadRequestError",
              WrappedOpenAIError)
         ]
     )
@@ -130,7 +134,7 @@ class TestOpenAI:
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
-    def test_openai_chat_with_not_support_response_format_model(
+    def test_openai_chat_with_not_support_response_format_json_mode_model(
             self,
             open_ai_connection,
             example_prompt_template,
@@ -146,6 +150,23 @@ class TestOpenAI:
                 chat_history=chat_history,
                 response_format={"type": "json_object"}
             )
-        error_message = "Current model does not support the `response_format` parameter."
+        error_message = "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}."
         assert error_message in exc_info.value.message
         assert exc_info.value.error_codes == "UserError/OpenAIError/BadRequestError".split("/")
+
+    def test_openai_chat_with_response_format_text_mode(
+            self,
+            open_ai_connection,
+            example_prompt_template,
+            chat_history
+    ):
+        result = chat(
+            connection=open_ai_connection,
+            prompt=example_prompt_template,
+            model="gpt-3.5-turbo",
+            temperature=0,
+            user_input="Write a slogan for product X.",
+            chat_history=chat_history,
+            response_format={"type": "text"}
+        )
+        assert "Product X".lower() in result.lower()
