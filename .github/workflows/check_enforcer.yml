@@ -25,11 +25,20 @@ jobs:
             Set-PSDebug -Trace 1
             $first_commit = "${{ github.sha }}"
             $github_repository = 'microsoft/promptflow'
-
-            git log -3
+            $merge_commit = ""
             
             function get_diffs() {
                 $snippet_debug = 1
+
+                git log -1 | ForEach-Object {
+                    if ($_.Contains("Merge")) {
+                        $merge_commit = $_.Split(" ")[-1]
+                    }
+                }
+
+                if ($snippet_debug -eq 1) {
+                    Write-Host "[DEBUG][merge_commit]$merge_commit"
+                }
             
                 $need_to_check = New-Object System.Collections.Generic.HashSet[string]
                 git diff --name-only HEAD origin/main | ForEach-Object {
@@ -74,7 +83,7 @@ jobs:
                     }
             
                     # Get pipeline status.
-                    $valid_status_array = $(gh api /repos/$github_repository/commits/$first_commit/check-runs) `
+                    $valid_status_array = $(gh api /repos/$github_repository/commits/$merge_commit/check-runs) `
                     | ConvertFrom-Json `
                     | Select-Object -ExpandProperty check_runs `
                     | Where-Object {
