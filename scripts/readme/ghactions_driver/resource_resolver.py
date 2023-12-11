@@ -5,7 +5,7 @@ from .readme_step import ReadmeStepsManage
 
 def resolve_tutorial_resource(workflow_name: str, resource_path: Path) -> str:
     """Resolve tutorial resources, so that workflow can be triggered more precisely.
-    
+
     A tutorial workflow should listen to changes of:
     1. working directory
     2. resources declared in text file
