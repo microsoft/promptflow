@@ -365,11 +365,17 @@ class FlowOperations(TelemetryMixin):
 
     def _export_flow_connections(
         self,
-        flow_dag_path: Path,
+        built_flow_dag_path: Path,
         *,
         output_dir: Path,
     ):
-        flow: ProtectedFlow = load_flow(flow_dag_path)
+        """Export flow connections to yaml files.
+
+        :param built_flow_dag_path: path to built flow dag yaml file. Given this is a built flow, we can assume
+        that the flow involves no additional includes, symlink, or variant.
+        :param output_dir: output directory to export connections
+        """
+        flow: ProtectedFlow = load_flow(built_flow_dag_path)
         with _change_working_dir(flow.code):
             if flow.language == FlowLanguage.CSharp:
                 from promptflow.batch import CSharpExecutorProxy
@@ -584,7 +590,7 @@ class FlowOperations(TelemetryMixin):
 
         # use new flow dag path below as origin one may miss additional includes
         connection_paths, env_var_names = self._export_flow_connections(
-            flow_dag_path=new_flow_dag_path,
+            built_flow_dag_path=new_flow_dag_path,
             output_dir=output_dir / "connections",
         )
 

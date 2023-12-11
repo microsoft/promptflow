@@ -419,6 +419,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                     flow_file=self.flow.flow_dag_path,
                     working_dir=self.flow.code,
                 ),
+                client=self._client,
             )
         credential_list = ConnectionManager(connections).get_secret_list()
 
@@ -475,6 +476,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 flow_file=self.flow.path,
                 working_dir=self.flow.code,
             ),
+            client=self._client,
         )
         storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
         flow_executor = CSharpExecutorProxy.create(

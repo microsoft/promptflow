@@ -190,7 +190,7 @@ class SubmitterHelper:
 
     @staticmethod
     def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
-        # TODO: use resolve_used_connections instead of this function to avoid using executable in control-plane
+        # TODO 2856400: use resolve_used_connections instead of this function to avoid using executable in control-plane
         from .._pf_client import PFClient
 
         client = client or PFClient()
@@ -203,9 +203,7 @@ class SubmitterHelper:
         )
 
     @staticmethod
-    def resolve_used_connections(
-        flow: ProtectedFlow, tools_meta: dict, client=None, connections_to_ignore=None
-    ) -> dict:
+    def resolve_used_connections(flow: ProtectedFlow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
         from .._pf_client import PFClient
 
         client = client or PFClient()

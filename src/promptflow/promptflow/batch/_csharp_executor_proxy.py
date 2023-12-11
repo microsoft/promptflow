@@ -100,7 +100,13 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
         if flow_tools_json_path.is_file():
             with open(flow_tools_json_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-                return json.load(f)
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError:
+                    raise RuntimeError(
+                        f"Failed to fetch meta of tools: {flow_tools_json_path.absolute().as_posix()} "
+                        f"is not a valid json file."
+                    )
         raise FileNotFoundError(
             f"Failed to fetch meta of tools: cannot find {flow_tools_json_path.absolute().as_posix()}, "
             f"please build the flow project first."
