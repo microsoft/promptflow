@@ -115,6 +115,7 @@
         <ComponentGroup Id="PromptflowCliSettingsGroup">
             <Component Id="RemovePromptflowFolder" Directory="APPLICATIONFOLDER" Guid="$(var.RemovePromptflowFolderGuid)">
                 <RemoveFolder Id="APPLICATIONFOLDER" On="uninstall" />
+                <CreateFolder />
             </Component>
 
             <Component Id="RemoveShortcutComponent" Directory="APPLICATIONFOLDER" Guid="$(var.RemoveShortcutGuid)">
