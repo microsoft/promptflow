@@ -141,12 +141,10 @@
                           Advertise="no">
                           <Icon Id="PromptflowServiceIcon" SourceFile="$(var.ProductResources)logo32.ico" />
                 </Shortcut>
-<!--                 <RemoveFolder Id="StartupFolder" On="uninstall"/> -->
                 <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)">
                     <RegistryValue Name="installed" Type="integer" Value="1" />
                     <RegistryValue Name="version" Type="string" Value="$(var.ProductVersion)" KeyPath="yes"/>
                 </RegistryKey>
-<!--                 <util:RemoveFolderEx On="uninstall" Property="StartupFolder" /> -->
             </Component>
 
             <Component Id="RemoveRegistry" Directory="StartupFolder" Guid="$(var.RemoveRegistryGuid)">
