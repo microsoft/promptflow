@@ -32,13 +32,13 @@ jobs:
                 }
 
                 if ($snippet_debug -eq 1) {
-                    Write-Host "[DEBUG][merge_commit]$merge_commit"
+                    echo "[DEBUG][merge_commit]$merge_commit" >> $env:GITHUB_OUTPUT
                 }
             
                 $need_to_check = New-Object System.Collections.Generic.HashSet[string]
                 git diff --name-only HEAD origin/main | ForEach-Object {
                     if ($snippet_debug -eq 1) {
-                        Write-Host "[DEBUG][git diff --name-only HEAD main]$_"
+                        echo "[DEBUG][git diff --name-only HEAD main]$_" >> $env:GITHUB_OUTPUT
                     }
                     if ($_.Contains("src/promptflow")) {
                         $need_to_check.Add("sdk_cli")
@@ -85,7 +85,7 @@ jobs:
                     | Select-Object -ExpandProperty check_suites `
                     | ForEach-Object {
                         if ($snippet_debug -eq 1) {
-                            Write-Host "[DEBUG][check-suites id]$($_.id)"
+                            echo "[DEBUG][check-suites id]$($_.id)" >> $env:GITHUB_OUTPUT
                         }
                         $suite_id = $_.id
                         $(gh api /repos/microsoft/promptflow/check-suites/$suite_id/check-runs) `
@@ -93,7 +93,7 @@ jobs:
                         | Select-Object -ExpandProperty check_runs `
                         | ForEach-Object {
                             if ($snippet_debug -eq 1) {
-                                Write-Host "[DEBUG][check-runs name]$($_.name)"
+                                echo "[DEBUG][check-runs name]$($_.name)" >> $env:GITHUB_OUTPUT
                             }
                             foreach ($key in $pipelines.Keys) {
                                 $value = $pipelines[$key]
@@ -117,11 +117,11 @@ jobs:
                         }
                     }
                     if ($failed_reason -ne "") {
-                        Write-Host $failed_reason
+                        echo "$failed_reason" >> $env:GITHUB_OUTPUT
                         if ($snippet_debug -eq 1) {
-                            Write-Host "[DEBUG][pipelines_count]"
+                            echo "[DEBUG][pipelines_count]" >> $env:GITHUB_OUTPUT
                             $pipelines_count.GetEnumerator() | ForEach-Object {
-                                Write-Host "  $($_.Key): $($_.Value)"
+                                echo "  $($_.Key): $($_.Value)" >> $env:GITHUB_OUTPUT
                             }
                         }
                         continue
@@ -154,19 +154,19 @@ jobs:
                         }
                     }
                     if ($snippet_debug -eq 1) {
-                        Write-Host "[DEBUG][pipelines_count]"
+                        echo "[DEBUG][pipelines_count]" >> $env:GITHUB_OUTPUT
                         $pipelines_count.GetEnumerator() | ForEach-Object {
-                            Write-Host "  $($_.Key): $($_.Value)"
+                            echo "  $($_.Key): $($_.Value)" >> $env:GITHUB_OUTPUT
                         }
                     }
                     if ($failed_reason.Contains("not successful")) {
-                        Write-Host $failed_reason
+                        echo "$failed_reason" >> $env:GITHUB_OUTPUT
                         break
                     } elseif ($failed_reason.Contains("not successful")) {
-                        Write-Host $failed_reason
+                        echo "$failed_reason" >> $env:GITHUB_OUTPUT
                         continue
                     } else {
-                        Write-Host "All required pipelines are successful."
+                        echo "All required pipelines are successful." >> $env:GITHUB_OUTPUT
                         break
                     }
                 }
