@@ -20,6 +20,8 @@ def run_cli_command(cmd, time_limit=3600):
     with mock.patch.object(ClientUserAgentUtil, "get_user_agent") as get_user_agent_fun:
         # Client side will modify user agent only through ClientUserAgentUtil to avoid impact executor/runtime.
         get_user_agent_fun.return_value = f"{CLI_USER_AGENT} perf_monitor/1.0"
+        user_agent = ClientUserAgentUtil.get_user_agent()
+        assert user_agent == f"{CLI_USER_AGENT} perf_monitor/1.0"
         main()
     ed = timeit.default_timer()
 
