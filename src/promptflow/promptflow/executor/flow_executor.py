@@ -611,11 +611,14 @@ class FlowExecutor:
         add_metric_logger(_log_metric)
         try:
             self._submit_to_scheduler(context, inputs, nodes)
+        except Exception:
+            if self._raise_ex:
+                raise
+        finally:
+            remove_metric_logger(_log_metric)
             node_run_infos = run_tracker.collect_child_node_runs(run_id)
             # Output is set as an empty dict, because the aggregation outputs story is not finalized.
             return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
-        finally:
-            remove_metric_logger(_log_metric)
 
     def exec(self, inputs: dict, node_concurrency=DEFAULT_CONCURRENCY_FLOW) -> dict:
         """Executes the flow with the given inputs and returns the output.
