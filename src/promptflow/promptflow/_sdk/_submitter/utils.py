@@ -186,6 +186,7 @@ class SubmitterHelper:
 
     @staticmethod
     def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
+        # TODO: refactor this method with get_used_connection_names to avoid using executable in control-plane
         from .._pf_client import PFClient
 
         client = client or PFClient()
@@ -198,7 +199,7 @@ class SubmitterHelper:
         )
 
     @staticmethod
-    def resolve_connection_names_from_tool_meta(tools_meta: dict, flow_dag: dict,):
+    def get_used_connection_names(tools_meta: dict, flow_dag: dict):
         connection_names = set({})
         tool_names = set({})
         if tools_meta:
