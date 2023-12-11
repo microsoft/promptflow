@@ -288,7 +288,28 @@ class ReadmeStepsManage:
         schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
         if "tutorials" in workflow_name:
-            path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml, '!examples/flows/integrations/**' ]"
+            # for tutorial READMEs, require resources.txt to identify resources
+            resource_path = Path(ReadmeStepsManage.git_base_dir()) / ReadmeSteps.working_dir / "resources.txt"
+            resource_path = resource_path.resolve()
+            if not resource_path.is_file():
+                raise FileNotFoundError(f"Please declare tutorial resources in {resource_path.as_posix()!r}.")
+            path_filter_list = []
+            resources = resource_path.read_text(encoding="utf-8").split("\n")
+            for resource in resources:
+                # skip empty line
+                if len(resource) == 0:
+                    continue
+                # validate resource path exists
+                resource_path = (Path(ReadmeStepsManage.git_base_dir()) / resource).resolve()
+                if not resource_path.exists():
+                    raise FileNotFoundError("Please declare tutorial resources path whose base is the git repo root.")
+                elif resource_path.is_file():
+                    path_filter_list.append(resource)
+                else:
+                    path_filter_list.append(f"{resource}/**")
+            # append workflow file itself
+            path_filter_list.append(f".github/workflows/{workflow_name}.yml")
+            path_filter = "[ " + ", ".join(path_filter_list) + " ]"
         else:
             path_filter = (
                 f"[ {ReadmeSteps.working_dir}/**, "
