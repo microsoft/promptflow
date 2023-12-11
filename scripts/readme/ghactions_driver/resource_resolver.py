@@ -11,6 +11,7 @@ def resolve_tutorial_resource(workflow_name: str, resource_path: Path) -> str:
     2. resources declared in text file
     3. workflow file
     4. examples/requirements.txt (for release verification)
+    5. examples/connections/azure_openai.yml (fall back as it is the most basic and common connection)
     """
     if not resource_path.is_file():
         raise FileNotFoundError(f"Please declare tutorial resources in {resource_path.as_posix()!r}.")
@@ -38,4 +39,8 @@ def resolve_tutorial_resource(workflow_name: str, resource_path: Path) -> str:
     examples_req = "examples/requirements.txt"
     if examples_req not in path_filter_list:
         path_filter_list.append(examples_req)
+    # manually add examples/connections/azure_openai.yml if not exists
+    aoai_conn = "examples/connections/azure_openai.yml"
+    if aoai_conn not in path_filter_list:
+        path_filter_list.append(aoai_conn)
     return "[ " + ", ".join(path_filter_list) + " ]"
