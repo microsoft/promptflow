@@ -1,6 +1,6 @@
 name: tools_tests
 on:
-  pull_request_target:
+  pull_request:
     paths:
       - src/promptflow-tools/**
       - '**tools_tests.yml'
@@ -11,9 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     name: Tool Test
     timeout-minutes: 30
-    env:
-      # PF_SOURCE is "main" or "package", means the source of pf code
-      PF_SOURCE: "main"
 
     steps:
       - name: Check for dockerenv file
@@ -28,7 +25,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
-          if [ "${{ env.PF_SOURCE }}" = "main" ]; then
+          # PF_SOURCE is "main" or "package", means the source of pf code
+          if [ "${{ github.PF_SOURCE }}" = "main" ]; then
             python ./scripts/building/dev_setup.py --promptflow-extra-deps azure
             pip install google-search-results==2.4.1
             pip install openai>=1.0.0
@@ -42,7 +40,7 @@ jobs:
 
       - name: Run tests
         run: |
-          if [ "${{ env.PF_SOURCE }}" = "main" ]; then
+          if [ "${{ github.PF_SOURCE }}" = "main" ]; then
             export PYTHONPATH=./src/promptflow
           fi
           pytest ./src/promptflow-tools/tests
