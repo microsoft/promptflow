@@ -1598,3 +1598,43 @@ class TestCli:
         ua_dict = parse_ua_to_dict(user_agent)
         assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "a", "b"}
         context.user_agent = ""
+
+    def test_node_run_telemetry(self, local_client):
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+
+        def assert_node_run(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flow.node_test") or record.msg.startswith("pf.flows.node_test")
+            assert record.custom_dimensions["activity_name"] in ["pf.flow.node_test", "pf.flows.node_test"]
+
+        def assert_flow_test(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flow.test") or record.msg.startswith("pf.flows.test")
+            assert record.custom_dimensions["activity_name"] in ["pf.flow.test", "pf.flows.test"]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shutil.copytree((Path(FLOWS_DIR) / "print_env_var").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
+
+            with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+                mock_logger.side_effect = assert_node_run
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    temp_dir,
+                    "--inputs",
+                    "key=API_BASE",
+                    "--node",
+                    "print_env",
+                )
+
+            with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+                mock_logger.side_effect = assert_flow_test
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    temp_dir,
+                    "--inputs",
+                    "key=API_BASE",
+                )

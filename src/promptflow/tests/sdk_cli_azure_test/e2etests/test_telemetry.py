@@ -3,9 +3,12 @@
 # ---------------------------------------------------------
 import contextlib
 import os
+import shutil
 import sys
+import tempfile
 import uuid
 from logging import Logger
+from pathlib import Path
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
@@ -60,6 +63,7 @@ def extension_consent_config_overwrite(val):
 
 
 RUNS_DIR = "./tests/test_configs/runs"
+FLOWS_DIR = "./tests/test_configs/flows"
 
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
@@ -314,3 +318,32 @@ class TestTelemetry:
                 pf.runs.get("not_exist")
             except RunNotFoundError:
                 pass
+
+    def test_different_event_for_node_run(self):
+        from promptflow import PFClient
+
+        pf = PFClient()
+
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+
+        def assert_node_run(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flows.node_test")
+            assert record.custom_dimensions["activity_name"] == "pf.flows.node_test"
+
+        def assert_flow_test(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flows.test")
+            assert record.custom_dimensions["activity_name"] == "pf.flows.test"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shutil.copytree((Path(FLOWS_DIR) / "print_env_var").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
+            with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+                mock_logger.side_effect = assert_node_run
+
+                pf.flows.test(temp_dir, node="print_env", inputs={"key": "API_BASE"})
+
+            with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+                mock_logger.side_effect = assert_flow_test
+
+                pf.flows.test(temp_dir, inputs={"key": "API_BASE"})
