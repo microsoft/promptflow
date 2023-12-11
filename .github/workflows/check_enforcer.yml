@@ -113,7 +113,10 @@ jobs:
                     }
                     if ($failed_reason -ne "") {
                         Write-Host $failed_reason
-                        Write-Host $pipelines_count
+                        Write-Host "[DEBUG][pipelines_count]"
+                        $pipelines_count.GetEnumerator() | ForEach-Object {
+                            Write-Host "  $($_.Key): $($_.Value)"
+                        }
                         continue
                     }
                     $pipelines_success_count = @{
