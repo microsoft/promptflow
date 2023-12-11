@@ -311,7 +311,7 @@ class ReadmeStepsManage:
             path_filter_list.append(f".github/workflows/{workflow_name}.yml")
             path_filter = "[ " + ", ".join(path_filter_list) + " ]"
         else:
-            if "flow-with-additional-includes" in workflow_name or "flow-with-symlinks" in workflow_name:
+            if "flow_with_additional_includes" in workflow_name or "flow_with_symlinks" in workflow_name:
                 # these two flows have dependencies on flow web-classification
                 # so corresponding workflows should also listen to changes in web-classification
                 path_filter = (
