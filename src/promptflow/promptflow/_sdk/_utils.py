@@ -35,6 +35,7 @@ from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
+    ConnectionProvider,
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
@@ -1092,3 +1093,20 @@ def parse_remote_flow_pattern(flow: object) -> str:
             raise UserErrorException(error_message)
         flow_name = match.groups()[0]
     return flow_name
+
+
+def get_connection_operation(connection_provider: str):
+    logger = LoggerFactory.get_logger(LOGGER_NAME)
+    if connection_provider == ConnectionProvider.LOCAL.value:
+        from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+        logger.debug("PFClient using local connection operations.")
+        connection_operation = ConnectionOperations()
+    elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+        from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+        logger.debug("PFClient using local azure connection operations.")
+        connection_operation = LocalAzureConnectionOperations(connection_provider)
+    else:
+        raise ValueError(f"Unsupported connection provider: {connection_provider}")
+    return connection_operation

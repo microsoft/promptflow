@@ -3,15 +3,18 @@
 # ---------------------------------------------------------
 
 from datetime import datetime
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
 import httpx
 
 from promptflow._constants import LINE_TIMEOUT_SEC
-from promptflow._utils.logger_utils import logger
+from promptflow._core._errors import UnexpectedError
+from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._errors import ExecutorServiceUnhealthy
-from promptflow.exceptions import PromptflowException
+from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -71,15 +74,20 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         index: Optional[int] = None,
         run_id: Optional[str] = None,
     ) -> LineResult:
+        start_time = datetime.utcnow()
         # ensure service health
-        await self.ensure_executor_health()
+        await self._ensure_executor_health()
         # call execution api to get line results
         url = self.api_endpoint + "/Execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        response = self.process_http_response(response)
-        return LineResult.deserialize(response)
+        # process the response
+        result = self._process_http_response(response)
+        if response.status_code != 200:
+            run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
+            return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
+        return LineResult.deserialize(result)
 
     async def exec_aggregation_async(
         self,
@@ -88,26 +96,35 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         # ensure service health
-        await self.ensure_executor_health()
+        await self._ensure_executor_health()
         # call aggregation api to get aggregation result
         async with httpx.AsyncClient() as client:
             url = self.api_endpoint + "/Aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        response = self.process_http_response(response)
-        return AggregationResult.deserialize(response)
+        result = self._process_http_response(response)
+        return AggregationResult.deserialize(result)
 
-    def process_http_response(self, response: httpx.Response):
-        status_code = response.status_code
-        if status_code == 200:
+    def _process_http_response(self, response: httpx.Response):
+        if response.status_code == 200:
+            # if the status code is 200, the response is the json dict of a line result
             return response.json()
         else:
-            # TODO: add more error handling
-            raise PromptflowException(
-                f"Error when calling executor API, response: {response}, error: {response.content}"
-            )
+            # if the status code is not 200, log the error
+            message_format = "Unexpected error when executing a line, status code: {status_code}, error: {error}"
+            bulk_logger.error(message_format.format(status_code=response.status_code, error=response.text))
+            # if response can be parsed as json, return the error dict
+            # otherwise, wrap the error in an UnexpectedError and return the error dict
+            try:
+                error_dict = response.json()
+                return error_dict["error"]
+            except (JSONDecodeError, KeyError):
+                unexpected_error = UnexpectedError(
+                    message_format=message_format, status_code=response.status_code, error=response.text
+                )
+                return ExceptionPresenter.create(unexpected_error).to_dict()
 
-    async def ensure_executor_health(self):
+    async def _ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
 
         During testing, we observed that the executor service started quickly on Windows.
@@ -119,19 +136,19 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         waiting_health_timeout = 5
         start_time = datetime.utcnow()
         while (datetime.utcnow() - start_time).seconds < waiting_health_timeout:
-            if await self.check_health():
+            if await self._check_health():
                 return
         raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
-    async def check_health(self):
+    async def _check_health(self):
         try:
             health_url = self.api_endpoint + "/health"
             async with httpx.AsyncClient() as client:
                 response = await client.get(health_url)
             if response.status_code != 200:
-                logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Response: {response.status_code} - {response.text}")
+                bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Response: {response.status_code} - {response.text}")
                 return False
             return True
         except Exception as e:
-            logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
+            bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
             return False
