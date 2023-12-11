@@ -199,14 +199,19 @@ class BatchEngine:
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
             run_id = run_id or str(uuid.uuid4())
+
             # execute lines
             if isinstance(self._executor_proxy, PythonExecutorProxy):
-                line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
+                line_results.extend(self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id))
             else:
                 await self._exec_batch(line_results, batch_inputs, run_id)
             handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
+
             # execute aggregation nodes
-            aggr_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
+            self._update_aggr_result(aggr_result, aggr_exec_result)
+
             # persist outputs to output dir
             outputs = [
                 {LINE_NUMBER_KEY: r.run_info.index, **r.output}
@@ -308,3 +313,9 @@ class BatchEngine:
         """Persist outputs to json line file in output directory"""
         output_file = output_dir / OUTPUT_FILE_NAME
         dump_list_to_jsonl(output_file, outputs)
+
+    def _update_aggr_result(self, aggr_result: AggregationResult, aggr_exec_result: AggregationResult):
+        """Update aggregation result with the aggregation execution result"""
+        aggr_result.metrics = aggr_exec_result.metrics
+        aggr_result.node_run_infos = aggr_exec_result.node_run_infos
+        aggr_result.output = aggr_exec_result.output
