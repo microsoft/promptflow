@@ -119,10 +119,12 @@
 
             <Component Id="RemoveRegistry" Directory="StartupFolder" Guid="$(var.RemoveRegistryGuid)">
                 <RemoveRegistryKey Id="RemovePromptflowRegistry" Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="removeOnUninstall"/>
+                <CreateFolder />
             </Component>
 
             <Component Id="RemoveShortcutComponent" Directory="StartupFolder" Guid="$(var.RemoveShortcutGuid)">
                 <RemoveFile Id="RemoveShortcut" Name="pfs.lnk" On="uninstall" />
+                <CreateFolder />
             </Component>
 
             <Component Id="PromptflowSystemPath" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowSystemPathGuid)">
@@ -147,7 +149,7 @@
                           Target="[#promptflow_service.vbs]"
                           WorkingDirectory="APPLICATIONFOLDER"
                           Advertise="no">
-                          <Icon Id="PromptflowServiceIcon" SourceFile="$(var.ProductResources)logo32.ico" />
+                          <Icon Id="PfSIcon" SourceFile="$(var.ProductResources)logo32.ico" />
                 </Shortcut>
                 <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)">
                     <RegistryValue Name="installed" Type="integer" Value="1" />
