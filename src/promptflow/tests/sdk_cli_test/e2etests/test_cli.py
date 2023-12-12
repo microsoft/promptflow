@@ -79,7 +79,7 @@ class TestCli:
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
-    def test_basic_flow_run_batch_and_eval(self, capfd) -> None:
+    def test_basic_flow_run_batch_and_eval(self, capfd, local_client) -> None:
         run_id = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -91,6 +91,8 @@ class TestCli:
             "--name",
             run_id,
         )
+        run = local_client.runs.get(name=run_id)
+        raise Exception(f"chengbin check: {run._to_dict()}")
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
