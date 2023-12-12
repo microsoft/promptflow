@@ -113,7 +113,7 @@ class TestCli:
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
-    def test_submit_run_with_yaml(self, capfd):
+    def test_submit_run_with_yaml(self, capfd, local_client):
         run_id = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -124,6 +124,8 @@ class TestCli:
             run_id,
             cwd=f"{RUNS_DIR}",
         )
+        run = local_client.runs.get(name=run_id)
+        raise Exception(f"chengbin check: {run._to_dict()}")
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
