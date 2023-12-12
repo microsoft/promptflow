@@ -12,7 +12,6 @@ from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
 from promptflow._sdk._serving.monitor.metrics import MetricsRecorder
 from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
-from promptflow._sdk._serving.utils import get_pf_serving_env
 from promptflow._sdk._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
 from promptflow._sdk._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
 

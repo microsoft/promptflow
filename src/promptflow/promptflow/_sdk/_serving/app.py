@@ -13,7 +13,7 @@ from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._sdk._serving.response_creator import ResponseCreator
-from promptflow._sdk._serving.extension.extension_factory import ExtensionType, ExtensionFactory
+from promptflow._sdk._serving.extension.extension_factory import ExtensionFactory
 from promptflow._sdk._serving.utils import (
     get_output_fields_to_remove,
     get_sample_json,

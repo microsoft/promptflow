@@ -6,7 +6,7 @@ import json
 import os
 import re
 from promptflow._version import VERSION
-from promptflow._sdk._serving._errors import InvalidConnectionDataError, MissingConnectionProvider
+from promptflow._sdk._serving._errors import InvalidConnectionData, MissingConnectionProvider
 from promptflow._sdk._serving.extension.default_extension import AppExtension
 from promptflow._sdk._serving.monitor.metrics import MetricsRecorder
 from promptflow._sdk._serving.monitor.data_collector import FlowDataCollector
@@ -98,7 +98,7 @@ class AzureMLExtension(AppExtension):
                         connections[connection_name] = conn
                     except Exception as e:
                         self.logger.warn(f"Failed to convert connection data to connection: {e}")
-                        raise InvalidConnectionDataError(connection_name)
+                        raise InvalidConnectionData(connection_name)
         if len(connections_name_overrides) > 0:
             self.logger.info(f"Connection name overrides: {connections_name_overrides}")
         if len(connections) > 0:
