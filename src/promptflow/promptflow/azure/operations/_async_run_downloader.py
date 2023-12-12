@@ -11,6 +11,7 @@ from azure.storage.blob.aio import BlobServiceClient
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, LOGGER_NAME, DownloadedRun
 from promptflow._sdk._errors import RunNotFoundError, RunOperationError
+from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.exceptions import UserErrorException
 
@@ -57,7 +58,6 @@ class AsyncRunDownloader:
                     # and use thread pool to avoid blocking the event loop
                     self.to_thread(self._download_run_metrics),
                     self.to_thread(self._download_run_logs),
-                    self.to_thread(self._download_run_metadata),
                 ]
                 await asyncio.gather(*tasks)
         except Exception as e:
@@ -81,6 +81,13 @@ class AsyncRunDownloader:
             self._use_flow_outputs = True
             output_data = run_data["runMetadata"]["outputs"].get("flow_outputs", None)
         output_asset_id = output_data["assetId"]
+
+        # save run metadata to run_metadata.json
+        logger.debug("Saving the run meta data.")
+        run_data = self.run_ops._refine_run_data_from_run_history(run_data)
+        run_data = Run._from_run_history_entity(run_data)
+        with open(self.output_folder / DownloadedRun.RUN_METADATA_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(run_data._to_dict(), f, ensure_ascii=False)
 
         async with self.blob_service_client:
             container_name = self.datastore.container_name
@@ -242,15 +249,6 @@ class AsyncRunDownloader:
         with open(self.output_folder / DownloadedRun.LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(logs)
         logger.debug("Downloaded run logs.")
-
-    def _download_run_metadata(self):
-        """Download the run metadata."""
-        logger.debug("Downloading run metadata.")
-        run = self.run_ops.get(self.run)
-
-        with open(self.output_folder / DownloadedRun.RUN_METADATA_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(run._to_dict(), f, ensure_ascii=False)
-        logger.debug("Downloaded run metadata.")
 
     @staticmethod
     async def to_thread(func, /, *args, **kwargs):
