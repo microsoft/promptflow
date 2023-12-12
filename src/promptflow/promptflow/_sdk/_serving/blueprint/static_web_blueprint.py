@@ -15,8 +15,8 @@ def construct_staticweb_blueprint(static_folder):
     @staticweb_blueprint.route("/", methods=["GET", "POST"])
     def home():
         """Show the home page."""
-        index_path = Path(static_folder) / "index.html"
-        if index_path.exists():
+        index_path = Path(static_folder) / "index.html" if static_folder else None
+        if index_path and index_path.exists():
             template = Template(open(index_path, "r", encoding="UTF-8").read())
             return flask.render_template(template, url_for=url_for)
         else:

@@ -39,10 +39,10 @@ class AzureMLExtension(AppExtension):
         self.project_path = self._get_mlflow_project_path(project_path)
         # initialize connections or connection provider
         # TODO: to be deprecated, remove in next major version
-        self.connection_provider = None
         self.connections = self._get_env_connections_if_exist()
         self.endpoint_name: str = None
         self.deployment_name: str = None
+        self.connection_provider = None
         if len(self.connections) == 0:
             self._initialize_connection_provider()
         # initiliaze metrics common dimensions if exist
@@ -64,7 +64,7 @@ class AzureMLExtension(AppExtension):
         return self.connection_provider
 
     def get_blueprints(self):
-        return []
+        return self._get_default_blueprints()
 
     def get_flow_monitor(self) -> FlowMonitor:
         data_collector = FlowDataCollector()
