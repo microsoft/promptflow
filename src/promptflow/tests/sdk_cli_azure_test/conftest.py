@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
+import functools
 import logging
 import os
 import uuid
@@ -283,4 +285,28 @@ def mock_vcrpy_for_httpx() -> None:
         return out
 
     with patch("vcr.stubs.httpx_stubs._transform_headers", new=_transform_headers):
+        yield
+
+
+@pytest.fixture(autouse=not is_live())
+def mock_to_thread() -> None:
+    # https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread
+    # to_thread actually uses a separate thread, which will break mocks
+    # so we need to mock it to avoid using a separate thread
+
+    # this is only for AsyncRunDownloader.to_thread
+    # it's strange that func is AsyncRunDownloader object,
+    # while args[0] is the function
+    # so just execute the function via `args[0]()`
+    async def to_thread(func, /, *args, **kwargs):
+        args[0]()
+        # as original is async, we need to keep same and do something async
+        # use run_in_executor to print async
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, functools.partial(print, "not important"))
+
+    with patch(
+        "promptflow.azure.operations._async_run_downloader.AsyncRunDownloader.to_thread",
+        new=to_thread,
+    ):
         yield
