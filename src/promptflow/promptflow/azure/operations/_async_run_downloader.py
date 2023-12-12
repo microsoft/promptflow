@@ -56,8 +56,8 @@ class AsyncRunDownloader:
                     self._download_artifacts_and_snapshot(client),
                     # below functions are actually synchronous functions in order to reuse code
                     # and use thread pool to avoid blocking the event loop
-                    self.to_thread(self._download_run_metrics),
-                    self.to_thread(self._download_run_logs),
+                    to_thread(self._download_run_metrics),
+                    to_thread(self._download_run_logs),
                 ]
                 await asyncio.gather(*tasks)
         except Exception as e:
@@ -250,11 +250,11 @@ class AsyncRunDownloader:
             f.write(logs)
         logger.debug("Downloaded run logs.")
 
-    @staticmethod
-    async def to_thread(func, /, *args, **kwargs):
-        # this is copied from asyncio.to_thread() in Python 3.9
-        # as it is not available in Python 3.8, which is the minimum supported version of promptflow
-        loop = asyncio.get_running_loop()
-        ctx = contextvars.copy_context()
-        func_call = functools.partial(ctx.run, func, *args, **kwargs)
-        return await loop.run_in_executor(None, func_call)
+
+async def to_thread(func, /, *args, **kwargs):
+    # this is copied from asyncio.to_thread() in Python 3.9
+    # as it is not available in Python 3.8, which is the minimum supported version of promptflow
+    loop = asyncio.get_running_loop()
+    ctx = contextvars.copy_context()
+    func_call = functools.partial(ctx.run, func, *args, **kwargs)
+    return await loop.run_in_executor(None, func_call)
