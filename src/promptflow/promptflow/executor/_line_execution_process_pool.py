@@ -279,28 +279,28 @@ class LineExecutionProcessPool:
 
     def _process_multimedia_in_flow_run(self, run_info: FlowRunInfo):
         if run_info.inputs:
-            run_info.inputs = self._persist_images(run_info.inputs)
+            run_info.inputs = self._persist_and_convert_images_to_path_dicts(run_info.inputs)
         if run_info.output:
-            serialized_output = self._persist_images(run_info.output)
+            serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
             run_info.output = serialized_output
             run_info.result = None
         if run_info.api_calls:
-            run_info.api_calls = self._persist_images(run_info.api_calls)
+            run_info.api_calls = self._persist_and_convert_images_to_path_dicts(run_info.api_calls, inplace=True)
 
     def _process_multimedia_in_node_run(self, run_info: NodeRunInfo):
         if run_info.inputs:
-            run_info.inputs = self._persist_images(run_info.inputs)
+            run_info.inputs = self._persist_and_convert_images_to_path_dicts(run_info.inputs)
         if run_info.output:
-            serialized_output = self._persist_images(run_info.output)
+            serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
             run_info.output = serialized_output
             run_info.result = None
         if run_info.api_calls:
-            run_info.api_calls = self._persist_images(run_info.api_calls)
+            run_info.api_calls = self._persist_and_convert_images_to_path_dicts(run_info.api_calls, inplace=True)
         return run_info
 
-    def _persist_images(self, value):
+    def _persist_and_convert_images_to_path_dicts(self, value, inplace=False):
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
-        return _process_recursively(value, process_funcs=serialization_funcs, inplace=True)
+        return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         bulk_logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
