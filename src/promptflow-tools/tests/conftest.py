@@ -48,7 +48,7 @@ def serp_connection():
     return ConnectionManager().get("serp_connection")
 
 
-def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
+def verify_om_llm_custom_connection(connection: CustomConnection) -> bool:
     '''Verify that there is a MIR endpoint up and available for the Custom Connection.
     We explicitly do not pass the endpoint key to avoid the delay in generating a response.
     '''
@@ -66,7 +66,7 @@ def llama_chat_custom_connection():
 
 
 @pytest.fixture
-def open_source_llm_ws_service_connection() -> bool:
+def open_model_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
         subs = json.loads(creds_custom_connection.secrets['service_credential'])
@@ -92,9 +92,9 @@ def skip_if_no_api_key(request, mocker):
         elif isinstance(connection, CustomConnection):
             if "endpoint_api_key" not in connection.secrets or "-api-key" in connection.secrets["endpoint_api_key"]:
                 pytest.skip('skipped because no key')
-            # Verify Custom Connections, but only those used by the Open_Source_LLM Tool
+            # Verify Custom Connections, but only those used by the Open_Model_LLM Tool
             if "endpoint_url" in connection.configs and "-endpoint-url" not in connection.configs["endpoint_url"]:
-                if not verify_oss_llm_custom_connection(connection):
+                if not verify_om_llm_custom_connection(connection):
                     pytest.skip('skipped because the connection is not valid')
 
 
