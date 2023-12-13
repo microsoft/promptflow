@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 import pydash
 import pytest
 
-from promptflow._sdk._constants import RunStatus
+from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
@@ -797,14 +797,13 @@ class TestFlowRun:
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
     def test_download_run(self, pf):
-        from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
-
         run = "c619f648-c809-4545-9f94-f67b0a680706"
 
         expected_files = [
-            AsyncRunDownloader.LOCAL_LOGS_FILE_NAME,
-            AsyncRunDownloader.LOCAL_METRICS_FILE_NAME,
-            f"{AsyncRunDownloader.LOCAL_SNAPSHOT_FOLDER}/flow.dag.yaml",
+            DownloadedRun.RUN_METADATA_FILE_NAME,
+            DownloadedRun.LOGS_FILE_NAME,
+            DownloadedRun.METRICS_FILE_NAME,
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
         ]
 
         with TemporaryDirectory() as tmp_dir:

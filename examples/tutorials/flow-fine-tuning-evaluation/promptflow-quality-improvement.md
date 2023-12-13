@@ -1,3 +1,7 @@
+---
+resources: examples/connections/azure_openai.yml, examples/flows/chat/basic-chat, examples/flows/chat/chat-math-variant, examples/flows/evaluation/eval-chat-math
+---
+
 # Tutorial: How prompt flow helps on quality improvement
 
 This tutorial is designed to enhance your understanding of improving flow quality through prompt tuning and evaluation.
@@ -15,7 +19,7 @@ When we talk about "high quality", it's not just about accuracy. It's equally im
 Before practicing, you can watch the video for a quick understand. This video shows how to use the **prompt flow VS code extension** to develop your chat flow, fine tune the prompt, batch test the flow, and evaluate the quality.
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=gcIe6nk2gA4
-" target="_blank"><img src="./media/Screenshot-video.png" 
+" target="_blank"><img src="./media/Screenshot-video.png"
 alt="video demo" border="5" /></a>
 
 ## Hands-on practice
@@ -59,7 +63,7 @@ To enable your chatbot flow to solve math problems, you need to instruct the LLM
 
 ```jinja
 system:
-You are an assistant to calculate the answer to the provided math problems. 
+You are an assistant to calculate the answer to the provided math problems.
 Please return the final numerical answer only, without any accompanying reasoning or explanation.
 
 {% for item in chat_history %}
@@ -133,16 +137,16 @@ There is a `data.jsonl` file in the `promptflow/examples/flows/chat/chat-math-va
 
 ```json
 {
-    "question": "Determine the number of ways to arrange the letters of the word PROOF.", 
-    "answer": "60", 
-    "raw_answer": "There are two O's and five total letters, so the answer is $\\dfrac{5!}{2!} = \\boxed{60}$." 
+    "question": "Determine the number of ways to arrange the letters of the word PROOF.",
+    "answer": "60",
+    "raw_answer": "There are two O's and five total letters, so the answer is $\\dfrac{5!}{2!} = \\boxed{60}$."
 }
 
 ```
 
 Run the following command to test your prompt with this dataset:
 
-First, set the environment variable `base_run_name` to specify the run name. 
+First, set the environment variable `base_run_name` to specify the run name.
 
 ```bash
 base_run_name="base_run"
@@ -178,7 +182,7 @@ pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column
 
 </details>
 
-> ℹ️ The run name must be unique. Please specify a new name in `--name`. 
+> ℹ️ The run name must be unique. Please specify a new name in `--name`.
 > If you see "Run 'base_run' already exists.", you can specify another name. But please remember the name you specified, because you'll need it in the next step.
 
 
@@ -290,7 +294,7 @@ Oops! The accuracy isn't satisfactory. It's time to fine-tune your prompt for hi
 
 In the `/chat` folder, you can see a `chat-math-variant` folder, which represents a flow with two additional prompt variants compared to the original one you customized based on the `basic-chat`.
 
-In this sample flow, you'll find three Jinja files: 
+In this sample flow, you'll find three Jinja files:
 * `chat.jinja2` is the original prompt as same as the one you customized in `basic-chat`.
 * `chat_variant_1.jinja2` and `chat_variant_2.jinja2` are the 2 additional prompt variants.
 
@@ -399,9 +403,9 @@ pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/da
 # Evaluate-run
 pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run "${base_run_name}1" --name "${eval_run_name}1"
 
-# Test and evaluate variant_2: 
+# Test and evaluate variant_2:
 # Test-run
-pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name "${base_run_name}2" 
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name "${base_run_name}2"
 # Evaluate-run
 pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run "${base_run_name}2" --name "${eval_run_name}2"
 ```
@@ -424,9 +428,9 @@ pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/da
 # Evaluate-run
 pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run %base_run_name%1 --name %eval_run_name%1
 
-# Test and evaluate variant_2: 
+# Test and evaluate variant_2:
 # Test-run
-pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name %base_run_name%2 
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name %base_run_name%2
 # Evaluate-run
 pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run %base_run_name%2 --name %eval_run_name%2
 ```
@@ -445,7 +449,7 @@ You may get the familiar output like this:
 ```
 # eval_variant_0_run
 {
-    "accuracy": 0.3, 
+    "accuracy": 0.3,
     "error_rate": 0.7
 }
 # eval_variant_1_run

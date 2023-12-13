@@ -347,13 +347,15 @@ class LocalStorageOperations(AbstractRunStorage):
                 if line_run_record_file.suffix.lower() != ".jsonl":
                     continue
                 with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                    flow_runs.append(json.load(f)["run_info"])
+                    new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                    flow_runs += new_runs
             for node_folder in sorted(self._node_infos_folder.iterdir()):
                 for node_run_record_file in sorted(node_folder.iterdir()):
                     if node_run_record_file.suffix.lower() != ".jsonl":
                         continue
                     with open(node_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                        node_runs.append(json.load(f)["run_info"])
+                        new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                        node_runs += new_runs
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
     def load_metrics(self) -> Dict[str, Union[int, float, str]]:
@@ -457,13 +459,14 @@ class LocalStorageOperations(AbstractRunStorage):
             if line_run_record_file.suffix.lower() != ".jsonl":
                 continue
             with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                data = json.load(f)
-                line_number: int = data[LINE_NUMBER]
-                line_run_info: dict = data["run_info"]
-                current_inputs = line_run_info.get("inputs")
-                current_outputs = line_run_info.get("output")
-                inputs.append(copy.deepcopy(current_inputs))
-                if current_outputs is not None:
-                    current_outputs[LINE_NUMBER] = line_number
-                    outputs.append(copy.deepcopy(current_outputs))
+                datas = [json.loads(line) for line in list(f)]
+                for data in datas:
+                    line_number: int = data[LINE_NUMBER]
+                    line_run_info: dict = data["run_info"]
+                    current_inputs = line_run_info.get("inputs")
+                    current_outputs = line_run_info.get("output")
+                    inputs.append(copy.deepcopy(current_inputs))
+                    if current_outputs is not None:
+                        current_outputs[LINE_NUMBER] = line_number
+                        outputs.append(copy.deepcopy(current_outputs))
         return pd.DataFrame(inputs), pd.DataFrame(outputs)
