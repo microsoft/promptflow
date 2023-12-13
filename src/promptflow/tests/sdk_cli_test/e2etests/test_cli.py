@@ -113,7 +113,7 @@ class TestCli:
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
-    def test_submit_run_with_yaml(self, capfd, local_client):
+    def test_submit_run_with_yaml(self, capfd):
         run_id = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -124,8 +124,6 @@ class TestCli:
             run_id,
             cwd=f"{RUNS_DIR}",
         )
-        run = local_client.runs.get(name=run_id)
-        raise Exception(f"chengbin check: {run._to_dict()}")
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
@@ -1599,3 +1597,107 @@ class TestCli:
         ua_dict = parse_ua_to_dict(user_agent)
         assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow", "a", "b"}
         context.user_agent = ""
+
+    def test_node_run_telemetry(self, local_client):
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+
+        def assert_node_run(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flow.node_test") or record.msg.startswith("pf.flows.node_test")
+            assert record.custom_dimensions["activity_name"] in ["pf.flow.node_test", "pf.flows.node_test"]
+
+        def assert_flow_test(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flow.test") or record.msg.startswith("pf.flows.test")
+            assert record.custom_dimensions["activity_name"] in ["pf.flow.test", "pf.flows.test"]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shutil.copytree((Path(FLOWS_DIR) / "print_env_var").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
+
+            with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+                mock_logger.side_effect = assert_node_run
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    temp_dir,
+                    "--inputs",
+                    "key=API_BASE",
+                    "--node",
+                    "print_env",
+                )
+
+            with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+                mock_logger.side_effect = assert_flow_test
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    temp_dir,
+                    "--inputs",
+                    "key=API_BASE",
+                )
+
+    def test_run_create_with_existing_run_folder(self):
+        run_name = "web_classification_variant_0_20231205_120253_104100"
+        # clean the run if exists
+        from promptflow import PFClient
+        from promptflow._cli._utils import _try_delete_existing_run_record
+
+        pf = PFClient()
+        _try_delete_existing_run_record(run_name)
+
+        # assert the run doesn't exist
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(run_name)
+
+        uuid_str = str(uuid.uuid4())
+        run_folder = Path(RUNS_DIR) / run_name
+        run_pf_command(
+            "run",
+            "create",
+            "--source",
+            Path(run_folder).resolve().as_posix(),
+            "--set",
+            f"display_name={uuid_str}",
+            f"description={uuid_str}",
+            f"tags.tag1={uuid_str}",
+        )
+
+        # check run results
+        run = pf.runs.get(run_name)
+        assert run.display_name == uuid_str
+        assert run.description == uuid_str
+        assert run.tags["tag1"] == uuid_str
+
+    def test_cli_command_no_sub_command(self, capfd):
+        try:
+            run_pf_command(
+                "run",
+            )
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        # will run pf run -h
+        out, _ = capfd.readouterr()
+        assert "A CLI tool to manage runs for prompt flow." in out
+
+        try:
+            run_pf_command("run", "-h")
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        # will run pf run -h
+        out, _ = capfd.readouterr()
+        assert "A CLI tool to manage runs for prompt flow." in out
+
+    def test_unknown_command(self, capfd):
+        try:
+            run_pf_command(
+                "unknown",
+            )
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        _, err = capfd.readouterr()
+        assert "invalid choice" in err
