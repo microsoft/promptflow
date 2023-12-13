@@ -198,15 +198,23 @@ def convert_multimedia_data_to_base64(value: Any, with_type=False, dict_type=Fal
 
 
 # TODO: Move this function to a more general place and integrate serialization to this function.
-def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None) -> dict:
+def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None, inplace: bool = False) -> dict:
     if process_funcs:
         for cls, f in process_funcs.items():
             if isinstance(value, cls):
                 return f(value)
     if isinstance(value, list):
-        return [_process_recursively(v, process_funcs) for v in value]
-    if isinstance(value, dict):
-        return {k: _process_recursively(v, process_funcs) for k, v in value.items()}
+        if inplace:
+            for i in range(len(value)):
+                value[i] = _process_recursively(value[i], process_funcs, inplace)
+        else:
+            return [_process_recursively(v, process_funcs, inplace) for v in value]
+    elif isinstance(value, dict):
+        if inplace:
+            for k, v in value.items():
+                value[k] = _process_recursively(v, process_funcs, inplace)
+        else:
+            return {k: _process_recursively(v, process_funcs, inplace) for k, v in value.items()}
     return value
 
 
