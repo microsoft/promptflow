@@ -1,3 +1,7 @@
+---
+resources: examples/connections/azure_openai.yml, examples/flows/chat/chat-with-pdf
+---
+
 # Tutorial: Chat with PDF
 
 ## Overview
@@ -5,7 +9,7 @@ Retrieval Augmented Generation (or RAG) has become a prevalent pattern to build 
 ![edge-chat-pdf](../../flows/chat/chat-with-pdf/assets/edge-chat-pdf.png)
 Note that new Bing will also search web for more information to generate the answer, let's ignore that part for now.
 
-In this tutorial we will try to mimic the functionality of retrieval of relevant information from the PDF to generate an answer with GPT. 
+In this tutorial we will try to mimic the functionality of retrieval of relevant information from the PDF to generate an answer with GPT.
 
 **We will guide you through the following steps:**
 
@@ -44,13 +48,13 @@ OK now back to the chatbot we want to build, a simplified design could be:
 
 <img src="../../flows/chat/chat-with-pdf/assets/chat_with_pdf_simple.png" width="300" alt="chat with pdf simple design"/>
 
-A more robust or practical application might consider using an external vector database to store the vectors. For this simple example we're using a [FAISS](https://github.com/facebookresearch/faiss) index, which can be saved as a file. However, a more robust or practical application should consider using an external vector database with advanced management capabilities to store the vectors.  With this sample's FAISS index, to prevent repetitive downloading and index building for same PDF file, we will add a check that if the PDF file already exists then we won't download, same for index building.  
+A more robust or practical application might consider using an external vector database to store the vectors. For this simple example we're using a [FAISS](https://github.com/facebookresearch/faiss) index, which can be saved as a file. However, a more robust or practical application should consider using an external vector database with advanced management capabilities to store the vectors.  With this sample's FAISS index, to prevent repetitive downloading and index building for same PDF file, we will add a check that if the PDF file already exists then we won't download, same for index building.
 
 This design is quite effective for question and answering, but it may fall short when it comes to multi-turn conversations with the chatbot. Consider a scenario like this:
 
 > $User: what is BERT?
 >
-> $Bot: BERT stands for Bidirectional Encoder Representations from Transformers. 
+> $Bot: BERT stands for Bidirectional Encoder Representations from Transformers.
 >
 > $User: is it better than GPT?
 >
@@ -73,7 +77,7 @@ Rename the .env.example file in chat_with_pdf directory and modify per your need
 ```ini
 OPENAI_API_KEY=<open_ai_key>
 EMBEDDING_MODEL_DEPLOYMENT_NAME=<text-embedding-ada-002>
-CHAT_MODEL_DEPLOYMENT_NAME=<gpt-4> 
+CHAT_MODEL_DEPLOYMENT_NAME=<gpt-4>
 PROMPT_TOKEN_LIMIT=3000
 MAX_COMPLETION_TOKENS=1024
 CHUNK_SIZE=256
@@ -122,9 +126,9 @@ Several libraries are used in this step to build index:
 The environment variables used in this step:
 - OPENAI_API_* and EMBEDDING_MODEL_DEPLOYMENT_NAME: to access the Azure OpenAI embedding model
 - CHUNK_SIZE and CHUNK_OVERLAP: controls how to split the PDF file into chunks for embedding
-   
+
 #### Rewrite question: [rewrite_question.py](../../flows/chat/chat-with-pdf/chat_with_pdf/rewrite_question.py)
-This step is to use ChatGPT/GPT4 to rewrite the question to be better fit for finding relevant context from the vector index. The prompt file [rewrite_question.md](../../flows/chat/chat-with-pdf/chat_with_pdf/rewrite_question_prompt.md) should give you a better idea how it works. 
+This step is to use ChatGPT/GPT4 to rewrite the question to be better fit for finding relevant context from the vector index. The prompt file [rewrite_question.md](../../flows/chat/chat-with-pdf/chat_with_pdf/rewrite_question_prompt.md) should give you a better idea how it works.
 
 #### Find context: [find_context.py](../../flows/chat/chat-with-pdf/chat_with_pdf/find_context.py)
 In this step we load the FAISS index and the dict that were built in the "build index" step. We then turn the question into a vector using the same embedding function in the build index step. There is a small trick in this step to make sure the context will not exceed the token limit of model input prompt ([aoai model max request tokens](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models), OpenAI has similar limit). The output of this step is the final prompt that QnA step will send to the chat model. The PROMPT_TOKEN_LIMIT environment variable decides how big the context is.
@@ -145,7 +149,7 @@ Appropriate tooling is essential for facilitating this experimentation and fine-
 - Running a few examples and manually verifying the results.
 - Running larger scale tests with a formal approach (using metrics) to assess your app's quality.
 
-You may have already learned how to create a prompt flow from scratch. Building a prompt flow from existing code is also straightforward. You can construct a chat flow either by composing the YAML file or using the visual editor of [Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) and create a few wrappers for existing code. 
+You may have already learned how to create a prompt flow from scratch. Building a prompt flow from existing code is also straightforward. You can construct a chat flow either by composing the YAML file or using the visual editor of [Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) and create a few wrappers for existing code.
 
 Check out below:
 - [flow.dag.yaml](../../flows/chat/chat-with-pdf/flow.dag.yaml)
@@ -216,7 +220,7 @@ column_mapping:
   chat_history: ${data.chat_history}
   pdf_url: ${data.pdf_url}
   question: ${data.question}
-  config: 
+  config:
     EMBEDDING_MODEL_DEPLOYMENT_NAME: text-embedding-ada-002
     CHAT_MODEL_DEPLOYMENT_NAME: gpt-35-turbo
     PROMPT_TOKEN_LIMIT: 3000
@@ -255,7 +259,7 @@ And we developed two evaluation flows one for "[groundedness](../../flows/evalua
 - [groundedness prompt](../../flows/evaluation/eval-groundedness/gpt_groundedness.md)
 - [perceived intelligence prompt](../../flows/evaluation/eval-perceived-intelligence/gpt_perceived_intelligence.md)
 
-The following example creates an evaluation flow.  
+The following example creates an evaluation flow.
 
 **eval_run.yaml:**
 ```yaml
@@ -304,7 +308,7 @@ Take a look at how we experiment with #3 in below test: [test_eval in tests/chat
 
 As you can probably tell through the names: run #3 and #4 generate metrics for run #1, run #5 and #6 generate metrics for run #2. You can compare these metrics to decide which performs better - 2K context or 3K context.
 
-NOTE: [azure_chat_with_pdf_test](../../flows/chat/chat-with-pdf/tests/azure_chat_with_pdf_test.py) does the same tests but using Azure AI as backend, so you can see all the runs in a nice web portal with all the logs and metrics comparison etc. 
+NOTE: [azure_chat_with_pdf_test](../../flows/chat/chat-with-pdf/tests/azure_chat_with_pdf_test.py) does the same tests but using Azure AI as backend, so you can see all the runs in a nice web portal with all the logs and metrics comparison etc.
 
 
 Further reading:
@@ -349,7 +353,7 @@ docker build dist -t chat-with-pdf-serve
 
 #### Run Docker image
 
-Run the docker image will start a service to serve the flow inside the container. 
+Run the docker image will start a service to serve the flow inside the container.
 
 ##### Connections
 If the service involves connections, all related connections will be exported as yaml files and recreated in containers.

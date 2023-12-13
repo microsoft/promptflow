@@ -9,7 +9,7 @@ on:
     - cron: "19 19 * * *" # Every day starting at 3:19 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_kubernetes.yml, '!examples/flows/integrations/**' ]
+    paths: [ examples/tutorials/flow-deploy/kubernetes/**, examples/connections/azure_openai.yml, examples/flows/standard/web-classification/**, .github/workflows/samples_tutorials_flow_deploy_kubernetes.yml, examples/requirements.txt ]
   workflow_dispatch:
 
 env:
