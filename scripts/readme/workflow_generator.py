@@ -61,6 +61,11 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     if "tutorials" in gh_working_dir:
         notebook_path = Path(ReadmeStepsManage.git_base_dir()) / str(notebook)
         path_filter = resolve_tutorial_resource(workflow_name, notebook_path.resolve())
+    elif "samples_configuration" in workflow_name:
+        # exception, samples configuration is very simple and not related to other prompt flow examples
+        path_filter = (
+            "[ examples/configuration.ipynb, .github/workflows/samples_configuration.yml ]"
+        )
     else:
         path_filter = (
             f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml, "
