@@ -41,7 +41,7 @@ class TestBatchTimeout:
         assert batch_results.failed_lines == 2
         assert batch_results.error_summary.failed_user_error_lines == 2
         assert batch_results.error_summary.failed_system_error_lines == 0
-        for i, line_error in enumerate(batch_results.error_summary.error_list):
+        for i, line_error in enumerate(batch_results.error_summary.line_error_list):
             assert isinstance(line_error, LineError)
             assert line_error.error["message"] == f"Line {i} execution timeout for exceeding 1 seconds"
             assert line_error.error["code"] == "UserError"
@@ -78,11 +78,11 @@ class TestBatchTimeout:
         # assert the error summary in batch result
         assert batch_results.error_summary.failed_user_error_lines == 1
         assert batch_results.error_summary.failed_system_error_lines == 0
-        assert isinstance(batch_results.error_summary.error_list[0], LineError)
-        assert batch_results.error_summary.error_list[0].line_number == 2
-        assert batch_results.error_summary.error_list[0].error["code"] == "UserError"
+        assert isinstance(batch_results.error_summary.line_error_list[0], LineError)
+        assert batch_results.error_summary.line_error_list[0].line_number == 2
+        assert batch_results.error_summary.line_error_list[0].error["code"] == "UserError"
         assert (
-            batch_results.error_summary.error_list[0].error["message"]
+            batch_results.error_summary.line_error_list[0].error["message"]
             == "Line 2 execution timeout for exceeding 60 seconds"
         )
 

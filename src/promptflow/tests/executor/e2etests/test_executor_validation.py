@@ -243,12 +243,12 @@ class TestValidation:
         batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
 
         assert error_message in str(
-            batch_results.error_summary.error_list[0].error
-        ), f"Expected message {error_message} but got {str(batch_results.error_summary.error_list[0].error)}"
+            batch_results.error_summary.line_error_list[0].error
+        ), f"Expected message {error_message} but got {str(batch_results.error_summary.line_error_list[0].error)}"
 
         assert error_class in str(
-            batch_results.error_summary.error_list[0].error
-        ), f"Expected message {error_class} but got {str(batch_results.error_summary.error_list[0].error)}"
+            batch_results.error_summary.line_error_list[0].error
+        ), f"Expected message {error_class} but got {str(batch_results.error_summary.line_error_list[0].error)}"
 
     @pytest.mark.parametrize(
         "path_root, flow_folder, node_name, line_input, error_class, error_msg",
@@ -377,7 +377,7 @@ class TestValidation:
             )
             assert batch_result.total_lines == 1
             assert batch_result.completed_lines == 1
-            assert batch_result.error_summary.error_list == []
+            assert batch_result.error_summary.line_error_list == []
         else:
             if raise_on_line_failure:
                 with pytest.raises(error_class):
@@ -390,4 +390,4 @@ class TestValidation:
                 )
                 assert batch_result.total_lines == 1
                 assert batch_result.failed_lines == 1
-                assert error_class.__name__ in json.dumps(batch_result.error_summary.error_list[0].error)
+                assert error_class.__name__ in json.dumps(batch_result.error_summary.line_error_list[0].error)
