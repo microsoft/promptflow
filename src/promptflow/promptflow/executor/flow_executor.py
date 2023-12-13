@@ -5,6 +5,7 @@ import asyncio
 import copy
 import functools
 import inspect
+import os
 import uuid
 from pathlib import Path
 from threading import current_thread
@@ -866,7 +867,9 @@ class FlowExecutor:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        should_use_async = all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+        should_use_async = all(
+            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
+        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
         if should_use_async:
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
