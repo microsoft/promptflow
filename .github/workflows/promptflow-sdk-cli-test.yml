@@ -134,6 +134,9 @@ jobs:
         path: |
           ${{ env.testWorkingDirectory }}/*.xml
           ${{ env.testWorkingDirectory }}/htmlcov/
+  call-check-enforcer:
+    needs: sdk_cli_tests
+    uses: "microsoft/promptflow/.github/workflows/check_enforcer.yml@yigao/enforcer_fix"
   publish-test-results:
     name: "Publish Tests Results"
     needs: sdk_cli_tests
