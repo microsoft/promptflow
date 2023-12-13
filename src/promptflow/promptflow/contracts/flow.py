@@ -531,6 +531,7 @@ class Flow:
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
     program_language: str = FlowLanguage.Python
+    version: int = 1
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -591,6 +592,7 @@ class Flow:
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
+            version=data.get("version", 1),
         )
 
     def _apply_default_node_variants(self: "Flow"):

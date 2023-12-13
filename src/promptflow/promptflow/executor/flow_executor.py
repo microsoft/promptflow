@@ -218,7 +218,7 @@ class FlowExecutor:
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
         flow = Flow(
-            flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
+            flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[], version=flow.version
         )
         # ensure_flow_valid including validation + resolve
         # Todo: 1) split pure validation + resolve from below method 2) provide completed validation()
@@ -313,8 +313,8 @@ class FlowExecutor:
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
             flow, node, inputs_with_default_value
         )
-        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
-        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
+        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node, version=flow.version)
+        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs, version=flow.version)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -784,7 +784,7 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            inputs = load_multimedia_data(self._flow.inputs, inputs, version=self._flow.version)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)

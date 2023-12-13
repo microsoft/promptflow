@@ -1,0 +1,59 @@
+inputs:
+  question:
+    type: list
+    default:
+    - type: text
+      text: Please summarize the images.
+    - type: image_file
+      image_file:
+        path: logo.jpg
+    - type: image_url
+      image_url:
+        url: https://raw.githubusercontent.com/microsoft/promptflow/main/src/promptflow/tests/test_configs/datas/logo.png
+    is_chat_input: true
+  chat_history:
+    type: list
+    default:
+    - inputs:
+        question:
+        - type: text
+          text: the first question
+        - type: image_file
+          image_file:
+            path: logo.jpg
+      outputs:
+        answer:
+        - type: text
+          text: the first answer
+        - type: image_file
+          image_file:
+            path: logo.jpg
+    - inputs:
+        question:
+        - type: text
+          text: the second question
+        - type: image_file
+          image_file:
+            path: logo.png
+      outputs:
+        answer:
+        - type: text
+          text: the second answer
+        - type: image_file
+          image_file:
+            path: logo.png
+    is_chat_history: true
+outputs:
+  output:
+    type: list
+    reference: ${python_node.output}
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: passthrough.py
+  inputs:
+    question: ${inputs.question}
+    chat_history: ${inputs.chat_history}
+version: 2

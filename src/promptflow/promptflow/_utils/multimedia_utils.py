@@ -40,6 +40,17 @@ def is_multimedia_dict(multimedia_dict: dict):
     return False
 
 
+def is_multimedia_dict_v2(multimedia_dict: dict):
+    if len(multimedia_dict) != 2:
+        return False
+    if "type" not in multimedia_dict:
+        return False
+    image_type = multimedia_dict["type"]
+    if image_type in ["image_url", "image_file"] and image_type in multimedia_dict:
+        return True
+    return False
+
+
 def _get_multimedia_info(key: str):
     match = re.match(MIME_PATTERN, key)
     if match:
@@ -59,6 +70,13 @@ def _is_base64(value: str):
     base64_regex = re.compile(r"^([A-Za-z0-9+/]{4})*(([A-Za-z0-9+/]{2})*(==|[A-Za-z0-9+/]=)?)?$")
     if re.match(base64_regex, value):
         return True
+    return False
+
+
+def _is_base64_with_prefix(value: str):
+    prefix = value.split(",")[0]
+    if re.match(r"^data:image/(.*);base64$", prefix):
+        return _is_base64(value.split(",")[1])
     return False
 
 
@@ -97,7 +115,7 @@ def _create_image_from_url(url: str, mime_type: str = None):
         )
 
 
-def _create_image_from_dict(image_dict: dict):
+def _create_image_from_dict_v1(image_dict: dict):
     for k, v in image_dict.items():
         format, resource = _get_multimedia_info(k)
         if resource == "path":
@@ -120,6 +138,30 @@ def _create_image_from_dict(image_dict: dict):
             )
 
 
+def _create_image_from_dict_v2(image_dict: dict):
+    image_type = image_dict["type"]
+    if image_type == "image_url":
+        if _is_base64_with_prefix(image_dict["image_url"]["url"]):
+            base64_str = image_dict["image_url"]["url"].split(",")[1]
+            return _create_image_from_base64(base64_str)
+        elif _is_url(image_dict["image_url"]["url"]):
+            return _create_image_from_url(image_dict["image_url"]["url"])
+        else:
+            raise InvalidImageInput(
+                message_format=f"Invalid image url: {image_dict['image_url']}."
+                "Should be a valid url or base64 string.",
+                target=ErrorTarget.EXECUTOR,
+            )
+    elif image_type == "image_file":
+        return _create_image_from_file(Path(image_dict["image_file"]["path"]))
+    else:
+        raise InvalidImageInput(
+            message_format=f"Unsupported image type: {image_type}. "
+            "Supported types are [image_url, image_file].",
+            target=ErrorTarget.EXECUTOR,
+        )
+
+
 def _create_image_from_string(value: str):
     if _is_base64(value):
         return _create_image_from_base64(value)
@@ -134,7 +176,9 @@ def create_image(value: any):
         return value
     elif isinstance(value, dict):
         if is_multimedia_dict(value):
-            return _create_image_from_dict(value)
+            return _create_image_from_dict_v1(value)
+        elif is_multimedia_dict_v2(value):
+            return _create_image_from_dict_v2(value)
         else:
             raise InvalidImageInput(
                 message_format="Invalid image input format. The image input should be a dictionary like: "
@@ -152,14 +196,17 @@ def create_image(value: any):
 
 
 def _save_image_to_file(
-    image: Image, file_name: str, folder_path: Path, relative_path: Path = None, use_absolute_path=False
+    image: Image, file_name: str, folder_path: Path, relative_path: Path = None, use_absolute_path=False, version=1
 ):
     ext = _get_extension_from_mime_type(image._mime_type)
     file_name = f"{file_name}.{ext}" if ext else file_name
     image_path = (relative_path / file_name).as_posix() if relative_path else file_name
     if use_absolute_path:
         image_path = Path(folder_path / image_path).resolve().as_posix()
-    image_reference = {f"data:{image._mime_type};path": image_path}
+    if version == "v1":
+        image_reference = {f"data:{image._mime_type};path": image_path}
+    else:
+        image_reference = {"type": "image_file", "image_file": {"path": image_path}}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)
     with open(os.path.join(path, file_name), "wb") as file:
@@ -167,13 +214,13 @@ def _save_image_to_file(
     return image_reference
 
 
-def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *, use_absolute_path=False) -> Callable:
+def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *, use_absolute_path=False, version=1) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
         if isinstance(obj, PFBytes):
             file_name = str(uuid.uuid4())
             # If use_absolute_path is True, the image file path in image dictionary will be absolute path.
-            return _save_image_to_file(obj, file_name, folder_path, relative_path, use_absolute_path)
+            return _save_image_to_file(obj, file_name, folder_path, relative_path, use_absolute_path, version=version)
         raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
 
     return pfbytes_file_reference_encoder
@@ -186,8 +233,8 @@ def default_json_encoder(obj):
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
-def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
-    pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)
+def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None, version=1):
+    pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir, version=version)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
     return _process_recursively(value, process_funcs=serialization_funcs)
 
@@ -210,7 +257,7 @@ def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None)
     return value
 
 
-def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: dict):
+def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: dict, version=1):
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
         if value.type == ValueType.IMAGE:
@@ -220,12 +267,13 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
             else:
                 updated_inputs[key] = create_image(updated_inputs[key])
         elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
-            updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+            updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key], version=version)
     return updated_inputs
 
 
-def load_multimedia_data_recursively(value: Any):
-    return _process_multimedia_dict_recursively(value, _create_image_from_dict)
+def load_multimedia_data_recursively(value: Any, version=1):
+    process_funcs = {1: _create_image_from_dict_v1, 2: _create_image_from_dict_v2}
+    return _process_multimedia_dict_recursively(value, process_funcs[version])
 
 
 def resolve_multimedia_data_recursively(input_dir: Path, value: Any):
@@ -237,7 +285,7 @@ def _process_multimedia_dict_recursively(value: Any, process_func: Callable) -> 
     if isinstance(value, list):
         return [_process_multimedia_dict_recursively(item, process_func) for item in value]
     elif isinstance(value, dict):
-        if is_multimedia_dict(value):
+        if is_multimedia_dict(value) or is_multimedia_dict_v2(value):
             return process_func(**{"image_dict": value})
         else:
             return {k: _process_multimedia_dict_recursively(v, process_func) for k, v in value.items()}
