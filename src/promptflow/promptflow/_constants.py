@@ -40,7 +40,10 @@ USER_AGENT = "USER_AGENT"
 PF_USER_AGENT = "PF_USER_AGENT"
 
 CLI_PACKAGE_NAME = 'promptflow'
-VERSION_UPDATE_TIME = 'update_time'
+CURRENT_VERSION = 'current_version'
+LATEST_VERSION = 'latest_version'
+LAST_HINT_TIME = 'last_hint_time'
+LAST_CHECK_TIME = 'last_check_time'
 PF_VERSION_CHECK = "pf_version_check.json"
 HINT_FREQUENCY_DAY = 7
 GET_PYPI_FREQUENCY_DAY = 1

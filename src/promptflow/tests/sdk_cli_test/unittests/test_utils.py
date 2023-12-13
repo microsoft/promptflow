@@ -23,7 +23,7 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._constants import PF_VERSION_CHECK
+from promptflow._constants import PF_VERSION_CHECK, CURRENT_VERSION, LAST_CHECK_TIME, LATEST_VERSION
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
@@ -38,7 +38,7 @@ from promptflow._sdk._utils import (
     snake_to_camel,
 )
 from promptflow._utils.load_data import load_data
-from promptflow._utils.version_hint_utils import hint_for_update
+from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -205,21 +205,26 @@ class TestUtils:
 
     def test_hint_for_update(self):
         with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
-            mock_datetime.datetime.now.return_value = datetime.datetime(
-                2023, 12, 13, 10, 30, 1, 884406
-            )
-            mock_datetime.datetime.strptime.return_value = datetime.datetime(
-                2023, 12, 1, 10, 30, 1, 884406
-            )
+            mock_datetime.datetime.now.return_value = datetime.datetime.now()
+            mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
             mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
-            async_run_allowing_running_loop(hint_for_update)
+            hint_for_update()
             assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
             with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
                 cached_versions = json.load(f)
-            assert "update_time" in cached_versions
-            assert "versions" in cached_versions
-            assert "local" in cached_versions["versions"]
-            assert "pypi" in cached_versions["versions"]
+            assert CURRENT_VERSION in cached_versions
+
+    def test_check_latest_version(self):
+        with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
+            mock_datetime.datetime.now.return_value = datetime.datetime.now()
+            mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
+            mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
+            async_run_allowing_running_loop(check_latest_version)
+            assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
+            with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
+                cached_versions = json.load(f)
+            assert LATEST_VERSION in cached_versions
+            assert LAST_CHECK_TIME in cached_versions
 
     @pytest.mark.parametrize(
         "data_path",

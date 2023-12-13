@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from datetime import datetime
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
-from promptflow._utils.version_hint_utils import hint_for_update, HINT_ACTIVITY_NAME
+from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 
 
@@ -178,7 +178,8 @@ def monitor_operation(
                     return f(self, *args, **kwargs)
                 finally:
                     if activity_name in HINT_ACTIVITY_NAME:
-                        async_run_allowing_running_loop(hint_for_update)
+                        async_run_allowing_running_loop(check_latest_version)
+                        hint_for_update()
 
         return wrapper
 
