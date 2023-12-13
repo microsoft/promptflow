@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import os
 from os import PathLike
-from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from azure.ai.ml import MLClient
@@ -12,9 +11,9 @@ from azure.core.credentials import TokenCredential
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
+from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._sdk.entities import Run
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
-from promptflow.azure._utils.gerneral import is_remote_uri
 from promptflow.azure.operations import RunOperations
 from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
@@ -48,7 +47,9 @@ class PFClient:
         **kwargs,
     ):
         self._validate_config_information(subscription_id, resource_group_name, workspace_name, kwargs)
-        self._add_user_agent(kwargs)
+        # append SDK ua to context
+        user_agent = setup_user_agent_to_operation_context(USER_AGENT)
+        kwargs.setdefault("user_agent", user_agent)
         self._ml_client = kwargs.pop("ml_client", None) or MLClient(
             credential=credential,
             subscription_id=subscription_id,
@@ -236,17 +237,6 @@ class PFClient:
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
-        if not os.path.exists(flow):
-            raise FileNotFoundError(f"flow path {flow} does not exist")
-        if is_remote_uri(data):
-            # Pass through ARM id or remote url, the error will happen in runtime if format is not correct currently.
-            pass
-        else:
-            if data and not os.path.exists(data):
-                raise FileNotFoundError(f"data path {data} does not exist")
-        if not run and not data:
-            raise ValueError("at least one of data or run must be provided")
-
         run = Run(
             name=name,
             display_name=display_name,
@@ -255,7 +245,7 @@ class PFClient:
             column_mapping=column_mapping,
             run=run,
             variant=variant,
-            flow=Path(flow),
+            flow=flow,
             connections=connections,
             environment_variables=environment_variables,
         )
@@ -314,8 +304,3 @@ class PFClient:
         :type run: Union[str, ~promptflow.sdk.entities.Run]
         """
         self.runs.visualize(runs)
-
-    def _add_user_agent(self, kwargs) -> None:
-        user_agent = kwargs.pop("user_agent", None)
-        user_agent = f"{user_agent} {USER_AGENT}" if user_agent else USER_AGENT
-        kwargs.setdefault("user_agent", user_agent)

@@ -36,11 +36,10 @@ from promptflow._sdk._constants import (
     ListViewType,
 )
 from promptflow._sdk._errors import FlowOperationError
-from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk._vendor._asset_utils import traverse_directory
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
@@ -470,7 +469,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                         ignore_file=ignore_file,
                     )
                 )
-            logger = logging.getLogger(LOGGER_NAME)
+            logger = LoggerFactory.get_logger(LOGGER_NAME)
 
             ignore_files = code._ignore_file._get_ignore_list()
             for file_path in ignore_files:

@@ -5,7 +5,6 @@
 import argparse
 import contextlib
 import json
-import logging
 import os
 import shutil
 import sys
@@ -23,12 +22,13 @@ from tabulate import tabulate
 from promptflow._sdk._constants import LOGGER_NAME, CLIListOutputFormat
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
-logger = logging.getLogger(__name__)
+logger = LoggerFactory.get_logger(__name__)
 
 
 def _set_workspace_argument_for_subparsers(subparser, required=False):
@@ -128,9 +128,7 @@ def get_credentials_for_cli():
     return credential
 
 
-def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
-    from azure.ai.ml import MLClient
-
+def get_client_info_for_cli(subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
     if not (subscription_id and resource_group_name and workspace_name):
         workspace_triad = get_workspace_triad_from_local()
         subscription_id = subscription_id or workspace_triad.subscription_id
@@ -142,6 +140,15 @@ def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str 
         subscription_id = subscription_id or os.getenv("AZUREML_ARM_SUBSCRIPTION")
         resource_group_name = resource_group_name or os.getenv("AZUREML_ARM_RESOURCEGROUP")
 
+    return subscription_id, resource_group_name, workspace_name
+
+
+def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
+    from azure.ai.ml import MLClient
+
+    subscription_id, resource_group_name, workspace_name = get_client_info_for_cli(
+        subscription_id=subscription_id, resource_group_name=resource_group_name, workspace_name=workspace_name
+    )
     missing_fields = []
     for key in ["workspace_name", "subscription_id", "resource_group_name"]:
         if not locals()[key]:
@@ -449,10 +456,30 @@ def _output_result_list_with_format(result_list: List[Dict], output_format: CLIL
     elif output_format == CLIListOutputFormat.JSON:
         print(json.dumps(result_list, indent=4))
     else:
-        logger = logging.getLogger(LOGGER_NAME)
+        logger = LoggerFactory.get_logger(LOGGER_NAME)
         warning_message = (
             f"Unknown output format {output_format!r}, accepted values are 'json' and 'table';"
             "will print using 'json'."
         )
         logger.warning(warning_message)
         print(json.dumps(result_list, indent=4))
+
+
+def _get_cli_activity_name(cli, args):
+    activity_name = cli
+    if getattr(args, "action", None):
+        activity_name += f".{args.action}"
+    if getattr(args, "sub_action", None):
+        activity_name += f".{args.sub_action}"
+
+    return activity_name
+
+
+def _try_delete_existing_run_record(run_name: str):
+    from promptflow._sdk._errors import RunNotFoundError
+    from promptflow._sdk._orm import RunInfo as ORMRun
+
+    try:
+        ORMRun.delete(run_name)
+    except RunNotFoundError:
+        pass

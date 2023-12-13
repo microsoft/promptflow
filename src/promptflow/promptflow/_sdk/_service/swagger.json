@@ -17,6 +17,34 @@
                 },
                 "description": "List all connection",
                 "operationId": "get_connection_list",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "formData",
+                        "type": "string"
+                    }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            }
+        },
+        "/Connections/specs": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "List connection spec",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionSpec"
+                        }
+                    }
+                },
+                "description": "List connection spec",
+                "operationId": "get_connection_specs",
                 "tags": [
                     "Connections"
                 ]
@@ -43,30 +71,16 @@
                 },
                 "description": "Get connection",
                 "operationId": "get_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Create connection",
-                "operationId": "post_connection",
                 "parameters": [
                     {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
+                        "name": "working_directory",
+                        "in": "formData",
+                        "type": "string"
                     }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
                 ],
                 "tags": [
                     "Connections"
@@ -108,6 +122,31 @@
                 "tags": [
                     "Connections"
                 ]
+            },
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Create connection",
+                "operationId": "post_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
             }
         },
         "/Connections/{name}/listsecrets": {
@@ -130,6 +169,17 @@
                 },
                 "description": "Get connection with secret",
                 "operationId": "get_connection_with_secret",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "formData",
+                        "type": "string"
+                    }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
                 "tags": [
                     "Connections"
                 ]
@@ -483,22 +533,47 @@
                     "type": "string"
                 },
                 "expiry_time": {
-                    "type": "string",
-                    "format": "date-time"
+                    "type": "string"
                 },
                 "created_date": {
-                    "type": "string",
-                    "format": "date-time"
+                    "type": "string"
                 },
                 "last_modified_date": {
-                    "type": "string",
-                    "format": "date-time"
+                    "type": "string"
                 }
             },
             "type": "object"
         },
         "ConnectionDict": {
             "additionalProperties": true,
+            "type": "object"
+        },
+        "ConnectionSpec": {
+            "properties": {
+                "connection_type": {
+                    "type": "string"
+                },
+                "config_spec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConnectionConfigSpec"
+                    }
+                }
+            },
+            "type": "object"
+        },
+        "ConnectionConfigSpec": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "optional": {
+                    "type": "boolean"
+                },
+                "default": {
+                    "type": "string"
+                }
+            },
             "type": "object"
         },
         "RunList": {

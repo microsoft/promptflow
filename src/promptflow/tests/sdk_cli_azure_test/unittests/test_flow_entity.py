@@ -12,8 +12,7 @@ from mock.mock import Mock
 
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._vendor import get_upload_files_from_folder
-from promptflow.azure._load_functions import load_flow
-from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow._utils.flow_utils import load_flow_dag
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = PROMOTFLOW_ROOT / "tests/test_configs/flows"
@@ -22,10 +21,17 @@ RUNS_DIR = Path("./tests/test_configs/runs")
 tests_root_dir = Path(__file__).parent.parent.parent
 
 
+def load_flow(source):
+    from promptflow.azure._load_functions import load_flow
+
+    return load_flow(source=source)
+
+
 @pytest.mark.unittest
 class TestFlow:
     @pytest.mark.skip(reason="TODO: add back when we bring back meta.yaml")
     def test_load_flow(self):
+
         local_file = tests_root_dir / "test_configs/flows/meta_files/flow.meta.yaml"
 
         flow = load_flow(source=local_file)
@@ -49,6 +55,8 @@ class TestFlow:
 
     @pytest.mark.skip(reason="TODO: add back when we bring back meta.yaml")
     def test_load_flow_from_remote_storage(self):
+        from promptflow.azure.operations._flow_operations import FlowOperations
+
         local_file = tests_root_dir / "test_configs/flows/meta_files/remote_fs.meta.yaml"
 
         flow = load_flow(source=local_file)
@@ -120,6 +128,8 @@ class TestFlow:
 
         with flow._build_code() as code:
             assert code is not None
+            _, temp_flow = load_flow_dag(code.path)
+            assert "additional_includes" not in temp_flow
             upload_paths = get_upload_files_from_folder(
                 path=code.path,
                 ignore_file=code._ignore_file,

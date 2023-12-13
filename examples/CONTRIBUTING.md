@@ -13,8 +13,9 @@ When creating or modifying a notebook or markdown file, please follow these guid
     - `.metadata.description`: (Mandatory) A short description of the example that will be displayed in the README.md file. The description should be concise and informative, and end with a period.
     - `.metadata.stage`: (Optional) A value that indicates whether the script should skip generating a workflow for this notebook or markdown file. If set to `development`, the script will ignore this file. If set to other values or omitted, the script will generate a workflow for this file.
 - Each notebook or markdown file should have a clear and logical structure, using appropriate headings, subheadings, comments, and code cells. The code cells should be executable and produce meaningful outputs.
-- Each notebook or markdown file should follow the [PEP 8] style guide for Python code, and use consistent and readable variable names, indentation, spacing, and punctuation.
-- Each notebook or markdown file should include relevant references, citations, and acknowledgements
+- Each notebook or markdown file should follow the [PEP 8](https://peps.python.org/pep-0008/) style guide for Python code, and use consistent and readable variable names, indentation, spacing, and punctuation.
+- Each notebook or markdown file should include relevant references, citations, and acknowledgements.
+- If you are contributing to [tutorial](./tutorials/), each notebook or markdown file should declare its dependent resources in its metadata, so that the auto generated workflow can listen to the changes of these resources to avoid unexpected breaking. Resources should be declared with relative path to the repo root, and here are examples for [notebook](./tutorials/get-started/quickstart.ipynb) and [markdown](./tutorials/e2e-development/chat-with-pdf.md).
 
 ## Generate workflows, update README.md and submit pull requests
 
@@ -33,7 +34,7 @@ Then, you can run the script by:
 python scripts/readme/readme.py
 ```
 
-For detailed usage of readme.py, please refer to the readme workflow generator manual [README.md](../scripts/readme/README.md) 
+For detailed usage of readme.py, please refer to the readme workflow generator manual [README.md](../scripts/readme/README.md)
 
 ### Update [README.md](./README.md) in [examples](./) folder
 

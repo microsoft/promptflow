@@ -11,6 +11,7 @@ class ErrorTarget(str, Enum):
     """The target of the error, indicates which part of the system the error occurs."""
 
     EXECUTOR = "Executor"
+    BATCH = "Batch"
     FLOW_EXECUTOR = "FlowExecutor"
     NODE_EXECUTOR = "NodeExecutor"
     TOOL = "Tool"
@@ -119,10 +120,14 @@ class PromptflowException(Exception):
     @property
     def reference_code(self):
         """The reference code of the error."""
+        # In Python 3.11, the __str__ method of the Enum type returns the name of the enumeration member.
+        # However, in earlier Python versions, the __str__ method returns the value of the enumeration member.
+        # Therefore, when dealing with this situation, we need to make some additional adjustments.
+        target = self.target.value if isinstance(self.target, ErrorTarget) else self.target
         if self.module:
-            return f"{self.target}/{self.module}"
+            return f"{target}/{self.module}"
         else:
-            return self.target
+            return target
 
     @property
     def inner_exception(self):

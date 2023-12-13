@@ -1,5 +1,4 @@
 import base64
-import filetype
 import os
 import re
 import uuid
@@ -8,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict
 from urllib.parse import urlparse
 
+import filetype
 import requests
 
 from promptflow.contracts._errors import InvalidImageInput
@@ -88,9 +88,12 @@ def _create_image_from_url(url: str, mime_type: str = None):
         return Image(response.content, mime_type=mime_type, source_url=url)
     else:
         raise InvalidImageInput(
-            message_format=f"Error while fetching image from URL: {url}. "
-            "Error code: {response.status_code}. Error message: {response.text}.",
+            message_format="Failed to fetch image from URL: {url}. Error code: {error_code}. "
+            "Error message: {error_message}.",
             target=ErrorTarget.EXECUTOR,
+            url=url,
+            error_code=response.status_code,
+            error_message=response.text,
         )
 
 

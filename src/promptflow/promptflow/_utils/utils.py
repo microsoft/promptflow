@@ -167,7 +167,7 @@ def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
         # If the current frame is in tool.py and the next frame is not in _core folder
         # then we can say that the next frame is in user code.
         if cur_file == tool_file and not next_file.startswith(core_folder):
-            return frame_summaries[i + 1 :]
+            return frame_summaries[i + 1:]
     return frame_summaries
 
 
@@ -236,3 +236,30 @@ def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path
         base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
         path = base_dir / sub_dir
     return path
+
+
+def parse_ua_to_dict(ua):
+    """Parse string user agent to dict with name as ua name and value as ua version."""
+    ua_dict = {}
+    ua_list = ua.split(" ")
+    for item in ua_list:
+        if item:
+            key, value = item.split("/")
+            ua_dict[key] = value
+    return ua_dict
+
+
+def get_int_env_var(env_var_name, default_value=None):
+    """
+    The function `get_int_env_var` retrieves an integer environment variable value, with an optional
+    default value if the variable is not set or cannot be converted to an integer.
+
+    :param env_var_name: The name of the environment variable you want to retrieve the value of
+    :param default_value: The default value is the value that will be returned if the environment
+    variable is not found or if it cannot be converted to an integer
+    :return: an integer value.
+    """
+    try:
+        return int(os.environ.get(env_var_name, default_value))
+    except Exception:
+        return default_value

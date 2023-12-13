@@ -31,12 +31,8 @@ promptflow.tools.openai_gpt4v.OpenAI.chat:
       default: 1
       type:
         - double
-    n:
-      default: 1
-      type:
-        - int
     max_tokens:
-      default: ""
+      default: 512
       type:
         - int
     stop:

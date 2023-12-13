@@ -1,3 +1,8 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
+import signal
 from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
@@ -6,6 +11,7 @@ from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 from promptflow.executor._flow_nodes_scheduler import DEFAULT_CONCURRENCY_BULK
+from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -26,6 +32,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
     ) -> "PythonExecutorProxy":
         # TODO: Raise error if connections is None
         flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage)
+        signal.signal(signal.SIGINT, signal_handler)
         return cls(flow_executor)
 
     async def exec_aggregation_async(
@@ -52,3 +59,13 @@ class PythonExecutorProxy(AbstractExecutorProxy):
             # For bulk run, currently we need to add line results to run_tracker
             self._flow_executor._add_line_results(line_results)
         return line_results
+
+    @classmethod
+    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
+        from promptflow._sdk._utils import generate_flow_tools_json
+
+        return generate_flow_tools_json(
+            flow_directory=working_dir,
+            dump=False,
+            used_packages_only=True,
+        )

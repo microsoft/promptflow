@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 from contextvars import ContextVar
 from typing import Dict, Mapping
 
@@ -107,7 +106,9 @@ class OperationContext(Dict):
                 yield self.get("user_agent")
             yield f"promptflow/{VERSION}"
 
-        return " ".join(parts())
+        # strip to avoid leading or trailing spaces, which may cause error when sending request
+        ua = " ".join(parts()).strip()
+        return ua
 
     def append_user_agent(self, user_agent: str):
         """Append the user agent string.
@@ -120,7 +121,7 @@ class OperationContext(Dict):
         """
         if "user_agent" in self:
             if user_agent not in self.user_agent:
-                self.user_agent = f"{self.user_agent} {user_agent}"
+                self.user_agent = f"{self.user_agent.strip()} {user_agent.strip()}"
         else:
             self.user_agent = user_agent
 

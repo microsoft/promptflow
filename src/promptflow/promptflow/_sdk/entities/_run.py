@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import datetime
+import functools
 import json
 import logging
 import uuid
@@ -15,15 +16,20 @@ from dateutil import parser as date_parser
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    DEFAULT_ENCODING,
     DEFAULT_VARIANT,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
+    FLOW_RESOURCE_ID_PREFIX,
     LOGGER_NAME,
     PARAMS_OVERRIDE_KEY,
     PROMPT_FLOW_DIR_NAME,
+    REGISTRY_URI_PREFIX,
+    REMOTE_URI_PREFIX,
     RUN_MACRO,
     TIMESTAMP_MACRO,
     VARIANT_ID_MACRO,
     AzureRunTypes,
+    DownloadedRun,
     FlowRunProperties,
     RestRunTypes,
     RunDataKeys,
@@ -33,7 +39,12 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
-from promptflow._sdk._utils import _sanitize_python_variable_name, parse_variant
+from promptflow._sdk._utils import (
+    _sanitize_python_variable_name,
+    is_remote_uri,
+    parse_remote_flow_pattern,
+    parse_variant,
+)
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -58,7 +69,7 @@ class Run(YAMLTranslatableMixin):
     :param flow: Path of the flow directory.
     :type flow: Path
     :param name: Name of the run.
-    :type name: Optional[str]
+    :type name: str
     :param data: Input data for the run. Local path or remote uri(starts with azureml: or public URL) are supported. Note: remote uri is only supported for cloud run. # noqa: E501
     :type data: Optional[str]
     :param variant: Variant of the run.
@@ -93,7 +104,7 @@ class Run(YAMLTranslatableMixin):
 
     def __init__(
         self,
-        flow: Path,
+        flow: Optional[Union[Path, str]] = None,
         name: Optional[str] = None,
         # input fields are optional since it's not stored in DB
         data: Optional[str] = None,
@@ -111,6 +122,7 @@ class Run(YAMLTranslatableMixin):
         environment_variables: Optional[Dict[str, str]] = None,
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
+        source: Optional[Union[Path, str]] = None,
         **kwargs,
     ):
         # TODO: remove when RUN CRUD don't depend on this
@@ -127,6 +139,7 @@ class Run(YAMLTranslatableMixin):
         self.environment_variables = environment_variables or {}
         self.connections = connections or {}
         self._properties = properties or {}
+        self.source = source
         self._is_archived = kwargs.get("is_archived", False)
         self._run_source = kwargs.get("run_source", RunInfoSources.LOCAL)
         self._start_time = start_time
@@ -136,11 +149,15 @@ class Run(YAMLTranslatableMixin):
         self._creation_context = kwargs.get("creation_context", None)
         # init here to make sure those fields initialized in all branches.
         self.flow = flow
+        self._use_remote_flow = is_remote_uri(flow)
         self._experiment_name = None
         self._lineage_id = None
+        if self._use_remote_flow:
+            self._flow_name = parse_remote_flow_pattern(flow)
+            self._lineage_id = self._flow_name
         # default run name: flow directory name + timestamp
         self.name = name or self._generate_run_name()
-        if self._run_source == RunInfoSources.LOCAL:
+        if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
             self.flow = Path(flow).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
@@ -149,6 +166,7 @@ class Run(YAMLTranslatableMixin):
             self._output_path = Path(
                 kwargs.get("output_path", self._generate_output_path(config=kwargs.get("config", None)))
             )
+            self._flow_name = flow_dir.name
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = kwargs.get("experiment_name", None)
@@ -158,6 +176,9 @@ class Run(YAMLTranslatableMixin):
             self._input_run_portal_url = kwargs.get("input_run_portal_url", None)
             self._output = kwargs.get("output", None)
             self._output_portal_url = kwargs.get("output_portal_url", None)
+        elif self._run_source == RunInfoSources.EXISTING_RUN:
+            # when the run is created from an existing run folder, the output path is also the source path
+            self._output_path = Path(source)
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
 
@@ -171,10 +192,11 @@ class Run(YAMLTranslatableMixin):
 
     @property
     def properties(self) -> Dict[str, str]:
+        result = {}
         if self._run_source == RunInfoSources.LOCAL:
             # show posix path to avoid windows path escaping
             result = {
-                FlowRunProperties.FLOW_PATH: Path(self.flow).as_posix(),
+                FlowRunProperties.FLOW_PATH: Path(self.flow).as_posix() if not self._use_remote_flow else self.flow,
                 FlowRunProperties.OUTPUT_PATH: self._output_path.as_posix(),
             }
             if self.run:
@@ -182,18 +204,32 @@ class Run(YAMLTranslatableMixin):
                 result[FlowRunProperties.RUN] = run_name
             if self.variant:
                 result[FlowRunProperties.NODE_VARIANT] = self.variant
-            return {
-                **result,
-                **self._properties,
+        elif self._run_source == RunInfoSources.EXISTING_RUN:
+            result = {
+                FlowRunProperties.OUTPUT_PATH: Path(self.source).resolve().as_posix(),
             }
-        return self._properties
+
+        return {
+            **result,
+            **self._properties,
+        }
 
     @classmethod
     def _from_orm_object(cls, obj: ORMRun) -> "Run":
         properties_json = json.loads(str(obj.properties))
+        flow = properties_json.get(FlowRunProperties.FLOW_PATH, None)
+
+        # there can be two sources for orm run object:
+        # 1. LOCAL: Created when run is created from local flow
+        # 2. EXISTING_RUN: Created when run is created from existing run folder
+        source = None
+        if getattr(obj, "run_source", None) == RunInfoSources.EXISTING_RUN:
+            source = properties_json[FlowRunProperties.OUTPUT_PATH]
+
         return Run(
             name=str(obj.name),
-            flow=Path(properties_json[FlowRunProperties.FLOW_PATH]),
+            flow=Path(flow) if flow else None,
+            source=Path(source) if source else None,
             output_path=properties_json[FlowRunProperties.OUTPUT_PATH],
             run=properties_json.get(FlowRunProperties.RUN, None),
             variant=properties_json.get(FlowRunProperties.NODE_VARIANT, None),
@@ -207,6 +243,8 @@ class Run(YAMLTranslatableMixin):
             status=str(obj.status),
             data=Path(obj.data).resolve().absolute().as_posix() if obj.data else None,
             properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
+            # compatible with old runs, their run_source is empty, treat them as local
+            run_source=obj.run_source or RunInfoSources.LOCAL,
         )
 
     @classmethod
@@ -298,13 +336,14 @@ class Run(YAMLTranslatableMixin):
             tags=json.dumps(self.tags) if self.tags else None,
             properties=json.dumps(self.properties),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
+            run_source=self._run_source,
         )
 
     def _dump(self) -> None:
         """Dump current run entity to local DB."""
         self._to_orm_object().dump()
 
-    def _to_dict(self):
+    def _to_dict(self, *, exclude_additional_info: bool = False, exclude_debug_info: bool = False):
         from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
         properties = self.properties
@@ -319,7 +358,7 @@ class Run(YAMLTranslatableMixin):
         }
 
         if self._run_source == RunInfoSources.LOCAL:
-            result["flow_name"] = Path(str(self.flow)).resolve().name
+            result["flow_name"] = self._flow_name
             local_storage = LocalStorageOperations(run=self)
             result[RunDataKeys.DATA] = (
                 local_storage._data_path.resolve().absolute().as_posix()
@@ -333,6 +372,10 @@ class Run(YAMLTranslatableMixin):
             # add exception part if any
             exception_dict = local_storage.load_exception()
             if exception_dict:
+                if exclude_additional_info:
+                    exception_dict.pop("additionalInfo", None)
+                if exclude_debug_info:
+                    exception_dict.pop("debugInfo", None)
                 result["error"] = exception_dict
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             result["creation_context"] = self._creation_context
@@ -356,6 +399,10 @@ class Run(YAMLTranslatableMixin):
                 result[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._input_run_portal_url
             if self._error:
                 result["error"] = self._error
+                if exclude_additional_info:
+                    result["error"]["error"].pop("additionalInfo", None)
+                if exclude_debug_info:
+                    result["error"]["error"].pop("debugInfo", None)
         return result
 
     @classmethod
@@ -385,7 +432,7 @@ class Run(YAMLTranslatableMixin):
     def _generate_run_name(self) -> str:
         """Generate a run name with flow_name_variant_timestamp format."""
         try:
-            flow_name = self._get_flow_dir().name
+            flow_name = self._get_flow_dir().name if not self._use_remote_flow else self._flow_name
             variant = self.variant
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
@@ -397,9 +444,7 @@ class Run(YAMLTranslatableMixin):
             return str(uuid.uuid4())
 
     def _get_default_display_name(self) -> str:
-        display_name = self.display_name
-        if not display_name:
-            display_name = self.name
+        display_name = self.display_name or self.name
         return display_name
 
     def _format_display_name(self) -> str:
@@ -424,10 +469,12 @@ class Run(YAMLTranslatableMixin):
         return display_name
 
     def _get_flow_dir(self) -> Path:
-        flow = Path(self.flow)
-        if flow.is_dir():
-            return flow
-        return flow.parent
+        if not self._use_remote_flow:
+            flow = Path(self.flow)
+            if flow.is_dir():
+                return flow
+            return flow.parent
+        raise UserErrorException("Cannot get flow directory for remote flow.")
 
     @classmethod
     def _get_schema_cls(self):
@@ -474,50 +521,57 @@ class Run(YAMLTranslatableMixin):
                         )
                     inputs_mapping[k] = val
 
-        if str(self.flow).startswith("azureml://"):
-            # upload via _check_and_upload_path
-            # submit with params FlowDefinitionDataStoreName and FlowDefinitionBlobPath
-            path_uri = AzureMLDatastorePathUri(str(self.flow))
-            return SubmitBulkRunRequest(
-                flow_definition_data_store_name=path_uri.datastore,
-                flow_definition_blob_path=path_uri.path,
-                run_id=self.name,
-                # will use user provided display name since PFS will have special logic to update it.
-                run_display_name=self._get_default_display_name(),
-                description=self.description,
-                tags=self.tags,
-                node_variant=self.variant,
-                variant_run_id=variant,
-                batch_data_input=BatchDataInput(
-                    data_uri=self.data,
-                ),
-                inputs_mapping=inputs_mapping,
-                run_experiment_name=self._experiment_name,
-                environment_variables=self.environment_variables,
-                connections=self.connections,
-                flow_lineage_id=self._lineage_id,
-                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
-            )
+        # use functools.partial to avoid too many arguments that have the same values
+        common_submit_bulk_run_request = functools.partial(
+            SubmitBulkRunRequest,
+            run_id=self.name,
+            # will use user provided display name since PFS will have special logic to update it.
+            run_display_name=self._get_default_display_name(),
+            description=self.description,
+            tags=self.tags,
+            node_variant=self.variant,
+            variant_run_id=variant,
+            batch_data_input=BatchDataInput(
+                data_uri=self.data,
+            ),
+            inputs_mapping=inputs_mapping,
+            run_experiment_name=self._experiment_name,
+            environment_variables=self.environment_variables,
+            connections=self.connections,
+            flow_lineage_id=self._lineage_id,
+            run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
+        )
+
+        if str(self.flow).startswith(REMOTE_URI_PREFIX):
+            if not self._use_remote_flow:
+                # in normal case, we will upload local flow to datastore and resolve the self.flow to be remote uri
+                # upload via _check_and_upload_path
+                # submit with params FlowDefinitionDataStoreName and FlowDefinitionBlobPath
+                path_uri = AzureMLDatastorePathUri(str(self.flow))
+                return common_submit_bulk_run_request(
+                    flow_definition_data_store_name=path_uri.datastore,
+                    flow_definition_blob_path=path_uri.path,
+                )
+            else:
+                # if the flow is a remote flow in the beginning, we will submit with params FlowDefinitionResourceID
+                # submit with params flow_definition_resource_id which will be resolved in pfazure run create operation
+                # the flow resource id looks like: "azureml://locations/<region>/workspaces/<ws-name>/flows/<flow-name>"
+                if not isinstance(self.flow, str) or (
+                    not self.flow.startswith(FLOW_RESOURCE_ID_PREFIX) and not self.flow.startswith(REGISTRY_URI_PREFIX)
+                ):
+                    raise UserErrorException(
+                        f"Invalid flow value when transforming to rest object: {self.flow!r}. "
+                        f"Expecting a flow definition resource id starts with '{FLOW_RESOURCE_ID_PREFIX}' "
+                        f"or a flow registry uri starts with '{REGISTRY_URI_PREFIX}'"
+                    )
+                return common_submit_bulk_run_request(
+                    flow_definition_resource_id=self.flow,
+                )
         else:
             # upload via CodeOperations.create_or_update
             # submit with param FlowDefinitionDataUri
-            return SubmitBulkRunRequest(
+            return common_submit_bulk_run_request(
                 flow_definition_data_uri=str(self.flow),
-                run_id=self.name,
-                run_display_name=self._get_default_display_name(),
-                description=self.description,
-                tags=self.tags,
-                node_variant=self.variant,
-                variant_run_id=variant,
-                batch_data_input=BatchDataInput(
-                    data_uri=self.data,
-                ),
-                inputs_mapping=inputs_mapping,
-                run_experiment_name=self._experiment_name,
-                environment_variables=self.environment_variables,
-                connections=self.connections,
-                flow_lineage_id=self._lineage_id,
-                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
             )
 
     def _check_run_status_is_completed(self) -> None:
@@ -535,6 +589,30 @@ class Run(YAMLTranslatableMixin):
         elif isinstance(run, str):
             return run
         raise InvalidRunError(f"Invalid run {run!r}, expected 'str' or 'Run' object but got {type(run)!r}.")
+
+    def _validate_for_run_create_operation(self):
+        """Validate run object for create operation."""
+        # check flow value
+        if Path(self.flow).is_dir():
+            # local flow
+            pass
+        elif isinstance(self.flow, str) and self.flow.startswith(REMOTE_URI_PREFIX):
+            # remote flow
+            pass
+        else:
+            raise UserErrorException(
+                f"Invalid flow value: {self.flow!r}. Expecting a local flow folder path or a remote flow pattern "
+                f"like '{REMOTE_URI_PREFIX}<flow-name>'"
+            )
+
+        if is_remote_uri(self.data):
+            # Pass through ARM id or remote url, the error will happen in runtime if format is not correct currently.
+            pass
+        else:
+            if self.data and not Path(self.data).exists():
+                raise UserErrorException(f"data path {self.data} does not exist")
+        if not self.run and not self.data:
+            raise UserErrorException("at least one of data or run must be provided")
 
     def _generate_output_path(self, config: Optional[Configuration]) -> Path:
         config = config or Configuration.get_instance()
@@ -559,3 +637,33 @@ class Run(YAMLTranslatableMixin):
                 )
                 logging.getLogger(LOGGER_NAME).warning(warning_message)
         return (path / str(self.name)).resolve()
+
+    @classmethod
+    def _load_from_source(cls, source: Union[str, Path], params_override: Optional[Dict] = None, **kwargs) -> "Run":
+        """Load run from run record source folder."""
+        source = Path(source)
+        params_override = params_override or {}
+
+        run_metadata_file = source / DownloadedRun.RUN_METADATA_FILE_NAME
+        if not run_metadata_file.exists():
+            raise UserErrorException(
+                f"Invalid run source: {source!r}. Expecting a valid run source folder with {run_metadata_file!r}. "
+                f"Please make sure the run source is downloaded by 'pfazure run download' command."
+            )
+        # extract run info from source folder
+        with open(source / DownloadedRun.RUN_METADATA_FILE_NAME, encoding=DEFAULT_ENCODING) as f:
+            run_info = json.load(f)
+
+        return cls(
+            name=run_info["name"],
+            source=source,
+            run_source=RunInfoSources.EXISTING_RUN,
+            status=run_info["status"],  # currently only support completed run
+            display_name=params_override.get("display_name", run_info.get("display_name", source.name)),
+            description=params_override.get("description", run_info.get("description", "")),
+            tags=params_override.get("tags", run_info.get("tags", {})),
+            created_on=datetime.datetime.fromisoformat(run_info["created_on"]),
+            start_time=datetime.datetime.fromisoformat(run_info["start_time"]),
+            end_time=datetime.datetime.fromisoformat(run_info["end_time"]),
+            **kwargs,
+        )
