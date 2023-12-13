@@ -1638,6 +1638,38 @@ class TestCli:
                     "key=API_BASE",
                 )
 
+    def test_run_create_with_existing_run_folder(self):
+        run_name = "web_classification_variant_0_20231205_120253_104100"
+        # clean the run if exists
+        from promptflow import PFClient
+        from promptflow._cli._utils import _try_delete_existing_run_record
+
+        pf = PFClient()
+        _try_delete_existing_run_record(run_name)
+
+        # assert the run doesn't exist
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(run_name)
+
+        uuid_str = str(uuid.uuid4())
+        run_folder = Path(RUNS_DIR) / run_name
+        run_pf_command(
+            "run",
+            "create",
+            "--source",
+            Path(run_folder).resolve().as_posix(),
+            "--set",
+            f"display_name={uuid_str}",
+            f"description={uuid_str}",
+            f"tags.tag1={uuid_str}",
+        )
+
+        # check run results
+        run = pf.runs.get(run_name)
+        assert run.display_name == uuid_str
+        assert run.description == uuid_str
+        assert run.tags["tag1"] == uuid_str
+
     def test_cli_command_no_sub_command(self, capfd):
         try:
             run_pf_command(

@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.024'
+      - '0.032'
     status:
       code: 200
       message: OK
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.057'
+      - '0.092'
     status:
       code: 200
       message: OK
@@ -147,7 +147,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.227'
+      - '0.161'
     status:
       code: 200
       message: OK
@@ -201,7 +201,61 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.059'
+      - '0.065'
+    http_version: HTTP/1.1
+    status_code: 200
+- request:
+    body: '{"snapshotOrAssetId": "194d5c58-3176-4311-88f0-e01a31a5f706"}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '61'
+      content-type:
+      - application/json
+      host:
+      - eastus.api.azureml.ms
+      user-agent:
+      - python-httpx/0.25.2
+    method: POST
+    uri: https://eastus.api.azureml.ms/content/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/snapshots/sas
+  response:
+    content: '{"name": "", "hash": null, "type": "Directory", "timestamp": "0001-01-01T00:00:00+00:00",
+      "sasUrl": null, "absoluteUrl": null, "sizeBytes": 0, "sizeSet": false, "children":
+      {"__pycache__": {"name": "__pycache__", "hash": null, "type": "Directory", "timestamp":
+      "0001-01-01T00:00:00+00:00", "sasUrl": null, "absoluteUrl": null, "sizeBytes":
+      0, "sizeSet": false, "children": {"hello_world.cpython-39.pyc": {"name": "hello_world.cpython-39.pyc",
+      "hash": null, "type": "File", "timestamp": "0001-01-01T00:00:00+00:00", "sasUrl":
+      "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/__pycache__/hello_world.cpython-39.pyc?sv=2019-07-07&sr=b&sig=UJIZ3XIGhmt8gay9%2BxUup%2BY9upNDqD5fsebKNnnpZl8%3D&st=2023-12-12T13%3A40%3A56Z&se=2023-12-12T21%3A50%3A56Z&sp=r&rscd=filename%3Dhello_world.cpython-39.pyc",
+      "absoluteUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/__pycache__/hello_world.cpython-39.pyc",
+      "sizeBytes": 368, "sizeSet": true, "children": {}}}}, "flow.dag.yaml": {"name":
+      "flow.dag.yaml", "hash": "62F0A1A8051F7271F319C0D12B016592", "type": "File",
+      "timestamp": "0001-01-01T00:00:00+00:00", "sasUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/flow.dag.yaml?sv=2019-07-07&sr=b&sig=1nUJlo8RuMz8uOzAqkMZUyaT4kL%2FoEP2q0%2BZB7XjBhA%3D&st=2023-12-12T13%3A40%3A56Z&se=2023-12-12T21%3A50%3A56Z&sp=r&rscd=filename%3Dflow.dag.yaml",
+      "absoluteUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/flow.dag.yaml",
+      "sizeBytes": 349, "sizeSet": true, "children": {}}, "hello_world.py": {"name":
+      "hello_world.py", "hash": null, "type": "File", "timestamp": "0001-01-01T00:00:00+00:00",
+      "sasUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/hello_world.py?sv=2019-07-07&sr=b&sig=OfW%2BjJuBUoTLP4y%2F5cDJ5ojv3yMwtXsSu4%2FOSzX%2BKWQ%3D&st=2023-12-12T13%3A40%3A56Z&se=2023-12-12T21%3A50%3A56Z&sp=r&rscd=filename%3Dhello_world.py",
+      "absoluteUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/hello_world.py",
+      "sizeBytes": 105, "sizeSet": true, "children": {}}}}'
+    headers:
+      connection:
+      - keep-alive
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.163'
     http_version: HTTP/1.1
     status_code: 200
 - request:
@@ -212,7 +266,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Thu, 07 Dec 2023 06:39:06 GMT
+      - Tue, 12 Dec 2023 13:50:54 GMT
       x-ms-version:
       - '2023-11-03'
     method: GET
@@ -262,60 +316,6 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"snapshotOrAssetId": "194d5c58-3176-4311-88f0-e01a31a5f706"}'
-    headers:
-      accept:
-      - '*/*'
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '61'
-      content-type:
-      - application/json
-      host:
-      - eastus.api.azureml.ms
-      user-agent:
-      - python-httpx/0.25.2
-    method: POST
-    uri: https://eastus.api.azureml.ms/content/v2.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/snapshots/sas
-  response:
-    content: '{"name": "", "hash": null, "type": "Directory", "timestamp": "0001-01-01T00:00:00+00:00",
-      "sasUrl": null, "absoluteUrl": null, "sizeBytes": 0, "sizeSet": false, "children":
-      {"__pycache__": {"name": "__pycache__", "hash": null, "type": "Directory", "timestamp":
-      "0001-01-01T00:00:00+00:00", "sasUrl": null, "absoluteUrl": null, "sizeBytes":
-      0, "sizeSet": false, "children": {"hello_world.cpython-39.pyc": {"name": "hello_world.cpython-39.pyc",
-      "hash": null, "type": "File", "timestamp": "0001-01-01T00:00:00+00:00", "sasUrl":
-      "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/__pycache__/hello_world.cpython-39.pyc?sv=2019-07-07&sr=b&sig=bZIsNRT30ua9dUHxAKx2FGHFkZN4Qh8INZVZM3tjOOk%3D&st=2023-12-07T06%3A29%3A09Z&se=2023-12-07T14%3A39%3A09Z&sp=r&rscd=filename%3Dhello_world.cpython-39.pyc",
-      "absoluteUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/__pycache__/hello_world.cpython-39.pyc",
-      "sizeBytes": 368, "sizeSet": true, "children": {}}}}, "flow.dag.yaml": {"name":
-      "flow.dag.yaml", "hash": "62F0A1A8051F7271F319C0D12B016592", "type": "File",
-      "timestamp": "0001-01-01T00:00:00+00:00", "sasUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/flow.dag.yaml?sv=2019-07-07&sr=b&sig=eZGH140eK9bvkNLKe64c5iWQNz7T17wXW49DLOcO00g%3D&st=2023-12-07T06%3A29%3A09Z&se=2023-12-07T14%3A39%3A09Z&sp=r&rscd=filename%3Dflow.dag.yaml",
-      "absoluteUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/flow.dag.yaml",
-      "sizeBytes": 349, "sizeSet": true, "children": {}}, "hello_world.py": {"name":
-      "hello_world.py", "hash": null, "type": "File", "timestamp": "0001-01-01T00:00:00+00:00",
-      "sasUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/hello_world.py?sv=2019-07-07&sr=b&sig=08FjgNFkTV61mFWEeXL4FncSj574iiYphFnHN1Wu%2F%2F0%3D&st=2023-12-07T06%3A29%3A09Z&se=2023-12-07T14%3A39%3A09Z&sp=r&rscd=filename%3Dhello_world.py",
-      "absoluteUrl": "https://promptfloweast4063704120.blob.core.windows.net/azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/runs/c619f648-c809-4545-9f94-f67b0a680706/hello_world.py",
-      "sizeBytes": 105, "sizeSet": true, "children": {}}}}'
-    headers:
-      connection:
-      - keep-alive
-      content-type:
-      - application/json; charset=utf-8
-      strict-transport-security:
-      - max-age=15724800; includeSubDomains; preload
-      transfer-encoding:
-      - chunked
-      vary:
-      - Accept-Encoding
-      x-content-type-options:
-      - nosniff
-      x-request-time:
-      - '0.618'
-    http_version: HTTP/1.1
-    status_code: 200
-- request:
     body: null
     headers:
       Accept:
@@ -323,7 +323,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Thu, 07 Dec 2023 06:39:09 GMT
+      - Tue, 12 Dec 2023 13:50:57 GMT
       x-ms-range:
       - bytes=0-33554431
       x-ms-version:
@@ -382,7 +382,108 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Thu, 07 Dec 2023 06:39:09 GMT
+      - Tue, 12 Dec 2023 13:50:56 GMT
+      x-ms-range:
+      - bytes=0-33554431
+      x-ms-version:
+      - '2023-11-03'
+    method: GET
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/c619f648-c809-4545-9f94-f67b0a680706/hello_world.py
+  response:
+    body:
+      string: "from promptflow import tool\n\n\n@tool\ndef hello_world(name: str)
+        -> str:\n    return f\"Hello World {name}!\"\n"
+    headers:
+      accept-ranges:
+      - bytes
+      content-length:
+      - '105'
+      content-range:
+      - bytes 0-104/105
+      content-type:
+      - application/octet-stream
+      last-modified:
+      - Wed, 29 Nov 2023 07:22:09 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      vary:
+      - Origin
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-copy-completion-time:
+      - Wed, 29 Nov 2023 07:22:09 GMT
+      x-ms-copy-id:
+      - 1cfbfeb7-1100-494a-af62-ec2781d4114a
+      x-ms-copy-progress:
+      - 105/105
+      x-ms-copy-source:
+      - https://promptfloweast4063704120.file.core.windows.net/code-391ff5ac-6576-460f-ba4d-7e03433c68b6/Users/hod/promptflow/Simple%20Hello%20World/hello_world.py?sv=2019-07-07&sr=f&se=2023-12-06T07%3A22%3A08Z&sp=r&api-version=2019-07-07
+      x-ms-copy-status:
+      - success
+      x-ms-creation-time:
+      - Wed, 29 Nov 2023 07:22:09 GMT
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 206
+      message: Partial Content
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Tue, 12 Dec 2023 13:50:56 GMT
+      x-ms-range:
+      - bytes=0-33554431
+      x-ms-version:
+      - '2023-11-03'
+    method: GET
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/c619f648-c809-4545-9f94-f67b0a680706/flow.dag.yaml
+  response:
+    body:
+      string: "inputs:\n  name:\n    type: string\n    default: hod\n    is_chat_input:
+        false\noutputs:\n  result:\n    type: string\n    reference: ${hello_world.output}\n
+        \   evaluation_only: false\n    is_chat_output: false\nnodes:\n- name: hello_world\n
+        \ type: python\n  source:\n    type: code\n    path: hello_world.py\n  inputs:\n
+        \   name: ${inputs.name}\n  aggregation: false\n"
+    headers:
+      accept-ranges:
+      - bytes
+      content-length:
+      - '349'
+      content-range:
+      - bytes 0-348/349
+      content-type:
+      - application/octet-stream
+      last-modified:
+      - Wed, 29 Nov 2023 07:22:09 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      vary:
+      - Origin
+      x-ms-blob-content-md5:
+      - YvChqAUfcnHzGcDRKwFlkg==
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-creation-time:
+      - Wed, 29 Nov 2023 07:22:09 GMT
+      x-ms-version:
+      - '2023-11-03'
+    status:
+      code: 206
+      message: Partial Content
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      User-Agent:
+      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
+      x-ms-date:
+      - Tue, 12 Dec 2023 13:50:57 GMT
       x-ms-range:
       - bytes=0-33554431
       x-ms-version:
@@ -439,7 +540,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Thu, 07 Dec 2023 06:39:09 GMT
+      - Tue, 12 Dec 2023 13:50:57 GMT
       x-ms-range:
       - bytes=0-33554431
       x-ms-version:
@@ -483,53 +584,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Thu, 07 Dec 2023 06:39:09 GMT
-      x-ms-range:
-      - bytes=0-33554431
-      x-ms-version:
-      - '2023-11-03'
-    method: GET
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/c619f648-c809-4545-9f94-f67b0a680706/flow_outputs/output.jsonl
-  response:
-    body:
-      string: '{"line_number": 0, "result": "Hello World promptflow!"}
-
-        '
-    headers:
-      accept-ranges:
-      - bytes
-      content-length:
-      - '56'
-      content-range:
-      - bytes 0-55/56
-      content-type:
-      - application/octet-stream
-      last-modified:
-      - Wed, 29 Nov 2023 07:22:31 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      vary:
-      - Origin
-      x-ms-blob-content-md5:
-      - 0rf09gNjcm6+yck9hUgVPg==
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-creation-time:
-      - Wed, 29 Nov 2023 07:22:31 GMT
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 206
-      message: Partial Content
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/xml
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
-      x-ms-date:
-      - Thu, 07 Dec 2023 06:39:09 GMT
+      - Tue, 12 Dec 2023 13:50:57 GMT
       x-ms-range:
       - bytes=0-33554431
       x-ms-version:
@@ -576,94 +631,39 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Thu, 07 Dec 2023 06:39:09 GMT
+      - Tue, 12 Dec 2023 13:50:57 GMT
       x-ms-range:
       - bytes=0-33554431
       x-ms-version:
       - '2023-11-03'
     method: GET
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/c619f648-c809-4545-9f94-f67b0a680706/hello_world.py
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/promptflow/PromptFlowArtifacts/c619f648-c809-4545-9f94-f67b0a680706/flow_outputs/output.jsonl
   response:
     body:
-      string: "from promptflow import tool\n\n\n@tool\ndef hello_world(name: str)
-        -> str:\n    return f\"Hello World {name}!\"\n"
+      string: '{"line_number": 0, "result": "Hello World promptflow!"}
+
+        '
     headers:
       accept-ranges:
       - bytes
       content-length:
-      - '105'
+      - '56'
       content-range:
-      - bytes 0-104/105
+      - bytes 0-55/56
       content-type:
       - application/octet-stream
       last-modified:
-      - Wed, 29 Nov 2023 07:22:09 GMT
-      server:
-      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
-      vary:
-      - Origin
-      x-ms-blob-type:
-      - BlockBlob
-      x-ms-copy-completion-time:
-      - Wed, 29 Nov 2023 07:22:09 GMT
-      x-ms-copy-id:
-      - 1cfbfeb7-1100-494a-af62-ec2781d4114a
-      x-ms-copy-progress:
-      - 105/105
-      x-ms-copy-source:
-      - https://promptfloweast4063704120.file.core.windows.net/code-391ff5ac-6576-460f-ba4d-7e03433c68b6/Users/hod/promptflow/Simple%20Hello%20World/hello_world.py?sv=2019-07-07&sr=f&se=2023-12-06T07%3A22%3A08Z&sp=r&api-version=2019-07-07
-      x-ms-copy-status:
-      - success
-      x-ms-creation-time:
-      - Wed, 29 Nov 2023 07:22:09 GMT
-      x-ms-version:
-      - '2023-11-03'
-    status:
-      code: 206
-      message: Partial Content
-- request:
-    body: null
-    headers:
-      Accept:
-      - application/xml
-      User-Agent:
-      - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
-      x-ms-date:
-      - Thu, 07 Dec 2023 06:39:09 GMT
-      x-ms-range:
-      - bytes=0-33554431
-      x-ms-version:
-      - '2023-11-03'
-    method: GET
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/runs/c619f648-c809-4545-9f94-f67b0a680706/flow.dag.yaml
-  response:
-    body:
-      string: "inputs:\n  name:\n    type: string\n    default: hod\n    is_chat_input:
-        false\noutputs:\n  result:\n    type: string\n    reference: ${hello_world.output}\n
-        \   evaluation_only: false\n    is_chat_output: false\nnodes:\n- name: hello_world\n
-        \ type: python\n  source:\n    type: code\n    path: hello_world.py\n  inputs:\n
-        \   name: ${inputs.name}\n  aggregation: false\n"
-    headers:
-      accept-ranges:
-      - bytes
-      content-length:
-      - '349'
-      content-range:
-      - bytes 0-348/349
-      content-type:
-      - application/octet-stream
-      last-modified:
-      - Wed, 29 Nov 2023 07:22:09 GMT
+      - Wed, 29 Nov 2023 07:22:31 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
       - Origin
       x-ms-blob-content-md5:
-      - YvChqAUfcnHzGcDRKwFlkg==
+      - 0rf09gNjcm6+yck9hUgVPg==
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Wed, 29 Nov 2023 07:22:09 GMT
+      - Wed, 29 Nov 2023 07:22:31 GMT
       x-ms-version:
       - '2023-11-03'
     status:
@@ -990,7 +990,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.079'
+      - '0.067'
     http_version: HTTP/1.1
     status_code: 200
 - request:
@@ -1104,7 +1104,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.738'
+      - '1.197'
     status:
       code: 200
       message: OK

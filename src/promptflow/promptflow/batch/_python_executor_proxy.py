@@ -59,3 +59,13 @@ class PythonExecutorProxy(AbstractExecutorProxy):
             # For bulk run, currently we need to add line results to run_tracker
             self._flow_executor._add_line_results(line_results)
         return line_results
+
+    @classmethod
+    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
+        from promptflow._sdk._utils import generate_flow_tools_json
+
+        return generate_flow_tools_json(
+            flow_directory=working_dir,
+            dump=False,
+            used_packages_only=True,
+        )
