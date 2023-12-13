@@ -26,14 +26,14 @@ def compute_f1_score(ground_truth: str, answer: str) -> str:
         def white_space_fix(text):
             return " ".join(text.split())
 
-        def remove_punc(text):
+        def remove_punctuation(text):
             exclude = set(string.punctuation)
             return "".join(ch for ch in text if ch not in exclude)
 
         def lower(text):
             return text.lower()
 
-        return white_space_fix(remove_articles(remove_punc(lower(text))))
+        return white_space_fix(remove_articles(remove_punctuation(lower(text))))
     prediction_tokens = normalize_text(answer)
     reference_tokens = normalize_text(ground_truth)
     tokenizer = QASplitTokenizer()
