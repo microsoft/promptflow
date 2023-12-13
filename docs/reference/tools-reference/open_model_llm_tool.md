@@ -1,23 +1,23 @@
-# Open Source LLM
+# Open Model LLM
 
 ## Introduction
 
-The Open Source LLM tool enables the utilization of a variety of Open Source and Foundational Models, such as [Falcon](https://ml.azure.com/models/tiiuae-falcon-7b/version/4/catalog/registry/azureml) and [Llama 2](https://ml.azure.com/models/Llama-2-7b-chat/version/14/catalog/registry/azureml-meta), for natural language processing in Azure ML Prompt Flow.
+The Open Model LLM tool enables the utilization of a variety of Open Model and Foundational Models, such as [Falcon](https://ml.azure.com/models/tiiuae-falcon-7b/version/4/catalog/registry/azureml) and [Llama 2](https://ml.azure.com/models/Llama-2-7b-chat/version/14/catalog/registry/azureml-meta), for natural language processing in Azure ML Prompt Flow.
 
 Here's how it looks in action on the Visual Studio Code prompt flow extension. In this example, the tool is being used to call a LlaMa-2 chat endpoint and asking "What is CI?".
 
-![Screenshot of the Open Source LLM On VScode Prompt Flow extension](../../media/reference/tools-reference/open_source_llm_on_vscode_promptflow.png)
+![Screenshot of the Open Model LLM On VScode Prompt Flow extension](../../media/reference/tools-reference/open_model_llm_on_vscode_promptflow.png)
 
 This prompt flow tool supports two different LLM API types:
 
 - **Chat**: Shown in the example above. The chat API type facilitates interactive conversations with text-based inputs and responses.
 - **Completion**: The Completion API type is used to generate single response text completions based on provided prompt input.
 
-## Quick Overview: How do I use Open Source LLM Tool?
+## Quick Overview: How do I use Open Model LLM Tool?
 
 1. Choose a Model from the AzureML Model Catalog and get it deployed.
 2. Connect to the model deployment.
-3. Configure the open source llm tool settings.
+3. Configure the open model llm tool settings.
 4. Prepare the Prompt with [guidance](./prompt-tool.md#how-to-write-prompt).
 5. Run the flow.
 
@@ -35,15 +35,15 @@ In order for prompt flow to use your deployed model, you will need to connect to
 
 ### 1. Endpoint Connections
 
-Once associated to a AzureML or Azure AI Studio workspace, the Open Source LLM tool can use the endpoints on that workspace.
+Once associated to a AzureML or Azure AI Studio workspace, the Open Model LLM tool can use the endpoints on that workspace.
 
 1. **Using AzureML or Azure AI Studio workspaces**: If you are using prompt flow in one of the web page based browsers workspaces, the online endpoints available on that workspace will automatically who up.
 
-2. **Using VScode or Code First**: If you are using prompt flow in VScode or one of the Code First offerings, you will need to connect to the workspace. The Open Source LLM tool uses the azure.identity DefaultAzureCredential client for authorization. One way is through [setting environment credential values](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.environmentcredential?view=azure-python).
+2. **Using VScode or Code First**: If you are using prompt flow in VScode or one of the Code First offerings, you will need to connect to the workspace. The Open Model LLM tool uses the azure.identity DefaultAzureCredential client for authorization. One way is through [setting environment credential values](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.environmentcredential?view=azure-python).
 
 ### 2. Custom Connections
 
-The Open Source LLM tool uses the CustomConnection. Prompt flow supports two types of connections:
+The Open Model LLM tool uses the CustomConnection. Prompt flow supports two types of connections:
 
 1. **Workspace Connections** - These are connections which are stored as secrets on an Azure Machine Learning workspace. While these can be used, in many places, the are commonly created and maintained in the Studio UI.
 
@@ -64,7 +64,7 @@ The required keys to set are:
 
 ## Running the Tool: Inputs
 
-The Open Source LLM tool has a number of parameters, some of which are required. Please see the below table for details, you can match these to the screen shot above for visual clarity.
+The Open Model LLM tool has a number of parameters, some of which are required. Please see the below table for details, you can match these to the screen shot above for visual clarity.
 
 | Name | Type | Description | Required |
 |------|------|-------------|----------|
@@ -83,3 +83,7 @@ The Open Source LLM tool has a number of parameters, some of which are required.
 |------------|-------------|------------------------------------------|
 | Completion | string      | The text of one predicted completion     |
 | Chat       | string      | The text of one response int the conversation |
+
+## Deploying to an Online Endpoint
+
+When deploying a flow containing the Open Model LLM tool to an online endpoint, there is an additional step to setup permissions. During deployment through the web pages, there is a choice between System-assigned and User-assigned Identity types. Either way, using the Azure Portal (or a similar functionality), add the "Reader" Job function role to the identity on the Azure Machine Learning workspace or Ai Studio project which is hosting the endpoint. The prompt flow deployment may need to be refreshed.

@@ -9,7 +9,7 @@ on:
     - cron: "24 20 * * *" # Every day starting at 4:24 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_getstarted_quickstartazure.yml, '!examples/flows/integrations/**' ]
+    paths: [ examples/tutorials/get-started/**, examples/requirements.txt, examples/flows/standard/web-classification/**, examples/flows/evaluation/eval-classification-accuracy/**, .github/workflows/samples_getstarted_quickstartazure.yml, examples/connections/azure_openai.yml ]
   workflow_dispatch:
 
 env:
