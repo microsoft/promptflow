@@ -96,12 +96,21 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         return AggregationResult({}, {}, {})
 
     @classmethod
-    def generate_tool_metadata(cls, working_dir: Path) -> dict:
-        promptflow_folder = working_dir / PROMPT_FLOW_DIR_NAME
-        if promptflow_folder.exists():
-            with open(promptflow_folder / FLOW_TOOLS_JSON, mode="r", encoding=DEFAULT_ENCODING) as f:
-                return json.load(f)
-        return {}
+    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
+        flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        if flow_tools_json_path.is_file():
+            with open(flow_tools_json_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError:
+                    raise RuntimeError(
+                        f"Failed to fetch meta of tools: {flow_tools_json_path.absolute().as_posix()} "
+                        f"is not a valid json file."
+                    )
+        raise FileNotFoundError(
+            f"Failed to fetch meta of tools: cannot find {flow_tools_json_path.absolute().as_posix()}, "
+            f"please build the flow project first."
+        )
 
     @classmethod
     def find_available_port(cls) -> str:
