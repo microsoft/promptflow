@@ -4,6 +4,7 @@
 
 from functools import partial
 from pathlib import Path
+from typing import Union
 
 from promptflow._utils.multimedia_utils import _process_recursively, get_file_reference_encoder
 from promptflow.contracts.multimedia import Image
@@ -59,35 +60,49 @@ class DefaultRunStorage(AbstractRunStorage):
         self._base_dir = base_dir
         self._sub_dir = sub_dir
 
-    def persist_node_run(self, run_info: NodeRunInfo):
-        """Persist the multimedia data in node run info after the node is executed.
+    def persist_run_info(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
+        """Persist the multimedia data in run info after execution.
 
-        :param run_info: The run info of the node.
-        :type run_info: ~promptflow.contracts.run_info.RunInfo
+        :param run_info: The run info of the node or flow.
+        :type run_info: ~promptflow.contracts.run_info.RunInfo or ~promptflow.contracts.run_info.FlowRunInfo
         """
+        # Persist and convert images in inputs to path dictionaries.
+        # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.inputs:
             run_info.inputs = self._persist_and_convert_images_to_path_dicts(run_info.inputs)
+
+        # Persist and convert images in output to path dictionaries.
+        # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.output:
             serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
             run_info.output = serialized_output
             run_info.result = serialized_output
+
+        # Persist and convert images in api_calls to path dictionaries.
+        # The `inplace=True` parameter is used here to ensure that the original list structure holding generator outputs
+        # is maintained. This allows us to keep tracking the list as it dynamically changes when the generator is
+        # consumed. It is crucial to process the api_calls list in place to avoid losing the reference to the list that
+        # holds the generator items, which is essential for tracing generator execution.
         if run_info.api_calls:
             run_info.api_calls = self._persist_and_convert_images_to_path_dicts(run_info.api_calls, inplace=True)
+
+    def persist_node_run(self, run_info: NodeRunInfo):
+        """Persist the multimedia data in node run info after the node is executed.
+        This method now delegates to the shared persist_run_info method.
+
+        :param run_info: The run info of the node.
+        :type run_info: NodeRunInfo
+        """
+        self.persist_run_info(run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         """Persist the multimedia data in flow run info after one line data is executed for the flow.
+        This method now delegates to the shared persist_run_info method.
 
         :param run_info: The run info of the flow.
-        :type run_info: ~promptflow.contracts.run_info.FlowRunInfo
+        :type run_info: FlowRunInfo
         """
-        if run_info.inputs:
-            run_info.inputs = self._persist_and_convert_images_to_path_dicts(run_info.inputs)
-        if run_info.output:
-            serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
-            run_info.output = serialized_output
-            run_info.result = serialized_output
-        if run_info.api_calls:
-            run_info.api_calls = self._persist_and_convert_images_to_path_dicts(run_info.api_calls, inplace=True)
+        self.persist_run_info(run_info)
 
     def _persist_and_convert_images_to_path_dicts(self, value, inplace=False):
         """Persist image objects within a Python object to disk and convert them to path dictionaries.

@@ -9,6 +9,7 @@ from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
+from typing import Union
 
 import psutil
 
@@ -277,25 +278,34 @@ class LineExecutionProcessPool:
         result.output = persist_multimedia_data(result.output, self._output_dir)
         return result
 
-    def _process_multimedia_in_flow_run(self, run_info: FlowRunInfo):
+    def _process_multimedia_in_run_info(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
+        # Persist and convert images in inputs to path dictionaries.
+        # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.inputs:
             run_info.inputs = self._persist_and_convert_images_to_path_dicts(run_info.inputs)
+
+        # Persist and convert images in output to path dictionaries.
+        # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.output:
             serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
             run_info.output = serialized_output
             run_info.result = None
+
+        # Persist and convert images in api_calls to path dictionaries.
+        # The `inplace=True` parameter is used here to ensure that the original list structure holding generator outputs
+        # is maintained. This allows us to keep tracking the list as it dynamically changes when the generator is
+        # consumed. It is crucial to process the api_calls list in place to avoid losing the reference to the list that
+        # holds the generator items, which is essential for tracing generator execution.
         if run_info.api_calls:
             run_info.api_calls = self._persist_and_convert_images_to_path_dicts(run_info.api_calls, inplace=True)
 
+        return run_info
+
+    def _process_multimedia_in_flow_run(self, run_info: FlowRunInfo):
+        self._process_multimedia_in_run_info(run_info)
+
     def _process_multimedia_in_node_run(self, run_info: NodeRunInfo):
-        if run_info.inputs:
-            run_info.inputs = self._persist_and_convert_images_to_path_dicts(run_info.inputs)
-        if run_info.output:
-            serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
-            run_info.output = serialized_output
-            run_info.result = None
-        if run_info.api_calls:
-            run_info.api_calls = self._persist_and_convert_images_to_path_dicts(run_info.api_calls, inplace=True)
+        run_info = self._process_multimedia_in_run_info(run_info)
         return run_info
 
     def _persist_and_convert_images_to_path_dicts(self, value, inplace=False):
