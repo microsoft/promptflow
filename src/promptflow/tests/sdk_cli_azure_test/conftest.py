@@ -284,3 +284,19 @@ def mock_vcrpy_for_httpx() -> None:
 
     with patch("vcr.stubs.httpx_stubs._transform_headers", new=_transform_headers):
         yield
+
+
+@pytest.fixture(autouse=not is_live())
+def mock_to_thread() -> None:
+    # https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread
+    # to_thread actually uses a separate thread, which will break mocks
+    # so we need to mock it to avoid using a separate thread
+    # this is only for AsyncRunDownloader.to_thread
+    async def to_thread(func, /, *args, **kwargs):
+        func(*args, **kwargs)
+
+    with patch(
+        "promptflow.azure.operations._async_run_downloader.to_thread",
+        new=to_thread,
+    ):
+        yield
