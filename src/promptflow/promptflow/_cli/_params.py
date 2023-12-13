@@ -4,7 +4,7 @@
 
 import argparse
 
-from promptflow._sdk._constants import CLIListOutputFormat, FlowType
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
 
 # TODO: avoid azure dependency here
 MAX_LIST_CLI_RESULTS = 50
@@ -160,7 +160,10 @@ def add_param_output(parser):
         "-o",
         "--output",
         type=str,
-        help="The output directory to store the results. Default to be current working directory if not specified.",
+        help=(
+            f"The output directory to store the results. "
+            f"Default to be ~/{PROMPT_FLOW_DIR_NAME}/{PROMPT_FLOW_RUNS_DIR_NAME} if not specified."
+        ),
     )
 
 

@@ -12,6 +12,7 @@ import pytest
 
 from promptflow import PFClient
 from promptflow._sdk.entities import CustomConnection
+from sdk_cli_azure_test.recording_utilities import is_replay
 
 from ..utils import PFSOperations
 
@@ -49,6 +50,7 @@ class TestConnectionAPIs:
         specs = pfs_op.get_connection_specs(status_code=200).json
         assert len(specs) > 1
 
+    @pytest.mark.skipif(is_replay(), reason="connection provider test, skip in non-live mode.")
     def test_get_connection_by_provicer(self, pfs_op, subscription_id, resource_group_name, workspace_name):
         target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
         provider_url_target = (
