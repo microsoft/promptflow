@@ -16,6 +16,7 @@ from dateutil import parser as date_parser
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    DEFAULT_ENCODING,
     DEFAULT_VARIANT,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     FLOW_RESOURCE_ID_PREFIX,
@@ -28,6 +29,7 @@ from promptflow._sdk._constants import (
     TIMESTAMP_MACRO,
     VARIANT_ID_MACRO,
     AzureRunTypes,
+    DownloadedRun,
     FlowRunProperties,
     RestRunTypes,
     RunDataKeys,
@@ -102,7 +104,7 @@ class Run(YAMLTranslatableMixin):
 
     def __init__(
         self,
-        flow: Union[Path, str],
+        flow: Optional[Union[Path, str]] = None,
         name: Optional[str] = None,
         # input fields are optional since it's not stored in DB
         data: Optional[str] = None,
@@ -120,6 +122,7 @@ class Run(YAMLTranslatableMixin):
         environment_variables: Optional[Dict[str, str]] = None,
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
+        source: Optional[Union[Path, str]] = None,
         **kwargs,
     ):
         # TODO: remove when RUN CRUD don't depend on this
@@ -136,6 +139,7 @@ class Run(YAMLTranslatableMixin):
         self.environment_variables = environment_variables or {}
         self.connections = connections or {}
         self._properties = properties or {}
+        self.source = source
         self._is_archived = kwargs.get("is_archived", False)
         self._run_source = kwargs.get("run_source", RunInfoSources.LOCAL)
         self._start_time = start_time
@@ -172,6 +176,9 @@ class Run(YAMLTranslatableMixin):
             self._input_run_portal_url = kwargs.get("input_run_portal_url", None)
             self._output = kwargs.get("output", None)
             self._output_portal_url = kwargs.get("output_portal_url", None)
+        elif self._run_source == RunInfoSources.EXISTING_RUN:
+            # when the run is created from an existing run folder, the output path is also the source path
+            self._output_path = Path(source)
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
 
@@ -185,6 +192,7 @@ class Run(YAMLTranslatableMixin):
 
     @property
     def properties(self) -> Dict[str, str]:
+        result = {}
         if self._run_source == RunInfoSources.LOCAL:
             # show posix path to avoid windows path escaping
             result = {
@@ -196,18 +204,32 @@ class Run(YAMLTranslatableMixin):
                 result[FlowRunProperties.RUN] = run_name
             if self.variant:
                 result[FlowRunProperties.NODE_VARIANT] = self.variant
-            return {
-                **result,
-                **self._properties,
+        elif self._run_source == RunInfoSources.EXISTING_RUN:
+            result = {
+                FlowRunProperties.OUTPUT_PATH: Path(self.source).resolve().as_posix(),
             }
-        return self._properties
+
+        return {
+            **result,
+            **self._properties,
+        }
 
     @classmethod
     def _from_orm_object(cls, obj: ORMRun) -> "Run":
         properties_json = json.loads(str(obj.properties))
+        flow = properties_json.get(FlowRunProperties.FLOW_PATH, None)
+
+        # there can be two sources for orm run object:
+        # 1. LOCAL: Created when run is created from local flow
+        # 2. EXISTING_RUN: Created when run is created from existing run folder
+        source = None
+        if getattr(obj, "run_source", None) == RunInfoSources.EXISTING_RUN:
+            source = properties_json[FlowRunProperties.OUTPUT_PATH]
+
         return Run(
             name=str(obj.name),
-            flow=Path(properties_json[FlowRunProperties.FLOW_PATH]),
+            flow=Path(flow) if flow else None,
+            source=Path(source) if source else None,
             output_path=properties_json[FlowRunProperties.OUTPUT_PATH],
             run=properties_json.get(FlowRunProperties.RUN, None),
             variant=properties_json.get(FlowRunProperties.NODE_VARIANT, None),
@@ -221,6 +243,8 @@ class Run(YAMLTranslatableMixin):
             status=str(obj.status),
             data=Path(obj.data).resolve().absolute().as_posix() if obj.data else None,
             properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
+            # compatible with old runs, their run_source is empty, treat them as local
+            run_source=obj.run_source or RunInfoSources.LOCAL,
         )
 
     @classmethod
@@ -312,6 +336,7 @@ class Run(YAMLTranslatableMixin):
             tags=json.dumps(self.tags) if self.tags else None,
             properties=json.dumps(self.properties),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
+            run_source=self._run_source,
         )
 
     def _dump(self) -> None:
@@ -612,3 +637,33 @@ class Run(YAMLTranslatableMixin):
                 )
                 logging.getLogger(LOGGER_NAME).warning(warning_message)
         return (path / str(self.name)).resolve()
+
+    @classmethod
+    def _load_from_source(cls, source: Union[str, Path], params_override: Optional[Dict] = None, **kwargs) -> "Run":
+        """Load run from run record source folder."""
+        source = Path(source)
+        params_override = params_override or {}
+
+        run_metadata_file = source / DownloadedRun.RUN_METADATA_FILE_NAME
+        if not run_metadata_file.exists():
+            raise UserErrorException(
+                f"Invalid run source: {source!r}. Expecting a valid run source folder with {run_metadata_file!r}. "
+                f"Please make sure the run source is downloaded by 'pfazure run download' command."
+            )
+        # extract run info from source folder
+        with open(source / DownloadedRun.RUN_METADATA_FILE_NAME, encoding=DEFAULT_ENCODING) as f:
+            run_info = json.load(f)
+
+        return cls(
+            name=run_info["name"],
+            source=source,
+            run_source=RunInfoSources.EXISTING_RUN,
+            status=run_info["status"],  # currently only support completed run
+            display_name=params_override.get("display_name", run_info.get("display_name", source.name)),
+            description=params_override.get("description", run_info.get("description", "")),
+            tags=params_override.get("tags", run_info.get("tags", {})),
+            created_on=datetime.datetime.fromisoformat(run_info["created_on"]),
+            start_time=datetime.datetime.fromisoformat(run_info["start_time"]),
+            end_time=datetime.datetime.fromisoformat(run_info["end_time"]),
+            **kwargs,
+        )

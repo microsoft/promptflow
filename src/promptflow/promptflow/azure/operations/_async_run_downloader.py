@@ -1,4 +1,6 @@
 import asyncio
+import contextvars
+import functools
 import json
 import logging
 from pathlib import Path
@@ -7,8 +9,9 @@ from typing import Optional, Union
 import httpx
 from azure.storage.blob.aio import BlobServiceClient
 
-from promptflow._sdk._constants import DEFAULT_ENCODING, LOGGER_NAME
+from promptflow._sdk._constants import DEFAULT_ENCODING, LOGGER_NAME, DownloadedRun
 from promptflow._sdk._errors import RunNotFoundError, RunOperationError
+from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.exceptions import UserErrorException
 
@@ -25,10 +28,6 @@ class AsyncRunDownloader:
     :param output_folder: The output folder to save the run results.
     :type output_folder: Union[Path, str]
     """
-
-    LOCAL_SNAPSHOT_FOLDER = "snapshot"
-    LOCAL_METRICS_FILE_NAME = "metrics.json"
-    LOCAL_LOGS_FILE_NAME = "logs.txt"
 
     IGNORED_PATTERN = ["__pycache__"]
 
@@ -52,21 +51,14 @@ class AsyncRunDownloader:
             # Source: https://github.com/encode/httpx/issues/1331
             async with httpx.AsyncClient(verify=False) as client:
 
-                async_tasks = [
+                tasks = [
                     # put async functions in tasks to run in coroutines
                     self._download_artifacts_and_snapshot(client),
+                    # below functions are actually synchronous functions in order to reuse code
+                    # and use thread pool to avoid blocking the event loop
+                    to_thread(self._download_run_metrics),
+                    to_thread(self._download_run_logs),
                 ]
-                sync_tasks = [
-                    # below functions are actually synchronous functions in order to reuse code,
-                    # the execution time of these functions should be shorter than the above async functions
-                    # so it won't increase the total execution time.
-                    # the reason we still put them in the tasks is, on one hand the code is more consistent and
-                    # we can use asyncio.gather() to wait for all tasks to finish, on the other hand, we can
-                    # also evaluate below functions to be shorter than the async functions with the help of logs
-                    self._download_run_metrics(),
-                    self._download_run_logs(),
-                ]
-                tasks = async_tasks + sync_tasks
                 await asyncio.gather(*tasks)
         except Exception as e:
             raise RunOperationError(f"Failed to download run {self.run!r}. Error: {e}") from e
@@ -89,6 +81,13 @@ class AsyncRunDownloader:
             self._use_flow_outputs = True
             output_data = run_data["runMetadata"]["outputs"].get("flow_outputs", None)
         output_asset_id = output_data["assetId"]
+
+        # save run metadata to run_metadata.json
+        logger.debug("Saving the run meta data.")
+        run_data = self.run_ops._refine_run_data_from_run_history(run_data)
+        run_data = Run._from_run_history_entity(run_data)
+        with open(self.output_folder / DownloadedRun.RUN_METADATA_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(run_data._to_dict(), f, ensure_ascii=False)
 
         async with self.blob_service_client:
             container_name = self.datastore.container_name
@@ -125,13 +124,13 @@ class AsyncRunDownloader:
                 f"Failed to get run from service. Code: {response.status_code}, text: {response.text}"
             )
 
-    async def _download_run_metrics(
+    def _download_run_metrics(
         self,
     ):
         """Download the run metrics."""
         logger.debug("Downloading run metrics.")
         metrics = self.run_ops.get_metrics(self.run)
-        with open(self.output_folder / self.LOCAL_METRICS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+        with open(self.output_folder / DownloadedRun.METRICS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(metrics, f, ensure_ascii=False)
         logger.debug("Downloaded run metrics.")
 
@@ -191,7 +190,7 @@ class AsyncRunDownloader:
             blob_name = url.split(self.datastore.container_name)[-1].lstrip("/")
             blob_client = container_client.get_blob_client(blob_name)
             relative_path = url.split(self.run)[-1].lstrip("/")
-            local_path = Path(self.output_folder / self.LOCAL_SNAPSHOT_FOLDER / relative_path)
+            local_path = Path(self.output_folder / DownloadedRun.SNAPSHOT_FOLDER / relative_path)
             tasks.append(self._download_single_blob(blob_client, local_path))
         await asyncio.gather(*tasks)
 
@@ -242,11 +241,20 @@ class AsyncRunDownloader:
 
         return urls
 
-    async def _download_run_logs(self):
+    def _download_run_logs(self):
         """Download the run logs."""
         logger.debug("Downloading run logs.")
         logs = self.run_ops._get_log(self.run)
 
-        with open(self.output_folder / self.LOCAL_LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
+        with open(self.output_folder / DownloadedRun.LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(logs)
         logger.debug("Downloaded run logs.")
+
+
+async def to_thread(func, /, *args, **kwargs):
+    # this is copied from asyncio.to_thread() in Python 3.9
+    # as it is not available in Python 3.8, which is the minimum supported version of promptflow
+    loop = asyncio.get_running_loop()
+    ctx = contextvars.copy_context()
+    func_call = functools.partial(ctx.run, func, *args, **kwargs)
+    return await loop.run_in_executor(None, func_call)
