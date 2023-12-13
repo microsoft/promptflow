@@ -5,6 +5,7 @@ promptflow.tools.openai_gpt4v.OpenAI.chat:
   module: promptflow.tools.openai_gpt4v
   class_name: OpenAI
   function: chat
+  tool_state: preview
   default_prompt: |
     # system:
     As an AI assistant, your task involves interpreting images and responding to questions about the image.
