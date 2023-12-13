@@ -65,22 +65,48 @@ class TestFlowContract:
         assert connection_names == ["connection", "connection_2"]
         assert flow.get_connection_input_names_for_node("not_exist") == []
 
-    def test_load_env_variables(self):
-        flow_folder = get_flow_folder("flow_with_environment_variables")
+    @pytest.mark.parametrize(
+        "flow_folder_name, environment_variables_overrides, except_environment_variables",
+        [
+            pytest.param(
+                "flow_with_environment_variables",
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                {
+                    "env1": "2",
+                    "env2": "runtime_env2",
+                    "env3": "[1, 2, 3, 4, 5]",
+                    "env4": '{"a": 1, "b": "2"}',
+                    "env10": "aaaaa",
+                },
+                id="LoadEnvVariablesWithOverrides",
+            ),
+            pytest.param(
+                "flow_with_environment_variables",
+                None,
+                {
+                    "env1": "2",
+                    "env2": "spawn",
+                    "env3": "[1, 2, 3, 4, 5]",
+                    "env4": '{"a": 1, "b": "2"}',
+                },
+                id="LoadEnvVariablesWithoutOverrides",
+            ),
+            pytest.param(
+                "simple_hello_world",
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                id="LoadEnvVariablesWithoutYamlLevelEnvVariables",
+            ),
+        ],
+    )
+    def test_load_env_variables(self, flow_folder_name, environment_variables_overrides, except_environment_variables):
+        flow_folder = get_flow_folder(flow_folder_name)
         flow_file = "flow.dag.yaml"
-        environment_variables_overrides = {"env2": "runtime_env2", "env10": "aaaaa"}
         merged_environment_variables = Flow.load_env_variables(
             flow_file=flow_file,
             working_dir=flow_folder,
             environment_variables_overrides=environment_variables_overrides,
         )
-        except_environment_variables = {
-            "env1": "2",
-            "env2": "runtime_env2",
-            "env3": "[1, 2, 3, 4, 5]",
-            "env4": '{"a": 1, "b": "2"}',
-            "env10": "aaaaa",
-        }
         assert merged_environment_variables == except_environment_variables
 
 
