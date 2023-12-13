@@ -203,10 +203,10 @@ def _save_image_to_file(
     image_path = (relative_path / file_name).as_posix() if relative_path else file_name
     if use_absolute_path:
         image_path = Path(folder_path / image_path).resolve().as_posix()
-    if version == "v1":
-        image_reference = {f"data:{image._mime_type};path": image_path}
-    else:
+    if version == 2:
         image_reference = {"type": "image_file", "image_file": {"path": image_path}}
+    else:
+        image_reference = {f"data:{image._mime_type};path": image_path}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)
     with open(os.path.join(path, file_name), "wb") as file:
@@ -214,7 +214,9 @@ def _save_image_to_file(
     return image_reference
 
 
-def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *, use_absolute_path=False, version=1) -> Callable:
+def get_file_reference_encoder(
+    folder_path: Path, relative_path: Path = None, *, use_absolute_path=False, version=1
+) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
         if isinstance(obj, PFBytes):

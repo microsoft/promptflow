@@ -54,6 +54,10 @@ nodes:
     type: code
     path: passthrough.py
   inputs:
+    image:
+      type: image_file
+      image_file:
+        path: logo.jpg
     question: ${inputs.question}
     chat_history: ${inputs.chat_history}
 version: 2

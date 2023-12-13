@@ -42,7 +42,7 @@ class ResolvedTool:
 
 class ToolResolver:
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
+        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None, version=None
     ):
         try:
             # Import openai and aoai for llm tool
@@ -52,6 +52,7 @@ class ToolResolver:
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
+        self._version = version if version else 1
 
     def _convert_to_connection_value(self, k: str, v: InputAssignment, node: Node, conn_types: List[ValueType]):
         connection_value = self._connection_manager.get(v.value)
@@ -109,7 +110,7 @@ class ToolResolver:
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
-                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
+                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value, version=self._version)
                 except InvalidImageInput as e:
                     msg = (
                         f"Input '{k} for node '{node.name}' of value {v.value} is not a valid image, "
