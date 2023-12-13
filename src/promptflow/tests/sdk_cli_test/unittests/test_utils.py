@@ -205,8 +205,12 @@ class TestUtils:
 
     @patch('promptflow._utils.version_hint_utils.datetime')
     def test_hint_for_update(self, mock_datetime):
-        mock_datetime.datetime.now.return_value = datetime.datetime(2023, 12, 13, 10, 30, 0)  # 设置为 2023 年 12 月 15 日 10:30 AM
-        mock_datetime.datetime.strptime.return_value = datetime.datetime(2023, 12, 1, 10, 30, 0)
+        mock_datetime.datetime.now.return_value = datetime.datetime(
+            2023, 12, 13, 10, 30, 0
+        )
+        mock_datetime.datetime.strptime.return_value = datetime.datetime(
+            2023, 12, 1, 10, 30, 0
+        )
         mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
         async_run_allowing_running_loop(hint_for_update)
         assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
