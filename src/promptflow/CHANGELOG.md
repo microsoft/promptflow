@@ -4,6 +4,7 @@
 
 ### Features Added
 - [SDK/CLI] Support `pfazure run download` to download run data from Azure AI.
+- [SDK/CLI] Support `pf run create` to create a local run record from downloaded run data.
 
 ### Bugs Fixed
 
