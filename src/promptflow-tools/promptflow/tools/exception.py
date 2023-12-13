@@ -29,6 +29,14 @@ def to_openai_error_message(e: Exception) -> str:
               "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt " \
               "or view the samples in our gallery that contain 'Chat' in the name."
         return f"OpenAI API hits {ex_type}: {msg}"
+    elif ("\'response_format\' of type" in str(e) and "is not supported with this model." in str(e))\
+            or ("Additional properties are not allowed" in str(e) and "unexpected) - \'response_format\'" in str(e)):
+        msg = "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}. " \
+              "The value associated with the type key should be either 'text' or 'json_object' " \
+              "If you are using openai connection, you can only set response_format to { \"type\": \"json_object\" } " \
+              "when calling gpt-3.5-turbo-1106 or gpt-4-1106-preview to enable JSON mode. You can refer to " \
+              "https://platform.openai.com/docs/guides/text-generation/json-mode."
+        return f"OpenAI API hits {ex_type}: {msg}"
     else:
         return f"OpenAI API hits {ex_type}: {str(e)} [{openai_error_code_ref_message}]"
 
@@ -136,21 +144,21 @@ class SerpAPIUserError(UserErrorException):
         super().__init__(**kwargs, target=ErrorTarget.TOOL)
 
 
-class OpenSourceLLMOnlineEndpointError(UserErrorException):
+class OpenModelLLMOnlineEndpointError(UserErrorException):
     """Base exception raised when the call to an online endpoint failed."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs, target=ErrorTarget.TOOL)
 
 
-class OpenSourceLLMUserError(UserErrorException):
-    """Base exception raised when the call to Open Source LLM failed with a user error."""
+class OpenModelLLMUserError(UserErrorException):
+    """Base exception raised when the call to Open Model LLM failed with a user error."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs, target=ErrorTarget.TOOL)
 
 
-class OpenSourceLLMKeyValidationError(ToolValidationError):
+class OpenModelLLMKeyValidationError(ToolValidationError):
     """Base exception raised when failed to validate functions when call chat api."""
 
     def __init__(self, **kwargs):
