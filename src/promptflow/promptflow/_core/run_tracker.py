@@ -392,9 +392,12 @@ class RunTracker(ThreadLocalSingleton):
             else:
                 status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
 
-        line_flow_run_infos = [flow_run_info for flow_run_info in self.flow_run_list if flow_run_info.root_run_id == run_id]
+        line_flow_run_infos = [
+            flow_run_info for flow_run_info in self.flow_run_list
+            if flow_run_info.root_run_id == run_id and flow_run_info.index is not None]
         total_lines = len(line_flow_run_infos)
-        completed_lines = len([flow_run_info for flow_run_info in line_flow_run_infos if flow_run_info.status == Status.Completed])
+        completed_lines = len([flow_run_info for flow_run_info in line_flow_run_infos
+                               if flow_run_info.status == Status.Completed])
         status_summary["__pf__.lines.completed"] = completed_lines
         status_summary["__pf__.lines.failed"] = total_lines - completed_lines
         return status_summary
