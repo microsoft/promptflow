@@ -349,7 +349,8 @@ class TestBatch:
         assert batch_result.total_lines == batch_result.completed_lines
         assert batch_result.node_status == get_flow_expected_status_summary(flow_folder)
         # assert aggregation node error summary
-        aggre_node_error = batch_result.aggr_error_summary["aggregate"]
+        assert batch_result.failed_lines == 0
+        aggre_node_error = batch_result.error_summary.aggr_error_dict["aggregate"]
         assert aggre_node_error["message"] == "Execution failure in 'aggregate': (ZeroDivisionError) division by zero"
         assert aggre_node_error["code"] == "UserError"
         assert aggre_node_error["innerError"] == {"code": "ToolExecutionError", "innerError": None}
