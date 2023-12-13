@@ -473,3 +473,13 @@ def _get_cli_activity_name(cli, args):
         activity_name += f".{args.sub_action}"
 
     return activity_name
+
+
+def _try_delete_existing_run_record(run_name: str):
+    from promptflow._sdk._errors import RunNotFoundError
+    from promptflow._sdk._orm import RunInfo as ORMRun
+
+    try:
+        ORMRun.delete(run_name)
+    except RunNotFoundError:
+        pass

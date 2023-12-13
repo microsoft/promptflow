@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        pythonVersion: ['3.8', '3.9']
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
     - name: set test mode
@@ -105,7 +105,7 @@ jobs:
           -l eastus `
           -m "unittest or e2etest" `
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc `
-          -o "${{ github.workspace }}/test-results-sdk-cli.xml" `
+          -o "${{ env.testWorkingDirectory }}/test-results-sdk-cli.xml" `
           --ignore-glob ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py
     - name: Install pf executable
       shell: pwsh
@@ -125,7 +125,7 @@ jobs:
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py `
           -l eastus `
           -m "unittest or e2etest" `
-          -o "${{ github.workspace }}/test-results-sdk-cli-executable.xml"
+          -o "${{ env.testWorkingDirectory }}/test-results-sdk-cli-executable.xml"
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3

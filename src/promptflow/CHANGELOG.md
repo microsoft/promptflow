@@ -2,6 +2,10 @@
 
 ## 1.2.0 (upcoming)
 
+### Features Added
+- [SDK/CLI] Support `pfazure run download` to download run data from Azure AI.
+- [SDK/CLI] Support `pf run create` to create a local run record from downloaded run data.
+
 ### Bugs Fixed
 
 - [SDK/CLI] Removing telemetry warning when running commands.

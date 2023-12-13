@@ -5,6 +5,7 @@
 import json
 import time
 
+from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
@@ -129,7 +130,14 @@ def main():
         version_dict = {"promptflow": get_promptflow_sdk_version()}
         return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
     if len(command_args) == 0:
+        # print privacy statement & welcome message like azure-cli
+        show_privacy_statement()
+        show_welcome_message()
         command_args.append("-h")
+    elif len(command_args) == 1:
+        # pfazure only has "pf --version" with 1 layer
+        if command_args[0] not in ["--version", "-v"]:
+            command_args.append("-h")
     setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 
