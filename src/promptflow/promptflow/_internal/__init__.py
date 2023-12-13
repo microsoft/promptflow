@@ -105,10 +105,3 @@ from promptflow.batch._batch_inputs_processor import apply_inputs_mapping
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.storage._run_storage import DefaultRunStorage
-from promptflow.storage._sqlite_client import (
-    INDEX,
-    PRIMARY_KEY,
-    DuplicatedPrimaryKeyException,
-    NotFoundException,
-    SqliteClient,
-)
