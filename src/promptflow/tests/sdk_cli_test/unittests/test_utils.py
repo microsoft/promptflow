@@ -203,23 +203,23 @@ class TestUtils:
         for thread in threads:
             thread.join()
 
-    @patch('promptflow._utils.version_hint_utils.datetime')
-    def test_hint_for_update(self, mock_datetime):
-        mock_datetime.datetime.now.return_value = datetime.datetime(
-            2023, 12, 13, 10, 30, 0
-        )
-        mock_datetime.datetime.strptime.return_value = datetime.datetime(
-            2023, 12, 1, 10, 30, 0
-        )
-        mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
-        async_run_allowing_running_loop(hint_for_update)
-        assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
-        with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
-            cached_versions = json.load(f)
-        assert "update_time" in cached_versions
-        assert "versions" in cached_versions
-        assert "local" in cached_versions["versions"]
-        assert "pypi" in cached_versions["versions"]
+    def test_hint_for_update(self):
+        with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
+            mock_datetime.datetime.now.return_value = datetime.datetime(
+                2023, 12, 13, 10, 30, 1, 884406
+            )
+            mock_datetime.datetime.strptime.return_value = datetime.datetime(
+                2023, 12, 1, 10, 30, 1, 884406
+            )
+            mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
+            async_run_allowing_running_loop(hint_for_update)
+            assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
+            with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
+                cached_versions = json.load(f)
+            assert "update_time" in cached_versions
+            assert "versions" in cached_versions
+            assert "local" in cached_versions["versions"]
+            assert "pypi" in cached_versions["versions"]
 
     @pytest.mark.parametrize(
         "data_path",
