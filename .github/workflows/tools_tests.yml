@@ -24,7 +24,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
       - name: Setup
         run: |
-          echo "DEPENDENCY_SOURCE_MODE $DEPENDENCY_SOURCE_MODE"
           python -m pip install --upgrade pip
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
