@@ -66,7 +66,7 @@ class TestBatchResult:
             for k, v in line_dict.items()
         ]
 
-    def get_bulk_result(self, line_dict, aggr_dict, line_api_calls=None, aggr_api_calls=None):
+    def get_batch_result(self, line_dict, aggr_dict, line_api_calls=None, aggr_api_calls=None):
         line_results = self.get_line_results(line_dict=line_dict, api_calls=line_api_calls)
         aggr_result = AggregationResult(
             output={}, metrics={}, node_run_infos=self.get_node_run_infos(node_dict=aggr_dict, api_calls=aggr_api_calls)
@@ -82,7 +82,7 @@ class TestBatchResult:
             2: {"node_0": Status.Completed, "node_1": Status.Completed, "node_2": Status.Bypassed},
         }
         aggr_dict = {"aggr_0": Status.Completed, "aggr_1": Status.Failed, "aggr_2": Status.Bypassed}
-        batch_result = self.get_bulk_result(line_dict=line_dict, aggr_dict=aggr_dict)
+        batch_result = self.get_batch_result(line_dict=line_dict, aggr_dict=aggr_dict)
 
         assert batch_result.total_lines == 3
         assert batch_result.completed_lines == 2
@@ -144,7 +144,7 @@ class TestBatchResult:
             },
             output={"choices": [{"message": {"content": "content"}}]},
         )
-        batch_result = self.get_bulk_result(
+        batch_result = self.get_batch_result(
             line_dict=line_dict, aggr_dict=aggr_dict, line_api_calls=[line_api_calls], aggr_api_calls=[aggr_api_call]
         )
         assert batch_result.system_metrics.total_tokens == 42
@@ -165,7 +165,7 @@ class TestBatchResult:
     )
     def test_invalid_api_calls(self, api_call):
         line_dict = {0: {"node_0": Status.Completed}}
-        batch_result = self.get_bulk_result(line_dict=line_dict, aggr_dict={}, line_api_calls=[api_call])
+        batch_result = self.get_batch_result(line_dict=line_dict, aggr_dict={}, line_api_calls=[api_call])
         assert batch_result.system_metrics.total_tokens == 0
         assert batch_result.system_metrics.completion_tokens == 0
         assert batch_result.system_metrics.prompt_tokens == 0
@@ -182,7 +182,7 @@ class TestBatchResult:
             "aggr_2": Status.Bypassed,
             "aggr_4": Status.Failed,
         }
-        batch_result = self.get_bulk_result(line_dict=line_dict, aggr_dict=aggr_dict)
+        batch_result = self.get_batch_result(line_dict=line_dict, aggr_dict=aggr_dict)
         assert batch_result.total_lines == 3
         assert batch_result.failed_lines == 1
         assert batch_result.error_summary.failed_system_error_lines == 0
