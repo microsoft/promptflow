@@ -23,7 +23,7 @@ jobs:
           stale-pr-label: 'no-recent-activity'
           days-before-issue-stale: 30
           days-before-pr-stale: 14
-          # # close issue/pull request
-          # close-pr-message: 'Hi, thank you for your contribution. Since there hasn't been recent engagement, we're going to close this out.'
+          # close issue/pull request
           # days-before-issue-close: 7
-          # days-before-pr-close: 7
+          days-before-pr-close: 7
+          close-pr-message: "Hi, thank you for your contribution. Since there has not been recent engagement, we are going to close this out. Feel free to reopen if you'd like to continue working on these changes. Please be sure to remove the `no-recent-activity` label; otherwise, this is likely to be closed again with the next cleanup pass."
