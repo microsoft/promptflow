@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from promptflow.batch._result import BatchResult
+from promptflow.batch._result import BatchResult, LineError
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -35,7 +35,7 @@ class TestBatchResult:
             for k, v in node_dict.items()
         }
 
-    def get_flow_run_info(self, status_dict: dict):
+    def get_flow_run_info(self, status_dict: dict, index: int):
         status = Status.Failed if any(status == Status.Failed for status in status_dict.values()) else Status.Completed
         error = {"code": "UserError", "message": "test message"} if status == Status.Failed else None
         return FlowRunInfo(
@@ -52,6 +52,7 @@ class TestBatchResult:
             flow_id="",
             start_time=datetime.utcnow(),
             end_time=datetime.utcnow(),
+            index=index,
         )
 
     def get_line_results(self, line_dict, api_calls=None):
@@ -59,7 +60,7 @@ class TestBatchResult:
             LineResult(
                 output={},
                 aggregation_inputs={},
-                run_info=self.get_flow_run_info(status_dict=v),
+                run_info=self.get_flow_run_info(status_dict=v, index=k),
                 node_run_infos=self.get_node_run_infos(node_dict=v, index=k, api_calls=api_calls),
             )
             for k, v in line_dict.items()
@@ -169,9 +170,11 @@ class TestBatchResult:
         assert batch_result.system_metrics.completion_tokens == 0
         assert batch_result.system_metrics.prompt_tokens == 0
 
-    def test_get_aggr_error_summary(self):
+    def test_error_summary(self):
         line_dict = {
             0: {"node_0": Status.Completed, "node_1": Status.Completed, "node_2": Status.Completed},
+            1: {"node_0": Status.Completed, "node_1": Status.Failed, "node_2": Status.Completed},
+            2: {"node_0": Status.Completed, "node_1": Status.Completed, "node_2": Status.Bypassed},
         }
         aggr_dict = {
             "aggr_0": Status.Completed,
@@ -180,7 +183,14 @@ class TestBatchResult:
             "aggr_4": Status.Failed,
         }
         batch_result = self.get_bulk_result(line_dict=line_dict, aggr_dict=aggr_dict)
-        assert batch_result.aggr_error_summary == {
+        assert batch_result.total_lines == 3
+        assert batch_result.failed_lines == 1
+        assert batch_result.error_summary.failed_system_error_lines == 0
+        assert batch_result.error_summary.failed_user_error_lines == 1
+        assert batch_result.error_summary.line_error_list == [
+            LineError(line_number=1, error={"code": "UserError", "message": "test message"}),
+        ]
+        assert batch_result.error_summary.aggr_error_dict == {
             "aggr_1": {"code": "UserError", "message": "test message"},
             "aggr_4": {"code": "UserError", "message": "test message"},
         }

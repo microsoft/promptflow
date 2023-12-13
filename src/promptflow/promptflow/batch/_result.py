@@ -9,7 +9,7 @@ from typing import Any, List, Mapping
 
 from promptflow._utils.exception_utils import RootErrorCode
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
-from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_info import RunInfo, Status
 from promptflow.executor._result import AggregationResult, LineResult
 
 
@@ -37,13 +37,14 @@ class ErrorSummary:
 
     failed_user_error_lines: int
     failed_system_error_lines: int
-    error_list: List[LineError]
+    line_error_list: List[LineError]
+    aggr_error_dict: Mapping[str, Any]
 
     @staticmethod
-    def create(line_results: List[LineResult]):
+    def create(line_results: List[LineResult], aggr_result: AggregationResult):
         failed_user_error_lines = 0
         failed_system_error_lines = 0
-        error_list = []
+        error_list: List[LineError] = []
 
         for line_result in line_results:
             if line_result.run_info.status != Status.Failed:
@@ -64,7 +65,12 @@ class ErrorSummary:
         error_summary = ErrorSummary(
             failed_user_error_lines=failed_user_error_lines,
             failed_system_error_lines=failed_system_error_lines,
-            error_list=sorted(error_list, key=lambda x: x.line_number),
+            line_error_list=sorted(error_list, key=lambda x: x.line_number),
+            aggr_error_dict={
+                node_name: node_run_info.error
+                for node_name, node_run_info in aggr_result.node_run_infos.items()
+                if node_run_info.status == Status.Failed
+            },
         )
         return error_summary
 
@@ -106,7 +112,7 @@ class SystemMetrics:
                     calculator.merge_metrics_dict(total_metrics, metrics)
         return total_metrics
 
-    def _try_get_openai_metrics(run_info):
+    def _try_get_openai_metrics(run_info: RunInfo):
         openai_metrics = {}
         if run_info.system_metrics:
             for metric in ["total_tokens", "prompt_tokens", "completion_tokens"]:
@@ -138,7 +144,6 @@ class BatchResult:
     metrics: Mapping[str, str]
     system_metrics: SystemMetrics
     error_summary: ErrorSummary
-    aggr_error_summary: Mapping[str, Any]
 
     @classmethod
     def create(
@@ -163,12 +168,7 @@ class BatchResult:
             end_time=end_time,
             metrics=aggr_result.metrics,
             system_metrics=SystemMetrics.create(start_time, end_time, line_results, aggr_result),
-            error_summary=ErrorSummary.create(line_results),
-            aggr_error_summary={
-                node_name: node_run_info.error
-                for node_name, node_run_info in aggr_result.node_run_infos.items()
-                if node_run_info.status == Status.Failed
-            },
+            error_summary=ErrorSummary.create(line_results, aggr_result),
         )
 
     @staticmethod
