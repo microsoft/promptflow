@@ -89,8 +89,13 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         # call execution api to get line results
         url = self.api_endpoint + "/Execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
+        except httpx.HTTPError as e:
+            run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, str(e))
+            result = self._process_http_exception(e)
+            return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
         # process the response
         result = self._process_http_response(response)
         if response.status_code != 200:
@@ -132,6 +137,14 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                     message_format=message_format, status_code=response.status_code, error=response.text
                 )
                 return ExceptionPresenter.create(unexpected_error).to_dict()
+
+    def _process_http_exception(self, exception: Exception):
+        message_format = "Unexpected error when executing a line, error: {error}"
+        bulk_logger.error(message_format.format(error=str(exception)))
+        unexpected_error = UnexpectedError(
+            message_format=message_format, error=str(exception)
+        )
+        return ExceptionPresenter.create(unexpected_error).to_dict()
 
     async def _ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
