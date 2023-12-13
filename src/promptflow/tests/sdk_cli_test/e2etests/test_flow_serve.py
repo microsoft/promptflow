@@ -140,7 +140,9 @@ def test_serving_api(flow_serving_client):
 @pytest.mark.usefixtures("evaluation_flow_serving_client", "recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
-    response = evaluation_flow_serving_client.post("/score", data=json.dumps({"url": "https://www.microsoft.com/"}))
+    response = evaluation_flow_serving_client.post(
+        "/score", data=json.dumps({"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"})
+    )
     assert (
         response.status_code == 200
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
