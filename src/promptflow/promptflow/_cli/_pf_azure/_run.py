@@ -233,6 +233,12 @@ pfazure run show-metrics --name <name>
 
 def add_parser_run_cancel(subparsers):
     """Add run cancel parser to the pfazure subparsers."""
+    epilog = """
+Example:
+
+# Cancel a run:
+pfazure run cancel --name <name>
+"""
     add_params = [
         add_param_run_name,
         _set_workspace_argument_for_subparsers,
@@ -241,7 +247,7 @@ def add_parser_run_cancel(subparsers):
     activate_action(
         name="cancel",
         description="A CLI tool to cancel a run.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Cancel a run.",
@@ -435,6 +441,8 @@ def dispatch_run_commands(args: argparse.Namespace):
         update_run(args.subscription, args.resource_group, args.workspace_name, args.name, params=args.params_override)
     elif args.sub_action == "download":
         download_run(args)
+    elif args.sub_action == "cancel":
+        cancel_run(args)
 
 
 @exception_handler("List runs")
@@ -568,3 +576,9 @@ def update_run(
 def download_run(args: argparse.Namespace):
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     pf.runs.download(run=args.name, output=args.output, overwrite=args.overwrite)
+
+
+@exception_handler("Cancel run")
+def cancel_run(args: argparse.Namespace):
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    pf.runs.cancel(run=args.name)
