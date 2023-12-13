@@ -1037,3 +1037,31 @@ class TestFlowRun:
         exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
         assert "additionalInfo" in default["error"] and "additionalInfo" not in exclude["error"]
         assert "debugInfo" in default["error"] and "debugInfo" not in exclude["error"]
+
+    def test_create_run_with_existing_run_folder(self, pf):
+        # TODO: Should use fixture to create an run and download it to be used here.
+        run_name = "web_classification_variant_0_20231205_120253_104100"
+
+        # clean the run if exists
+        from promptflow._cli._utils import _try_delete_existing_run_record
+
+        _try_delete_existing_run_record(run_name)
+
+        # assert the run doesn't exist
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(run_name)
+
+        # create the run with run folder
+        run_folder = f"{RUNS_DIR}/{run_name}"
+        run = Run._load_from_source(source=run_folder)
+        pf.runs.create_or_update(run)
+
+        # test with other local run operations
+        run = pf.runs.get(run_name)
+        assert run.name == run_name
+        details = pf.get_details(run_name)
+        assert details.shape == (3, 5)
+        metrics = pf.runs.get_metrics(run_name)
+        assert metrics == {}
+        pf.stream(run_name)
+        pf.visualize([run_name])

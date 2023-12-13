@@ -9,7 +9,7 @@ on:
     - cron: "17 21 * * *" # Every day starting at 5:17 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_getstarted_flowasfunction.yml, '!examples/flows/integrations/**' ]
+    paths: [ examples/tutorials/get-started/**, examples/flows/standard/web-classification/**, examples/flows/chat/basic-chat/**, .github/workflows/samples_getstarted_flowasfunction.yml, examples/requirements.txt, examples/connections/azure_openai.yml ]
   workflow_dispatch:
 
 env:
