@@ -4,7 +4,8 @@
 import datetime
 import json
 
-from promptflow._constants import VERSION_UPDATE_TIME, PF_VERSION_CHECK, CLI_PACKAGE_NAME
+from promptflow._constants import (VERSION_UPDATE_TIME, PF_VERSION_CHECK, CLI_PACKAGE_NAME, HINT_FREQUENCY_DAY,
+                                   GET_PYPI_FREQUENCY_DAY)
 
 HINT_ACTIVITY_NAME = ["pf.flows.test", "pf.runs.create_or_update", "pfazure.flows.create_or_update",
                       "pfazure.runs.create_or_update"]
@@ -25,7 +26,8 @@ def get_cached_latest_versions(cached_versions):
     versions = get_local_versions()
     if VERSION_UPDATE_TIME in cached_versions:
         version_update_time = datetime.datetime.strptime(cached_versions[VERSION_UPDATE_TIME], '%Y-%m-%d %H:%M:%S.%f')
-        if datetime.datetime.now() < version_update_time + datetime.timedelta(days=1):
+        if ('versions' in cached_versions and 'pypi' in cached_versions['versions'] and
+                datetime.datetime.now() < version_update_time + datetime.timedelta(days=GET_PYPI_FREQUENCY_DAY)):
             cache_versions = cached_versions['versions'] if 'versions' in cached_versions else {}
             if cache_versions and cache_versions['local'] == versions['local']:
                 return cache_versions.copy(), True, False
@@ -82,7 +84,8 @@ def hint_for_update():
         cached_versions[VERSION_UPDATE_TIME],
         '%Y-%m-%d %H:%M:%S.%f'
     ) if VERSION_UPDATE_TIME in cached_versions else None
-    if version_update_time is None or datetime.datetime.now() > version_update_time + datetime.timedelta(days=7):
+    if (version_update_time is None or datetime.datetime.now() > version_update_time +
+            datetime.timedelta(days=HINT_FREQUENCY_DAY)):
         _, success, is_updated = get_cached_latest_versions(cached_versions)
         from packaging.version import parse
         if success:
