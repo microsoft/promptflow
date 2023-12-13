@@ -7,11 +7,10 @@ import uuid
 from contextvars import ContextVar
 from datetime import datetime
 
-
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.version_hint_utils import hint_for_update, HINT_ACTIVITY_NAME
 
-
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 class ActivityType(object):
     """The type of activity (code) monitored.
 
@@ -178,7 +177,7 @@ def monitor_operation(
                     return f(self, *args, **kwargs)
                 finally:
                     if activity_name in HINT_ACTIVITY_NAME:
-                        hint_for_update()
+                        async_run_allowing_running_loop(hint_for_update)
 
         return wrapper
 

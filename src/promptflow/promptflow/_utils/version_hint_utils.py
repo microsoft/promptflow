@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import httpx
 import datetime
 import json
 
@@ -19,10 +20,8 @@ def get_local_versions():
     return versions
 
 
-def get_cached_latest_versions(cached_versions):
+async def get_cached_latest_versions(cached_versions):
     """ Get the latest versions from a cached file"""
-    import datetime
-
     versions = get_local_versions()
     if VERSION_UPDATE_TIME in cached_versions:
         version_update_time = datetime.datetime.strptime(cached_versions[VERSION_UPDATE_TIME], '%Y-%m-%d %H:%M:%S.%f')
@@ -32,15 +31,15 @@ def get_cached_latest_versions(cached_versions):
             if cache_versions and cache_versions['local'] == versions['local']:
                 return cache_versions.copy(), True, False
 
-    versions, success = update_latest_from_pypi(versions)
+    versions, success = await update_latest_from_pypi(versions)
     cached_versions['versions'] = versions
     cached_versions[VERSION_UPDATE_TIME] = str(datetime.datetime.now())
     return versions.copy(), success, True
 
 
-def update_latest_from_pypi(versions):
+async def update_latest_from_pypi(versions):
     success = True
-    version = get_latest_version_from_pypi(CLI_PACKAGE_NAME)
+    version = await get_latest_version_from_pypi(CLI_PACKAGE_NAME)
     if version is None:
         success = False
     else:
@@ -48,23 +47,23 @@ def update_latest_from_pypi(versions):
     return versions, success
 
 
-def get_latest_version_from_pypi(package_name):
+async def get_latest_version_from_pypi(package_name):
+    pypi_url = f"https://pypi.org/pypi/{package_name}/json"
     try:
-        import requests
-        pypi_url = f"https://pypi.org/pypi/{package_name}/json"
-        response = requests.get(pypi_url)
-        if response.status_code == 200:
-            data = response.json()
-            latest_version = data["info"]["version"]
-            return latest_version
-        else:
-            return None
+        async with httpx.AsyncClient(verify=False) as client:
+            response = await client.get(pypi_url)
+            if response.status_code == 200:
+                data = response.json()
+                latest_version = data["info"]["version"]
+                return latest_version
+            else:
+                return None
     except Exception as ex:  # pylint: disable=broad-except
         print(f"Failed to get the latest version from '{pypi_url}'. {str(ex)}")
         return None
 
 
-def hint_for_update():
+async def hint_for_update():
     """
     Check if there is a new version of prompt flow available every 7 days. IF yes, print a warning message to hint
     customer to upgrade package.
@@ -86,9 +85,10 @@ def hint_for_update():
     ) if VERSION_UPDATE_TIME in cached_versions else None
     if (version_update_time is None or datetime.datetime.now() > version_update_time +
             datetime.timedelta(days=HINT_FREQUENCY_DAY)):
-        _, success, is_updated = get_cached_latest_versions(cached_versions)
-        from packaging.version import parse
+        _, success, is_updated = await get_cached_latest_versions(cached_versions)
+
         if success:
+            from packaging.version import parse
             if parse(cached_versions['versions']['local']) < parse(cached_versions['versions']['pypi']):
                 print_yellow_warning("New prompt flow version available: "
                                      "promptflow-{cached_versions['versions']['pypi']} . "
