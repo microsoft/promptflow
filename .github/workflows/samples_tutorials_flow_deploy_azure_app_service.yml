@@ -9,7 +9,7 @@ on:
     - cron: "48 20 * * *" # Every day starting at 4:48 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_azure_app_service.yml, '!examples/flows/integrations/**' ]
+    paths: [ examples/tutorials/flow-deploy/azure-app-service/**, examples/connections/azure_openai.yml, examples/flows/standard/web-classification/**, .github/workflows/samples_tutorials_flow_deploy_azure_app_service.yml, examples/requirements.txt ]
   workflow_dispatch:
 
 env:
