@@ -29,6 +29,14 @@ def to_openai_error_message(e: Exception) -> str:
               "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt " \
               "or view the samples in our gallery that contain 'Chat' in the name."
         return f"OpenAI API hits {ex_type}: {msg}"
+    elif "Invalid content type. image_url is only supported by certain models" in str(e):
+        msg = "Current model does not support the image input. If you are using openai connection, then please use " \
+              "gpt-4-vision-preview. You can refer to https://platform.openai.com/docs/guides/vision." \
+              "If you are using azure openai connection, then please first go to your Azure OpenAI resource, " \
+              "create a GPT-4 Turbo with Vision deployment by selecting model name: \"gpt-4\" and "\
+              "model version \"vision-preview\". You can refer to " \
+              "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/gpt-with-vision"
+        return f"OpenAI API hits {ex_type}: {msg}"
     else:
         return f"OpenAI API hits {ex_type}: {str(e)} [{openai_error_code_ref_message}]"
 
