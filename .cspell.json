@@ -29,7 +29,8 @@
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
     "**/setup.py",
-    "scripts/installer/windows/**"
+    "scripts/installer/windows/**",
+    "src/promptflow/promptflow/_sdk/_service/pfsvc.py"
   ],
   "words": [
     "aoai",
@@ -75,7 +76,9 @@
     "cref",
     "msal",
     "pfbytes",
-    "Apim"
+    "Apim",
+    "junit",
+    "nunit"
   ],
   "ignoreWords": [
     "openmpi",
@@ -146,7 +149,13 @@
     "llms",
     "vcrpy",
     "uionly",
-    "llmops"
+    "llmops",
+    "Abhishek",
+    "restx",
+    "httpx",
+    "tiiuae",
+    "nohup",
+    "metagenai"
   ],
   "flagWords": [
     "Prompt Flow"

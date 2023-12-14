@@ -9,21 +9,21 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
-    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api-version=2023-06-01-preview
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/api-version=2023-08-01-preview
   response:
     body:
       string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
         "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
         "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
-        "tier": "Basic"}}'
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '3519'
+      - '3630'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.022'
+      - '0.017'
     status:
       code: 200
       message: OK
@@ -53,8 +53,8 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?api-version=2023-04-01-preview&count=30&isDefault=true&orderByAsc=false
   response:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.268'
+      - '0.070'
     status:
       code: 200
       message: OK
@@ -114,19 +114,20 @@ interactions:
     body:
       string: '{"tags": null, "location": null, "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/connections/azure_open_ai_connection",
         "name": "azure_open_ai_connection", "type": "Microsoft.MachineLearningServices/workspaces/connections",
-        "properties": {"authType": "ApiKey", "credentials": {"key": "_"}, "category":
-        "AzureOpenAI", "expiryTime": null, "target": "_", "createdByWorkspaceArmId":
+        "properties": {"authType": "ApiKey", "credentials": {"key": "_"}, "group":
+        "AzureAI", "category": "AzureOpenAI", "expiryTime": null, "target": "_", "createdByWorkspaceArmId":
         null, "isSharedToAll": false, "sharedUserList": [], "metadata": {"azureml.flow.connection_type":
         "AzureOpenAI", "azureml.flow.module": "promptflow.connections", "ApiType":
-        "azure", "ApiVersion": "2023-07-01-preview", "ResourceId": null}}, "systemData":
-        {"createdAt": "2023-08-22T10:15:34.5762053Z", "createdBy": "yigao@microsoft.com",
-        "createdByType": "User", "lastModifiedAt": "2023-08-22T10:15:34.5762053Z",
-        "lastModifiedBy": "yigao@microsoft.com", "lastModifiedByType": "User"}}'
+        "azure", "ApiVersion": "2023-07-01-preview", "ResourceId": null, "DeploymentApiVersion":
+        "2023-10-01-preview"}}, "systemData": {"createdAt": "2023-08-22T10:15:34.5762053Z",
+        "createdBy": "username@microsoft.com", "createdByType": "User", "lastModifiedAt":
+        "2023-08-22T10:15:34.5762053Z", "lastModifiedBy": "username@microsoft.com",
+        "lastModifiedByType": "User"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1170'
+      - '1246'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -142,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.197'
+      - '0.072'
     status:
       code: 200
       message: OK
@@ -165,18 +166,18 @@ interactions:
     body:
       string: '{"tags": null, "location": null, "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/connections/custom_connection",
         "name": "custom_connection", "type": "Microsoft.MachineLearningServices/workspaces/connections",
-        "properties": {"authType": "CustomKeys", "credentials": {"keys": {}}, "category":
-        "CustomKeys", "expiryTime": null, "target": "_", "createdByWorkspaceArmId":
+        "properties": {"authType": "CustomKeys", "credentials": {"keys": {}}, "group":
+        "AzureAI", "category": "CustomKeys", "expiryTime": null, "target": "_", "createdByWorkspaceArmId":
         null, "isSharedToAll": false, "sharedUserList": [], "metadata": {"azureml.flow.connection_type":
         "Custom", "azureml.flow.module": "promptflow.connections"}}, "systemData":
-        {"createdAt": "2023-06-19T20:56:12.0353964Z", "createdBy": "sejuare@microsoft.com",
+        {"createdAt": "2023-06-19T20:56:12.0353964Z", "createdBy": "username@microsoft.com",
         "createdByType": "User", "lastModifiedAt": "2023-06-19T20:56:12.0353964Z",
-        "lastModifiedBy": "sejuare@microsoft.com", "lastModifiedByType": "User"}}'
+        "lastModifiedBy": "username@microsoft.com", "lastModifiedByType": "User"}}'
     headers:
       cache-control:
       - no-cache
       content-length:
-      - '1251'
+      - '1275'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -192,7 +193,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.259'
+      - '0.075'
     status:
       code: 200
       message: OK

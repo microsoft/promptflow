@@ -1,16 +1,60 @@
 # Release History
 
-## 1.1.0 (Upcoming)
+## 1.2.0 (upcoming)
 
 ### Features Added
-- Add `pfazure flow list` to list flows from Azure AI.
-- Display node status in run visualize page graph view.
+- [SDK/CLI] Support `pfazure run download` to download run data from Azure AI.
+- [SDK/CLI] Support `pf run create` to create a local run record from downloaded run data.
 
 ### Bugs Fixed
+
+- [SDK/CLI] Removing telemetry warning when running commands.
+- Empty node stdout & stderr to avoid large visualize HTML.
+- Hide unnecessary fields in run list for better readability.
+
+## 1.1.1 (2023.12.1)
+
+### Bugs Fixed
+
+- [SDK/CLI] Fix compatibility issue with `semantic-kernel==0.4.0.dev0` and `azure-ai-ml==1.12.0`.
+- [SDK/CLI] Add back workspace information in CLI telemetry.
+- [SDK/CLI] Disable the feature to customize user agent in CLI to avoid changes on operation context.
+- Fix openai metrics calculator to adapt openai v1.
+
+## 1.1.0 (2023.11.30)
+
+### Features Added
+- Add `pfazure flow show/list` to show or list flows from Azure AI.
+- Display node status in run visualize page graph view.
+- Add support for image input and output in prompt flow.
+- [SDK/CLI] SDK/CLI will collect telemetry by default, user can use `pf config set telemetry.enabled=false` to opt out.
+- Add `raise_on_error` for stream run API, by default we raise for failed run.
+- Flow as function: consume a flow like a function with parameters mapped to flow inputs.
+- Enable specifying the default output path for run.
+  - Use `pf config set run.output_path=<output-path>` to specify, and the run output path will be `<output-path>/<run-name>`.
+  - Introduce macro `${flow_directory}` for `run.output_path` in config, which will be replaced with corresponding flow directory.
+  - The flow directory cannot be set as run output path, which means `pf config set run.output_path='${flow_directory}'` is invalid; but you can use child folder, e.g. `pf config set run.output_path='${flow_directory}/.runs'`.
+- Support pfazure run create with remote flow.
+  - For remote workspace flow: `pfazure run create --flow azureml:<flow-name>`
+  - For remote registry flow: `pfazure run create --flow azureml://registries/<registry-name>/models/<flow-name>/versions/<flow-version>`
+- Support set logging level via environment variable `PF_LOGGING_LEVEL`, valid values includes `CRITICAL`, `ERROR`, `WARNING`, `INFO`, `DEBUG`, default to `INFO`.
+- Remove openai version restrictions
+
+### Bugs Fixed
+
+- [SDK/CLI] Fix node test with dict node input will raise "Required input(s) missing".
+- [SDK/CLI] Will use run name as display name when display name not specified (used flow folder name before).
+- [SDK/CLI] Fix pf flow build created unexpected layer of dist folder
+- [SDK/CLI] Fix deploy prompt flow: connections value may be none
 
 ### Improvements
 - Force 'az login' if using azureml connection provider in cli command.
 - Add env variable 'PF_NO_INTERACTIVE_LOGIN' to disable interactive login if using azureml connection provider in promptflow sdk.
+- Improved CLI invoke time.
+- Bump `pydash` upper bound to 8.0.0.
+- Bump `SQLAlchemy` upper bound to 3.0.0.
+- Bump `flask` upper bound to 4.0.0, `flask-restx` upper bound to 2.0.0.
+- Bump `ruamel.yaml` upper bound to 1.0.0.
 
 ## 1.0.0 (2023.11.09)
 

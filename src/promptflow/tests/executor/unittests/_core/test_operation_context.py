@@ -88,17 +88,44 @@ class TestOperationContext:
 
     def test_append_user_agent(self):
         context = OperationContext()
+        user_agent = ' ' + context.user_agent if 'user_agent' in context else ''
 
         context.append_user_agent("test_agent/0.0.2")
-        assert context.user_agent == "test_agent/0.0.2"
+        assert context.user_agent == "test_agent/0.0.2" + user_agent
 
         context.append_user_agent("test_agent/0.0.3")
-        assert context.user_agent == "test_agent/0.0.2 test_agent/0.0.3"
+        assert context.user_agent == "test_agent/0.0.2 test_agent/0.0.3" + user_agent
 
     def test_get_instance(self):
         context1 = OperationContext.get_instance()
         context2 = OperationContext.get_instance()
         assert context1 is context2
+
+    def test_set_batch_input_source_from_inputs_mapping_run(self):
+        input_mapping = {"input1": "${run.outputs.output1}", "input2": "${run.outputs.output2}"}
+        context = OperationContext()
+        context.set_batch_input_source_from_inputs_mapping(input_mapping)
+        assert context.batch_input_source == "Run"
+
+    def test_set_batch_input_source_from_inputs_mapping_data(self):
+        input_mapping = {"url": "${data.url}"}
+        context = OperationContext()
+        context.set_batch_input_source_from_inputs_mapping(input_mapping)
+        assert context.batch_input_source == "Data"
+
+    def test_set_batch_input_source_from_inputs_mapping_none(self):
+        input_mapping = None
+        context = OperationContext()
+        assert not hasattr(context, "batch_input_source")
+        context.set_batch_input_source_from_inputs_mapping(input_mapping)
+        assert context.batch_input_source == "Data"
+
+    def test_set_batch_input_source_from_inputs_mapping_empty(self):
+        input_mapping = {}
+        context = OperationContext()
+        assert not hasattr(context, "batch_input_source")
+        context.set_batch_input_source_from_inputs_mapping(input_mapping)
+        assert context.batch_input_source == "Data"
 
     def test_different_thread_have_different_instance(self):
         # create a list to store the OperationContext instances from each thread

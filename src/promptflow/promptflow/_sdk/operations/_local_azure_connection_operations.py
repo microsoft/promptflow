@@ -6,20 +6,23 @@ import re
 from typing import List
 
 from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, LOGGER_NAME, MAX_LIST_CLI_RESULTS
-from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces, print_red_error
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._utils.logger_utils import LoggerFactory
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
-class LocalAzureConnectionOperations(TelemetryMixin):
+class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     def __init__(self, connection_provider, **kwargs):
-
-        super().__init__(**kwargs)
         self._subscription_id, self._resource_group, self._workspace_name = self._extract_workspace(connection_provider)
+        super().__init__(
+            subscription_id=self._subscription_id,
+            resource_group_name=self._resource_group,
+            workspace_name=self._workspace_name,
+            **kwargs,
+        )
         # Lazy init client as ml_client initialization require workspace read permission
         self._pfazure_client = None
         self._credential = self._get_credential()
@@ -61,18 +64,6 @@ class LocalAzureConnectionOperations(TelemetryMixin):
             credential.credentials = (*credential.credentials, DeviceCodeCredential())
             return credential
         return DefaultAzureCredential(exclude_interactive_browser_credential=False)
-
-    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
-        """Return the telemetry values of run operations.
-
-        :return: The telemetry values
-        :rtype: Dict
-        """
-        return {
-            "subscription_id": self._pfazure_client._ml_client.subscription_id,
-            "resource_group_name": self._pfazure_client._ml_client.resource_group_name,
-            "workspace_name": self._pfazure_client._ml_client.workspace_name,
-        }
 
     @classmethod
     def _extract_workspace(cls, connection_provider):

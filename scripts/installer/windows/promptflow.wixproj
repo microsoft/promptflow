@@ -7,7 +7,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>04ff6707-750d-4474-89b3-7922c84721be</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>promptflow</OutputName>
+    <OutputName>promptflow-$(env.CLI_VERSION)</OutputName>
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
@@ -61,13 +61,12 @@
       <Name>WixUtilExtension</Name>
     </WixExtension>
   </ItemGroup>
-  <Import Project="$(WixTargetsPath)" />
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\wix.targets" Condition=" '$(WixTargetsPath)' == '' AND Exists('$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\wix.targets') " />
   <Target Name="EnsureWixToolsetInstalled" Condition=" '$(WixTargetsImported)' != 'true' ">
     <Error Text="The WiX Toolset v3.10 build tools must be installed to build this project. To download the WiX Toolset, see https://wixtoolset.org/releases/v3.10/stable" />
   </Target>
   <Target Name="BeforeBuild">
-    <HeatDirectory Directory="$(PromptflowSource)" ToolPath="$(WixToolPath)" AutogenerateGuids="true" ComponentGroupName="PromptflowCliComponentGroup" SuppressRootDirectory="true" DirectoryRefId="DynamicCliDir" OutputFile="out\promptflow.wxs" PreprocessorVariable="var.PromptflowSource" />
+    <HeatDirectory Directory="$(PromptflowSource)" ToolPath="$(WixToolPath)" AutogenerateGuids="true" ComponentGroupName="PromptflowCliComponentGroup" SuppressRootDirectory="true" DirectoryRefId="APPLICATIONFOLDER" OutputFile="out\promptflow.wxs" PreprocessorVariable="var.PromptflowSource" />
   </Target>
 </Project>

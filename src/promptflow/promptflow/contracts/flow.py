@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import json
 import logging
 import sys
 from dataclasses import asdict, dataclass
@@ -13,10 +14,11 @@ import yaml
 
 from promptflow.exceptions import ErrorTarget
 
+from .._constants import LANGUAGE_KEY, FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import FailedToImportModule, NodeConditionConflict
+from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -227,39 +229,6 @@ class ActivateCondition:
 
 
 @dataclass
-class SkipCondition:
-    """This class represents the skip condition of a node.
-
-    :param condition: The condition of the skip condition.
-    :type condition: ~promptflow.contracts.flow.InputAssignment
-    :param condition_value: The value of the condition.
-    :type condition_value: Any
-    :param return_value: The return value when skip condition is met.
-    :type return_value: ~promptflow.contracts.flow.InputAssignment
-    """
-
-    condition: InputAssignment
-    condition_value: Any
-    return_value: InputAssignment
-
-    @staticmethod
-    def deserialize(data: dict) -> "SkipCondition":
-        """Deserialize the skip condition from a dict.
-
-        :param data: The dict to be deserialized.
-        :type data: dict
-        :return: The skip condition constructed from the dict.
-        :rtype: ~promptflow.contracts.flow.SkipCondition
-        """
-        result = SkipCondition(
-            condition=InputAssignment.deserialize(data["when"]),
-            condition_value=data["is"],
-            return_value=InputAssignment.deserialize(data["return"]),
-        )
-        return result
-
-
-@dataclass
 class Node:
     """This class represents a node in a flow.
 
@@ -289,8 +258,6 @@ class Node:
     :type source: ~promptflow.contracts.flow.ToolSource
     :param type: The tool type of the node.
     :type type: ~promptflow.contracts.tool.ToolType
-    :param skip: The skip condition of the node.
-    :type skip: ~promptflow.contracts.flow.SkipCondition
     :param activate: The activate condition of the node.
     :type activate: ~promptflow.contracts.flow.ActivateCondition
     """
@@ -308,7 +275,6 @@ class Node:
     use_variants: bool = False
     source: Optional[ToolSource] = None
     type: Optional[ToolType] = None
-    skip: Optional[SkipCondition] = None
     activate: Optional[ActivateCondition] = None
 
     def serialize(self):
@@ -323,6 +289,8 @@ class Node:
         if self.aggregation:
             data["aggregation"] = True
             data["reduce"] = True  # TODO: Remove this fallback.
+        if self.type:
+            data["type"] = self.type.value
         return data
 
     @staticmethod
@@ -351,13 +319,8 @@ class Node:
             node.source = ToolSource.deserialize(data["source"])
         if "type" in data:
             node.type = ToolType(data["type"])
-        if "skip" in data:
-            node.skip = SkipCondition.deserialize(data["skip"])
         if "activate" in data:
             node.activate = ActivateCondition.deserialize(data["activate"])
-        if node.skip and node.activate:
-            raise NodeConditionConflict(f"Node {node.name!r} can't have both skip and activate condition.")
-
         return node
 
 
@@ -557,6 +520,10 @@ class Flow:
     :type tools: List[Tool]
     :param node_variants: The node variants of the flow.
     :type node_variants: Dict[str, NodeVariants]
+    :param program_language: The program language of the flow.
+    :type program_language: str
+    :param environment_variables: The default environment variables of the flow.
+    :type environment_variables: Dict[str, object]
     """
 
     id: str
@@ -566,6 +533,8 @@ class Flow:
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
+    program_language: str = FlowLanguage.Python
+    environment_variables: Dict[str, object] = None
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -580,6 +549,7 @@ class Flow:
             "inputs": {name: i.serialize() for name, i in self.inputs.items()},
             "outputs": {name: o.serialize() for name, o in self.outputs.items()},
             "tools": [serialize(t) for t in self.tools],
+            "language": self.program_language,
         }
         return data
 
@@ -624,6 +594,8 @@ class Flow:
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
+            program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
+            environment_variables=data.get("environment_variables") or {},
         )
 
     def _apply_default_node_variants(self: "Flow"):
@@ -646,27 +618,67 @@ class Flow:
         default_variant.node.name = node.name
         return default_variant.node
 
-    @staticmethod
-    def _resolve_working_dir(flow_file: Path, working_dir=None) -> Path:
+    @classmethod
+    def _resolve_working_dir(cls, flow_file: Path, working_dir=None) -> Path:
+        working_dir = cls._parse_working_dir(flow_file, working_dir)
+        cls._update_working_dir(working_dir)
+        return working_dir
+
+    @classmethod
+    def _parse_working_dir(cls, flow_file: Path, working_dir=None) -> Path:
         if working_dir is None:
             working_dir = Path(flow_file).resolve().parent
         working_dir = Path(working_dir).absolute()
-        sys.path.insert(0, str(working_dir))
         return working_dir
 
-    @staticmethod
-    def from_yaml(flow_file: Path, working_dir=None) -> "Flow":
+    @classmethod
+    def _update_working_dir(cls, working_dir: Path):
+        sys.path.insert(0, str(working_dir))
+
+    @classmethod
+    def from_yaml(cls, flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
-            flow = Flow.deserialize(yaml.safe_load(fin))
-            flow._set_tool_loader(working_dir)
+            flow_dag = yaml.safe_load(fin)
+        return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
+
+    @classmethod
+    def _from_dict(cls, flow_dag: dict, working_dir: Path) -> "Flow":
+        """Load flow from dict."""
+        cls._update_working_dir(working_dir)
+        flow = Flow.deserialize(flow_dag)
+        flow._set_tool_loader(working_dir)
         return flow
+
+    @classmethod
+    def load_env_variables(
+        cls, flow_file: Path, working_dir=None, environment_variables_overrides: Dict[str, str] = None
+    ) -> Dict[str, str]:
+        """
+        Read flow_environment_variables from flow yaml.
+        If environment_variables_overrides exists, override yaml level configuration.
+        Returns the merged environment variables dict.
+        """
+        working_dir = cls._parse_working_dir(flow_file, working_dir)
+        with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
+            flow_dag = yaml.safe_load(fin)
+        flow = Flow.deserialize(flow_dag)
+
+        environment_variables = {
+            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in flow.environment_variables.items()
+        }
+        if environment_variables_overrides is not None:
+            for k, v in environment_variables_overrides.items():
+                environment_variables[k] = v
+        return environment_variables
 
     def _set_tool_loader(self, working_dir):
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
         from promptflow._core.tools_manager import ToolLoader
 
+        # TODO: consider refactor this. It will raise an error if promptflow-tools
+        #  is not installed even for csharp flow.
         self._tool_loader = ToolLoader(working_dir, package_tool_keys)
 
     def _apply_node_overrides(self, node_overrides):

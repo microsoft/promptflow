@@ -3,24 +3,25 @@
 # ---------------------------------------------------------
 """service_caller.py, module for interacting with the AzureML service."""
 import json
-import logging
 import os
 import sys
 import time
 import uuid
-from functools import wraps
+from functools import wraps, cached_property
 
 import pydash
 
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._sdk._telemetry import request_id_context
+from promptflow._sdk._telemetry import TelemetryMixin
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.exceptions import ValidationException, UserErrorException, PromptflowException
 
-logger = logging.getLogger(__name__)
+logger = LoggerFactory.get_logger(__name__)
 
 
 class FlowRequestException(PromptflowException):
@@ -34,7 +35,7 @@ class RequestTelemetryMixin(TelemetryMixin):
 
     def __init__(self):
         super().__init__()
-        self._request_id = str(uuid.uuid4())
+        self._refresh_request_id_for_telemetry()
         self._from_cli = False
 
     def _get_telemetry_values(self, *args, **kwargs):
@@ -44,7 +45,8 @@ class RequestTelemetryMixin(TelemetryMixin):
         self._from_cli = True
 
     def _refresh_request_id_for_telemetry(self):
-        self._request_id = str(uuid.uuid4())
+        # refresh request id from current request id context
+        self._request_id = request_id_context.get() or str(uuid.uuid4())
 
 
 def _request_wrapper():
@@ -90,7 +92,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
     DEFAULT_BASE_REGION = 'westus2'
     AML_USE_ARM_TOKEN = 'AML_USE_ARM_TOKEN'
 
-    def __init__(self, workspace, credential, base_url=None, region=None, **kwargs):
+    def __init__(self, workspace, credential, operation_scope, base_url=None, region=None, **kwargs):
         """Initializes DesignerServiceCaller."""
         if 'get_instance' != sys._getframe().f_back.f_code.co_name:
             raise UserErrorException(
@@ -107,7 +109,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
             base_url = os.environ.get(self.FLOW_CLUSTER_ADDRESS, default=base_url)
 
         self._workspace = workspace
-
+        self._operation_scope = operation_scope
         self._service_endpoint = base_url
         self._credential = credential
         retry_policy = RetryPolicy()
@@ -154,6 +156,17 @@ class FlowServiceCaller(RequestTelemetryMixin):
         decoded_token = jwt.decode(token.token, options={"verify_signature": False})
         user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
         return user_object_id, user_tenant_id
+
+    @cached_property
+    def _common_azure_url_pattern(self):
+        operation_scope = self._operation_scope
+        pattern = (
+            f"/subscriptions/{operation_scope.subscription_id}"
+            f"/resourceGroups/{operation_scope.resource_group_name}"
+            f"/providers/Microsoft.MachineLearningServices"
+            f"/workspaces/{operation_scope.workspace_name}"
+        )
+        return pattern
 
     @_request_wrapper()
     def create_flow(

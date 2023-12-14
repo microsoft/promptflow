@@ -1,21 +1,27 @@
 import json
 
-import openai
+try:
+    from openai import AzureOpenAI as AzureOpenAIClient
+except Exception:
+    raise Exception(
+        "Please upgrade your OpenAI package to version 1.0.0 or later using the command: pip install --upgrade openai.")
 
-from promptflow.connections import AzureOpenAIConnection
-from promptflow.contracts.types import PromptTemplate
+from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
+    validate_functions, process_function_call, post_process_chat_api_response, normalize_connection_config
+
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import enable_cache, ToolProvider, tool, register_apis
-from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
-    validate_functions, process_function_call, post_process_chat_api_response
+from promptflow.connections import AzureOpenAIConnection
+from promptflow.contracts.types import PromptTemplate
 
 
 class AzureOpenAI(ToolProvider):
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
         self.connection = connection
-        self._connection_dict = dict(self.connection)
+        self._connection_dict = normalize_connection_config(self.connection)
+        self._client = AzureOpenAIClient(**self._connection_dict)
 
     def calculate_cache_string_for_completion(
         self,
@@ -55,10 +61,9 @@ class AzureOpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
         stream = to_bool(stream)
-        print("test")
-        response = openai.Completion.create(
+        response = self._client.completions.create(
             prompt=prompt,
-            engine=deployment_name,
+            model=deployment_name,
             # empty string suffix should be treated as None.
             suffix=suffix if suffix else None,
             max_tokens=int(max_tokens),
@@ -79,14 +84,14 @@ class AzureOpenAI(ToolProvider):
             # Logit bias must be a dict if we passed it to openai api.
             logit_bias=logit_bias if logit_bias else {},
             user=user,
-            headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
-            **self._connection_dict,
-        )
+            extra_headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"})
+
         if stream:
             def generator():
                 for chunk in response:
                     if chunk.choices:
-                        yield getattr(chunk.choices[0], "text", "")
+                        yield chunk.choices[0].text if hasattr(chunk.choices[0], 'text') and \
+                               chunk.choices[0].text is not None else ""
 
             # We must return the generator object, not using yield directly here.
             # Otherwise, the function itself will become a generator, despite whether stream is True or False.
@@ -124,40 +129,27 @@ class AzureOpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         stream = to_bool(stream)
         params = {
-            "engine": deployment_name,
+            "model": deployment_name,
             "messages": messages,
             "temperature": float(temperature),
             "top_p": float(top_p),
             "n": int(n),
             "stream": stream,
             "stop": stop if stop else None,
-            "max_tokens": int(max_tokens) if max_tokens and str(max_tokens).lower() != "inf" else None,
+            "max_tokens": int(max_tokens) if max_tokens is not None and str(max_tokens).lower() != "inf" else None,
             "presence_penalty": float(presence_penalty),
             "frequency_penalty": float(frequency_penalty),
             "logit_bias": logit_bias,
             "user": user,
-            "headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
+            "extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
         }
         if functions is not None:
             validate_functions(functions)
             params["functions"] = functions
             params["function_call"] = process_function_call(function_call)
 
-        completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
+        completion = self._client.chat.completions.create(**params)
         return post_process_chat_api_response(completion, stream, functions)
-
-    # TODO: embedding is a separate builtin tool, will remove it from llm.
-    @tool
-    @handle_openai_error()
-    def embedding(self, input, deployment_name: str, user: str = ""):
-        response = openai.Embedding.create(
-            input=input,
-            engine=deployment_name,
-            user=user,
-            headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
-            **self._connection_dict,
-        )
-        return response["data"][0]["embedding"]
 
 
 register_apis(AzureOpenAI)

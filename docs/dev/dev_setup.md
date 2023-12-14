@@ -54,7 +54,15 @@ After above setup process is finished. You can use `pytest` command to run test,
 
 ![img4](../media/dev_setup/set_up_vscode_4.png)
 
-3. Click the `Run Test` button on the left
+3. Exclude specific test folders.
+
+You can exclude specific test folders if you don't have some extra dependency to avoid VS Code's test discovery fail.
+For example, if you don't have azure dependency, you can exclude `sdk_cli_azure_test`.
+Open `.vscode/settings.json`, write `"--ignore=src/promptflow/tests/sdk_cli_azure_test"` to `"python.testing.pytestArgs"`.
+
+![img6](../media/dev_setup/set_up_vscode_6.png)
+
+4. Click the `Run Test` button on the left
 
 ![img5](../media/dev_setup/set_up_vscode_5.png)
 
@@ -71,6 +79,10 @@ After above setup process is finished. You can use `pytest` command to run test,
 3. Run test, right-click the test name to run, or click the green arrow button on the left.
 
 ![img2](../media/dev_setup/set_up_pycharm_2.png)
+
+### Record and replay tests
+
+Please refer to [Replay End-to-End Tests](./replay-e2e-test.md) to learn how to record and replay tests.
 
 ## How to write docstring.
 

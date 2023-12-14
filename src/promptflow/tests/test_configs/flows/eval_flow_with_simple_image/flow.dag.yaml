@@ -14,7 +14,7 @@ nodes:
     path: pick_an_image.py
   inputs:
     image_1: ${inputs.image}
-    image_2: 
+    image_2:
       data:image/png;path: logo_2.png
 - name: aggregate
   type: python
@@ -22,7 +22,7 @@ nodes:
     type: code
     path: merge_images.py
   inputs:
-    image_1: 
+    image_1:
     - data:image/jpg;path: logo.jpg
     image_2: ${inputs.image}
     image_3: ${python_node.output}

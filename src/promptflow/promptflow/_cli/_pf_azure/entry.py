@@ -2,7 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: disable=wrong-import-position
+import json
 import time
+
+from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message
+from promptflow._cli._user_agent import USER_AGENT
+from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli
+from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 
 # Log the start time
 start_time = time.perf_counter()
@@ -15,31 +21,18 @@ import sys  # noqa: E402
 from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
 from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
-from promptflow._sdk._logger_factory import LoggerFactory  # noqa: E402
-from promptflow._sdk._utils import print_pf_version  # noqa: E402
+from promptflow._sdk._utils import (  # noqa: E402
+    get_promptflow_sdk_version,
+    print_pf_version,
+    setup_user_agent_to_operation_context,
+)
+from promptflow._utils.logger_utils import LoggerFactory  # noqa: E402
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
-def entry(argv):
-    """
-    Control plane CLI tools for promptflow cloud version.
-    """
-    parser = argparse.ArgumentParser(
-        prog="pfazure",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="pfazure: manage prompt flow assets in azure. Learn more: https://microsoft.github.io/promptflow.",
-    )
-    parser.add_argument(
-        "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
-    )
-
-    subparsers = parser.add_subparsers()
-    add_parser_run(subparsers)
-    add_parser_flow(subparsers)
-
-    args = parser.parse_args(argv)
+def run_command(args):
     # Log the init finish time
     init_finish_time = time.perf_counter()
     try:
@@ -78,11 +71,74 @@ def entry(argv):
         )
 
 
+def get_parser_args(argv):
+    parser = argparse.ArgumentParser(
+        prog="pfazure",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="pfazure: manage prompt flow assets in azure. Learn more: https://microsoft.github.io/promptflow.",
+    )
+    parser.add_argument(
+        "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
+    )
+
+    subparsers = parser.add_subparsers()
+    add_parser_run(subparsers)
+    add_parser_flow(subparsers)
+
+    return parser.prog, parser.parse_args(argv)
+
+
+def _get_workspace_info(args):
+    try:
+        subscription_id, resource_group_name, workspace_name = get_client_info_for_cli(
+            subscription_id=args.subscription,
+            resource_group_name=args.resource_group,
+            workspace_name=args.workspace_name,
+        )
+        return {
+            "subscription_id": subscription_id,
+            "resource_group_name": resource_group_name,
+            "workspace_name": workspace_name,
+        }
+    except Exception:
+        # fall back to empty dict if workspace info is not available
+        return {}
+
+
+def entry(argv):
+    """
+    Control plane CLI tools for promptflow cloud version.
+    """
+    prog, args = get_parser_args(argv)
+    if hasattr(args, "user_agent"):
+        setup_user_agent_to_operation_context(args.user_agent)
+    logger = get_telemetry_logger()
+    custom_dimensions = _get_workspace_info(args)
+    with log_activity(
+        logger,
+        _get_cli_activity_name(cli=prog, args=args),
+        activity_type=ActivityType.PUBLICAPI,
+        custom_dimensions=custom_dimensions,
+    ):
+        run_command(args)
+
+
 def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
+    if len(command_args) == 1 and command_args[0] == "version":
+        version_dict = {"promptflow": get_promptflow_sdk_version()}
+        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
     if len(command_args) == 0:
+        # print privacy statement & welcome message like azure-cli
+        show_privacy_statement()
+        show_welcome_message()
         command_args.append("-h")
+    elif len(command_args) == 1:
+        # pfazure only has "pf --version" with 1 layer
+        if command_args[0] not in ["--version", "-v"]:
+            command_args.append("-h")
+    setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 
 

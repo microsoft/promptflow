@@ -1,8 +1,6 @@
 {
-    "__pf__.nodes.my_python_tool_with_failed_line_1.completed": 7,
-    "__pf__.nodes.my_python_tool_with_failed_line_1.failed": 3,
-    "__pf__.nodes.my_python_tool_with_failed_line_2.completed": 5,
-    "__pf__.nodes.my_python_tool_with_failed_line_2.failed": 2,
-    "__pf__.lines.completed": 5,
-    "__pf__.lines.failed": 5
+    "my_python_tool_with_failed_line_1.completed": 7,
+    "my_python_tool_with_failed_line_1.failed": 3,
+    "my_python_tool_with_failed_line_2.completed": 5,
+    "my_python_tool_with_failed_line_2.failed": 2
 }

@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
 import concurrent
 import copy
 import hashlib
@@ -8,10 +9,12 @@ import json
 import logging
 import os
 import re
+import shutil
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import requests
@@ -23,14 +26,19 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 from azure.ai.ml.constants._common import AzureMLResourceType
+from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
     LINE_NUMBER,
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
+    PROMPT_FLOW_DIR_NAME,
+    PROMPT_FLOW_RUNS_DIR_NAME,
+    REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
     ListViewType,
@@ -38,13 +46,13 @@ from promptflow._sdk._constants import (
     RunHistoryKeys,
     RunStatus,
 )
-from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
-from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
+from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
+from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
+from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
     AUTOMATIC_RUNTIME_NAME,
@@ -55,8 +63,9 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
@@ -70,7 +79,7 @@ class RunRequestException(Exception):
         super().__init__(message)
 
 
-class RunOperations(_ScopeDependentOperations, TelemetryMixin):
+class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
@@ -90,15 +99,24 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         flow_operations: FlowOperations,
         credential,
         service_caller: FlowServiceCaller,
+        workspace: Workspace,
         **kwargs: Dict,
     ):
-        super().__init__(operation_scope, operation_config)
+        super().__init__(
+            operation_scope=operation_scope,
+            operation_config=operation_config,
+            workspace_name=operation_scope.workspace_name,
+            subscription_id=operation_scope.subscription_id,
+            resource_group_name=operation_scope.resource_group_name,
+        )
+        self._operation_scope = operation_scope
         self._all_operations = all_operations
         self._service_caller = service_caller
+        self._workspace = workspace
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
-        self._workspace_default_datastore = self._datastore_operations.get_default().name
+        self._workspace_default_datastore = self._datastore_operations.get_default()
 
     @property
     def _data_operations(self):
@@ -109,38 +127,26 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         return self._all_operations.all_operations[AzureMLResourceType.DATASTORE]
 
     @cached_property
-    def _common_azure_url_pattern(self):
-        operation_scope = self._operation_scope
-        url = (
-            f"/subscriptions/{operation_scope.subscription_id}"
-            f"/resourceGroups/{operation_scope.resource_group_name}"
-            f"/providers/Microsoft.MachineLearningServices"
-            f"/workspaces/{operation_scope.workspace_name}"
-        )
-        return url
-
-    @cached_property
     def _run_history_endpoint_url(self):
         """Get the endpoint url for the workspace."""
         endpoint = self._service_caller._service_endpoint
-        return endpoint + "history/v1.0" + self._common_azure_url_pattern
-
-    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
-        """Return the telemetry values of run operations.
-
-        :return: The telemetry values
-        :rtype: Dict
-        """
-        return {
-            "subscription_id": self._operation_scope.subscription_id,
-            "resource_group_name": self._operation_scope.resource_group_name,
-            "workspace_name": self._operation_scope.workspace_name,
-        }
+        return endpoint + "history/v1.0" + self._service_caller._common_azure_url_pattern
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
-        url = f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid={self._common_azure_url_pattern}"
-        return url
+        workspace_kind = str(self._workspace._kind).lower()
+        if workspace_kind == "default":
+            return (
+                f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
+        elif workspace_kind == "project":
+            return (
+                f"https://ai.azure.com/projectflows/bulkrun/run/{run_id}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
+        else:
+            raise RunOperationParameterError(f"Unsupported workspace kind: {workspace_kind!r}")
 
     def _get_input_portal_url_from_input_uri(self, input_uri):
         """Get the portal url for the data input."""
@@ -163,7 +169,10 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         elif input_uri.startswith("azureml:"):
             # named asset id
             name, version = input_uri.split(":")[1:]
-            return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
+            return (
+                f"https://ml.azure.com/data/{name}/{version}/"
+                f"details?wsid={self._service_caller._common_azure_url_pattern}"
+            )
         else:
             logger.warning(error_msg)
             return None
@@ -182,8 +191,8 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             return None
         datastore, path = match.groups()
         return (
-            f"https://ml.azure.com/data/datastore/{datastore}/edit?wsid={self._common_azure_url_pattern}"
-            f"&activeFilePath={path}#browseTab"
+            f"https://ml.azure.com/data/datastore/{datastore}/"
+            f"edit?wsid={self._service_caller._common_azure_url_pattern}&activeFilePath={path}#browseTab"
         )
 
     def _get_portal_url_from_asset_id(self, asset_id, log_warning=False):
@@ -197,7 +206,9 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
                 logger.warning(error_msg)
             return None
         name, version = match.groups()
-        return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
+        return (
+            f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._service_caller._common_azure_url_pattern}"
+        )
 
     def _get_headers(self):
         token = self._credential.get_token("https://management.azure.com/.default").token
@@ -218,6 +229,9 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         """
         stream = kwargs.pop("stream", False)
         reset = kwargs.pop("reset_runtime", False)
+
+        # validate the run object
+        run._validate_for_run_create_operation()
 
         rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"), reset=reset)
 
@@ -650,11 +664,13 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
-    def stream(self, run: Union[str, Run]) -> Run:
+    def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream the logs of a run.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
+        :param raise_on_error: Raises an exception if a run fails or canceled.
+        :type raise_on_error: bool
         :return: The run object
         :rtype: ~promptflow.entities.Run
         """
@@ -705,13 +721,26 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
                 f'Duration: "{duration}"\n'
                 f'Run url: "{self._get_run_portal_url(run_id=run.name)}"'
             )
-            # won't print error here, put it in run dict
         except KeyboardInterrupt:
             error_message = (
                 "The output streaming for the flow run was interrupted.\n"
                 "But the run is still executing on the cloud.\n"
             )
             print(error_message)
+
+        if run.status == RunStatus.FAILED or run.status == RunStatus.CANCELED:
+            if run.status == RunStatus.FAILED:
+                try:
+                    error_message = run._error["error"]["message"]
+                except Exception:  # pylint: disable=broad-except
+                    error_message = "Run fails with unknown error."
+            else:
+                error_message = "Run is canceled."
+            if raise_on_error:
+                raise InvalidRunStatusError(error_message)
+            else:
+                print_red_error(error_message)
+
         return run
 
     def _resolve_data_to_asset_id(self, run: Run):
@@ -739,7 +768,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
                 self._operation_scope,
                 self._datastore_operations,
                 test_data,
-                datastore_name=self._workspace_default_datastore,
+                datastore_name=self._workspace_default_datastore.name,
                 show_progress=self._show_progress,
             )
             if data_type == AssetTypes.URI_FOLDER and test_data and not test_data.endswith("/"):
@@ -752,9 +781,14 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         return test_data
 
     def _resolve_flow(self, run: Run):
+        if run._use_remote_flow:
+            return self._resolve_flow_definition_resource_id(run=run)
         flow = load_flow(run.flow)
-        # ignore .promptflow/dag.tools.json only for run submission scenario
-        self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
+        self._flow_operations._resolve_arm_id_or_upload_dependencies(
+            flow=flow,
+            # ignore .promptflow/dag.tools.json only for run submission scenario in python
+            ignore_tools_json=flow._flow_dict.get(LANGUAGE_KEY, None) != FlowLanguage.CSharp,
+        )
         return flow.path
 
     def _get_session_id(self, flow):
@@ -900,7 +934,9 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
 
     def _resolve_runtime(self, run, flow_path, runtime, reset=None):
         runtime = run._runtime or runtime
-        session_id = self._get_session_id(flow=flow_path)
+        # for remote flow case, use flow name as session id
+        # for local flow case, use flow path to calculate session id
+        session_id = run._flow_name if run._use_remote_flow else self._get_session_id(flow=flow_path)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime(run=run, session_id=session_id, reset=reset)
@@ -954,3 +990,79 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             raise RunRequestException(
                 f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
             )
+
+    def _resolve_flow_definition_resource_id(self, run: Run):
+        """Resolve the flow definition resource id."""
+        # for registry flow pattern, the flow uri can be passed as flow definition resource id directly
+        if run.flow.startswith(REGISTRY_URI_PREFIX):
+            return run.flow
+
+        # for workspace flow pattern, generate the flow definition resource id
+        workspace_id = self._workspace._workspace_id
+        location = self._workspace.location
+        return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{run._flow_name}"
+
+    @monitor_operation(activity_name="pfazure.runs.download", activity_type=ActivityType.PUBLICAPI)
+    def download(
+        self, run: Union[str, Run], output: Optional[Union[str, Path]] = None, overwrite: Optional[bool] = False
+    ) -> str:
+        """Download the data of a run, including input, output, snapshot and other run information.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :param output: The output directory. Default to be default to be "~/.promptflow/.runs" folder.
+        :type output: Optional[str]
+        :param overwrite: Whether to overwrite the existing run folder. Default to be False.
+        :type overwrite: Optional[bool]
+        :return: The run directory path
+        :rtype: str
+        """
+        import platform
+
+        from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
+
+        run_folder = self._validate_for_run_download(run=run, output=output, overwrite=overwrite)
+        run_downloader = AsyncRunDownloader(run=run, run_ops=self, output_folder=run_folder)
+        if platform.system().lower() == "windows":
+            # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
+            # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+        async_run_allowing_running_loop(run_downloader.download)
+        result_path = run_folder.resolve().as_posix()
+        logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
+        return result_path
+
+    def _validate_for_run_download(self, run: Union[str, Run], output: Optional[Union[str, Path]], overwrite):
+        """Validate the run download parameters."""
+        run = Run._validate_and_return_run_name(run)
+
+        # process the output path
+        if output is None:
+            # default to be "~/.promptflow/.runs" folder
+            output_directory = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_RUNS_DIR_NAME
+        else:
+            output_directory = Path(output)
+
+        # validate the run folder
+        run_folder = output_directory / run
+        if run_folder.exists():
+            if overwrite is True:
+                logger.warning("Removing existing run folder %r.", run_folder.resolve().as_posix())
+                shutil.rmtree(run_folder)
+            else:
+                raise UserErrorException(
+                    f"Run folder {run_folder.resolve().as_posix()!r} already exists, please specify a new output path "
+                    f"or set the overwrite flag to be true."
+                )
+
+        # check the run status, only download the completed run
+        run = self.get(run=run)
+        if run.status != RunStatus.COMPLETED:
+            raise UserErrorException(
+                f"Can only download the run with status {RunStatus.COMPLETED!r} "
+                f"while {run.name!r}'s status is {run.status!r}."
+            )
+
+        run_folder.mkdir(parents=True)
+        return run_folder

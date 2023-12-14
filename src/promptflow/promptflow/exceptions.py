@@ -11,6 +11,7 @@ class ErrorTarget(str, Enum):
     """The target of the error, indicates which part of the system the error occurs."""
 
     EXECUTOR = "Executor"
+    BATCH = "Batch"
     FLOW_EXECUTOR = "FlowExecutor"
     NODE_EXECUTOR = "NodeExecutor"
     TOOL = "Tool"
@@ -38,8 +39,6 @@ class PromptflowException(Exception):
 
     def __init__(
         self,
-        # We must keep the message as the first argument,
-        # since some places are using it as positional argument for now.
         message="",
         message_format="",
         target: ErrorTarget = ErrorTarget.UNKNOWN,
@@ -80,8 +79,6 @@ class PromptflowException(Exception):
         parameters = {}
         for argument in required_arguments:
             if argument not in self._kwargs:
-                # Set a default value for the missing argument to avoid KeyError.
-                # For long term solution, use CI to guarantee the message_format and message_parameters are in sync.
                 parameters[argument] = f"<{argument}>"
             else:
                 parameters[argument] = self._kwargs[argument]
@@ -123,10 +120,14 @@ class PromptflowException(Exception):
     @property
     def reference_code(self):
         """The reference code of the error."""
+        # In Python 3.11, the __str__ method of the Enum type returns the name of the enumeration member.
+        # However, in earlier Python versions, the __str__ method returns the value of the enumeration member.
+        # Therefore, when dealing with this situation, we need to make some additional adjustments.
+        target = self.target.value if isinstance(self.target, ErrorTarget) else self.target
         if self.module:
-            return f"{self.target}/{self.module}"
+            return f"{target}/{self.module}"
         else:
-            return self.target
+            return target
 
     @property
     def inner_exception(self):
@@ -181,11 +182,9 @@ class PromptflowException(Exception):
                 return
 
             for _, field_name, _, _ in string.Formatter().parse(message_format):
-                # Last one field_name is always None, filter it out to avoid exception.
                 if field_name is not None:
                     yield field_name
 
-        # Use set to remove duplicates
         return set(iter_field_name())
 
     def __str__(self):

@@ -1,10 +1,9 @@
 from pathlib import Path
 
 import pytest
-import yaml
 
 from promptflow._sdk.entities._connection import AzureContentSafetyConnection
-from promptflow.contracts._errors import FailedToImportModule, NodeConditionConflict
+from promptflow.contracts._errors import FailedToImportModule
 from promptflow.contracts.flow import (
     Flow,
     FlowInputAssignment,
@@ -20,7 +19,7 @@ from promptflow.contracts.flow import (
 )
 from promptflow.contracts.tool import Tool, ToolType, ValueType
 
-from ...utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_yaml_file
+from ...utils import get_flow_folder, get_flow_package_tool_definition, get_yaml_file
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent.parent / "package_tools"
 
@@ -66,14 +65,49 @@ class TestFlowContract:
         assert connection_names == ["connection", "connection_2"]
         assert flow.get_connection_input_names_for_node("not_exist") == []
 
-    def test_node_condition_conflict(self):
-        flow_folder = "node_condition_conflict"
-        flow_yaml = get_yaml_file(flow_folder, root=WRONG_FLOW_ROOT)
-        with pytest.raises(NodeConditionConflict) as e:
-            with open(flow_yaml, "r") as fin:
-                Flow.deserialize(yaml.safe_load(fin))
-        error_message = "Node 'test_node' can't have both skip and activate condition."
-        assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
+    @pytest.mark.parametrize(
+        "flow_folder_name, environment_variables_overrides, except_environment_variables",
+        [
+            pytest.param(
+                "flow_with_environment_variables",
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                {
+                    "env1": "2",
+                    "env2": "runtime_env2",
+                    "env3": "[1, 2, 3, 4, 5]",
+                    "env4": '{"a": 1, "b": "2"}',
+                    "env10": "aaaaa",
+                },
+                id="LoadEnvVariablesWithOverrides",
+            ),
+            pytest.param(
+                "flow_with_environment_variables",
+                None,
+                {
+                    "env1": "2",
+                    "env2": "spawn",
+                    "env3": "[1, 2, 3, 4, 5]",
+                    "env4": '{"a": 1, "b": "2"}',
+                },
+                id="LoadEnvVariablesWithoutOverrides",
+            ),
+            pytest.param(
+                "simple_hello_world",
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                id="LoadEnvVariablesWithoutYamlLevelEnvVariables",
+            ),
+        ],
+    )
+    def test_load_env_variables(self, flow_folder_name, environment_variables_overrides, except_environment_variables):
+        flow_folder = get_flow_folder(flow_folder_name)
+        flow_file = "flow.dag.yaml"
+        merged_environment_variables = Flow.load_env_variables(
+            flow_file=flow_file,
+            working_dir=flow_folder,
+            environment_variables_overrides=environment_variables_overrides,
+        )
+        assert merged_environment_variables == except_environment_variables
 
 
 @pytest.mark.unittest
@@ -83,7 +117,15 @@ class TestFlow:
         [
             (
                 Flow(id="flow_id", name="flow_name", nodes=[], inputs={}, outputs={}, tools=[]),
-                {"id": "flow_id", "name": "flow_name", "nodes": [], "inputs": {}, "outputs": {}, "tools": []},
+                {
+                    "id": "flow_id",
+                    "name": "flow_name",
+                    "nodes": [],
+                    "inputs": {},
+                    "outputs": {},
+                    "tools": [],
+                    "language": "python",
+                },
             ),
             (
                 Flow(
@@ -101,6 +143,7 @@ class TestFlow:
                     "inputs": {"input1": {"type": ValueType.STRING.value}},
                     "outputs": {"output1": {"type": ValueType.STRING.value}},
                     "tools": [],
+                    "language": "python",
                 },
             ),
         ],
@@ -142,6 +185,8 @@ class TestFlow:
                     },
                     tools=[],
                     node_variants={},
+                    program_language="python",
+                    environment_variables={},
                 ),
             ),
         ],

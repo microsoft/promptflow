@@ -137,7 +137,6 @@ class RunTracker(ThreadLocalSingleton):
         flow_run_id,
         parent_run_id,
         run_id,
-        outputs,
         index,
         variant_id,
     ):
@@ -148,12 +147,12 @@ class RunTracker(ThreadLocalSingleton):
             parent_run_id=parent_run_id,
             status=Status.Bypassed,
             inputs=None,
-            output=outputs,
+            output=None,
             metrics=None,
             error=None,
             start_time=datetime.utcnow(),
             end_time=datetime.utcnow(),
-            result=outputs,
+            result=None,
             index=index,
             variant_id=variant_id,
             api_calls=[],
@@ -338,7 +337,7 @@ class RunTracker(ThreadLocalSingleton):
             traces.extend(node_run_info.api_calls or [])
         return traces
 
-    OPENAI_AGGREGATE_METRICS = ["total_tokens"]
+    OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
 
     def collect_metrics(self, run_infos: List[RunInfo], aggregate_metrics: List[str] = []):
         if not aggregate_metrics:

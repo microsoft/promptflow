@@ -2,23 +2,26 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import argparse
+import json
 from typing import Dict, List
 
 from promptflow._cli._params import (
     add_param_archived_only,
+    add_param_flow_name,
     add_param_flow_type,
     add_param_include_archived,
     add_param_include_others,
     add_param_max_results,
     add_param_output_format,
     add_param_set,
-    logging_params,
+    base_params,
 )
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
     _output_result_list_with_format,
     _set_workspace_argument_for_subparsers,
     activate_action,
+    exception_handler,
 )
 from promptflow._sdk._constants import get_list_view_type
 
@@ -32,7 +35,7 @@ def add_parser_flow(subparsers):
     )
     flow_subparsers = flow_parser.add_subparsers()
     add_parser_flow_create(flow_subparsers)
-    # add_parser_flow_get(flow_subparsers)
+    add_parser_flow_show(flow_subparsers)
     add_parser_flow_list(flow_subparsers)
     # add_parser_flow_delete(flow_subparsers)
     # add_parser_flow_download(flow_subparsers)
@@ -43,17 +46,21 @@ def add_parser_flow_create(subparsers):
     """Add flow create parser to the pf flow subparsers."""
     epilog = """
 Use "--set" to set flow properties like:
-    display-name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
+    display_name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
     type: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
     description: Flow description. e.g. "--set description=<description>."
     tags: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
 
+Note:
+    In "--set" parameter, if the key name consists of multiple words, use snake-case instead of kebab-case. e.g. "--set display_name=<flow-display-name>"
+
 Examples:
+
 # Create a flow to azure portal with local flow folder.
-pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-name> type=<flow-type>
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type>
 
 # Create a flow with more properties
-pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
 """  # noqa: E501
     add_param_source = lambda parser: parser.add_argument(  # noqa: E731
         "--flow", type=str, help="Source folder of the flow."
@@ -62,7 +69,7 @@ pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-n
         _set_workspace_argument_for_subparsers,
         add_param_source,
         add_param_set,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="create",
@@ -103,7 +110,7 @@ pfazure flow list --include-others
         add_param_include_archived,
         add_param_output_format,
         _set_workspace_argument_for_subparsers,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="list",
@@ -112,6 +119,27 @@ pfazure flow list --include-others
         add_params=add_params,
         subparsers=subparsers,
         help_message="pfazure flow list",
+        action_param_name="sub_action",
+    )
+
+
+def add_parser_flow_show(subparsers):
+    """Add flow get parser to the pf flow subparsers."""
+    epilog = """
+Examples:
+
+# Get flow:
+pfazure flow show --name <flow-name>
+"""
+    add_params = [add_param_flow_name, _set_workspace_argument_for_subparsers] + base_params
+
+    activate_action(
+        name="show",
+        description="Show a flow from Azure.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="pfazure flow show",
         action_param_name="sub_action",
     )
 
@@ -128,7 +156,7 @@ def add_parser_flow_download(subparsers):
         _set_workspace_argument_for_subparsers,
         add_param_source,
         add_param_destination,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="download",
@@ -144,6 +172,8 @@ def add_parser_flow_download(subparsers):
 def dispatch_flow_commands(args: argparse.Namespace):
     if args.sub_action == "create":
         create_flow(args)
+    elif args.sub_action == "show":
+        show_flow(args)
     elif args.sub_action == "list":
         list_flows(args)
 
@@ -153,6 +183,7 @@ def _get_flow_operation(subscription_id, resource_group, workspace_name):
     return pf_client._flows
 
 
+@exception_handler("Create flow")
 def create_flow(args: argparse.Namespace):
     """Create a flow for promptflow."""
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
@@ -164,6 +195,14 @@ def create_flow(args: argparse.Namespace):
         description=params.get("description", None),
         tags=params.get("tags", None),
     )
+
+
+@exception_handler("Show flow")
+def show_flow(args: argparse.Namespace):
+    """Get a flow for promptflow."""
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    flow = pf.flows.get(args.name)
+    print(json.dumps(flow._to_dict(), indent=4))
 
 
 def list_flows(args: argparse.Namespace):

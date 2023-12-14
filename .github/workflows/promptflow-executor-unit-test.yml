@@ -4,9 +4,21 @@ on:
     - cron: "40 19 * * *" # Every day starting at 3:40 BJT
   pull_request_target:
     paths:
-      - src/promptflow/**
-      - scripts/**
-      - '**promptflow-executor-unit-test.yml'
+      - src/promptflow/*
+      - src/promptflow/promptflow/*
+      - src/promptflow/promptflow/_core/**
+      - src/promptflow/promptflow/_internal/**
+      - src/promptflow/promptflow/_utils/**
+      - src/promptflow/promptflow/batch/**
+      - src/promptflow/promptflow/contracts/**
+      - src/promptflow/promptflow/entities/**
+      - src/promptflow/promptflow/executor/**
+      - src/promptflow/promptflow/integrations/**
+      - src/promptflow/promptflow/storage/**
+      - src/promptflow/tests/*
+      - src/promptflow/tests/executor/**
+      - scripts/building/**
+      - .github/workflows/promptflow-executor-unit-test.yml
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra
@@ -23,8 +35,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: true
-  executor_unit_tests:
+  build:
     needs: authorize
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
+        fetch-depth: 0
+    - name: merge main to current branch
+      uses: "./.github/actions/step_merge_main"
+    - name: Display and Set Environment Variables
+      run: |
+        env | sort >> $GITHUB_OUTPUT
+      id: display_env
+      shell: bash -el {0}
+    - name: Python Setup - ubuntu-latest - Python Version 3.9
+      uses: "./.github/actions/step_create_python_environment"
+      with:
+        pythonVersion: 3.9
+    - name: Build wheel
+      uses: "./.github/actions/step_sdk_setup"
+      with:
+        setupType: promptflow_with_extra
+        scriptPath: ${{ env.testWorkingDirectory }}
+    - name: Upload Wheel
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheel
+        path: |
+          ${{ github.workspace }}/src/promptflow/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
+  executor_unit_tests:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -40,26 +87,27 @@ jobs:
       uses: "./.github/actions/step_merge_main"
     - name: Display and Set Environment Variables
       run: |
-        if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
-          export pyVersion="3.9";
-        elif [ "macos-latest" == "${{ matrix.os }}" ]; then
-          export pyVersion="3.10";
-        else
-          echo "Unsupported OS: ${{ matrix.os }}";
-          exit 1;
-        fi
         env | sort >> $GITHUB_OUTPUT
       id: display_env
       shell: bash -el {0}
-    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
+    - name: Python Setup - ${{ matrix.os }} - Python Version 3.9
       uses: "./.github/actions/step_create_python_environment"
       with:
-        pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
-    - name: Build wheel
-      uses: "./.github/actions/step_sdk_setup"
+        pythonVersion: 3.9
+    - name: Download Artifacts
+      uses: actions/download-artifact@v3
       with:
-        setupType: ${{ env.packageSetupType }}
-        scriptPath: ${{ env.testWorkingDirectory }}
+        name: wheel
+        path: artifacts
+    - name: Install wheel
+      shell: pwsh
+      working-directory: artifacts
+      run: |
+        Set-PSDebug -Trace 1
+        pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
+        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        pip freeze
     - name: Azure Login
       uses: azure/login@v1
       with:
@@ -90,7 +138,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
+        name: Test Results (Python 3.9) (OS ${{ matrix.os }})
         path: |
           ${{ github.workspace }}/*.xml
           ${{ github.workspace }}/htmlcov/
@@ -103,9 +151,12 @@ jobs:
 
     steps:
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha || github.ref }}
+        fetch-depth: 0
+    - name: merge main to current branch
+      uses: "./.github/actions/step_merge_main"
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:

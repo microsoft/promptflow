@@ -83,7 +83,7 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-**Core value: ensuring "High Quality” from prototype to production** 
+**Core value: ensuring "High Quality” from prototype to production**
 
 Explore our [**15-minute tutorial**](examples/tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md) that guides you through prompt tuning ➡ batch testing ➡ evaluation, all designed to ensure high quality ready for production.
 
@@ -116,7 +116,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 If you're interested in contributing, please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
-Next Step! Continue with the **Contributing**  👇 section to to contribute to prompt flow.
+Next Step! Continue with the **Contributing**  👇 section to contribute to prompt flow.
 
 ## Contributing
 
@@ -166,11 +166,9 @@ use of the software operates as your consent to these practices.
 
 ### Telemetry Configuration
 
-Telemetry collection is off by default.
+Telemetry collection is on by default.
 
-To opt in, please run `pf config set cli.telemetry_enabled=true` to turn it on.
-
-For Europe user, please run `pf config set cli.eu_user=true` to make sure telemetry is sent to Europe server.
+To opt out, please run `pf config set telemetry.enabled=false` to turn it off.
 
 ## License
 

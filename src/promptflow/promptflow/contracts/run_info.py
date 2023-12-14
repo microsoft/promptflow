@@ -7,6 +7,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional
 
+from dateutil import parser
+
 
 class Status(Enum):
     """An enumeration class for different types of run status."""
@@ -82,7 +84,7 @@ class RunInfo:
     flow_run_id: str
     run_id: str
     status: Status
-    inputs: list
+    inputs: Mapping[str, Any]
     output: object
     metrics: Dict[str, Any]
     error: Dict[str, Any]
@@ -97,6 +99,32 @@ class RunInfo:
     logs: Optional[Dict[str, str]] = None
     system_metrics: Dict[str, Any] = None
     result: object = None
+
+    @staticmethod
+    def deserialize(data: dict) -> "RunInfo":
+        """Deserialize the RunInfo from a dict."""
+        run_info = RunInfo(
+            node=data.get("node"),
+            flow_run_id=data.get("flow_run_id"),
+            run_id=data.get("run_id"),
+            status=Status(data.get("status")),
+            inputs=data.get("inputs", None),
+            output=data.get("output", None),
+            metrics=data.get("metrics", None),
+            error=data.get("error", None),
+            parent_run_id=data.get("parent_run_id", None),
+            start_time=parser.parse(data.get("start_time")).replace(tzinfo=None),
+            end_time=parser.parse(data.get("end_time")).replace(tzinfo=None),
+            index=data.get("index", None),
+            api_calls=data.get("api_calls", None),
+            variant_id=data.get("variant_id", ""),
+            cached_run_id=data.get("cached_run_id", None),
+            cached_flow_run_id=data.get("cached_flow_run_id", None),
+            logs=data.get("logs", None),
+            system_metrics=data.get("system_metrics", None),
+            result=data.get("result", None),
+        )
+        return run_info
 
 
 @dataclass
@@ -171,3 +199,51 @@ class FlowRunInfo:
     system_metrics: Dict[str, Any] = None
     result: object = None
     upload_metrics: bool = False  # only set as true for root runs in bulk test mode and evaluation mode
+
+    @staticmethod
+    def deserialize(data: dict) -> "FlowRunInfo":
+        """Deserialize the FlowRunInfo from a dict."""
+        flow_run_info = FlowRunInfo(
+            run_id=data.get("run_id"),
+            status=Status(data.get("status")),
+            error=data.get("error", None),
+            inputs=data.get("inputs", None),
+            output=data.get("output", None),
+            metrics=data.get("metrics", None),
+            request=data.get("request", None),
+            parent_run_id=data.get("parent_run_id", None),
+            root_run_id=data.get("root_run_id", None),
+            source_run_id=data.get("source_run_id", None),
+            flow_id=data.get("flow_id"),
+            start_time=parser.parse(data.get("start_time")).replace(tzinfo=None),
+            end_time=parser.parse(data.get("end_time")).replace(tzinfo=None),
+            index=data.get("index", None),
+            api_calls=data.get("api_calls", None),
+            variant_id=data.get("variant_id", ""),
+            name=data.get("name", ""),
+            description=data.get("description", ""),
+            tags=data.get("tags", None),
+            system_metrics=data.get("system_metrics", None),
+            result=data.get("result", None),
+            upload_metrics=data.get("upload_metrics", False),
+        )
+        return flow_run_info
+
+    @staticmethod
+    def create_with_error(start_time, inputs, index, run_id, error):
+        return FlowRunInfo(
+            run_id=run_id,
+            status=Status.Failed,
+            error=error,
+            inputs=inputs,
+            output=None,
+            metrics=None,
+            request=None,
+            parent_run_id=run_id,
+            root_run_id=run_id,
+            source_run_id=run_id,
+            flow_id="default_flow_id",
+            start_time=start_time,
+            end_time=datetime.utcnow(),
+            index=index,
+        )

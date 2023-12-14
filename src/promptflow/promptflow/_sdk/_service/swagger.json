@@ -1,0 +1,598 @@
+{
+    "swagger": "2.0",
+    "basePath": "/v1.0",
+    "paths": {
+        "/Connections/": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Connection"
+                            }
+                        }
+                    }
+                },
+                "description": "List all connection",
+                "operationId": "get_connection_list",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "formData",
+                        "type": "string"
+                    }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            }
+        },
+        "/Connections/specs": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "List connection spec",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionSpec"
+                        }
+                    }
+                },
+                "description": "List connection spec",
+                "operationId": "get_connection_specs",
+                "tags": [
+                    "Connections"
+                ]
+            }
+        },
+        "/Connections/{name}": {
+            "parameters": [
+                {
+                    "in": "path",
+                    "description": "The connection name.",
+                    "name": "name",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "formData",
+                        "type": "string"
+                    }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Update connection",
+                "operationId": "put_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Create connection",
+                "operationId": "post_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            }
+        },
+        "/Connections/{name}/listsecrets": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details with secret",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection with secret",
+                "operationId": "get_connection_with_secret",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "formData",
+                        "type": "string"
+                    }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            }
+        },
+        "/Runs/": {
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Runs",
+                        "schema": {
+                            "$ref": "#/definitions/RunList"
+                        }
+                    }
+                },
+                "description": "List all runs",
+                "operationId": "get_run_list",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/submit": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Submit run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Submit run",
+                "operationId": "post_run_submit",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Update run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Update run",
+                "operationId": "put_run",
+                "parameters": [
+                    {
+                        "name": "display_name",
+                        "in": "formData",
+                        "type": "string"
+                    },
+                    {
+                        "name": "description",
+                        "in": "formData",
+                        "type": "string"
+                    },
+                    {
+                        "name": "tags",
+                        "in": "formData",
+                        "type": "string"
+                    }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/archive": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Archived run",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Archive run",
+                "operationId": "get_archive_run",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/childRuns": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Child runs",
+                        "schema": {
+                            "$ref": "#/definitions/RunList"
+                        }
+                    }
+                },
+                "description": "Get child runs",
+                "operationId": "get_flow_child_runs",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/logContent": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Log content",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "description": "Get run log content",
+                "operationId": "get_log_content",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/metaData": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Run metadata",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get metadata of run",
+                "operationId": "get_meta_data",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/metrics": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Run metrics",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run metrics",
+                "operationId": "get_metrics",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/nodeRuns/{node_name}": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "node_name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Node runs",
+                        "schema": {
+                            "$ref": "#/definitions/RunList"
+                        }
+                    }
+                },
+                "description": "Get node runs info",
+                "operationId": "get_flow_node_runs",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/restore": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Restored run",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Restore run",
+                "operationId": "get_restore_run",
+                "tags": [
+                    "Runs"
+                ]
+            }
+        },
+        "/Runs/{name}/visualize": {
+            "parameters": [
+                {
+                    "name": "name",
+                    "in": "path",
+                    "required": true,
+                    "type": "string"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Visualize run",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "description": "Visualize run",
+                "operationId": "get_visualize_run",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "Runs"
+                ]
+            }
+        }
+    },
+    "info": {
+        "title": "Prompt Flow Service",
+        "version": "1.0"
+    },
+    "produces": [
+        "application/json"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "tags": [
+        {
+            "name": "Connections",
+            "description": "Connections Management"
+        },
+        {
+            "name": "Runs",
+            "description": "Runs Management"
+        }
+    ],
+    "definitions": {
+        "Connection": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "module": {
+                    "type": "string"
+                },
+                "expiry_time": {
+                    "type": "string"
+                },
+                "created_date": {
+                    "type": "string"
+                },
+                "last_modified_date": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "ConnectionDict": {
+            "additionalProperties": true,
+            "type": "object"
+        },
+        "ConnectionSpec": {
+            "properties": {
+                "connection_type": {
+                    "type": "string"
+                },
+                "config_spec": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ConnectionConfigSpec"
+                    }
+                }
+            },
+            "type": "object"
+        },
+        "ConnectionConfigSpec": {
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "optional": {
+                    "type": "boolean"
+                },
+                "default": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "RunList": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/RunDict"
+            }
+        },
+        "RunDict": {
+            "additionalProperties": true,
+            "type": "object"
+        }
+    },
+    "responses": {
+        "ParseError": {
+            "description": "When a mask can't be parsed"
+        },
+        "MaskError": {
+            "description": "When any error occurs on mask"
+        }
+    }
+}
