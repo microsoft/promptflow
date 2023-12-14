@@ -163,7 +163,7 @@ jobs:
                     }
                     if ($failed_reason.Contains("not successful")) {
                         throw "$failed_reason"
-                    } elseif ($failed_reason.Contains("not successful")) {
+                    } elseif ($failed_reason.Contains("not finished")) {
                         Write-Output "$failed_reason"
                         continue
                     } else {
