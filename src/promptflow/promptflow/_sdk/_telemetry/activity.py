@@ -1,6 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
+import sys
 import contextlib
 import functools
 import uuid
@@ -177,8 +179,10 @@ def monitor_operation(
                 try:
                     return f(self, *args, **kwargs)
                 finally:
-                    if activity_name in HINT_ACTIVITY_NAME:
-                        async_run_allowing_running_loop(check_latest_version)
+                    if sys.platform.startswith("win"):
+                        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+                    asyncio.run(check_latest_version())
+                    if _activity_name in HINT_ACTIVITY_NAME:
                         hint_for_update()
 
         return wrapper
