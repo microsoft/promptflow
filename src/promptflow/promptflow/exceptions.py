@@ -52,6 +52,7 @@ class PromptflowException(Exception):
         self._message_format = message_format
         self._kwargs = kwargs
         super().__init__(self._message)
+        self._try_get_message()
 
     @property
     def message(self):
@@ -192,6 +193,12 @@ class PromptflowException(Exception):
 
         Some child classes may override this method to return a more detailed error message."""
         return self.message
+
+    def _try_get_message(self):
+        """Try to get the error message to early capture any exception during formatting the
+        error message according to message_format."""
+
+        self.message
 
 
 class UserErrorException(PromptflowException):
