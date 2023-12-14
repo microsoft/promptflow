@@ -12,7 +12,7 @@ from azure.identity import AzureCliCredential
 
 ENVIRONMENT_YAML = Path(__file__).parent / "runtime-env" / "env.yaml"
 
-EXAMPLE_RUNTIME_NAME = "example-runtime-ci"
+EXAMPLE_RUNTIME_NAME = "tmp-example-runtime-ci"
 TEST_RUNTIME_NAME = "test-runtime-ci"
 
 
