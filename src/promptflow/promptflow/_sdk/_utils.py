@@ -864,9 +864,11 @@ class ClientUserAgentUtil:
 
     @classmethod
     def get_user_agent(cls):
+        from promptflow._core.operation_context import OperationContext
+
         context = cls._get_context()
         # directly get from context since client side won't need promptflow/xxx.
-        return context.get(context.USER_AGENT_KEY, "").strip()
+        return context.get(OperationContext.USER_AGENT_KEY, "").strip()
 
     @classmethod
     def append_user_agent(cls, user_agent: Optional[str]):

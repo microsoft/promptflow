@@ -103,8 +103,8 @@ class OperationContext(Dict):
         """
 
         def parts():
-            if self.USER_AGENT_KEY in self:
-                yield self.get(self.USER_AGENT_KEY)
+            if OperationContext.USER_AGENT_KEY in self:
+                yield self.get(OperationContext.USER_AGENT_KEY)
             yield f"promptflow/{VERSION}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
@@ -120,7 +120,7 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        if self.USER_AGENT_KEY in self:
+        if OperationContext.USER_AGENT_KEY in self:
             if user_agent not in self.user_agent:
                 self.user_agent = f"{self.user_agent.strip()} {user_agent.strip()}"
         else:
