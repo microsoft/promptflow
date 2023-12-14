@@ -24,8 +24,6 @@ jobs:
             function get_diffs() {
                 $snippet_debug = 1
 
-                $failed_reason = ""
-
                 git log -1 | ForEach-Object {
                     if ($_.Contains("Merge")) {
                         $merge_commit = $_.Split(" ")[-3]
@@ -51,6 +49,8 @@ jobs:
             
                 for ($i = 0; $i -lt $failedCount; $i++) {
                     Start-Sleep -Seconds 30
+
+                    $failed_reason = ""
                     
                     $pipelines = @{
                         "executor_e2e_tests" = 0;
