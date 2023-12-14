@@ -61,11 +61,6 @@ def gpt2_custom_connection():
 
 
 @pytest.fixture
-def llama_chat_custom_connection():
-    return ConnectionManager().get("llama_chat_connection")
-
-
-@pytest.fixture
 def open_model_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
@@ -139,7 +134,6 @@ def example_image() -> Image:
     with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/images/number10.jpg", "rb") as f:
         image = Image(f.read())
     return image
-
 
 # functions
 @pytest.fixture
