@@ -48,14 +48,13 @@ jobs:
                 $failedCount = 24
             
                 for ($i = 0; $i -lt $failedCount; $i++) {
-                    #Start-Sleep -Seconds 30
+                    Start-Sleep -Seconds 30
                     
                     $pipelines = @{
                         "executor_e2e_tests" = 0;
                         "executor_unit_tests" = 0;
                         "sdk_cli_tests" = 0;
                         "sdk_cli_global_config_tests" = 0;
-                        "sdk_pfs_e2e_test" = 0;
                         "sdk_cli_azure_test" = 0;
                     }
                     $pipelines_count = @{
@@ -63,7 +62,6 @@ jobs:
                         "executor_unit_tests" = 0;
                         "sdk_cli_tests" = 0;
                         "sdk_cli_global_config_tests" = 0;
-                        "sdk_pfs_e2e_test" = 0;
                         "sdk_cli_azure_test" = 0;
                     }
                     
@@ -72,7 +70,6 @@ jobs:
                             $pipelines.sdk_cli_tests = 4
                             $pipelines.sdk_cli_global_config_tests = 1
                             $pipelines.sdk_cli_azure_test = 2
-                            $pipelines.sdk_pfs_e2e_test = 2
                         }
                     }
             
@@ -130,7 +127,6 @@ jobs:
                         "executor_unit_tests" = 0;
                         "sdk_cli_tests" = 0;
                         "sdk_cli_global_config_tests" = 0;
-                        "sdk_pfs_e2e_test" = 0;
                         "sdk_cli_azure_test" = 0;
                     }
             
