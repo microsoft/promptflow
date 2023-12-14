@@ -105,10 +105,7 @@ jobs:
                             }
                         }
                     }
-                    
-            
-                    # Get pipeline conclusion. count should match.
-            
+                    # Get pipelines of commit. count should match.
                     foreach ($key in $pipelines.Keys) {
                         if ($pipelines_count[$key] -lt $pipelines[$key]) {
                             $failed_reason = "Not all pipelines are triggered."
@@ -131,7 +128,11 @@ jobs:
                         "sdk_cli_global_config_tests" = 0;
                         "sdk_cli_azure_test" = 0;
                     }
-            
+                    
+                    # Get pipeline conclusion Priority:
+                    # 1. Not successful, Fail.
+                    # 2. Not finished, Continue.
+                    # 3. Successful, Break.
                     $valid_status_array `
                     | ForEach-Object {
                         foreach ($key in $pipelines.Keys) {
@@ -145,7 +146,9 @@ jobs:
                                 } elseif ($_.conclusion -ieq "failure") {
                                     $failed_reason = "Required pipelines are not successful."
                                 } else {
-                                    $failed_reason = "Required pipelines are not finished."
+                                    if (failed_reason -eq "") {
+                                        $failed_reason = "Required pipelines are not finished."
+                                    }
                                 }
                             }
                             Write-Output "$key is $($_.conclusion)."
