@@ -76,7 +76,6 @@ class DefaultRunStorage(AbstractRunStorage):
         if run_info.output:
             serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
             run_info.output = serialized_output
-            run_info.result = serialized_output
 
         # Persist and convert images in api_calls to path dictionaries.
         # The `inplace=True` parameter is used here to ensure that the original list structure holding generator outputs

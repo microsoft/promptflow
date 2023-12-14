@@ -320,7 +320,6 @@ class TestSubmitter:
                 if isinstance(node.output, GeneratorType):
                     node_output = "".join(get_result_output(node.output))
                     node.output = node_output
-                    node.result = node_output
 
             return flow_result
 

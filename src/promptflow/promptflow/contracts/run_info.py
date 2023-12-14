@@ -98,7 +98,7 @@ class RunInfo:
     cached_flow_run_id: str = None
     logs: Optional[Dict[str, str]] = None
     system_metrics: Dict[str, Any] = None
-    result: object = None
+    result: object = None # Legacy field, will be removed in the future
 
     @staticmethod
     def deserialize(data: dict) -> "RunInfo":
@@ -122,7 +122,6 @@ class RunInfo:
             cached_flow_run_id=data.get("cached_flow_run_id", None),
             logs=data.get("logs", None),
             system_metrics=data.get("system_metrics", None),
-            result=data.get("result", None),
         )
         return run_info
 
@@ -197,7 +196,7 @@ class FlowRunInfo:
     description: str = ""
     tags: Optional[Mapping[str, str]] = None
     system_metrics: Dict[str, Any] = None
-    result: object = None
+    result: object = None  # Legacy field, will be removed in the future
     upload_metrics: bool = False  # only set as true for root runs in bulk test mode and evaluation mode
 
     @staticmethod

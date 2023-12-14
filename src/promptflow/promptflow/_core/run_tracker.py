@@ -152,7 +152,6 @@ class RunTracker(ThreadLocalSingleton):
             error=None,
             start_time=datetime.utcnow(),
             end_time=datetime.utcnow(),
-            result=None,
             index=index,
             variant_id=variant_id,
             api_calls=[],
@@ -192,7 +191,6 @@ class RunTracker(ThreadLocalSingleton):
     def _common_postprocess(self, run_info, output, ex):
         if output is not None:
             #  Duplicated fields for backward compatibility.
-            run_info.result = output
             run_info.output = output
         if ex is not None:
             self._enrich_run_info_with_exception(run_info=run_info, ex=ex)

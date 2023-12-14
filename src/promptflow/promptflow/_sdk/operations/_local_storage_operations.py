@@ -403,7 +403,6 @@ class LocalStorageOperations(AbstractRunStorage):
             run_info.inputs = self._serialize_multimedia(run_info.inputs, folder_path)
         if run_info.output:
             run_info.output = self._serialize_multimedia(run_info.output, folder_path)
-            run_info.result = None
         if run_info.api_calls:
             run_info.api_calls = self._serialize_multimedia(run_info.api_calls, folder_path)
 
