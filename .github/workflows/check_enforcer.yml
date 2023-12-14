@@ -84,7 +84,7 @@ jobs:
                     # Get pipeline status.
                     $valid_status_array = @()
 
-                    $(gh api /repos/microsoft/promptflow/commits/87e997055c52e858a63f9bc2ada64fba6e1b63ea/check-suites) `
+                    $(gh api /repos/microsoft/promptflow/commits/$merge_commit/check-suites) `
                     | ConvertFrom-Json `
                     | Select-Object -ExpandProperty check_suites `
                     | ForEach-Object {
@@ -155,6 +155,7 @@ jobs:
                                     $failed_reason = "Required pipelines are not finished."
                                 }
                             }
+                            Write-Output "$key is $($_.conclusion)."
                         }
                     }
                     if ($snippet_debug -eq 1) {
