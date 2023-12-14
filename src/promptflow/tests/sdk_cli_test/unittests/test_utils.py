@@ -23,7 +23,7 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._constants import PF_VERSION_CHECK, CURRENT_VERSION, LAST_CHECK_TIME, LATEST_VERSION
+from promptflow._constants import PF_VERSION_CHECK, CURRENT_VERSION, LAST_CHECK_TIME, LATEST_VERSION, LAST_HINT_TIME
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
@@ -39,7 +39,6 @@ from promptflow._sdk._utils import (
 )
 from promptflow._utils.load_data import load_data
 from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version
-from promptflow._utils.async_utils import async_run_allowing_running_loop
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -203,28 +202,38 @@ class TestUtils:
         for thread in threads:
             thread.join()
 
-    def test_hint_for_update(self):
+    @pytest.mark.parametrize("concurrent_count", [1, 2, 4, 8])
+    def test_concurrent_hint_for_update(self, concurrent_count):
+        import concurrent
+        from concurrent.futures import ThreadPoolExecutor
         with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
             mock_datetime.datetime.now.return_value = datetime.datetime.now()
             mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
             mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
-            hint_for_update()
+            # with ThreadPoolExecutor(max_workers=concurrent_count) as pool:
+            #     tasks = [pool.submit(check_latest_version), pool.submit(hint_for_update)]
+            #     concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=concurrent_count) as executor:
+                # Submit concurrent calls to the functions
+                results_hint = [executor.submit(hint_for_update) for _ in range(concurrent_count)]
+                results_check = [executor.submit(check_latest_version) for _ in range(concurrent_count)]
+
+                # Wait for all calls to complete
+                concurrent.futures.wait(results_hint + results_check, return_when=concurrent.futures.ALL_COMPLETED)
+
+                # Ensure that no exceptions were raised during concurrent calls
+                for result in results_hint + results_check:
+                    assert result.exception() is None,  f"Exception in thread: {result.exception()}"
+
             assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
             with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
                 cached_versions = json.load(f)
             assert CURRENT_VERSION in cached_versions
-
-    def test_check_latest_version(self):
-        with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
-            mock_datetime.datetime.now.return_value = datetime.datetime.now()
-            mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
-            mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
-            async_run_allowing_running_loop(check_latest_version)
-            assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
-            with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
-                cached_versions = json.load(f)
+            assert LAST_HINT_TIME in cached_versions
             assert LATEST_VERSION in cached_versions
             assert LAST_CHECK_TIME in cached_versions
+
 
     @pytest.mark.parametrize(
         "data_path",

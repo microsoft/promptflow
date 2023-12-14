@@ -38,6 +38,7 @@ def acquire_lock(filename):
     except OSError:
         pass  # best effort to remove the lock file
 
+
 def get_cached_versions():
     from promptflow._sdk._utils import read_write_by_user
     lock_path = HOME_PROMPT_FLOW_DIR / (PF_VERSION_CHECK + '.lock')
