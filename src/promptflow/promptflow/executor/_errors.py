@@ -16,7 +16,7 @@ from promptflow.exceptions import (
 
 class InvalidCustomLLMTool(ValidationException):
     """Exception raised when package tool definition is wrong."""
-
+    print("test")
     pass
 
 
