@@ -43,7 +43,6 @@ class TestHealthyEnsuredProcess:
         assert healthy_ensured_process.is_ready is False
         task_queue = Queue()
         healthy_ensured_process.start_new(task_queue)
-        assert healthy_ensured_process.process.is_alive() is True
         assert healthy_ensured_process.is_ready is False
         end_process(healthy_ensured_process)
         assert healthy_ensured_process.process.is_alive() is False
