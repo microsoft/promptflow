@@ -28,15 +28,13 @@ def acquire_lock(filename):
             fcntl.flock(f, fcntl.LOCK_EX)
             yield f
             fcntl.flock(f, fcntl.LOCK_UN)
+            f.close()
     else:  # Windows
         with open(filename, "w") as f:
             msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
             yield f
             msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
-    try:
-        os.remove(filename)
-    except OSError:
-        pass  # best effort to remove the lock file
+            f.close()
 
 
 def get_cached_versions():

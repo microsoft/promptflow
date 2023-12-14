@@ -210,9 +210,6 @@ class TestUtils:
             mock_datetime.datetime.now.return_value = datetime.datetime.now()
             mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
             mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
-            # with ThreadPoolExecutor(max_workers=concurrent_count) as pool:
-            #     tasks = [pool.submit(check_latest_version), pool.submit(hint_for_update)]
-            #     concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=concurrent_count) as executor:
                 # Submit concurrent calls to the functions
@@ -233,7 +230,6 @@ class TestUtils:
             assert LAST_HINT_TIME in cached_versions
             assert LATEST_VERSION in cached_versions
             assert LAST_CHECK_TIME in cached_versions
-
 
     @pytest.mark.parametrize(
         "data_path",
