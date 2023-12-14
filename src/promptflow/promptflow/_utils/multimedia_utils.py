@@ -142,6 +142,10 @@ def create_image(value: any):
                 target=ErrorTarget.EXECUTOR,
             )
     elif isinstance(value, str):
+        if not value:
+            raise InvalidImageInput(
+                message_format="The image input should not be empty.", target=ErrorTarget.EXECUTOR
+            )
         return _create_image_from_string(value)
     else:
         raise InvalidImageInput(
@@ -221,14 +225,19 @@ def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None,
 def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: dict):
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
-        if value.type == ValueType.IMAGE:
-            if isinstance(updated_inputs[key], list):
-                # For aggregation node, the image input is a list.
-                updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
-            else:
-                updated_inputs[key] = create_image(updated_inputs[key])
-        elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
-            updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+        try:
+            if value.type == ValueType.IMAGE:
+                if isinstance(updated_inputs[key], list):
+                    # For aggregation node, the image input is a list.
+                    updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
+                else:
+                    updated_inputs[key] = create_image(updated_inputs[key])
+            elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
+                updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+        except InvalidImageInput as ex:
+            raise InvalidImageInput(
+                message_format=f"Failed to load image for input '{key}': {ex.message}", target=ex.target
+            ) from ex
     return updated_inputs
 
 
