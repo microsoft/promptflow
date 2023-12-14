@@ -16,8 +16,8 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
+    get_available_max_worker_count,
     get_multiprocessing_context,
-    get_available_max_worker_count
 )
 from promptflow.executor._result import LineResult
 
@@ -53,11 +53,8 @@ def get_bulk_inputs(nlinee=4, flow_folder="", sample_inputs_file="", return_dict
 
 
 def execute_in_fork_mode_subprocess(
-        dev_connections,
-        flow_folder,
-        is_set_environ_pf_worker_count,
-        pf_worker_count,
-        n_process):
+    dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process
+):
     os.environ["PF_BATCH_METHOD"] = "fork"
     if is_set_environ_pf_worker_count:
         os.environ["PF_WORKER_COUNT"] = pf_worker_count
@@ -81,27 +78,26 @@ def execute_in_fork_mode_subprocess(
             assert pool._n_process == n_process
             if is_set_environ_pf_worker_count:
                 mock_logger.info.assert_any_call(
-                    f"Set process count to {pf_worker_count} with the environment "
-                    f"variable 'PF_WORKER_COUNT'.")
+                    f"Set process count to {pf_worker_count} with the environment " f"variable 'PF_WORKER_COUNT'."
+                )
             else:
                 factors = {
                     "default_worker_count": pool._DEFAULT_WORKER_COUNT,
                     "row_count": pool._nlines,
                 }
                 mock_logger.info.assert_any_call(
-                    f"Set process count to {n_process} by taking the minimum value among the "
-                    f"factors of {factors}."
+                    f"Set process count to {n_process} by taking the minimum value among the " f"factors of {factors}."
                 )
 
 
 def execute_in_spawn_mode_subprocess(
-        dev_connections,
-        flow_folder,
-        is_set_environ_pf_worker_count,
-        is_calculation_smaller_than_set,
-        pf_worker_count,
-        estimated_available_worker_count,
-        n_process
+    dev_connections,
+    flow_folder,
+    is_set_environ_pf_worker_count,
+    is_calculation_smaller_than_set,
+    pf_worker_count,
+    estimated_available_worker_count,
+    n_process,
 ):
     os.environ["PF_BATCH_METHOD"] = "spawn"
     if is_set_environ_pf_worker_count:
@@ -132,20 +128,23 @@ def execute_in_spawn_mode_subprocess(
                     if is_set_environ_pf_worker_count and is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
                             f"Set process count to {pf_worker_count} with the environment "
-                            f"variable 'PF_WORKER_COUNT'.")
+                            f"variable 'PF_WORKER_COUNT'."
+                        )
                         mock_logger.warning.assert_any_call(
                             f"The current process count ({pf_worker_count}) is larger than recommended process count "
                             f"({estimated_available_worker_count}) that estimated by system available memory. This may "
-                            f"cause memory exhaustion")
+                            f"cause memory exhaustion"
+                        )
                     elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
                             f"Set process count to {pf_worker_count} with the environment "
-                            f"variable 'PF_WORKER_COUNT'.")
+                            f"variable 'PF_WORKER_COUNT'."
+                        )
                     elif not is_set_environ_pf_worker_count:
                         factors = {
                             "default_worker_count": pool._DEFAULT_WORKER_COUNT,
                             "row_count": pool._nlines,
-                            "estimated_worker_count_based_on_memory_usage": estimated_available_worker_count
+                            "estimated_worker_count_based_on_memory_usage": estimated_available_worker_count,
                         }
                         mock_logger.info.assert_any_call(
                             f"Set process count to {n_process} by taking the minimum value among the factors "
@@ -203,6 +202,8 @@ class TestLineExecutionProcessPool:
             assert len(result_list) == nlines
             for i, line_result in enumerate(result_list):
                 assert isinstance(line_result, LineResult)
+                if line_result.run_info.status != Status.Completed:
+                    raise Exception(f"chengbin: {line_result.run_info.__to_dict__()}")
                 assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
     @pytest.mark.parametrize(
@@ -364,33 +365,18 @@ class TestLineExecutionProcessPool:
             assert e.value.error_codes[0] == "UserError"
 
     @pytest.mark.parametrize(
-        (
-            "flow_folder",
-            "is_set_environ_pf_worker_count",
-            "pf_worker_count",
-            "n_process"
-        ),
-        [
-            (SAMPLE_FLOW, True, "3", 3),
-            (SAMPLE_FLOW, False, None, 4)
-        ],
+        ("flow_folder", "is_set_environ_pf_worker_count", "pf_worker_count", "n_process"),
+        [(SAMPLE_FLOW, True, "3", 3), (SAMPLE_FLOW, False, None, 4)],
     )
     def test_process_pool_parallelism_in_fork_mode(
-            self,
-            dev_connections,
-            flow_folder,
-            is_set_environ_pf_worker_count,
-            pf_worker_count,
-            n_process):
+        self, dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process
+    ):
         if "fork" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: fork")
         p = multiprocessing.Process(
             target=execute_in_fork_mode_subprocess,
-            args=(dev_connections,
-                  flow_folder,
-                  is_set_environ_pf_worker_count,
-                  pf_worker_count,
-                  n_process))
+            args=(dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process),
+        )
         p.start()
         p.join()
         assert p.exitcode == 0
@@ -402,12 +388,12 @@ class TestLineExecutionProcessPool:
             "is_calculation_smaller_than_set",
             "pf_worker_count",
             "estimated_available_worker_count",
-            "n_process"
+            "n_process",
         ),
         [
             (SAMPLE_FLOW, True, False, "2", 4, 2),
             (SAMPLE_FLOW, True, True, "6", 2, 6),
-            (SAMPLE_FLOW, False, True, None, 2, 2)
+            (SAMPLE_FLOW, False, True, None, 2, 2),
         ],
     )
     def test_process_pool_parallelism_in_spawn_mode(
@@ -418,19 +404,22 @@ class TestLineExecutionProcessPool:
         is_calculation_smaller_than_set,
         pf_worker_count,
         estimated_available_worker_count,
-        n_process
+        n_process,
     ):
         if "spawn" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: spawn")
         p = multiprocessing.Process(
             target=execute_in_spawn_mode_subprocess,
-            args=(dev_connections,
-                  flow_folder,
-                  is_set_environ_pf_worker_count,
-                  is_calculation_smaller_than_set,
-                  pf_worker_count,
-                  estimated_available_worker_count,
-                  n_process))
+            args=(
+                dev_connections,
+                flow_folder,
+                is_set_environ_pf_worker_count,
+                is_calculation_smaller_than_set,
+                pf_worker_count,
+                estimated_available_worker_count,
+                n_process,
+            ),
+        )
         p.start()
         p.join()
         assert p.exitcode == 0
@@ -441,7 +430,7 @@ class TestGetAvailableMaxWorkerCount:
         "available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count",
         [
             (128.0, 64.0, 2, 2),  # available_memory/process_memory > 1
-            (63.0, 64.0, 1, 0),   # available_memory/process_memory < 1
+            (63.0, 64.0, 1, 0),  # available_memory/process_memory < 1
         ],
     )
     def test_get_available_max_worker_count(
