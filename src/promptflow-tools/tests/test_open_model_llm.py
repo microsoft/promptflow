@@ -533,10 +533,10 @@ user:
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
             return_endpoint_url=True
             )
-        
+
         import uuid
         connection_name = f"test_local_connection_{uuid.uuid4()}"
-        
+
         for e in endpoints:
             assert e['value'] != connection_name
 
@@ -547,7 +547,7 @@ user:
                                           "model_family": gpt2_custom_connection.configs['model_family']},
                                       secrets={
                                           "endpoint_api_key": gpt2_custom_connection.secrets['endpoint_api_key']})
-        
+
         from promptflow import PFClient as LocalPFClient
         pf_client = LocalPFClient()
         pf_client.connections.create_or_update(connection)

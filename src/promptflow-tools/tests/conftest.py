@@ -135,6 +135,7 @@ def example_image() -> Image:
         image = Image(f.read())
     return image
 
+
 # functions
 @pytest.fixture
 def functions():
