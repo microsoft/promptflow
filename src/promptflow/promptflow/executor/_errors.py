@@ -198,26 +198,23 @@ class ResolveToolError(PromptflowException):
         super().__init__(target=target, module=module)
 
     @property
-    def message_format(self):
-        if self.inner_exception:
-            return "Tool load failed in '{node_name}': {error_type_and_message}"
-        else:
-            return "Tool load failed in '{node_name}'."
-
-    @property
-    def message_parameters(self):
-        error_type_and_message = None
+    def message(self):
         if self.inner_exception:
             error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
             if isinstance(self.inner_exception, TemplateSyntaxError):
                 error_type_and_message = (
                     f"Jinja parsing failed at line {self.inner_exception.lineno}: {error_type_and_message}"
                 )
+            return f"Tool load failed in '{self._node_name}': {error_type_and_message}"
+        return self._message
 
-        return {
-            "node_name": self._node_name,
-            "error_type_and_message": error_type_and_message,
-        }
+    @property
+    def message_format(self):
+        return "Tool load failed in '{node_name}'."
+
+    @property
+    def message_parameters(self):
+        return {"node_name": self._node_name}
 
     @property
     def additional_info(self):

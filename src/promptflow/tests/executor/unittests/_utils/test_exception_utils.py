@@ -301,11 +301,8 @@ class TestExceptionPresenter:
         assert dct == {
             "code": "UserError",
             "message": "Execution failure in 'MyTool': (ZeroDivisionError) division by zero",
-            "messageFormat": "Execution failure in '{node_name}': {error_type_and_message}",
-            "messageParameters": {
-                "error_type_and_message": "(ZeroDivisionError) division by zero",
-                "node_name": "MyTool",
-            },
+            "messageFormat": "Execution failure in '{node_name}'.",
+            "messageParameters": {"node_name": "MyTool"},
             "referenceCode": "Tool",
             "innerError": {
                 "code": "ToolExecutionError",
@@ -760,11 +757,8 @@ class TestExceptions:
 
         assert result == {
             "message": "Execution failure in 'MyTool': (ZeroDivisionError) division by zero",
-            "messageFormat": "Execution failure in '{node_name}': {error_type_and_message}",
-            "messageParameters": {
-                "error_type_and_message": "(ZeroDivisionError) division by zero",
-                "node_name": "MyTool",
-            },
+            "messageFormat": "Execution failure in '{node_name}'.",
+            "messageParameters": {"node_name": "MyTool"},
             "referenceCode": "Tool",
             "code": "UserError",
             "innerError": {
@@ -815,11 +809,8 @@ class TestExceptions:
         assert error_dict == {
             "code": "UserError",
             "message": "Execution failure in 'MyTool': (ZeroDivisionError) division by zero",
-            "messageFormat": "Execution failure in '{node_name}': {error_type_and_message}",
-            "messageParameters": {
-                "node_name": "MyTool",
-                "error_type_and_message": "(ZeroDivisionError) division by zero",
-            },
+            "messageFormat": "Execution failure in '{node_name}'.",
+            "messageParameters": {"node_name": "MyTool"},
             "referenceCode": "Tool",
             "innerError": {
                 "code": "ToolExecutionError",

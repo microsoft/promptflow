@@ -47,22 +47,20 @@ class ToolExecutionError(UserErrorException):
         super().__init__(target=ErrorTarget.TOOL, module=module)
 
     @property
-    def message_format(self):
+    def message(self):
         if self.inner_exception:
-            return "Execution failure in '{node_name}': {error_type_and_message}"
+            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
+            return f"Execution failure in '{self._node_name}': {error_type_and_message}"
         else:
-            return "Execution failure in '{node_name}'."
+            return self._message
+
+    @property
+    def message_format(self):
+        return "Execution failure in '{node_name}'."
 
     @property
     def message_parameters(self):
-        error_type_and_message = None
-        if self.inner_exception:
-            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
-
-        return {
-            "node_name": self._node_name,
-            "error_type_and_message": error_type_and_message,
-        }
+        return {"node_name": self._node_name}
 
     @property
     def tool_last_frame_info(self):
