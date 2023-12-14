@@ -6,14 +6,25 @@ on:
       - '**tools_tests.yml'
   workflow_dispatch:
 jobs:
-  run_tool_ci_job:
+  authorize:
+    environment:
+      # forked prs from pull_request_target will be run in external environment, domain prs will be run in internal environment
+      ${{ github.event_name == 'pull_request_target' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      'external' || 'internal' }}
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     name: Tool Test
     timeout-minutes: 30
     env:
       DEPENDENCY_SOURCE_MODE: ${{ secrets.DEPENDENCY_SOURCE_MODE }}
-
+    steps:
+      - run: true
+  build:
+    needs: authorize
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest     
     steps:
       - name: Check for dockerenv file
         run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
