@@ -10,8 +10,7 @@ from contextvars import ContextVar
 from datetime import datetime
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
-from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
-from promptflow._utils.async_utils import async_run_allowing_running_loop
+from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version_main, HINT_ACTIVITY_NAME
 
 
 class ActivityType(object):
@@ -181,7 +180,7 @@ def monitor_operation(
                 finally:
                     if sys.platform.startswith("win"):
                         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-                    asyncio.run(check_latest_version())
+                    asyncio.run(check_latest_version_main())
                     if _activity_name in HINT_ACTIVITY_NAME:
                         hint_for_update()
 

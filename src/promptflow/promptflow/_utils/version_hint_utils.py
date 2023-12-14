@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
 import httpx
 import datetime
 import json
@@ -8,6 +9,7 @@ import json
 from promptflow._constants import (LAST_HINT_TIME, LAST_CHECK_TIME, PF_VERSION_CHECK, CLI_PACKAGE_NAME,
                                    HINT_FREQUENCY_DAY, GET_PYPI_FREQUENCY_DAY, LATEST_VERSION, CURRENT_VERSION)
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
+from promptflow._utils.async_utils import _has_running_loop
 
 HINT_ACTIVITY_NAME = ["pf.flows.test", "pf.runs.create_or_update", "pfazure.flows.create_or_update",
                       "pfazure.runs.create_or_update"]
@@ -56,6 +58,12 @@ async def check_latest_version():
             with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "w") as f:
                 json.dump(cached_versions, f)
 
+
+async def check_latest_version_main():
+    if _has_running_loop():
+        loop = asyncio.get_running_loop()
+        task = loop.create_task(check_latest_version())
+        await task
 
 def hint_for_update():
     """
