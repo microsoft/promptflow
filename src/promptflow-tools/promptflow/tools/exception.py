@@ -6,6 +6,7 @@ openai_error_code_ref_message = "Error reference: https://platform.openai.com/do
 
 
 def to_openai_error_message(e: Exception) -> str:
+    print("test")
     ex_type = type(e).__name__
     if str(e) == "<empty message>":
         msg = "The api key is invalid or revoked. " \
