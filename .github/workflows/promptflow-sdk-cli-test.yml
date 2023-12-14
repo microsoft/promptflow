@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest] # test in mac, will revert
+        os: [ubuntu-latest]
         pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
