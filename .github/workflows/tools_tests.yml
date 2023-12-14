@@ -6,16 +6,28 @@ on:
       - '**tools_tests.yml'
   workflow_dispatch:
 jobs:
-  run_tool_ci_job:
+  authorize:
+    environment:
+      # forked prs from pull_request_target will be run in external environment, domain prs will be run in internal environment
+      ${{ github.event_name == 'pull_request_target' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      'external' || 'internal' }}
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    name: Tool Test
+    steps:
+      - run: true
+  build:
+    needs: authorize
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
     timeout-minutes: 30
-
+    env:
+      DEPENDENCY_SOURCE_MODE: ${{ secrets.DEPENDENCY_SOURCE_MODE }}
     steps:
       - name: Check for dockerenv file
         run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+        # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
@@ -23,16 +35,24 @@ jobs:
       - name: Setup
         run: |
           python -m pip install --upgrade pip
-          python ./scripts/building/dev_setup.py --promptflow-extra-deps azure
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
-          pip install google-search-results==2.4.1
-          pip install openai>=1.0.0
+          # "DEPENDENCY_SOURCE_MODE" is "main" or "package", means the dependency source of code
+          if [ "$DEPENDENCY_SOURCE_MODE" = "main" ]; then
+            python ./scripts/building/dev_setup.py --promptflow-extra-deps azure
+            pip install google-search-results==2.4.1
+            pip install openai>=1.0.0
+          else
+            pip install -r ./src/promptflow-tools/requirements.txt
+          fi
+          pip list
       - name: Generate configs
         run: |
           python ./scripts/tool/generate_connection_config.py --tenant_id ${{ secrets.TENANT_ID }} --client_id ${{ secrets.CLIENT_ID }} --client_secret ${{ secrets.CLIENT_SECRET }}
 
       - name: Run tests
         run: |
-          export PYTHONPATH=./src/promptflow
+          if [ "$DEPENDENCY_SOURCE_MODE" = "main" ]; then
+            export PYTHONPATH=./src/promptflow
+          fi
           pytest ./src/promptflow-tools/tests
