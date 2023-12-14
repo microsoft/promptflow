@@ -45,9 +45,6 @@ pf connection create --file ../../../connections/azure_openai.yml --set api_key=
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
-
-# test with flow inputs
-pf flow test --flow . --inputs metrics="ABC" question="ABC" answer="ABC" documents="ABC"
 ```
 
 ## 2. Create flow run with multi line data and selected metrics

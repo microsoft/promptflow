@@ -44,11 +44,11 @@ def compute_f1_score(ground_truth: str, answer: str) -> str:
     num_common_tokens = sum(common_tokens.values())
 
     if num_common_tokens == 0:
-        f1 = 0
+        f1 = 0.0
     else:
         precision = 1.0 * num_common_tokens / len(prediction_tokens)
         recall = 1.0 * num_common_tokens / len(reference_tokens)
 
-        f1 = (2 * precision * recall) / (precision + recall)
+        f1 = (2.0 * precision * recall) / (precision + recall)
 
     return f1

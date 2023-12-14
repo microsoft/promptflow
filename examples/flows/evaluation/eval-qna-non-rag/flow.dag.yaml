@@ -3,7 +3,7 @@ name: QnA Evaluation
 inputs:
   question:
     type: string
-    default: Which camping table holds the most weight?
+    default: Which tent is the most waterproof?
     is_chat_input: false
   answer:
     type: string

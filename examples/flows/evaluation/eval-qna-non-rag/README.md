@@ -56,7 +56,7 @@ pf connection create --file ../../../connections/azure_openai.yml --set api_key=
 pf flow test --flow .
 
 # test with flow inputs
-pf flow test --flow . --inputs metrics="ABC" question="ABC" ground_truth="ABC" answer="ABC" context="ABC"
+pf flow test --flow . --inputs metrics="ada_similarity,gpt_fluency,f1_score" question="what programming language is good for learning to code? " ground_truth="Python is good for learning to code." answer="Python" context="Python is the most picked lanaguge for learning to code"
 ```
 
 ## 2. Create flow run with multi line data and selected metrics
