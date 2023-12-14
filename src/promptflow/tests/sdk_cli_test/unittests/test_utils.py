@@ -211,7 +211,7 @@ class TestUtils:
             mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
             mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=concurrent_count) as executor:
+            with ThreadPoolExecutor(max_workers=concurrent_count) as executor:
                 # Submit concurrent calls to the functions
                 results_hint = [executor.submit(hint_for_update) for _ in range(concurrent_count)]
                 results_check = [executor.submit(check_latest_version) for _ in range(concurrent_count)]
