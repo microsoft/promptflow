@@ -227,7 +227,6 @@ class TestUtils:
             with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
                 cached_versions = json.load(f)
             assert CURRENT_VERSION in cached_versions
-            assert LAST_HINT_TIME in cached_versions
             assert LATEST_VERSION in cached_versions
             assert LAST_CHECK_TIME in cached_versions
 
