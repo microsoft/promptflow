@@ -65,7 +65,7 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 
 ``` bash
 # create run
-pfazure run create --file batch_run.yaml --name $run_name --runtime test-runtime-ci
+pfazure run create --file batch_run.yaml --name $run_name --runtime tmp-example-runtime-ci
 # pfazure run create --file batch_run.yaml --name $run_name # automatic runtime
 ```
 
