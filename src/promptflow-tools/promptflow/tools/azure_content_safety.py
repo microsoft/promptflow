@@ -37,7 +37,7 @@ class AzureContentSafety(ToolProvider):
         content_safety = ContentSafety(self.connection.endpoint, self.connection.api_key, self.connection.api_version)
         media_type = MediaType.Text
         blocklists = []
-
+        print("tests")
         detection_result = content_safety.detect(media_type, text, blocklists)
 
         # Set the reject thresholds for each category
