@@ -143,7 +143,7 @@ class ContentSafety(object):
         Builds the URL for the Content Safety API based on the media type.
 
         Args:
-        - media_type (MediaType): The type of media to analyze.
+        - media_type (MediaType): The type of media to analyze.,,,,
 
         Returns:
         - str: The URL for the Content Safety API.
