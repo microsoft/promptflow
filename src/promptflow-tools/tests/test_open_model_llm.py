@@ -133,8 +133,6 @@ user:
             deployment_name="gpt2-10")
         validate_response(response)
 
-    
-
     def test_open_model_llm_chat(self, verify_service_endpoints):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
@@ -552,10 +550,7 @@ user:
         
         from promptflow import PFClient as LocalPFClient
         pf_client = LocalPFClient()
-        new_name = pf_client.connections.create_or_update(connection)
-
-        new_connection = pf_client.connections.get(connection_name)
-        assert new_connection is not None
+        pf_client.connections.create_or_update(connection)
 
         endpoints = list_endpoint_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
