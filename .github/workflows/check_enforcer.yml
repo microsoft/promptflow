@@ -2,8 +2,11 @@ name: check_enforcer
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_run:
+    workflows: ["promptflow-sdk-cli-test"]
+    types:
+      - completed
   workflow_call:
 
 jobs:
@@ -24,7 +27,7 @@ jobs:
             $merge_commit = ""
             
             function get_diffs() {
-                $snippet_debug = 0
+                $snippet_debug = 1
 
                 git log -1 | ForEach-Object {
                     if ($_.Contains("Merge")) {
