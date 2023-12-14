@@ -24,6 +24,8 @@ jobs:
             function get_diffs() {
                 $snippet_debug = 1
 
+                $failed_reason = ""
+
                 git log -1 | ForEach-Object {
                     if ($_.Contains("Merge")) {
                         $merge_commit = $_.Split(" ")[-3]
