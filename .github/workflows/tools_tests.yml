@@ -16,15 +16,15 @@ jobs:
     runs-on: ubuntu-latest
     name: Tool Test
     timeout-minutes: 30
-    env:
-      DEPENDENCY_SOURCE_MODE: ${{ secrets.DEPENDENCY_SOURCE_MODE }}
     steps:
       - run: true
   build:
     needs: authorize
     strategy:
       fail-fast: false
-    runs-on: ubuntu-latest     
+    runs-on: ubuntu-latest
+    env:
+      DEPENDENCY_SOURCE_MODE: ${{ secrets.DEPENDENCY_SOURCE_MODE }}
     steps:
       - name: Check for dockerenv file
         run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
