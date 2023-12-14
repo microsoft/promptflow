@@ -4,7 +4,7 @@
 
 from jinja2 import TemplateSyntaxError
 
-from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class
+from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class, remove_suffix
 from promptflow.exceptions import (
     ErrorTarget,
     PromptflowException,
@@ -205,7 +205,7 @@ class ResolveToolError(PromptflowException):
                 error_type_and_message = (
                     f"Jinja parsing failed at line {self.inner_exception.lineno}: {error_type_and_message}"
                 )
-            return f"Tool load failed in '{self._node_name}': {error_type_and_message}"
+            return remove_suffix(self._message, ".") + f": {error_type_and_message}"
         return self._message
 
     @property

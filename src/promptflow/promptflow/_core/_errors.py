@@ -1,6 +1,11 @@
 from traceback import TracebackException
 
-from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERROR, is_pf_core_frame, last_frame_info
+from promptflow._utils.exception_utils import (
+    ADDITIONAL_INFO_USER_EXECUTION_ERROR,
+    is_pf_core_frame,
+    last_frame_info,
+    remove_suffix
+)
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 
@@ -50,7 +55,7 @@ class ToolExecutionError(UserErrorException):
     def message(self):
         if self.inner_exception:
             error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
-            return f"Execution failure in '{self._node_name}': {error_type_and_message}"
+            return remove_suffix(self._message, ".") + f": {error_type_and_message}"
         else:
             return self._message
 

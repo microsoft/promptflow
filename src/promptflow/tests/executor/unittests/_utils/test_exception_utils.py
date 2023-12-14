@@ -13,6 +13,7 @@ from promptflow._utils.exception_utils import (
     get_tb_next,
     infer_error_code_from_class,
     last_frame_info,
+    remove_suffix,
 )
 from promptflow.exceptions import (
     ErrorTarget,
@@ -817,3 +818,13 @@ class TestExceptions:
                 "innerError": None,
             },
         }
+
+    def test_remove_suffix(self):
+        assert remove_suffix('PackageToolNotFoundError.', '.') == 'PackageToolNotFoundError'
+        assert remove_suffix('PackageToolNotFoundError', 'Error') == 'PackageToolNotFound'
+        assert remove_suffix('PackageToolNotFoundError', 'PackageToolNotFoundError') == ''
+        assert remove_suffix('PackageToolNotFoundError', 'NonExistedSuffix') == 'PackageToolNotFoundError'
+        assert remove_suffix('PackageToolNotFoundError', '') == 'PackageToolNotFoundError'
+        assert remove_suffix('PackageToolNotFoundError', None) == 'PackageToolNotFoundError'
+        assert remove_suffix('', 'NonExistedSuffix') == ''
+        assert remove_suffix(None, 'NonExistedSuffix') is None
