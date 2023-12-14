@@ -69,7 +69,7 @@ jobs:
                         if ($item -eq "sdk_cli") {
                             $pipelines.sdk_cli_tests = 4
                             $pipelines.sdk_cli_global_config_tests = 1
-                            $pipelines.sdk_cli_azure_test = 2
+                            $pipelines.sdk_cli_azure_test = 4
                         }
                     }
             
