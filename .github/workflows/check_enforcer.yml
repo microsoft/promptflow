@@ -3,11 +3,6 @@ name: check_enforcer
 on:
   pull_request:
     branches: [ main ]
-  workflow_run:
-    workflows: ["promptflow-sdk-cli-test"]
-    types:
-      - completed
-  workflow_call:
 
 jobs:
   check_enforcer:
@@ -21,13 +16,13 @@ jobs:
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: |
-            SET-PSDEBUG -Trace 1
+            #SET-PSDEBUG -Trace 1
             $first_commit = "${{ github.sha }}"
             $github_repository = 'microsoft/promptflow'
             $merge_commit = ""
             
             function get_diffs() {
-                $snippet_debug = 1
+                $snippet_debug = 0
 
                 git log -1 | ForEach-Object {
                     if ($_.Contains("Merge")) {
@@ -50,10 +45,10 @@ jobs:
                 }
             
                 $failed_reason =  ""
-                $failedCount = 3
+                $failedCount = 24
             
                 for ($i = 0; $i -lt $failedCount; $i++) {
-                    #Start-Sleep -Seconds 20
+                    #Start-Sleep -Seconds 30
                     
                     $pipelines = @{
                         "executor_e2e_tests" = 0;
