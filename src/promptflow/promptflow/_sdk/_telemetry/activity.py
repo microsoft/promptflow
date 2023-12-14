@@ -1,17 +1,16 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import asyncio
+import concurrent
 import contextlib
 import functools
 import uuid
 from contextvars import ContextVar
 from datetime import datetime
-import sys
+from concurrent.futures import ThreadPoolExecutor
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
-from promptflow._utils.async_utils import async_run_allowing_running_loop
 
 
 class ActivityType(object):
@@ -180,11 +179,9 @@ def monitor_operation(
                     return f(self, *args, **kwargs)
                 finally:
                     if _activity_name in HINT_ACTIVITY_NAME:
-                        if sys.platform.startswith("win"):
-                            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-                        async_run_allowing_running_loop(check_latest_version)
-                        hint_for_update()
-
+                        with ThreadPoolExecutor() as pool:
+                            tasks = [pool.submit(check_latest_version), pool.submit(hint_for_update)]
+                            concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
         return wrapper
 
     return monitor
