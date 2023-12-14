@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        pythonVersion: ['3.8', '3.9']
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
     - name: set test mode
@@ -126,6 +126,26 @@ jobs:
           -l eastus `
           -m "unittest or e2etest" `
           -o "${{ env.testWorkingDirectory }}/test-results-sdk-cli-executable.xml"
+    - name: Install pfs
+      shell: pwsh
+      working-directory: artifacts
+      run: |
+        Set-PSDebug -Trace 1
+        pip uninstall -y promptflow promptflow-sdk promptflow-tools
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[pfs,azure]"}}
+        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        pip freeze
+    - name: Run PFS Test
+      shell: pwsh
+      working-directory: ${{ env.testWorkingDirectory }}
+      run: |
+        python "../../scripts/building/run_coverage_tests.py" `
+          -p promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/sdk_pfs_test `
+          -l eastus `
+          -m "e2etest" `
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_pfs_test/.coveragerc `
+          -o "${{ env.testWorkingDirectory }}/test-results-pfs.xml"
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
@@ -134,6 +154,8 @@ jobs:
         path: |
           ${{ env.testWorkingDirectory }}/*.xml
           ${{ env.testWorkingDirectory }}/htmlcov/
+
+
   publish-test-results:
     name: "Publish Tests Results"
     needs: sdk_cli_tests

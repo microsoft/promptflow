@@ -4,12 +4,14 @@
 
 ### Features Added
 - [SDK/CLI] Support `pfazure run download` to download run data from Azure AI.
+- [SDK/CLI] Support `pf run create` to create a local run record from downloaded run data.
 
 ### Bugs Fixed
 
 - [SDK/CLI] Removing telemetry warning when running commands.
 - Empty node stdout & stderr to avoid large visualize HTML.
 - Hide unnecessary fields in run list for better readability.
+- Fix bug that ignores timeout lines in batch run status summary.
 
 ## 1.1.1 (2023.12.1)
 

@@ -1021,25 +1021,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
 
-        run = Run._validate_and_return_run_name(run)
-        if output is None:
-            # default to be "~/.promptflow/.runs" folder
-            output_directory = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_RUNS_DIR_NAME
-        else:
-            output_directory = Path(output)
-
-        run_folder = output_directory / run
-        if run_folder.exists():
-            if overwrite is True:
-                logger.warning("Removing existing run folder %r.", run_folder.resolve().as_posix())
-                shutil.rmtree(run_folder)
-            else:
-                raise UserErrorException(
-                    f"Run folder {run_folder.resolve().as_posix()!r} already exists, please specify a new output path "
-                    f"or set the overwrite flag to be true."
-                )
-        run_folder.mkdir(parents=True)
-
+        run_folder = self._validate_for_run_download(run=run, output=output, overwrite=overwrite)
         run_downloader = AsyncRunDownloader(run=run, run_ops=self, output_folder=run_folder)
         if platform.system().lower() == "windows":
             # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
@@ -1050,3 +1032,37 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         result_path = run_folder.resolve().as_posix()
         logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
         return result_path
+
+    def _validate_for_run_download(self, run: Union[str, Run], output: Optional[Union[str, Path]], overwrite):
+        """Validate the run download parameters."""
+        run = Run._validate_and_return_run_name(run)
+
+        # process the output path
+        if output is None:
+            # default to be "~/.promptflow/.runs" folder
+            output_directory = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_RUNS_DIR_NAME
+        else:
+            output_directory = Path(output)
+
+        # validate the run folder
+        run_folder = output_directory / run
+        if run_folder.exists():
+            if overwrite is True:
+                logger.warning("Removing existing run folder %r.", run_folder.resolve().as_posix())
+                shutil.rmtree(run_folder)
+            else:
+                raise UserErrorException(
+                    f"Run folder {run_folder.resolve().as_posix()!r} already exists, please specify a new output path "
+                    f"or set the overwrite flag to be true."
+                )
+
+        # check the run status, only download the completed run
+        run = self.get(run=run)
+        if run.status != RunStatus.COMPLETED:
+            raise UserErrorException(
+                f"Can only download the run with status {RunStatus.COMPLETED!r} "
+                f"while {run.name!r}'s status is {run.status!r}."
+            )
+
+        run_folder.mkdir(parents=True)
+        return run_folder
