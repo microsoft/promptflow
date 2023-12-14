@@ -561,9 +561,7 @@ user:
 
         found = False
         target_connection_name = f"localConnection/{connection_name}"
-        print(">", target_connection_name)
         for e in endpoints:
-            print("-", e['value'])
             if e['value'] == target_connection_name:
                 found = True
                 break
