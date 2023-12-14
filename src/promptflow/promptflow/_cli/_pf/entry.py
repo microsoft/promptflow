@@ -7,6 +7,7 @@ import time
 
 from promptflow._cli._utils import _get_cli_activity_name
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
+from promptflow._sdk._telemetry.activity import update_activity_name
 
 # Log the start time
 start_time = time.perf_counter()
@@ -109,7 +110,9 @@ def entry(argv):
     if hasattr(args, "user_agent"):
         setup_user_agent_to_operation_context(args.user_agent)
     logger = get_telemetry_logger()
-    with log_activity(logger, _get_cli_activity_name(cli=prog, args=args), activity_type=ActivityType.PUBLICAPI):
+    activity_name = _get_cli_activity_name(cli=prog, args=args)
+    activity_name = update_activity_name(activity_name, args=args)
+    with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
         run_command(args)
 
 
@@ -124,6 +127,10 @@ def main():
         show_privacy_statement()
         show_welcome_message()
         command_args.append("-h")
+    elif len(command_args) == 1:
+        # pf only has "pf --version" with 1 layer
+        if command_args[0] not in ["--version", "-v"]:
+            command_args.append("-h")
     setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 
