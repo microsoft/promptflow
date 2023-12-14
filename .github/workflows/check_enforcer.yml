@@ -45,7 +45,7 @@ jobs:
                 }
             
                 $failed_reason =  ""
-                $failedCount = 24
+                $failedCount = 24 # Loop for 12 minutes.
             
                 for ($i = 0; $i -lt $failedCount; $i++) {
                     Start-Sleep -Seconds 30
@@ -152,7 +152,7 @@ jobs:
                                     }
                                 }
                             }
-                            Write-Output "$key is $($_.conclusion)."
+                            Write-Output "$($_.name) is $($_.conclusion)."
                         }
                     }
                     if ($snippet_debug -eq 1) {
