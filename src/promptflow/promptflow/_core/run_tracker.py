@@ -392,9 +392,12 @@ class RunTracker(ThreadLocalSingleton):
             else:
                 status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
 
+        # Runtime will start root flow run with run_id == root_run_id,
+        # line flow run will have run id f"{root_run_id}_{line_number}"
+        # We filter out root flow run accordingly.
         line_flow_run_infos = [
             flow_run_info for flow_run_info in self.flow_run_list
-            if flow_run_info.root_run_id == run_id and flow_run_info.index is not None]
+            if flow_run_info.root_run_id == run_id and flow_run_info.run_id != run_id]
         total_lines = len(line_flow_run_infos)
         completed_lines = len([flow_run_info for flow_run_info in line_flow_run_infos
                                if flow_run_info.status == Status.Completed])
