@@ -98,7 +98,7 @@ class RunInfo:
     cached_flow_run_id: str = None
     logs: Optional[Dict[str, str]] = None
     system_metrics: Dict[str, Any] = None
-    result: object = None # Legacy field, will be removed in the future
+    result: object = None  # Legacy field, will be removed in the future
 
     @staticmethod
     def deserialize(data: dict) -> "RunInfo":

@@ -312,7 +312,6 @@ class TestSubmitter:
                 if isinstance(v, GeneratorType):
                     flow_output = "".join(get_result_output(v))
                     flow_result.run_info.output[k] = flow_output
-                    flow_result.run_info.result[k] = flow_output
                     flow_result.output[k] = flow_output
 
             # resolve generator in node outputs
