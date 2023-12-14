@@ -13,9 +13,6 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
     post_process_chat_api_response
 
 
-TOKEN_BASED_AOAI_TYPE = "azure_ad"
-
-
 class AzureOpenAI(ToolProvider):
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
@@ -25,16 +22,8 @@ class AzureOpenAI(ToolProvider):
         azure_endpoint = self._connection_dict.get("azure_endpoint")
         api_version = self._connection_dict.get("api_version")
         api_key = self._connection_dict.get("api_key")
-        api_type = self._connection_dict.get("api_type")
 
-        if api_type == TOKEN_BASED_AOAI_TYPE:
-            token_provider = self.connection.get_token
-            self._client = AzureOpenAIClient(
-                azure_endpoint=azure_endpoint,
-                api_version=api_version,
-                azure_ad_token_provider=token_provider)
-        else:
-            self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
+        self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
 
     @tool(streaming_option_parameter="stream")
     @handle_openai_error()
