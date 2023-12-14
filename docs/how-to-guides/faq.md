@@ -119,7 +119,7 @@ Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
 
     flow = "web-classification"
     data = "web-classification/data.jsonl"
-    runtime = "tmp-example-runtime-ci"
+    runtime = "example-runtime-ci"
 
     environment_variables = {"PF_WORKER_COUNT": "2", "PF_BATCH_METHOD": "spawn"}
 
