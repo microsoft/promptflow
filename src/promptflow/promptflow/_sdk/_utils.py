@@ -877,6 +877,7 @@ class ClientUserAgentUtil:
 
     @classmethod
     def update_user_agent_from_env_var(cls):
+        # this is for backward compatibility: we should use PF_USER_AGENT in newer versions.
         for env_name in [USER_AGENT, PF_USER_AGENT]:
             if env_name in os.environ:
                 cls.append_user_agent(os.environ[env_name])
