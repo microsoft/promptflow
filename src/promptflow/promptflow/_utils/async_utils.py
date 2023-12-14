@@ -32,6 +32,10 @@ def async_run_allowing_running_loop(async_func, *args, **kwargs):
     """
     if _has_running_loop():
         with ThreadPoolExecutor(1) as executor:
-            return executor.submit(lambda: asyncio.run(async_func(*args, **kwargs))).result()
+            with ThreadPoolExecutor(1) as executor:
+                future = executor.submit(lambda: asyncio.run(async_func(*args, **kwargs)))
+                result = future.result()
+                executor.shutdown()
+                return result
     else:
         return asyncio.run(async_func(*args, **kwargs))

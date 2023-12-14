@@ -178,8 +178,7 @@ def monitor_operation(
                     return f(self, *args, **kwargs)
                 finally:
                     if activity_name in HINT_ACTIVITY_NAME:
-                        # todo: add async_run_allowing_running_loop back
-                        # async_run_allowing_running_loop(check_latest_version)
+                        async_run_allowing_running_loop(check_latest_version)
                         hint_for_update()
 
         return wrapper
