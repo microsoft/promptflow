@@ -284,6 +284,11 @@ class ConnectionType(str, Enum):
     CUSTOM = "Custom"
 
 
+ALL_CONNECTION_TYPES = set(
+    map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
+)
+
+
 class ConnectionFields(str, Enum):
     CONNECTION = "connection"
     DEPLOYMENT_NAME = "deployment_name"

@@ -5,14 +5,18 @@
 
 import contextlib
 import os
+import re
 import tempfile
+from collections import defaultdict
 from os import PathLike
 from pathlib import Path
 
+import pydash
 from dotenv import load_dotenv
 from pydash import objects
 
 from promptflow._sdk._constants import (
+    ALL_CONNECTION_TYPES,
     DEFAULT_VAR_ID,
     INPUTS,
     NODE,
@@ -32,7 +36,7 @@ from promptflow._sdk._utils import (
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
 )
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flow import Flow, ProtectedFlow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -171,7 +175,7 @@ def variant_overwrite_context(
             overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
             overwrite_flow(flow_dag, overrides)
             flow_path = dump_flow_dag(flow_dag, Path(temp_dir))
-            flow = Flow(code=flow_dir_path, path=flow_path, dag=flow_dag)
+            flow = ProtectedFlow(code=flow_dir_path, path=flow_path, dag=flow_dag)
             yield flow
 
 
@@ -186,6 +190,7 @@ class SubmitterHelper:
 
     @staticmethod
     def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
+        # TODO 2856400: use resolve_used_connections instead of this function to avoid using executable in control-plane
         from .._pf_client import PFClient
 
         client = client or PFClient()
@@ -198,21 +203,41 @@ class SubmitterHelper:
         )
 
     @staticmethod
-    def resolve_connection_names_from_tool_meta(tools_meta: dict, flow_dag: dict,):
-        connection_names = set({})
-        tool_names = set({})
-        if tools_meta:
-            packages = tools_meta.get("package", {})
-            for key, pkg in packages.items():
-                inputs = pkg.get("inputs", {})
-                if "connection" in inputs and inputs["connection"].get("type", []) == ["object"]:
-                    tool_names.add(key)
-            nodes = flow_dag.get("nodes", [])
-            for node in nodes:
-                if node.get("source", {}).get("tool", "") in tool_names:
-                    connection_names.add(node["inputs"]["connection"])
-            return list(connection_names)
-        return []
+    def resolve_used_connections(flow: ProtectedFlow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
+        connection_names = SubmitterHelper.get_used_connection_names(tools_meta=tools_meta, flow_dag=flow.dag)
+        connections_to_ignore = connections_to_ignore or []
+        result = {}
+        for n in connection_names:
+            if n not in connections_to_ignore:
+                conn = client.connections.get(name=n, with_secrets=True)
+                result[n] = conn._to_execution_connection_dict()
+        return result
+
+    @staticmethod
+    def get_used_connection_names(tools_meta: dict, flow_dag: dict):
+        # TODO: handle code tool meta for python
+        connection_inputs = defaultdict(set)
+        for package_id, package_meta in tools_meta.get("package", {}).items():
+            for tool_input_key, tool_input_meta in package_meta.get("inputs", {}).items():
+                if ALL_CONNECTION_TYPES.intersection(set(tool_input_meta.get("type"))):
+                    connection_inputs[package_id].add(tool_input_key)
+
+        connection_names = set()
+        # TODO: we assume that all variants are resolved here
+        # TODO: only literal connection inputs are supported
+        # TODO: check whether we should put this logic in executor as seems it's not possible to avoid touching
+        #  information for executable
+        for node in flow_dag.get("nodes", []):
+            package_id = pydash.get(node, "source.tool")
+            if package_id in connection_inputs:
+                for connection_input in connection_inputs[package_id]:
+                    connection_name = pydash.get(node, f"inputs.{connection_input}")
+                    if connection_name and not re.match(r"\${.*}", connection_name):
+                        connection_names.add(connection_name)
+        return list(connection_names)
 
     @classmethod
     def resolve_environment_variables(cls, environment_variables: dict, client=None):
