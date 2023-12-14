@@ -133,6 +133,7 @@ jobs:
                     # 1. Not successful, Fail.
                     # 2. Not finished, Continue.
                     # 3. Successful, Break.
+
                     $valid_status_array `
                     | ForEach-Object {
                         foreach ($key in $pipelines.Keys) {
@@ -146,7 +147,7 @@ jobs:
                                 } elseif ($_.conclusion -ieq "failure") {
                                     $failed_reason = "Required pipelines are not successful."
                                 } else {
-                                    if (failed_reason -eq "") {
+                                    if ($failed_reason -eq "") {
                                         $failed_reason = "Required pipelines are not finished."
                                     }
                                 }
