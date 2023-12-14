@@ -165,8 +165,7 @@ jobs:
                         }
                     }
                     if ($failed_reason.Contains("not successful")) {
-                        Write-Output "$failed_reason"
-                        break
+                        throw "$failed_reason"
                     } elseif ($failed_reason.Contains("not successful")) {
                         Write-Output "$failed_reason"
                         continue
@@ -174,6 +173,9 @@ jobs:
                         Write-Output "All required pipelines are successful."
                         break
                     }
+                }
+                if ($failed_reason -ne "") {
+                    throw "$failed_reason"
                 }
             }
             
