@@ -35,6 +35,11 @@ function sdk_cli_trigger_checks([ref]$failed_reason_ref, [ref]$valid_status_arra
     # return all valid checks when successful
     $failed_reason_ref.Value = ""
 
+    # Basic fact of sdk cli checked pipelines
+    # update this number if we expand the matrix of pipeline
+    # sdk_cli_tests: 4 runs
+    # sdk_cli_global_config_tests: 1 run
+    # sdk_cli_azure_test: 4 runs
     $pipelines = @{
         "sdk_cli_tests" = 4;
         "sdk_cli_global_config_tests" = 1;
@@ -82,6 +87,7 @@ function sdk_cli_trigger_checks([ref]$failed_reason_ref, [ref]$valid_status_arra
 }
 function sdk_cli_checks([ref]$failed_reason_ref, $valid_status_array) {
     $failed_reason_ref.Value = ""
+    # Basic fact of sdk cli checked pipelines
     $pipelines = @{
         "sdk_cli_tests" = 4;
         "sdk_cli_global_config_tests" = 1;
@@ -138,6 +144,7 @@ function run_checks() {
     }
 
     $failed_reason =  ""
+    $not_started_counter = 5
     
     for ($i = 0; $i -lt $LoopTimes; $i++) {
         Start-Sleep -Seconds 30
@@ -151,7 +158,11 @@ function run_checks() {
             sdk_cli_trigger_checks ([ref]$failed_reason) ([ref]$valid_status_array)
         }
         if ($failed_reason -ne "") {
+            if ($not_started_counter -eq 0) {
+                throw "$failed_reason for 6 times."
+            }
             Write-Output "$failed_reason"
+            $not_started_counter -= 1
             continue
         }
         
