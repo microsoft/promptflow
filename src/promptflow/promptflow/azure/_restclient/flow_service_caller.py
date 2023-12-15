@@ -639,3 +639,23 @@ class FlowServiceCaller(RequestTelemetryMixin):
             headers=headers,
             **kwargs
         )
+
+    @_request_wrapper()
+    def cancel_flow_run(
+            self,
+            subscription_id,  # type: str
+            resource_group_name,  # type: str
+            workspace_name,  # type: str
+            flow_run_id,  # type: str
+            **kwargs  # type: Any
+        ):
+        """Cancel a flow run."""
+        headers = self._get_headers()
+        return self.caller.bulk_runs.cancel_flow_run(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_run_id=flow_run_id,
+            headers=headers,
+            **kwargs
+        )
