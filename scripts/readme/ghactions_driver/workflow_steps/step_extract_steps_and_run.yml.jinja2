@@ -8,6 +8,7 @@
     cat bash_script.sh
 - name: Run scripts against canary workspace (scheduled runs only)
   if: github.event_name == 'schedule'
+  working-directory: {{ working_dir }}
   run: |
     export aoai_api_key=${{ '{{' }}secrets.AOAI_API_KEY_TEST }}
     export aoai_api_endpoint=${{ '{{' }} secrets.AOAI_API_ENDPOINT_TEST }}
@@ -17,6 +18,7 @@
     bash bash_script.sh
 - name: Run scripts against production workspace (scheduled runs only)
   if: github.event_name != 'schedule'
+  working-directory: {{ working_dir }}
   run: |
     export aoai_api_key=${{ '{{' }}secrets.AOAI_API_KEY_TEST }}
     export aoai_api_endpoint=${{ '{{' }} secrets.AOAI_API_ENDPOINT_TEST }}
