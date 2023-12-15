@@ -23,7 +23,9 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
 
     ReadmeSteps.setup_target(
         working_dir=workflow_path,
-        template="basic_workflow_replace_config_json.yml.jinja2" if "e2e_development_chat_with_pdf" in workflow_name else "basic_workflow_replace.yml.jinja2",
+        template="basic_workflow_replace_config_json.yml.jinja2"
+        if "e2e_development_chat_with_pdf" in workflow_name
+        else "basic_workflow_replace.yml.jinja2",
         target=f"{workflow_name}.yml",
         readme_name=relative_path.as_posix(),
     )
