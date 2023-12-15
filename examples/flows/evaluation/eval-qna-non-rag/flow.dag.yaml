@@ -1,4 +1,3 @@
-id: QnA_non_rag_eval
 name: QnA Evaluation
 inputs:
   question:

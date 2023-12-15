@@ -1,4 +1,3 @@
-id: QnA_rag_eval
 name: QnA RAG Evaluation
 inputs:
   metrics:
