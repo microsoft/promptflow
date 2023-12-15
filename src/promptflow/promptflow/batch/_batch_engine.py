@@ -34,6 +34,7 @@ from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
+# TODO: will remain consistent with PF_WORKER_COUNT in the future
 DEFAULT_CONCURRENCY = 10
 
 
