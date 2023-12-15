@@ -145,6 +145,7 @@ class Run(YAMLTranslatableMixin):
         self._start_time = start_time
         self._end_time = end_time
         self._duration = kwargs.get("duration", None)
+        self._portal_url = kwargs.get(RunDataKeys.PORTAL_URL, None)
         self._creation_context = kwargs.get("creation_context", None)
         # init here to make sure those fields initialized in all branches.
         self.flow = flow
@@ -292,6 +293,7 @@ class Run(YAMLTranslatableMixin):
             is_archived=run_entity.get("archived", False),  # TODO: Get archived status, depends on run history team
             error=run_entity.get("error", None),
             run_source=RunInfoSources.RUN_HISTORY,
+            portal_url=run_entity[RunDataKeys.PORTAL_URL],
             creation_context=run_entity["createdBy"],
             data=run_entity[RunDataKeys.DATA],
             run=run_entity[RunDataKeys.RUN],
@@ -380,6 +382,7 @@ class Run(YAMLTranslatableMixin):
             result["start_time"] = self._start_time.isoformat() if self._start_time else None
             result["end_time"] = self._end_time.isoformat() if self._end_time else None
             result["duration"] = self._duration
+            result[RunDataKeys.PORTAL_URL] = self._portal_url
             result[RunDataKeys.DATA] = self.data
             result[RunDataKeys.OUTPUT] = self._output
             if self.run:

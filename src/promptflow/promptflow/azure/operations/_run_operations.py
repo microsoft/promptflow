@@ -127,6 +127,19 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         endpoint = self._service_caller._service_endpoint
         return endpoint + "history/v1.0" + self._service_caller._common_azure_url_pattern
 
+    def _get_run_portal_url(self, run_id: str):
+        """Get the portal url for the run."""
+        portal_url, run_info = None, None
+        try:
+            run_info = self._get_run_from_pfs(run_id=run_id)
+        except Exception as e:
+            logger.warning(f"Failed to get run portal url from pfs for run {run_id!r}: {str(e)}")
+
+        if run_info and hasattr(run_info, "studio_portal_endpoint"):
+            portal_url = run_info.studio_portal_endpoint
+
+        return portal_url
+
     def _get_headers(self):
         token = self._credential.get_token("https://management.azure.com/.default").token
         custom_header = {
@@ -159,7 +172,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             body=rest_obj,
         )
         if in_jupyter_notebook():
-            print("Portal url: ")
+            print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
         if stream:
             self.stream(run=run.name)
         return self.get(run=run.name)
@@ -431,6 +444,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         Generate the portal url, input and output value from run history data.
         """
         run_data = run_data[RunHistoryKeys.RunMetaData]
+        # add cloud run url
+        run_data[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_data["runId"])
 
         # get input and output value
         # TODO: Unify below values to the same pattern - azureml://xx
@@ -473,6 +488,15 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             raise RunRequestException(
                 f"Failed to get run metrics from service. Code: {response.status_code}, text: {response.text}"
             )
+
+    def _get_run_from_pfs(self, run_id, **kwargs):
+        """Get run info from pfs"""
+        return self._service_caller.get_flow_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            flow_run_id=run_id,
+        )
 
     @monitor_operation(activity_name="pfazure.runs.archive", activity_type=ActivityType.PUBLICAPI)
     def archive(self, run: Union[str, Run]) -> Run:
@@ -626,6 +650,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 f'Run status: "{run.status}"\n'
                 f'Start time: "{run._start_time}"\n'
                 f'Duration: "{duration}"\n'
+                f'Run url: "{self._get_run_portal_url(run_id=run.name)}"'
             )
         except KeyboardInterrupt:
             error_message = (
