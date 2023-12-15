@@ -10,7 +10,6 @@ from typing import Dict, List, Optional
 from promptflow._cli._params import (
     add_param_all_results,
     add_param_archived_only,
-    add_param_debug,
     add_param_include_archived,
     add_param_max_results,
     add_param_output,
@@ -18,7 +17,6 @@ from promptflow._cli._params import (
     add_param_overwrite,
     add_param_run_name,
     add_param_set,
-    add_param_verbose,
     base_params,
 )
 from promptflow._cli._pf._run import _parse_metadata_args, add_run_create_common, create_run
@@ -49,7 +47,7 @@ def add_parser_run(subparsers):
     add_parser_run_show(subparsers)
     add_parser_run_show_details(subparsers)
     add_parser_run_show_metrics(subparsers)
-    # add_parser_run_cancel(subparsers)
+    add_parser_run_cancel(subparsers)
     add_parser_run_visualize(subparsers)
     add_parser_run_archive(subparsers)
     add_parser_run_restore(subparsers)
@@ -84,7 +82,7 @@ pfazure run create --flow azureml://registries/<registry-name>/models/<flow-name
     )
     add_run_create_common(
         subparsers,
-        [add_param_data, _set_workspace_argument_for_subparsers, add_param_runtime, add_param_reset],
+        [add_param_data, add_param_runtime, add_param_reset, _set_workspace_argument_for_subparsers],
         epilog=epilog,
     )
 
@@ -133,17 +131,20 @@ Example:
 # Stream run logs:
 pfazure run stream --name <name>
 """
-    run_stream_parser = subparsers.add_parser(
-        "stream",
+    add_params = [
+        add_param_run_name,
+        _set_workspace_argument_for_subparsers,
+    ] + base_params
+
+    activate_action(
+        name="stream",
         description="A CLI tool to stream run logs to the console.",
         epilog=epilog,
-        help="Stream run logs to the console.",
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Stream run logs to the console.",
+        action_param_name="sub_action",
     )
-    _set_workspace_argument_for_subparsers(run_stream_parser)
-    run_stream_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to stream.")
-    add_param_debug(run_stream_parser)
-    add_param_verbose(run_stream_parser)
-    run_stream_parser.set_defaults(sub_action="stream")
 
 
 def add_parser_run_show(subparsers):
@@ -155,8 +156,8 @@ Example:
 pfazure run show --name <name>
 """
     add_params = [
-        _set_workspace_argument_for_subparsers,
         add_param_run_name,
+        _set_workspace_argument_for_subparsers,
     ] + base_params
 
     activate_action(
@@ -189,10 +190,10 @@ pfazure run show-details --name <name>
     )
 
     add_params = [
-        _set_workspace_argument_for_subparsers,
         add_param_max_results,
         add_param_run_name,
         add_param_all_results,
+        _set_workspace_argument_for_subparsers,
     ] + base_params
 
     activate_action(
@@ -215,8 +216,8 @@ Example:
 pfazure run show-metrics --name <name>
 """
     add_params = [
-        _set_workspace_argument_for_subparsers,
         add_param_run_name,
+        _set_workspace_argument_for_subparsers,
     ] + base_params
 
     activate_action(
@@ -232,15 +233,21 @@ pfazure run show-metrics --name <name>
 
 def add_parser_run_cancel(subparsers):
     """Add run cancel parser to the pfazure subparsers."""
+    epilog = """
+Example:
+
+# Cancel a run:
+pfazure run cancel --name <name>
+"""
     add_params = [
-        _set_workspace_argument_for_subparsers,
         add_param_run_name,
+        _set_workspace_argument_for_subparsers,
     ] + base_params
 
     activate_action(
         name="cancel",
         description="A CLI tool to cancel a run.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Cancel a run.",
@@ -292,8 +299,8 @@ Examples:
 pfazure run archive -n <name>
 """
     add_params = [
-        _set_workspace_argument_for_subparsers,
         add_param_run_name,
+        _set_workspace_argument_for_subparsers,
     ] + base_params
 
     activate_action(
@@ -316,8 +323,8 @@ Examples:
 pfazure run restore -n <name>
 """
     add_params = [
-        _set_workspace_argument_for_subparsers,
         add_param_run_name,
+        _set_workspace_argument_for_subparsers,
     ] + base_params
 
     activate_action(
@@ -340,9 +347,9 @@ Example:
 pfazure run update --name <name> --set display_name="<display-name>" description="<description>" tags.key="<value>"
 """
     add_params = [
-        _set_workspace_argument_for_subparsers,
         add_param_run_name,
         add_param_set,
+        _set_workspace_argument_for_subparsers,
     ] + base_params
 
     activate_action(
@@ -434,6 +441,8 @@ def dispatch_run_commands(args: argparse.Namespace):
         update_run(args.subscription, args.resource_group, args.workspace_name, args.name, params=args.params_override)
     elif args.sub_action == "download":
         download_run(args)
+    elif args.sub_action == "cancel":
+        cancel_run(args)
 
 
 @exception_handler("List runs")
@@ -567,3 +576,9 @@ def update_run(
 def download_run(args: argparse.Namespace):
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     pf.runs.download(run=args.name, output=args.output, overwrite=args.overwrite)
+
+
+@exception_handler("Cancel run")
+def cancel_run(args: argparse.Namespace):
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
+    pf.runs.cancel(run=args.name)
