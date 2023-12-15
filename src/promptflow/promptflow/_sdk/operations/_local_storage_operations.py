@@ -294,7 +294,7 @@ class LocalStorageOperations(AbstractRunStorage):
         message = ""
         errors = []
         if batch_result:
-            for line_error in batch_result.error_summary.line_error_list:
+            for line_error in batch_result.error_summary.error_list:
                 errors.append(line_error.to_dict())
         if errors:
             try:

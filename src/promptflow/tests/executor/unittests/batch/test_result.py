@@ -187,7 +187,7 @@ class TestBatchResult:
         assert batch_result.failed_lines == 1
         assert batch_result.error_summary.failed_system_error_lines == 0
         assert batch_result.error_summary.failed_user_error_lines == 1
-        assert batch_result.error_summary.line_error_list == [
+        assert batch_result.error_summary.error_list == [
             LineError(line_number=1, error={"code": "UserError", "message": "test message"}),
         ]
         assert batch_result.error_summary.aggr_error_dict == {

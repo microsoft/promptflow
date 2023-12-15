@@ -33,11 +33,21 @@ class LineError:
 
 @dataclass
 class ErrorSummary:
-    """The summary of errors in a batch run."""
+    """The summary of errors in a batch run.
+
+    :param failed_user_error_lines: The number of lines that failed with user error.
+    :type failed_user_error_lines: int
+    :param failed_system_error_lines: The number of lines that failed with system error.
+    :type failed_system_error_lines: int
+    :param error_list: The line number and error dict of failed lines in the line results.
+    :type error_list: List[~promptflow.batch._result.LineError]
+    :param aggr_error_dict: The dict of node name and error dict of failed nodes in the aggregation result.
+    :type aggr_error_dict: Mapping[str, Any]
+    """
 
     failed_user_error_lines: int
     failed_system_error_lines: int
-    line_error_list: List[LineError]
+    error_list: List[LineError]
     aggr_error_dict: Mapping[str, Any]
 
     @staticmethod
@@ -65,7 +75,7 @@ class ErrorSummary:
         error_summary = ErrorSummary(
             failed_user_error_lines=failed_user_error_lines,
             failed_system_error_lines=failed_system_error_lines,
-            line_error_list=sorted(error_list, key=lambda x: x.line_number),
+            error_list=sorted(error_list, key=lambda x: x.line_number),
             aggr_error_dict={
                 node_name: node_run_info.error
                 for node_name, node_run_info in aggr_result.node_run_infos.items()
