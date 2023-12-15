@@ -1,0 +1,67 @@
+additional_includes:
+- ./setup/setup_env.py
+- ./index/create_index.py
+- ./qa_generation/generate_qa.py
+- ./querying/querying.py
+- ./evaluation/evaluation.py
+inputs:
+  should_index:
+    type: bool
+    default: true
+  config_dir:
+    type: string
+    default: .
+  should_generate_qa:
+    type: bool
+    default: true
+outputs: {}
+nodes:
+- name: setup
+  type: python
+  source:
+    type: code
+    path: setup/setup_env.py
+  inputs:
+    connection: rag_connection
+- name: index
+  type: python
+  source:
+    type: code
+    path: index/create_index.py
+  inputs:
+    should_index: ${inputs.should_index}
+    config_dir: ${inputs.config_dir}
+  activate:
+    when: ${setup.output}
+    is: true
+- name: generate_qa
+  type: python
+  source:
+    type: code
+    path: qa_generation/generate_qa.py
+  inputs:
+    config_dir: ${inputs.config_dir}
+    should_generate_qa: ${inputs.should_generate_qa}
+  activate:
+    when: ${index.output}
+    is: true
+- name: querying
+  type: python
+  source:
+    type: code
+    path: querying/querying.py
+  inputs:
+    config_dir: ${inputs.config_dir}
+  activate:
+    when: ${generate_qa.output}
+    is: true
+- name: evaluation
+  type: python
+  source:
+    type: code
+    path: evaluation/evaluation.py
+  inputs:
+    config_dir: ${inputs.config_dir}
+  activate:
+    when: ${querying.output}
+    is: true

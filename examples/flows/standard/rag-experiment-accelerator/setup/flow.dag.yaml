@@ -1,0 +1,8 @@
+inputs: {}
+outputs: {}
+nodes:
+- name: setup_env
+  type: python
+  source:
+    type: code
+    path: setup_env.py

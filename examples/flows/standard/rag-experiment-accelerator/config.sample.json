@@ -1,0 +1,47 @@
+{
+    "name_prefix": "surface",
+    "chunking": {
+        "chunk_size": [1000],
+        "overlap_size": [200]
+    },
+    "embedding_dimension": [768],
+    "ef_construction": [400],
+    "ef_search": [400],
+    "language":{
+        "analyzers": {
+            "analyzer_name": "en.microsoft",
+            "index_analyzer_name": "",
+            "search_analyzer_name": "",
+            "char_filters": [],
+            "tokenizers": [],
+            "token_filters": []
+        },
+        "query_language": "en-us"
+    },
+    "rerank": "TRUE",
+    "rerank_type": "crossencoder",
+    "llm_re_rank_threshold": 3,
+    "cross_encoder_at_k": 4,
+    "crossencoder_model": "cross-encoder/stsb-roberta-base",
+    "search_types": [
+        "search_for_manual_hybrid",
+        "search_for_match_Hybrid_multi",
+        "search_for_match_semantic"
+    ],
+    "retrieve_num_of_documents": 5,
+    "metric_types": [
+        "fuzzy",
+        "bert_all_MiniLM_L6_v2",
+        "cosine",
+        "bert_distilbert_base_nli_stsb_mean_tokens",
+        "llm_answer_relevance",
+        "llm_context_precision"
+    ],
+    "chat_model_name": "gpt-35-turbo",
+    "embedding_model_name": "text-embedding-ada-002",
+    "eval_model_name": "gpt-35-turbo",
+    "openai_temperature": 0,
+    "search_relevancy_threshold": 0.8,
+    "data_formats": "all",
+    "eval_data_jsonl_file_path": "./artifacts/eval_data.jsonl"
+}

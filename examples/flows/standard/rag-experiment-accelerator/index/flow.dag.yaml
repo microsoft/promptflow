@@ -1,0 +1,29 @@
+additional_includes:
+- ./setup/setup_env.py
+inputs:
+  config_dir:
+    type: string
+    default: ../
+  should_index:
+    type: bool
+    default: true
+outputs: {}
+nodes:
+- name: setup_env
+  type: python
+  source:
+    type: code
+    path: ../setup/setup_env.py
+  inputs:
+    connection: ""
+- name: create_index
+  type: python
+  source:
+    type: code
+    path: create_index.py
+  inputs:
+    should_index: true
+    config_dir: ${inputs.config_dir}
+  activate:
+    when: ${setup_env.output}
+    is: true

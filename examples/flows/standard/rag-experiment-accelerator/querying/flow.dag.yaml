@@ -1,0 +1,25 @@
+additional_includes:
+- ./setup/setup_env.py
+inputs:
+  config_dir:
+    type: string
+    default: ../
+outputs: {}
+nodes:
+- name: setup_env
+  type: python
+  source:
+    type: code
+    path: ../setup/setup_env.py
+  inputs:
+    connection: ""
+- name: querying
+  type: python
+  source:
+    type: code
+    path: querying.py
+  inputs:
+    config_dir: ${inputs.config_dir}
+  activate:
+    when: ${setup_env.output}
+    is: true

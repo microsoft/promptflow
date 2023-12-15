@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Deep Neural Nets: 33 years ago and 33 years from now</title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="description" content="Musings of a Computer Scientist.">
+    <link rel="canonical" href="http://karpathy.github.io/2022/03/14/lecun1989/">
+    <link href="/feed.xml" type="application/atom+xml" rel="alternate" title="Andrej Karpathy blog posts" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/main.css">
+
+    <!-- Google Analytics -->
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-3698471-23', 'auto');
+      ga('send', 'pageview');
+    </script>
+
+</head>
+
+
+    <body>
+
+    <header class="site-header">
+
+  <div class="wrap">
+
+    <div style="float:left; margin-top:10px; margin-right:10px;">
+    <a href="/feed.xml">
+      <img src="/assets/rssicon.svg" width="40">
+    </a>
+    </div>
+
+    <a class="site-title" href="/">Andrej Karpathy blog</a>
+    
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+           viewBox="0 0 18 15" enable-background="new 0 0 18 15" xml:space="preserve">
+          <path fill="#505050" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0
+            h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#505050" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484
+            h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#505050" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0
+            c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+      <div class="trigger">
+        
+          <a class="page-link" href="/about/">About</a>
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrap">
+      <div class="post">
+
+  <header class="post-header">
+    <h1>Deep Neural Nets: 33 years ago and 33 years from now</h1>
+    <p class="meta">Mar 14, 2022</p>
+  </header>
+
+  <article class="post-content">
+  <style>
+.post-header h1 {
+    font-size: 35px;
+}
+.post pre,
+.post code {
+    background-color: #fcfcfc;
+    font-size: 13px; /* make code smaller for this post... */
+}
+</style>
+
+<p>The Yann LeCun et al. (1989) paper <a href="http://yann.lecun.com/exdb/publis/pdf/lecun-89e.pdf">Backpropagation Applied to Handwritten Zip Code Recognition</a> is I believe of some historical significance because it is, to my knowledge, the earliest real-world application of a neural net trained end-to-end with backpropagation. Except for the tiny dataset (7291 16x16 grayscale images of digits) and the tiny neural network used (only 1,000 neurons), this paper reads remarkably modern today, 33 years later - it lays out a dataset, describes the neural net architecture, loss function, optimization, and reports the experimental classification error rates over training and test sets. It’s all very recognizable and type checks as a modern deep learning paper, except it is from 33 years ago. So I set out to reproduce the paper 1) for fun, but 2) to use the exercise as a case study on the nature of progress in deep learning.</p>
+
+<p><img src="/assets/lecun/lecun1989.png" width="100%" /></p>
+
+<p><strong>Implementation</strong>. I tried to follow the paper as close as possible and re-implemented everything in PyTorch in this <a href="https://github.com/karpathy/lecun1989-repro">karpathy/lecun1989-repro</a> github repo. The original network was implemented in Lisp using the Bottou and LeCun 1988 <a href="https://leon.bottou.org/papers/bottou-lecun-88">backpropagation simulator SN</a> (later named Lush). The paper is in french so I can’t super read it, but from the syntax it looks like you can specify neural nets using higher-level API similar to what you’d do in something like PyTorch today. As a quick note on software design, modern libraries have adopted a design that splits into 3 components: 1) a fast (C/CUDA) general Tensor library that implements basic mathematical operations over multi-dimensional tensors, and 2) an autograd engine that tracks the forward compute graph and can generate operations for the backward pass, and 3) a scriptable (Python) deep-learning-aware, high-level API of common deep learning operations, layers, architectures, optimizers, loss functions, etc.</p>
+
+<p><strong>Training</strong>. During the course of training we have to make 23 passes over the training set of 7291 examples, for a total of 167,693 presentations of (example, label) to the neural network. The original network trained for 3 days on a <a href="https://en.wikipedia.org/wiki/Sun-4">SUN-4/260</a> workstation. I ran my implementation on my MacBook Air (M1) CPU, which crunched through it in about 90 seconds (~<strong>3000X naive speedup</strong>). My conda is setup to use the native arm64 builds, rather than Rosetta emulation. The speedup may have been more dramatic if PyTorch had support for the full capability of the M1 (including the GPU and the NPU), but this seems to still be in development. I also tried naively running the code on an A100 GPU, but the training was actually <em>slower</em>, most likely because the network is so tiny (4 layer convnet with up to 12 channels, total of 9760 params, 64K MACs, 1K activations), and the SGD uses only a single example at a time. That said, if one really wanted to crush this problem with modern hardware (A100) and software infrastructure (CUDA, PyTorch), we’d need to trade per-example SGD for full-batch training to maximize GPU utilization and most likely achieve another ~100X speedup of training latency.</p>
+
+<p><strong>Reproducing 1989 performance</strong>. The original paper reports the following results:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 2.5e-3. error 0.14%. misses: 10
+eval: split test . loss 1.8e-2. error 5.00%. misses: 102
+</code></pre></div></div>
+
+<p>While my training script repro.py in its current form prints at the end of the 23rd pass:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 4.073383e-03. error 0.62%. misses: 45
+eval: split test . loss 2.838382e-02. error 4.09%. misses: 82
+</code></pre></div></div>
+
+<p>So I am reproducing the numbers <em>roughly</em>, but not exactly. Sadly, an exact reproduction is most likely not possible because the original dataset has, I believe, been lost to time. Instead, I had to simulate it using the larger MNIST dataset (hah never thought I’d say that) by taking its 28x28 digits, scaling them down to 16x16 pixels with bilinear interpolation, and randomly without replacement drawing the correct number of training and test set examples from it. But I am sure there are other culprits at play. For example, the paper is a bit too abstract in its description of the weight initialization scheme, and I suspect that there are some formatting errors in the pdf file that, for example, erase dots “.”, making “2.5” look like like “2 5”, and potentially (I think?) erasing square roots. E.g. we’re told that the weight init is drawn from uniform “2 4 / F” where F is the fan-in, but I am guessing this surely (?) means “2.4 / sqrt(F)”, where the sqrt helps preserve the standard deviation of outputs. The specific sparse connectivity structure between the H1 and H2 layers of the net are also brushed over, the paper just says it is “chosen according to a scheme that will not be discussed here”, so I had to make some some sensible guesses here with an overlapping block sparse structure. The paper also claims to use tanh non-linearity, but I am worried this may have actually been the “normalized tanh” that maps ntanh(1) = 1, and potentially with an added scaled-down skip connection, which was trendy at the time to ensure there is at least a bit of gradient in the flat tails of the tanh. Lastly, the paper uses a “special version of Newton’s algorithm that uses a positive, diagonal approximation of Hessian”, but I only used SGD because it is significantly simpler and, according to the paper, “this algorithm is not believed to bring a tremendous increase in learning speed”.</p>
+
+<p><strong>Cheating with time travel</strong>. Around this point came my favorite part. We are living here 33 years in the future and deep learning is a highly active area of research. How much can we improve on the original result using our modern understanding and 33 years of R&amp;D? My original result was:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 4.073383e-03. error 0.62%. misses: 45
+eval: split test . loss 2.838382e-02. error 4.09%. misses: 82
+</code></pre></div></div>
+
+<p>The first thing I was a bit sketched out about is that we are doing simple classification into 10 categories, but at the time this was modeled as a <a href="https://pytorch.org/docs/stable/generated/torch.nn.MSELoss.html">mean squared error</a> (MSE) regression into targets -1 (for negative class) or +1 (for positive class), with output neurons that also had the tanh non-linearity. So I deleted the tanh on output layers to get class logits and swapped in the standard (multiclass) <a href="https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html">cross entropy loss</a> function. This change dramatically improved the training error, completely overfitting the training set:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 9.536698e-06. error 0.00%. misses: 0
+eval: split test . loss 9.536698e-06. error 4.38%. misses: 87
+</code></pre></div></div>
+
+<p>I suspect one has to be much more careful with weight initialization details if your output layer has the (saturating) tanh non-linearity and an MSE error on top of it. Next, in my experience a very finely-tuned SGD can work very well, but the modern <a href="https://pytorch.org/docs/stable/generated/torch.optim.Adam.html">Adam optimizer</a> (learning rate of 3e-4, of course :)) is almost always a strong baseline and needs little to no tuning. So to improve my confidence that optimization was not holding back performance, I switched to AdamW with LR 3e-4, and decay it down to 1e-4 over the course of training, giving:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 0.000000e+00. error 0.00%. misses: 0
+eval: split test . loss 0.000000e+00. error 3.59%. misses: 72
+</code></pre></div></div>
+
+<p>This gave a slightly improved result on top of SGD, except we also have to remember that a little bit of weight decay came in for the ride as well via the default parameters, which helps fight the overfitting situation. As we are still heavily overfitting, next I introduced a simple data augmentation strategy where I shift the input images by up to 1 pixel horizontally or vertically. However, because this simulates an increase in the size of the dataset, I also had to increase the number of passes from 23 to 60 (I verified that just naively increasing passes in original setting did not substantially improve results):</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 8.780676e-04. error 1.70%. misses: 123
+eval: split test . loss 8.780676e-04. error 2.19%. misses: 43
+</code></pre></div></div>
+
+<p>As can be seen in the test error, that helped quite a bit! Data augmentation is a fairly simple and very standard concept used to fight overfitting, but I didn’t see it mentioned in the 1989 paper, perhaps it was a more recent innovation (?). Since we are still overfitting a bit, I reached for another modern tool in the toolbox, <a href="https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html">Dropout</a>. I added a weak dropout of 0.25 just before the layer with the largest number of parameters (H3). Because dropout sets activations to zero, it doesn’t make as much sense to use it with tanh that has an active range of [-1,1], so I swapped all non-linearities to the much simpler <a href="https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html">ReLU</a> activation function as well. Because dropout introduces even more noise during training, we also have to train longer, bumping up to 80 passes, but giving:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 2.601336e-03. error 1.47%. misses: 106
+eval: split test . loss 2.601336e-03. error 1.59%. misses: 32
+</code></pre></div></div>
+
+<p>Which brings us down to only 32 / 2007 mistakes on the test set! I verified that just swapping tanh -&gt; relu in the original network did not give substantial gains, so most of the improvement here is coming from the addition of dropout. In summary, if I time traveled to 1989 I’d be able to cut the rate of errors by about 60%, taking us from ~80 to ~30 mistakes, and an overall error rate of ~1.5% on the test set. This gain did not come completely free because we also almost 4X’d the training time, which would have increased the 1989 training time from 3 days to almost 12. But the inference latency would not have been impacted. The remaining errors are here:</p>
+
+<p><img src="/assets/lecun/errors32.png" width="100%" /></p>
+
+<p><strong>Going further</strong>. However, after swapping MSE -&gt; Softmax, SGD -&gt; AdamW, adding data augmentation, dropout, and swapping tanh -&gt; relu I’ve started to taper out on the low hanging fruit of ideas. I tried a few more things (e.g. weight normalization), but did not get substantially better results. I also tried to miniaturize a <a href="https://arxiv.org/abs/2010.11929">Visual Transformer (ViT)</a>) into a “micro-ViT” that roughly matches the number of parameters and flops, but couldn’t match the performance of a convnet. Of course, many other innovations have been made in the last 33 years, but many of them (e.g. residual connections, layer/batch normalizations) only become relevant in much larger models, and mostly help stabilize large-scale optimization. Further gains at this point would likely have to come from scaling up the size of the network, but this would bloat the test-time inference latency.</p>
+
+<p><strong>Cheating with data</strong>. Another approach to improving the performance would have been to scale up the dataset, though this would come at a dollar cost of labeling. Our original reproduction baseline, again for reference, was:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 4.073383e-03. error 0.62%. misses: 45
+eval: split test . loss 2.838382e-02. error 4.09%. misses: 82
+</code></pre></div></div>
+
+<p>Using the fact that we have all of MNIST available to us, we can simply try scaling up the training set by ~7X (7,291 to 50,000 examples). Leaving the baseline training running for 100 passes already shows some improvement from the added data alone:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 1.305315e-02. error 2.03%. misses: 60
+eval: split test . loss 1.943992e-02. error 2.74%. misses: 54
+</code></pre></div></div>
+
+<p>But further combining this with the innovations of modern knowledge (described in the previous section) gives the best performance yet:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>eval: split train. loss 3.238392e-04. error 1.07%. misses: 31
+eval: split test . loss 3.238392e-04. error 1.25%. misses: 24
+</code></pre></div></div>
+
+<p>In summary, simply scaling up the dataset in 1989 would have been an effective way to drive up the performance of the system, at no cost to inference latency.</p>
+
+<p><strong>Reflections</strong>. Let’s summarize what we’ve learned as a 2022 time traveler examining state of the art 1989 deep learning tech:</p>
+
+<ul>
+  <li>First of all, not much has changed in 33 years on the macro level. We’re still setting up differentiable neural net architectures made of layers of neurons and optimizing them end-to-end with backpropagation and stochastic gradient descent. Everything reads remarkably familiar, except it is smaller.</li>
+  <li>The dataset is a baby by today’s standards: The training set is just 7291 16x16 greyscale images. Today’s vision datasets typically contain a few hundred million high-resolution color images from the web (e.g. Google has JFT-300M, <a href="https://openai.com/blog/clip/">OpenAI CLIP</a> was trained on a 400M), but grow to as large as a small few billion. This is approx. ~1000X pixel information per image (384*384*3/(16*16)) times 100,000X the number of images (1e9/1e4), for a rough 100,000,000X more pixel data at the input.</li>
+  <li>The neural net is also a baby: This 1989 net has approx. 9760 params, 64K MACs, and 1K activations. <a href="https://arxiv.org/abs/2106.04560">Modern (vision) neural nets</a> are on the scale of small few billion parameters (1,000,000X) and O(~1e12) MACs (~10,000,000X). Natural language models can reach into trillions of parameters.</li>
+  <li>A state of the art classifier that took 3 days to train on a workstation now trains in 90 seconds on my fanless laptop (3,000X naive speedup), and further ~100X gains are very likely possible by switching to full-batch optimization and utilizing a GPU.</li>
+  <li>I was, in fact, able to tune the model, augmentation, loss function, and the optimization based on modern R&amp;D innovations to cut down the error rate by 60%, while keeping the dataset and the test-time latency of the model unchanged.</li>
+  <li>Modest gains were attainable just by scaling up the dataset alone.</li>
+  <li>Further significant gains would likely have to come from a larger model, which would require more compute, and additional R&amp;D to help stabilize the training at increasing scales. In particular, if I was transported to 1989, I would have ultimately become upper-bounded in my ability to further improve the system without a bigger computer.</li>
+</ul>
+
+<p>Suppose that the lessons of this exercise remain invariant in time. What does that imply about deep learning of 2022? What would a time traveler from 2055 think about the performance of current networks?</p>
+
+<ul>
+  <li>2055 neural nets are basically the same as 2022 neural nets on the macro level, except bigger.</li>
+  <li>Our datasets and models today look like a joke. Both are somewhere around 10,000,000X larger.</li>
+  <li>One can train 2022 state of the art models in ~1 minute by training naively on their personal computing device as a weekend fun project.</li>
+  <li>Today’s models are not optimally formulated, and just changing some of the details of the model, loss function, augmentation or the optimizer we can about halve the error.</li>
+  <li>Our datasets are too small, and modest gains would come from scaling up the dataset alone.</li>
+  <li>Further gains are actually not possible without expanding the computing infrastructure and investing into some R&amp;D on effectively training models on that scale.</li>
+</ul>
+
+<p>But the most important trend I want to comment on is that the whole setting of training a neural network from scratch on some target task (like digit recognition) is quickly becoming outdated due to finetuning, especially with the emergence of <a href="https://arxiv.org/abs/2108.07258">foundation models</a> like GPT. These foundation models are trained by only a few institutions with substantial computing resources, and most applications are achieved via lightweight finetuning of part of the network, prompt engineering, or an optional step of data or model distillation into smaller, special-purpose inference networks. I think we should expect this trend to be very much alive, and indeed, intensify. In its most extreme extrapolation, you will not want to train any neural networks at all. In 2055, you will ask a 10,000,000X-sized neural net megabrain to perform some task by speaking (or thinking) to it in English. And if you ask nicely enough, it will oblige. Yes you could train a neural net too… but why would you?</p>
+
+<p><br /><br /><br /></p>
+
+  </article>
+
+  <!-- mathjax -->
+  
+  
+  <!-- disqus comments -->
+ 
+ <div id="disqus_thread"></div>
+  <script type="text/javascript">
+      /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+      var disqus_shortname = 'karpathyblog'; // required: replace example with your forum shortname
+
+      /* * * DON'T EDIT BELOW THIS LINE * * */
+      (function() {
+          var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+          dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+          (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+  
+  
+</div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrap">
+
+    <!-- <h2 class="footer-heading">Andrej Karpathy blog</h2> -->
+
+    <div class="footer-col-1 column">
+      <ul>
+        <li>Andrej Karpathy blog</li>
+        <!-- <li><a href="mailto:"></a></li> -->
+      </ul>
+    </div>
+
+    <div class="footer-col-2 column">
+      <ul>
+        <li>
+          <a href="https://github.com/karpathy">
+            <span class="icon github">
+              <svg version="1.1" class="github-icon-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                 viewBox="0 0 16 16" enable-background="new 0 0 16 16" xml:space="preserve">
+                <path fill-rule="evenodd" clip-rule="evenodd" fill="#C2C2C2" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761
+                c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32
+                c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472
+                c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037
+                C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65
+                c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261
+                c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082
+                c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129
+                c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+              </svg>
+            </span>
+            <span class="username">karpathy</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://twitter.com/karpathy">
+            <span class="icon twitter">
+              <svg version="1.1" class="twitter-icon-svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                 viewBox="0 0 16 16" enable-background="new 0 0 16 16" xml:space="preserve">
+                <path fill="#C2C2C2" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809
+                c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27
+                c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767
+                c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206
+                C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271
+                c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469
+                c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/>
+              </svg>
+            </span>
+            <span class="username">karpathy</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="footer-col-3 column">
+      <p class="text">Musings of a Computer Scientist.</p>
+    </div>
+
+  </div>
+
+</footer>
+
+
+    </body>
+</html>

@@ -1,0 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/latest/environment.schema.json
+name: rag-experiment-accelerator-environment-2
+build:
+  path: ./
