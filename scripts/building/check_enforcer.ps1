@@ -82,6 +82,11 @@ function sdk_cli_trigger_checks([ref]$failed_reason_ref, [ref]$valid_status_arra
 }
 function sdk_cli_checks([ref]$failed_reason_ref, $valid_status_array) {
     $failed_reason_ref.Value = ""
+    $pipelines = @{
+        "sdk_cli_tests" = 4;
+        "sdk_cli_global_config_tests" = 1;
+        "sdk_cli_azure_test" = 4;
+    }
 
     $pipelines_success_count = @{
         "sdk_cli_tests" = 0;
