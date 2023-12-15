@@ -3,6 +3,7 @@ import os
 from promptflow import tool
 from promptflow.connections import CustomConnection
 
+
 @tool
 def my_python_tool(connection: CustomConnection):
     os.environ["AZURE_SEARCH_SERVICE_ENDPOINT"] = connection.configs["AZURE_SEARCH_SERVICE_ENDPOINT"]
@@ -23,5 +24,5 @@ def my_python_tool(connection: CustomConnection):
 
     if "LOGGING_LEVEL" in connection.configs:
         os.environ["LOGGING_LEVEL"] = connection.configs["LOGGING_LEVEL"]
-        
+
     return True
