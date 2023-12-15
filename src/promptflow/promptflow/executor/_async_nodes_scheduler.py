@@ -102,23 +102,12 @@ class AsyncNodesScheduler:
         return asyncio.create_task(task)
 
     @staticmethod
-    def _invoke_sync_tool(context, node, f, kwargs):
-        try:
-            context.start()
-            context.current_node = node
-            result = f(**kwargs)
-            context.current_node = None
-            return result
-        finally:
-            context.end()
-
-    @staticmethod
     async def _sync_function_to_async_task(
         executor: ThreadPoolExecutor,
-        context, node,
+        context: FlowExecutionContext, node,
         f,
         kwargs,
     ):
         return await asyncio.get_running_loop().run_in_executor(
-            executor, AsyncNodesScheduler._invoke_sync_tool, context, node, f, kwargs
+            executor, context.invoke_tool, node, f, kwargs
         )
