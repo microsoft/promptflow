@@ -80,7 +80,13 @@
     "pfbytes",
     "Apim",
     "junit",
-    "nunit"
+    "nunit",
+    "rerank",
+    "stsb",
+    "lcsstr",
+    "lcsseq",
+    "jaro",
+    "jaccard"
   ],
   "ignoreWords": [
     "openmpi",
