@@ -138,7 +138,7 @@ def create_image(value: any):
         else:
             raise InvalidImageInput(
                 message_format="Invalid image input format. The image input should be a dictionary like: "
-                "{data:image/<image_type>;[path|base64|url]: <image_data>}.",
+                "{{data:image/<image_type>;[path|base64|url]: <image_data>}}.",
                 target=ErrorTarget.EXECUTOR,
             )
     elif isinstance(value, str):

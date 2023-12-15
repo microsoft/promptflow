@@ -84,7 +84,7 @@ def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
     return len(inputs)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
+@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestBatch:
     def test_batch_storage(self, dev_connections, recording_injection):
@@ -262,7 +262,6 @@ class TestBatch:
         ]
 
     def test_batch_with_openai_metrics(self, dev_connections, recording_injection):
-        recording_status, _ = recording_injection
         inputs_mapping = {"url": "${data.url}"}
         batch_result, output_dir = submit_batch_run(
             SAMPLE_FLOW, inputs_mapping, connections=dev_connections, return_output_dir=True
@@ -270,14 +269,9 @@ class TestBatch:
         nlines = get_batch_inputs_line(SAMPLE_FLOW)
         outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
         assert len(outputs) == nlines
-        if recording_status is True:
-            assert batch_result.system_metrics.total_tokens == 0
-            assert batch_result.system_metrics.prompt_tokens == 0
-            assert batch_result.system_metrics.completion_tokens == 0
-        else:
-            assert batch_result.system_metrics.total_tokens > 0
-            assert batch_result.system_metrics.prompt_tokens > 0
-            assert batch_result.system_metrics.completion_tokens > 0
+        assert batch_result.system_metrics.total_tokens > 0
+        assert batch_result.system_metrics.prompt_tokens > 0
+        assert batch_result.system_metrics.completion_tokens > 0
 
     def test_batch_with_default_input(self, recording_injection):
         mem_run_storage = MemoryRunStorage()
@@ -346,3 +340,17 @@ class TestBatch:
         batch_result = asyncio.run(async_submit_batch_run(flow_folder, inputs_mapping, dev_connections))
         assert isinstance(batch_result, BatchResult)
         assert batch_result.total_lines == batch_result.completed_lines
+
+    def test_batch_run_with_aggregation_failure(self, dev_connections, recording_injection):
+        flow_folder = "aggregation_node_failed"
+        inputs_mapping = {"groundtruth": "${data.groundtruth}", "prediction": "${data.prediction}"}
+        batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
+        assert isinstance(batch_result, BatchResult)
+        assert batch_result.total_lines == batch_result.completed_lines
+        assert batch_result.node_status == get_flow_expected_status_summary(flow_folder)
+        # assert aggregation node error summary
+        assert batch_result.failed_lines == 0
+        aggre_node_error = batch_result.error_summary.aggr_error_dict["aggregate"]
+        assert aggre_node_error["message"] == "Execution failure in 'aggregate': (ZeroDivisionError) division by zero"
+        assert aggre_node_error["code"] == "UserError"
+        assert aggre_node_error["innerError"] == {"code": "ToolExecutionError", "innerError": None}
