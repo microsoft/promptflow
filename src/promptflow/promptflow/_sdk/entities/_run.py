@@ -145,7 +145,6 @@ class Run(YAMLTranslatableMixin):
         self._start_time = start_time
         self._end_time = end_time
         self._duration = kwargs.get("duration", None)
-        self._portal_url = kwargs.get(RunDataKeys.PORTAL_URL, None)
         self._creation_context = kwargs.get("creation_context", None)
         # init here to make sure those fields initialized in all branches.
         self.flow = flow
@@ -172,10 +171,7 @@ class Run(YAMLTranslatableMixin):
             self._experiment_name = kwargs.get("experiment_name", None)
         elif self._run_source == RunInfoSources.RUN_HISTORY:
             self._error = kwargs.get("error", None)
-            self._data_portal_url = kwargs.get("data_portal_url", None)
-            self._input_run_portal_url = kwargs.get("input_run_portal_url", None)
             self._output = kwargs.get("output", None)
-            self._output_portal_url = kwargs.get("output_portal_url", None)
         elif self._run_source == RunInfoSources.EXISTING_RUN:
             # when the run is created from an existing run folder, the output path is also the source path
             self._output_path = Path(source)
@@ -269,7 +265,6 @@ class Run(YAMLTranslatableMixin):
             start_time=date_parser.parse(start_time) if start_time else None,
             end_time=date_parser.parse(end_time) if end_time else None,
             duration=duration,
-            portal_url=run_entity[RunDataKeys.PORTAL_URL],
             creation_context=run_entity["properties"]["creationContext"],
             experiment_name=run_entity["properties"]["experimentName"],
         )
@@ -297,14 +292,10 @@ class Run(YAMLTranslatableMixin):
             is_archived=run_entity.get("archived", False),  # TODO: Get archived status, depends on run history team
             error=run_entity.get("error", None),
             run_source=RunInfoSources.RUN_HISTORY,
-            portal_url=run_entity[RunDataKeys.PORTAL_URL],
             creation_context=run_entity["createdBy"],
             data=run_entity[RunDataKeys.DATA],
-            data_portal_url=run_entity[RunDataKeys.DATA_PORTAL_URL],
             run=run_entity[RunDataKeys.RUN],
-            input_run_portal_url=run_entity[RunDataKeys.INPUT_RUN_PORTAL_URL],
             output=run_entity[RunDataKeys.OUTPUT],
-            output_portal_url=run_entity[RunDataKeys.OUTPUT_PORTAL_URL],
         )
 
     @classmethod
@@ -389,14 +380,10 @@ class Run(YAMLTranslatableMixin):
             result["start_time"] = self._start_time.isoformat() if self._start_time else None
             result["end_time"] = self._end_time.isoformat() if self._end_time else None
             result["duration"] = self._duration
-            result[RunDataKeys.PORTAL_URL] = self._portal_url
             result[RunDataKeys.DATA] = self.data
-            result[RunDataKeys.DATA_PORTAL_URL] = self._data_portal_url
             result[RunDataKeys.OUTPUT] = self._output
-            result[RunDataKeys.OUTPUT_PORTAL_URL] = self._output_portal_url
             if self.run:
                 result[RunDataKeys.RUN] = self.run
-                result[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._input_run_portal_url
             if self._error:
                 result["error"] = self._error
                 if exclude_additional_info:
