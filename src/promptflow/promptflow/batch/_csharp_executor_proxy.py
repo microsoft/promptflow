@@ -14,7 +14,7 @@ from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
-EXECUTOR_SERVICE_DLL = "Promptflow.DotnetService.dll"
+EXECUTOR_SERVICE_DLL = "Promptflow.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
