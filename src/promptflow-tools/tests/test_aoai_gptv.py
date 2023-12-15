@@ -9,7 +9,6 @@ def azure_openai_provider(azure_open_ai_connection) -> AzureOpenAI:
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
-@pytest.mark.skip_if_no_api_key("azure_open_ai_connection")
 @pytest.mark.skip("Skipping until we have a Azure OpenAI GPT-4 Vision deployment")
 class TestAzureOpenAIGPT4V:
     def test_openai_gpt4v_chat(self, azure_openai_provider, example_prompt_template_with_image, example_image):
