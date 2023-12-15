@@ -73,34 +73,40 @@ def get_test_cases_for_node_run():
     composite_image_input = {"image_list": image_list, "image_dcit": image_dict}
 
     return [
-        (SIMPLE_IMAGE_FLOW, "python_node", simple_image_input, None),
-        (SIMPLE_IMAGE_FLOW, "python_node_2", simple_image_input, {"python_node": image}),
-        (COMPOSITE_IMAGE_FLOW, "python_node", composite_image_input, None),
-        (COMPOSITE_IMAGE_FLOW, "python_node_2", composite_image_input, None),
+        (SIMPLE_IMAGE_FLOW, "python_node", simple_image_input, None, True),
+        (SIMPLE_IMAGE_FLOW, "python_node", simple_image_input, None, False),  # Add case for no storage.
+        (SIMPLE_IMAGE_FLOW, "python_node_2", simple_image_input, {"python_node": image}, True),
+        (COMPOSITE_IMAGE_FLOW, "python_node", composite_image_input, None, True),
+        (COMPOSITE_IMAGE_FLOW, "python_node_2", composite_image_input, None, True),
         (
             COMPOSITE_IMAGE_FLOW,
             "python_node_3",
             composite_image_input,
             {"python_node": image_list, "python_node_2": image_dict},
+            True,
         ),
     ]
 
 
-def contain_image_reference(value):
+def contain_image_reference(value, under_temp_dir=True):
     if isinstance(value, (FlowRunInfo, RunInfo)):
-        assert contain_image_reference(value.api_calls)
-        assert contain_image_reference(value.inputs)
-        assert contain_image_reference(value.output)
+        assert contain_image_reference(value.api_calls, under_temp_dir)
+        assert contain_image_reference(value.inputs, under_temp_dir)
+        assert contain_image_reference(value.output, under_temp_dir)
         return True
     assert not isinstance(value, Image)
     if isinstance(value, list):
-        return any(contain_image_reference(item) for item in value)
+        return any(contain_image_reference(item, under_temp_dir) for item in value)
     if isinstance(value, dict):
         if is_multimedia_dict(value):
             v = list(value.values())[0]
             assert isinstance(v, str)
+            if under_temp_dir:
+                assert v.startswith(str(Path("./temp")))
+            else:
+                assert not v.startswith(str(Path("./temp")))  # When did not assign storage, save image in working dir.
             return True
-        return any(contain_image_reference(v) for v in value.values())
+        return any(contain_image_reference(v, under_temp_dir) for v in value.values())
     return False
 
 
@@ -140,24 +146,25 @@ class TestExecutorWithImage:
             assert contain_image_reference(node_run_info)
 
     @pytest.mark.parametrize(
-        "flow_folder, node_name, flow_inputs, dependency_nodes_outputs", get_test_cases_for_node_run()
+        "flow_folder, node_name, flow_inputs, dependency_nodes_outputs, assign_storage", get_test_cases_for_node_run()
     )
     def test_executor_exec_node_with_image(
-        self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections
+        self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, assign_storage, dev_connections
     ):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp")) if assign_storage else None
         run_info = FlowExecutor.load_and_exec_node(
             get_yaml_file(flow_folder),
             node_name,
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
-            output_sub_dir=("./temp"),
+            storage=storage,
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
-        assert contain_image_reference(run_info)
+        assert contain_image_reference(run_info, under_temp_dir=assign_storage)
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
@@ -181,13 +188,14 @@ class TestExecutorWithImage:
     ):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
         run_info = FlowExecutor.load_and_exec_node(
             get_yaml_file(flow_folder),
             node_name,
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
-            output_sub_dir=("./temp"),
+            storage=storage,
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
