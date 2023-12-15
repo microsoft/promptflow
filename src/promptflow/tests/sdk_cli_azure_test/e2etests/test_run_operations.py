@@ -8,6 +8,7 @@ import shutil
 from logging import Logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import sleep
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
@@ -416,6 +417,24 @@ class TestFlowRun:
         assert run.display_name == new_display_name
         assert run.description == new_description
         assert run.tags["test_tag"] == test_mark
+
+    def test_cancel_run(self, pf, runtime: str, randstr: Callable[[str], str]):
+        # create a run
+        run_name = randstr("name")
+        pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"url": "${data.url}"},
+            variant="${summarize_text_content.variant_0}",
+            runtime=runtime,
+            name=run_name,
+        )
+
+        pf.runs.cancel(run=run_name)
+        sleep(3)
+        run = pf.runs.get(run=run_name)
+        # the run status might still be cancel requested, but it should be canceled eventually
+        assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
     @pytest.mark.skipif(
         condition=not is_live(), reason="request uri contains temp folder name, need some time to sanitize."
