@@ -1066,3 +1066,18 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         run_folder.mkdir(parents=True)
         return run_folder
+
+    @monitor_operation(activity_name="pfazure.runs.cancel", activity_type=ActivityType.PUBLICAPI)
+    def cancel(self, run: Union[str, Run], **kwargs) -> None:
+        """Cancel a run.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        """
+        run = Run._validate_and_return_run_name(run)
+        self._service_caller.cancel_flow_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            flow_run_id=run,
+        )
