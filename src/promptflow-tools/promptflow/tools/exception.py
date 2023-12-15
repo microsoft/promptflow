@@ -45,8 +45,8 @@ class WrappedOpenAIError(UserErrorException):
     """Refine error messages on top of native openai errors."""
 
     def __init__(self, ex: OpenAIError, **kwargs):
-        super().__init__(target=ErrorTarget.TOOL, **kwargs)
         self._ex = ex
+        super().__init__(target=ErrorTarget.TOOL, **kwargs)
 
     @property
     def message(self):
