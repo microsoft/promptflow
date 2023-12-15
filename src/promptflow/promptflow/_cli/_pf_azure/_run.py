@@ -142,7 +142,7 @@ pfazure run stream --name <name>
         epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="Show a run.",
+        help_message="Stream run logs to the console.",
         action_param_name="sub_action",
     )
 
