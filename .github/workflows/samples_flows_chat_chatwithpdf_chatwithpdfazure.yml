@@ -21,44 +21,27 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Generate config.json for canary workspace (scheduled runs only)
+        if: github.event_name == 'schedule'
+        run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
+      - name: Generate config.json for production workspace
+        if: github.event_name != 'schedule'
+        run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Setup Python 3.9 environment
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - name: Prepare sample requirements
-        working-directory: examples/flows/chat/chat-with-pdf
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
       - name: Prepare requirements
         run: |
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}/examples/requirements.txt
           pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
-      - name: Create Chat With PDF Custom Connection
-        working-directory: examples/flows/chat/chat-with-pdf
-        run: |
-          AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
-          AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
-          AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
-          if [[ -e .env.example ]]; then
-            echo "env replacement"
-            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
-            mv .env.example .env
-            pf connection create --file .env --name chat_with_pdf_custom_connection
-          fi
-      - name: Create AOAI Connection
-        working-directory: examples/connections
-        run: |
-          AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
-          AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
-          if [[ -e azure_openai.yml ]]; then
-            pf connection create --file azure_openai.yml --set api_key=$AOAI_API_KEY api_base=$AOAI_API_ENDPOINT
-          fi
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Create Aoai Connection
+        run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY_TEST }}" api_base="${{ secrets.AOAI_API_ENDPOINT_TEST }}"
       - name: Test Notebook
         working-directory: examples/flows/chat/chat-with-pdf
         run: |
