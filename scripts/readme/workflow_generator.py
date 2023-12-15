@@ -73,43 +73,24 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
         )
 
     if "chatwithpdf" in workflow_name:
-        template_pdf = env.get_template("pdf_workflow.yml.jinja2")
-        content = template_pdf.render(
-            {
-                "workflow_name": workflow_name,
-                "ci_name": "samples_notebook_ci",
-                "name": name,
-                "gh_working_dir": gh_working_dir,
-                "path_filter": path_filter,
-                "crontab": f"{schedule_minute} {schedule_hour} * * *",
-                "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
-            }
-        )
+        template = env.get_template("pdf_workflow.yml.jinja2")
     elif "flowasfunction" in workflow_name:
-        flow_as_func_template = env.get_template("flow_as_function.yml.jinja2")
-        content = flow_as_func_template.render(
-            {
-                "workflow_name": workflow_name,
-                "ci_name": "samples_notebook_ci",
-                "name": name,
-                "gh_working_dir": gh_working_dir,
-                "path_filter": path_filter,
-                "crontab": f"{schedule_minute} {schedule_hour} * * *",
-                "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
-            }
-        )
-    else:
-        content = template.render(
-            {
-                "workflow_name": workflow_name,
-                "ci_name": "samples_notebook_ci",
-                "name": name,
-                "gh_working_dir": gh_working_dir,
-                "path_filter": path_filter,
-                "crontab": f"{schedule_minute} {schedule_hour} * * *",
-                "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
-            }
-        )
+        template = env.get_template("flow_as_function.yml.jinja2")
+    elif "flowinpipeline" in workflow_name:
+        # flow in pipeline is related to Azure ML, requires config.json
+        template = env.get_template("flow_in_pipeline.yml.jinja2")
+
+    content = template.render(
+        {
+            "workflow_name": workflow_name,
+            "ci_name": "samples_notebook_ci",
+            "name": name,
+            "gh_working_dir": gh_working_dir,
+            "path_filter": path_filter,
+            "crontab": f"{schedule_minute} {schedule_hour} * * *",
+            "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
+        }
+    )
 
     # To customize workflow, add new steps in steps.py
     # make another function for special cases.
