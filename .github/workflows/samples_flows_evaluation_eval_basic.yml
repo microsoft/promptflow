@@ -76,6 +76,7 @@ jobs:
           cat bash_script.sh
       - name: Run scripts against canary workspace (scheduled runs only)
         if: github.event_name == 'schedule'
+        working-directory: examples/flows/evaluation/eval-basic
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -85,6 +86,7 @@ jobs:
           bash bash_script.sh
       - name: Run scripts against production workspace (scheduled runs only)
         if: github.event_name != 'schedule'
+        working-directory: examples/flows/evaluation/eval-basic
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
