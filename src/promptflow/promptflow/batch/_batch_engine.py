@@ -214,11 +214,6 @@ class BatchEngine:
                 await self._exec_batch(line_results, batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
 
-        # execute aggregation nodes
-        aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
-        # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
-        self._update_aggr_result(aggr_result, aggr_exec_result)
-
         # persist outputs to output dir
         outputs = [
             {LINE_NUMBER_KEY: r.run_info.index, **r.output}
@@ -226,6 +221,11 @@ class BatchEngine:
             if r.run_info.status == Status.Completed
         ]
         self._persist_outputs(outputs, output_dir)
+
+        # execute aggregation nodes
+        aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+        # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
+        self._update_aggr_result(aggr_result, aggr_exec_result)
         # summary some infos from line results and aggr results to batch result
         return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result)
 
