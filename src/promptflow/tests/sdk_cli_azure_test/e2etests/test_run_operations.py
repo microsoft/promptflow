@@ -253,6 +253,7 @@ class TestFlowRun:
             print(json.dumps(run._to_dict(), indent=4))
         assert len(runs) == 10
 
+    @pytest.mark.skipif(condition=not is_live(), reason="Need to fix the replay error")
     def test_show_run(self, pf, tenant_id: str):
         run = pf.runs.get(run="classification_accuracy_eval_default_20230808_153241_422491")
         run_dict = run._to_dict()
