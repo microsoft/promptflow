@@ -1,3 +1,7 @@
+---
+resources: examples/tutorials/flow-deploy/create-service-with-flow
+---
+
 # Create service with flow
 
 This example shows how to create a simple service with flow.
@@ -12,7 +16,7 @@ You can use json parser to parse the output.
 ## 1. Start the service and put in background
 
 ```bash
-nohup python simple_score.py & 
+nohup python simple_score.py &
 # Note: added this to run in our CI pipeline, not needed for user.
 sleep 10
 ```

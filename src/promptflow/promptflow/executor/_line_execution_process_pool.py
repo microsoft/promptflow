@@ -9,6 +9,7 @@ from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
+from typing import Union
 
 import psutil
 
@@ -20,7 +21,7 @@ from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
 from promptflow._utils.thread_utils import RepeatLogTimer
-from promptflow._utils.utils import log_progress, set_context, get_int_env_var
+from promptflow._utils.utils import get_int_env_var, log_progress, set_context
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
@@ -277,30 +278,39 @@ class LineExecutionProcessPool:
         result.output = persist_multimedia_data(result.output, self._output_dir)
         return result
 
-    def _process_multimedia_in_flow_run(self, run_info: FlowRunInfo):
+    def _process_multimedia_in_run_info(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
+        # Persist and convert images in inputs to path dictionaries.
+        # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.inputs:
-            run_info.inputs = self._persist_images(run_info.inputs)
-        if run_info.output:
-            serialized_output = self._persist_images(run_info.output)
-            run_info.output = serialized_output
-            run_info.result = None
-        if run_info.api_calls:
-            run_info.api_calls = self._persist_images(run_info.api_calls)
+            run_info.inputs = self._persist_and_convert_images_to_path_dicts(run_info.inputs)
 
-    def _process_multimedia_in_node_run(self, run_info: NodeRunInfo):
-        if run_info.inputs:
-            run_info.inputs = self._persist_images(run_info.inputs)
+        # Persist and convert images in output to path dictionaries.
+        # This replaces any image objects with their corresponding file path dictionaries.
         if run_info.output:
-            serialized_output = self._persist_images(run_info.output)
+            serialized_output = self._persist_and_convert_images_to_path_dicts(run_info.output)
             run_info.output = serialized_output
             run_info.result = None
+
+        # Persist and convert images in api_calls to path dictionaries.
+        # The `inplace=True` parameter is used here to ensure that the original list structure holding generator outputs
+        # is maintained. This allows us to keep tracking the list as it dynamically changes when the generator is
+        # consumed. It is crucial to process the api_calls list in place to avoid losing the reference to the list that
+        # holds the generator items, which is essential for tracing generator execution.
         if run_info.api_calls:
-            run_info.api_calls = self._persist_images(run_info.api_calls)
+            run_info.api_calls = self._persist_and_convert_images_to_path_dicts(run_info.api_calls, inplace=True)
+
         return run_info
 
-    def _persist_images(self, value):
+    def _process_multimedia_in_flow_run(self, run_info: FlowRunInfo):
+        self._process_multimedia_in_run_info(run_info)
+
+    def _process_multimedia_in_node_run(self, run_info: NodeRunInfo):
+        run_info = self._process_multimedia_in_run_info(run_info)
+        return run_info
+
+    def _persist_and_convert_images_to_path_dicts(self, value, inplace=False):
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
-        return _process_recursively(value, process_funcs=serialization_funcs)
+        return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         bulk_logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
@@ -429,17 +439,18 @@ class LineExecutionProcessPool:
         # Take the minimum value as the result
         worker_count = min(valid_factors.values())
         bulk_logger.info(
-            f"Set process count to {worker_count} by taking the minimum value among the factors of {valid_factors}.")
+            f"Set process count to {worker_count} by taking the minimum value among the factors of {valid_factors}."
+        )
         return worker_count
 
     def _log_set_worker_count(self, worker_count, estimated_available_worker_count):
-        bulk_logger.info(
-            f"Set process count to {worker_count} with the environment variable 'PF_WORKER_COUNT'.")
+        bulk_logger.info(f"Set process count to {worker_count} with the environment variable 'PF_WORKER_COUNT'.")
         if estimated_available_worker_count is not None and estimated_available_worker_count < worker_count:
             bulk_logger.warning(
                 f"The current process count ({worker_count}) is larger than recommended process count "
                 f"({estimated_available_worker_count}) that estimated by system available memory. This may "
-                f"cause memory exhaustion")
+                f"cause memory exhaustion"
+            )
 
 
 def _exec_line(
@@ -581,7 +592,8 @@ def get_available_max_worker_count():
         #  create the child process
         bulk_logger.warning(
             f"Current system's available memory is {available_memory}MB, less than the memory "
-            f"{process_memory}MB required by the process. The maximum available worker count is 1.")
+            f"{process_memory}MB required by the process. The maximum available worker count is 1."
+        )
         estimated_available_worker_count = 1
     else:
         bulk_logger.info(
