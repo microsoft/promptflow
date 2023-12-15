@@ -615,6 +615,11 @@ class FlowExecutor:
             node_run_infos = run_tracker.collect_child_node_runs(run_id)
             # Output is set as an empty dict, because the aggregation outputs story is not finalized.
             return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
+        except Exception:
+            if self._raise_ex:
+                raise
+            node_run_infos = run_tracker.collect_child_node_runs(run_id)
+            return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
         finally:
             remove_metric_logger(_log_metric)
 
