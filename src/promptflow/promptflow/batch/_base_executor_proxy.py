@@ -23,6 +23,15 @@ EXECUTOR_UNHEALTHY_MESSAGE = "The executor service is currently not in a healthy
 
 class AbstractExecutorProxy:
     @classmethod
+    def get_tool_metadata(cls, flow_file: Path, working_dir: Optional[Path] = None) -> dict:
+        """Generate tool metadata file for the specified flow."""
+        return cls._get_tool_metadata(flow_file, working_dir or flow_file.parent)
+
+    @classmethod
+    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
+        raise NotImplementedError()
+
+    @classmethod
     def create(
         cls,
         flow_file: Path,

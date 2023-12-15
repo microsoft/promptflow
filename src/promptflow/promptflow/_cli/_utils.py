@@ -106,7 +106,7 @@ def get_credentials_for_cli():
     # check OBO via environment variable, the referenced code can be found from below search:
     # https://msdata.visualstudio.com/Vienna/_search?text=AZUREML_OBO_ENABLED&type=code&pageSize=25&filters=ProjectFilters%7BVienna%7D&action=contents
     if os.getenv(IdentityEnvironmentVariable.OBO_ENABLED_FLAG):
-        logger.info("User identity is configured, use OBO credential.")
+        logger.debug("User identity is configured, use OBO credential.")
         credential = AzureMLOnBehalfOfCredential()
     else:
         client_id_from_env = os.getenv(IdentityEnvironmentVariable.DEFAULT_IDENTITY_CLIENT_ID)
@@ -114,15 +114,15 @@ def get_credentials_for_cli():
             # use managed identity when client id is available from environment variable.
             # reference code:
             # https://learn.microsoft.com/en-us/azure/machine-learning/how-to-identity-based-service-authentication?tabs=cli#compute-cluster
-            logger.info("Use managed identity credential.")
+            logger.debug("Use managed identity credential.")
             credential = ManagedIdentityCredential(client_id=client_id_from_env)
         elif is_in_ci_pipeline():
             # use managed identity when executing in CI pipeline.
-            logger.info("Use azure cli credential.")
+            logger.debug("Use azure cli credential.")
             credential = AzureCliCredential()
         else:
             # use default Azure credential to handle other cases.
-            logger.info("Use default credential.")
+            logger.debug("Use default credential.")
             credential = DefaultAzureCredential()
 
     return credential
@@ -473,3 +473,13 @@ def _get_cli_activity_name(cli, args):
         activity_name += f".{args.sub_action}"
 
     return activity_name
+
+
+def _try_delete_existing_run_record(run_name: str):
+    from promptflow._sdk._errors import RunNotFoundError
+    from promptflow._sdk._orm import RunInfo as ORMRun
+
+    try:
+        ORMRun.delete(run_name)
+    except RunNotFoundError:
+        pass
