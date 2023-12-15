@@ -337,3 +337,16 @@ class TestAzureCli:
             *operation_scope_args,
         )
         mocked.assert_called_once()
+
+    def test_run_cancel(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
+        mocked = mocker.patch.object(RunOperations, "cancel")
+        run_pf_command(
+            "run",
+            "cancel",
+            "--name",
+            "test_run",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
