@@ -1,6 +1,12 @@
 <#
 .DESCRIPTION
-Enforce the check of pipelines
+Enforce the check of pipelines.
+
+There are a few places that need to be updated when adding new pipelines.
+1. This script will get diff of current branch and main branch.
+   If the diff contains your concerned files, please add $need_to_check variable.
+2. To Enable more pipelines, following the code of sdk_cli_trigger_checks and sdk_cli_checks.
+   Create new functions and add them to run_checks.
 
 .EXAMPLE 
 PS> ./check_enforcer.ps1
