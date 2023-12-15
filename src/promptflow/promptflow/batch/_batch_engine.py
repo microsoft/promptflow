@@ -173,23 +173,16 @@ class BatchEngine:
         task = asyncio.create_task(
             self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
         )
-        try:
-            while not task.done():
-                # check whether the task is completed or canceled every 1s
-                await asyncio.sleep(1)
-                if self._is_canceled:
-                    task.cancel()
-                    # use current completed line results and aggregation results to create a BatchResult
-                    return BatchResult.create(
-                        self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
-                    )
-            return task.result()
-        except asyncio.CancelledError:
-            # If the batch run is canceled, log it and ignore the exception.
-            bulk_logger.warning("The batch run is canceled.")
-            return BatchResult.create(
-                self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
-            )
+        while not task.done():
+            # check whether the task is completed or canceled every 1s
+            await asyncio.sleep(1)
+            if self._is_canceled:
+                task.cancel()
+                # use current completed line results and aggregation results to create a BatchResult
+                return BatchResult.create(
+                    self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
+                )
+        return task.result()
 
     async def _exec(
         self,
