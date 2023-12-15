@@ -14,10 +14,8 @@ param(
 
 )
 
-#SET-PSDEBUG -Trace 1 # Powershell debug flag
 $github_repository = 'microsoft/promptflow'
 $snippet_debug = 1 # Write debug info to console.
-
 
 
 if ($MergeCommit -eq "") {
@@ -137,7 +135,7 @@ function run_checks() {
     $failed_reason =  ""
     
     for ($i = 0; $i -lt $LoopTimes; $i++) {
-        #Start-Sleep -Seconds 30
+        Start-Sleep -Seconds 30
 
         $failed_reason = ""
         $valid_status_array = @()
