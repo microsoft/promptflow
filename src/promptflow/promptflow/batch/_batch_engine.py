@@ -204,7 +204,8 @@ class BatchEngine:
             if isinstance(self._executor_proxy, PythonExecutorProxy):
                 line_results.extend(self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id))
             else:
-                await self._exec_batch(line_results, batch_inputs, run_id)
+                async with asyncio.Semaphore(DEFAULT_CONCURRENCY):
+                    await self._exec_batch(line_results, batch_inputs, run_id)
             handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
 
             # execute aggregation nodes
@@ -240,19 +241,18 @@ class BatchEngine:
 
         while completed_line < total_lines:
             try:
-                async with asyncio.Semaphore(DEFAULT_CONCURRENCY):
-                    done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-                    completed_line_results = [task.result() for task in done]
-                    self._persist_run_info(completed_line_results)
-                    line_results.extend(completed_line_results)
-                    log_progress(
-                        self._start_time,
-                        bulk_logger,
-                        len(line_results),
-                        total_lines,
-                        last_log_count=completed_line,
-                    )
-                    completed_line = len(line_results)
+                done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                completed_line_results = [task.result() for task in done]
+                self._persist_run_info(completed_line_results)
+                line_results.extend(completed_line_results)
+                log_progress(
+                    self._start_time,
+                    bulk_logger,
+                    len(line_results),
+                    total_lines,
+                    last_log_count=completed_line,
+                )
+                completed_line = len(line_results)
             except asyncio.CancelledError:
                 break
 
