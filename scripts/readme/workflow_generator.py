@@ -77,6 +77,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
         "configuration",
         "flowinpipeline",
         "chatwithpdfazure",
+        "quickstartazure",
         "cloudrunmanagement",
     ]
     if any(keyword in workflow_name for keyword in workflows_require_config_json):
