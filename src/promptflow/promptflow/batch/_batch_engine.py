@@ -124,7 +124,7 @@ class BatchEngine:
         try:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
-                # create executor proxy and ensure service health before running
+                # create executor proxy instance according to the flow program language
                 executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
                 self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
                     self._flow_file,
@@ -159,6 +159,7 @@ class BatchEngine:
                 )
                 raise unexpected_error from e
         finally:
+            # destroy the executor proxy and end the life cycle of the executor proxy
             self._executor_proxy.destroy()
 
     def cancel(self):
@@ -200,6 +201,7 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
+        # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         batch_inputs = [
