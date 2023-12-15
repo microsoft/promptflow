@@ -172,16 +172,23 @@ class BatchEngine:
         task = asyncio.create_task(
             self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
         )
-        while not task.done():
-            # check whether the task is completed or canceled every 1s
-            await asyncio.sleep(1)
-            if self._is_canceled:
-                task.cancel()
-                # use current completed line results and aggregation results to create a BatchResult
-                return BatchResult.create(
-                    self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
-                )
-        return task.result()
+        try:
+            while not task.done():
+                # check whether the task is completed or canceled every 1s
+                await asyncio.sleep(1)
+                if self._is_canceled:
+                    task.cancel()
+                    # use current completed line results and aggregation results to create a BatchResult
+                    return BatchResult.create(
+                        self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
+                    )
+            return task.result()
+        except asyncio.CancelledError:
+            # If the batch run is canceled, log it and ignore the exception.
+            bulk_logger.warning("The batch run is canceled.")
+            return BatchResult.create(
+                self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
+            )
 
     async def _exec(
         self,
@@ -192,39 +199,35 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
-        try:
-            await self._executor_proxy.ensure_executor_health()
-            # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
-            batch_inputs = [
-                apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
-            ]
-            run_id = run_id or str(uuid.uuid4())
+        await self._executor_proxy.ensure_executor_health()
+        # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
+        batch_inputs = [
+            apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
+        ]
+        run_id = run_id or str(uuid.uuid4())
 
-            # execute lines
-            if isinstance(self._executor_proxy, PythonExecutorProxy):
-                line_results.extend(self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id))
-            else:
-                async with asyncio.Semaphore(DEFAULT_CONCURRENCY):
-                    await self._exec_batch(line_results, batch_inputs, run_id)
-            handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
+        # execute lines
+        if isinstance(self._executor_proxy, PythonExecutorProxy):
+            line_results.extend(self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id))
+        else:
+            async with asyncio.Semaphore(DEFAULT_CONCURRENCY):
+                await self._exec_batch(line_results, batch_inputs, run_id)
+        handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
 
-            # execute aggregation nodes
-            aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
-            # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
-            self._update_aggr_result(aggr_result, aggr_exec_result)
+        # execute aggregation nodes
+        aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+        # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
+        self._update_aggr_result(aggr_result, aggr_exec_result)
 
-            # persist outputs to output dir
-            outputs = [
-                {LINE_NUMBER_KEY: r.run_info.index, **r.output}
-                for r in line_results
-                if r.run_info.status == Status.Completed
-            ]
-            self._persist_outputs(outputs, output_dir)
-            # summary some infos from line results and aggr results to batch result
-            return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result)
-        except asyncio.CancelledError:
-            # If the batch run is canceled, log it and ignore the exception.
-            bulk_logger.warning("The batch run is canceled.")
+        # persist outputs to output dir
+        outputs = [
+            {LINE_NUMBER_KEY: r.run_info.index, **r.output}
+            for r in line_results
+            if r.run_info.status == Status.Completed
+        ]
+        self._persist_outputs(outputs, output_dir)
+        # summary some infos from line results and aggr results to batch result
+        return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result)
 
     async def _exec_batch(
         self,
@@ -240,21 +243,18 @@ class BatchEngine:
         ]
 
         while completed_line < total_lines:
-            try:
-                done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
-                completed_line_results = [task.result() for task in done]
-                self._persist_run_info(completed_line_results)
-                line_results.extend(completed_line_results)
-                log_progress(
-                    self._start_time,
-                    bulk_logger,
-                    len(line_results),
-                    total_lines,
-                    last_log_count=completed_line,
-                )
-                completed_line = len(line_results)
-            except asyncio.CancelledError:
-                break
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            completed_line_results = [task.result() for task in done]
+            self._persist_run_info(completed_line_results)
+            line_results.extend(completed_line_results)
+            log_progress(
+                self._start_time,
+                bulk_logger,
+                len(line_results),
+                total_lines,
+                last_log_count=completed_line,
+            )
+            completed_line = len(line_results)
 
     async def _exec_aggregation(
         self,
