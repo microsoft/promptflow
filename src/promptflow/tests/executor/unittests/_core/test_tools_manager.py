@@ -138,6 +138,12 @@ class TestToolsManager:
         package_tools = collect_package_tools(legacy_node_source_tools)
         assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
 
+    def test_collect_package_tools_set_defaut_input_index(self):
+        tool = "my_tool_package.tools.tool_with_cascading_inputs.my_tool"
+        package_tools = collect_package_tools([tool])
+        assert package_tools[tool]['inputs']['user_type']['uhint']['index'] == 0
+        assert package_tools[tool]['inputs']['teacher_id']['uhint']['index'] == 2
+
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
