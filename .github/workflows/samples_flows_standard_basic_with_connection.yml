@@ -87,7 +87,7 @@ jobs:
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
           bash bash_script.sh
-      - name: Run scripts against production workspace (scheduled runs only)
+      - name: Run scripts against production workspace
         if: github.event_name != 'schedule'
         working-directory: examples/flows/standard/basic-with-connection
         run: |
