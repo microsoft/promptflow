@@ -345,6 +345,7 @@ class FlowExecutor:
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
+                working_dir=working_dir,
                 connections=connections
             )
 
@@ -598,6 +599,7 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
+            working_dir=self._working_dir,
             connections=self._connections,
             run_id=run_id,
             flow_id=self._flow_id
@@ -773,6 +775,7 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
+            working_dir=self._working_dir,
             connections=self._connections,
             run_id=run_id,
             flow_id=self._flow_id,
@@ -887,7 +890,7 @@ class FlowExecutor:
 
         return outputs
 
-    def _submit_to_scheduler(self, context: DefaultToolInvoker, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
+    def _submit_to_scheduler(self, invoker: DefaultToolInvoker, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):
             raise UnexpectedError(
                 message_format=(
@@ -896,7 +899,7 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context).execute()
+        return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, invoker).execute()
 
     @staticmethod
     def apply_inputs_mapping(

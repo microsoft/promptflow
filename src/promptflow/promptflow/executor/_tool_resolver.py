@@ -109,7 +109,7 @@ class ToolResolver:
                 updated_inputs[k].value = create_image(v.value)
             elif value_type == ValueType.ASSISTANT_DEFINITION:
                 definition = self._load_json_from_file(v.value, k, node.name)
-                updated_inputs[k].value = AssistantDefinition(definition)
+                updated_inputs[k].value = AssistantDefinition.deserialize(definition)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)

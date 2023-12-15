@@ -33,10 +33,18 @@ class FilePath(str):
 class AssistantDefinition:
     """This class is used to hint a parameter is an assistant override."""
 
-    def __init__(self, value: dict):
-        self.model = value["module"]
-        self.instructions = value["instructions"]
-        self.tools = value["tools"]
+    def __init__(self, model: str, instructions: str, tools: list):
+        self.model = model
+        self.instructions =instructions
+        self.tools = tools
+
+    @staticmethod
+    def deserialize(data: dict) -> "AssistantDefinition":
+        return AssistantDefinition(
+            model=data.get("module"),
+            instructions=data.get("instructions"),
+            tools=data.get("tools")
+        )
 
     def serialize(self):
         return {

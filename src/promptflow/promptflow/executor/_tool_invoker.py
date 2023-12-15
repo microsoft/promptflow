@@ -41,6 +41,7 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         name,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
+        working_dir: Optional[Path] = None,
         connections: Optional[dict] = None,
         run_id=None,
         flow_id=None,
@@ -50,6 +51,7 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         self._name = name
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
+        self._working_dir = working_dir
         self._connections = connections or {}
         self._run_id = run_id or str(uuid.uuid4())
         self._flow_id = flow_id or self._run_id
@@ -63,13 +65,14 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         name,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
+        working_dir: Optional[Path] = None,
         connections: Optional[dict] = None,
         run_id=None,
         flow_id=None,
         line_number=None,
         variant_id=None
     ):
-        invoker = cls(name, run_tracker, cache_manager, connections, run_id, flow_id, line_number, variant_id)
+        invoker = cls(name, run_tracker, cache_manager, working_dir, connections, run_id, flow_id, line_number, variant_id)
         active_invoker = cls.active_instance()
         if active_invoker:
             active_invoker._deactivate_in_context()
@@ -92,7 +95,7 @@ class DefaultToolInvoker(ThreadLocalSingleton):
                 inputs=updated_inputs,
                 source=ToolSource.deserialize(tool["source"])
             )
-            tool_resolver = ToolResolver(working_dir=Path(os.getcwd()), connections=invoker._connections)
+            tool_resolver = ToolResolver(working_dir=invoker._working_dir, connections=invoker._connections)
             resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
             if resolved_tool.node.inputs:
                 inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
@@ -101,18 +104,20 @@ class DefaultToolInvoker(ThreadLocalSingleton):
             invoker._assistant_tools[resolved_tool.definition.function] = resolved_tool
         return invoker
 
+    def invoke_assistant_tool(self, func_name, kwargs):
+        return self._assistant_tools[func_name].callable(**kwargs)
+
     def to_openai_tools(self):
         openai_tools = []
         for name, tool in self._assistant_tools.items():
             preset_inputs = [name for name, _ in tool.node.inputs.items()]
-            description = self._get_tool_description(name, tool.definition.description, preset_inputs)
+            description = self._get_openai_tool_description(name, tool.definition.description, preset_inputs)
             openai_tools.append(description)
         return openai_tools
 
-    def invoke_assistant_tool(self, func_name, kwargs):
-        return self._assistant_tools[func_name].callable(**kwargs)
+    def _get_openai_tool_description(self, func_name: str, docstring: str, preset_inputs: Optional[list] = None):
+        to_openai_type = {"str": "string", "int": "number"}
 
-    def _get_tool_description(self, func_name: str, docstring: str, preset_inputs: Optional[list] = None):
         doctree = publish_doctree(docstring)
         params = {}
 
@@ -133,7 +138,7 @@ class DefaultToolInvoker(ThreadLocalSingleton):
                     continue
                 if param_name not in params:
                     params[param_name] = {}
-                params[param_name]["type"] = self._convert_type(field_body)
+                params[param_name]["type"] = to_openai_type[field_body] if field_body in to_openai_type else field_body
 
         return {
             "type": "function",
@@ -147,12 +152,6 @@ class DefaultToolInvoker(ThreadLocalSingleton):
                 }
             }
         }
-
-    def _convert_type(self, type: str):
-        if type == "str":
-            return "string"
-        if type == "int":
-            return "number"
 
     def _update_operation_context(self):
         flow_context_info = {"flow-id": self._flow_id, "root-run-id": self._run_id}
@@ -288,7 +287,7 @@ class DefaultToolInvoker(ThreadLocalSingleton):
             raise ToolExecutionError(node_name=node_name, module=module) from e
 
     def bypass_node(self, node: Node):
-        """Update teh bypassed node run info."""
+        """Update the bypassed node run info."""
         node_run_id = self._generate_node_run_id(node)
         flow_logger.info(f"Bypassing node {node.name}. node run id: {node_run_id}")
         parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
