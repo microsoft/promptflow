@@ -210,8 +210,7 @@ class BatchEngine:
         if isinstance(self._executor_proxy, PythonExecutorProxy):
             line_results.extend(self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id))
         else:
-            async with asyncio.Semaphore(DEFAULT_CONCURRENCY):
-                await self._exec_batch(line_results, batch_inputs, run_id)
+            await self._exec_batch(line_results, batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
 
         # persist outputs to output dir
@@ -235,13 +234,14 @@ class BatchEngine:
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
-        total_lines = len(batch_inputs)
-        completed_line = 0
+        semaphore = asyncio.Semaphore(DEFAULT_CONCURRENCY)
         pending = [
-            asyncio.create_task(self._executor_proxy.exec_line_async(line_inputs, i, run_id))
+            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
             for i, line_inputs in enumerate(batch_inputs)
         ]
 
+        total_lines = len(batch_inputs)
+        completed_line = 0
         while completed_line < total_lines:
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
             completed_line_results = [task.result() for task in done]
@@ -255,6 +255,16 @@ class BatchEngine:
                 last_log_count=completed_line,
             )
             completed_line = len(line_results)
+
+    async def _exec_line_under_semaphore(
+        self,
+        semaphore,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+    ):
+        async with semaphore:
+            return await self._executor_proxy.exec_line_async(inputs, index, run_id)
 
     async def _exec_aggregation(
         self,
