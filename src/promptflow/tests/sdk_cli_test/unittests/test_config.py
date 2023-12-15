@@ -18,8 +18,6 @@ def config():
 
 @pytest.mark.unittest
 class TestConfig:
-    def test_assert(self):
-        assert False, "Break Pipeline"
     def test_set_config(self, config):
         config.set_config("a.b.c.test_key", "test_value")
         assert config.get_config("a.b.c.test_key") == "test_value"
