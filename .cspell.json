@@ -30,7 +30,9 @@
     "**/flow.dag.yaml",
     "**/setup.py",
     "scripts/installer/windows/**",
-    "src/promptflow/promptflow/_sdk/_service/pfsvc.py"
+    "src/promptflow/promptflow/_sdk/_service/pfsvc.py",
+    "examples/flows/standard/rag-experiment-accelerator/data/**",
+    "examples/flows/standard/rag-experiment-accelerator/config.sample.json"
   ],
   "words": [
     "aoai",
