@@ -36,7 +36,8 @@ class DefaultToolInvoker(ThreadLocalSingleton):
     CONTEXT_VAR_NAME = "Invoker"
     context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
-    def __init__(self,
+    def __init__(
+        self,
         name,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
@@ -57,7 +58,8 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         self._assistant_tools = {}
 
     @classmethod
-    def start_invoker(cls,
+    def start_invoker(
+        cls,
         name,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
@@ -68,6 +70,9 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         variant_id=None
     ):
         invoker = cls(name, run_tracker, cache_manager, connections, run_id, flow_id, line_number, variant_id)
+        active_invoker = cls.active_instance()
+        if active_invoker:
+            active_invoker._deactivate_in_context()
         cls._activate_in_context(invoker)
         return invoker
 

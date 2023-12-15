@@ -20,7 +20,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolInvoker
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -43,7 +43,6 @@ from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_FLOW,
     FlowNodesScheduler,
 )
-from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
@@ -91,7 +90,6 @@ class FlowExecutor:
         working_dir=None,
         line_timeout_sec=LINE_TIMEOUT_SEC,
         flow_file=None,
-        tool_resolver: ToolResolver = None,
     ):
         """Initialize a FlowExecutor object.
 
@@ -129,7 +127,6 @@ class FlowExecutor:
         self._working_dir = working_dir
         self._line_timeout_sec = line_timeout_sec
         self._flow_file = flow_file
-        self._tool_resolver = tool_resolver
         try:
             self._tools_manager = ToolsManager(loaded_tools)
             tool_to_meta = {tool.name: tool for tool in flow.tools}
@@ -233,8 +230,6 @@ class FlowExecutor:
 
         cache_manager = AbstractCacheManager.init_from_env()
 
-        # ToolInvoker.activate(DefaultToolInvoker())
-
         return FlowExecutor(
             flow=flow,
             connections=connections,
@@ -245,7 +240,6 @@ class FlowExecutor:
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
             flow_file=flow_file,
-            tool_resolver=tool_resolver,
         )
 
     @classmethod
