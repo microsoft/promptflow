@@ -37,7 +37,6 @@ from promptflow._core.tools_manager import (
     builtins,
     collect_package_tools,
     gen_dynamic_list,
-    gen_tool_by_source,
     register_apis,
     register_builtins,
     register_connections,
