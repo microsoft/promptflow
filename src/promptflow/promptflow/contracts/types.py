@@ -35,7 +35,7 @@ class AssistantDefinition:
 
     def __init__(self, model: str, instructions: str, tools: list):
         self.model = model
-        self.instructions =instructions
+        self.instructions = instructions
         self.tools = tools
 
     @staticmethod

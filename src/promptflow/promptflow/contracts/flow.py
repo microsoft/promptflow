@@ -781,9 +781,9 @@ class Flow:
 
     def _get_connection_name_from_assistant_tools(self, tools: list):
         for tool in tools:
-            if tool["type"] != "promptflow_tool" or tool.get("inputs") is None:
+            if tool["type"] != "promptflow_tool" or tool.get("pre_assigned_inputs") is None:
                 continue
-            inputs = tool.get("inputs")
+            inputs = tool.get("pre_assigned_inputs")
             updated_inputs = {}
             for input_name, value in inputs.items():
                 updated_inputs[input_name] = InputAssignment.deserialize(value)

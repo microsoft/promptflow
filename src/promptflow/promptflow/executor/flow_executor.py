@@ -213,7 +213,7 @@ class FlowExecutor:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver.start_tool_resolver(working_dir, connections, package_tool_keys)
 
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
@@ -314,7 +314,7 @@ class FlowExecutor:
         inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver.start_tool_resolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
         # Prepare callable and real inputs here
@@ -345,8 +345,6 @@ class FlowExecutor:
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
-                working_dir=working_dir,
-                connections=connections
             )
 
             try:
@@ -599,8 +597,6 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
-            working_dir=self._working_dir,
-            connections=self._connections,
             run_id=run_id,
             flow_id=self._flow_id
         )
@@ -775,8 +771,6 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
-            working_dir=self._working_dir,
-            connections=self._connections,
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,

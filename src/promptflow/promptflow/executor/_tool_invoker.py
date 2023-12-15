@@ -6,7 +6,6 @@ import docutils.nodes
 import functools
 import inspect
 import logging
-import os
 import threading
 import time
 import uuid
@@ -41,8 +40,6 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         name,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
-        working_dir: Optional[Path] = None,
-        connections: Optional[dict] = None,
         run_id=None,
         flow_id=None,
         line_number=None,
@@ -51,8 +48,6 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         self._name = name
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
-        self._working_dir = working_dir
-        self._connections = connections or {}
         self._run_id = run_id or str(uuid.uuid4())
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
@@ -65,14 +60,12 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         name,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
-        working_dir: Optional[Path] = None,
-        connections: Optional[dict] = None,
         run_id=None,
         flow_id=None,
         line_number=None,
         variant_id=None
     ):
-        invoker = cls(name, run_tracker, cache_manager, working_dir, connections, run_id, flow_id, line_number, variant_id)
+        invoker = cls(name, run_tracker, cache_manager, run_id, flow_id, line_number, variant_id)
         active_invoker = cls.active_instance()
         if active_invoker:
             active_invoker._deactivate_in_context()
@@ -82,10 +75,11 @@ class DefaultToolInvoker(ThreadLocalSingleton):
     @classmethod
     def load_assistant_tools(cls, tools: list):
         invoker = cls.active_instance()
+        tool_resolver = ToolResolver.active_instance()
         for tool in tools:
             if tool["type"] != "promptflow_tool":
                 continue
-            inputs = tool.get("inputs", {})
+            inputs = tool.get("pre_assigned_inputs", {})
             updated_inputs = {}
             for input_name, value in inputs.items():
                 updated_inputs[input_name] = InputAssignment.deserialize(value)
@@ -95,7 +89,6 @@ class DefaultToolInvoker(ThreadLocalSingleton):
                 inputs=updated_inputs,
                 source=ToolSource.deserialize(tool["source"])
             )
-            tool_resolver = ToolResolver(working_dir=invoker._working_dir, connections=invoker._connections)
             resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
             if resolved_tool.node.inputs:
                 inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
