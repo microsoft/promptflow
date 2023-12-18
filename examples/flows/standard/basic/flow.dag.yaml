@@ -25,4 +25,4 @@ nodes:
   inputs:
     prompt: ${hello_prompt.output}
     deployment_name: text-davinci-003
-    max_tokens: "120"
+    max_tokens: 120
