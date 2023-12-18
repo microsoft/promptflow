@@ -8,23 +8,35 @@ on:
       - 'src/promptflow-tools/**'
       - '!README.*'
       - '!src/promptflow-tools/tests/**'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to run the workflow on'
+        required: true
+        default: 'main'
+        type: string
 
 jobs:
   continuous_delivery_release:
-    if: github.event_name == 'push'
-    uses: ./.github/workflows/wheel_distributing.yml
-    name: Continuous delivery release
-    with:
-      ReleaseType: "Test"
-      UploadAsLatest: "True"
-      SourceFolderName: "promptflow-tools"
-      ConfigsFolderPath: "scripts/distributing/configs"
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up for Release
+        if: github.event_name == 'push'
+        run: |
+          echo "ReleaseType=Release" >> $GITHUB_ENV
+          echo "UploadAsLatest=True" >> $GITHUB_ENV
 
-  deploy_runtime_with_updated_tools_package:
-    needs: continuous_delivery_release
-    uses: ./.github/workflows/tools_deploy_runtime.yml
-    name: Deploy runtime
-    with:
-      ToolsPackageVersion: ${{ needs.continuous_delivery_release.outputs.PackageVersion }}
-    secrets: inherit
+      - name: Set up for Test
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "ReleaseType=Test" >> $GITHUB_ENV
+          echo "UploadAsLatest=False" >> $GITHUB_ENV
+
+      - name: Build and publish wheel distribution
+        uses: ./.github/workflows/wheel_distributing.yml
+        with:
+          ReleaseType: ${{ env.ReleaseType }}
+          UploadAsLatest: ${{ env.UploadAsLatest }}
+          SourceFolderName: "promptflow-tools"
+          ConfigsFolderPath: "scripts/distributing/configs"
+        secrets: inherit
