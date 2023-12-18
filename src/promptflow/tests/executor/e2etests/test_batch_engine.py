@@ -163,7 +163,7 @@ class TestBatch:
             ),
         ],
     )
-    def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections, recording_injection):
+    def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         if "spawn" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: spawn")
         p = multiprocessing.Process(
@@ -194,7 +194,7 @@ class TestBatch:
             ),
         ],
     )
-    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections, recording_injection):
+    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         if "forkserver" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: forkserver")
         p = multiprocessing.Process(
@@ -261,7 +261,7 @@ class TestBatch:
             {"line_number": 6, "output": 7},
         ]
 
-    def test_batch_with_openai_metrics(self, dev_connections, recording_injection):
+    def test_batch_with_openai_metrics(self, dev_connections):
         inputs_mapping = {"url": "${data.url}"}
         batch_result, output_dir = submit_batch_run(
             SAMPLE_FLOW, inputs_mapping, connections=dev_connections, return_output_dir=True
