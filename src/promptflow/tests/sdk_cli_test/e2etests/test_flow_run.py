@@ -1065,3 +1065,20 @@ class TestFlowRun:
         assert metrics == {}
         pf.stream(run_name)
         pf.visualize([run_name])
+
+    def test_csharp_flow(self, pf):
+        # flow_path = "C:/Users/peiwengao/source/repos/HelloWorldFlow/bin/Debug/net6.0"
+        flow_path = "D:/PromptflowCS/src/PromptflowCSharp/Sample/Basic/bin/Debug/net6.0"
+        data_path = "D:/small_inputs.jsonl"
+
+        result = pf.run(
+            flow=flow_path,
+            data=data_path,
+            column_mapping={
+                "question": "${data.question}",
+            },
+        )
+        run = pf.runs.get(name=result.name)
+        assert run.status == "Completed", run.name
+        # no error when processing lines
+        assert "error" not in run._to_dict(), run.name
