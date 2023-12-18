@@ -25,7 +25,7 @@ from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
+from ..recording_utilities import is_live, is_replay
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -261,10 +261,10 @@ class TestFlowRun:
         subscription_id = pf.ml_client.subscription_id
         resource_group_name = pf.ml_client.resource_group_name
         workspace_name = pf.ml_client.workspace_name
-        # find this miss sanitization during test, use this as a workaround
-        miss_sanitization = "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5" if tenant_id else workspace_name
-        if not tenant_id:
-            tenant_id = "00000000-0000-0000-0000-000000000000"
+        # find this miss sanitization during test
+        # workspace id is kind of special, so use this as a workaround
+        # if we run into similar issue, we will resolve it with fixture
+        miss_sanitization = "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5" if not is_replay() else workspace_name
 
         assert run_dict == {
             "name": "classification_accuracy_eval_default_20230808_153241_422491",
