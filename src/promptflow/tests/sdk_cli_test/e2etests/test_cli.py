@@ -1719,3 +1719,5 @@ class TestCli:
             "set",
             "user_agent=",
         )
+        context = OperationContext().get_instance()
+        context.user_agent = ""

@@ -7,6 +7,8 @@ import pytest
 
 from promptflow._sdk._configuration import Configuration, InvalidConfigValue
 from promptflow._sdk._constants import FLOW_DIRECTORY_MACRO_IN_CONFIG
+from promptflow._sdk._utils import ClientUserAgentUtil
+from promptflow._utils.utils import parse_ua_to_dict
 
 CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
 
@@ -50,3 +52,17 @@ class TestConfig:
         with pytest.raises(InvalidConfigValue) as e:
             Configuration(overrides={Configuration.RUN_OUTPUT_PATH: FLOW_DIRECTORY_MACRO_IN_CONFIG})
         assert expected_error_message in str(e)
+
+    def test_ua_set_load(self, config: Configuration) -> None:
+        config.set_config(key=Configuration.USER_AGENT, value="test/1.0.0")
+        user_agent = config.get_user_agent()
+        assert user_agent == "PFCustomer_test/1.0.0"
+        # load empty ua won't break
+        config.set_config(key=Configuration.USER_AGENT, value="")
+        user_agent = config.get_user_agent()
+        assert user_agent == ""
+        # empty ua won't add to context
+        ClientUserAgentUtil.update_user_agent_from_config()
+        user_agent = ClientUserAgentUtil.get_user_agent()
+        ua_dict = parse_ua_to_dict(user_agent)
+        assert dict(ua_dict.keys()) == {}
