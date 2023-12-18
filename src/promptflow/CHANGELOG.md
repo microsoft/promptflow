@@ -1,6 +1,11 @@
 # Release History
 
-## 1.2.0 (upcoming)
+## 1.3.0 (Upcoming)
+
+### Features Added
+- [SDK/CLI] Support `pfazure run cancel` to cancel a run on Azure AI.
+
+## 1.2.0 (2023.12.14)
 
 ### Features Added
 - [SDK/CLI] Support `pfazure run download` to download run data from Azure AI.
