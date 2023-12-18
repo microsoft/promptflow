@@ -22,7 +22,7 @@ from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
-from promptflow._sdk._utils import ClientUserAgentUtil
+from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -1702,3 +1702,20 @@ class TestCli:
             pass
         _, err = capfd.readouterr()
         assert "invalid choice" in err
+
+    def test_config_set_user_agent(self) -> None:
+        run_pf_command(
+            "config",
+            "set",
+            "user_agent=test/1.0.0",
+        )
+        user_agent = setup_user_agent_to_operation_context(None)
+        ua_dict = parse_ua_to_dict(user_agent)
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "PFCustomer_test"}
+
+        # clear user agent
+        run_pf_command(
+            "config",
+            "set",
+            "user_agent=",
+        )
