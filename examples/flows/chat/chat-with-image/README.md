@@ -27,10 +27,10 @@ Go to "Prompt flow" "Connections" tab. Click on "Create" button, and create an "
 pf connection create --file ../../../connections/openai.yml --set api_key=<your_api_key>
 ```
 
-Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `openai_connection`.
+Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
 ```bash
 # show registered connection 
-pf connection show --name openai_connection
+pf connection show --name open_ai_connection
 ```
 
 ### 2 Start chatting
