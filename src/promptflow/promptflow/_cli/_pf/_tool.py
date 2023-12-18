@@ -8,7 +8,7 @@ import re
 import shutil
 from pathlib import Path
 
-from promptflow._cli._params import add_param_set_tool_extra_info, base_params
+from promptflow._cli._params import add_param_set_tool_extra_info, add_param_source, base_params
 from promptflow._cli._pf._init_entry_generators import (
     InitGenerator,
     ManifestGenerator,
@@ -36,6 +36,7 @@ def add_tool_parser(subparsers):
     subparsers = tool_parser.add_subparsers()
     add_parser_init_tool(subparsers)
     add_parser_list_tool(subparsers)
+    add_parser_validate_tool(subparsers)
     tool_parser.set_defaults(action="tool")
 
 
@@ -98,11 +99,36 @@ pf tool list --flow flow-path
     )
 
 
+def add_parser_validate_tool(subparsers):
+    """Add tool list parser to the pf tool subparsers."""
+    epilog = """
+Examples:
+
+# Validate package tool by path:
+pf tool validate --source <path_to_tool_package>
+# Validate a tool by script path:
+pf tool validate --source <path_to_tool_script>
+"""  # noqa: E501
+    return activate_action(
+        name="validate",
+        description="Validate tool.",
+        epilog=epilog,
+        add_params=[
+            add_param_source,
+        ],
+        subparsers=subparsers,
+        help_message="Validate tool. Will raise error if it is not valid.",
+        action_param_name="sub_action",
+    )
+
+
 def dispatch_tool_commands(args: argparse.Namespace):
     if args.sub_action == "init":
         init_tool(args)
     elif args.sub_action == "list":
         list_tool(args)
+    elif args.sub_action == "validate":
+        validate_tool(args)
 
 
 @exception_handler("Tool init")
@@ -151,3 +177,8 @@ def list_tool(args):
     pf_client = PFClient()
     package_tools = pf_client._tools.list(args.flow)
     print(json.dumps(package_tools, indent=4))
+
+
+@exception_handler("Tool validate")
+def validate_tool(args):
+    pass

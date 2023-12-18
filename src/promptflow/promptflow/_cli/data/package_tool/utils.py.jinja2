@@ -6,7 +6,7 @@ from promptflow import PFClient
 package_name = "{{ package_name }}"
 
 
-def list_package_tools():
+def list_package_tools(raise_error=False):
     """
     List the meta of all tools in the package.
     The key of meta dict is the module name of tools and value is the meta data of the tool.
@@ -25,5 +25,5 @@ def list_package_tools():
 
             # Load the module's code
             spec.loader.exec_module(module)
-            tools.update(pf_client._tools.generate_tool_meta(module))
+            tools.update(pf_client._tools.generate_tool_meta(module, raise_error=raise_error))
     return tools

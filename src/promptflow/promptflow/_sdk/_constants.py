@@ -83,7 +83,7 @@ SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
 ICON_DARK = "icon_dark"
 ICON_LIGHT = "icon_light"
 ICON = "icon"
-
+TOOL_SCHEMA = Path(__file__).parent / "data" / "tool.schema.json"
 
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
