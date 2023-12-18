@@ -337,17 +337,17 @@ class TestFlowRun:
         run = pf.runs.stream(run=created_batch_run_without_llm.name)
         assert run.status == RunStatus.COMPLETED
 
-    def test_stream_failed_run_logs(self, pf, capfd: pytest.CaptureFixture):
+    def test_stream_failed_run_logs(self, pf: PFClient, created_failed_run: Run, capfd: pytest.CaptureFixture):
         # (default) raise_on_error=True
         with pytest.raises(InvalidRunStatusError):
-            pf.stream(run=FAILED_RUN_NAME_EASTUS)
+            pf.stream(run=created_failed_run.name)
         # raise_on_error=False
-        pf.stream(run=FAILED_RUN_NAME_EASTUS, raise_on_error=False)
+        pf.stream(run=created_failed_run.name, raise_on_error=False)
         out, _ = capfd.readouterr()
-        assert "Input 'question' in line 0 is not provided for flow 'Simple_mock_answer'." in out
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations: ${data.key}" in out
 
-    def test_failed_run_to_dict_exclude(self, pf):
-        failed_run = pf.runs.get(run=FAILED_RUN_NAME_EASTUS)
+    def test_failed_run_to_dict_exclude(self, pf: PFClient, created_failed_run: Run):
+        failed_run = pf.runs.get(run=created_failed_run.name)
         # Azure run object reference a dict, use deepcopy to avoid unexpected modification
         default = copy.deepcopy(failed_run._to_dict())
         exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)

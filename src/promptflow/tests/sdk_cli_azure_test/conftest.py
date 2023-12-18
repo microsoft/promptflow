@@ -309,6 +309,23 @@ def created_eval_run_without_llm(
     yield run
 
 
+@pytest.fixture
+def created_failed_run(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
+    """Create a failed run."""
+    name = randstr("failed_run_name")
+    run = pf.run(
+        flow=f"{FLOWS_DIR}/partial_fail",
+        data=f"{DATAS_DIR}/webClassification3.jsonl",
+        runtime=runtime,
+        name=name,
+        display_name="sdk-cli-test-fixture-failed-run",
+    )
+    # set raise_on_error to False to promise returning something
+    run = pf.runs.stream(run=name, raise_on_error=False)
+    assert run.status == RunStatus.FAILED
+    yield run
+
+
 @pytest.fixture(autouse=not is_live())
 def mock_vcrpy_for_httpx() -> None:
     # there is a known issue in vcrpy handling httpx response: https://github.com/kevin1024/vcrpy/pull/591
