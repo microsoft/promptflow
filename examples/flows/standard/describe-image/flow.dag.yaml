@@ -20,7 +20,7 @@ nodes:
     tool: promptflow.tools.openai_gpt4v.OpenAI.chat
     path: question_on_image.jinja2
   inputs:
-    connection: openai-connection
+    connection: openai_connection
     question: ${inputs.question}
     test_image: ${passthrough.output}
     model: gpt-4-vision-preview

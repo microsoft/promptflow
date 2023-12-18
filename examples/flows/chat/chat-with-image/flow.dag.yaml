@@ -23,7 +23,7 @@ nodes:
     tool: promptflow.tools.openai_gpt4v.OpenAI.chat
     path: chat.jinja2
   inputs:
-    connection: openai-connection
+    connection: openai_connection
     model: gpt-4-vision-preview
     max_tokens: 200
     chat_history: ${inputs.chat_history}
