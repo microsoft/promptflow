@@ -38,7 +38,7 @@ RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspace
 @pytest.fixture
 def user_object_id() -> str:
     if is_replay():
-        return ""
+        return SanitizedValues.USER_OBJECT_ID
     credential = get_cred()
     access_token = credential.get_token("https://management.azure.com/.default")
     decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
@@ -48,7 +48,7 @@ def user_object_id() -> str:
 @pytest.fixture
 def tenant_id() -> str:
     if is_replay():
-        return ""
+        return SanitizedValues.TENANT_ID
     credential = get_cred()
     access_token = credential.get_token("https://management.azure.com/.default")
     decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
