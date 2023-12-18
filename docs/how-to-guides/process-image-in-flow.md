@@ -40,7 +40,7 @@ Please note that `path` representation is not supported in Deployment scenario.
 ## Batch Input data
 Batch input data containing image can be of 2 formats:
 1. The same jsonl format of regular batch input, except that some column may be seriliazed image data or composite data type (dict/list) containing images. The serialized images can only be Url or Base64. E.g.
-    ```jsonl
+    ```json
     {"question": "How many colors are there in the image?", "input_image": {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/logo-ms-social.png"}}
     {"question": "What's this image about?", "input_image": {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/404.png"}}
     ```
@@ -52,7 +52,7 @@ Batch input data containing image can be of 2 formats:
     |----image2.png
     ```
     Content of `input.jsonl`
-    ```jsonl
+    ```json
     {"question": "How many colors are there in the image?", "input_image": {"data:image/png;path": "image1.png"}}
     {"question": "What's this image about?", "input_image": {"data:image/png;path": "image2.png"}}
     ```
