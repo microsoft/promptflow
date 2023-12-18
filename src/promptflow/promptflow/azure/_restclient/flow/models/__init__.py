@@ -16,6 +16,7 @@ try:
     from ._models_py3 import AMLComputeConfiguration
     from ._models_py3 import APCloudConfiguration
     from ._models_py3 import Activate
+    from ._models_py3 import AdditionalErrorInfo
     from ._models_py3 import AdhocTriggerScheduledCommandJobRequest
     from ._models_py3 import AdhocTriggerScheduledSparkJobRequest
     from ._models_py3 import AetherAPCloudConfiguration
@@ -192,6 +193,7 @@ try:
     from ._models_py3 import BatchGetComponentRequest
     from ._models_py3 import Binding
     from ._models_py3 import BulkTestDto
+    from ._models_py3 import CloudError
     from ._models_py3 import CloudPrioritySetting
     from ._models_py3 import CloudSettings
     from ._models_py3 import ColumnTransformer
@@ -213,11 +215,17 @@ try:
     from ._models_py3 import ComponentValidationResponse
     from ._models_py3 import Compute
     from ._models_py3 import ComputeConfiguration
+    from ._models_py3 import ComputeContract
+    from ._models_py3 import ComputeIdentityContract
     from ._models_py3 import ComputeIdentityDto
     from ._models_py3 import ComputeInfo
+    from ._models_py3 import ComputeProperties
+    from ._models_py3 import ComputeRPUserAssignedIdentity
     from ._models_py3 import ComputeRequest
     from ._models_py3 import ComputeSetting
+    from ._models_py3 import ComputeStatus
     from ._models_py3 import ComputeStatusDetail
+    from ._models_py3 import ComputeWarning
     from ._models_py3 import ConnectionConfigSpec
     from ._models_py3 import ConnectionDto
     from ._models_py3 import ConnectionEntity
@@ -345,6 +353,8 @@ try:
     from ._models_py3 import FlowSessionDto
     from ._models_py3 import FlowSnapshot
     from ._models_py3 import FlowSubmitRunSettings
+    from ._models_py3 import FlowTestInfo
+    from ._models_py3 import FlowTestStorageSetting
     from ._models_py3 import FlowToolSettingParameter
     from ._models_py3 import FlowToolsDto
     from ._models_py3 import FlowVariantNode
@@ -354,6 +364,8 @@ try:
     from ._models_py3 import GeneratePipelineComponentRequest
     from ._models_py3 import GenerateToolMetaRequest
     from ._models_py3 import GetDynamicListRequest
+    from ._models_py3 import GetRunDataResultDto
+    from ._models_py3 import GetTrainingSessionDto
     from ._models_py3 import GlobalJobDispatcherConfiguration
     from ._models_py3 import GlobsOptions
     from ._models_py3 import GraphAnnotationNode
@@ -409,6 +421,7 @@ try:
     from ._models_py3 import LinkedADBWorkspaceMetadata
     from ._models_py3 import LinkedPipelineInfo
     from ._models_py3 import LoadFlowAsComponentRequest
+    from ._models_py3 import LogRunTerminatedEventDto
     from ._models_py3 import LongRunningOperationUriResponse
     from ._models_py3 import LongRunningUpdateRegistryComponentRequest
     from ._models_py3 import ManagedServiceIdentity
@@ -448,6 +461,10 @@ try:
     from ._models_py3 import Nodes
     from ._models_py3 import NoteBookTaskDto
     from ._models_py3 import NotificationSetting
+    from ._models_py3 import ODataError
+    from ._models_py3 import ODataErrorDetail
+    from ._models_py3 import ODataErrorResponse
+    from ._models_py3 import ODataInnerError
     from ._models_py3 import OutputData
     from ._models_py3 import OutputDataBinding
     from ._models_py3 import OutputDatasetLineage
@@ -568,6 +585,9 @@ try:
     from ._models_py3 import SecretConfiguration
     from ._models_py3 import SegmentedResult1
     from ._models_py3 import ServiceLogRequest
+    from ._models_py3 import SessionApplication
+    from ._models_py3 import SessionApplicationRunCommandResult
+    from ._models_py3 import SessionProperties
     from ._models_py3 import SetupFlowSessionRequest
     from ._models_py3 import SharingScope
     from ._models_py3 import Snapshot
@@ -584,6 +604,8 @@ try:
     from ._models_py3 import SparkSubmitTaskDto
     from ._models_py3 import SqlDataPath
     from ._models_py3 import StackEnsembleSettings
+    from ._models_py3 import StandbyPoolProperties
+    from ._models_py3 import StandbyPoolResourceStatus
     from ._models_py3 import StartRunResult
     from ._models_py3 import StepRunProfile
     from ._models_py3 import StorageInfo
@@ -606,6 +628,7 @@ try:
     from ._models_py3 import SubPipelinesInfo
     from ._models_py3 import SubStatusPeriod
     from ._models_py3 import SubmitBulkRunRequest
+    from ._models_py3 import SubmitBulkRunResponse
     from ._models_py3 import SubmitFlowRequest
     from ._models_py3 import SubmitPipelineRunRequest
     from ._models_py3 import SweepEarlyTerminationPolicy
@@ -678,6 +701,7 @@ except (SyntaxError, ImportError):
     from ._models import AMLComputeConfiguration  # type: ignore
     from ._models import APCloudConfiguration  # type: ignore
     from ._models import Activate  # type: ignore
+    from ._models import AdditionalErrorInfo  # type: ignore
     from ._models import AdhocTriggerScheduledCommandJobRequest  # type: ignore
     from ._models import AdhocTriggerScheduledSparkJobRequest  # type: ignore
     from ._models import AetherAPCloudConfiguration  # type: ignore
@@ -854,6 +878,7 @@ except (SyntaxError, ImportError):
     from ._models import BatchGetComponentRequest  # type: ignore
     from ._models import Binding  # type: ignore
     from ._models import BulkTestDto  # type: ignore
+    from ._models import CloudError  # type: ignore
     from ._models import CloudPrioritySetting  # type: ignore
     from ._models import CloudSettings  # type: ignore
     from ._models import ColumnTransformer  # type: ignore
@@ -875,11 +900,17 @@ except (SyntaxError, ImportError):
     from ._models import ComponentValidationResponse  # type: ignore
     from ._models import Compute  # type: ignore
     from ._models import ComputeConfiguration  # type: ignore
+    from ._models import ComputeContract  # type: ignore
+    from ._models import ComputeIdentityContract  # type: ignore
     from ._models import ComputeIdentityDto  # type: ignore
     from ._models import ComputeInfo  # type: ignore
+    from ._models import ComputeProperties  # type: ignore
+    from ._models import ComputeRPUserAssignedIdentity  # type: ignore
     from ._models import ComputeRequest  # type: ignore
     from ._models import ComputeSetting  # type: ignore
+    from ._models import ComputeStatus  # type: ignore
     from ._models import ComputeStatusDetail  # type: ignore
+    from ._models import ComputeWarning  # type: ignore
     from ._models import ConnectionConfigSpec  # type: ignore
     from ._models import ConnectionDto  # type: ignore
     from ._models import ConnectionEntity  # type: ignore
@@ -1007,6 +1038,8 @@ except (SyntaxError, ImportError):
     from ._models import FlowSessionDto  # type: ignore
     from ._models import FlowSnapshot  # type: ignore
     from ._models import FlowSubmitRunSettings  # type: ignore
+    from ._models import FlowTestInfo  # type: ignore
+    from ._models import FlowTestStorageSetting  # type: ignore
     from ._models import FlowToolSettingParameter  # type: ignore
     from ._models import FlowToolsDto  # type: ignore
     from ._models import FlowVariantNode  # type: ignore
@@ -1016,6 +1049,8 @@ except (SyntaxError, ImportError):
     from ._models import GeneratePipelineComponentRequest  # type: ignore
     from ._models import GenerateToolMetaRequest  # type: ignore
     from ._models import GetDynamicListRequest  # type: ignore
+    from ._models import GetRunDataResultDto  # type: ignore
+    from ._models import GetTrainingSessionDto  # type: ignore
     from ._models import GlobalJobDispatcherConfiguration  # type: ignore
     from ._models import GlobsOptions  # type: ignore
     from ._models import GraphAnnotationNode  # type: ignore
@@ -1071,6 +1106,7 @@ except (SyntaxError, ImportError):
     from ._models import LinkedADBWorkspaceMetadata  # type: ignore
     from ._models import LinkedPipelineInfo  # type: ignore
     from ._models import LoadFlowAsComponentRequest  # type: ignore
+    from ._models import LogRunTerminatedEventDto  # type: ignore
     from ._models import LongRunningOperationUriResponse  # type: ignore
     from ._models import LongRunningUpdateRegistryComponentRequest  # type: ignore
     from ._models import ManagedServiceIdentity  # type: ignore
@@ -1110,6 +1146,10 @@ except (SyntaxError, ImportError):
     from ._models import Nodes  # type: ignore
     from ._models import NoteBookTaskDto  # type: ignore
     from ._models import NotificationSetting  # type: ignore
+    from ._models import ODataError  # type: ignore
+    from ._models import ODataErrorDetail  # type: ignore
+    from ._models import ODataErrorResponse  # type: ignore
+    from ._models import ODataInnerError  # type: ignore
     from ._models import OutputData  # type: ignore
     from ._models import OutputDataBinding  # type: ignore
     from ._models import OutputDatasetLineage  # type: ignore
@@ -1230,6 +1270,9 @@ except (SyntaxError, ImportError):
     from ._models import SecretConfiguration  # type: ignore
     from ._models import SegmentedResult1  # type: ignore
     from ._models import ServiceLogRequest  # type: ignore
+    from ._models import SessionApplication  # type: ignore
+    from ._models import SessionApplicationRunCommandResult  # type: ignore
+    from ._models import SessionProperties  # type: ignore
     from ._models import SetupFlowSessionRequest  # type: ignore
     from ._models import SharingScope  # type: ignore
     from ._models import Snapshot  # type: ignore
@@ -1246,6 +1289,8 @@ except (SyntaxError, ImportError):
     from ._models import SparkSubmitTaskDto  # type: ignore
     from ._models import SqlDataPath  # type: ignore
     from ._models import StackEnsembleSettings  # type: ignore
+    from ._models import StandbyPoolProperties  # type: ignore
+    from ._models import StandbyPoolResourceStatus  # type: ignore
     from ._models import StartRunResult  # type: ignore
     from ._models import StepRunProfile  # type: ignore
     from ._models import StorageInfo  # type: ignore
@@ -1268,6 +1313,7 @@ except (SyntaxError, ImportError):
     from ._models import SubPipelinesInfo  # type: ignore
     from ._models import SubStatusPeriod  # type: ignore
     from ._models import SubmitBulkRunRequest  # type: ignore
+    from ._models import SubmitBulkRunResponse  # type: ignore
     from ._models import SubmitFlowRequest  # type: ignore
     from ._models import SubmitPipelineRunRequest  # type: ignore
     from ._models import SweepEarlyTerminationPolicy  # type: ignore
@@ -1426,13 +1472,16 @@ from ._azure_machine_learning_designer_service_client_enums import (
     EndpointAuthMode,
     EntityKind,
     EntityStatus,
+    ErrorHandlingMode,
     ExecutionPhase,
     FeaturizationMode,
     FlowFeatureStateEnum,
+    FlowLanguage,
     FlowPatchOperationType,
     FlowRunMode,
     FlowRunTypeEnum,
     FlowRuntimeSubmissionApiVersion,
+    FlowTestMode,
     FlowType,
     ForecastHorizonMode,
     Framework,
@@ -1483,6 +1532,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     PipelineType,
     PortAction,
     PrimaryMetrics,
+    ProvisioningState,
     RealTimeEndpointInternalStepCode,
     RealTimeEndpointOpCode,
     RealTimeEndpointOpStatusCode,
@@ -1502,7 +1552,9 @@ from ._azure_machine_learning_designer_service_client_enums import (
     ScriptType,
     SeasonalityMode,
     Section,
+    SessionSetupModeEnum,
     SetupFlowSessionAction,
+    SeverityLevel,
     ShortSeriesHandlingConfiguration,
     StackMetaLearnerType,
     StorageAuthType,
@@ -1517,6 +1569,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     TaskStatusCode,
     TaskType,
     ToolFuncCallScenario,
+    ToolState,
     ToolType,
     TrainingOutputType,
     TriggerOperationType,
@@ -1548,6 +1601,7 @@ __all__ = [
     'AMLComputeConfiguration',
     'APCloudConfiguration',
     'Activate',
+    'AdditionalErrorInfo',
     'AdhocTriggerScheduledCommandJobRequest',
     'AdhocTriggerScheduledSparkJobRequest',
     'AetherAPCloudConfiguration',
@@ -1724,6 +1778,7 @@ __all__ = [
     'BatchGetComponentRequest',
     'Binding',
     'BulkTestDto',
+    'CloudError',
     'CloudPrioritySetting',
     'CloudSettings',
     'ColumnTransformer',
@@ -1745,11 +1800,17 @@ __all__ = [
     'ComponentValidationResponse',
     'Compute',
     'ComputeConfiguration',
+    'ComputeContract',
+    'ComputeIdentityContract',
     'ComputeIdentityDto',
     'ComputeInfo',
+    'ComputeProperties',
+    'ComputeRPUserAssignedIdentity',
     'ComputeRequest',
     'ComputeSetting',
+    'ComputeStatus',
     'ComputeStatusDetail',
+    'ComputeWarning',
     'ConnectionConfigSpec',
     'ConnectionDto',
     'ConnectionEntity',
@@ -1877,6 +1938,8 @@ __all__ = [
     'FlowSessionDto',
     'FlowSnapshot',
     'FlowSubmitRunSettings',
+    'FlowTestInfo',
+    'FlowTestStorageSetting',
     'FlowToolSettingParameter',
     'FlowToolsDto',
     'FlowVariantNode',
@@ -1886,6 +1949,8 @@ __all__ = [
     'GeneratePipelineComponentRequest',
     'GenerateToolMetaRequest',
     'GetDynamicListRequest',
+    'GetRunDataResultDto',
+    'GetTrainingSessionDto',
     'GlobalJobDispatcherConfiguration',
     'GlobsOptions',
     'GraphAnnotationNode',
@@ -1941,6 +2006,7 @@ __all__ = [
     'LinkedADBWorkspaceMetadata',
     'LinkedPipelineInfo',
     'LoadFlowAsComponentRequest',
+    'LogRunTerminatedEventDto',
     'LongRunningOperationUriResponse',
     'LongRunningUpdateRegistryComponentRequest',
     'ManagedServiceIdentity',
@@ -1980,6 +2046,10 @@ __all__ = [
     'Nodes',
     'NoteBookTaskDto',
     'NotificationSetting',
+    'ODataError',
+    'ODataErrorDetail',
+    'ODataErrorResponse',
+    'ODataInnerError',
     'OutputData',
     'OutputDataBinding',
     'OutputDatasetLineage',
@@ -2100,6 +2170,9 @@ __all__ = [
     'SecretConfiguration',
     'SegmentedResult1',
     'ServiceLogRequest',
+    'SessionApplication',
+    'SessionApplicationRunCommandResult',
+    'SessionProperties',
     'SetupFlowSessionRequest',
     'SharingScope',
     'Snapshot',
@@ -2116,6 +2189,8 @@ __all__ = [
     'SparkSubmitTaskDto',
     'SqlDataPath',
     'StackEnsembleSettings',
+    'StandbyPoolProperties',
+    'StandbyPoolResourceStatus',
     'StartRunResult',
     'StepRunProfile',
     'StorageInfo',
@@ -2138,6 +2213,7 @@ __all__ = [
     'SubPipelinesInfo',
     'SubStatusPeriod',
     'SubmitBulkRunRequest',
+    'SubmitBulkRunResponse',
     'SubmitFlowRequest',
     'SubmitPipelineRunRequest',
     'SweepEarlyTerminationPolicy',
@@ -2294,13 +2370,16 @@ __all__ = [
     'EndpointAuthMode',
     'EntityKind',
     'EntityStatus',
+    'ErrorHandlingMode',
     'ExecutionPhase',
     'FeaturizationMode',
     'FlowFeatureStateEnum',
+    'FlowLanguage',
     'FlowPatchOperationType',
     'FlowRunMode',
     'FlowRunTypeEnum',
     'FlowRuntimeSubmissionApiVersion',
+    'FlowTestMode',
     'FlowType',
     'ForecastHorizonMode',
     'Framework',
@@ -2351,6 +2430,7 @@ __all__ = [
     'PipelineType',
     'PortAction',
     'PrimaryMetrics',
+    'ProvisioningState',
     'RealTimeEndpointInternalStepCode',
     'RealTimeEndpointOpCode',
     'RealTimeEndpointOpStatusCode',
@@ -2370,7 +2450,9 @@ __all__ = [
     'ScriptType',
     'SeasonalityMode',
     'Section',
+    'SessionSetupModeEnum',
     'SetupFlowSessionAction',
+    'SeverityLevel',
     'ShortSeriesHandlingConfiguration',
     'StackMetaLearnerType',
     'StorageAuthType',
@@ -2385,6 +2467,7 @@ __all__ = [
     'TaskStatusCode',
     'TaskType',
     'ToolFuncCallScenario',
+    'ToolState',
     'ToolType',
     'TrainingOutputType',
     'TriggerOperationType',
