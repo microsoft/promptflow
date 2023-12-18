@@ -1,4 +1,3 @@
-import json
 import multiprocessing
 import os
 import uuid
@@ -203,8 +202,6 @@ class TestLineExecutionProcessPool:
             assert len(result_list) == nlines
             for i, line_result in enumerate(result_list):
                 assert isinstance(line_result, LineResult)
-                if line_result.run_info.status != Status.Completed:
-                    raise Exception(f"chengbin: {json.dumps(line_result.run_info.error)}")
                 assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
     @pytest.mark.parametrize(
