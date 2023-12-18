@@ -78,7 +78,7 @@ setup(
     extras_require={
         "azure": [
             "azure-core>=1.26.4,<2.0.0",
-            "azure-storage-blob>=12.13.0,<13.0.0",
+            "azure-storage-blob[aio]>=12.13.0,<13.0.0",  # add [aio] for async run download feature
             "azure-identity>=1.12.0,<2.0.0",
             "azure-ai-ml>=1.11.0,<2.0.0",
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK

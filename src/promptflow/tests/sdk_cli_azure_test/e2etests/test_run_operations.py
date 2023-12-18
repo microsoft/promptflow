@@ -8,13 +8,14 @@ import shutil
 from logging import Logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import sleep
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
 import pydash
 import pytest
 
-from promptflow._sdk._constants import RunStatus
+from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
@@ -417,6 +418,24 @@ class TestFlowRun:
         assert run.description == new_description
         assert run.tags["test_tag"] == test_mark
 
+    def test_cancel_run(self, pf, runtime: str, randstr: Callable[[str], str]):
+        # create a run
+        run_name = randstr("name")
+        pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"url": "${data.url}"},
+            variant="${summarize_text_content.variant_0}",
+            runtime=runtime,
+            name=run_name,
+        )
+
+        pf.runs.cancel(run=run_name)
+        sleep(3)
+        run = pf.runs.get(run=run_name)
+        # the run status might still be cancel requested, but it should be canceled eventually
+        assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
+
     @pytest.mark.skipif(
         condition=not is_live(), reason="request uri contains temp folder name, need some time to sanitize."
     )
@@ -795,6 +814,21 @@ class TestFlowRun:
             workspace=mock_workspace, credential=MagicMock(), operation_scope=MagicMock()
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
+
+    def test_download_run(self, pf):
+        run = "c619f648-c809-4545-9f94-f67b0a680706"
+
+        expected_files = [
+            DownloadedRun.RUN_METADATA_FILE_NAME,
+            DownloadedRun.LOGS_FILE_NAME,
+            DownloadedRun.METRICS_FILE_NAME,
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
+        ]
+
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, run, file).exists()
 
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError

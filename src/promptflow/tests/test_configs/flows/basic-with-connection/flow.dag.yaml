@@ -15,7 +15,7 @@ nodes:
     path: hello.jinja2
 - inputs:
     prompt: ${hello_prompt.output}
-    deployment_name: text-davinci-003
+    deployment_name: gpt-35-turbo
     max_tokens: "120"
     connection: azure_open_ai_connection
   name: echo_my_prompt

@@ -18,6 +18,7 @@ DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_DIR_NAME = ".promptflow"
+PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
 HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
 SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_FILE = "pfs.port"
@@ -260,6 +261,7 @@ class RunInfoSources(str, Enum):
     INDEX_SERVICE = "index_service"
     RUN_HISTORY = "run_history"
     MT_SERVICE = "mt_service"
+    EXISTING_RUN = "existing_run"
 
 
 class ConfigValueType(str, Enum):
@@ -280,6 +282,11 @@ class ConnectionType(str, Enum):
     FORM_RECOGNIZER = "FormRecognizer"
     WEAVIATE = "Weaviate"
     CUSTOM = "Custom"
+
+
+ALL_CONNECTION_TYPES = set(
+    map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
+)
 
 
 class ConnectionFields(str, Enum):
@@ -339,3 +346,10 @@ class AzureFlowSource:
     LOCAL = "local"
     PF_SERVICE = "pf_service"
     INDEX = "index"
+
+
+class DownloadedRun:
+    SNAPSHOT_FOLDER = LocalStorageFilenames.SNAPSHOT_FOLDER
+    METRICS_FILE_NAME = LocalStorageFilenames.METRICS
+    LOGS_FILE_NAME = LocalStorageFilenames.LOG
+    RUN_METADATA_FILE_NAME = "run_metadata.json"

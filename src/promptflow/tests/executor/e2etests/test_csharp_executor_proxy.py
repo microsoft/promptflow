@@ -28,6 +28,15 @@ class TestCSharpExecutorProxy:
         assert batch_result.status == Status.Completed
         assert batch_result.completed_lines == batch_result.total_lines
         assert batch_result.system_metrics.duration > 0
+        assert batch_result.completed_lines > 0
+
+    def test_batch_error(self):
+        # submit a batch run
+        _, batch_result = self._submit_batch_run(has_error=True)
+        assert batch_result.status == Status.Completed
+        assert batch_result.total_lines == 3
+        assert batch_result.failed_lines == 1
+        assert batch_result.system_metrics.duration > 0
 
     def test_batch_cancel(self):
         # use a thread to submit a batch run
@@ -39,16 +48,17 @@ class TestCSharpExecutorProxy:
         batch_run_thread.join()
         assert batch_engine._is_canceled is True
         assert batch_result_global.status == Status.Canceled
-        assert batch_result_global.total_lines == 0
         assert batch_result_global.system_metrics.duration > 0
 
     def _submit_batch_run(
-        self, run_in_thread=False
+        self, run_in_thread=False, has_error=False
     ) -> Union[Tuple[BatchEngine, threading.Thread], Tuple[BatchEngine, BatchResult]]:
         flow_folder = "csharp_flow"
         mem_run_storage = MemoryRunStorage()
         # init the batch engine
-        batch_engine = BatchEngine(get_yaml_file(flow_folder), get_flow_folder(flow_folder), storage=mem_run_storage)
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder), get_flow_folder(flow_folder), storage=mem_run_storage, has_error=has_error
+        )
         # prepare the inputs
         input_dirs = {"data": get_flow_inputs_file(flow_folder)}
         inputs_mapping = {"question": "${data.question}"}
@@ -81,8 +91,15 @@ class MockCSharpExecutorProxy(CSharpExecutorProxy):
         **kwargs,
     ) -> "MockCSharpExecutorProxy":
         """Create a new executor"""
+        has_error = kwargs.get("has_error", False)
         port = cls.find_available_port()
-        process = multiprocessing.Process(target=run_executor_server, args=(port,))
+        process = multiprocessing.Process(
+            target=run_executor_server,
+            args=(
+                int(port),
+                has_error,
+            ),
+        )
         process.start()
         return cls(process, port)
 

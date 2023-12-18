@@ -320,3 +320,33 @@ class TestAzureCli:
                 "--include-archived",
                 *operation_scope_args,
             )
+
+    def test_run_download(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
+        mocked = mocker.patch.object(RunOperations, "download")
+        mocked.return_value = "fake_output_run_dir"
+        run_pf_command(
+            "run",
+            "download",
+            "--name",
+            "test_run",
+            "--output",
+            "fake_output_dir",
+            "--overwrite",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_run_cancel(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
+        mocked = mocker.patch.object(RunOperations, "cancel")
+        run_pf_command(
+            "run",
+            "cancel",
+            "--name",
+            "test_run",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()

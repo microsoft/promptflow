@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import asyncio
 import concurrent
 import copy
 import hashlib
@@ -8,10 +9,12 @@ import json
 import logging
 import os
 import re
+import shutil
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import requests
@@ -33,6 +36,8 @@ from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
+    PROMPT_FLOW_DIR_NAME,
+    PROMPT_FLOW_RUNS_DIR_NAME,
     REGISTRY_URI_PREFIX,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
@@ -45,6 +50,7 @@ from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, Run
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
 from promptflow._sdk.entities import Run
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import (
@@ -59,6 +65,7 @@ from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
@@ -109,7 +116,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
-        self._workspace_default_datastore = self._datastore_operations.get_default().name
+        self._workspace_default_datastore = self._datastore_operations.get_default()
 
     @property
     def _data_operations(self):
@@ -761,7 +768,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 self._operation_scope,
                 self._datastore_operations,
                 test_data,
-                datastore_name=self._workspace_default_datastore,
+                datastore_name=self._workspace_default_datastore.name,
                 show_progress=self._show_progress,
             )
             if data_type == AssetTypes.URI_FOLDER and test_data and not test_data.endswith("/"):
@@ -994,3 +1001,83 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         workspace_id = self._workspace._workspace_id
         location = self._workspace.location
         return f"azureml://locations/{location}/workspaces/{workspace_id}/flows/{run._flow_name}"
+
+    @monitor_operation(activity_name="pfazure.runs.download", activity_type=ActivityType.PUBLICAPI)
+    def download(
+        self, run: Union[str, Run], output: Optional[Union[str, Path]] = None, overwrite: Optional[bool] = False
+    ) -> str:
+        """Download the data of a run, including input, output, snapshot and other run information.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :param output: The output directory. Default to be default to be "~/.promptflow/.runs" folder.
+        :type output: Optional[str]
+        :param overwrite: Whether to overwrite the existing run folder. Default to be False.
+        :type overwrite: Optional[bool]
+        :return: The run directory path
+        :rtype: str
+        """
+        import platform
+
+        from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
+
+        run_folder = self._validate_for_run_download(run=run, output=output, overwrite=overwrite)
+        run_downloader = AsyncRunDownloader(run=run, run_ops=self, output_folder=run_folder)
+        if platform.system().lower() == "windows":
+            # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
+            # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+        async_run_allowing_running_loop(run_downloader.download)
+        result_path = run_folder.resolve().as_posix()
+        logger.info(f"Successfully downloaded run {run!r} to {result_path!r}.")
+        return result_path
+
+    def _validate_for_run_download(self, run: Union[str, Run], output: Optional[Union[str, Path]], overwrite):
+        """Validate the run download parameters."""
+        run = Run._validate_and_return_run_name(run)
+
+        # process the output path
+        if output is None:
+            # default to be "~/.promptflow/.runs" folder
+            output_directory = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_RUNS_DIR_NAME
+        else:
+            output_directory = Path(output)
+
+        # validate the run folder
+        run_folder = output_directory / run
+        if run_folder.exists():
+            if overwrite is True:
+                logger.warning("Removing existing run folder %r.", run_folder.resolve().as_posix())
+                shutil.rmtree(run_folder)
+            else:
+                raise UserErrorException(
+                    f"Run folder {run_folder.resolve().as_posix()!r} already exists, please specify a new output path "
+                    f"or set the overwrite flag to be true."
+                )
+
+        # check the run status, only download the completed run
+        run = self.get(run=run)
+        if run.status != RunStatus.COMPLETED:
+            raise UserErrorException(
+                f"Can only download the run with status {RunStatus.COMPLETED!r} "
+                f"while {run.name!r}'s status is {run.status!r}."
+            )
+
+        run_folder.mkdir(parents=True)
+        return run_folder
+
+    @monitor_operation(activity_name="pfazure.runs.cancel", activity_type=ActivityType.PUBLICAPI)
+    def cancel(self, run: Union[str, Run], **kwargs) -> None:
+        """Cancel a run.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        """
+        run = Run._validate_and_return_run_name(run)
+        self._service_caller.cancel_flow_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            flow_run_id=run,
+        )

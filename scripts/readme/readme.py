@@ -37,6 +37,9 @@ def get_readme_description_first_sentence(readme) -> str:
                 line = f.readline()
                 if line.startswith("#"):
                     line = ""
+                # skip metadata section
+                if line.startswith("---") or line.startswith("resources"):
+                    line = ""
                 if line.strip() == "" and sentence != "":
                     break
                 elif "." in line:
