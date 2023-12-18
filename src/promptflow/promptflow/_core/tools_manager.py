@@ -58,6 +58,15 @@ def collect_tools_from_directory(base_dir) -> dict:
                 tools[identifier] = tool
     return tools
 
+def set_default_input_index_ui_hint(tool):
+    inputs_dict = tool["inputs"]
+    input_index = 0
+    for input_name, settings in inputs_dict.items():
+        if "input_type" in settings.keys() and settings["input_type"] == "uionly_hidden":
+            continue
+        settings.setdefault("ui_hints", {})
+        settings["ui_hints"]["index"] = input_index
+        input_index += 1
 
 def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools from all installed packages."""
@@ -85,12 +94,7 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
                 tool["package_version"] = entry_point.dist.version
                 # Set default input index to ui_hints
                 if "inputs" in tool:
-                    inputs_dict = tool["inputs"]
-                    inputs_order = list(inputs_dict.keys())
-                    for input_name, settings in inputs_dict.items():
-                        if "input_type" in settings.keys() and settings["input_type"] == "uionly_hidden":
-                            continue
-                        settings.setdefault("ui_hints", {}).setdefault("index", inputs_order.index(input_name))
+                    set_default_input_index_ui_hint(tool)
                 all_package_tools[identifier] = tool
         except Exception as e:
             msg = (
@@ -123,6 +127,9 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                 module = importlib.import_module(m)  # Import the module to make sure it is valid
                 tool["package"] = entry_point.dist.project_name
                 tool["package_version"] = entry_point.dist.version
+                # Set default input index to ui_hints
+                if "inputs" in tool:
+                    set_default_input_index_ui_hint(tool)
                 all_package_tools[identifier] = tool
 
                 # Get custom strong type connection definition
