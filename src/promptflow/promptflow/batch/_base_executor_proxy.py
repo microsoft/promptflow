@@ -90,7 +90,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
     ) -> LineResult:
         start_time = datetime.utcnow()
         # call execution api to get line results
-        url = self.api_endpoint + "/Execution"
+        url = self.api_endpoint + "/execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
@@ -109,7 +109,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
     ) -> AggregationResult:
         # call aggregation api to get aggregation result
         async with httpx.AsyncClient() as client:
-            url = self.api_endpoint + "/Aggregation"
+            url = self.api_endpoint + "/aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
         result = self._process_http_response(response)
