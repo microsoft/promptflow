@@ -124,8 +124,7 @@ class TestExecutor:
         process.start()
         process.join()
 
-        if not queue.empty():
-            raise queue.get()
+        assert process.exitcode == 0
 
     @pytest.mark.skipif(is_replay() or is_record(), reason="Resolve tool error cannot record")
     def test_executor_node_overrides(self, dev_connections):
