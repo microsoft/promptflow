@@ -8,7 +8,6 @@ import pytest
 from promptflow._sdk._configuration import Configuration, InvalidConfigValue
 from promptflow._sdk._constants import FLOW_DIRECTORY_MACRO_IN_CONFIG
 from promptflow._sdk._utils import ClientUserAgentUtil
-from promptflow._utils.utils import parse_ua_to_dict
 
 CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
 
@@ -64,5 +63,5 @@ class TestConfig:
         # empty ua won't add to context
         ClientUserAgentUtil.update_user_agent_from_config()
         user_agent = ClientUserAgentUtil.get_user_agent()
-        ua_dict = parse_ua_to_dict(user_agent)
-        assert dict(ua_dict.keys()) == {}
+        # in test environment, user agent may contain promptflow-local-serving/0.0.1 test-user-agent
+        assert "test/1.0.0" not in user_agent
