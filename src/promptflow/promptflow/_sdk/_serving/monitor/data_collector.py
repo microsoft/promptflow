@@ -19,9 +19,6 @@ class FlowDataCollector:
         """init data collector."""
         logger.info("Init mdc...")
         try:
-            # for details, please refer to:
-            # https://github.com/Azure/azureml_run_specification/blob/mdc_consolidated_spec/specs/model_data_collector.md
-            # https://msdata.visualstudio.com/Vienna/_git/sdk-cli-v2?path=/src/azureml-ai-monitoring/README.md&version=GBmain&_a=preview
             from azureml.ai.monitoring import Collector
 
             self.inputs_collector = Collector(name="model_inputs")

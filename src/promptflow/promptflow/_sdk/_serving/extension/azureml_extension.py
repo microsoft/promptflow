@@ -89,7 +89,7 @@ class AzureMLExtension(AppExtension):
                 except ValueError:
                     # name override
                     self.logger.debug(f"Connection value is not json, enable name override for {connection_name}.")
-                    connections_name_overrides[override_conn] = connection_name
+                    connections_name_overrides[connection_name] = override_conn
                 if data_override:
                     try:
                         # try best to convert to connection, this is only for azureml deployment.

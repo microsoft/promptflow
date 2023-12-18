@@ -29,7 +29,7 @@ from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.executor import FlowExecutor
-from promptflow.storage._run_storage import DefaultRunStorage, AbstractRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = LoggerFactory.get_logger(LOGGER_NAME)
 
@@ -41,17 +41,17 @@ class FlowInvoker:
     :param flow: The path of the flow, or the flow loaded by load_flow().
     :type flow: [str, ~promptflow._sdk.entities._flow.Flow]
     :param connection_provider: The connection provider, defaults to None
-    :type connection_provider: [str, Callable], optional
+    :type connection_provider: [str, Callable], optiopen_ai_connection
     :param streaming: The function or bool to determine enable streaming or not, defaults to lambda: False
     :type streaming: Union[Callable[[], bool], bool], optional
     :param connections: Pre-resolved connections used when executing, defaults to None
     :type connections: dict, optional
     :param connections_name_overrides: The connection name overrides, defaults to None
+        Example: ``{"aoai_connection": "azure_open_ai_connection"}``
+        The node with reference to connection 'aoai_connection' will be resolved to the actual connection 'azure_open_ai_connection'. # noqa: E501
     :type connections_name_overrides: dict, optional
     :param raise_ex: Whether to raise exception when executing flow, defaults to True
     :type raise_ex: bool, optional
-    :param storage: The storage to store flow run result, defaults to None
-    :type storage: ~promptflow.storage._run_storage.AbstractRunStorage, optional
     """
 
     def __init__(
@@ -62,7 +62,6 @@ class FlowInvoker:
         connections: dict = None,
         connections_name_overrides: dict = None,
         raise_ex: bool = True,
-        storage: AbstractRunStorage = None,
         **kwargs,
     ):
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
@@ -72,7 +71,7 @@ class FlowInvoker:
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}
         self.raise_ex = raise_ex
-        self.storage = storage
+        self.storage = kwargs.get("storage", None)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         # Pass dump_to path to dump flow result for extension.
         self._dump_to = kwargs.get("dump_to", None)
@@ -88,19 +87,22 @@ class FlowInvoker:
         if isinstance(connection_provider, str):
             logger.info(f"Getting connections from pf client with provider {connection_provider}...")
             connections_to_ignore = list(self.connections.keys())
-            connections_to_ignore.extend(self.connections_name_overrides.values())
+            connections_to_ignore.extend(self.connections_name_overrides.keys())
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             connections = get_local_connections_from_executable(
                 executable=self._executable_flow,
                 client=PFClient(config={"connection.provider": connection_provider}),
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with overrided name
-                connections_to_add=list(self.connections_name_overrides.keys()),
+                connections_to_add=list(self.connections_name_overrides.values()),
             )
             # use original name for connection with name override
+            overrided_name_to_original_name_mapping = {
+                v: k for k, v in self.connections_name_overrides.items()
+            }
             for name, conn in connections.items():
-                if name in self.connections_name_overrides:
-                    self.connections[self.connections_name_overrides[name]] = conn
+                if name in overrided_name_to_original_name_mapping:
+                    self.connections[overrided_name_to_original_name_mapping[name]] = conn
                 else:
                     self.connections[name] = conn
         elif isinstance(connection_provider, Callable):
