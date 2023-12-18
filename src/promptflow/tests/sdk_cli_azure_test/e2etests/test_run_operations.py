@@ -36,9 +36,6 @@ FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
-# TODO(2770419): make this dynamic created during migrate live test to canary
-FAILED_RUN_NAME_EASTUS = "3dfd077a-f071-443e-9c4e-d41531710950"
-
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
