@@ -16,7 +16,7 @@ Promptflow uses a special dict to represent image.
 `{"data:image/<mime-type>;<representation>": "<value>"}`
 
 - `<mime-type>` can be html standard [mime](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) image types. Setting it to specific type can help previewing the image correctly, or it can be `*` for unknown type.
-- `<representation>` is the image serilized representation, there are 3 supported types:
+- `<representation>` is the image serialized representation, there are 3 supported types:
 
     - url
 
@@ -31,7 +31,7 @@ Promptflow uses a special dict to represent image.
 
     - path
 
-        It can reference an image file on local disk. Both absolute path and relative path are supported, but in the cases where the serlized image representation is stored in a file, relative to the containing folder of that file is recommended, as in the case of flow IO data. E.g.
+        It can reference an image file on local disk. Both absolute path and relative path are supported, but in the cases where the serialized image representation is stored in a file, relative to the containing folder of that file is recommended, as in the case of flow IO data. E.g.
 
         {"data:image/png;path": "./my-image.png"}
 
