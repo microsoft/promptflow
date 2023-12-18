@@ -11,7 +11,7 @@ outputs:
     reference: ${question_on_image.output}
   output_image:
     type: string
-    reference: ${passthrough.output}
+    reference: ${flip_image.output}
 nodes:
 - name: question_on_image
   type: custom_llm
@@ -22,13 +22,13 @@ nodes:
   inputs:
     connection: openai_connection
     question: ${inputs.question}
-    test_image: ${passthrough.output}
+    test_image: ${flip_image.output}
     model: gpt-4-vision-preview
     max_tokens: 200
-- name: passthrough
+- name: flip_image
   type: python
   source:
     type: code
-    path: passthrough.py
+    path: flip_image.py
   inputs:
     input_image: ${inputs.input_image}

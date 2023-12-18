@@ -1,5 +1,5 @@
 # Describe image flow
-A flow that take image input and uses OpenAI GPT-4V tool to describe it. We also added a pass_through node from input to output to demo PromptFlow's ability to output image in both node output and flow output.
+A flow that take image input, flip it horizontally and uses OpenAI GPT-4V tool to describe it.
 
 Tools used in this flow：
 - `OpenAI GPT-4V` tool
