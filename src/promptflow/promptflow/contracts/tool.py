@@ -247,6 +247,7 @@ class InputDefinition:
     # For a custom strong type connection input, the type should be 'CustomConnection',
     # while the custom_type should be the custom strong type connection class name.
     custom_type: List[str] = None
+    ui_hints: dict = None
 
     def serialize(self) -> dict:
         """Serialize input definition to dict.
@@ -267,6 +268,8 @@ class InputDefinition:
             data["enum"] = self.enum
         if self.custom_type:
             data["custom_type"] = self.custom_type
+        if self.ui_hints:
+            data["ui_hints"] = self.ui_hints
         return data
 
     @staticmethod
@@ -291,6 +294,7 @@ class InputDefinition:
             data.get("description", ""),
             data.get("enum", []),
             data.get("custom_type", []),
+            data.get("ui_hints", {})
         )
 
 

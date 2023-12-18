@@ -13,6 +13,8 @@ from promptflow._utils.tool_utils import (
     load_function_from_function_path,
     param_to_definition,
     validate_dynamic_list_func_response_type,
+    get_inputs_for_prompt_template
+
 )
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.tool import ValueType, Tool, ToolType
@@ -54,14 +56,15 @@ def mock_dynamic_list_func8(input1, input2, subscription_id, resource_group_name
 @pytest.mark.unittest
 class TestToolUtils:
     def test_function_to_interface(self):
-        def func(conn: [AzureOpenAIConnection, CustomConnection], input: [str, int]):
+        def func(conn: [AzureOpenAIConnection, CustomConnection], input: [str, int], api: str):
             pass
 
         input_defs, _, connection_types, _ = function_to_interface(func)
-        assert len(input_defs) == 2
+        assert len(input_defs) == 3
         assert input_defs["conn"].type == ["AzureOpenAIConnection", "CustomConnection"]
         assert input_defs["input"].type == [ValueType.OBJECT]
         assert connection_types == [["AzureOpenAIConnection", "CustomConnection"]]
+        assert input_defs["api"].ui_hints["index"] == 2
 
     def test_function_to_interface_with_invalid_initialize_inputs(self):
         def func(input_str: str):
@@ -372,3 +375,18 @@ class TestToolUtils:
         }
         with pytest.raises(DuplicateToolMappingError, match="secure operation"):
             _find_deprecated_tools(package_tools)
+
+    def test_get_inputs_for_prompt_template(self):
+        prompt_str = '''
+        Please summarize the following text in one paragraph. 50 words.
+        Do not add any information that is not in the text.
+        Text: {{text}}
+        {{connection}}
+        {{api}}
+        Summary:
+        '''
+
+        result_dict = get_inputs_for_prompt_template(prompt_str)
+        assert len(result_dict) == 3
+        assert result_dict["connection"].ui_hints["index"] == 1
+        assert result_dict["api"].ui_hints["index"] == 2
