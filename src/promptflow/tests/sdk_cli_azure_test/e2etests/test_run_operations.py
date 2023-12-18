@@ -814,7 +814,7 @@ class TestFlowRun:
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
     def test_download_run(self, pf):
-        run = "c619f648-c809-4545-9f94-f67b0a680706"
+        run = "web_classification_copy_3_variant_0_20231214_192417_246780"
 
         expected_files = [
             DownloadedRun.RUN_METADATA_FILE_NAME,
