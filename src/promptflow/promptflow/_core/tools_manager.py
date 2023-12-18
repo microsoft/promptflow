@@ -58,6 +58,7 @@ def collect_tools_from_directory(base_dir) -> dict:
                 tools[identifier] = tool
     return tools
 
+
 def set_default_input_index_ui_hint(tool):
     inputs_dict = tool["inputs"]
     input_index = 0
