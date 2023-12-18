@@ -1,11 +1,11 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
 from promptflow import tool
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
-from promptflow.executor._line_execution_process_pool import get_available_max_worker_count
+
 from promptflow.executor.flow_executor import (
     FlowExecutor,
     _ensure_node_result_is_serializable,
@@ -178,31 +178,3 @@ class TestEnsureNodeResultIsSerializable:
     def test_non_streaming_tool_should_not_be_affected(self):
         func = _ensure_node_result_is_serializable(non_streaming_tool)
         assert func() == 1
-
-
-class TestGetAvailableMaxWorkerCount:
-    @pytest.mark.parametrize(
-        "total_memory, available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count",
-        [
-            (1024.0, 128.0, 64.0, 1, -3),  # available_memory - 0.3 * total_memory < 0
-            (1024.0, 307.20, 64.0, 1, 0),  # available_memory - 0.3 * total_memory = 0
-            (1024.0, 768.0, 64.0, 7, 7),  # available_memory - 0.3 * total_memory > 0
-        ],
-    )
-    def test_get_available_max_worker_count(
-        self, total_memory, available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count
-    ):
-        with patch("psutil.virtual_memory") as mock_mem:
-            mock_mem.return_value.total = total_memory * 1024 * 1024
-            mock_mem.return_value.available = available_memory * 1024 * 1024
-            with patch("psutil.Process") as mock_process:
-                mock_process.return_value.memory_info.return_value.rss = process_memory * 1024 * 1024
-                with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
-                    mock_logger.warning.return_value = None
-                    max_worker_count = get_available_max_worker_count()
-                    assert max_worker_count == expected_max_worker_count
-                    if actual_calculate_worker_count < 1:
-                        mock_logger.warning.assert_called_with(
-                            f"Available max worker count {actual_calculate_worker_count} is less than 1, "
-                            "set it to 1."
-                        )

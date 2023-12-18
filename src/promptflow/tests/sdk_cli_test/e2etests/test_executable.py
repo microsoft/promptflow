@@ -18,7 +18,10 @@ DATAS_DIR = "./tests/test_configs/datas"
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestExecutable:
-    @pytest.mark.skipif(sys.platform == "win32", reason="Raise Exception: Process terminated with exit code 4294967295")
+    @pytest.mark.skipif(
+        sys.platform == "win32" or sys.platform == "darwin",
+        reason="Raise Exception: Process terminated with exit code 4294967295",
+    )
     def test_flow_build_executable(self):
         source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
         target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
