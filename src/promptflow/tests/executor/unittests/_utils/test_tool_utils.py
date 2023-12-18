@@ -381,11 +381,8 @@ class TestToolUtils:
         Please summarize the following text in one paragraph. 50 words.
         Do not add any information that is not in the text.
         Text: {{text}}
-        
         {{connection}}
-        
         {{api}}
-        
         Summary:
         '''
 
