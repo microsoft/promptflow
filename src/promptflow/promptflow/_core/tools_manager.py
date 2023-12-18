@@ -69,6 +69,7 @@ def set_default_input_index_ui_hint(tool):
         settings["ui_hints"]["index"] = input_index
         input_index += 1
 
+
 def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools from all installed packages."""
     # lazy load to improve performance for scenarios that don't need to load package tools
