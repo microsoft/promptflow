@@ -42,7 +42,8 @@ class ResolvedTool:
 
 class ToolResolver:
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None, version=None
+        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None,
+        version=None
     ):
         try:
             # Import openai and aoai for llm tool
@@ -110,7 +111,9 @@ class ToolResolver:
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
-                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value, version=self._version)
+                    updated_inputs[k].value = load_multimedia_data_recursively(
+                        updated_inputs[k].value, version=self._version
+                    )
                 except InvalidImageInput as e:
                     msg = (
                         f"Input '{k} for node '{node.name}' of value {v.value} is not a valid image, "

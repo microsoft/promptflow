@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 import filetype
 import requests
 
-from promptflow.contracts._errors import InvalidImageInput, InvalidTextInput
+from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes, Text
 from promptflow.contracts.tool import ValueType
@@ -306,7 +306,9 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
 
 def load_multimedia_data_recursively(value: Any, version=1):
     process_funcs = {1: _create_image_from_dict_v1, 2: _create_image_from_dict_v2}
-    return _process_multimedia_dict_recursively(value, process_funcs[version], create_text_from_dict if version == 2 else None)
+    return _process_multimedia_dict_recursively(
+        value, process_funcs[version], create_text_from_dict if version == 2 else None
+    )
 
 
 def resolve_multimedia_data_recursively(input_dir: Path, value: Any):
@@ -327,7 +329,9 @@ def _process_multimedia_dict_recursively(
         elif text_process_func is not None and is_text_dict(value):
             return text_process_func(**{"text_dict": value})
         else:
-            return {k: _process_multimedia_dict_recursively(v, process_func, text_process_func) for k, v in value.items()}
+            return {
+                k: _process_multimedia_dict_recursively(v, process_func, text_process_func) for k, v in value.items()
+            }
     else:
         return value
 
