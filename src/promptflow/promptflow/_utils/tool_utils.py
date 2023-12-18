@@ -131,13 +131,21 @@ def function_to_interface(
         }
     )
     # Resolve inputs to definitions.
+    input_index = 0
     for k, v in all_inputs.items():
         # Get value type from annotation
         value_type = resolve_annotation(v.annotation)
         if skip_prompt_template and value_type is PromptTemplate:
             # custom llm tool has prompt template as input, skip it
             continue
+
         input_def, is_connection = param_to_definition(v, gen_custom_type_conn=gen_custom_type_conn)
+        # Set ui_hints and index
+        if input_def.ui_hints is None:
+            input_def.ui_hints = {}
+        input_def.ui_hints['index'] = input_index
+
+        input_index += 1
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
@@ -199,7 +207,7 @@ def get_inputs_for_prompt_template(template_str):
     env = Environment()
     template = env.parse(template_str)
     inputs = sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x))
-    result_dict = {i: InputDefinition(type=[ValueType.STRING]) for i in inputs}
+    result_dict = {i: InputDefinition(type=[ValueType.STRING], ui_hints={"index": inputs.index(i)}) for i in inputs}
 
     # currently we only support image type
     pattern = r"\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)"
