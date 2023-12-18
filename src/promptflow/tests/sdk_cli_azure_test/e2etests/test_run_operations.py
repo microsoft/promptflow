@@ -300,44 +300,32 @@ class TestFlowRun:
             "run": "web_classification_default_20230804_143634_056856",
         }
 
-    def test_show_run_details(self, pf):
-        run = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+    def test_show_run_details(self, pf: PFClient, created_batch_run_without_llm: Run):
+        # get first 2 results
+        details = pf.get_details(run=created_batch_run_without_llm.name, max_results=2)
+        assert details.shape[0] == 2
 
-        # get first 20 results
-        details = pf.get_details(run=run, max_results=20)
-
-        assert details.shape[0] == 20
-
-        # get first 1000 results while it only has 40
-        details = pf.get_details(run=run, max_results=1000)
-        assert details.shape[0] == 40
+        # get first 10 results while it only has 3
+        details = pf.get_details(run=created_batch_run_without_llm.name, max_results=10)
+        assert details.shape[0] == 3
 
         # get all results
+        details = pf.get_details(run=created_batch_run_without_llm.name, all_results=True)
+        assert details.shape[0] == 3
+
+        # get all results even if max_results is set to 2
         details = pf.get_details(
-            run=run,
+            run=created_batch_run_without_llm.name,
+            max_results=2,
             all_results=True,
         )
-        assert details.shape[0] == 40
+        assert details.shape[0] == 3
 
-        # get all results even if max_results is set to 10
-        details = pf.get_details(
-            run=run,
-            max_results=10,
-            all_results=True,
-        )
-        assert details.shape[0] == 40
-
-    def test_show_metrics(self, pf):
-        metrics = pf.runs.get_metrics(
-            run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
-        )
+    def test_show_metrics(self, pf: PFClient, created_eval_run_without_llm: Run):
+        metrics = pf.runs.get_metrics(run=created_eval_run_without_llm.name)
         print(json.dumps(metrics, indent=4))
-        assert metrics == {
-            "gpt_relevance.variant_1": 1.0,
-            "gpt_relevance.variant_0": 1.0,
-            "gpt_relevance_pass_rate(%).variant_1": 0.0,
-            "gpt_relevance_pass_rate(%).variant_0": 0.0,
-        }
+        # as we use unmatched data, we can assert the accuracy is 0
+        assert metrics == {"accuracy": 0.0}
 
     def test_stream_invalid_run_logs(self, pf, randstr: Callable[[str], str]):
         # test get invalid run name
@@ -345,8 +333,8 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError, match=f"Run {non_exist_run!r} not found"):
             pf.runs.stream(run=non_exist_run)
 
-    def test_stream_run_logs(self, pf):
-        run = pf.runs.stream(run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74")
+    def test_stream_run_logs(self, pf: PFClient, created_batch_run_without_llm: Run):
+        run = pf.runs.stream(run=created_batch_run_without_llm.name)
         assert run.status == RunStatus.COMPLETED
 
     def test_stream_failed_run_logs(self, pf, capfd: pytest.CaptureFixture):
