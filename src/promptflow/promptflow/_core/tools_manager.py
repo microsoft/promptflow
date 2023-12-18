@@ -123,12 +123,6 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                 module = importlib.import_module(m)  # Import the module to make sure it is valid
                 tool["package"] = entry_point.dist.project_name
                 tool["package_version"] = entry_point.dist.version
-                # # Set default input index to ui_hints
-                # if "inputs" in tool:
-                #     inputs_dict = tool["inputs"]
-                #     inputs_order = list(inputs_dict.keys())
-                #     for input, settings in inputs_dict.items():
-                #         settings.setdefault("ui_hints", {}).setdefault("index", inputs_order.index(input))
                 all_package_tools[identifier] = tool
 
                 # Get custom strong type connection definition
