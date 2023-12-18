@@ -211,6 +211,19 @@ class TestMultimediaUtils:
             "images": [image_str, image_str],
             "object": {"image": image_str, "other_data": "other_data"},
         }
+        assert value != updated_value
+
+    def test_process_recursively_inplace(self):
+        image = _create_image_from_file(TEST_IMAGE_PATH)
+        value = {"image": image, "images": [image, image], "object": {"image": image, "other_data": "other_data"}}
+        process_funcs = {Image: lambda x: str(x)}
+        _process_recursively(value, process_funcs, inplace=True)
+        image_str = str(image)
+        assert value == {
+            "image": image_str,
+            "images": [image_str, image_str],
+            "object": {"image": image_str, "other_data": "other_data"},
+        }
 
     def test_process_multimedia_dict_recursively(self):
         def process_func(image_dict):

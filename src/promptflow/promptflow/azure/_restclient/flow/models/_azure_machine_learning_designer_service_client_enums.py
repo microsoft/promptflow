@@ -15,6 +15,7 @@ class ActionType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     GET_VALIDATION_STATUS = "GetValidationStatus"
     SUBMIT_BULK_RUN = "SubmitBulkRun"
     LOG_RUN_RESULT = "LogRunResult"
+    LOG_RUN_TERMINATED_EVENT = "LogRunTerminatedEvent"
 
 class AetherArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -834,6 +835,11 @@ class EntityStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     DEPRECATED = "Deprecated"
     DISABLED = "Disabled"
 
+class ErrorHandlingMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    DEFAULT_INTERPOLATION = "DefaultInterpolation"
+    CUSTOMER_FACING_INTERPOLATION = "CustomerFacingInterpolation"
+
 class ExecutionPhase(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     EXECUTION = "Execution"
@@ -850,6 +856,11 @@ class FlowFeatureStateEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     READY = "Ready"
     E2_E_TEST = "E2ETest"
+
+class FlowLanguage(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    PYTHON = "Python"
+    C_SHARP = "CSharp"
 
 class FlowPatchOperationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -878,6 +889,11 @@ class FlowRunTypeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PAIRWISE_EVALUATION_RUN = "PairwiseEvaluationRun"
     SINGLE_NODE_RUN = "SingleNodeRun"
     FROM_NODE_RUN = "FromNodeRun"
+
+class FlowTestMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    SYNC = "Sync"
+    ASYNC_ENUM = "Async"
 
 class FlowType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1016,8 +1032,8 @@ class IdentityType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
 class InputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
-    DEFAULT = "Default"
-    UI_ONLY_HIDDEN = "UIOnly_Hidden"
+    DEFAULT = "default"
+    UIONLY_HIDDEN = "uionly_hidden"
 
 class IntellectualPropertyAccessMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1343,6 +1359,17 @@ class PrimaryMetrics(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     MEAN_AVERAGE_PRECISION = "MeanAveragePrecision"
     IOU = "Iou"
 
+class ProvisioningState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    UNKNOWN = "Unknown"
+    UPDATING = "Updating"
+    CREATING = "Creating"
+    DELETING = "Deleting"
+    ACCEPTED = "Accepted"
+    SUCCEEDED = "Succeeded"
+    FAILED = "Failed"
+    CANCELED = "Canceled"
+
 class RealTimeEndpointInternalStepCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     ABOUT_TO_DEPLOY = "AboutToDeploy"
@@ -1500,12 +1527,24 @@ class Section(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     GALLERY = "Gallery"
     TEMPLATE = "Template"
 
+class SessionSetupModeEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    CLIENT_WAIT = "ClientWait"
+    SYSTEM_WAIT = "SystemWait"
+
 class SetupFlowSessionAction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     INSTALL = "Install"
     RESET = "Reset"
     UPDATE = "Update"
     DELETE = "Delete"
+
+class SeverityLevel(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    CRITICAL = "Critical"
+    ERROR = "Error"
+    WARNING = "Warning"
+    INFO = "Info"
 
 class ShortSeriesHandlingConfiguration(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1615,9 +1654,15 @@ class TaskType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
 class ToolFuncCallScenario(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
-    GENARATED_BY = "Genarated_by"
-    REVERSE_GENERATED_BY = "Reverse_generated_by"
-    DYNAMIC_LIST = "Dynamic_list"
+    GENERATED_BY = "generated_by"
+    REVERSE_GENERATED_BY = "reverse_generated_by"
+    DYNAMIC_LIST = "dynamic_list"
+
+class ToolState(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    STABLE = "Stable"
+    PREVIEW = "Preview"
+    DEPRECATED = "Deprecated"
 
 class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1626,6 +1671,7 @@ class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ACTION = "action"
     PROMPT = "prompt"
     CUSTOM_LLM = "custom_llm"
+    CSHARP = "csharp"
 
 class TrainingOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 

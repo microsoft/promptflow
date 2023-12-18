@@ -46,23 +46,22 @@ class PromptflowException(Exception):
         **kwargs,
     ):
         self._inner_exception = kwargs.get("error")
-        self._message = str(message)
         self._target = target
         self._module = module
         self._message_format = message_format
         self._kwargs = kwargs
+        if message:
+            self._message = str(message)
+        elif self.message_format:
+            self._message = self.message_format.format(**self.message_parameters)
+        else:
+            self._message = self.__class__.__name__
         super().__init__(self._message)
 
     @property
     def message(self):
         """The error message."""
-        if self._message:
-            return self._message
-
-        if self.message_format:
-            return self.message_format.format(**self.message_parameters)
-
-        return self.__class__.__name__
+        return self._message
 
     @property
     def message_format(self):
