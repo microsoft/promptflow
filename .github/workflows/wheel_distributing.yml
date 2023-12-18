@@ -45,6 +45,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.event_name == 'push' && 'main' || github.event.inputs.branch }}
           submodules: true
 
       - name: Override version with workflow run number
