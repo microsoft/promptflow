@@ -12,7 +12,7 @@ Set the type of flow input to `image` and promptflow will treat it as an image.
 In prompt templates that support image (e.g. in OpenAI GPT-4V tool), using markdown syntax to denote that a template input is an image: `![image]({{test_image}})`. In this case, `test_image` will be substituted with base64 or source_url (if set) before sending to LLM model.
 
 ## Serialization/Deserialization
-Promptflow uses a special dict to representnt image.
+Promptflow uses a special dict to represent image.
 `{"data:image/<mime-type>;<representation>": "<value>"}`
 
 - `<mime-type>` can be html standard [mime](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types) image types. Setting it to specific type can help previewing the image correctly, or it can be `*` for unknown type.
