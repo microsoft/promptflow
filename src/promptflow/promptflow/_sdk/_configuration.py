@@ -217,7 +217,7 @@ class Configuration(object):
         return
 
     def get_user_agent(self) -> Optional[str]:
-        """Get 1p customer set user agent. Only 1p customer will set this. If set, will add prefix `PFCustomer_`"""
+        """Get customer set user agent. If set, will add prefix `PFCustomer_`"""
         user_agent = self.get_config(key=self.USER_AGENT)
         if user_agent:
             return f"PFCustomer_{user_agent}"
