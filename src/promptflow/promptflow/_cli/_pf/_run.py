@@ -18,7 +18,7 @@ from promptflow._cli._params import (
     add_param_run_name,
     add_param_set,
     add_parser_build,
-    logging_params,
+    base_params,
 )
 from promptflow._cli._utils import (
     _output_result_list_with_format,
@@ -33,6 +33,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
 from promptflow._sdk.entities import Run
+from promptflow.exceptions import UserErrorException
 
 
 def add_run_parser(subparsers):
@@ -96,7 +97,7 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
         add_param_environment_variables,
         add_param_connections,
         add_param_set,
-    ] + logging_params
+    ] + base_params
 
     add_params.extend(add_param_list)
     create_parser = activate_action(
@@ -119,13 +120,18 @@ Examples:
 pf run create -f <yaml-filename>
 # Create a run from flow directory and reference a run:
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
+# Create a run from an existing run record folder
+pf run create --source <path-to-run-folder>
 """
 
     # data for pf has different help doc than pfazure
     def add_param_data(parser):
         parser.add_argument("--data", type=str, help="Local path to the data file.")
 
-    add_run_create_common(subparsers, [add_param_data], epilog=epilog)
+    def add_param_source(parser):
+        parser.add_argument("--source", type=str, help="Local path to the existing run record folder.")
+
+    add_run_create_common(subparsers, [add_param_data, add_param_source], epilog=epilog)
 
 
 def add_run_cancel(subparsers):
@@ -135,7 +141,7 @@ Example:
 # Cancel a run:
 pf run cancel --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
     activate_action(
         name="cancel",
         description=None,
@@ -157,7 +163,7 @@ pf run update --name <name> --set display_name="<display-name>" description="<de
     add_params = [
         add_param_run_name,
         add_param_set,
-    ] + logging_params
+    ] + base_params
     activate_action(
         name="update",
         description=None,
@@ -176,7 +182,7 @@ Example:
 # Stream run logs:
 pf run stream --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
     activate_action(
         name="stream",
         description=None,
@@ -211,7 +217,7 @@ pf run list --output table
         add_param_archived_only,
         add_param_include_archived,
         add_param_output_format,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="list",
@@ -231,7 +237,7 @@ Example:
 # Show the status of a run:
 pf run show --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
 
     activate_action(
         name="show",
@@ -260,7 +266,7 @@ pf run show-details --name <name>
         help=f"Number of lines to show. Default is {MAX_SHOW_DETAILS_RESULTS}.",
     )
 
-    add_params = [add_param_max_results, add_param_run_name, add_param_all_results] + logging_params
+    add_params = [add_param_max_results, add_param_run_name, add_param_all_results] + base_params
 
     activate_action(
         name="show-details",
@@ -280,7 +286,7 @@ Example:
 # View metrics of a run:
 pf run show-metrics --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
 
     activate_action(
         name="show-metrics",
@@ -311,7 +317,7 @@ pf run visualize --names "<name1>, <name2>"
         "--html-path", type=str, default=None, help=argparse.SUPPRESS
     )
 
-    add_params = [add_param_name, add_param_html_path] + logging_params
+    add_params = [add_param_name, add_param_html_path] + base_params
 
     activate_action(
         name="visualize",
@@ -331,7 +337,7 @@ Example:
 # Archive a run:
 pf run archive --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
 
     activate_action(
         name="archive",
@@ -351,7 +357,7 @@ Example:
 # Restore an archived run:
 pf run restore --name <name>
 """
-    add_params = [add_param_run_name] + logging_params
+    add_params = [add_param_run_name] + base_params
 
     activate_action(
         name="restore",
@@ -458,7 +464,8 @@ def list_runs(
         max_results=max_results,
         list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
-    json_list = [run._to_dict() for run in runs]
+    # hide additional info and debug info in run list for better user experience
+    json_list = [run._to_dict(exclude_additional_info=True, exclude_debug_info=True) for run in runs]
     _output_result_list_with_format(result_list=json_list, output_format=output)
     return runs
 
@@ -520,6 +527,7 @@ def _parse_kv_pair(kv_pairs: str) -> Dict[str, str]:
 def create_run(create_func: Callable, args):
     file = args.file
     flow = args.flow
+    run_source = getattr(args, "source", None)  # source is only available for pf args, not pfazure.
     data = args.data
     column_mapping = args.column_mapping
     variant = args.variant
@@ -528,7 +536,7 @@ def create_run(create_func: Callable, args):
     stream = args.stream
     environment_variables = args.environment_variables
     connections = args.connections
-    params_override = args.params_override
+    params_override = args.params_override or []
 
     if environment_variables:
         environment_variables = list_of_dict_to_dict(environment_variables)
@@ -537,7 +545,6 @@ def create_run(create_func: Callable, args):
     if column_mapping:
         column_mapping = list_of_dict_to_dict(column_mapping)
 
-    params_override = params_override or []
     if file:
         for param_key, param in {
             "name": name,
@@ -554,9 +561,7 @@ def create_run(create_func: Callable, args):
             params_override.append({param_key: param})
 
         run = load_run(source=file, params_override=params_override)
-    elif flow is None:
-        raise ValueError("--flow is required when not using --file.")
-    else:
+    elif flow:
         run_data = {
             "name": name,
             "flow": flow,
@@ -571,6 +576,16 @@ def create_run(create_func: Callable, args):
         run_data = {k: v for k, v in run_data.items() if v is not None}
 
         run = Run._load(data=run_data, params_override=params_override)
+    elif run_source:
+        display_name, description, tags = _parse_metadata_args(params_override)
+        processed_params = {
+            "display_name": display_name,
+            "description": description,
+            "tags": tags,
+        }
+        run = Run._load_from_source(source=run_source, params_override=processed_params)
+    else:
+        raise UserErrorException("To create a run, one of [file, flow, source] must be specified.")
     run = create_func(run=run, stream=stream)
     if stream:
         print("\n")  # change new line to show run info

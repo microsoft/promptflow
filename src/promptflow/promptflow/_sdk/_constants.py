@@ -18,6 +18,7 @@ DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_DIR_NAME = ".promptflow"
+PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
 HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
 SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_FILE = "pfs.port"
@@ -66,12 +67,23 @@ VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
 VIS_LIB_CDN_LINK_TMPL = (
     "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
 )
-VIS_LIB_VERSION = "0.0.32"
+VIS_LIB_VERSION = "0.0.33"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
     "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
+REMOTE_URI_PREFIX = "azureml:"
+REGISTRY_URI_PREFIX = "azureml://registries/"
+FLOW_RESOURCE_ID_PREFIX = "azureml://locations/"
+FLOW_DIRECTORY_MACRO_IN_CONFIG = "${flow_directory}"
+
+# Tool meta info
+UIONLY_HIDDEN = "uionly_hidden"
+SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
+ICON_DARK = "icon_dark"
+ICON_LIGHT = "icon_light"
+ICON = "icon"
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -212,11 +224,6 @@ class CLIListOutputFormat:
     TABLE = "table"
 
 
-def get_run_output_path(run) -> Path:
-    # store the run outputs to user's local dir
-    return (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / str(run.name)).resolve()
-
-
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
     DAG = DAG_FILE_NAME
@@ -254,6 +261,7 @@ class RunInfoSources(str, Enum):
     INDEX_SERVICE = "index_service"
     RUN_HISTORY = "run_history"
     MT_SERVICE = "mt_service"
+    EXISTING_RUN = "existing_run"
 
 
 class ConfigValueType(str, Enum):
@@ -274,6 +282,11 @@ class ConnectionType(str, Enum):
     FORM_RECOGNIZER = "FormRecognizer"
     WEAVIATE = "Weaviate"
     CUSTOM = "Custom"
+
+
+ALL_CONNECTION_TYPES = set(
+    map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
+)
 
 
 class ConnectionFields(str, Enum):
@@ -333,3 +346,10 @@ class AzureFlowSource:
     LOCAL = "local"
     PF_SERVICE = "pf_service"
     INDEX = "index"
+
+
+class DownloadedRun:
+    SNAPSHOT_FOLDER = LocalStorageFilenames.SNAPSHOT_FOLDER
+    METRICS_FILE_NAME = LocalStorageFilenames.METRICS
+    LOGS_FILE_NAME = LocalStorageFilenames.LOG
+    RUN_METADATA_FILE_NAME = "run_metadata.json"

@@ -14,7 +14,7 @@ from promptflow._cli._params import (
     add_param_max_results,
     add_param_output_format,
     add_param_set,
-    logging_params,
+    base_params,
 )
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
@@ -46,17 +46,21 @@ def add_parser_flow_create(subparsers):
     """Add flow create parser to the pf flow subparsers."""
     epilog = """
 Use "--set" to set flow properties like:
-    display-name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
+    display_name: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
     type: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
     description: Flow description. e.g. "--set description=<description>."
     tags: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
 
+Note:
+    In "--set" parameter, if the key name consists of multiple words, use snake-case instead of kebab-case. e.g. "--set display_name=<flow-display-name>"
+
 Examples:
+
 # Create a flow to azure portal with local flow folder.
-pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-name> type=<flow-type>
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type>
 
 # Create a flow with more properties
-pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
+pfazure flow create --flow <flow-folder-path> --set display_name=<flow-display-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
 """  # noqa: E501
     add_param_source = lambda parser: parser.add_argument(  # noqa: E731
         "--flow", type=str, help="Source folder of the flow."
@@ -65,7 +69,7 @@ pfazure flow create --flow <flow-folder-path> --set display-name=<flow-display-n
         _set_workspace_argument_for_subparsers,
         add_param_source,
         add_param_set,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="create",
@@ -106,7 +110,7 @@ pfazure flow list --include-others
         add_param_include_archived,
         add_param_output_format,
         _set_workspace_argument_for_subparsers,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="list",
@@ -127,7 +131,7 @@ Examples:
 # Get flow:
 pfazure flow show --name <flow-name>
 """
-    add_params = [add_param_flow_name, _set_workspace_argument_for_subparsers] + logging_params
+    add_params = [add_param_flow_name, _set_workspace_argument_for_subparsers] + base_params
 
     activate_action(
         name="show",
@@ -152,7 +156,7 @@ def add_parser_flow_download(subparsers):
         _set_workspace_argument_for_subparsers,
         add_param_source,
         add_param_destination,
-    ] + logging_params
+    ] + base_params
 
     activate_action(
         name="download",

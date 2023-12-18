@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import logging
 from pathlib import Path
 from typing import Callable, Union
 
@@ -15,19 +14,19 @@ from promptflow._sdk._utils import (
     dump_flow_result,
     get_local_connections_from_executable,
     override_connection_config_with_environment_variable,
-    print_yellow_warning,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class FlowInvoker:
@@ -149,7 +148,7 @@ class FlowInvoker:
         # Get base64 for multi modal object
         resolved_outputs = self._convert_multimedia_data_to_base64(result)
         self._dump_invoke_result(result)
-        print_yellow_warning(f"Result: {result.output}")
+        logger.info(f"Flow run result: {result.output}")
         return resolved_outputs
 
     def _convert_multimedia_data_to_base64(self, invoke_result):
