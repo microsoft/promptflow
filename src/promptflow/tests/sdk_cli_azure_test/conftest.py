@@ -277,7 +277,10 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
     """Create a batch run that does not require LLM."""
     name = randstr("batch_run_name")
     run = pf.run(
-        flow=f"{FLOWS_DIR}/simple_hello_world",
+        # copy test_configs/flows/simple_hello_world to a separate folder
+        # as pf.run will generate .promptflow/flow.tools.json
+        # it will affect Azure file share upload logic and replay test
+        flow=f"{FLOWS_DIR}/hello-world",
         data=f"{DATAS_DIR}/webClassification3.jsonl",
         column_mapping={"name": "${data.url}"},
         runtime=runtime,
