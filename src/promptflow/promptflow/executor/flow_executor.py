@@ -234,6 +234,9 @@ class FlowExecutor:
 
         if storage is None:
             storage = DefaultRunStorage()
+        else:
+            if isinstance(storage, DefaultRunStorage):
+                storage.version = flow.version
         run_tracker = RunTracker(storage)
 
         cache_manager = AbstractCacheManager.init_from_env()
@@ -599,7 +602,7 @@ class FlowExecutor:
                 k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
             }
         # Load multimedia data for the flow inputs of aggregation nodes.
-        inputs = load_multimedia_data(self._flow.inputs, inputs)
+        inputs = load_multimedia_data(self._flow.inputs, inputs, version=self._flow.version)
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
         run_tracker = self._run_tracker

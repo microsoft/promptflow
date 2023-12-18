@@ -10,9 +10,9 @@ from urllib.parse import urlparse
 import filetype
 import requests
 
-from promptflow.contracts._errors import InvalidImageInput
+from promptflow.contracts._errors import InvalidImageInput, InvalidTextInput
 from promptflow.contracts.flow import FlowInputDefinition
-from promptflow.contracts.multimedia import Image, PFBytes
+from promptflow.contracts.multimedia import Image, PFBytes, Text
 from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget
 
@@ -48,6 +48,21 @@ def is_multimedia_dict_v2(multimedia_dict: dict):
     image_type = multimedia_dict["type"]
     if image_type in ["image_url", "image_file"] and image_type in multimedia_dict:
         return True
+    return False
+
+
+def is_text_dict(text_dict: dict):
+    if len(text_dict) != 2:
+        return False
+    if "type" not in text_dict:
+        return False
+    if text_dict["type"] == "text" and "text" in text_dict:
+        text = text_dict["text"]
+        if isinstance(text, str):
+            return True
+        elif isinstance(text, dict):
+            if "value" in text and isinstance(text["value"], str):
+                return True
     return False
 
 
@@ -195,6 +210,10 @@ def create_image(value: any):
         )
 
 
+def create_text_from_dict(text_dict: any):
+    return Text.deserialize(text_dict)
+
+
 def _save_image_to_file(
     image: Image, file_name: str, folder_path: Path, relative_path: Path = None, use_absolute_path=False, version=1
 ):
@@ -231,13 +250,17 @@ def get_file_reference_encoder(
 def default_json_encoder(obj):
     if isinstance(obj, PFBytes):
         return str(obj)
+    elif isinstance(obj, Text):
+        return str(obj)
     else:
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None, version=1):
     pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir, version=version)
-    serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
+    serialization_funcs = {
+        Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder}), Text: Text.serialize
+    }
     return _process_recursively(value, process_funcs=serialization_funcs)
 
 
@@ -275,7 +298,7 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
 
 def load_multimedia_data_recursively(value: Any, version=1):
     process_funcs = {1: _create_image_from_dict_v1, 2: _create_image_from_dict_v2}
-    return _process_multimedia_dict_recursively(value, process_funcs[version])
+    return _process_multimedia_dict_recursively(value, process_funcs[version], create_text_from_dict if version == 2 else None)
 
 
 def resolve_multimedia_data_recursively(input_dir: Path, value: Any):
@@ -283,14 +306,20 @@ def resolve_multimedia_data_recursively(input_dir: Path, value: Any):
     return _process_multimedia_dict_recursively(value, process_func)
 
 
-def _process_multimedia_dict_recursively(value: Any, process_func: Callable) -> dict:
+def _process_multimedia_dict_recursively(
+    value: Any,
+    process_func: Callable,
+    text_process_func: Callable = None
+) -> dict:
     if isinstance(value, list):
-        return [_process_multimedia_dict_recursively(item, process_func) for item in value]
+        return [_process_multimedia_dict_recursively(item, process_func, text_process_func) for item in value]
     elif isinstance(value, dict):
         if is_multimedia_dict(value) or is_multimedia_dict_v2(value):
             return process_func(**{"image_dict": value})
+        elif text_process_func is not None and is_text_dict(value):
+            return text_process_func(**{"text_dict": value})
         else:
-            return {k: _process_multimedia_dict_recursively(v, process_func) for k, v in value.items()}
+            return {k: _process_multimedia_dict_recursively(v, process_func, text_process_func) for k, v in value.items()}
     else:
         return value
 

@@ -58,3 +58,27 @@ class Image(PFBytes):
         if encoder is None:
             return self.__str__()
         return encoder(self)
+
+
+class Text():
+    def __init__(self, value: str, annotations: list = None):
+        self._value = value
+        self._annotations = annotations
+
+    @classmethod
+    def deserialize(cls, data: dict):
+        """Deserialize the dictionary to the text object."""
+
+        text = data.get("text", "")
+        if isinstance(text, dict):
+            return cls(value=text.get("value", ""), annotations=text.get("annotations", []))
+        else:
+            return cls(value=text)
+
+    def serialize(self):
+        """Serialize the text to a dictionary."""
+
+        if self._annotations is None:
+            return {"type": "text", "text": self._value}
+        else:
+            return {"type": "text", "text": {"value": self._value, "annotations": self._annotations}}
