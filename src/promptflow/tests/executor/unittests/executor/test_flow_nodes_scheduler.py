@@ -21,6 +21,7 @@ class TestFlowNodesScheduler:
         # Define mock objects and methods
         self.tools_manager = MagicMock()
         self.context = MagicMock(spec=FlowExecutionContext)
+        self.context.invoke_tool.side_effect = lambda _, func, kwargs: func(**kwargs)
         self.scheduler = FlowNodesScheduler(self.tools_manager, {}, [], DEFAULT_CONCURRENCY_BULK, self.context)
 
     def test_maximun_concurrency(self):
@@ -54,9 +55,7 @@ class TestFlowNodesScheduler:
         dag_manager.pop_bypassable_nodes.side_effect = ([node1], [])
         self.scheduler._dag_manager = dag_manager
         self.scheduler._execute_nodes(executor)
-        self.scheduler._context.bypass_node.assert_called_once_with(
-            node1, dag_manager.get_bypassed_node_outputs.return_value
-        )
+        self.scheduler._context.bypass_node.assert_called_once_with(node1)
 
     def test_submit_nodes(self):
         executor = MagicMock()
@@ -133,7 +132,7 @@ class TestFlowNodesScheduler:
     def test_execute_single_node(self):
         node_to_run = MagicMock(spec=Node)
         node_to_run.name = "node1"
-        mock_callable = MagicMock(sepc=Callable)
+        mock_callable = MagicMock(spec=Callable)
         mock_callable.return_value = "output1"
         self.scheduler._tools_manager.get_tool.return_value = mock_callable
         dag_manager = MagicMock(spec=DAGManager)

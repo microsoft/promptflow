@@ -11,10 +11,8 @@ from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
-from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
-from promptflow._utils.utils import environment_variable_overwrite
 
-from .recording_utilities import ENVIRON_TEST_MODE, RecordMode, RecordStorage
+from .recording_utilities import RecordFileMissingException, RecordItemMissingException, RecordStorage
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -25,16 +23,12 @@ MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 
 @pytest.fixture(scope="session")
 def local_client() -> PFClient:
-    # enable telemetry for CI
-    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
-        yield PFClient()
+    yield PFClient()
 
 
 @pytest.fixture(scope="session")
 def pf() -> PFClient:
-    # enable telemetry for CI
-    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
-        yield PFClient()
+    yield PFClient()
 
 
 @pytest.fixture()
@@ -78,18 +72,6 @@ def setup_local_connection(local_client, azure_open_ai_connection):
     if _connection_setup:
         return
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
-    if RecordStorage.is_replaying_mode():
-        connection_dict["azure_open_ai_connection"] = {
-            "type": "AzureOpenAIConnection",
-            "value": {
-                "api_type": azure_open_ai_connection.api_type,
-                "api_key": azure_open_ai_connection.api_key,
-                "api_base": azure_open_ai_connection.api_base,
-                "api_version": azure_open_ai_connection.api_version,
-            },
-        }
-        connection_dict["azure_open_ai_connection"]["api_key"] = azure_open_ai_connection.api_key
-        connection_dict["azure_open_ai_connection"]["api_base"] = azure_open_ai_connection.api_base
     for name, _dct in connection_dict.items():
         if _dct["type"] == "BingConnection":
             continue
@@ -163,44 +145,67 @@ def serving_client_composite_image_flow(mocker: MockerFixture):
 
 
 def mock_origin(original):
-    def mock_invoke_tool(self, func, *args, **kwargs):
-        if func.__qualname__.startswith("AzureOpenAI"):
+    def mock_invoke_tool(self, node, func, kwargs):
+        if type(func).__name__ == "partial":
+            func_wo_partial = func.func
+        else:
+            func_wo_partial = func
+
+        if (
+            node.provider == "AzureOpenAI"
+            or node.provider == "OpenAI"
+            or func_wo_partial.__qualname__.startswith("AzureOpenAI")
+            or func_wo_partial.__qualname__.startswith("OpenAI")
+            or func_wo_partial.__qualname__ == "fetch_text_content_from_url"
+            or func_wo_partial.__qualname__ == "my_python_tool"
+        ):
             input_dict = {}
             for key in kwargs:
                 input_dict[key] = kwargs[key]
+            if type(func).__name__ == "partial":
+                input_dict["_args"] = func.args
+                for key in func.keywords:
+                    input_dict[key] = func.keywords[key]
+            else:
+                input_dict["_args"] = []
+            input_dict["_func"] = func_wo_partial.__qualname__
+            # Replay mode will direct return item from record file
             if RecordStorage.is_replaying_mode():
-                response = RecordStorage.get_instance().get_record(input_dict)
-                return response
+                obj = RecordStorage.get_instance().get_record(input_dict)
+                return obj
 
-            obj = original(self, func, *args, **kwargs)
+            # Record mode will record item to record file
             if RecordStorage.is_recording_mode():
-                RecordStorage.get_instance().set_record(input_dict, obj)
+                # If already recorded, use previous result
+                # If record item missing, call related functions and record result
+                try:
+                    obj = RecordStorage.get_instance().get_record(input_dict)
+                except (RecordItemMissingException, RecordFileMissingException):
+                    obj_original = original(self, node, func, kwargs)
+                    obj = RecordStorage.get_instance().set_record(input_dict, obj_original)
+                # More exceptions should just raise
+            else:
+                obj = original(self, node, func, kwargs)
             return obj
-        return original(self, func, *args, **kwargs)
+        return original(self, node, func, kwargs)
 
     return mock_invoke_tool
 
 
 @pytest.fixture
-def recording_enabled(mocker: MockerFixture):
-    original_fun = FlowExecutionContext.invoke_tool
-    mocker.patch("promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun))
-    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.RECORD})
-    yield
-    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.LIVE})
-
-
-@pytest.fixture
-def replaying_enabled(mocker: MockerFixture):
-    original_fun = FlowExecutionContext.invoke_tool
-    mocker.patch("promptflow._core.flow_execution_context.FlowExecutionContext.invoke_tool", mock_origin(original_fun))
-    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.REPLAY})
-    yield
-    mocker.patch.dict(os.environ, {ENVIRON_TEST_MODE: RecordMode.LIVE})
-
-
-@pytest.fixture
 def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
-    if request.cls.__name__ == "TestCli":
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "testcli_node_cache.shelve"
-    RecordStorage.get_instance(file_path)
+    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
+        RecordStorage.get_instance(file_path)
+    yield
+
+
+@pytest.fixture
+def recording_injection(mocker: MockerFixture, recording_file_override):
+    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        original_fun = FlowExecutionContext._invoke_tool_with_timer
+        mocker.patch(
+            "promptflow._core.flow_execution_context.FlowExecutionContext._invoke_tool_with_timer",
+            mock_origin(original_fun),
+        )
+    yield

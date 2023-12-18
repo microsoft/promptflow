@@ -75,7 +75,7 @@ def _run_command(
 
     t0 = time.perf_counter()
     try:
-        logger.debug("Executing {0} in {1}".format(commands, cwd))
+        logger.debug("[RunCommand]Executing {0} in {1}".format(commands, cwd))
         out = ""
         p = subprocess.Popen(commands, stdout=subprocess.PIPE, stderr=stderr, cwd=cwd, shell=shell, env=env)
         for line in p.stdout:
@@ -95,13 +95,13 @@ def _run_command(
         return retcode, out
     finally:
         t1 = time.perf_counter()
-        logger.debug("Execution took {0}s for {1} in {2}".format(t1 - t0, commands, cwd))
+        logger.debug("[RunCommand] Execution took {0}s for {1} in {2}".format(t1 - t0, commands, cwd))
 
 
 def run_command(
     commands, cwd=None, stderr=subprocess.STDOUT, shell=False, stream_stdout=True, throw_on_retcode=True, logger=None
 ):
-    _, out = _run_command(
+    return _run_command(
         commands,
         cwd=cwd,
         stderr=stderr,
@@ -110,4 +110,3 @@ def run_command(
         throw_on_retcode=throw_on_retcode,
         logger=logger,
     )
-    return out

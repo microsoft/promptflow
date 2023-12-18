@@ -6,6 +6,7 @@ from typing import List
 import pytest
 
 from promptflow._core.tools_manager import ToolLoader
+from promptflow._internal import tool
 from promptflow._sdk.entities import CustomConnection, CustomStrongTypeConnection
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
@@ -32,6 +33,13 @@ WRONG_REQUESTS_PATH = TEST_ROOT / "test_configs/executor_wrong_requests"
 class MyFirstCSTConnection(CustomStrongTypeConnection):
     api_key: Secret
     api_base: str
+
+
+@tool(streaming_option_parameter="stream_enabled")
+def mock_package_func(prompt: PromptTemplate, **kwargs):
+    from promptflow.tools.template_rendering import render_template_jinja2
+
+    return render_template_jinja2(prompt, **kwargs)
 
 
 @pytest.mark.unittest
@@ -318,7 +326,7 @@ class TestToolResolver:
             inputs={
                 "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
                 "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL),
-                "image": InputAssignment(value=str(DATA_ROOT / "test_image.jpg"), value_type=InputValueType.LITERAL),
+                "image": InputAssignment(value=str(DATA_ROOT / "logo.jpg"), value_type=InputValueType.LITERAL),
             },
             connection="conn_name",
             provider="mock",
@@ -366,11 +374,6 @@ class TestToolResolver:
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 
     def test_resolve_package_node(self, mocker):
-        def mock_package_func(prompt: PromptTemplate, **kwargs):
-            from promptflow.tools.template_rendering import render_template_jinja2
-
-            return render_template_jinja2(prompt, **kwargs)
-
         tool_loader = ToolLoader(working_dir=None)
         tool = Tool(name="mock", type=ToolType.PYTHON, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
         mocker.patch.object(tool_loader, "load_tool_for_package_node", return_value=tool)
@@ -401,11 +404,6 @@ class TestToolResolver:
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 
     def test_integrate_prompt_in_package_node(self, mocker):
-        def mock_package_func(prompt: PromptTemplate, **kwargs):
-            from promptflow.tools.template_rendering import render_template_jinja2
-
-            return render_template_jinja2(prompt, **kwargs)
-
         tool_resolver = ToolResolver(working_dir=None, connections={})
         mocker.patch.object(
             tool_resolver,
@@ -422,7 +420,9 @@ class TestToolResolver:
             provider="mock",
         )
         resolved_tool = ResolvedTool(node=node, callable=mock_package_func, definition=tool, init_args=None)
+        assert resolved_tool.callable._streaming_option_parameter == "stream_enabled"
         resolved_tool = tool_resolver._integrate_prompt_in_package_node(resolved_tool)
+        assert resolved_tool.callable._streaming_option_parameter == "stream_enabled"
         kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 

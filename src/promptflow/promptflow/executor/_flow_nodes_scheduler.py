@@ -2,7 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import contextvars
+import inspect
 from concurrent import futures
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict, List, Tuple
@@ -73,7 +75,8 @@ class FlowNodesScheduler:
         # Skip nodes and update node run info until there are no nodes to bypass
         nodes_to_bypass = self._dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
-            self._bypass_nodes(nodes_to_bypass)
+            for node in nodes_to_bypass:
+                self._context.bypass_node(node)
             nodes_to_bypass = self._dag_manager.pop_bypassable_nodes()
 
         # Submit nodes that are ready to run
@@ -89,15 +92,6 @@ class FlowNodesScheduler:
             completed_nodes_outputs[each_node.name] = each_node_result
         return completed_nodes_outputs
 
-    def _bypass_nodes(self, nodes: List[Node]):
-        try:
-            self._context.start()
-            for node in nodes:
-                node_outputs = self._dag_manager.get_bypassed_node_outputs(node)
-                self._context.bypass_node(node, node_outputs)
-        finally:
-            self._context.end()
-
     def _submit_nodes(self, executor: ThreadPoolExecutor, nodes):
         for each_node in nodes:
             future = executor.submit(self._exec_single_node_in_thread, (each_node, self._dag_manager))
@@ -107,14 +101,12 @@ class FlowNodesScheduler:
         node, dag_manager = args
         # We are using same run tracker and cache manager for all threads, which may not thread safe.
         # But for bulk run scenario, we've doing this for a long time, and it works well.
-        context = self._context.copy()
-        try:
-            context.start()
-            f = self._tools_manager.get_tool(node.name)
-            kwargs = dag_manager.get_node_valid_inputs(node, f)
-            context.current_node = node
-            result = f(**kwargs)
-            context.current_node = None
-            return result
-        finally:
-            context.end()
+        context = self._context
+        f = self._tools_manager.get_tool(node.name)
+        kwargs = dag_manager.get_node_valid_inputs(node, f)
+        if inspect.iscoroutinefunction(f):
+            # TODO: Run async functions in flow level event loop
+            result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
+        else:
+            result = context.invoke_tool(node, f, kwargs=kwargs)
+        return result

@@ -26,7 +26,7 @@ git clone https://github.com/microsoft/promptflow.git
 ### Create custom tool package
 Run below command under the root folder to create your tool project quickly:
 ```
-python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name>
+python <promptflow github repo>\scripts\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name>
 ```
 For example:
 ```
@@ -69,7 +69,7 @@ hello-world-proj/
 
     > [!Note] If you create a new tool, don't forget to also create the corresponding tool YAML. You can run below command under your tool project to auto generate your tool YAML. You may want to specify `-n` for `name` and `-d` for `description`, which would be displayed as the tool name and tooltip in prompt flow UI. 
     ```
-    python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description>
+    python <promptflow github repo>\scripts\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description>
     ```
     For example:
     ```
@@ -162,9 +162,10 @@ Alternatively, you can test your tool package using the script below to ensure t
 * If you encounter a `403 Forbidden Error`, it's likely due to a naming conflict with an existing package. You will need to choose a different name. Package names must be unique on PyPI to avoid confusion and conflicts among users. Before creating a new package, it's recommended to search PyPI (https://pypi.org/) to verify that your chosen name is not already taken. If the name you want is unavailable, consider selecting an alternative name or a variation that clearly differentiates your package from the existing one.
 
 ## Advanced features
-[Customize your tool icon](add-a-tool-icon.md)  
-[Add category and tags for tool](add-category-and-tags-for-tool.md)  
-[Use file path as tool input](use-file-path-as-tool-input.md)  
-[Customize an LLM Tool](customize_an_llm_tool.md)  
-[Creating Cascading Tool Inputs](create-cascading-tool-inputs.md)   
-[Create and Use Your Own Custom Strong Type Connection](create-your-own-custom-strong-type-connection.md) 
+- [Add a Tool Icon](add-a-tool-icon.md)  
+- [Add Category and Tags for Tool](add-category-and-tags-for-tool.md)  
+- [Create and Use Your Own Custom Strong Type Connection](create-your-own-custom-strong-type-connection.md)  
+- [Customize an LLM Tool](customize_an_llm_tool.md)  
+- [Use File Path as Tool Input](use-file-path-as-tool-input.md)  
+- [Create a Dynamic List Tool Input](create-dynamic-list-tool-input.md)  
+- [Create Cascading Tool Inputs](create-cascading-tool-inputs.md)

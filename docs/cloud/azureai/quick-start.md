@@ -155,8 +155,13 @@ pf.visualize(base_run)
 
 At the end of stream logs, you can find the `portal_url` of the submitted run, click it to view the run in the workspace.
 
-
 ![c_0](../../media/cloud/azureml/local-to-cloud-run-webview.png)
+
+### Run snapshot of the flow with additional includes
+
+Flows that enabled [additional include](../../how-to-guides/develop-a-flow/develop-standard-flow.md#referencing-external-filesfolders-in-a-flow) files can also be submitted for execution in the workspace. Please note that the specific additional include files or folders will be uploaded and organized within the **Files** folder of the run snapshot in the cloud.
+
+![img](../../media/cloud/azureml/run-with-additional-includes.png)
 
 
 ## Next steps

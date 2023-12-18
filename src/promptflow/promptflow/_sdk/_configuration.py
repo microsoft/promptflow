@@ -11,9 +11,9 @@ from typing import Optional, Union
 
 import pydash
 
-from promptflow._sdk._constants import LOGGER_NAME, ConnectionProvider
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, LOGGER_NAME, SERVICE_CONFIG_FILE, ConnectionProvider
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml
+from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml, read_write_by_user
 from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -23,13 +23,15 @@ class ConfigFileNotFound(ValidationException):
     pass
 
 
+class InvalidConfigFile(ValidationException):
+    pass
+
+
 class Configuration(object):
 
-    CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
-    COLLECT_TELEMETRY = "cli.telemetry_enabled"
+    CONFIG_PATH = Path(HOME_PROMPT_FLOW_DIR) / SERVICE_CONFIG_FILE
+    COLLECT_TELEMETRY = "telemetry.enabled"
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
-    EU_USER = "cli.eu_user"
-    EXTENSION_EU_USER = "extension.eu_user"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
     _instance = None
@@ -38,6 +40,7 @@ class Configuration(object):
         if not os.path.exists(self.CONFIG_PATH.parent):
             os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
         if not os.path.exists(self.CONFIG_PATH):
+            self.CONFIG_PATH.touch(mode=read_write_by_user(), exist_ok=True)
             with open(self.CONFIG_PATH, "w") as f:
                 f.write(dump_yaml({}))
         self._config = load_yaml(self.CONFIG_PATH)
@@ -138,10 +141,10 @@ class Configuration(object):
 
         subscription_id, resource_group, workspace_name = MLClient._get_workspace_info(found_path)
         if not (subscription_id and resource_group and workspace_name):
-            raise ValueError(
+            raise InvalidConfigFile(
                 "The subscription_id, resource_group and workspace_name can not be empty. Got: "
                 f"subscription_id: {subscription_id}, resource_group: {resource_group}, "
-                f"workspace_name: {workspace_name}."
+                f"workspace_name: {workspace_name} from file {found_path}."
             )
         return RESOURCE_ID_FORMAT.format(subscription_id, resource_group, AZUREML_RESOURCE_PROVIDER, workspace_name)
 
@@ -170,12 +173,6 @@ class Configuration(object):
     def set_telemetry_consent(self, value):
         """Set the telemetry consent value and store in local."""
         self.set_config(key=self.COLLECT_TELEMETRY, value=value)
-
-    def is_eu_user(self) -> Optional[bool]:
-        """Check if user is from europe. Return None if not configured."""
-        if call_from_extension():
-            return self.get_config(key=self.EXTENSION_EU_USER)
-        return self.get_config(key=self.EU_USER)
 
     def get_or_set_installation_id(self):
         """Get user id if exists, otherwise set installation id and return it."""

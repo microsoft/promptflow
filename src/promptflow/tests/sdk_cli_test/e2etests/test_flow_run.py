@@ -13,12 +13,14 @@ from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames,
 from promptflow._sdk._errors import ConnectionNotFoundError, InvalidFlowError, RunExistsError, RunNotFoundError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
+from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
+
+from ..recording_utilities import RecordStorage
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -75,7 +77,9 @@ def assert_run_with_invalid_column_mapping(client: PFClient, run: Run, capfd: py
     assert exception["code"] == "BulkRunException"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowRun:
@@ -821,6 +825,7 @@ class TestFlowRun:
         assert "error" in run_dict
         assert run_dict["error"] == exception
 
+    @pytest.mark.skipif(RecordStorage.is_replaying_mode(), reason="System metrics not supported in replaying mode")
     def test_system_metrics_in_properties(self, pf) -> None:
         run = create_run_against_multi_line_data(pf)
         assert FlowRunProperties.SYSTEM_METRICS in run.properties
