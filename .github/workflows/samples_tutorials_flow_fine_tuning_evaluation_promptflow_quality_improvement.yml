@@ -9,7 +9,7 @@ on:
     - cron: "15 19 * * *" # Every day starting at 3:15 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_tutorials_flow_fine_tuning_evaluation_promptflow_quality_improvement.yml, '!examples/flows/integrations/**' ]
+    paths: [ examples/tutorials/flow-fine-tuning-evaluation/**, examples/connections/azure_openai.yml, examples/flows/chat/basic-chat/**, examples/flows/chat/chat-math-variant/**, examples/flows/evaluation/eval-chat-math/**, .github/workflows/samples_tutorials_flow_fine_tuning_evaluation_promptflow_quality_improvement.yml, examples/requirements.txt ]
   workflow_dispatch:
 
 env:
@@ -74,7 +74,8 @@ jobs:
         working-directory: examples/tutorials/flow-fine-tuning-evaluation
         run: |
           cat bash_script.sh
-      - name: Run scripts
+      - name: Run scripts against canary workspace (scheduled runs only)
+        if: github.event_name == 'schedule'
         working-directory: examples/tutorials/flow-fine-tuning-evaluation
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
@@ -82,6 +83,16 @@ jobs:
           export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
+          bash bash_script.sh
+      - name: Run scripts against production workspace
+        if: github.event_name != 'schedule'
+        working-directory: examples/tutorials/flow-fine-tuning-evaluation
+        run: |
+          export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
+          export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
+          export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
+          export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
+          export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_PROD }}
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}

@@ -9,14 +9,13 @@ from typing import Any, Dict, List, Union
 
 from .._utils.logger_utils import LoggerFactory
 from ._configuration import Configuration
-from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
+from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS
 from ._user_agent import USER_AGENT
-from ._utils import setup_user_agent_to_operation_context
+from ._utils import get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._flow_operations import FlowOperations
-from .operations._local_azure_connection_operations import LocalAzureConnectionOperations
 from .operations._tool_operations import ToolOperations
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -195,14 +194,7 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             self._ensure_connection_provider()
-            if self._connection_provider == ConnectionProvider.LOCAL.value:
-                logger.debug("PFClient using local connection operations.")
-                self._connections = ConnectionOperations()
-            elif self._connection_provider.startswith(ConnectionProvider.AZUREML.value):
-                logger.debug("PFClient using local azure connection operations.")
-                self._connections = LocalAzureConnectionOperations(self._connection_provider)
-            else:
-                raise ValueError(f"Unsupported connection provider: {self._connection_provider}")
+            self._connections = get_connection_operation(self._connection_provider)
         return self._connections
 
     @property

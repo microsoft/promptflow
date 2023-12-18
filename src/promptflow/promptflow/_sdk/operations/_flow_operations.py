@@ -19,6 +19,7 @@ from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOL
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
+from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
@@ -31,8 +32,6 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
 
@@ -366,31 +365,36 @@ class FlowOperations(TelemetryMixin):
 
     def _export_flow_connections(
         self,
-        flow_dag_path: Path,
+        built_flow_dag_path: Path,
         *,
         output_dir: Path,
     ):
-        from promptflow.contracts.flow import Flow as ExecutableFlow
-        from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
+        """Export flow connections to yaml files.
 
-        executable = ExecutableFlow.from_yaml(
-            flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent.absolute()
-        )
-
-        with _change_working_dir(flow_dag_path.parent):
-            if executable.program_language == FlowLanguage.CSharp:
-                connection_names = SubmitterHelper.resolve_connection_names_from_tool_meta(
-                    tools_meta=CSharpExecutorProxy.generate_tool_metadata(
-                        working_dir=flow_dag_path.parent.absolute(),
-                    ),
-                    flow_dag=executable.serialize(),
-                )
+        :param built_flow_dag_path: path to built flow dag yaml file. Given this is a built flow, we can assume
+        that the flow involves no additional includes, symlink, or variant.
+        :param output_dir: output directory to export connections
+        """
+        flow: ProtectedFlow = load_flow(built_flow_dag_path)
+        with _change_working_dir(flow.code):
+            if flow.language == FlowLanguage.CSharp:
+                from promptflow.batch import CSharpExecutorProxy
 
                 return self._migrate_connections(
-                    connection_names=connection_names,
+                    connection_names=SubmitterHelper.get_used_connection_names(
+                        tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                            flow_file=flow.flow_dag_path,
+                            working_dir=flow.code,
+                        ),
+                        flow_dag=flow.dag,
+                    ),
                     output_dir=output_dir,
                 )
             else:
+                # TODO: avoid using executable here
+                from promptflow.contracts.flow import Flow as ExecutableFlow
+
+                executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
                 return self._migrate_connections(
                     connection_names=executable.get_connection_names(),
                     output_dir=output_dir,
@@ -556,7 +560,7 @@ class FlowOperations(TelemetryMixin):
         output_dir = Path(output).absolute()
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        flow = load_flow(flow)
+        flow: ProtectedFlow = load_flow(flow)
         is_csharp_flow = flow.dag.get(LANGUAGE_KEY, "") == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
@@ -578,7 +582,7 @@ class FlowOperations(TelemetryMixin):
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
-            update_flow_tools_json=False if is_csharp_flow else True
+            update_flow_tools_json=False if is_csharp_flow else True,
         )
 
         if flow_only:
@@ -586,7 +590,7 @@ class FlowOperations(TelemetryMixin):
 
         # use new flow dag path below as origin one may miss additional includes
         connection_paths, env_var_names = self._export_flow_connections(
-            flow_dag_path=new_flow_dag_path,
+            built_flow_dag_path=new_flow_dag_path,
             output_dir=output_dir / "connections",
         )
 

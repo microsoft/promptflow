@@ -16,6 +16,7 @@ from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType
+from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
@@ -77,14 +78,17 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
     from promptflow.azure import PFClient
 
     if is_replay():
-        yield get_pf_client_for_replay()
+        client = get_pf_client_for_replay()
     else:
-        yield PFClient(
+        client = PFClient(
             credential=get_cred(),
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
         )
+    assert "promptflow-sdk" in ClientUserAgentUtil.get_user_agent()
+    assert "promptflow/" not in ClientUserAgentUtil.get_user_agent()
+    yield client
 
 
 @pytest.fixture()
@@ -180,7 +184,7 @@ def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], s
 @pytest.fixture(autouse=not is_live())
 def mock_appinsights_log_handler(mocker: MockerFixture) -> None:
     dummy_logger = logging.getLogger("dummy")
-    mocker.patch("promptflow._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
+    mocker.patch("promptflow._sdk._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
     return
 
 
@@ -265,3 +269,38 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     assert result.path.endswith(f"/promptflow/{flow_display_name}/flow.dag.yaml")
 
     yield result
+
+
+@pytest.fixture(autouse=not is_live())
+def mock_vcrpy_for_httpx() -> None:
+    # there is a known issue in vcrpy handling httpx response: https://github.com/kevin1024/vcrpy/pull/591
+    # the related code change has not been merged, so we need such a fixture for patch
+    def _transform_headers(httpx_response):
+        out = {}
+        for key, var in httpx_response.headers.raw:
+            decoded_key = key.decode("utf-8")
+            decoded_var = var.decode("utf-8")
+            if decoded_key.lower() == "content-encoding" and decoded_var in ("gzip", "deflate"):
+                continue
+            out.setdefault(decoded_key, [])
+            out[decoded_key].append(decoded_var)
+        return out
+
+    with patch("vcr.stubs.httpx_stubs._transform_headers", new=_transform_headers):
+        yield
+
+
+@pytest.fixture(autouse=not is_live())
+def mock_to_thread() -> None:
+    # https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread
+    # to_thread actually uses a separate thread, which will break mocks
+    # so we need to mock it to avoid using a separate thread
+    # this is only for AsyncRunDownloader.to_thread
+    async def to_thread(func, /, *args, **kwargs):
+        func(*args, **kwargs)
+
+    with patch(
+        "promptflow.azure.operations._async_run_downloader.to_thread",
+        new=to_thread,
+    ):
+        yield

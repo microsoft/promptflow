@@ -14,8 +14,8 @@ import pydash
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
-from promptflow._telemetry.activity import request_id_context
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._sdk._telemetry import request_id_context
+from promptflow._sdk._telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
@@ -636,6 +636,26 @@ class FlowServiceCaller(RequestTelemetryMixin):
             index=index,
             start_index=start_index,
             end_index=end_index,
+            headers=headers,
+            **kwargs
+        )
+
+    @_request_wrapper()
+    def cancel_flow_run(
+            self,
+            subscription_id,  # type: str
+            resource_group_name,  # type: str
+            workspace_name,  # type: str
+            flow_run_id,  # type: str
+            **kwargs  # type: Any
+        ):
+        """Cancel a flow run."""
+        headers = self._get_headers()
+        return self.caller.bulk_runs.cancel_flow_run(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_run_id=flow_run_id,
             headers=headers,
             **kwargs
         )
