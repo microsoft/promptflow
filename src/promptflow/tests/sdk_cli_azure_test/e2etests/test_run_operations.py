@@ -358,13 +358,13 @@ class TestFlowRun:
         condition=not is_live(),
         reason="cannot differ the two requests to run history in replay mode.",
     )
-    def test_archive_and_restore_run(self, pf):
+    def test_archive_and_restore_run(self, pf: PFClient, created_batch_run_without_llm: Run):
         from promptflow._sdk._constants import RunHistoryKeys
 
         run_meta_data = RunHistoryKeys.RunMetaData
         hidden = RunHistoryKeys.HIDDEN
 
-        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+        run_id = created_batch_run_without_llm.name
 
         # test archive
         pf.runs.archive(run=run_id)
@@ -376,8 +376,8 @@ class TestFlowRun:
         run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         assert run_data[hidden] is False
 
-    def test_update_run(self, pf, randstr: Callable[[str], str]):
-        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+    def test_update_run(self, pf: PFClient, created_batch_run_without_llm: Run, randstr: Callable[[str], str]):
+        run_id = created_batch_run_without_llm.name
         test_mark = randstr("test_mark")
 
         new_display_name = f"test_display_name_{test_mark}"
