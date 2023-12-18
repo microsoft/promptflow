@@ -5,12 +5,12 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate, br
+      - gzip, deflate
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
   response:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.026'
+      - '0.024'
     status:
       code: 200
       message: OK
@@ -49,12 +49,12 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate, br
+      - gzip, deflate
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
-        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
   response:
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.058'
+      - '0.055'
     status:
       code: 200
       message: OK
@@ -101,12 +101,12 @@ interactions:
       Accept:
       - application/json
       Accept-Encoding:
-      - gzip, deflate, br
+      - gzip, deflate
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 promptflow/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
-        Python/3.9.18 (Windows-10-10.0.22631-SP0)
+      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/classification_accuracy_eval_default_20230808_153241_422491
   response:
@@ -138,7 +138,7 @@ interactions:
         "inputsMapping": {"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
         "outputDatastoreName": "workspaceblobstore", "childRunBasePath": "promptflow/PromptFlowArtifacts/classification_accuracy_eval_default_20230808_153241_422491/flow_artifacts",
         "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "e5d50c43-7ad2-4354-9ce4-4f56f0ea9a30",
-        "studioPortalEndpoint": "https://ml.azure.com/runs/classification_accuracy_eval_default_20230808_153241_422491?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus"}'
+        "studioPortalEndpoint": "https://ml.azure.com/runs/classification_accuracy_eval_default_20230808_153241_422491?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
       - keep-alive
@@ -155,7 +155,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.391'
+      - '0.428'
     status:
       code: 200
       message: OK
@@ -167,7 +167,7 @@ interactions:
       Accept:
       - '*/*'
       Accept-Encoding:
-      - gzip, deflate, br
+      - gzip, deflate
       Connection:
       - keep-alive
       Content-Length:
@@ -182,10 +182,10 @@ interactions:
     body:
       string: '{"runMetadata": {"runNumber": 1691479972, "rootRunId": "classification_accuracy_eval_default_20230808_153241_422491",
         "createdUtc": "2023-08-08T07:32:52.7610302+00:00", "createdBy": {"userObjectId":
-        "00000000-0000-0000-0000-000000000000", "userPuId": "10032000324F7449", "userIdp":
+        "c05e0746-e125-4cb3-9213-a8b535eacd79", "userPuId": "10032000324F7449", "userIdp":
         null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Honglin
-        Du", "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token":
+        Du", "upn": null}, "userId": "c05e0746-e125-4cb3-9213-a8b535eacd79", "token":
         null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
         4, "statusRevision": 2, "runUuid": "59a146b3-caca-4313-8e22-04385a10067b",
         "parentRunUuid": null, "rootRunUuid": "59a146b3-caca-4313-8e22-04385a10067b",
@@ -264,7 +264,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.028'
+      - '0.059'
     status:
       code: 200
       message: OK
