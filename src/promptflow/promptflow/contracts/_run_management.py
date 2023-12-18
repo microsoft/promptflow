@@ -30,9 +30,16 @@ class RunMetadata:
 
 
 @dataclass
+class VisualizationConfig:
+    # use camel name here to fit contract requirement from js
+    availableIDEList: List[str]
+
+
+@dataclass
 class RunVisualization:
     detail: List[RunDetail]
     metadata: List[RunMetadata]
+    config: List[VisualizationConfig]
 
 
 @dataclass

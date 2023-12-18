@@ -141,7 +141,7 @@ class TestBatchInputsProcessor:
         inputs = {
             "question": None,
             "groundtruth": None,
-            "input_with_default_value": FlowInputDefinition(type=ValueType.INT, default="default_value"),
+            "input_with_default_value": FlowInputDefinition(type=ValueType.BOOL, default=False),
         }
         updated_inputs_mapping = BatchInputsProcessor("", inputs)._complete_inputs_mapping_by_default_value(
             inputs_mapping

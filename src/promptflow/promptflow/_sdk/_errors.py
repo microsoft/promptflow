@@ -92,6 +92,12 @@ class RunOperationParameterError(PromptflowException):
     pass
 
 
+class RunOperationError(PromptflowException):
+    """Exception raised when run operation failed."""
+
+    pass
+
+
 class FlowOperationError(PromptflowException):
     """Exception raised when flow operation failed."""
 

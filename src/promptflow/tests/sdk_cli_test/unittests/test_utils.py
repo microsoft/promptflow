@@ -23,6 +23,7 @@ from promptflow._cli._utils import (
 )
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
+from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
 from promptflow._sdk._utils import (
     _generate_connections_dir,
     decrypt_secret_value,
@@ -88,6 +89,21 @@ class TestUtils:
         assert connections["test_connection"]["value"]["api_key"] == "KEY"
         assert connections["test_connection"]["value"]["api_base"] == "BASE"
         assert connections["test_custom_connection"]["value"]["key"] == "CUSTOM_VALUE"
+
+        # test bad cases
+        connections = {
+            "test_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {"none_value": None, "integer_value": 1, "float_value": 1.0, "dict_value": {}},
+            },
+        }
+        resolve_connections_environment_variable_reference(connections)
+        assert connections["test_connection"]["value"] == {
+            "none_value": None,
+            "integer_value": 1,
+            "float_value": 1.0,
+            "dict_value": {},
+        }
 
     def test_override_connection_config_with_environment_variable(self):
         connections = {
@@ -225,6 +241,34 @@ class TestUtils:
         # specify max_rows_count
         df = load_data(data_path, max_rows_count=5000)
         assert len(df) == 5000
+
+    @pytest.mark.parametrize(
+        "script_name, expected_result",
+        [
+            ("pfs", "pfs"),
+            ("pfutil.py", "pfutil.py"),
+            ("pf", "pf"),
+            ("pfazure", "pfazure"),
+            ("pf.exe", "pf.exe"),
+            ("pfazure.exe", "pfazure.exe"),
+            ("app.py", "app.py"),
+            ("python -m unittest", "python -m unittest"),
+            ("pytest", "pytest"),
+            ("gunicorn", "gunicorn"),
+            ("ipykernel_launcher.py", "ipykernel_launcher.py"),
+            ("jupyter-notebook", "jupyter-notebook"),
+            ("jupyter-lab", "jupyter-lab"),
+            ("python", "python"),
+            ("Unknown Application", "Unknown Application"),
+            ("unknown_script.py", "***.py"),
+            ("path/to/unknown_script.py", "***.py"),
+            (r"path\to\unknown_script.py", "***.py"),
+            ('invalid_chars_\\/:*?"<>|', "***"),
+        ],
+    )
+    def test_get_scrubbed_cloud_role(self, script_name, expected_result):
+        with mock.patch("sys.argv", [script_name]):
+            assert get_scrubbed_cloud_role() == expected_result
 
 
 @pytest.mark.unittest

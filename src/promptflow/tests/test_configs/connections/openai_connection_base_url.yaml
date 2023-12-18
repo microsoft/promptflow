@@ -1,0 +1,6 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+name: my_open_ai_connection
+type: open_ai
+api_key: "<to-be-replaced>"
+organization: "org"
+base_url: custom_base_url

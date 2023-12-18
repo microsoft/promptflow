@@ -1,1 +1,23 @@
 * @microsoft/prompt-flow-approvers
+
+/src/promptflow/promptflow/_core/ @microsoft/promptflow-execution
+/src/promptflow/promptflow/_internal/ @microsoft/promptflow-execution
+/src/promptflow/promptflow/batch/ @microsoft/promptflow-execution
+/src/promptflow/promptflow/executor/ @microsoft/promptflow-execution
+/src/promptflow/promptflow/integrations/ @microsoft/promptflow-execution
+/src/promptflow/promptflow/storage/ @microsoft/promptflow-execution
+/src/promptflow/tests/executor/ @microsoft/promptflow-execution
+
+/src/promptflow/promptflow/_cli/ @microsoft/promptflow-sdk
+/src/promptflow/promptflow/_sdk/ @microsoft/promptflow-sdk
+/src/promptflow/promptflow/azure/ @microsoft/promptflow-sdk
+/src/promptflow/promptflow/entities/ @microsoft/promptflow-sdk
+/src/promptflow/promptflow/operations/ @microsoft/promptflow-sdk
+/src/promptflow/tests/sdk_cli_test/ @microsoft/promptflow-sdk
+/src/promptflow/tests/sdk_cli_azure_test/ @microsoft/promptflow-sdk
+/src/promptflow/tests/sdk_cli_global_config_test/ @microsoft/promptflow-sdk
+/src/promptflow/tests/sdk_pfs_test/ @microsoft/promptflow-sdk
+/scripts/docs/ @microsoft/promptflow-sdk
+/scripts/installer/ @microsoft/promptflow-sdk
+/scripts/json_schema/ @microsoft/promptflow-sdk
+/scripts/readme/ @microsoft/promptflow-sdk

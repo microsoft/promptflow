@@ -2,7 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class
+from jinja2 import TemplateSyntaxError
+
+from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class, remove_suffix
 from promptflow.exceptions import (
     ErrorTarget,
     PromptflowException,
@@ -196,22 +198,23 @@ class ResolveToolError(PromptflowException):
         super().__init__(target=target, module=module)
 
     @property
-    def message_format(self):
+    def message(self):
         if self.inner_exception:
-            return "Tool load failed in '{node_name}': {error_type_and_message}"
-        else:
-            return "Tool load failed in '{node_name}'."
+            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
+            if isinstance(self.inner_exception, TemplateSyntaxError):
+                error_type_and_message = (
+                    f"Jinja parsing failed at line {self.inner_exception.lineno}: {error_type_and_message}"
+                )
+            return remove_suffix(self._message, ".") + f": {error_type_and_message}"
+        return self._message
+
+    @property
+    def message_format(self):
+        return "Tool load failed in '{node_name}'."
 
     @property
     def message_parameters(self):
-        error_type_and_message = None
-        if self.inner_exception:
-            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
-
-        return {
-            "node_name": self._node_name,
-            "error_type_and_message": error_type_and_message,
-        }
+        return {"node_name": self._node_name}
 
     @property
     def additional_info(self):
