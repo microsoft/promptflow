@@ -152,8 +152,8 @@ class MetricsRecorder(object):
         """
         if not metrics_enabled:
             logger.warning("OpenTelemetry metrics is not enabled, metrics will not be recorded." +
-                           "Please enable 'monitor' extra requirement when installing promptflow: " +
-                           "'pip install promptflow[monitor]'")
+                           "Please enable 'monitoring' extra requirement when installing promptflow: " +
+                           "'pip install promptflow[monitoring]'")
             return
         self.common_dimensions = common_dimensions or {}
         self.reader = reader

@@ -86,7 +86,7 @@ setup(
         "pfs": [
             "flask-restx>=1.2.0,<2.0.0",
         ],
-        "monitor": [
+        "monitoring": [
             # OTel dependencies for monitoring
             "opentelemetry-api>=1.21.0,<2.0.0",
             "opentelemetry-sdk>=1.21.0,<2.0.0",
