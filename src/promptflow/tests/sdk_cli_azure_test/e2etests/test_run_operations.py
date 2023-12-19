@@ -875,7 +875,6 @@ class TestFlowRun:
 @pytest.mark.skipif(condition=not is_live(), reason="aml-user-token will be mocked")
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
-@pytest.mark.usefixtures("single_worker_thread_pool", "vcr_recording")
 class TestFlowRunRelatedToAMLToken:
     def test_automatic_runtime_creation_user_aml_token(self, pf):
         from azure.core.pipeline import Pipeline
