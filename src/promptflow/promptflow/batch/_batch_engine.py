@@ -83,14 +83,16 @@ class BatchEngine:
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
-        self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
         FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
-        self._connections = connections
+        executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
+        with _change_working_dir(self._working_dir):
+            self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
+                flow_file, self._working_dir, connections=connections, storage=storage, **kwargs
+            )
         self._storage = storage
-        self._kwargs = kwargs
         # set it to True when the batch run is canceled
         self._is_canceled = False
 
@@ -123,24 +125,15 @@ class BatchEngine:
 
         try:
             self._start_time = datetime.utcnow()
+            # set batch input source from input mapping
+            OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
+            # resolve input data from input dirs and apply inputs mapping
+            batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
+            batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+            # resolve output dir
+            output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
+            # run flow in batch mode
             with _change_working_dir(self._working_dir):
-                # create executor proxy instance according to the flow program language
-                executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
-                self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
-                    self._flow_file,
-                    self._working_dir,
-                    connections=self._connections,
-                    storage=self._storage,
-                    **self._kwargs,
-                )
-                # set batch input source from input mapping
-                OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
-                # resolve input data from input dirs and apply inputs mapping
-                batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
-                batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
-                # resolve output dir
-                output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
-                # run flow in batch mode
                 return async_run_allowing_running_loop(
                     self._exec_in_task, batch_inputs, run_id, output_dir, raise_on_line_failure
                 )
@@ -159,7 +152,6 @@ class BatchEngine:
                 )
                 raise unexpected_error from e
         finally:
-            # destroy the executor proxy and end the life cycle of the executor proxy
             self._executor_proxy.destroy()
 
     def cancel(self):
@@ -201,7 +193,6 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
-        # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         batch_inputs = [

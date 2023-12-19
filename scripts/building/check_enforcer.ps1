@@ -136,7 +136,7 @@ function run_checks() {
         if ($snippet_debug -eq 1) {
             Write-Output "git diff --name-only HEAD main $_"
         }
-        if ($_.Contains("src/promptflow")) {
+        if ($_.Contains("src/promptflow/")) {
             $need_to_check.Add("sdk_cli")
         }
     }
