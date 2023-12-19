@@ -4,14 +4,17 @@ import os
 import queue
 import signal
 import sys
+from contextlib import contextmanager
 from datetime import datetime
 from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 from typing import Union
+from unittest.mock import patch
 
 import psutil
+from sdk_cli_test.recording_utilities import RecordStorage, mock_tool
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import ProcessPoolError
@@ -497,6 +500,27 @@ def _exec_line(
         return result
 
 
+@contextmanager
+def apply_recording_injection_if_enabled():
+    patches = []
+    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        from promptflow._core.tool import tool as original_tool
+
+        mocked_tool = mock_tool(original_tool)
+        patch_targets = ["promptflow._core.tool.tool", "promptflow._internal.tool", "promptflow.tool"]
+
+        for target in patch_targets:
+            patcher = patch(target, mocked_tool)
+            patches.append(patcher)
+            patcher.start()
+
+    try:
+        yield
+    finally:
+        for patcher in patches:
+            patcher.stop()
+
+
 def _process_wrapper(
     executor_creation_func,
     input_queue: Queue,
@@ -505,13 +529,16 @@ def _process_wrapper(
     operation_contexts_dict: dict,
 ):
     signal.signal(signal.SIGINT, signal_handler)
-    OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
-    if log_context_initialization_func:
-        with log_context_initialization_func():
-            bulk_logger.info(f"Process {os.getpid()} started.")
+    with apply_recording_injection_if_enabled():
+        OperationContext.get_instance().update(
+            operation_contexts_dict
+        )  # Update the operation context for the new process.
+        if log_context_initialization_func:
+            with log_context_initialization_func():
+                bulk_logger.info(f"Process {os.getpid()} started.")
+                exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        else:
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
-    else:
-        exec_line_for_queue(executor_creation_func, input_queue, output_queue)
 
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
