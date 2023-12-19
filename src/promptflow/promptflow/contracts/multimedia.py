@@ -60,10 +60,11 @@ class Image(PFBytes):
         return encoder(self)
 
 
-class Text():
-    def __init__(self, value: str, annotations: list = None):
-        self._value = value
-        self._annotations = annotations
+class Text(str):
+    def __new__(cls, value: str, annotations: list = None):
+        obj = str.__new__(cls, value)
+        obj._annotations = annotations
+        return obj
 
     @classmethod
     def deserialize(cls, data: dict):
@@ -79,6 +80,6 @@ class Text():
         """Serialize the text to a dictionary."""
 
         if self._annotations is None:
-            return {"type": "text", "text": self._value}
+            return {"type": "text", "text": self}
         else:
-            return {"type": "text", "text": {"value": self._value, "annotations": self._annotations}}
+            return {"type": "text", "text": {"value": self, "annotations": self._annotations}}
