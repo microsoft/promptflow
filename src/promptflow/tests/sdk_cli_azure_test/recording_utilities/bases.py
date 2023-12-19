@@ -32,7 +32,7 @@ from .utils import (
     is_live,
     is_record,
     is_replay,
-    sanitize_pfs_body,
+    sanitize_pfs_request_body,
     sanitize_upload_hash,
 )
 from .variable_recorder import VariableRecorder
@@ -285,7 +285,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
             # otherwise it will be sanitized multiple times with many zeros
             _r1 = copy.deepcopy(r1)
             body1 = _r1.body.decode("utf-8")
-            body1 = sanitize_pfs_body(body1)
+            body1 = sanitize_pfs_request_body(body1)
             body1 = sanitize_upload_hash(body1)
             _r1.body = body1.encode("utf-8")
             return matchers.body(_r1, r2)
