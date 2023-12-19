@@ -83,6 +83,26 @@ class Tracer(ThreadLocalSingleton):
         return trace
 
     @classmethod
+    def push_func(cls, f, args=[], kwargs={}):
+        obj = cls.active_instance()
+        sig = inspect.signature(f).parameters
+        all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+        all_kwargs = {
+            k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
+            for k, v in all_kwargs.items()
+        }
+        # TODO: put parameters in self to inputs for builtin tools
+        all_kwargs.pop("self", None)
+        trace = Trace(
+            name=f.__qualname__,
+            type=TraceType.FUNC,
+            start_time=datetime.utcnow().timestamp(),
+            inputs=all_kwargs,
+        )
+        obj._push(trace)
+        return trace
+
+    @classmethod
     def push(cls, trace: Trace):
         obj = cls.active_instance()
         if not obj:

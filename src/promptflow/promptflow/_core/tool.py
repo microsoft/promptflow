@@ -133,6 +133,95 @@ def tool(
     return tool_decorator
 
 
+def trace(
+    func=None,
+    *,
+    name: str = None,
+    description: str = None,
+    type: str = None,
+    input_settings=None,
+    streaming_option_parameter: Optional[str] = None,
+    **kwargs,
+) -> Callable:
+    """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.
+
+    :param name: The tool name.
+    :type name: str
+    :param description: The tool description.
+    :type description: str
+    :param type: The tool type.
+    :type type: str
+    :param input_settings: Dict of input setting.
+    :type input_settings: Dict[str, promptflow.entities.InputSetting]
+    :return: The decorated function.
+    :rtype: Callable
+    """
+
+    def tool_decorator(func: Callable) -> Callable:
+        from promptflow.exceptions import UserErrorException
+
+        if inspect.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def decorated_tool(*args, **kwargs):
+                from .tracer import Tracer
+
+                if Tracer.active_instance() is None:
+                    return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push_func(func, args, kwargs)
+                    output = await func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+
+            new_f = decorated_tool
+        else:
+
+            @functools.wraps(func)
+            def decorated_tool(*args, **kwargs):
+                from .tracer import Tracer
+
+                if Tracer.active_instance() is None:
+                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push_func(func, args, kwargs)
+                    output = func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+
+            new_f = decorated_tool
+
+        if type is not None and type not in [k.value for k in ToolType]:
+            raise UserErrorException(f"Tool type {type} is not supported yet.")
+
+        new_f.__original_function = func
+        func.__wrapped_function = new_f
+        new_f.__name = name
+        new_f.__description = description
+        new_f.__type = type
+        new_f.__input_settings = input_settings
+        new_f.__extra_info = kwargs
+        if streaming_option_parameter and isinstance(streaming_option_parameter, str):
+            setattr(new_f, STREAMING_OPTION_PARAMETER_ATTR, streaming_option_parameter)
+
+        return new_f
+
+    # enable use decorator without "()" if all arguments are default values
+    if func is not None:
+        return tool_decorator(func)
+    return tool_decorator
+
+
 def parse_all_args(argnames, args, kwargs) -> dict:
     """Parse args + kwargs to kwargs."""
     all_args = {name: value for name, value in zip(argnames, args)}
