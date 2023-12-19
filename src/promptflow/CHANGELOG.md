@@ -5,6 +5,9 @@
 ### Features Added
 - [SDK/CLI] Support `pfazure run cancel` to cancel a run on Azure AI.
 
+### Improvements
+- Bump `ruamel.yaml` lower bound to 0.17.10.
+
 ## 1.2.0 (2023.12.14)
 
 ### Features Added
