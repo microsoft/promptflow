@@ -2,9 +2,17 @@ import bs4
 import requests
 from requests.exceptions import HTTPError
 
-from promptflow import tool
+from promptflow import tool, trace
 
 
+@trace
+def sleep():
+    import time
+
+    time.sleep(1)
+
+
+@trace
 def fetch_url(url):
     # Send a request to the URL
     try:
@@ -13,6 +21,7 @@ def fetch_url(url):
             "Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35"
         }
         response = requests.get(url, headers=headers)
+        sleep()
         response.raise_for_status(response)
         return response.text
     except HTTPError as e:
