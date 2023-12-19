@@ -47,16 +47,60 @@ class ToolOperations:
                 self._tool_schema = json.load(f)
         return self._tool_schema
 
-    def generate_tool_meta(self, tool_module, raise_error=False):
+    def list_tools_in_package(self, package_name: str, raise_error: bool = False):
+        """
+        List the meta of all tools in the package.
+
+        :param package_name: Package name
+        :type package_name: str
+        :param raise_error: Whether to raise the error.
+        :type raise_error: bool
+        :return: Dict of tools meta
+        :rtype: Dict[str, Dict]
+        """
+
+        def merge_validate_result(target, source):
+            target.merge_with(source)
+            target._set_extra_info(
+                TOTAL_COUNT,
+                target._get_extra_info(TOTAL_COUNT, 0) + source._get_extra_info(TOTAL_COUNT, 0),
+            )
+            target._set_extra_info(
+                INVALID_COUNT,
+                target._get_extra_info(INVALID_COUNT, 0) + source._get_extra_info(INVALID_COUNT, 0),
+            )
+
+        package_tools = {}
+        validate_result = ValidationResultBuilder.success()
+        try:
+            package = __import__(package_name)
+            module_list = pkgutil.walk_packages(package.__path__, prefix=package.__name__ + ".")
+            for module in module_list:
+                module_tools, module_validate_result = self.generate_tool_meta(importlib.import_module(module.name))
+                package_tools.update(module_tools)
+                merge_validate_result(validate_result, module_validate_result)
+        except ImportError:
+            raise UserErrorException(f"Cannot find the package {package_name}.")
+        if not validate_result.passed:
+            if raise_error:
+
+                def tool_validate_error_func(msg, _):
+                    return ToolValidationError(message=msg, validate_result=validate_result)
+
+                validate_result.try_raise(raise_error=raise_error, error_func=tool_validate_error_func)
+            else:
+                logger.warning(f"Found invalid tool(s):\n {repr(validate_result)}")
+
+        return package_tools
+
+    def generate_tool_meta(self, tool_module):
         """
         Generate tools meta in the module.
 
         :param tool_module: The module needs to generate tools meta
         :type tool_module: object
-        :param raise_error: Whether to raise the error.
-        :type raise_error: bool
-        :return: Dict of tools meta
-        :rtype: Dict[str, Dict]
+        :return: Dict of tools meta, validation result
+        :rtype: Dict[str, Dict], ValidationResult
         """
         tool_functions = self._collect_tool_functions_in_module(tool_module)
         tool_methods = self._collect_tool_class_methods_in_module(tool_module)
@@ -85,16 +129,7 @@ class ToolOperations:
         tools = json.loads(json.dumps(construct_tools))
         tool_validate_result._set_extra_info(TOTAL_COUNT, len(tool_functions) + len(tool_methods))
         tool_validate_result._set_extra_info(INVALID_COUNT, invalid_tool_count)
-        if not tool_validate_result.passed:
-            if raise_error:
-
-                def tool_validate_error_func(msg, _):
-                    return ToolValidationError(message=msg, validate_result=tool_validate_result)
-
-                tool_validate_result.try_raise(raise_error=raise_error, error_func=tool_validate_error_func)
-            else:
-                logger.warning(f"Found invalid tool(s):\n {repr(tool_validate_result)}")
-        return tools
+        return tools, tool_validate_result
 
     @staticmethod
     def _collect_tool_functions_in_module(tool_module):
@@ -399,21 +434,14 @@ class ToolOperations:
         :return: a validation result object
         :rtype: ValidationResult
         """
-
-        def validate_tools_in_module(module):
-            try:
-                self.generate_tool_meta(module, raise_error=True)
-                validate_result = ValidationResultBuilder.success()
-            except ToolValidationError as exception:
-                validate_result = exception._kwargs.get("validate_result")
-            return validate_result
-
         if callable(source):
+            # Validate tool function
             tool, input_settings, extra_info = self._parse_tool_from_func(source)
             _, validate_result = self._serialize_tool(tool, input_settings, extra_info, source)
             validate_result._set_extra_info(TOTAL_COUNT, 1)
             validate_result._set_extra_info(INVALID_COUNT, 0 if validate_result.passed else 1)
         elif isinstance(source, (str, PathLike)):
+            # Validate tool script
             if not Path(source).exists():
                 raise UserErrorException(f"Cannot find the tool script {source}")
             # Load the module from the file path
@@ -423,26 +451,15 @@ class ToolOperations:
 
             # Load the module's code
             spec.loader.exec_module(module)
-            validate_result = validate_tools_in_module(module)
+            _, validate_result = self.generate_tool_meta(module)
         elif isinstance(source, ModuleType):
+            # Validate package tool
             if not self._is_package_tool(source):
                 raise UserErrorException("Invalid package tool.")
-
-            module_list = pkgutil.walk_packages(source.__path__, prefix=source.__name__ + ".")
-            validate_result = ValidationResultBuilder.success()
-            for module in module_list:
-                module_validate_result = validate_tools_in_module(importlib.import_module(module.name))
-                validate_result.merge_with(module_validate_result)
-                validate_result._set_extra_info(
-                    TOTAL_COUNT,
-                    validate_result._get_extra_info(TOTAL_COUNT, 0)
-                    + module_validate_result._get_extra_info(TOTAL_COUNT, 0),
-                )
-                validate_result._set_extra_info(
-                    INVALID_COUNT,
-                    validate_result._get_extra_info(INVALID_COUNT, 0)
-                    + module_validate_result._get_extra_info(INVALID_COUNT, 0),
-                )
+            try:
+                self.list_tools_in_package(package_name=source.__name__, raise_error=True)
+            except ToolValidationError as exception:
+                validate_result = exception._kwargs.get("validate_result")
         else:
             raise UserErrorException(
                 "Provide invalid source, tool validation source supports script tool, "
