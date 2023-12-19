@@ -23,7 +23,7 @@ Fluency is scored on a scale of 1 to 5, with 1 being the worst and 5 being the b
 
 Similarity is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best.
 
-* __gpt_groundedness__ (against context)**: Measures how grounded the model's predicted answers are against the context. Even if LLM’s responses are true, if not verifiable against context, then such responses are considered ungrounded.
+* __gpt_groundedness__ (against context): Measures how grounded the model's predicted answers are against the context. Even if LLM’s responses are true, if not verifiable against context, then such responses are considered ungrounded.
 
 Groundedness metric is scored on a scale of 1 to 5, with 1 being the worst and 5 being the best. 
 
