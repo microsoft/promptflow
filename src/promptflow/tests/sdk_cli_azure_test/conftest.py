@@ -37,7 +37,7 @@ AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
 
-def determine_scope() -> str:
+def package_scope_in_live_mode() -> str:
     """Determine the scope of the pytest fixtures.
 
     We have many tests against flows and runs, and it's very time consuming to create a new flow/run
@@ -52,7 +52,7 @@ def determine_scope() -> str:
     return "package" if is_live() else "function"
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def user_object_id() -> str:
     if is_replay():
         return SanitizedValues.USER_OBJECT_ID
@@ -62,7 +62,7 @@ def user_object_id() -> str:
     return decoded_token["oid"]
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def tenant_id() -> str:
     if is_replay():
         return SanitizedValues.TENANT_ID
@@ -72,7 +72,7 @@ def tenant_id() -> str:
     return decoded_token["tid"]
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def ml_client(
     subscription_id: str,
     resource_group_name: str,
@@ -90,7 +90,7 @@ def ml_client(
     )
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def remote_client(subscription_id: str, resource_group_name: str, workspace_name: str):
     from promptflow.azure import PFClient
 
@@ -115,7 +115,7 @@ def remote_workspace_resource_id(subscription_id: str, resource_group_name: str,
     )
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def pf(remote_client):
     # do not add annotation here, because PFClient will trigger promptflow.azure imports and break the isolation
     # between azure and non-azure tests
@@ -163,12 +163,12 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
     return app.test_client()
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def variable_recorder() -> VariableRecorder:
     yield VariableRecorder()
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def randstr(variable_recorder: VariableRecorder) -> Callable[[str], str]:
     """Return a "random" UUID."""
 
@@ -184,7 +184,7 @@ def randstr(variable_recorder: VariableRecorder) -> Callable[[str], str]:
     return generate_random_string
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def vcr_recording(
     request: pytest.FixtureRequest, user_object_id: str, tenant_id: str, variable_recorder: VariableRecorder
 ) -> Optional[PFAzureIntegrationTestRecording]:
@@ -280,7 +280,7 @@ def mock_get_user_identity_info(mocker: MockerFixture) -> None:
     yield
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
@@ -302,7 +302,7 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     yield result
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
     """Create a batch run that does not require LLM."""
     name = randstr("batch_run_name")
@@ -322,7 +322,7 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
     yield run
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def created_eval_run_without_llm(
     pf: PFClient, randstr: Callable[[str], str], runtime: str, created_batch_run_without_llm: Run
 ) -> Run:
@@ -342,7 +342,7 @@ def created_eval_run_without_llm(
     yield run
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture(scope=package_scope_in_live_mode())
 def created_failed_run(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
     """Create a failed run."""
     name = randstr("failed_run_name")
