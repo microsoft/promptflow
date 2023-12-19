@@ -139,6 +139,17 @@ class CreateEnv(Step):
             {"step_name": self.workflow_name, "working_dir": ReadmeSteps.working_dir}
         )
         return content
+    
+class CreateEnvGPTFour(Step):
+    def __init__(self) -> None:
+        Step.__init__(self, "Refine .env file")
+
+    def get_workflow_step(self) -> str:
+        template = Step.get_workflow_template("step_create_env_gpt4.yml.jinja2")
+        content = template.render(
+            {"step_name": self.workflow_name, "working_dir": ReadmeSteps.working_dir}
+        )
+        return content
 
 
 class CreateAoaiFromEnv(Step):
@@ -194,6 +205,10 @@ class ReadmeSteps:
     @staticmethod
     def create_env() -> Step:
         return ReadmeSteps.remember_step(CreateEnv())
+    
+    @staticmethod
+    def create_env_gpt4() -> Step:
+        return ReadmeSteps.remember_step(CreateEnvGPTFour())
 
     @staticmethod
     def yml_create_aoai(yaml_name: str) -> Step:

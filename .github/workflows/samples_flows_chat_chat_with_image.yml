@@ -46,8 +46,8 @@ jobs:
       - name: Refine .env file
         working-directory: examples/flows/chat/chat-with-image
         run: |
-          AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
-          AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
+          AOAI_API_KEY=${{ secrets.AOAI_GPT_4V_KEY }}
+          AOAI_API_ENDPOINT=${{ secrets.AOAI_GPT_4V_ENDPOINT }}
           AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
           if [[ -e .env.example ]]; then
             echo "env replacement"
@@ -74,14 +74,25 @@ jobs:
         working-directory: examples/flows/chat/chat-with-image
         run: |
           cat bash_script.sh
-      - name: Run scripts
+      - name: Run scripts against canary workspace (scheduled runs only)
+        if: github.event_name == 'schedule'
         working-directory: examples/flows/chat/chat-with-image
         run: |
-          export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
-          export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
+          export aoai_api_key=${{secrets.AOAI_GPT_4V_KEY }}
+          export aoai_api_endpoint=${{ secrets.AOAI_GPT_4V_ENDPOINT }}
           export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
+          bash bash_script.sh
+      - name: Run scripts against production workspace
+        if: github.event_name != 'schedule'
+        working-directory: examples/flows/chat/chat-with-image
+        run: |
+          export aoai_api_key=${{secrets.AOAI_GPT_4V_KEY }}
+          export aoai_api_endpoint=${{ secrets.AOAI_GPT_4V_ENDPOINT }}
+          export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
+          export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
+          export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_PROD }}
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
