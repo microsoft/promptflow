@@ -35,7 +35,6 @@ from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._core.tools_manager import gen_dynamic_list, retrieve_tool_func_result
 from promptflow._sdk._constants import (
-    ConnectionProvider,
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
@@ -55,6 +54,7 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
+    ConnectionProvider,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -714,12 +714,6 @@ def _gen_dynamic_list(function_config: Dict) -> List:
 
 
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
-    import imp
-
-    import pkg_resources
-
-    imp.reload(pkg_resources)
-
     from promptflow._core.tools_manager import collect_package_tools
 
     return collect_package_tools(keys=keys)
@@ -853,43 +847,55 @@ def generate_flow_tools_json(
     return flow_tools
 
 
-def update_user_agent_from_env_var():
-    """Update user agent from env var to OperationContext"""
-    from promptflow._core.operation_context import OperationContext
+class ClientUserAgentUtil:
+    """SDK/CLI side user agent utilities."""
 
-    if USER_AGENT in os.environ:
-        # Append vscode or other user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ[USER_AGENT])
+    @classmethod
+    def _get_context(cls):
+        from promptflow._core.operation_context import OperationContext
 
-    if PF_USER_AGENT in os.environ:
-        # Append promptflow user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ[PF_USER_AGENT])
+        return OperationContext.get_instance()
+
+    @classmethod
+    def get_user_agent(cls):
+        from promptflow._core.operation_context import OperationContext
+
+        context = cls._get_context()
+        # directly get from context since client side won't need promptflow/xxx.
+        return context.get(OperationContext.USER_AGENT_KEY, "").strip()
+
+    @classmethod
+    def append_user_agent(cls, user_agent: Optional[str]):
+        if not user_agent:
+            return
+        context = cls._get_context()
+        context.append_user_agent(user_agent)
+
+    @classmethod
+    def update_user_agent_from_env_var(cls):
+        # this is for backward compatibility: we should use PF_USER_AGENT in newer versions.
+        for env_name in [USER_AGENT, PF_USER_AGENT]:
+            if env_name in os.environ:
+                cls.append_user_agent(os.environ[env_name])
 
 
-def setup_user_agent_to_operation_context(user_agent=None):
+def setup_user_agent_to_operation_context(user_agent):
     """Setup user agent to OperationContext.
     For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
     For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
     For calls from SDK, ua will be like: promptflow-sdk/
     """
-    from promptflow._core.operation_context import OperationContext
-
-    update_user_agent_from_env_var()
-    # Append user agent
-    context = OperationContext.get_instance()
-    # skip append if empty
-    if user_agent:
-        context.append_user_agent(user_agent)
-    return context.get_user_agent()
+    # add user added UA after SDK/CLI
+    ClientUserAgentUtil.append_user_agent(user_agent)
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    return ClientUserAgentUtil.get_user_agent()
 
 
 def call_from_extension() -> bool:
     """Return true if current request is from extension."""
-    from promptflow._core.operation_context import OperationContext
-
-    update_user_agent_from_env_var()
-    context = OperationContext().get_instance()
-    return EXTENSION_UA in context.get_user_agent()
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    user_agent = ClientUserAgentUtil.get_user_agent()
+    return EXTENSION_UA in user_agent
 
 
 def generate_random_string(length: int = 6) -> str:
@@ -1043,9 +1049,8 @@ def interactive_credential_disabled():
 
 def is_from_cli():
     from promptflow._cli._user_agent import USER_AGENT as CLI_UA
-    from promptflow._core.operation_context import OperationContext
 
-    return CLI_UA in OperationContext.get_instance().get_user_agent()
+    return CLI_UA in ClientUserAgentUtil.get_user_agent()
 
 
 def is_url(value: Union[PathLike, str]) -> bool:

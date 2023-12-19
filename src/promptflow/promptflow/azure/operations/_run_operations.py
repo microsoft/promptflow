@@ -8,7 +8,6 @@ import hashlib
 import json
 import logging
 import os
-import re
 import shutil
 import sys
 import time
@@ -87,10 +86,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     attaches it as an attribute.
     """
 
-    # add "_" in front of the constant to hide them from the docstring
-    _DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
-    _ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
-
     def __init__(
         self,
         operation_scope: OperationScope,
@@ -134,81 +129,16 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
-        workspace_kind = str(self._workspace._kind).lower()
-        if workspace_kind == "default":
-            return (
-                f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/"
-                f"details?wsid={self._service_caller._common_azure_url_pattern}"
-            )
-        elif workspace_kind == "project":
-            return (
-                f"https://ai.azure.com/projectflows/bulkrun/run/{run_id}/"
-                f"details?wsid={self._service_caller._common_azure_url_pattern}"
-            )
-        else:
-            raise RunOperationParameterError(f"Unsupported workspace kind: {workspace_kind!r}")
+        portal_url, run_info = None, None
+        try:
+            run_info = self._get_run_from_pfs(run_id=run_id)
+        except Exception as e:
+            logger.warning(f"Failed to get run portal url from pfs for run {run_id!r}: {str(e)}")
 
-    def _get_input_portal_url_from_input_uri(self, input_uri):
-        """Get the portal url for the data input."""
-        error_msg = f"Failed to get portal url: Input uri {input_uri!r} is not a valid azureml input uri."
-        if not input_uri:
-            return None
-        if input_uri.startswith("azureml://"):
-            res = self._get_portal_url_from_asset_id(input_uri)
-            if res is None:
-                res = self._get_portal_url_from_datastore_path(input_uri)
-            if res is None:
-                error_msg = (
-                    f"Failed to get portal url: {input_uri!r} is not a valid azureml asset id or datastore path."
-                )
-                logger.warning(error_msg)
-            return res
-        elif input_uri.startswith("azureml:/"):
-            # some asset id could start with "azureml:/"
-            return self._get_portal_url_from_asset_id(input_uri)
-        elif input_uri.startswith("azureml:"):
-            # named asset id
-            name, version = input_uri.split(":")[1:]
-            return (
-                f"https://ml.azure.com/data/{name}/{version}/"
-                f"details?wsid={self._service_caller._common_azure_url_pattern}"
-            )
-        else:
-            logger.warning(error_msg)
-            return None
+        if run_info and hasattr(run_info, "studio_portal_endpoint"):
+            portal_url = run_info.studio_portal_endpoint
 
-    def _get_portal_url_from_datastore_path(self, datastore_path, log_warning=False):
-        """Get the portal url from the datastore path."""
-        error_msg = (
-            f"Failed to get portal url: Datastore path {datastore_path!r} is not a valid azureml datastore path."
-        )
-        if not datastore_path:
-            return None
-        match = self._DATASTORE_PATH_PATTERN.match(datastore_path)
-        if not match or len(match.groups()) != 2:
-            if log_warning:
-                logger.warning(error_msg)
-            return None
-        datastore, path = match.groups()
-        return (
-            f"https://ml.azure.com/data/datastore/{datastore}/"
-            f"edit?wsid={self._service_caller._common_azure_url_pattern}&activeFilePath={path}#browseTab"
-        )
-
-    def _get_portal_url_from_asset_id(self, asset_id, log_warning=False):
-        """Get the portal url from asset id."""
-        error_msg = f"Failed to get portal url: {asset_id!r} is not a valid azureml asset id."
-        if not asset_id:
-            return None
-        match = self._ASSET_ID_PATTERN.match(asset_id)
-        if not match or len(match.groups()) != 2:
-            if log_warning:
-                logger.warning(error_msg)
-            return None
-        name, version = match.groups()
-        return (
-            f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._service_caller._common_azure_url_pattern}"
-        )
+        return portal_url
 
     def _get_headers(self):
         token = self._credential.get_token("https://management.azure.com/.default").token
@@ -312,8 +242,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             )
         refined_runs = []
         for run in runs:
-            run_id = run["properties"]["runId"]
-            run[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_id)
             refined_runs.append(Run._from_index_service_entity(run))
         return refined_runs
 
@@ -531,10 +459,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         run_data[RunDataKeys.RUN] = input_run_id
         run_data[RunDataKeys.OUTPUT] = output_data
 
-        # get portal urls
-        run_data[RunDataKeys.DATA_PORTAL_URL] = self._get_input_portal_url_from_input_uri(input_data)
-        run_data[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._get_run_portal_url(run_id=input_run_id)
-        run_data[RunDataKeys.OUTPUT_PORTAL_URL] = self._get_portal_url_from_asset_id(output_data, log_warning=True)
         return run_data
 
     def _get_run_from_index_service(self, flow_run_id, **kwargs):
@@ -559,13 +483,20 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                     f"Could not found run with run id {flow_run_id!r}, please double check the run id and try again."
                 )
             run = runs[0]
-            run_id = run["properties"]["runId"]
-            run[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_id)
             return Run._from_index_service_entity(run)
         else:
             raise RunRequestException(
                 f"Failed to get run metrics from service. Code: {response.status_code}, text: {response.text}"
             )
+
+    def _get_run_from_pfs(self, run_id, **kwargs):
+        """Get run info from pfs"""
+        return self._service_caller.get_flow_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            flow_run_id=run_id,
+        )
 
     @monitor_operation(activity_name="pfazure.runs.archive", activity_type=ActivityType.PUBLICAPI)
     def archive(self, run: Union[str, Run]) -> Run:
@@ -1066,3 +997,18 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         run_folder.mkdir(parents=True)
         return run_folder
+
+    @monitor_operation(activity_name="pfazure.runs.cancel", activity_type=ActivityType.PUBLICAPI)
+    def cancel(self, run: Union[str, Run], **kwargs) -> None:
+        """Cancel a run.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        """
+        run = Run._validate_and_return_run_name(run)
+        self._service_caller.cancel_flow_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            flow_run_id=run,
+        )

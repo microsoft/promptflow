@@ -15,7 +15,8 @@ from .utils import (
     sanitize_azure_workspace_triad,
     sanitize_email,
     sanitize_experiment_id,
-    sanitize_pfs_body,
+    sanitize_pfs_request_body,
+    sanitize_pfs_response_body,
     sanitize_upload_hash,
     sanitize_username,
 )
@@ -205,9 +206,14 @@ class PFSProcessor(RecordingProcessor):
     def process_request(self, request: Request) -> Request:
         if is_json_payload_request(request) and request.body is not None:
             body = request.body.decode("utf-8")
-            body = sanitize_pfs_body(body)
+            body = sanitize_pfs_request_body(body)
             request.body = body.encode("utf-8")
         return request
+
+    def process_response(self, response: Dict) -> Dict:
+        if is_json_payload_response(response):
+            response["body"]["string"] = sanitize_pfs_response_body(response["body"]["string"])
+        return response
 
 
 class UserInfoProcessor(RecordingProcessor):
