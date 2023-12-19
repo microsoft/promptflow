@@ -1,6 +1,6 @@
 # Referencing external files/folders in a flow
 
-Sometimes, pre-existing code assets are essential for the flow reference. It's common to reference external files or folders that are located outside of the current flow folder. To facilitate this, we allow you to reference these external files or folders using **additional includes** in your flow configuration.
+Sometimes, pre-existing code assets are essential for the flow reference. In most cases, you can accomplish this by importing a Python package into your flow. However, if a Python package is not available or it is heavy to create a package, you can still reference external files or folders located outside of the current flow folder by using our **additional includes** feature in your flow configuration.
 
 This feature provides an efficient mechanism to list relative file or folder paths that are outside of the flow folder, integrating them seamlessly into your flow.dag.yaml. For example:
 
