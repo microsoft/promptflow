@@ -24,13 +24,13 @@ Go to "Prompt flow" "Connections" tab. Click on "Create" button, and create an "
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file ../../../connections/openai.yml --set api_key=<your_api_key>
+pf connection create --file ../../../connections/openai.yml --set api_key=<your_api_key> api_base=<your_api_base> name=aoai_gpt4v_connection api_version=2023-03-15-preview
 ```
 
-Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
+Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `aoai_gpt4v_connection`.
 ```bash
 # show registered connection 
-pf connection show --name open_ai_connection
+pf connection show --name aoai_gpt4v_connection
 ```
 
 ### 2 Start chatting
@@ -41,7 +41,9 @@ pf flow test --flow .
 
 # run chat flow with new question
 pf flow test --flow . --inputs question='["How many colors can you see?", {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/logo-ms-social.png"}]'
+```
 
+```sh
 # start a interactive chat session in CLI
 pf flow test --flow . --interactive
 
