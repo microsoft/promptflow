@@ -41,7 +41,7 @@ class FlowInvoker:
     :param flow: The path of the flow, or the flow loaded by load_flow().
     :type flow: [str, ~promptflow._sdk.entities._flow.Flow]
     :param connection_provider: The connection provider, defaults to None
-    :type connection_provider: [str, Callable]
+    :type connection_provider: [str, Callable], optional
     :param streaming: The function or bool to determine enable streaming or not, defaults to lambda: False
     :type streaming: Union[Callable[[], bool], bool], optional
     :param connections: Pre-resolved connections used when executing, defaults to None
