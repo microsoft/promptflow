@@ -86,6 +86,7 @@ ICON_LIGHT = "icon_light"
 ICON = "icon"
 TOOL_SCHEMA = Path(__file__).parent / "data" / "tool.schema.json"
 
+
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
     TYPE = "custom_type"
