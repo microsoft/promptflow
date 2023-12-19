@@ -173,8 +173,8 @@ class AsyncRunDownloader:
         logger.debug("Downloading blob '%s' to local path '%s'", blob_client.blob_name, local_path.resolve().as_posix())
         local_path.parent.mkdir(parents=True, exist_ok=True)
         async with blob_client:
-            stream = await blob_client.download_blob()
             with open(local_path, "wb") as f:
+                stream = await blob_client.download_blob()
                 async for chunk in stream.chunks():
                     f.write(chunk)
         return local_path
