@@ -17,15 +17,12 @@ import yaml
 from promptflow._core._errors import (
     InputTypeMismatch,
     MissingRequiredInputs,
-    NotSupported,
     PackageToolNotFoundError,
     ToolLoadError,
 )
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
-    generate_prompt_tool,
-    generate_python_tool,
     load_python_module_from_file,
 )
 from promptflow._utils.connection_utils import (
@@ -44,7 +41,7 @@ from promptflow._utils.tool_utils import (
     validate_dynamic_list_func_response_type,
     validate_tool_func_result,
 )
-from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
@@ -62,17 +59,30 @@ def collect_tools_from_directory(base_dir) -> dict:
     return tools
 
 
+def _get_entry_points_by_group(group):
+    # lazy load to improve performance for scenarios that don't need to load package tools
+    import importlib.metadata
+
+    # In python3.10 and later, the entry_points() method returns a SelectableView of EntryPoint objects,
+    # which allows us to select entry points by group. In the previous versions, the entry_points() method
+    # returns a dictionary-like object, we can use group name directly as a key.
+    entry_points = importlib.metadata.entry_points()
+    if isinstance(entry_points, list):
+        return entry_points.select(group=group)
+    else:
+        return entry_points.get(group, [])
+
+
 def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools from all installed packages."""
-    # lazy load to improve performance for scenarios that don't need to load package tools
-    import pkg_resources
-
     all_package_tools = {}
     if keys is not None:
         keys = set(keys)
-    for entry_point in pkg_resources.iter_entry_points(group=PACKAGE_TOOLS_ENTRY):
+
+    entry_points = _get_entry_points_by_group(PACKAGE_TOOLS_ENTRY)
+    for entry_point in entry_points:
         try:
-            list_tool_func = entry_point.resolve()
+            list_tool_func = entry_point.load()
             package_tools = list_tool_func()
             for identifier, tool in package_tools.items():
                 #  Only load required tools to avoid unnecessary loading when keys is provided
@@ -84,12 +94,12 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
                 m = tool["module"]
                 importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.project_name
+                tool["package"] = entry_point.dist.metadata['Name']
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
         except Exception as e:
             msg = (
-                f"Failed to load tools from package {entry_point.dist.project_name}: {e},"
+                f"Failed to load tools from package {entry_point.dist.metadata['Name']}: {e},"
                 + f" traceback: {traceback.format_exc()}"
             )
             module_logger.warning(msg)
@@ -98,17 +108,15 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
 def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools and custom strong type connections from all installed packages."""
-    # lazy load to improve performance for scenarios that don't need to load package tools
-    import pkg_resources
-
     all_package_tools = {}
     all_package_connection_specs = {}
     all_package_connection_templates = {}
     if keys is not None:
         keys = set(keys)
-    for entry_point in pkg_resources.iter_entry_points(group=PACKAGE_TOOLS_ENTRY):
+    entry_points = _get_entry_points_by_group(PACKAGE_TOOLS_ENTRY)
+    for entry_point in entry_points:
         try:
-            list_tool_func = entry_point.resolve()
+            list_tool_func = entry_point.load()
             package_tools = list_tool_func()
             for identifier, tool in package_tools.items():
                 #  Only load required tools to avoid unnecessary loading when keys is provided
@@ -116,7 +124,7 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     continue
                 m = tool["module"]
                 module = importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.project_name
+                tool["package"] = entry_point.dist.metadata['Name']
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
 
@@ -133,67 +141,20 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     for cls in custom_strong_type_connections_classes:
                         identifier = f"{cls.__module__}.{cls.__name__}"
                         connection_spec = generate_custom_strong_type_connection_spec(
-                            cls, entry_point.dist.project_name, entry_point.dist.version
+                            cls, entry_point.dist.metadata['Name'], entry_point.dist.version
                         )
                         all_package_connection_specs[identifier] = connection_spec
                         all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
-                            cls, connection_spec, entry_point.dist.project_name, entry_point.dist.version
+                            cls, connection_spec, entry_point.dist.metadata['Name'], entry_point.dist.version
                         )
         except Exception as e:
             msg = (
-                f"Failed to load tools from package {entry_point.dist.project_name}: {e},"
+                f"Failed to load tools from package {entry_point.dist.metadata['Name']}: {e},"
                 + f" traceback: {traceback.format_exc()}"
             )
             module_logger.warning(msg)
 
     return all_package_tools, all_package_connection_specs, all_package_connection_templates
-
-
-def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_dir: Path) -> Tool:
-    if source.type == ToolSourceType.Package:
-        package_tools = collect_package_tools()
-        if source.tool in package_tools:
-            return Tool.deserialize(package_tools[source.tool])
-        raise PackageToolNotFoundError(
-            message_format=(
-                "Package tool '{tool_key}' is not found in the current environment. "
-                "Available package tools include: '{available_tools}'. "
-                "Please ensure that the required tool package is installed in current environment."
-            ),
-            tool_key=source.tool,
-            available_tools=",".join(package_tools.keys()),
-            target=ErrorTarget.EXECUTOR,
-        )
-    else:
-        if not source.path:
-            raise NodeSourcePathEmpty(
-                target=ErrorTarget.EXECUTOR,
-                message_format=(
-                    "Invalid node definitions found in the flow graph. The node '{node_name}' is missing its "
-                    "source path. Please kindly add the source path for the node '{node_name}' in the YAML file "
-                    "and try the operation again."
-                ),
-                node_name=name,
-            )
-        with open(working_dir / source.path) as fin:
-            content = fin.read()
-        if tool_type == ToolType.PYTHON:
-            # TODO: working directory doesn't take effect when loading module.
-            return generate_python_tool(name, content, source=str(working_dir / source.path))
-        elif tool_type == ToolType.PROMPT:
-            return generate_prompt_tool(name, content, prompt_only=True)
-        elif tool_type == ToolType.LLM:
-            return generate_prompt_tool(name, content)
-        else:
-            raise NotSupported(
-                message_format=(
-                    "The tool type {tool_type} is currently not supported for generating tools using source code. "
-                    "Please choose from the available types: {supported_types}. "
-                    "If you need further assistance, kindly contact support."
-                ),
-                tool_type=tool_type.value if hasattr(tool_type, "value") else tool_type,
-                supported_types=",".join([ToolType.PYTHON, ToolType.PROMPT, ToolType.LLM]),
-            )
 
 
 def retrieve_tool_func_result(
@@ -569,8 +530,4 @@ class MissingTargetFunction(CustomToolError):
 
 
 class APINotFound(ValidationException):
-    pass
-
-
-class NodeSourcePathEmpty(ValidationException):
     pass

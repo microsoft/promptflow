@@ -380,29 +380,29 @@ class RunTracker(ThreadLocalSingleton):
     def get_status_summary(self, run_id: str):
         node_run_infos = self.collect_node_runs(run_id)
         status_summary = {}
-        line_status = {}
+
         for run_info in node_run_infos:
             node_name = run_info.node
             if run_info.index is not None:
-                if run_info.index not in line_status.keys():
-                    line_status[run_info.index] = True
-
-                line_status[run_info.index] = line_status[run_info.index] and run_info.status in (
-                    Status.Completed,
-                    Status.Bypassed,
-                )
-
                 # Only consider Completed, Bypassed and Failed status, because the UX only support three status.
                 if run_info.status in (Status.Completed, Status.Bypassed, Status.Failed):
                     node_status_key = f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"
                     status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
-
             # For reduce node, the index is None.
             else:
                 status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
 
-        status_summary["__pf__.lines.completed"] = sum(line_status.values())
-        status_summary["__pf__.lines.failed"] = len(line_status) - status_summary["__pf__.lines.completed"]
+        # Runtime will start root flow run with run_id == root_run_id,
+        # line flow run will have run id f"{root_run_id}_{line_number}"
+        # We filter out root flow run accordingly.
+        line_flow_run_infos = [
+            flow_run_info for flow_run_info in self.flow_run_list
+            if flow_run_info.root_run_id == run_id and flow_run_info.run_id != run_id]
+        total_lines = len(line_flow_run_infos)
+        completed_lines = len([flow_run_info for flow_run_info in line_flow_run_infos
+                               if flow_run_info.status == Status.Completed])
+        status_summary["__pf__.lines.completed"] = completed_lines
+        status_summary["__pf__.lines.failed"] = total_lines - completed_lines
         return status_summary
 
     def persist_status_summary(self, status_summary: Dict[str, int], run_id: str):
