@@ -145,13 +145,6 @@ class TestToolsManager:
         assert package_tools[tool]['inputs']['teacher_id']['ui_hints']['index'] == 2
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         yaml = YAML()
         yaml.preserve_quotes = True
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
