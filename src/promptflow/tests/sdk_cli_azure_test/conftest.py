@@ -7,7 +7,7 @@ import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 from unittest.mock import patch
 
 import jwt
@@ -25,6 +25,7 @@ from ._azure_utils import get_cred
 from .recording_utilities import (
     PFAzureIntegrationTestRecording,
     SanitizedValues,
+    VariableRecorder,
     get_pf_client_for_replay,
     is_live,
     is_replay,
@@ -36,7 +37,17 @@ AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
 RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
 
-@pytest.fixture
+def determine_scope() -> str:
+    """Determine the scope of the pytest fixtures.
+
+    Replay tests require function scope fixture as it will locate the recording YAML based on
+    the test function; while we expect session level fixtures for shared flow/run during
+    live mode. So use this function to determine the scope of the fixtures dynamically.
+    """
+    return "session" if is_live() else "function"
+
+
+@pytest.fixture(scope=determine_scope())
 def user_object_id() -> str:
     if is_replay():
         return SanitizedValues.USER_OBJECT_ID
@@ -46,7 +57,7 @@ def user_object_id() -> str:
     return decoded_token["oid"]
 
 
-@pytest.fixture
+@pytest.fixture(scope=determine_scope())
 def tenant_id() -> str:
     if is_replay():
         return SanitizedValues.TENANT_ID
@@ -56,7 +67,7 @@ def tenant_id() -> str:
     return decoded_token["tid"]
 
 
-@pytest.fixture
+@pytest.fixture(scope=determine_scope())
 def ml_client(
     subscription_id: str,
     resource_group_name: str,
@@ -74,7 +85,7 @@ def ml_client(
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope=determine_scope())
 def remote_client(subscription_id: str, resource_group_name: str, workspace_name: str):
     from promptflow.azure import PFClient
 
@@ -92,14 +103,14 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
     yield client
 
 
-@pytest.fixture()
+@pytest.fixture(scope=determine_scope())
 def remote_workspace_resource_id(subscription_id: str, resource_group_name: str, workspace_name: str) -> str:
     return "azureml:" + RESOURCE_ID_FORMAT.format(
         subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name
     )
 
 
-@pytest.fixture()
+@pytest.fixture(scope=determine_scope())
 def pf(remote_client):
     # do not add annotation here, because PFClient will trigger promptflow.azure imports and break the isolation
     # between azure and non-azure tests
@@ -119,7 +130,7 @@ def remote_web_classification_data(remote_client):
         )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def runtime(runtime_name: str) -> str:
     return runtime_name
 
@@ -147,36 +158,50 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
     return app.test_client()
 
 
-@pytest.fixture
-def vcr_recording(
-    request: pytest.FixtureRequest, user_object_id: str, tenant_id: str
-) -> PFAzureIntegrationTestRecording:
-    """Fixture to record or replay network traffic.
-
-    If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
-    based on the test file, class and function name, write to (record) or read from (replay) the file.
-    """
-    recording = PFAzureIntegrationTestRecording.from_test_case(
-        test_class=request.cls,
-        test_func_name=request.node.name,
-        user_object_id=user_object_id,
-        tenant_id=tenant_id,
-    )
-    if not is_live():
-        recording.enter_vcr()
-        request.addfinalizer(recording.exit_vcr)
-    yield recording
+@pytest.fixture(scope=determine_scope())
+def variable_recorder() -> VariableRecorder:
+    yield VariableRecorder()
 
 
-@pytest.fixture
-def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], str]:
-    """Return a random UUID."""
+@pytest.fixture(scope=determine_scope())
+def randstr(variable_recorder: VariableRecorder) -> Callable[[str], str]:
+    """Return a "random" UUID."""
 
     def generate_random_string(variable_name: str) -> str:
         random_string = str(uuid.uuid4())
-        return vcr_recording.get_or_record_variable(variable_name, random_string)
+        if is_live():
+            return random_string
+        elif is_replay():
+            return variable_name
+        else:
+            return variable_recorder.get_or_record_variable(variable_name, random_string)
 
     return generate_random_string
+
+
+@pytest.fixture(scope=determine_scope())
+def vcr_recording(
+    request: pytest.FixtureRequest, user_object_id: str, tenant_id: str, variable_recorder: VariableRecorder
+) -> Optional[PFAzureIntegrationTestRecording]:
+    """Fixture to record or replay network traffic.
+
+    If the test mode is "live", nothing will happen.
+    If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
+    based on the test file, class and function name, write to (record) or read from (replay) the file.
+    """
+    if is_live():
+        yield None
+    else:
+        recording = PFAzureIntegrationTestRecording.from_test_case(
+            test_class=request.cls,
+            test_func_name=request.node.name,
+            user_object_id=user_object_id,
+            tenant_id=tenant_id,
+            variable_recorder=variable_recorder,
+        )
+        recording.enter_vcr()
+        request.addfinalizer(recording.exit_vcr)
+        yield recording
 
 
 # we expect this fixture only work when running live test without recording
@@ -250,7 +275,7 @@ def mock_get_user_identity_info(mocker: MockerFixture) -> None:
     yield
 
 
-@pytest.fixture
+@pytest.fixture(scope=determine_scope())
 def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
@@ -272,7 +297,7 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     yield result
 
 
-@pytest.fixture
+@pytest.fixture(scope=determine_scope())
 def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
     """Create a batch run that does not require LLM."""
     name = randstr("batch_run_name")
@@ -292,7 +317,7 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
     yield run
 
 
-@pytest.fixture
+@pytest.fixture(scope=determine_scope())
 def created_eval_run_without_llm(
     pf: PFClient, randstr: Callable[[str], str], runtime: str, created_batch_run_without_llm: Run
 ) -> Run:
@@ -312,7 +337,7 @@ def created_eval_run_without_llm(
     yield run
 
 
-@pytest.fixture
+@pytest.fixture(scope=determine_scope())
 def created_failed_run(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
     """Create a failed run."""
     name = randstr("failed_run_name")
