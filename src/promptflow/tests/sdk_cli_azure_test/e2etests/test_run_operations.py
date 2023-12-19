@@ -783,9 +783,7 @@ class TestFlowRun:
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
-    def test_download_run(self, pf):
-        run = "c619f648-c809-4545-9f94-f67b0a680706"
-
+    def test_download_run(self, pf: PFClient, created_batch_run_without_llm: Run):
         expected_files = [
             DownloadedRun.RUN_METADATA_FILE_NAME,
             DownloadedRun.LOGS_FILE_NAME,
@@ -794,9 +792,9 @@ class TestFlowRun:
         ]
 
         with TemporaryDirectory() as tmp_dir:
-            pf.runs.download(run=run, output=tmp_dir)
+            pf.runs.download(run=created_batch_run_without_llm.name, output=tmp_dir)
             for file in expected_files:
-                assert Path(tmp_dir, run, file).exists()
+                assert Path(tmp_dir, created_batch_run_without_llm.name, file).exists()
 
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError
