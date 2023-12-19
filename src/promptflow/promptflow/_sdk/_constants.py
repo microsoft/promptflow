@@ -305,11 +305,8 @@ SUPPORTED_CONNECTION_FIELDS = {
 class RunDataKeys:
     PORTAL_URL = "portal_url"
     DATA = "data"
-    DATA_PORTAL_URL = "data_portal_url"
     RUN = "run"
-    INPUT_RUN_PORTAL_URL = "input_run_portal_url"
     OUTPUT = "output"
-    OUTPUT_PORTAL_URL = "output_portal_url"
 
 
 class RunHistoryKeys:

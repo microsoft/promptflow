@@ -36,9 +36,6 @@ FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
-# TODO(2770419): make this dynamic created during migrate live test to canary
-FAILED_RUN_NAME_EASTUS = "3dfd077a-f071-443e-9c4e-d41531710950"
-
 
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
@@ -253,94 +250,65 @@ class TestFlowRun:
             print(json.dumps(run._to_dict(), indent=4))
         assert len(runs) == 10
 
-    def test_show_run(self, pf, tenant_id: str):
-        run = pf.runs.get(run="classification_accuracy_eval_default_20230808_153241_422491")
+    def test_show_run(self, pf: PFClient, created_eval_run_without_llm: Run):
+        run = pf.runs.get(run=created_eval_run_without_llm.name)
         run_dict = run._to_dict()
         print(json.dumps(run_dict, indent=4))
 
-        subscription_id = pf.ml_client.subscription_id
-        resource_group_name = pf.ml_client.resource_group_name
-        workspace_name = pf.ml_client.workspace_name
-        # find this miss sanitization during test, use this as a workaround
-        miss_sanitization = "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5" if tenant_id else workspace_name
-        if not tenant_id:
-            tenant_id = "00000000-0000-0000-0000-000000000000"
+        # it's hard to assert with precise value, so just assert existence, type and length
+        expected_keys = [
+            "name",
+            "created_on",
+            "status",
+            "display_name",
+            "description",
+            "tags",
+            "properties",
+            "creation_context",
+            "start_time",
+            "end_time",
+            "duration",
+            "portal_url",
+            "data",
+            "output",
+            "run",
+        ]
+        for expected_key in expected_keys:
+            assert expected_key in run_dict
+            if expected_key == "description":
+                assert run_dict[expected_key] is None
+            elif expected_key in {"tags", "properties", "creation_context"}:
+                assert isinstance(run_dict[expected_key], dict)
+            else:
+                assert isinstance(run_dict[expected_key], str)
+                assert len(run_dict[expected_key]) > 0
 
-        assert run_dict == {
-            "name": "classification_accuracy_eval_default_20230808_153241_422491",
-            "created_on": "2023-08-08T07:32:52.761030+00:00",
-            "status": "Completed",
-            "display_name": "classification_accuracy_eval_default_20230808_153241_422491",
-            "description": None,
-            "tags": {},
-            "properties": {
-                "azureml.promptflow.runtime_name": "demo-mir",
-                "azureml.promptflow.runtime_version": "20230801.v1",
-                "azureml.promptflow.definition_file_name": "flow.dag.yaml",
-                "azureml.promptflow.inputs_mapping": '{"groundtruth":"${data.answer}","prediction":"${run.outputs.category}"}',  # noqa: E501
-                "azureml.promptflow.snapshot_id": "e5d50c43-7ad2-4354-9ce4-4f56f0ea9a30",
-                "azureml.promptflow.total_tokens": "0",
-            },
-            "creation_context": {
-                "userObjectId": "c05e0746-e125-4cb3-9213-a8b535eacd79",
-                "userPuId": "10032000324F7449",
-                "userIdp": None,
-                "userAltSecId": None,
-                "userIss": f"https://sts.windows.net/{tenant_id}/",
-                "userTenantId": tenant_id,
-                "userName": "Honglin Du",
-                "upn": None,
-            },
-            "start_time": "2023-08-08T07:32:56.637761+00:00",
-            "end_time": "2023-08-08T07:33:07.853922+00:00",
-            "duration": "00:00:11.2161606",
-            "portal_url": f"https://ml.azure.com/prompts/flow/bulkrun/run/classification_accuracy_eval_default_20230808_153241_422491/details?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",  # noqa: E501
-            "data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl",  # noqa: E501
-            "data_portal_url": f"https://ml.azure.com/data/datastore/workspaceblobstore/edit?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&activeFilePath=LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl#browseTab",  # noqa: E501
-            "output": f"azureml://locations/eastus/workspaces/{miss_sanitization}/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/versions/1",  # noqa: E501
-            "output_portal_url": f"https://ml.azure.com/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/1/details?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",  # noqa: E501
-            "run": "web_classification_default_20230804_143634_056856",
-            "input_run_portal_url": f"https://ml.azure.com/prompts/flow/bulkrun/run/web_classification_default_20230804_143634_056856/details?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",  # noqa: E501
-        }
+    def test_show_run_details(self, pf: PFClient, created_batch_run_without_llm: Run):
+        # get first 2 results
+        details = pf.get_details(run=created_batch_run_without_llm.name, max_results=2)
+        assert details.shape[0] == 2
 
-    def test_show_run_details(self, pf):
-        run = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
-
-        # get first 20 results
-        details = pf.get_details(run=run, max_results=20)
-
-        assert details.shape[0] == 20
-
-        # get first 1000 results while it only has 40
-        details = pf.get_details(run=run, max_results=1000)
-        assert details.shape[0] == 40
+        # get first 10 results while it only has 3
+        details = pf.get_details(run=created_batch_run_without_llm.name, max_results=10)
+        assert details.shape[0] == 3
 
         # get all results
+        details = pf.get_details(run=created_batch_run_without_llm.name, all_results=True)
+        assert details.shape[0] == 3
+
+        # get all results even if max_results is set to 2
         details = pf.get_details(
-            run=run,
+            run=created_batch_run_without_llm.name,
+            max_results=2,
             all_results=True,
         )
-        assert details.shape[0] == 40
+        assert details.shape[0] == 3
 
-        # get all results even if max_results is set to 10
-        details = pf.get_details(
-            run=run,
-            max_results=10,
-            all_results=True,
-        )
-        assert details.shape[0] == 40
-
-    def test_show_metrics(self, pf):
-        metrics = pf.runs.get_metrics(
-            run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
-        )
+    def test_show_metrics(self, pf: PFClient, created_eval_run_without_llm: Run):
+        metrics = pf.runs.get_metrics(run=created_eval_run_without_llm.name)
         print(json.dumps(metrics, indent=4))
-        assert metrics == {
-            "gpt_relevance.variant_1": 1.0,
-            "gpt_relevance.variant_0": 1.0,
-            "gpt_relevance_pass_rate(%).variant_1": 0.0,
-            "gpt_relevance_pass_rate(%).variant_0": 0.0,
-        }
+        # as we use unmatched data, we can assert the accuracy is 0
+        assert metrics == {"accuracy": 0.0}
 
     def test_stream_invalid_run_logs(self, pf, randstr: Callable[[str], str]):
         # test get invalid run name
@@ -348,21 +316,21 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError, match=f"Run {non_exist_run!r} not found"):
             pf.runs.stream(run=non_exist_run)
 
-    def test_stream_run_logs(self, pf):
-        run = pf.runs.stream(run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74")
+    def test_stream_run_logs(self, pf: PFClient, created_batch_run_without_llm: Run):
+        run = pf.runs.stream(run=created_batch_run_without_llm.name)
         assert run.status == RunStatus.COMPLETED
 
-    def test_stream_failed_run_logs(self, pf, capfd: pytest.CaptureFixture):
+    def test_stream_failed_run_logs(self, pf: PFClient, created_failed_run: Run, capfd: pytest.CaptureFixture):
         # (default) raise_on_error=True
         with pytest.raises(InvalidRunStatusError):
-            pf.stream(run=FAILED_RUN_NAME_EASTUS)
+            pf.stream(run=created_failed_run.name)
         # raise_on_error=False
-        pf.stream(run=FAILED_RUN_NAME_EASTUS, raise_on_error=False)
+        pf.stream(run=created_failed_run.name, raise_on_error=False)
         out, _ = capfd.readouterr()
-        assert "Input 'question' in line 0 is not provided for flow 'Simple_mock_answer'." in out
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations: ${data.key}" in out
 
-    def test_failed_run_to_dict_exclude(self, pf):
-        failed_run = pf.runs.get(run=FAILED_RUN_NAME_EASTUS)
+    def test_failed_run_to_dict_exclude(self, pf: PFClient, created_failed_run: Run):
+        failed_run = pf.runs.get(run=created_failed_run.name)
         # Azure run object reference a dict, use deepcopy to avoid unexpected modification
         default = copy.deepcopy(failed_run._to_dict())
         exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
@@ -373,13 +341,13 @@ class TestFlowRun:
         condition=not is_live(),
         reason="cannot differ the two requests to run history in replay mode.",
     )
-    def test_archive_and_restore_run(self, pf):
+    def test_archive_and_restore_run(self, pf: PFClient, created_batch_run_without_llm: Run):
         from promptflow._sdk._constants import RunHistoryKeys
 
         run_meta_data = RunHistoryKeys.RunMetaData
         hidden = RunHistoryKeys.HIDDEN
 
-        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+        run_id = created_batch_run_without_llm.name
 
         # test archive
         pf.runs.archive(run=run_id)
@@ -391,8 +359,8 @@ class TestFlowRun:
         run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         assert run_data[hidden] is False
 
-    def test_update_run(self, pf, randstr: Callable[[str], str]):
-        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+    def test_update_run(self, pf: PFClient, created_batch_run_without_llm: Run, randstr: Callable[[str], str]):
+        run_id = created_batch_run_without_llm.name
         test_mark = randstr("test_mark")
 
         new_display_name = f"test_display_name_{test_mark}"
@@ -815,9 +783,7 @@ class TestFlowRun:
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
-    def test_download_run(self, pf):
-        run = "c619f648-c809-4545-9f94-f67b0a680706"
-
+    def test_download_run(self, pf: PFClient, created_batch_run_without_llm: Run):
         expected_files = [
             DownloadedRun.RUN_METADATA_FILE_NAME,
             DownloadedRun.LOGS_FILE_NAME,
@@ -826,9 +792,9 @@ class TestFlowRun:
         ]
 
         with TemporaryDirectory() as tmp_dir:
-            pf.runs.download(run=run, output=tmp_dir)
+            pf.runs.download(run=created_batch_run_without_llm.name, output=tmp_dir)
             for file in expected_files:
-                assert Path(tmp_dir, run, file).exists()
+                assert Path(tmp_dir, created_batch_run_without_llm.name, file).exists()
 
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError
@@ -893,7 +859,6 @@ class TestFlowRun:
 @pytest.mark.skipif(condition=not is_live(), reason="aml-user-token will be mocked")
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
-@pytest.mark.usefixtures("single_worker_thread_pool", "vcr_recording")
 class TestFlowRunRelatedToAMLToken:
     def test_automatic_runtime_creation_user_aml_token(self, pf):
         from azure.core.pipeline import Pipeline
