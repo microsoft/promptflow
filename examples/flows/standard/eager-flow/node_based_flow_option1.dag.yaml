@@ -1,0 +1,25 @@
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  text:
+    type: string
+    default: Hello World!
+outputs:
+  output:
+    type: string
+    reference: ${entry.output}
+# node based option 1: wrap @flow in one @tool
+# Pros: 
+#  no change in original YAML contract
+#  can wrap @flow in all kinds of functions
+# Cons: 
+#  only one node, no good visualize experience
+nodes:
+- name: entry
+  type: python
+  source:
+    # actual entry wraps inside @tool
+    type: code
+    path: node_entry.py
+  inputs:
+    text: ${inputs.text}

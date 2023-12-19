@@ -1,0 +1,12 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  text:
+    type: string
+    default: Hello World!
+outputs:
+  output:
+    type: string
+
+command: pf run --flow ./hello.py --name entry --inputs text=${inputs.text} --outputs output=${outputs.output}
