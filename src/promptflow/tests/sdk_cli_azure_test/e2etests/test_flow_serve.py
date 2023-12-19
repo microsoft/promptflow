@@ -28,7 +28,6 @@ def test_local_serving_api_with_remote_connection(flow_serving_client_remote_con
     assert "output_prompt" in json.loads(response.data.decode())
 
 
-@pytest.mark.skipif(condition=not is_live(), reason="serving tests, only run in live mode.")
 @pytest.mark.usefixtures("flow_serving_client_with_encoded_connection")
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_encoded_connection(flow_serving_client_with_encoded_connection):
@@ -98,7 +97,6 @@ def test_azureml_serving_api_with_connection_name_override(serving_client_with_c
     assert "output_prompt" in json.loads(response.data.decode())
 
 
-@pytest.mark.skipif(condition=not is_live(), reason="serving tests, only run in live mode.")
 @pytest.mark.usefixtures("serving_client_with_connection_data_override")
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_connection_data_override(serving_client_with_connection_data_override):

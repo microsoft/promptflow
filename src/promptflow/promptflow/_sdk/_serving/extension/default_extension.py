@@ -10,7 +10,6 @@ from pathlib import Path
 from promptflow._sdk._configuration import Configuration
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
-from promptflow._sdk._serving.monitor.metrics import MetricsRecorder
 from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
 from promptflow._sdk._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
 from promptflow._sdk._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
@@ -74,10 +73,8 @@ class AppExtension(ABC):
 
     def get_flow_monitor(self) -> FlowMonitor:
         """Get flow monitor for current extension."""
-        extra_dimensions = self.get_metrics_common_dimensions()
-        metrics_recorder = MetricsRecorder(common_dimensions=extra_dimensions)
         # default no data collector, no app insights metric exporter
-        return FlowMonitor(self.logger, self.get_flow_name(), None, metrics_recorder=metrics_recorder)
+        return FlowMonitor(self.logger, self.get_flow_name(), None, metrics_recorder=None)
 
     def _get_mlflow_project_path(self, project_path: str):
         # check whether it's mlflow model

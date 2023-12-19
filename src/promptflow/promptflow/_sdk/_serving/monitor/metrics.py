@@ -5,13 +5,6 @@
 from enum import Enum
 from typing import Dict, Sequence, Set, List, Any
 
-from opentelemetry import metrics
-from opentelemetry.exporter.prometheus import PrometheusMetricReader
-from opentelemetry.metrics import set_meter_provider
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import MetricReader
-from opentelemetry.sdk.metrics.view import ExplicitBucketHistogramAggregation, SumAggregation, View
-
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.exception_utils import ErrorResponse
@@ -30,36 +23,6 @@ EXCEPTION_TYPE_KEY = "exception"
 STREAMING_KEY = "streaming"
 API_CALL_KEY = "api_call"
 RESPONSE_TYPE_KEY = "response_type"  # firstbyte, lastbyte, default
-
-
-class ResponseType(Enum):
-    # latency from receving the request to sending the first byte of response, only applicable to streaming flow
-    FirstByte = "firstbyte"
-    # latency from receving the request to sending the last byte of response, only applicable to streaming flow
-    LastByte = "lastbyte"
-    # latency from receving the request to sending the whole response, only applicable to non-streaming flow
-    Default = "default"
-
-
-class LLMTokenType(Enum):
-    PromptTokens = "prompt_tokens"
-    CompletionTokens = "completion_tokens"
-
-
-# define meter
-meter = metrics.get_meter_provider().get_meter("Promptflow Standard Metrics")
-
-# define metrics
-token_consumption = meter.create_counter("Token_Consumption")
-flow_latency = meter.create_histogram("Flow_Latency")
-node_latency = meter.create_histogram("Node_Latency")
-flow_request = meter.create_counter("Flow_Request")
-remote_api_call_latency = meter.create_histogram("RPC_Latency")
-remote_api_call_request = meter.create_counter("RPC_Request")
-node_request = meter.create_counter("Node_Request")
-# metrics for streaming
-streaming_response_duration = meter.create_histogram("Flow_Streaming_Response_Duration")
-
 HISTOGRAM_BOUNDARIES: Sequence[float] = (
     1.0,
     5.0,
@@ -83,76 +46,123 @@ HISTOGRAM_BOUNDARIES: Sequence[float] = (
     300000.0,
 )
 
-# define metrics views
-# token view
-token_view = View(
-    instrument_name="Token_Consumption",
-    description="",
-    attribute_keys={FLOW_KEY, NODE_KEY, LLM_ENGINE_KEY, TOKEN_TYPE_KEY},
-    aggregation=SumAggregation(),
-)
-# latency view
-flow_latency_view = View(
-    instrument_name="Flow_Latency",
-    description="",
-    attribute_keys={FLOW_KEY, RESPONSE_CODE_KEY, STREAMING_KEY, RESPONSE_TYPE_KEY},
-    aggregation=ExplicitBucketHistogramAggregation(boundaries=HISTOGRAM_BOUNDARIES),
-)
-node_latency_view = View(
-    instrument_name="Node_Latency",
-    description="",
-    attribute_keys={FLOW_KEY, NODE_KEY, RUN_STATUS_KEY},
-    aggregation=ExplicitBucketHistogramAggregation(boundaries=HISTOGRAM_BOUNDARIES),
-)
-flow_streaming_response_duration_view = View(
-    instrument_name="Flow_Streaming_Response_Duration",
-    description="during between sending the first byte and last byte of the response, only for streaming flow",
-    attribute_keys={FLOW_KEY},
-    aggregation=ExplicitBucketHistogramAggregation(boundaries=HISTOGRAM_BOUNDARIES),
-)
-# request view
-request_view = View(
-    instrument_name="Flow_Request",
-    description="",
-    attribute_keys={FLOW_KEY, RESPONSE_CODE_KEY, STREAMING_KEY, EXCEPTION_TYPE_KEY},
-    aggregation=SumAggregation(),
-)
-node_request_view = View(
-    instrument_name="Node_Request",
-    description="",
-    attribute_keys={FLOW_KEY, NODE_KEY, RUN_STATUS_KEY, EXCEPTION_TYPE_KEY},
-    aggregation=SumAggregation(),
-)
-# Remote API call view
-remote_api_call_latency_view = View(
-    instrument_name="RPC_Latency",
-    description="",
-    attribute_keys={FLOW_KEY, NODE_KEY, API_CALL_KEY},
-    aggregation=ExplicitBucketHistogramAggregation(boundaries=HISTOGRAM_BOUNDARIES),
-)
-remote_api_call_request_view = View(
-    instrument_name="RPC_Request",
-    description="",
-    attribute_keys={FLOW_KEY, NODE_KEY, API_CALL_KEY, EXCEPTION_TYPE_KEY},
-    aggregation=SumAggregation(),
-)
+
+class ResponseType(Enum):
+    # latency from receving the request to sending the first byte of response, only applicable to streaming flow
+    FirstByte = "firstbyte"
+    # latency from receving the request to sending the last byte of response, only applicable to streaming flow
+    LastByte = "lastbyte"
+    # latency from receving the request to sending the whole response, only applicable to non-streaming flow
+    Default = "default"
+
+
+class LLMTokenType(Enum):
+    PromptTokens = "prompt_tokens"
+    CompletionTokens = "completion_tokens"
+
+
+try:
+    from opentelemetry import metrics
+    from opentelemetry.metrics import set_meter_provider
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import MetricReader
+    from opentelemetry.sdk.metrics.view import ExplicitBucketHistogramAggregation, SumAggregation, View
+
+    # define meter
+    meter = metrics.get_meter_provider().get_meter("Promptflow Standard Metrics")
+
+    # define metrics
+    token_consumption = meter.create_counter("Token_Consumption")
+    flow_latency = meter.create_histogram("Flow_Latency")
+    node_latency = meter.create_histogram("Node_Latency")
+    flow_request = meter.create_counter("Flow_Request")
+    remote_api_call_latency = meter.create_histogram("RPC_Latency")
+    remote_api_call_request = meter.create_counter("RPC_Request")
+    node_request = meter.create_counter("Node_Request")
+    # metrics for streaming
+    streaming_response_duration = meter.create_histogram("Flow_Streaming_Response_Duration")
+
+    # define metrics views
+    # token view
+    token_view = View(
+        instrument_name="Token_Consumption",
+        description="",
+        attribute_keys={FLOW_KEY, NODE_KEY, LLM_ENGINE_KEY, TOKEN_TYPE_KEY},
+        aggregation=SumAggregation(),
+    )
+    # latency view
+    flow_latency_view = View(
+        instrument_name="Flow_Latency",
+        description="",
+        attribute_keys={FLOW_KEY, RESPONSE_CODE_KEY, STREAMING_KEY, RESPONSE_TYPE_KEY},
+        aggregation=ExplicitBucketHistogramAggregation(boundaries=HISTOGRAM_BOUNDARIES),
+    )
+    node_latency_view = View(
+        instrument_name="Node_Latency",
+        description="",
+        attribute_keys={FLOW_KEY, NODE_KEY, RUN_STATUS_KEY},
+        aggregation=ExplicitBucketHistogramAggregation(boundaries=HISTOGRAM_BOUNDARIES),
+    )
+    flow_streaming_response_duration_view = View(
+        instrument_name="Flow_Streaming_Response_Duration",
+        description="during between sending the first byte and last byte of the response, only for streaming flow",
+        attribute_keys={FLOW_KEY},
+        aggregation=ExplicitBucketHistogramAggregation(boundaries=HISTOGRAM_BOUNDARIES),
+    )
+    # request view
+    request_view = View(
+        instrument_name="Flow_Request",
+        description="",
+        attribute_keys={FLOW_KEY, RESPONSE_CODE_KEY, STREAMING_KEY, EXCEPTION_TYPE_KEY},
+        aggregation=SumAggregation(),
+    )
+    node_request_view = View(
+        instrument_name="Node_Request",
+        description="",
+        attribute_keys={FLOW_KEY, NODE_KEY, RUN_STATUS_KEY, EXCEPTION_TYPE_KEY},
+        aggregation=SumAggregation(),
+    )
+    # Remote API call view
+    remote_api_call_latency_view = View(
+        instrument_name="RPC_Latency",
+        description="",
+        attribute_keys={FLOW_KEY, NODE_KEY, API_CALL_KEY},
+        aggregation=ExplicitBucketHistogramAggregation(boundaries=HISTOGRAM_BOUNDARIES),
+    )
+    remote_api_call_request_view = View(
+        instrument_name="RPC_Request",
+        description="",
+        attribute_keys={FLOW_KEY, NODE_KEY, API_CALL_KEY, EXCEPTION_TYPE_KEY},
+        aggregation=SumAggregation(),
+    )
+
+    metrics_enabled = True
+except ImportError:
+    metrics_enabled = False
 
 
 class MetricsRecorder(object):
     """OpenTelemetry Metrics Recorder"""
 
-    def __init__(self, extra_reader: MetricReader = None, common_dimensions: Dict[str, str] = None) -> None:
+    def __init__(self, reader: MetricReader = None, common_dimensions: Dict[str, str] = None) -> None:
         """initialize metrics recorder
 
-        :param extra_reader: extra metric reader
+        :param reader: metric reader
         :param common_dimensions: common dimensions for all metrics
         """
+        if not metrics_enabled:
+            logger.warning("OpenTelemetry metrics is not enabled, metrics will not be recorded." +
+                           "Please enable 'monitor' extra requirement when installing promptflow: " +
+                           "'pip install promptflow[monitor]'")
+            return
         self.common_dimensions = common_dimensions or {}
-        self.extra_reader = extra_reader
+        self.reader = reader
         dimension_keys = {key for key in common_dimensions}
-        config_common_monitor(dimension_keys, extra_reader)
+        self._config_common_monitor(dimension_keys, reader)
 
     def record_flow_request(self, flow_id: str, response_code: int, exception: str, streaming: bool):
+        if not metrics_enabled:
+            return
         try:
             flow_request.add(
                 1,
@@ -170,6 +180,8 @@ class MetricsRecorder(object):
     def record_flow_latency(
         self, flow_id: str, response_code: int, streaming: bool, response_type: str, duration: float
     ):
+        if not metrics_enabled:
+            return
         try:
             flow_latency.record(
                 duration,
@@ -185,12 +197,16 @@ class MetricsRecorder(object):
             logger.warning("failed to record flow latency metrics: %s", e)
 
     def record_flow_streaming_response_duration(self, flow_id: str, duration: float):
+        if not metrics_enabled:
+            return
         try:
             streaming_response_duration.record(duration, {FLOW_KEY: flow_id, **self.common_dimensions})
         except Exception as e:
             logger.warning("failed to record streaming duration metrics: %s", e)
 
     def record_tracing_metrics(self, flow_run: FlowRunInfo, node_runs: Dict[str, RunInfo]):
+        if not metrics_enabled:
+            return
         try:
             for _, run in node_runs.items():
                 flow_id = flow_run.flow_id if flow_run is not None else "default"
@@ -228,7 +244,7 @@ class MetricsRecorder(object):
                 if run.status != Status.Completed:
                     err = "unknown"
                     if isinstance(run.error, dict):
-                        err = self.get_exact_error(run.error)
+                        err = self._get_exact_error(run.error)
                     elif isinstance(run.error, str):
                         err = run.error
 
@@ -249,15 +265,11 @@ class MetricsRecorder(object):
                         api_calls: List[Dict[str, Any]] = api_call.get("children", None)
                         if api_calls is None:
                             continue
-                        self.record_api_call_metrics(flow_id, run.node, api_calls)
+                        self._record_api_call_metrics(flow_id, run.node, api_calls)
         except Exception as e:
             logger.warning(f"failed to record metrics: {e}, flow_run: {flow_run}, node_runs: {node_runs}")
 
-    def get_exact_error(self, err: Dict):
-        error_response = ErrorResponse.from_error_dict(err)
-        return error_response.innermost_error_code
-
-    def record_api_call_metrics(self, flow_id, node, api_calls: List[Dict[str, Any]], prefix: str = None):
+    def _record_api_call_metrics(self, flow_id, node, api_calls: List[Dict[str, Any]], prefix: str = None):
         if api_calls and len(api_calls) > 0:
             for api_call in api_calls:
                 cur_name = api_call.get("name")
@@ -280,7 +292,7 @@ class MetricsRecorder(object):
                 # remote api call request metrics
                 err = api_call.get("error") or {}
                 if isinstance(err, dict):
-                    exception_type = self.get_exact_error(err)
+                    exception_type = self._get_exact_error(err)
                 else:
                     exception_type = err
                 remote_api_call_request.add(
@@ -295,29 +307,31 @@ class MetricsRecorder(object):
                 )
                 child_api_calls = api_call.get("children", None)
                 if child_api_calls:
-                    self.record_api_call_metrics(flow_id, node, child_api_calls, api_name)
+                    self._record_api_call_metrics(flow_id, node, child_api_calls, api_name)
 
+    def _get_exact_error(self, err: Dict):
+        error_response = ErrorResponse.from_error_dict(err)
+        return error_response.innermost_error_code
 
-# configure monitor, by default only expose prometheus metrics
-def config_common_monitor(common_keys: Set[str] = {}, extra_reader: MetricReader = None):
-    prometheus_reader = PrometheusMetricReader()
-    metrics_views = [
-        token_view,
-        flow_latency_view,
-        node_latency_view,
-        request_view,
-        remote_api_call_latency_view,
-        remote_api_call_request_view,
-    ]
-    for view in metrics_views:
-        view._attribute_keys.update(common_keys)
+    # configure monitor, by default only expose prometheus metrics
+    def _config_common_monitor(self, common_keys: Set[str] = {}, reader: MetricReader = None):
+        metrics_views = [
+            token_view,
+            flow_latency_view,
+            node_latency_view,
+            request_view,
+            remote_api_call_latency_view,
+            remote_api_call_request_view,
+        ]
+        for view in metrics_views:
+            view._attribute_keys.update(common_keys)
 
-    readers = [prometheus_reader]
-    if extra_reader:
-        readers.append(extra_reader)
+        readers = []
+        if reader:
+            readers.append(reader)
 
-    meter_provider = MeterProvider(
-        metric_readers=readers,
-        views=metrics_views,
-    )
-    set_meter_provider(meter_provider)
+        meter_provider = MeterProvider(
+            metric_readers=readers,
+            views=metrics_views,
+        )
+        set_meter_provider(meter_provider)

@@ -14,7 +14,6 @@ from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
 from promptflow._sdk._serving.utils import get_pf_serving_env, normalize_connection_name, decode_dict
 
 from promptflow.contracts.flow import Flow
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
 
 USER_AGENT = f"promptflow-cloud-serving/{VERSION}"
@@ -126,20 +125,22 @@ class AzureMLExtension(AppExtension):
         return connections
 
     def _get_metrics_recorder(self):
+        # currently only support exporting it to azure monitor(application insights)
         # TODO: add support for dynamic loading otel reader thus user can use their own exporter.
         custom_dimensions = self.get_metrics_common_dimensions()
         try:
             from azure.monitor.opentelemetry.exporter import AzureMonitorMetricExporter
+            from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
             # check whether azure monitor instrumentation key is set
             instrumentation_key = os.getenv("AML_APP_INSIGHTS_KEY") or os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")
             if instrumentation_key:
                 self.logger.info("Initialize metrics recorder with azure monitor metrics exporter...")
                 exporter = AzureMonitorMetricExporter(connection_string=f"InstrumentationKey={instrumentation_key}")
                 reader = PeriodicExportingMetricReader(exporter=exporter, export_interval_millis=60000)
-                return MetricsRecorder(extra_reader=reader, common_dimensions=custom_dimensions)
+                return MetricsRecorder(reader=reader, common_dimensions=custom_dimensions)
         except ImportError as e:
             self.logger.warning(f"Failed to import azure monitor metrics exporter: {e}")
-        return MetricsRecorder(common_dimensions=custom_dimensions)
+        return None
 
     def _initialize_connection_provider(self):
         # parse connection provider
