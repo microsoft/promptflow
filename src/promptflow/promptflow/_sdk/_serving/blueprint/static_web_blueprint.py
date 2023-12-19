@@ -25,9 +25,9 @@ def construct_staticweb_blueprint(static_folder):
     @staticweb_blueprint.route("/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
     def notfound(path):
         rules = {rule.rule: rule.methods for rule in app.url_map.iter_rules()}
-        if request.path not in rules or request.method not in rules[request.path]:
+        if path not in rules or request.method not in rules[path]:
             unsupported_message = (
-                f"The requested api {request.path!r} with {request.method} is not supported by current app, "
+                f"The requested api {path!r} with {request.method} is not supported by current app, "
                 f"if you entered the URL manually please check your spelling and try again."
             )
             return unsupported_message, 404
