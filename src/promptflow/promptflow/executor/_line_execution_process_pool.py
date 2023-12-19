@@ -14,6 +14,7 @@ from typing import Union
 from unittest.mock import patch
 
 import psutil
+from executor.conftest import RECORDINGS_TEST_CONFIGS_ROOT
 from sdk_cli_test.recording_utilities import RecordStorage, mock_tool
 
 from promptflow._constants import LINE_NUMBER_KEY
@@ -504,6 +505,9 @@ def _exec_line(
 def apply_recording_injection_if_enabled():
     patches = []
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
+        RecordStorage.get_instance(file_path)
+
         from promptflow._core.tool import tool as original_tool
 
         mocked_tool = mock_tool(original_tool)
