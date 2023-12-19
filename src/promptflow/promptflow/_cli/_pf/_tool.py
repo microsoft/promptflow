@@ -8,7 +8,7 @@ import re
 import shutil
 from pathlib import Path
 
-from promptflow._cli._params import add_param_set_tool_extra_info, add_param_source, base_params
+from promptflow._cli._params import add_param_set_tool_extra_info, base_params
 from promptflow._cli._pf._init_entry_generators import (
     InitGenerator,
     ManifestGenerator,
@@ -111,6 +111,10 @@ pf tool validate -–source <package_name>
 # Validate tools in a python script:
 pf tool validate --source <path_to_tool_script>
 """  # noqa: E501
+
+    def add_param_source(parser):
+        parser.add_argument("--source", type=str, help="The tool source to be used.")
+
     return activate_action(
         name="validate",
         description="Validate tool.",
