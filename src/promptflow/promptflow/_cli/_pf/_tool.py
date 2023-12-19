@@ -104,9 +104,11 @@ def add_parser_validate_tool(subparsers):
     epilog = """
 Examples:
 
-# Validate package tool by path:
-pf tool validate --source <path_to_tool_package>
-# Validate a tool by script path:
+# Validate single function tool:
+pf tool validate -–source <package_name>.<module_name>.<tool_function>
+# Validate all tool in a package tool:
+pf tool validate -–source <package_name>
+# Validate tools in a python script:
 pf tool validate --source <path_to_tool_script>
 """  # noqa: E501
     return activate_action(
@@ -181,4 +183,24 @@ def list_tool(args):
 
 @exception_handler("Tool validate")
 def validate_tool(args):
-    pass
+    import pkg_resources
+    import importlib
+
+    pf_client = PFClient()
+    is_package = any(package.key == args.source for package in pkg_resources.working_set)
+    if is_package:
+        source = importlib.import_module(args.source)
+        logger.debug(f"The source {args.source} is used as a package to validate.")
+    else:
+        try:
+            module_name, func_name = args.source.rsplit(".", 1)
+            module = importlib.import_module(module_name)
+            source = getattr(module, func_name)
+            logger.debug(f"The source {args.source} is used as a function to validate.")
+        except Exception:
+            logger.debug(f"The source {args.source} is used as a script to validate.")
+            source = args.source
+    validation_result = pf_client._tools.validate(source)
+    print(repr(validation_result))
+    if not validation_result.passed:
+        exit(1)

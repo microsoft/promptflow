@@ -31,6 +31,7 @@ FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
+TOOL_ROOT = "./tests/test_configs/tools"
 
 TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
 
@@ -1447,6 +1448,33 @@ class TestCli:
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
         outerr = capsys.readouterr()
         assert "invalid_flow_folder does not exist" in outerr.out
+
+    def test_tool_validate(self):
+        import pkg_resources
+
+        # Test validate tool script
+        tool_script_path = Path(TOOL_ROOT) / "custom_llm_tool.py"
+        run_pf_command("tool", "validate", "--source", str(tool_script_path))
+
+        invalid_tool_script_path = Path(TOOL_ROOT) / "invalid_tool.py"
+        with pytest.raises(SystemExit):
+            run_pf_command("tool", "validate", "--source", str(invalid_tool_script_path))
+
+        # Test validate package tool
+        tool_script_path = Path(TOOL_ROOT) / "tool_package"
+        sys.path.append(tool_script_path)
+        package_set = list(pkg_resources.working_set)
+        tool_package_info = mock.MagicMock()
+        tool_package_info.key = "tool_package"
+        package_set.append(tool_package_info)
+        with patch("promptflow._sdk.operations._tool_operations.ToolOperations._is_package_tool", return_value=True), \
+                patch("pkg_resources.working_set", package_set):
+            with pytest.raises(SystemExit):
+                run_pf_command("tool", "validate", "--source", "tool_package")
+
+        # Test validate tool in package
+        with pytest.raises(SystemExit):
+            run_pf_command("tool", "validate", "--source", "tool_package.invalid_tool.invalid_input_settings")
 
     def test_flow_test_with_image_input_and_output(self):
         run_pf_command(

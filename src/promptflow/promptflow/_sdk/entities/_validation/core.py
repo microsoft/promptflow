@@ -36,7 +36,7 @@ class _ValidationStatus:
 class Diagnostic(object):
     """Represents a diagnostic of an asset validation error with the location info."""
 
-    def __init__(self, yaml_path: str, message: str, error_code: str) -> None:
+    def __init__(self, yaml_path: str, message: str, error_code: str, **kwargs) -> None:
         """Init Diagnostic.
 
         :keyword yaml_path: A dash path from root to the target element of the diagnostic.
@@ -50,6 +50,11 @@ class Diagnostic(object):
         self.message = message
         self.error_code = error_code
         self.local_path, self.value = None, None
+        self._key = kwargs.pop("key", "yaml_path")
+        # Set extra info to attribute
+        for k, v in kwargs.items():
+            if not k.startswith("_"):
+                setattr(self, k, v)
 
     def __repr__(self) -> str:
         """The asset friendly name and error message.
@@ -57,7 +62,7 @@ class Diagnostic(object):
         :return: The formatted diagnostic
         :rtype: str
         """
-        return "{}: {}".format(self.yaml_path, self.message)
+        return "{}: {}".format(getattr(self, self._key), self.message)
 
     @classmethod
     def create_instance(
@@ -65,6 +70,7 @@ class Diagnostic(object):
         yaml_path: str,
         message: Optional[str] = None,
         error_code: Optional[str] = None,
+        **kwargs,
     ):
         """Create a diagnostic instance.
 
@@ -81,6 +87,7 @@ class Diagnostic(object):
             yaml_path=yaml_path,
             message=message,
             error_code=error_code,
+            **kwargs,
         )
 
 
@@ -107,10 +114,11 @@ class ValidationResult(object):
         """
         messages = {}
         for diagnostic in self._errors:
-            if diagnostic.yaml_path not in messages:
-                messages[diagnostic.yaml_path] = diagnostic.message
+            message_key = getattr(diagnostic, diagnostic._key)
+            if message_key not in messages:
+                messages[message_key] = diagnostic.message
             else:
-                messages[diagnostic.yaml_path] += "; " + diagnostic.message
+                messages[message_key] += "; " + diagnostic.message
         return messages
 
     @property
@@ -139,6 +147,10 @@ class ValidationResult(object):
                 }
                 if diagnostic.local_path:
                     message["location"] = str(diagnostic.local_path)
+                for attr in dir(diagnostic):
+                    if attr not in message and not attr.startswith("_") and not callable(getattr(diagnostic, attr)):
+                        message[attr] = getattr(diagnostic, attr)
+                message = {k: v for k, v in message.items() if v}
                 messages.append(message)
             if messages:
                 result[diagnostic_type] = messages
@@ -242,9 +254,10 @@ class MutableValidationResult(ValidationResult):
                 def error_func(msg, _):
                     return ValidationError(message=msg)
 
+            fields = [key for key in self.error_messages if key]
             raise error_func(
                 self.__repr__(),
-                "validation failed on the following fields: " + ", ".join(self.error_messages),
+                "validation failed on the following fields: " + ", ".join(fields),
             )
         return self
 
@@ -253,6 +266,7 @@ class MutableValidationResult(ValidationResult):
         yaml_path: str = "*",
         message: Optional[str] = None,
         error_code: Optional[str] = None,
+        **kwargs,
     ):
         """Append an error to the validation result.
 
@@ -270,6 +284,7 @@ class MutableValidationResult(ValidationResult):
                 yaml_path=yaml_path,
                 message=message,
                 error_code=error_code,
+                **kwargs,
             )
         )
         return self
@@ -298,6 +313,7 @@ class MutableValidationResult(ValidationResult):
         yaml_path: str = "*",
         message: Optional[str] = None,
         error_code: Optional[str] = None,
+        **kwargs,
     ):
         """Append a warning to the validation result.
 
@@ -315,6 +331,7 @@ class MutableValidationResult(ValidationResult):
                 yaml_path=yaml_path,
                 message=message,
                 error_code=error_code,
+                **kwargs,
             )
         )
         return self
