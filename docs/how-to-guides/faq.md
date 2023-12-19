@@ -86,7 +86,7 @@ Valid for batch run only. The number of workers to use for parallel execution of
 
 Default value is 16. If you want more efficiency, you can increase the number to the improve the batch run concurrency, make it run faster.
 
-If your batch run fails due to rate limit of your LLM endpoint, pls set up PF_WORKER_COUNT to a samller number. Take Azure OpenAI endpoint as example, you can go to Azure OpenAI Studio, navigate to Deployment tab, check out the capacity of your endpoints. Then you can refer to this expression to set up the concurrency.
+If your batch run fails due to rate limit of your LLM endpoint, pls set up PF_WORKER_COUNT to a smaller number. Take Azure OpenAI endpoint as example, you can go to Azure OpenAI Studio, navigate to Deployment tab, check out the capacity of your endpoints. Then you can refer to this expression to set up the concurrency.
 
 PF_WORKER_COUNT<=TPM (token per minute)*single flow run duration en second/single flow run token count/60
 
