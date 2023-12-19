@@ -28,7 +28,7 @@ from promptflow._sdk._telemetry import (
     is_telemetry_enabled,
     log_activity,
 )
-from promptflow._sdk._utils import call_from_extension
+from promptflow._sdk._utils import ClientUserAgentUtil, call_from_extension
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -194,7 +194,7 @@ class TestTelemetry:
         def assert_ua(*args, **kwargs):
             ua = pydash.get(kwargs, "extra.custom_dimensions.user_agent", None)
             ua_dict = parse_ua_to_dict(ua)
-            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+            assert ua_dict.keys() == {"promptflow-sdk"}
 
         logger = MagicMock()
         logger.info = MagicMock()
@@ -207,9 +207,9 @@ class TestTelemetry:
         # start a clean local SDK client
         with environment_variable_overwrite(PF_USER_AGENT, ""):
             PFClient()
-            user_agent = context.get_user_agent()
+            user_agent = ClientUserAgentUtil.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+            assert ua_dict.keys() == {"promptflow-sdk"}
 
             # Call log_activity
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
@@ -224,9 +224,9 @@ class TestTelemetry:
                 resource_group_name=pf._ml_client.resource_group_name,
                 workspace_name=pf._ml_client.workspace_name,
             )
-            user_agent = context.get_user_agent()
+            user_agent = ClientUserAgentUtil.get_user_agent()
             ua_dict = parse_ua_to_dict(user_agent)
-            assert ua_dict.keys() == {"promptflow-sdk", "promptflow"}
+            assert ua_dict.keys() == {"promptflow-sdk"}
 
             # Call log_activity
             with log_activity(logger, "test_activity", activity_type=ActivityType.PUBLICAPI):
