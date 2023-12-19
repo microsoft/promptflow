@@ -17,15 +17,12 @@ import yaml
 from promptflow._core._errors import (
     InputTypeMismatch,
     MissingRequiredInputs,
-    NotSupported,
     PackageToolNotFoundError,
     ToolLoadError,
 )
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
-    generate_prompt_tool,
-    generate_python_tool,
     load_python_module_from_file,
 )
 from promptflow._utils.connection_utils import (
@@ -44,7 +41,7 @@ from promptflow._utils.tool_utils import (
     validate_dynamic_list_func_response_type,
     validate_tool_func_result,
 )
-from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
@@ -158,53 +155,6 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
             module_logger.warning(msg)
 
     return all_package_tools, all_package_connection_specs, all_package_connection_templates
-
-
-def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_dir: Path) -> Tool:
-    if source.type == ToolSourceType.Package:
-        package_tools = collect_package_tools()
-        if source.tool in package_tools:
-            return Tool.deserialize(package_tools[source.tool])
-        raise PackageToolNotFoundError(
-            message_format=(
-                "Package tool '{tool_key}' is not found in the current environment. "
-                "Available package tools include: '{available_tools}'. "
-                "Please ensure that the required tool package is installed in current environment."
-            ),
-            tool_key=source.tool,
-            available_tools=",".join(package_tools.keys()),
-            target=ErrorTarget.EXECUTOR,
-        )
-    else:
-        if not source.path:
-            raise NodeSourcePathEmpty(
-                target=ErrorTarget.EXECUTOR,
-                message_format=(
-                    "Invalid node definitions found in the flow graph. The node '{node_name}' is missing its "
-                    "source path. Please kindly add the source path for the node '{node_name}' in the YAML file "
-                    "and try the operation again."
-                ),
-                node_name=name,
-            )
-        with open(working_dir / source.path) as fin:
-            content = fin.read()
-        if tool_type == ToolType.PYTHON:
-            # TODO: working directory doesn't take effect when loading module.
-            return generate_python_tool(name, content, source=str(working_dir / source.path))
-        elif tool_type == ToolType.PROMPT:
-            return generate_prompt_tool(name, content, prompt_only=True)
-        elif tool_type == ToolType.LLM:
-            return generate_prompt_tool(name, content)
-        else:
-            raise NotSupported(
-                message_format=(
-                    "The tool type {tool_type} is currently not supported for generating tools using source code. "
-                    "Please choose from the available types: {supported_types}. "
-                    "If you need further assistance, kindly contact support."
-                ),
-                tool_type=tool_type.value if hasattr(tool_type, "value") else tool_type,
-                supported_types=",".join([ToolType.PYTHON, ToolType.PROMPT, ToolType.LLM]),
-            )
 
 
 def retrieve_tool_func_result(
@@ -580,8 +530,4 @@ class MissingTargetFunction(CustomToolError):
 
 
 class APINotFound(ValidationException):
-    pass
-
-
-class NodeSourcePathEmpty(ValidationException):
     pass

@@ -1,10 +1,25 @@
 # Release History
 
-## 1.2.0 (upcoming)
+## 1.3.0 (Upcoming)
+
+### Features Added
+- [SDK/CLI] Support `pfazure run cancel` to cancel a run on Azure AI.
+
+### Improvements
+- Change `ruamel.yaml` lower bound to 0.17.10.
+
+## 1.2.0 (2023.12.14)
+
+### Features Added
+- [SDK/CLI] Support `pfazure run download` to download run data from Azure AI.
+- [SDK/CLI] Support `pf run create` to create a local run record from downloaded run data.
 
 ### Bugs Fixed
 
 - [SDK/CLI] Removing telemetry warning when running commands.
+- Empty node stdout & stderr to avoid large visualize HTML.
+- Hide unnecessary fields in run list for better readability.
+- Fix bug that ignores timeout lines in batch run status summary.
 
 ## 1.1.1 (2023.12.1)
 

@@ -50,10 +50,18 @@ class MockDatastore:
     """Mock Datastore class for `DatastoreOperations.get_default().name`."""
 
     name: str
+    account_name: str
+    container_name: str
+    endpoint: str
 
 
 def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
-    return MockDatastore(name="workspaceblobstore")
+    return MockDatastore(
+        name="workspaceblobstore",
+        account_name=SanitizedValues.FAKE_ACCOUNT_NAME,
+        container_name=SanitizedValues.FAKE_CONTAINER_NAME,
+        endpoint="core.windows.net",
+    )
 
 
 def mock_workspace_get(*args, **kwargs):
@@ -182,7 +190,7 @@ def sanitize_flow_asset_id(value: str) -> str:
     return sanitized_flow_id
 
 
-def sanitize_pfs_body(body: str) -> str:
+def sanitize_pfs_request_body(body: str) -> str:
     # sanitize workspace triad for longhand syntax asset, e.g. "batchDataInput.dataUri"
     body = sanitize_azure_workspace_triad(body)
     body_dict = json.loads(body)
@@ -201,8 +209,16 @@ def sanitize_pfs_body(body: str) -> str:
     return json.dumps(body_dict)
 
 
+def sanitize_pfs_response_body(body: str) -> str:
+    body_dict = json.loads(body)
+    # BulkRuns/{flowRunId}
+    if "studioPortalEndpoint" in body:
+        body_dict["studioPortalEndpoint"] = sanitize_azure_workspace_triad(body_dict["studioPortalEndpoint"])
+    return json.dumps(body_dict)
+
+
 def sanitize_email(value: str) -> str:
-    return re.sub(r"([\w\.-]+)@([\w\.-]+)", r"{}@\2".format(SanitizedValues.EMAIL_USERNAME), value)
+    return re.sub(r"([\w\.-]+)@(microsoft.com)", r"{}@\2".format(SanitizedValues.EMAIL_USERNAME), value)
 
 
 def _is_json_payload(headers: Dict, key: str) -> bool:
@@ -226,3 +242,10 @@ def is_json_payload_response(response: Dict) -> bool:
     headers = response.get("headers")
     # PFAzureIntegrationTestRecording will lower keys in response headers
     return _is_json_payload(headers, key="content-type")
+
+
+def is_httpx_response(response: Dict) -> bool:
+    # different from other stubs in vcrpy, httpx response uses "content" instead of "body"
+    # this leads to different handle logic to response
+    # so we need a utility to check if a response is from httpx
+    return "content" in response
