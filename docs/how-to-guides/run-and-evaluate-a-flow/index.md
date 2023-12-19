@@ -72,9 +72,8 @@ base_run = pf.run(
     flow=flow,
     data=data,
     stream=True,
-    column_mapping={  # map the url field from the data to the url input of the flow
-          "url": "${data.url}",
-        }
+    # map the url field from the data to the url input of the flow
+    column_mapping={"url": "${data.url}"},
 )
 ```
 
