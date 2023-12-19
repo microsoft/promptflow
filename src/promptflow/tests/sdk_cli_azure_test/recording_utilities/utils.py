@@ -190,7 +190,7 @@ def sanitize_flow_asset_id(value: str) -> str:
     return sanitized_flow_id
 
 
-def sanitize_pfs_body(body: str) -> str:
+def sanitize_pfs_request_body(body: str) -> str:
     # sanitize workspace triad for longhand syntax asset, e.g. "batchDataInput.dataUri"
     body = sanitize_azure_workspace_triad(body)
     body_dict = json.loads(body)
@@ -206,6 +206,14 @@ def sanitize_pfs_body(body: str) -> str:
     # PFS will help handle this field, so client does not need to pass this value
     if "runExperimentName" in body:
         body_dict["runExperimentName"] = ""
+    return json.dumps(body_dict)
+
+
+def sanitize_pfs_response_body(body: str) -> str:
+    body_dict = json.loads(body)
+    # BulkRuns/{flowRunId}
+    if "studioPortalEndpoint" in body:
+        body_dict["studioPortalEndpoint"] = sanitize_azure_workspace_triad(body_dict["studioPortalEndpoint"])
     return json.dumps(body_dict)
 
 
