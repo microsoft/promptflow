@@ -174,9 +174,9 @@ class AsyncRunDownloader:
         local_path.parent.mkdir(parents=True, exist_ok=True)
         async with blob_client:
             stream = await blob_client.download_blob()
-            data = await stream.readall()
-            # use thread pool for file I/O to avoid blocking the event loop
-            await to_thread(_write_blob_binary_to_local, data, local_path)
+            with open(local_path, "wb") as f:
+                async for chunk in stream.chunks():
+                    f.write(chunk)
         return local_path
 
     async def _download_snapshot(self, httpx_client: httpx.AsyncClient, container_client, snapshot_id):
@@ -248,12 +248,6 @@ class AsyncRunDownloader:
         with open(self.output_folder / DownloadedRun.LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(logs)
         logger.debug("Downloaded run logs.")
-
-
-def _write_blob_binary_to_local(data, local_path):
-    """Write the blob binary data to local."""
-    with open(local_path, "wb") as f:
-        f.write(data)
 
 
 async def to_thread(func, /, *args, **kwargs):
