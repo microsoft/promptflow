@@ -33,7 +33,7 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
         workflow_name.endswith("flows_chat_chat_with_image")
         or workflow_name.endswith("flows_standard_describe_image")
     ):
-        ReadmeSteps.create_env_gpt4 ()
+        ReadmeSteps.create_env_gpt4()
         ReadmeSteps.env_create_aoai("aoai_gpt4v_connection")
     else:
         ReadmeSteps.create_env()
