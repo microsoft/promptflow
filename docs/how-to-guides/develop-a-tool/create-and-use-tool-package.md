@@ -96,8 +96,8 @@ Alternatively, you can test your tool package using the script below to ensure t
   1. Make sure to install the tool package in your conda environment before executing this script.
   2. Create a python file anywhere and copy the content below into it.
       ```python
-      import pkg_resources
       import importlib
+      import importlib.metadata
 
       def test():
           """List all package tools information using the `package-tools` entry point.
@@ -114,8 +114,13 @@ Alternatively, you can test your tool package using the script below to ensure t
           ----identifier
           {'module': 'module_name', 'package': 'package_name', 'package_version': 'package_version', ...}
           """
-          for entry_point in pkg_resources.iter_entry_points(group="package_tools"):
-              list_tool_func = entry_point.resolve()
+          entry_points = importlib.metadata.entry_points()
+          if isinstance(entry_points, list):
+              entry_points = entry_points.select(group=PACKAGE_TOOLS_ENTRY)
+          else:
+              entry_points = entry_points.get(PACKAGE_TOOLS_ENTRY, [])
+          for entry_point in entry_points:
+              list_tool_func = entry_point.load()
               package_tools = list_tool_func()
 
               for identifier, tool in package_tools.items():

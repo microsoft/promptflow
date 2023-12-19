@@ -6,9 +6,8 @@
 import datetime
 from pathlib import Path
 
-from promptflow._constants import FlowLanguage
+from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
-from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
@@ -20,6 +19,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 
+from ..._utils.logger_utils import LoggerFactory
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -64,7 +64,7 @@ class RunSubmitter:
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
-        if flow.dag.get("language", FlowLanguage.Python) == FlowLanguage.CSharp:
+        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
             connections = []
         else:
             with _change_working_dir(flow.code):

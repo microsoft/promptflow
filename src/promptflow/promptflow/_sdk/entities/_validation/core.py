@@ -6,7 +6,6 @@
 
 import copy
 import json
-import logging
 import os.path
 import typing
 from pathlib import Path
@@ -16,7 +15,9 @@ import pydash
 import strictyaml
 from marshmallow import ValidationError
 
-module_logger = logging.getLogger(__name__)
+from promptflow._utils.logger_utils import LoggerFactory
+
+module_logger = LoggerFactory.get_logger(__name__)
 
 
 class _ValidationStatus:

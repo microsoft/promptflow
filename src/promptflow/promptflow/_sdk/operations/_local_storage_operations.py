@@ -30,7 +30,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
-from promptflow._utils.logger_utils import LogContext
+from promptflow._utils.logger_utils import LogContext, LoggerFactory
 from promptflow._utils.multimedia_utils import get_file_reference_encoder
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -41,7 +41,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 from promptflow.storage import AbstractRunStorage
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 RunInputs = NewType("RunInputs", Dict[str, List[Any]])
 RunOutputs = NewType("RunOutputs", Dict[str, List[Any]])
@@ -347,13 +347,15 @@ class LocalStorageOperations(AbstractRunStorage):
                 if line_run_record_file.suffix.lower() != ".jsonl":
                     continue
                 with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                    flow_runs.append(json.load(f)["run_info"])
+                    new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                    flow_runs += new_runs
             for node_folder in sorted(self._node_infos_folder.iterdir()):
                 for node_run_record_file in sorted(node_folder.iterdir()):
                     if node_run_record_file.suffix.lower() != ".jsonl":
                         continue
                     with open(node_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                        node_runs.append(json.load(f)["run_info"])
+                        new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                        node_runs += new_runs
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
     def load_metrics(self) -> Dict[str, Union[int, float, str]]:
@@ -444,7 +446,7 @@ class LocalStorageOperations(AbstractRunStorage):
                 outputs = pd.read_json(f, orient="records", lines=True)
                 # if all line runs are failed, no need to fill
                 if len(outputs) > 0:
-                    outputs = self._outputs_padding(outputs, inputs["line_number"].tolist())
+                    outputs = self._outputs_padding(outputs, inputs[LINE_NUMBER].tolist())
                     outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
                     outputs = outputs.set_index(LINE_NUMBER)
         return inputs, outputs
@@ -457,13 +459,14 @@ class LocalStorageOperations(AbstractRunStorage):
             if line_run_record_file.suffix.lower() != ".jsonl":
                 continue
             with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                data = json.load(f)
-                line_number: int = data[LINE_NUMBER]
-                line_run_info: dict = data["run_info"]
-                current_inputs = line_run_info.get("inputs")
-                current_outputs = line_run_info.get("output")
-                inputs.append(copy.deepcopy(current_inputs))
-                if current_outputs is not None:
-                    current_outputs[LINE_NUMBER] = line_number
-                    outputs.append(copy.deepcopy(current_outputs))
+                datas = [json.loads(line) for line in list(f)]
+                for data in datas:
+                    line_number: int = data[LINE_NUMBER]
+                    line_run_info: dict = data["run_info"]
+                    current_inputs = line_run_info.get("inputs")
+                    current_outputs = line_run_info.get("output")
+                    inputs.append(copy.deepcopy(current_inputs))
+                    if current_outputs is not None:
+                        current_outputs[LINE_NUMBER] = line_number
+                        outputs.append(copy.deepcopy(current_outputs))
         return pd.DataFrame(inputs), pd.DataFrame(outputs)

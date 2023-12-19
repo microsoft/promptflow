@@ -1,18 +1,19 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import json
 import socket
 import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
-EXECUTOR_SERVICE_DLL = "Promptflow.DotnetService.dll"
+EXECUTOR_SERVICE_DLL = "Promptflow.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
@@ -37,21 +38,20 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
-        # TODO: connection_provider_url is not required for local,
-        # will remove it after C# executor marks it as optional
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
+            "-e",
             "-p",
             port,
             "--yaml_path",
             flow_file,
             "--assembly_folder",
             ".",
-            "--connection_provider_url",
-            "",
             "--log_path",
             log_path,
+            "--log_level",
+            "Warning",
         ]
         process = subprocess.Popen(command)
         return cls(process, port)
@@ -74,8 +74,21 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         return AggregationResult({}, {}, {})
 
     @classmethod
-    def generate_tool_metadata(cls, flow_dag: dict, working_dir: Path) -> dict:
-        return {}
+    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
+        flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        if flow_tools_json_path.is_file():
+            with open(flow_tools_json_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError:
+                    raise RuntimeError(
+                        f"Failed to fetch meta of tools: {flow_tools_json_path.absolute().as_posix()} "
+                        f"is not a valid json file."
+                    )
+        raise FileNotFoundError(
+            f"Failed to fetch meta of tools: cannot find {flow_tools_json_path.absolute().as_posix()}, "
+            f"please build the flow project first."
+        )
 
     @classmethod
     def find_available_port(cls) -> str:

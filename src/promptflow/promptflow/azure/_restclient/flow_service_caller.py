@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 """service_caller.py, module for interacting with the AzureML service."""
 import json
-import logging
 import os
 import sys
 import time
@@ -15,12 +14,14 @@ import pydash
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
-from promptflow._telemetry.telemetry import TelemetryMixin
+from promptflow._sdk._telemetry import request_id_context
+from promptflow._sdk._telemetry import TelemetryMixin
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.exceptions import ValidationException, UserErrorException, PromptflowException
 
-logger = logging.getLogger(__name__)
+logger = LoggerFactory.get_logger(__name__)
 
 
 class FlowRequestException(PromptflowException):
@@ -34,7 +35,7 @@ class RequestTelemetryMixin(TelemetryMixin):
 
     def __init__(self):
         super().__init__()
-        self._request_id = str(uuid.uuid4())
+        self._refresh_request_id_for_telemetry()
         self._from_cli = False
 
     def _get_telemetry_values(self, *args, **kwargs):
@@ -44,7 +45,8 @@ class RequestTelemetryMixin(TelemetryMixin):
         self._from_cli = True
 
     def _refresh_request_id_for_telemetry(self):
-        self._request_id = str(uuid.uuid4())
+        # refresh request id from current request id context
+        self._request_id = request_id_context.get() or str(uuid.uuid4())
 
 
 def _request_wrapper():
@@ -278,6 +280,26 @@ class FlowServiceCaller(RequestTelemetryMixin):
             workspace_name=workspace_name,
             experiment_id=experiment_id,
             flow_id=flow_id,
+            headers=headers,
+            **kwargs
+        )
+
+    @_request_wrapper()
+    def get_flow_run(
+            self,
+            subscription_id,  # type: str
+            resource_group_name,  # type: str
+            workspace_name,  # type: str
+            flow_run_id,  # type: str
+            **kwargs  # type: Any
+        ):
+        """Get flow run."""
+        headers = self._get_headers()
+        return self.caller.bulk_runs.get_flow_run_info(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_run_id=flow_run_id,
             headers=headers,
             **kwargs
         )
@@ -634,6 +656,26 @@ class FlowServiceCaller(RequestTelemetryMixin):
             index=index,
             start_index=start_index,
             end_index=end_index,
+            headers=headers,
+            **kwargs
+        )
+
+    @_request_wrapper()
+    def cancel_flow_run(
+            self,
+            subscription_id,  # type: str
+            resource_group_name,  # type: str
+            workspace_name,  # type: str
+            flow_run_id,  # type: str
+            **kwargs  # type: Any
+        ):
+        """Cancel a flow run."""
+        headers = self._get_headers()
+        return self.caller.bulk_runs.cancel_flow_run(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_run_id=flow_run_id,
             headers=headers,
             **kwargs
         )

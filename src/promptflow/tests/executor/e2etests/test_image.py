@@ -286,3 +286,31 @@ class TestExecutorWithImage:
         for _, node_run_info in aggregation_results.node_run_infos.items():
             assert node_run_info.status == Status.Completed
             assert contain_image_reference(node_run_info)
+
+    def test_batch_run_then_eval_with_image(self):
+        # submit a flow in batch mode fisrt
+        batch_flow_folder = get_flow_folder(COMPOSITE_IMAGE_FLOW)
+        batch_flow_file = get_yaml_file(batch_flow_folder)
+        batch_working_dir = get_flow_folder(batch_flow_folder)
+        batch_output_dir = Path(mkdtemp())
+        batch_input_dirs = {"data": "inputs.jsonl"}
+        batch_inputs_mapping = {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"}
+        batch_result = BatchEngine(batch_flow_file, batch_working_dir).run(
+            batch_input_dirs, batch_inputs_mapping, batch_output_dir
+        )
+        assert batch_result.completed_lines == batch_result.total_lines
+
+        # use the output of batch run as input of eval flow
+        eval_flow_folder = get_flow_folder(EVAL_FLOW_WITH_COMPOSITE_IMAGE)
+        eval_flow_file = get_yaml_file(eval_flow_folder)
+        eval_working_dir = get_flow_folder(eval_flow_folder)
+        eval_output_dir = Path(mkdtemp())
+        eval_input_dirs = {
+            "data": batch_flow_folder / "inputs.jsonl",
+            "run.outputs": batch_output_dir / OUTPUT_FILE_NAME,
+        }
+        eval_inputs_mapping = {"image_list": "${run.outputs.output}", "image_dict": "${data.image_dict}"}
+        eval_result = BatchEngine(eval_flow_file, eval_working_dir).run(
+            eval_input_dirs, eval_inputs_mapping, eval_output_dir
+        )
+        assert eval_result.completed_lines == eval_result.total_lines

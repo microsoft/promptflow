@@ -1,7 +1,8 @@
 import json
-import pkg_resources
+import sys
 import uuid
 from collections import namedtuple
+from importlib.metadata import version
 from pathlib import Path
 from tempfile import mkdtemp
 from unittest.mock import patch
@@ -15,34 +16,40 @@ from promptflow.executor import FlowExecutor
 
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
+IS_LEGACY_OPENAI = version("openai").startswith("0.")
+
 Completion = namedtuple("Completion", ["choices"])
+Choice = namedtuple("Choice", ["delta"])
 Delta = namedtuple("Delta", ["content"])
 
 
 def stream_response(kwargs):
-    delta = Delta(content=json.dumps(kwargs.get("headers", {})))
-    yield Completion(choices=[{"delta": delta}])
+    if IS_LEGACY_OPENAI:
+        delta = Delta(content=json.dumps(kwargs.get("headers", {})))
+        yield Completion(choices=[{"delta": delta}])
+    else:
+        delta = Delta(content=json.dumps(kwargs.get("extra_headers", {})))
+        yield Completion(choices=[Choice(delta=delta)])
 
 
-def mock_stream_chat(**kwargs):
+def mock_stream_chat(*args, **kwargs):
     return stream_response(kwargs)
 
 
-# @pytest.mark.skipif(sys.platform == "darwin" or sys.platform == "win32", reason="Skip on Mac and Windows")
+@pytest.mark.skipif(sys.platform == "darwin" or sys.platform == "win32", reason="Skip on Mac and Windows")
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
-    @pytest.mark.skipif(
-        pkg_resources.get_distribution("openai").version.startswith("1."),
-        reason="test needs to be upgraded to adapt to openai>=1.0.0",
-    )
     def test_executor_openai_telemetry(self, dev_connections):
         """This test validates telemetry info header is correctly injected to OpenAI API
-        by mocking openai.ChatCompletion.create method. The mock method will return a generator
-        that yields a namedtuple with a json string of the headers passed to the method.
+        by mocking chat api method. The mock method will return a generator that yields a
+        namedtuple with a json string of the headers passed to the method.
         """
-
-        with patch("openai.ChatCompletion.create", new=mock_stream_chat):
+        if IS_LEGACY_OPENAI:
+            api = "openai.ChatCompletion.create"
+        else:
+            api = "openai.resources.chat.Completions.create"
+        with patch(api, new=mock_stream_chat):
             operation_context = OperationContext.get_instance()
             operation_context.clear()
 
@@ -52,7 +59,7 @@ class TestExecutorTelemetry:
             executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
 
             # flow run case
-            inputs = {"question": "What's your name?", "chat_history": []}
+            inputs = {"question": "What's your name?", "chat_history": [], "stream": True}
             flow_result = executor.exec_line(inputs)
 
             assert isinstance(flow_result.output, dict)

@@ -6,11 +6,10 @@ import re
 from typing import List
 
 from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, LOGGER_NAME, MAX_LIST_CLI_RESULTS
-from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces, print_red_error
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import WorkspaceTelemetryMixin
+from promptflow._utils.logger_utils import LoggerFactory
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
