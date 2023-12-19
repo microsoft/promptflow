@@ -40,9 +40,13 @@ RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspace
 def determine_scope() -> str:
     """Determine the scope of the pytest fixtures.
 
-    Replay tests require function scope fixture as it will locate the recording YAML based on
-    the test function; while we expect session level fixtures for shared flow/run during
-    live mode. So use this function to determine the scope of the fixtures dynamically.
+    We have many tests against flows and runs, and it's very time consuming to create a new flow/run
+    for each test. So we expect to leverage pytest fixture concept to share flows/runs across tests -
+    session scope is what we expect. However, we also have replay tests, which require function scope
+    fixture as it will locate the recording YAML based on the test function info.
+
+    Use this function to determine the scope of the fixtures dynamically. For those fixtures that
+    will request dynamic scope fixture(s), they also need to be dynamic scope.
     """
     return "session" if is_live() else "function"
 
