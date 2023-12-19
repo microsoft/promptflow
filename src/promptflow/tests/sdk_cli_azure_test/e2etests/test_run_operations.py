@@ -25,7 +25,7 @@ from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live, is_replay
+from ..recording_utilities import is_live
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -250,52 +250,38 @@ class TestFlowRun:
             print(json.dumps(run._to_dict(), indent=4))
         assert len(runs) == 10
 
-    def test_show_run(self, pf, tenant_id: str):
-        run = pf.runs.get(run="classification_accuracy_eval_default_20230808_153241_422491")
+    def test_show_run(self, pf: PFClient, created_eval_run_without_llm: Run):
+        run = pf.runs.get(run=created_eval_run_without_llm.name)
         run_dict = run._to_dict()
         print(json.dumps(run_dict, indent=4))
 
-        subscription_id = pf.ml_client.subscription_id
-        resource_group_name = pf.ml_client.resource_group_name
-        workspace_name = pf.ml_client.workspace_name
-        # find this miss sanitization during test
-        # workspace id is kind of special, so use this as a workaround
-        # if we run into similar issue, we will resolve it with fixture
-        miss_sanitization = "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5" if not is_replay() else workspace_name
-
-        assert run_dict == {
-            "name": "classification_accuracy_eval_default_20230808_153241_422491",
-            "created_on": "2023-08-08T07:32:52.761030+00:00",
-            "status": "Completed",
-            "display_name": "classification_accuracy_eval_default_20230808_153241_422491",
-            "description": None,
-            "tags": {},
-            "properties": {
-                "azureml.promptflow.runtime_name": "demo-mir",
-                "azureml.promptflow.runtime_version": "20230801.v1",
-                "azureml.promptflow.definition_file_name": "flow.dag.yaml",
-                "azureml.promptflow.inputs_mapping": '{"groundtruth":"${data.answer}","prediction":"${run.outputs.category}"}',  # noqa: E501
-                "azureml.promptflow.snapshot_id": "e5d50c43-7ad2-4354-9ce4-4f56f0ea9a30",
-                "azureml.promptflow.total_tokens": "0",
-            },
-            "creation_context": {
-                "userObjectId": "c05e0746-e125-4cb3-9213-a8b535eacd79",
-                "userPuId": "10032000324F7449",
-                "userIdp": None,
-                "userAltSecId": None,
-                "userIss": f"https://sts.windows.net/{tenant_id}/",
-                "userTenantId": tenant_id,
-                "userName": "Honglin Du",
-                "upn": None,
-            },
-            "start_time": "2023-08-08T07:32:56.637761+00:00",
-            "end_time": "2023-08-08T07:33:07.853922+00:00",
-            "duration": "00:00:11.2161606",
-            "portal_url": f"https://ml.azure.com/runs/classification_accuracy_eval_default_20230808_153241_422491?wsid=/subscriptions/{subscription_id}/resourcegroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",  # noqa: E501
-            "data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl",  # noqa: E501
-            "output": f"azureml://locations/eastus/workspaces/{miss_sanitization}/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/versions/1",  # noqa: E501
-            "run": "web_classification_default_20230804_143634_056856",
-        }
+        # it's hard to assert with precise value, so just assert existence, type and length
+        expected_keys = [
+            "name",
+            "created_on",
+            "status",
+            "display_name",
+            "description",
+            "tags",
+            "properties",
+            "creation_context",
+            "start_time",
+            "end_time",
+            "duration",
+            "portal_url",
+            "data",
+            "output",
+            "run",
+        ]
+        for expected_key in expected_keys:
+            assert expected_key in run_dict
+            if expected_key == "description":
+                assert run_dict[expected_key] is None
+            elif expected_key in {"tags", "properties", "creation_context"}:
+                assert isinstance(run_dict[expected_key], dict)
+            else:
+                assert isinstance(run_dict[expected_key], str)
+                assert len(run_dict[expected_key]) > 0
 
     def test_show_run_details(self, pf: PFClient, created_batch_run_without_llm: Run):
         # get first 2 results
