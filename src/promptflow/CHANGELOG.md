@@ -4,6 +4,7 @@
 
 ### Features Added
 - [SDK/CLI] Support `pfazure run cancel` to cancel a run on Azure AI.
+- [Executor] Handle KeyboardInterrupt in flow test so that the final state is Canceled.
 
 ## 1.2.0 (2023.12.14)
 
