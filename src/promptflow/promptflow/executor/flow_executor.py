@@ -209,13 +209,13 @@ class FlowExecutor:
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
     ):
+        logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, version=flow.version)
-
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
         flow = Flow(
@@ -243,7 +243,7 @@ class FlowExecutor:
 
         ToolInvoker.activate(DefaultToolInvoker())
 
-        return FlowExecutor(
+        executor = FlowExecutor(
             flow=flow,
             connections=connections,
             run_tracker=run_tracker,
@@ -254,6 +254,8 @@ class FlowExecutor:
             line_timeout_sec=line_timeout_sec,
             flow_file=flow_file,
         )
+        logger.debug("The flow executor is initialized successfully.")
+        return executor
 
     @classmethod
     def load_and_exec_node(

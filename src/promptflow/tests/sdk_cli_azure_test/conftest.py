@@ -15,8 +15,9 @@ import pytest
 from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockerFixture
 
-from promptflow._sdk._constants import FlowType
+from promptflow._sdk._constants import FlowType, RunStatus
 from promptflow._sdk._utils import ClientUserAgentUtil
+from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
 from promptflow.azure._entities._flow import Flow
 
@@ -38,7 +39,7 @@ RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspace
 @pytest.fixture
 def user_object_id() -> str:
     if is_replay():
-        return ""
+        return SanitizedValues.USER_OBJECT_ID
     credential = get_cred()
     access_token = credential.get_token("https://management.azure.com/.default")
     decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
@@ -48,7 +49,7 @@ def user_object_id() -> str:
 @pytest.fixture
 def tenant_id() -> str:
     if is_replay():
-        return ""
+        return SanitizedValues.TENANT_ID
     credential = get_cred()
     access_token = credential.get_token("https://management.azure.com/.default")
     decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
@@ -269,6 +270,63 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     assert result.path.endswith(f"/promptflow/{flow_display_name}/flow.dag.yaml")
 
     yield result
+
+
+@pytest.fixture
+def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
+    """Create a batch run that does not require LLM."""
+    name = randstr("batch_run_name")
+    run = pf.run(
+        # copy test_configs/flows/simple_hello_world to a separate folder
+        # as pf.run will generate .promptflow/flow.tools.json
+        # it will affect Azure file share upload logic and replay test
+        flow=f"{FLOWS_DIR}/hello-world",
+        data=f"{DATAS_DIR}/webClassification3.jsonl",
+        column_mapping={"name": "${data.url}"},
+        runtime=runtime,
+        name=name,
+        display_name="sdk-cli-test-fixture-batch-run-without-llm",
+    )
+    run = pf.runs.stream(run=name)
+    assert run.status == RunStatus.COMPLETED
+    yield run
+
+
+@pytest.fixture
+def created_eval_run_without_llm(
+    pf: PFClient, randstr: Callable[[str], str], runtime: str, created_batch_run_without_llm: Run
+) -> Run:
+    """Create a evaluation run against batch run without LLM dependency."""
+    name = randstr("eval_run_name")
+    run = pf.run(
+        flow=f"{FLOWS_DIR}/eval-classification-accuracy",
+        data=f"{DATAS_DIR}/webClassification3.jsonl",
+        run=created_batch_run_without_llm,
+        column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.result}"},
+        runtime=runtime,
+        name=name,
+        display_name="sdk-cli-test-fixture-eval-run-without-llm",
+    )
+    run = pf.runs.stream(run=name)
+    assert run.status == RunStatus.COMPLETED
+    yield run
+
+
+@pytest.fixture
+def created_failed_run(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
+    """Create a failed run."""
+    name = randstr("failed_run_name")
+    run = pf.run(
+        flow=f"{FLOWS_DIR}/partial_fail",
+        data=f"{DATAS_DIR}/webClassification3.jsonl",
+        runtime=runtime,
+        name=name,
+        display_name="sdk-cli-test-fixture-failed-run",
+    )
+    # set raise_on_error to False to promise returning something
+    run = pf.runs.stream(run=name, raise_on_error=False)
+    assert run.status == RunStatus.FAILED
+    yield run
 
 
 @pytest.fixture(autouse=not is_live())

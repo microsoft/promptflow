@@ -36,13 +36,6 @@ class TestFlowTest:
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         inputs = {"text": "Hello World!"}
         flow_path = Path(f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection").absolute()
 
@@ -55,13 +48,6 @@ class TestFlowTest:
         assert result == "Hello World!This is my first custom connection."
 
     def test_pf_test_flow_with_package_tool_with_custom_connection_as_input_value(self, install_custom_tool_pkg):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         # Prepare custom connection
         from promptflow.connections import CustomConnection
 
