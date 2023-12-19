@@ -337,7 +337,7 @@ class TestTool:
 
     def test_validate_package_tool(self):
         package_tool_path = TOOL_ROOT / "tool_package"
-        sys.path.append(str(package_tool_path))
+        sys.path.append(str(package_tool_path.resolve()))
 
         import tool_package
 

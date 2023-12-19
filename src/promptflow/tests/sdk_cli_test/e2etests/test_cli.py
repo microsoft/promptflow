@@ -1451,8 +1451,6 @@ class TestCli:
         assert "invalid_flow_folder does not exist" in outerr.out
 
     def test_tool_validate(self):
-        import pkg_resources
-
         # Test validate tool script
         tool_script_path = Path(TOOL_ROOT) / "custom_llm_tool.py"
         run_pf_command("tool", "validate", "--source", str(tool_script_path))
@@ -1463,13 +1461,9 @@ class TestCli:
 
         # Test validate package tool
         tool_script_path = Path(TOOL_ROOT) / "tool_package"
-        sys.path.append(tool_script_path)
-        package_set = list(pkg_resources.working_set)
-        tool_package_info = mock.MagicMock()
-        tool_package_info.key = "tool_package"
-        package_set.append(tool_package_info)
-        with patch("promptflow._sdk.operations._tool_operations.ToolOperations._is_package_tool", return_value=True), \
-                patch("pkg_resources.working_set", package_set):
+        sys.path.append(str(tool_script_path.resolve()))
+
+        with patch("promptflow._sdk.operations._tool_operations.ToolOperations._is_package_tool", return_value=True):
             with pytest.raises(SystemExit):
                 run_pf_command("tool", "validate", "--source", "tool_package")
 

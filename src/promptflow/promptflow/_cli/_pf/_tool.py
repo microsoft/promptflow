@@ -183,15 +183,14 @@ def list_tool(args):
 
 @exception_handler("Tool validate")
 def validate_tool(args):
-    import pkg_resources
     import importlib
 
     pf_client = PFClient()
-    is_package = any(package.key == args.source for package in pkg_resources.working_set)
-    if is_package:
+    try:
+        __import__(args.source)
         source = importlib.import_module(args.source)
         logger.debug(f"The source {args.source} is used as a package to validate.")
-    else:
+    except ImportError:
         try:
             module_name, func_name = args.source.rsplit(".", 1)
             module = importlib.import_module(module_name)

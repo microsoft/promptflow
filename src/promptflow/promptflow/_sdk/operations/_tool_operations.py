@@ -29,6 +29,8 @@ from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow.contracts.multimedia import Image
 from promptflow.exceptions import UserErrorException
 
+TOTAL_COUNT = "total_count"
+INVALID_COUNT = "invalid_count"
 logger = logging.getLogger(LOGGER_NAME)
 
 
@@ -81,11 +83,13 @@ class ToolOperations:
                 tool_validate_result.merge_with(validate_result)
         # The generated dict cannot be dumped as yaml directly since yaml cannot handle string enum.
         tools = json.loads(json.dumps(construct_tools))
+        tool_validate_result._set_extra_info(TOTAL_COUNT, len(tool_functions) + len(tool_methods))
+        tool_validate_result._set_extra_info(INVALID_COUNT, invalid_tool_count)
         if not tool_validate_result.passed:
             if raise_error:
 
                 def tool_validate_error_func(msg, _):
-                    return ToolValidationError(message=msg, errors=tool_validate_result._errors)
+                    return ToolValidationError(message=msg, validate_result=tool_validate_result)
 
                 tool_validate_result.try_raise(raise_error=raise_error, error_func=tool_validate_error_func)
             else:
@@ -397,16 +401,18 @@ class ToolOperations:
         """
 
         def validate_tools_in_module(module):
-            validate_result = ValidationResultBuilder.success()
             try:
                 self.generate_tool_meta(module, raise_error=True)
+                validate_result = ValidationResultBuilder.success()
             except ToolValidationError as exception:
-                validate_result._errors = exception._kwargs.get("errors")
+                validate_result = exception._kwargs.get("validate_result")
             return validate_result
 
         if callable(source):
             tool, input_settings, extra_info = self._parse_tool_from_func(source)
             _, validate_result = self._serialize_tool(tool, input_settings, extra_info, source)
+            validate_result._set_extra_info(TOTAL_COUNT, 1)
+            validate_result._set_extra_info(INVALID_COUNT, 0 if validate_result.passed else 1)
         elif isinstance(source, (str, PathLike)):
             if not Path(source).exists():
                 raise UserErrorException(f"Cannot find the tool script {source}")
@@ -427,6 +433,16 @@ class ToolOperations:
             for module in module_list:
                 module_validate_result = validate_tools_in_module(importlib.import_module(module.name))
                 validate_result.merge_with(module_validate_result)
+                validate_result._set_extra_info(
+                    TOTAL_COUNT,
+                    validate_result._get_extra_info(TOTAL_COUNT, 0)
+                    + module_validate_result._get_extra_info(TOTAL_COUNT, 0),
+                )
+                validate_result._set_extra_info(
+                    INVALID_COUNT,
+                    validate_result._get_extra_info(INVALID_COUNT, 0)
+                    + module_validate_result._get_extra_info(INVALID_COUNT, 0),
+                )
         else:
             raise UserErrorException(
                 "Provide invalid source, tool validation source supports script tool, "

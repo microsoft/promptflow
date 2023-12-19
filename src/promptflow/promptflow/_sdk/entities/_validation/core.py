@@ -102,6 +102,13 @@ class ValidationResult(object):
         self._target_obj = None
         self._errors = []
         self._warnings = []
+        self._kwargs = {}
+
+    def _set_extra_info(self, key, value):
+        self._kwargs[key] = value
+
+    def _get_extra_info(self, key, default=None):
+        return self._kwargs.get(key, default)
 
     @property
     def error_messages(self) -> Dict:
@@ -134,6 +141,7 @@ class ValidationResult(object):
         result = {
             "result": _ValidationStatus.SUCCEEDED if self.passed else _ValidationStatus.FAILED,
         }
+        result.update(self._kwargs)
         for diagnostic_type, diagnostics in [
             ("errors", self._errors),
             ("warnings", self._warnings),
@@ -150,7 +158,7 @@ class ValidationResult(object):
                 for attr in dir(diagnostic):
                     if attr not in message and not attr.startswith("_") and not callable(getattr(diagnostic, attr)):
                         message[attr] = getattr(diagnostic, attr)
-                message = {k: v for k, v in message.items() if v}
+                message = {k: v for k, v in message.items() if v is not None}
                 messages.append(message)
             if messages:
                 result[diagnostic_type] = messages

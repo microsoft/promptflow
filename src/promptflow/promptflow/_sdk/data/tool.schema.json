@@ -281,7 +281,7 @@
         },
         "func_kwargs": {
           "type": "array",
-          "description": "Sample value in yaml\nfunc_kwargs:\n- name: prefix  # Argument name to be passed to the function\n  type: \n    - string\n  # if optional is not specified, default to false.\n  # this is for UX pre-validaton. If optional is false, but no nput. UX can throw error in advanced.\n  optional: true\n  reference: ${inputs.index_prefix}  # Dynamic reference to another input parameter\n- name: size  # Another argument name to be passed to the function\n  type: \n    - int\n  optional: true\n  default: 10",
+          "description": "Sample value in yaml\nfunc_kwargs:\n- name: prefix  # Argument name to be passed to the function\n  type: \n    - string\n  # if optional is not specified, default to false.\n  # this is for UX pre-validaton. If optional is false, but no input. UX can throw error in advanced.\n  optional: true\n  reference: ${inputs.index_prefix}  # Dynamic reference to another input parameter\n- name: size  # Another argument name to be passed to the function\n  type: \n    - int\n  optional: true\n  default: 10",
           "items": {
             "type": "object",
             "additionalProperties": {}
