@@ -41,14 +41,15 @@ def determine_scope() -> str:
     """Determine the scope of the pytest fixtures.
 
     We have many tests against flows and runs, and it's very time consuming to create a new flow/run
-    for each test. So we expect to leverage pytest fixture concept to share flows/runs across tests -
-    session scope is what we expect. However, we also have replay tests, which require function scope
-    fixture as it will locate the recording YAML based on the test function info.
+    for each test. So we expect to leverage pytest fixture concept to share flows/runs across tests.
+    However, we also have replay tests, which require function scope fixture as it will locate the
+    recording YAML based on the test function info.
 
     Use this function to determine the scope of the fixtures dynamically. For those fixtures that
     will request dynamic scope fixture(s), they also need to be dynamic scope.
     """
-    return "session" if is_live() else "function"
+    # package-scope should be enough for Azure tests
+    return "package" if is_live() else "function"
 
 
 @pytest.fixture(scope=determine_scope())
@@ -107,7 +108,7 @@ def remote_client(subscription_id: str, resource_group_name: str, workspace_name
     yield client
 
 
-@pytest.fixture(scope=determine_scope())
+@pytest.fixture
 def remote_workspace_resource_id(subscription_id: str, resource_group_name: str, workspace_name: str) -> str:
     return "azureml:" + RESOURCE_ID_FORMAT.format(
         subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name
