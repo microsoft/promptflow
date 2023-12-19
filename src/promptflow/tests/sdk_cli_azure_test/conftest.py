@@ -38,7 +38,7 @@ RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspace
 
 
 def package_scope_in_live_mode() -> str:
-    """Determine the scope of the pytest fixtures.
+    """Determine the scope of some expected sharing fixtures.
 
     We have many tests against flows and runs, and it's very time consuming to create a new flow/run
     for each test. So we expect to leverage pytest fixture concept to share flows/runs across tests.
