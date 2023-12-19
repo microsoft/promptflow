@@ -36,21 +36,24 @@ class TestTool:
             "test_tool.python_tool.PythonTool.python_tool": {
                 "class_name": "PythonTool",
                 "function": "python_tool",
-                "inputs": {"connection": {"type": ["AzureOpenAIConnection"]}, "input1": {"type": ["string"]}},
+                "inputs": {
+                    "connection": {"type": ["AzureOpenAIConnection"], "ui_hints": {"index": 0}},
+                    "input1": {"type": ["string"], "ui_hints": {"index": 1}}
+                },
                 "module": "test_tool.python_tool",
                 "name": "PythonTool.python_tool",
                 "type": "python",
             },
             "test_tool.python_tool.my_python_tool": {
                 "function": "my_python_tool",
-                "inputs": {"input1": {"type": ["string"]}},
+                "inputs": {"input1": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "module": "test_tool.python_tool",
                 "name": "python_tool",
                 "type": "python",
             },
             "test_tool.python_tool.my_python_tool_without_name": {
                 "function": "my_python_tool_without_name",
-                "inputs": {"input1": {"type": ["string"]}},
+                "inputs": {"input1": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "module": "test_tool.python_tool",
                 "name": "my_python_tool_without_name",
                 "type": "python",
@@ -65,7 +68,7 @@ class TestTool:
             "test_tool.custom_llm_tool.my_tool": {
                 "name": "My Custom LLM Tool",
                 "type": "custom_llm",
-                "inputs": {"connection": {"type": ["CustomConnection"]}},
+                "inputs": {"connection": {"type": ["CustomConnection"], "ui_hints": {"index": 0}}},
                 "description": "This is a tool to demonstrate the custom_llm tool type",
                 "module": "test_tool.custom_llm_tool",
                 "function": "my_tool",
@@ -74,7 +77,10 @@ class TestTool:
             "test_tool.custom_llm_tool.TestCustomLLMTool.tool_func": {
                 "name": "My Custom LLM Tool",
                 "type": "custom_llm",
-                "inputs": {"connection": {"type": ["AzureOpenAIConnection"]}, "api": {"type": ["string"]}},
+                "inputs": {
+                    "connection": {"type": ["AzureOpenAIConnection"], "ui_hints": {"index": 0}}, 
+                    "api": {"type": ["string"], "ui_hints": {"index": 1}}
+                },
                 "description": "This is a tool to demonstrate the custom_llm tool type",
                 "module": "test_tool.custom_llm_tool",
                 "class_name": "TestCustomLLMTool",
@@ -100,7 +106,10 @@ class TestTool:
             "test_tool.tool_with_custom_connection.MyTool.my_tool": {
                 "name": "My Second Tool",
                 "type": "python",
-                "inputs": {"connection": {"type": ["CustomConnection"]}, "input_text": {"type": ["string"]}},
+                "inputs": {
+                    "connection": {"type": ["CustomConnection"], "ui_hints": {"index": 0}},
+                    "input_text": {"type": ["string"], "ui_hints": {"index": 1}}
+                },
                 "description": "This is my second tool",
                 "module": "test_tool.tool_with_custom_connection",
                 "class_name": "MyTool",
@@ -116,8 +125,12 @@ class TestTool:
                 "name": "Tool With Custom Strong Type Connection",
                 "type": "python",
                 "inputs": {
-                    "connection": {"type": ["CustomConnection"], "custom_type": ["MyCustomConnection"]},
-                    "input_text": {"type": ["string"]},
+                    "connection": {
+                        "type": ["CustomConnection"],
+                        "custom_type": ["MyCustomConnection"],
+                        "ui_hints": {"index": 0}
+                    },
+                    "input_text": {"type": ["string"], "ui_hints": {"index": 1}},
                 },
                 "description": "This is my tool with custom strong type connection.",
                 "module": "test_tool.tool_with_custom_strong_type_connection",
@@ -148,11 +161,17 @@ class TestTool:
                                     "optional": True,
                                     "default": "",
                                 },
-                                {"name": "size", "type": ["int"], "optional": True, "default": 10},
+                                {
+                                    "name": "size",
+                                    "type": ["int"],
+                                    "optional": True,
+                                    "default": 10,
+                                },
                             ],
                         },
+                        "ui_hints": {"index": 0}
                     },
-                    "input_prefix": {"type": ["string"]},
+                    "input_prefix": {"type": ["string"], "ui_hints": {"index": 1}},
                 },
                 "description": "This is my tool with dynamic list input",
                 "module": "test_tool.tool_with_dynamic_list_input",
@@ -168,9 +187,19 @@ class TestTool:
                 "name": "My Tool with Enabled By Value",
                 "type": "python",
                 "inputs": {
-                    "user_type": {"type": ["string"], "enum": ["student", "teacher"]},
-                    "student_id": {"type": ["string"], "enabled_by": "user_type", "enabled_by_value": ["student"]},
-                    "teacher_id": {"type": ["string"], "enabled_by": "user_type", "enabled_by_value": ["teacher"]},
+                    "user_type": {"type": ["string"], "enum": ["student", "teacher"], "ui_hints": {"index": 0}},
+                    "student_id": {
+                        "type": ["string"],
+                        "enabled_by": "user_type",
+                        "enabled_by_value": ["student"],
+                        "ui_hints": {"index": 1}
+                    },
+                    "teacher_id": {
+                        "type": ["string"],
+                        "enabled_by": "user_type",
+                        "enabled_by_value": ["teacher"],
+                        "ui_hints": {"index": 2}
+                    },
                 },
                 "description": "This is my tool with enabled by value",
                 "module": "test_tool.tool_with_enabled_by_value",
@@ -264,7 +293,10 @@ class TestTool:
             "test_tool.tool_with_file_path_input.my_tool": {
                 "name": "Tool with FilePath Input",
                 "type": "python",
-                "inputs": {"input_file": {"type": ["file_path"]}, "input_text": {"type": ["string"]}},
+                "inputs": {
+                    "input_file": {"type": ["file_path"], "ui_hints": {"index": 0}},
+                    "input_text": {"type": ["string"], "ui_hints": {"index": 1}}
+                },
                 "description": "This is a tool to demonstrate the usage of FilePath input",
                 "module": "test_tool.tool_with_file_path_input",
                 "function": "my_tool",
