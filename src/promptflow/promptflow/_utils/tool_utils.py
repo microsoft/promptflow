@@ -9,8 +9,6 @@ import re
 from enum import Enum, EnumMeta
 from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
-from jinja2 import Environment, meta
-
 from promptflow._core._errors import DuplicateToolMappingError
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -204,9 +202,9 @@ def get_inputs_for_prompt_template(template_str):
     )
     {"image_input": InputDefinition(type=[ValueType.IMAGE]), "str_input": InputDefinition(type=[ValueType.STRING])
     """
-    env = Environment()
-    template = env.parse(template_str)
-    inputs = sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x))
+    # Define a regular expression pattern to match placeholders with varying whitespace
+    placeholder_pattern = r'\{\{\s*(\w+)\s*\}\}'
+    inputs = [match.group(1) for match in re.finditer(placeholder_pattern, template_str)]
     result_dict = {i: InputDefinition(type=[ValueType.STRING], ui_hints={"index": inputs.index(i)}) for i in inputs}
 
     # currently we only support image type

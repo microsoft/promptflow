@@ -380,13 +380,16 @@ class TestToolUtils:
         prompt_str = '''
         Please summarize the following text in one paragraph. 50 words.
         Do not add any information that is not in the text.
-        Text: {{text}}
-        {{connection}}
-        {{api}}
+        {{ who }}
+        Text: {{ text }}
+        {{ connection }}
+        {{ api }}
         Summary:
         '''
 
         result_dict = get_inputs_for_prompt_template(prompt_str)
-        assert len(result_dict) == 3
-        assert result_dict["connection"].ui_hints["index"] == 1
-        assert result_dict["api"].ui_hints["index"] == 2
+        assert len(result_dict) == 4
+        assert result_dict["connection"].ui_hints["index"] == 2
+        assert result_dict["api"].ui_hints["index"] == 3
+        assert result_dict["who"].ui_hints["index"] == 0
+        assert result_dict["text"].ui_hints["index"] == 1
