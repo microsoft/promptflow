@@ -2,10 +2,11 @@ import sys
 import timeit
 from typing import Callable
 from unittest import mock
+
 import pytest
-from promptflow import VERSION
-from promptflow._core.operation_context import OperationContext
+
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
+from promptflow._sdk._utils import ClientUserAgentUtil
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -16,9 +17,11 @@ def run_cli_command(cmd, time_limit=3600):
 
     sys.argv = list(cmd)
     st = timeit.default_timer()
-    with mock.patch.object(OperationContext, "get_user_agent") as get_user_agent_fun:
-        # Don't change get_user_agent_fun.return_value, dashboard needs to use.
-        get_user_agent_fun.return_value = f"{CLI_USER_AGENT} promptflow/{VERSION} perf_monitor/1.0"
+    with mock.patch.object(ClientUserAgentUtil, "get_user_agent") as get_user_agent_fun:
+        # Client side will modify user agent only through ClientUserAgentUtil to avoid impact executor/runtime.
+        get_user_agent_fun.return_value = f"{CLI_USER_AGENT} perf_monitor/1.0"
+        user_agent = ClientUserAgentUtil.get_user_agent()
+        assert user_agent == f"{CLI_USER_AGENT} perf_monitor/1.0"
         main()
     ed = timeit.default_timer()
 

@@ -13,7 +13,7 @@ from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
-EXECUTOR_SERVICE_DLL = "Promptflow.DotnetService.dll"
+EXECUTOR_SERVICE_DLL = "Promptflow.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
@@ -41,6 +41,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
+            "-e",
             "-p",
             port,
             "--yaml_path",
