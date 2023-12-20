@@ -24,7 +24,7 @@ You can use [pf tool init](../../reference/pf-command-reference.md#pf-tool-init)
 pf tool init --package <package-name> --tool <tool-name> --set icon=<icon-path>
 ```
 
-PF CLI will copy the icon file to the folder `<package-name>/icons/<icon-file-name>` and generate a tool script in the package. The tool icon will be configured in the tool script. Here we use [an existing tool](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart) as an example, the code is as follows:
+PF CLI will copy the icon file to the folder `<package-name>/icons/<icon-file-name>` and generate a tool script in the package. The tool icon will be configured in the tool script. Here we use [an existing tool](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/my_tool_1.py) as an example, the code is as follows:
 ```python
 from pathlib import Path
 
