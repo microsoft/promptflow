@@ -86,7 +86,10 @@ setup(
         "pfs": [
             "flask-restx>=1.2.0,<2.0.0",
         ],
-        "monitoring": [
+        "azureml-serving": [
+            # AzureML connection dependencies
+            "azure-identity>=1.12.0,<2.0.0",
+            "azure-ai-ml>=1.11.0,<2.0.0",
             # OTel dependencies for monitoring
             "opentelemetry-api>=1.21.0,<2.0.0",
             "opentelemetry-sdk>=1.21.0,<2.0.0",

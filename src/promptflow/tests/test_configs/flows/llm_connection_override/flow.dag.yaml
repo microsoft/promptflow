@@ -1,21 +1,13 @@
-inputs:
-  text:
-    type: string
+inputs: {}
 outputs:
-  output_prompt:
+  output:
     type: string
-    reference: ${summarize_text_content_prompt.output}
+    reference: ${conn_node.output}
 nodes:
-- name: summarize_text_content_prompt
-  type: llm
-  provider: AzureOpenAI
-  api: completion
-  module: promptflow.tools.aoai
-  connection: aoai connection
+- name: conn_node
+  type: python
   source:
     type: code
-    path: summarize_text_content_prompt.jinja2
+    path: conn_tool.py
   inputs:
-    deployment_name: text-ada-001
-    max_tokens: 16
-    text: ${inputs.text}
+    conn: aoai connection

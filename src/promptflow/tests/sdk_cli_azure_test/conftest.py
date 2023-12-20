@@ -196,6 +196,19 @@ def serving_client_with_connection_name_override(mocker: MockerFixture, remote_w
     return create_serving_client_with_connections("llm_connection_override", mocker, connections)
 
 
+@pytest.fixture
+def serving_client_with_connection_data_override(mocker: MockerFixture, remote_workspace_resource_id):
+    model_name = "llm_connection_override"
+    model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute()
+    # load arm connection template
+    connection_arm_template = model_path.joinpath("connection_arm_template.json").read_text()
+    connections = {
+        "aoai_connection": connection_arm_template,
+        "PROMPTFLOW_CONNECTION_PROVIDER": remote_workspace_resource_id,
+    }
+    return create_serving_client_with_connections(model_name, mocker, connections)
+
+
 def create_serving_client_with_connections(
     model_name, mocker: MockerFixture, connections: dict = {}
 ):
