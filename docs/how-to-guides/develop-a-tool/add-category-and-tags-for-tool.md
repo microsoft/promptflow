@@ -25,7 +25,7 @@ pf tool init --package <package-name> --tool <tool-name> --set category=<tool_ca
 
 Here, we use an example to show the categories and tags of the tool after initialization. Assume that the user executes this command:
 ```python
-pf tool init --package package_name --tool tool_name --set category="test_tool" tags="{'tag1':'value1','tag2':'value2'}"
+pf tool init --tool my_tool --set name="My First Tool" description="This is my first tool"  category="test_tool" tags="{'tag1':'value1','tag2':'value2'}"
 ```
 The generated tool script is as follows, where category and tags have been configured on the tool:
 ```python
@@ -34,12 +34,12 @@ from promptflow.connections import CustomConnection
 
 
 @tool(
-    name="tool_name",
-    description="This is tool_name tool",
-    category='test_tool',
-    tags={'tag1': 'value1', 'tag2': 'value2'},
+    name="My First Tool",
+    description="This is my first tool",
+    category="test_tool",
+    tags={"tag1": "value1", "tag2": "value2"},
 )
-def tool_name(connection: CustomConnection, input_text: str) -> str:
+def my_tool(self, input_text: str) -> str:
     # Replace with your tool code.
     # Usually connection contains configs to connect to an API.
     # Use CustomConnection is a dict. You can use it like: connection.api_key, connection.api_base

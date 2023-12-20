@@ -90,8 +90,7 @@ hello_world/
 
 ## FAQs
 ### Why is my custom tool not showing up in the UI?
-Confirm that the tool YAML files are included in your custom tool package. You can add the YAML files to [MANIFEST.in](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/MANIFEST.in) and include the package data in [setup.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/setup.py).
-Alternatively, you can test your tool package using the script below to ensure that you've packaged your tool YAML files and configured the package tool entry point correctly.
+Confirm that configured the package tool correctly. Alternatively, you can test your tool package using the script below to ensure that you've configured the package tool entry point correctly.
 
   1. Make sure to install the tool package in your conda environment before executing this script.
   2. Create a python file anywhere and copy the content below into it.
@@ -115,6 +114,7 @@ Alternatively, you can test your tool package using the script below to ensure t
           {'module': 'module_name', 'package': 'package_name', 'package_version': 'package_version', ...}
           """
           entry_points = importlib.metadata.entry_points()
+          PACKAGE_TOOLS_ENTRY = "package_tools"
           if isinstance(entry_points, list):
               entry_points = entry_points.select(group=PACKAGE_TOOLS_ENTRY)
           else:

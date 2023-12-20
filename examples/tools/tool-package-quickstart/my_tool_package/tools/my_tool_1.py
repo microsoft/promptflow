@@ -7,7 +7,9 @@ from promptflow.connections import CustomConnection
 @tool(
     name="My First Tool",
     description="This is my first tool",
-    icon=Path(__file__).parent.parent / "icons" / "custom-tool-icon.png"
+    icon=Path(__file__).parent.parent / "icons" / "custom-tool-icon.png",
+    category="test_tool",
+    tags={"tag1": "value1", "tag2": "value2"},
 )
 def my_tool(connection: CustomConnection, input_text: str) -> str:
     # Replace with your tool code.
