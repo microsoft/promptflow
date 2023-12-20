@@ -1,4 +1,4 @@
 promptflow[azure]
-promptflow-tools==1.0.0
+promptflow-tools
 python-dotenv
 bs4

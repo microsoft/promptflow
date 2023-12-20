@@ -25,9 +25,9 @@ The source JSON schema can be found at [Flow.schema.json](https://azuremlschemas
 
 | Key               | Type                                      | Description                                          | Allowed values                                      |
 |-------------------|-------------------------------------------|------------------------------------------------------|-----------------------------------------------------|
-| `type`            | string                                    | The type of flow input.                              | `int`, `double`, `bool`, `string`, `list`, `object` |
+| `type`            | string                                    | The type of flow input.                              | `int`, `double`, `bool`, `string`, `list`, `object`, `image` |
 | `description`     | string                                    | Description of the input.                            |                                                     |
-| `default`         | int, double, bool, string, list or object | The default value for the input.                     |                                                     |
+| `default`         | int, double, bool, string, list, object, image | The default value for the input.                     |                                                     |
 | `is_chat_input`   | boolean                                   | Whether the input is the chat flow input.            |                                                     |
 | `is_chat_history` | boolean                                   | Whether the input is the chat history for chat flow. |                                                     |
 
