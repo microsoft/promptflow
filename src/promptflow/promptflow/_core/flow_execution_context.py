@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import functools
 import inspect
 import logging
@@ -141,6 +142,14 @@ class FlowExecutionContext(ThreadLocalSingleton):
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             flow_logger.info(f"Node {node.name} completes.")
             return result
+        # User tool should reraise the CancelledError after its own handling logic,
+        # so that the error can propagate to the scheduler for handling.
+        # Otherwise, the node would end with Completed status.
+        except asyncio.CancelledError as e:
+            logger.exception(f"Node {node.name} in line {self._line_number} is cancelled.")
+            traces = Tracer.end_tracing(node_run_id)
+            self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
+            raise
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
             traces = Tracer.end_tracing(node_run_id)
