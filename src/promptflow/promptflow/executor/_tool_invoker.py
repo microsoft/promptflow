@@ -13,7 +13,7 @@ from docutils.core import publish_doctree
 from contextvars import ContextVar
 from functools import partial
 from logging import WARNING
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
@@ -77,7 +77,7 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         return invoker
 
     @classmethod
-    def load_tools(self, nodes: list[Node]):
+    def load_tools(self, nodes: List[Node]):
         invoker = self.active_instance()
         tool_resolver = ToolResolver.active_instance()
         invoker._tools = {node.name: tool_resolver.resolve_tool_by_node(node) for node in nodes}
