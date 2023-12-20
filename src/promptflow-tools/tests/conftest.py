@@ -153,3 +153,7 @@ def functions():
             },
         }
     ]
+
+@pytest.fixture
+def azure_content_safety_connection():
+    return ConnectionManager().get("azure_content_safety_connection")
