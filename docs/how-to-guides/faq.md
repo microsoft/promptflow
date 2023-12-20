@@ -11,6 +11,18 @@ Prompt flow provides both stable and experimental features in the same SDK.
 Stable features	| **Production ready** <br/><br/> These features are recommended for most use cases and production environments. They are updated less frequently then experimental features.|
 Experimental features | **Developmental**  <br/><br/> These features are newly developed capabilities & updates that may not be ready or fully tested for production usage. While the features are typically functional, they can include some breaking changes. Experimental features are used to iron out SDK breaking bugs, and will only receive updates for the duration of the testing period. Experimental features are also referred to as features that are in **preview**. <br/> As the name indicates, the experimental (preview) features are for experimenting and is **not considered bug free or stable**. For this reason, we only recommend experimental features to advanced users who wish to try out early versions of capabilities and updates, and intend to participate in the reporting of bugs and glitches.
 
+
+### OpenAI 1.x support
+Please use the following command to upgrade promptflow for openai 1.x support:
+```
+pip install promptflow>=1.1.0
+pip install promptflow-tools>=1.0.0
+```
+Note that the command above will upgrade your openai package a version later than 1.0.0, 
+which may introduce breaking changes to custom tool code.
+
+Reach [OpenAI migration guide](https://github.com/openai/openai-python/discussions/742) for more details.
+
 ## Troubleshooting ##
 
 ### Connection creation failed with StoreConnectionEncryptionKeyError
@@ -20,7 +32,7 @@ Connection creation failed with StoreConnectionEncryptionKeyError: System keyrin
 ```
 
 This error raised due to keyring can't find an available backend to store keys.
-For example [macOs Keychain](https://en.wikipedia.org/wiki/Keychain_%28software%29) and [Windows Credential Locker](https://learn.microsoft.com/en-us/windows/uwp/security/credential-locker)
+For example [macOS Keychain](https://en.wikipedia.org/wiki/Keychain_%28software%29) and [Windows Credential Locker](https://learn.microsoft.com/en-us/windows/uwp/security/credential-locker)
 are valid keyring backends.
 
 To resolve this issue, install the third-party keyring backend or write your own keyring backend, for example:
@@ -63,3 +75,74 @@ Below is the serving logs after setting `PF_LOGGING_LEVEL` to `DEBUG`:
 Compare to the serving logs with `WARNING` level:
 
 ![img](../media/how-to-guides/pf_logging_level_warning.png)
+
+### Set environment variables
+
+Currently, promptflow supports the following environment variables:
+
+**PF_WORKER_COUNT** 
+
+Valid for batch run only. The number of workers to use for parallel execution of the Flow.
+
+**PF_BATCH_METHOD**
+
+Valid for batch run only. Optional values: 'spawn', 'fork'. 
+
+**spawn**
+
+1. The child processes will not inherit resources of the parent process, therefore, each process needs to reinitialize the resources required for the flow, which may use more system memory.
+
+2. Starting a process is slow because it will take some time to initialize the necessary resources.
+ 
+**fork**
+
+1. Use the copy-on-write mechanism, the child processes will inherit all the resources of the parent process, thereby using less system memory.
+
+2. The process starts faster as it doesn't need to reinitialize resources.
+ 
+Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
+
+
+#### You can configure environment variables in the following ways
+
+1. If you are using CLI, you can use this parameter: ```--environment-variable```. Example: ```--environment-variable PF_WORKER_COUNT="2" PF_BATCH_METHOD="spawn"```.
+
+2. If you are using SDK, you can specify environment variables when creating run. Example: 
+
+``` python
+    pf = PFClient(
+        credential=credential,
+        subscription_id="<SUBSCRIPTION_ID>",
+        resource_group_name="<RESOURCE_GROUP>",
+        workspace_name="<AML_WORKSPACE_NAME>",
+    )
+
+    flow = "web-classification"
+    data = "web-classification/data.jsonl"
+    runtime = "example-runtime-ci"
+
+    environment_variables = {"PF_WORKER_COUNT": "2", "PF_BATCH_METHOD": "spawn"}
+
+    # create run
+    base_run = pf.run(
+        flow=flow,
+        data=data,
+        runtime=runtime,
+        environment_variables=environment_variables,
+    )
+```
+
+3. If you are using VSCode Extension to submit batch run, you can configure environment variables in the ```batch_run_create.yaml```. Example:
+
+``` yaml
+    name: flow_name
+    display_name: display_name
+    flow: flow_folder
+    data: data_file
+    column_mapping:
+        customer_info: <Please select a data input>
+        history: <Please select a data input>
+    environment_variables:
+        PF_WORKER_COUNT: "2"
+        PF_BATCH_METHOD: "spawn"
+```

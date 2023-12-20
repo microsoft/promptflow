@@ -4,7 +4,19 @@ on:
     - cron: "40 20 * * *" # Every day starting at 4:40 BJT
   pull_request_target:
     paths:
-      - src/promptflow/**
+      - src/promptflow/*
+      - src/promptflow/promptflow/*
+      - src/promptflow/promptflow/_core/**
+      - src/promptflow/promptflow/_internal/**
+      - src/promptflow/promptflow/_utils/**
+      - src/promptflow/promptflow/batch/**
+      - src/promptflow/promptflow/contracts/**
+      - src/promptflow/promptflow/entities/**
+      - src/promptflow/promptflow/executor/**
+      - src/promptflow/promptflow/integrations/**
+      - src/promptflow/promptflow/storage/**
+      - src/promptflow/tests/*
+      - src/promptflow/tests/executor/**
       - scripts/building/**
       - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
@@ -87,11 +99,9 @@ jobs:
       working-directory: artifacts
       run: |
         Set-PSDebug -Trace 1
-        pip install promptflow-tools
-        # Pin the openai version for sdk cli tests because pf and pf-tools which support openai 1.x aren't published to PyPi
-        # TODO: Remove restriction on openai version after pf-tools package which supports openai 1.x is published
-        pip install openai==0.27.10
+        pip install -r ${{ github.workspace }}/src/promptflow/dev_requirements.txt
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)"}}
+        gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
     - name: Azure Login
       uses: azure/login@v1

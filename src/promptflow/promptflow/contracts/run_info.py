@@ -228,3 +228,22 @@ class FlowRunInfo:
             upload_metrics=data.get("upload_metrics", False),
         )
         return flow_run_info
+
+    @staticmethod
+    def create_with_error(start_time, inputs, index, run_id, error):
+        return FlowRunInfo(
+            run_id=run_id,
+            status=Status.Failed,
+            error=error,
+            inputs=inputs,
+            output=None,
+            metrics=None,
+            request=None,
+            parent_run_id=run_id,
+            root_run_id=run_id,
+            source_run_id=run_id,
+            flow_id="default_flow_id",
+            start_time=start_time,
+            end_time=datetime.utcnow(),
+            index=index,
+        )

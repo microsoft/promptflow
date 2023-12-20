@@ -37,8 +37,10 @@ tools-reference/serp-api-tool
 tools-reference/faiss_index_lookup_tool
 tools-reference/vector_db_lookup_tool
 tools-reference/embedding_tool
-tools-reference/open_source_llm_tool
+tools-reference/open_model_llm_tool
 tools-reference/openai-gpt-4v-tool
+tools-reference/contentsafety_text_tool
+tools-reference/aoai-gpt4-turbo-vision
 ```
 
 ```{toctree}

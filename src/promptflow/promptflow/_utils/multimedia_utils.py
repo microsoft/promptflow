@@ -1,5 +1,4 @@
 import base64
-import filetype
 import os
 import re
 import uuid
@@ -8,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict
 from urllib.parse import urlparse
 
+import filetype
 import requests
 
 from promptflow.contracts._errors import InvalidImageInput
@@ -88,9 +88,12 @@ def _create_image_from_url(url: str, mime_type: str = None):
         return Image(response.content, mime_type=mime_type, source_url=url)
     else:
         raise InvalidImageInput(
-            message_format=f"Error while fetching image from URL: {url}. "
-            "Error code: {response.status_code}. Error message: {response.text}.",
+            message_format="Failed to fetch image from URL: {url}. Error code: {error_code}. "
+            "Error message: {error_message}.",
             target=ErrorTarget.EXECUTOR,
+            url=url,
+            error_code=response.status_code,
+            error_message=response.text,
         )
 
 
@@ -135,7 +138,7 @@ def create_image(value: any):
         else:
             raise InvalidImageInput(
                 message_format="Invalid image input format. The image input should be a dictionary like: "
-                "{data:image/<image_type>;[path|base64|url]: <image_data>}.",
+                "{{data:image/<image_type>;[path|base64|url]: <image_data>}}.",
                 target=ErrorTarget.EXECUTOR,
             )
     elif isinstance(value, str):
@@ -167,6 +170,8 @@ def _save_image_to_file(
 def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *, use_absolute_path=False) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
+        if obj.source_url:
+            return {f"data:{obj._mime_type};url": obj.source_url}
         if isinstance(obj, PFBytes):
             file_name = str(uuid.uuid4())
             # If use_absolute_path is True, the image file path in image dictionary will be absolute path.
@@ -195,15 +200,23 @@ def convert_multimedia_data_to_base64(value: Any, with_type=False, dict_type=Fal
 
 
 # TODO: Move this function to a more general place and integrate serialization to this function.
-def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None) -> dict:
+def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None, inplace: bool = False) -> dict:
     if process_funcs:
         for cls, f in process_funcs.items():
             if isinstance(value, cls):
                 return f(value)
     if isinstance(value, list):
-        return [_process_recursively(v, process_funcs) for v in value]
-    if isinstance(value, dict):
-        return {k: _process_recursively(v, process_funcs) for k, v in value.items()}
+        if inplace:
+            for i in range(len(value)):
+                value[i] = _process_recursively(value[i], process_funcs, inplace)
+        else:
+            return [_process_recursively(v, process_funcs, inplace) for v in value]
+    elif isinstance(value, dict):
+        if inplace:
+            for k, v in value.items():
+                value[k] = _process_recursively(v, process_funcs, inplace)
+        else:
+            return {k: _process_recursively(v, process_funcs, inplace) for k, v in value.items()}
     return value
 
 

@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # this file is a middle layer between the local SDK and executor.
-import asyncio
 import contextlib
 import logging
 import re
@@ -14,7 +13,7 @@ from typing import Any, Mapping
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
-from promptflow._sdk.entities._flow import Flow, FlowContext
+from promptflow._sdk.entities._flow import FlowContext, ProtectedFlow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
@@ -25,6 +24,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.storage._run_storage import DefaultRunStorage
 
+from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import LoggerFactory
 from .utils import SubmitterHelper, variant_overwrite_context
 
@@ -32,7 +32,7 @@ logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class TestSubmitter:
-    def __init__(self, flow: Flow, flow_context: FlowContext, client=None):
+    def __init__(self, flow: ProtectedFlow, flow_context: FlowContext, client=None):
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
@@ -116,9 +116,12 @@ class TestSubmitter:
                     else:
                         missing_inputs.append(name)
                         continue
-                    dependency_nodes_outputs[value.value] = (
-                        {value.property: dependency_input} if value.property else dependency_input
-                    )
+                    if value.property:
+                        dependency_nodes_outputs[value.value] = dependency_nodes_outputs.get(value.value, {})
+                        if value.property in dependency_input:
+                            dependency_nodes_outputs[value.value][value.property] = dependency_input[value.property]
+                    else:
+                        dependency_nodes_outputs[value.value] = dependency_input
                     merged_inputs[name] = dependency_input
                 elif value.value_type == InputValueType.FLOW_INPUT:
                     input_name = f"{value.prefix}{value.value}"
@@ -233,6 +236,7 @@ class TestSubmitter:
             stream=stream,
             credential_list=credential_list,
         ):
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
@@ -240,7 +244,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
-                output_sub_dir=".promptflow/intermediate",
+                storage=storage,
             )
             return result
 
@@ -397,7 +401,7 @@ class TestSubmitter:
 
 
 class TestSubmitterViaProxy(TestSubmitter):
-    def __init__(self, flow: Flow, flow_context: FlowContext, client=None):
+    def __init__(self, flow: ProtectedFlow, flow_context: FlowContext, client=None):
         super().__init__(flow, flow_context, client)
 
     def flow_test(
@@ -413,11 +417,13 @@ class TestSubmitterViaProxy(TestSubmitter):
         from promptflow._constants import LINE_NUMBER_KEY
 
         if not connections:
-            connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
-                tools_meta=CSharpExecutorProxy.generate_tool_metadata(
-                    flow_dag=self.flow.dag,
+            connections = SubmitterHelper.resolve_used_connections(
+                flow=self.flow,
+                tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                    flow_file=self.flow.flow_dag_path,
                     working_dir=self.flow.code,
-                )
+                ),
+                client=self._client,
             )
         credential_list = ConnectionManager(connections).get_secret_list()
 
@@ -442,7 +448,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                     log_path=log_path,
                 )
 
-                line_result = asyncio.run(flow_executor.exec_line_async(inputs, index=0))
+                line_result = async_run_allowing_running_loop(flow_executor.exec_line_async, inputs, index=0)
                 line_result.output = persist_multimedia_data(
                     line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
                 )
@@ -450,8 +456,8 @@ class TestSubmitterViaProxy(TestSubmitter):
                     # Convert inputs of aggregation to list type
                     flow_inputs = {k: [v] for k, v in inputs.items()}
                     aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                    aggregation_results = asyncio.run(
-                        flow_executor.exec_aggregation_async(flow_inputs, aggregation_inputs)
+                    aggregation_results = async_run_allowing_running_loop(
+                        flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
                     )
                     line_result.node_run_infos.update(aggregation_results.node_run_infos)
                     line_result.run_info.metrics = aggregation_results.metrics
@@ -468,23 +474,26 @@ class TestSubmitterViaProxy(TestSubmitter):
     def exec_with_inputs(self, inputs):
         from promptflow._constants import LINE_NUMBER_KEY
 
-        try:
-            connections = SubmitterHelper.resolve_connection_names_from_tool_meta(
-                tools_meta=CSharpExecutorProxy.generate_tool_metadata(
-                    flow_dag=self.flow.dag,
-                    working_dir=self.flow.code,
-                )
-            )
-            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            flow_executor = CSharpExecutorProxy.create(
+        connections = SubmitterHelper.resolve_used_connections(
+            flow=self.flow,
+            tools_meta=CSharpExecutorProxy.get_tool_metadata(
                 flow_file=self.flow.path,
                 working_dir=self.flow.code,
-                connections=connections,
-                storage=storage,
-            )
+            ),
+            client=self._client,
+        )
+        storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+        flow_executor = CSharpExecutorProxy.create(
+            flow_file=self.flow.path,
+            working_dir=self.flow.code,
+            connections=connections,
+            storage=storage,
+        )
+
+        try:
             # validate inputs
             flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-            line_result = asyncio.run(flow_executor.exec_line_async(inputs, index=0))
+            line_result = async_run_allowing_running_loop(flow_executor.exec_line_async, inputs, index=0)
             # line_result = flow_executor.exec_line(inputs, index=0)
             if isinstance(line_result.output, dict):
                 # Remove line_number from output

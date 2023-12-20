@@ -13,6 +13,7 @@ from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, to_openai_error_message, \
     JinjaTemplateError, LLMError, ChatAPIFunctionRoleInvalidFormat
 from promptflow.tools.openai import chat as openai_chat
+from promptflow.tools.aoai_gpt4v import AzureOpenAI as AzureOpenAIVision
 from pytest_mock import MockerFixture
 
 from promptflow.exceptions import UserErrorException
@@ -258,3 +259,47 @@ class TestHandleOpenAIError:
         msg = "Completion API is a legacy api and is going to be deprecated soon. " \
               "Please change to use Chat API for current model."
         assert msg in exc_info.value.message
+
+    def test_model_not_support_image_input(
+            self, azure_open_ai_connection, example_prompt_template_with_image, example_image):
+        aoai = AzureOpenAIVision(azure_open_ai_connection)
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            aoai.chat(
+                prompt=example_prompt_template_with_image,
+                deployment_name="gpt-35-turbo",
+                max_tokens=480,
+                temperature=0,
+                question="which number did you see in this picture?",
+                image_input=example_image,
+            )
+        assert "Current model does not support the image input" in exc_info.value.message
+
+    @pytest.mark.parametrize(
+        "max_tokens, error_message, error_codes, exception",
+        [
+            (0, "0 is less than the minimum of 1", "UserError/OpenAIError/BadRequestError", WrappedOpenAIError),
+            (-1, "-1 is less than the minimum of 1", "UserError/OpenAIError/BadRequestError", WrappedOpenAIError),
+            ("asd", "ValueError: invalid literal for int()", "UserError/LLMError", LLMError)
+        ]
+    )
+    def test_aoai_invalid_max_tokens(
+            self,
+            azure_open_ai_connection,
+            example_prompt_template,
+            chat_history,
+            max_tokens,
+            error_message,
+            error_codes,
+            exception):
+        with pytest.raises(exception) as exc_info:
+            chat(
+                connection=azure_open_ai_connection,
+                prompt=example_prompt_template,
+                deployment_name="gpt-35-turbo",
+                max_tokens=max_tokens,
+                temperature=0,
+                user_input="Write a slogan for product X",
+                chat_history=chat_history,
+            )
+        assert error_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")

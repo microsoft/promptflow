@@ -18,8 +18,6 @@ on:
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: src/promptflow
-  PYTHONPATH: ${{ github.workspace }}/src/promptflow
-  IS_IN_CI_PIPELINE: "true"
 
 jobs:
   build_msi_installer:
@@ -53,7 +51,7 @@ jobs:
 
       - name: Setup and Install dev promptflow
         if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
-        uses: "./.github/actions/step_sdk_setup_win"
+        uses: "./.github/actions/step_sdk_setup"
         with:
           setupType: promptflow_with_extra
           scriptPath: ${{ env.testWorkingDirectory }}
@@ -61,7 +59,7 @@ jobs:
       - name: Install stable promptflow
         if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
         run: |
-          pip install promptflow[azure,executable]==$env:INPUT_VERSION promptflow-tools
+          pip install promptflow[azure,executable,pfs]==$env:INPUT_VERSION promptflow-tools
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
         shell: pwsh
@@ -72,6 +70,10 @@ jobs:
         run: |
           if ($env:INPUT_VERSION) {
             $version=$env:INPUT_VERSION
+            $run_version=$(python -c "import promptflow; print(promptflow.__version__)")
+            if ($version -ne $run_version) {
+              throw "Version input does not match the version in promptflow package. Version input: $version, version in promptflow package: $run_version"
+            }
           } else {
             $prefix = 0
             $year = [int](Get-Date -Format "yy")
@@ -89,7 +91,7 @@ jobs:
         run: |
           echo 'Version from promptflow: ${{ steps.get-version.outputs.version }}'
           $text = Get-Content "version_info.txt" -Raw
-          
+
           $versionString = '${{ steps.get-version.outputs.version }}'
           $versionArray = $versionString.Split('.')
           if ($versionArray.Count -ge 4) {
@@ -101,7 +103,7 @@ jobs:
           }
           $versionTuple = [string]::Join(', ', $versionArray)
           $text = $text -replace '\$\((env\.FILE_VERSION)\)', $versionTuple
-          
+
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
           $text | Out-File -FilePath "version_info.txt" -Encoding utf8
           pyinstaller promptflow.spec
@@ -113,11 +115,11 @@ jobs:
           $text = Get-Content "promptflow.wixproj" -Raw
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
           $text | Out-File -FilePath "promptflow.wixproj" -Encoding utf8
-          
+
           $text = Get-Content "product.wxs" -Raw
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
-          $text | Out-File -FilePath "product.wxs" -Encoding utf8         
-          
+          $text | Out-File -FilePath "product.wxs" -Encoding utf8
+
           msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
 
@@ -126,18 +128,27 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Download JSON file from Azure Blob Storage
+        id: download-json
+        run: |
+          az storage blob download --account-name promptflowartifact --container-name msi-installer --name latest_version.json --file downloaded_version.json
+          $downloaded_version = (Get-Content downloaded_version.json | ConvertFrom-Json).promptflow
+          echo "::set-output name=downloaded_version::$downloaded_version"
+
       - name: Check if version input is valid and upload JSON file
         run: |
           $version = "${{ steps.get-version.outputs.version }}"
-          if ($version -like '1.*') {
+          $downloaded_version = "${{ steps.download-json.outputs.downloaded_version }}"
+          if ($version -like '1.*' -and [Version]$version -gt [Version]$downloaded_version){
             $jsonContent = @{
               "promptflow" = $version
             } | ConvertTo-Json -Depth 100
             $jsonContent | Out-File -FilePath latest_version.json -Encoding UTF8
+            
             Write-Output "Created latest_version.json with version: $version"
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "latest_version.json" --name "latest_version.json" --overwrite
           } else {
-            Write-Output "skip uploading since version input is either empty or does not start with '1.'"
+            Write-Output "skip uploading since version input isn't greater than latest version or does not start with '1.'"
           }
 
       - name: Upload to Azure Storage

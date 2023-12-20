@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 from contextvars import ContextVar
 from typing import Dict, Mapping
 
@@ -19,6 +18,7 @@ class OperationContext(Dict):
 
     _CONTEXT_KEY = "operation_context"
     _current_context = ContextVar(_CONTEXT_KEY, default=None)
+    USER_AGENT_KEY = "user_agent"
 
     @classmethod
     def get_instance(cls):
@@ -103,8 +103,8 @@ class OperationContext(Dict):
         """
 
         def parts():
-            if "user_agent" in self:
-                yield self.get("user_agent")
+            if OperationContext.USER_AGENT_KEY in self:
+                yield self.get(OperationContext.USER_AGENT_KEY)
             yield f"promptflow/{VERSION}"
 
         # strip to avoid leading or trailing spaces, which may cause error when sending request
@@ -120,12 +120,11 @@ class OperationContext(Dict):
         Args:
             user_agent (str): The user agent information to append.
         """
-        if "user_agent" in self:
+        if OperationContext.USER_AGENT_KEY in self:
             if user_agent not in self.user_agent:
-                self.user_agent = f"{self.user_agent} {user_agent}"
+                self.user_agent = f"{self.user_agent.strip()} {user_agent.strip()}"
         else:
             self.user_agent = user_agent
-        self.user_agent = self.user_agent.strip()
 
     def set_batch_input_source_from_inputs_mapping(self, inputs_mapping: Mapping[str, str]):
         """Infer the batch input source from the input mapping and set it in the OperationContext instance.

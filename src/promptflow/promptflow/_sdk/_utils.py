@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 import collections
 import hashlib
 import json
@@ -18,7 +17,7 @@ from contextlib import contextmanager
 from enum import Enum
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
+from typing import IO, Any, AnyStr, Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import keyring
@@ -55,6 +54,7 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
+    ConnectionProvider,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -316,12 +316,16 @@ def update_environment_variables_with_connections(built_connections):
 
 
 def _match_env_reference(val: str):
-    val = val.strip()
-    m = re.match(r"^\$\{env:(.+)}$", val)
-    if not m:
+    try:
+        val = val.strip()
+        m = re.match(r"^\$\{env:(.+)}$", val)
+        if not m:
+            return None
+        name = m.groups()[0]
+        return name
+    except Exception:
+        # for exceptions when val is not a string, return
         return None
-    name = m.groups()[0]
-    return name
 
 
 def override_connection_config_with_environment_variable(connections: Dict[str, dict]):
@@ -589,20 +593,46 @@ def _generate_tool_meta(
     timeout: int,
     *,
     include_errors_in_output: bool = False,
+    load_in_subprocess: bool = True,
 ) -> Dict[str, dict]:
+    """Generate tool meta from files.
+
+    :param flow_directory: flow directory
+    :param tools: tool list
+    :param raise_error: whether raise error when generate meta failed
+    :param timeout: timeout for generate meta
+    :param include_errors_in_output: whether include errors in output
+    :param load_in_subprocess: whether load tool meta with subprocess to prevent system path disturb. Default is True.
+        If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
+    :return: tool meta dict
+    """
     logger = LoggerFactory.get_logger(LOGGER_NAME)
-    # use multi process generate to avoid system path disturb
-    manager = multiprocessing.Manager()
-    tools_dict = manager.dict()
-    exception_dict = manager.dict()
-    p = multiprocessing.Process(
-        target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
-    )
-    p.start()
-    p.join(timeout=timeout)
-    if p.is_alive():
-        p.terminate()
-        p.join()
+    if load_in_subprocess:
+        # use multiprocess generate to avoid system path disturb
+        manager = multiprocessing.Manager()
+        tools_dict = manager.dict()
+        exception_dict = manager.dict()
+        p = multiprocessing.Process(
+            target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
+        )
+        p.start()
+        p.join(timeout=timeout)
+        if p.is_alive():
+            logger.warning(f"Generate meta timeout after {timeout} seconds, terminate the process.")
+            p.terminate()
+            p.join()
+    else:
+        tools_dict, exception_dict = {}, {}
+
+        #  There is no built-in method to forcefully stop a running thread/coroutine in Python
+        #  because abruptly stopping a thread can cause issues like resource leaks,
+        #  deadlocks, or inconsistent states.
+        #  Caller needs to handle the timeout outside current process.
+        logger.warning(
+            "Generate meta in current process and timeout won't take effect. "
+            "Please handle timeout manually outside current process."
+        )
+        _generate_meta_from_files(tools, flow_directory, tools_dict, exception_dict)
     res = {source: tool for source, tool in tools_dict.items()}
 
     for source in res:
@@ -684,15 +714,71 @@ def _gen_dynamic_list(function_config: Dict) -> List:
 
 
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
-    import imp
-
-    import pkg_resources
-
-    imp.reload(pkg_resources)
-
     from promptflow._core.tools_manager import collect_package_tools
 
     return collect_package_tools(keys=keys)
+
+
+def _update_involved_tools_and_packages(
+    _node,
+    _node_path,
+    *,
+    tools: List,
+    used_packages: Set,
+    source_path_mapping: Dict[str, List[str]],
+):
+    source, tool_type = pydash.get(_node, "source.path", None), _node.get("type", None)
+
+    used_packages.add(pydash.get(_node, "source.tool", None))
+
+    if source is None or tool_type is None:
+        return
+
+    # for custom LLM tool, its source points to the used prompt template so handle it as prompt tool
+    if tool_type == ToolType.CUSTOM_LLM:
+        tool_type = ToolType.PROMPT
+
+    if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
+        return
+    pair = (source, tool_type.lower())
+    if pair not in tools:
+        tools.append(pair)
+
+    source_path_mapping[source].append(f"{_node_path}.source.path")
+
+
+def _get_involved_code_and_package(
+    data: dict,
+) -> Tuple[List[Tuple[str, str]], Set[str], Dict[str, List[str]]]:
+    tools = []  # List[Tuple[source_file, tool_type]]
+    used_packages = set()
+    source_path_mapping = collections.defaultdict(list)
+
+    for node_i, node in enumerate(data[NODES]):
+        _update_involved_tools_and_packages(
+            node,
+            f"{NODES}.{node_i}",
+            tools=tools,
+            used_packages=used_packages,
+            source_path_mapping=source_path_mapping,
+        )
+
+        # understand DAG to parse variants
+        # TODO: should we allow source to appear both in node and node variants?
+        if node.get(USE_VARIANTS) is True:
+            node_variants = data[NODE_VARIANTS][node["name"]]
+            for variant_id in node_variants[VARIANTS]:
+                node_with_variant = node_variants[VARIANTS][variant_id][NODE]
+                _update_involved_tools_and_packages(
+                    node_with_variant,
+                    f"{NODE_VARIANTS}.{node['name']}.{VARIANTS}.{variant_id}.{NODE}",
+                    tools=tools,
+                    used_packages=used_packages,
+                    source_path_mapping=source_path_mapping,
+                )
+    if None in used_packages:
+        used_packages.remove(None)
+    return tools, used_packages, source_path_mapping
 
 
 def generate_flow_tools_json(
@@ -713,7 +799,8 @@ def generate_flow_tools_json(
     :param raise_error: whether to raise the error, default value is True.
     :param timeout: timeout for generation, default value is 60 seconds.
     :param include_errors_in_output: whether to include error messages in output, default value is False.
-    :param target_source: the source name to filter result, default value is None.
+    :param target_source: the source name to filter result, default value is None. Note that we will update system path
+        in coroutine if target_source is provided given it's expected to be from a specific cli call.
     :param used_packages_only: whether to only include used packages, default value is False.
     :param source_path_mapping: if specified, record yaml paths for each source.
     """
@@ -721,55 +808,33 @@ def generate_flow_tools_json(
     # parse flow DAG
     with open(flow_directory / DAG_FILE_NAME, "r", encoding=DEFAULT_ENCODING) as f:
         data = yaml.safe_load(f)
-    tools = []  # List[Tuple[source_file, tool_type]]
-    used_packages = set()
 
-    def process_node(_node, _node_path):
-        source, tool_type = pydash.get(_node, "source.path", None), _node.get("type", None)
-        if target_source and source != target_source:
-            return
-        used_packages.add(pydash.get(_node, "source.tool", None))
+    tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 
-        if source is None or tool_type is None:
-            return
+    # update passed in source_path_mapping if specified
+    if source_path_mapping is not None:
+        source_path_mapping.update(_source_path_mapping)
 
-        if tool_type == ToolType.CUSTOM_LLM:
-            tool_type = ToolType.PROMPT
-
-        if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
-            return
-        tools.append((source, tool_type.lower()))
-        if source_path_mapping is not None:
-            if source not in source_path_mapping:
-                source_path_mapping[source] = []
-
-            source_path_mapping[source].append(f"{_node_path}.source.path")
-
-    for node_i, node in enumerate(data[NODES]):
-        process_node(node, f"{NODES}.{node_i}")
-
-        # understand DAG to parse variants
-        # TODO: should we allow source to appear both in node and node variants?
-        if node.get(USE_VARIANTS) is True:
-            node_variants = data[NODE_VARIANTS][node["name"]]
-            for variant_id in node_variants[VARIANTS]:
-                current_node = node_variants[VARIANTS][variant_id][NODE]
-                process_node(current_node, f"{NODE_VARIANTS}.{node['name']}.{VARIANTS}.{variant_id}.{NODE}")
-
-    if None in used_packages:
-        used_packages.remove(None)
+    # filter tools by target_source if specified
+    if target_source is not None:
+        tools = list(filter(lambda x: x[0] == target_source, tools))
 
     # generate content
     # TODO: remove type in tools (input) and code (output)
     flow_tools = {
-        "package": _generate_package_tools(keys=list(used_packages) if used_packages_only else None),
         "code": _generate_tool_meta(
             flow_directory,
             tools,
             raise_error=raise_error,
             timeout=timeout,
             include_errors_in_output=include_errors_in_output,
+            # we don't need to protect system path according to the target usage when target_source is specified
+            load_in_subprocess=target_source is None,
         ),
+        # specified source may only appear in code tools
+        "package": {}
+        if target_source is not None
+        else _generate_package_tools(keys=list(used_packages) if used_packages_only else None),
     }
 
     if dump:
@@ -782,43 +847,55 @@ def generate_flow_tools_json(
     return flow_tools
 
 
-def update_user_agent_from_env_var():
-    """Update user agent from env var to OperationContext"""
-    from promptflow._core.operation_context import OperationContext
+class ClientUserAgentUtil:
+    """SDK/CLI side user agent utilities."""
 
-    if USER_AGENT in os.environ:
-        # Append vscode or other user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ[USER_AGENT])
+    @classmethod
+    def _get_context(cls):
+        from promptflow._core.operation_context import OperationContext
 
-    if PF_USER_AGENT in os.environ:
-        # Append promptflow user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ[PF_USER_AGENT])
+        return OperationContext.get_instance()
+
+    @classmethod
+    def get_user_agent(cls):
+        from promptflow._core.operation_context import OperationContext
+
+        context = cls._get_context()
+        # directly get from context since client side won't need promptflow/xxx.
+        return context.get(OperationContext.USER_AGENT_KEY, "").strip()
+
+    @classmethod
+    def append_user_agent(cls, user_agent: Optional[str]):
+        if not user_agent:
+            return
+        context = cls._get_context()
+        context.append_user_agent(user_agent)
+
+    @classmethod
+    def update_user_agent_from_env_var(cls):
+        # this is for backward compatibility: we should use PF_USER_AGENT in newer versions.
+        for env_name in [USER_AGENT, PF_USER_AGENT]:
+            if env_name in os.environ:
+                cls.append_user_agent(os.environ[env_name])
 
 
-def setup_user_agent_to_operation_context(user_agent=None):
+def setup_user_agent_to_operation_context(user_agent):
     """Setup user agent to OperationContext.
     For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
     For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
     For calls from SDK, ua will be like: promptflow-sdk/
     """
-    from promptflow._core.operation_context import OperationContext
-
-    update_user_agent_from_env_var()
-    # Append user agent
-    context = OperationContext.get_instance()
-    # skip append if empty
-    if user_agent:
-        context.append_user_agent(user_agent)
-    return context.get_user_agent()
+    # add user added UA after SDK/CLI
+    ClientUserAgentUtil.append_user_agent(user_agent)
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    return ClientUserAgentUtil.get_user_agent()
 
 
 def call_from_extension() -> bool:
     """Return true if current request is from extension."""
-    from promptflow._core.operation_context import OperationContext
-
-    update_user_agent_from_env_var()
-    context = OperationContext().get_instance()
-    return EXTENSION_UA in context.get_user_agent()
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    user_agent = ClientUserAgentUtil.get_user_agent()
+    return EXTENSION_UA in user_agent
 
 
 def generate_random_string(length: int = 6) -> str:
@@ -972,9 +1049,8 @@ def interactive_credential_disabled():
 
 def is_from_cli():
     from promptflow._cli._user_agent import USER_AGENT as CLI_UA
-    from promptflow._core.operation_context import OperationContext
 
-    return CLI_UA in OperationContext.get_instance().get_user_agent()
+    return CLI_UA in ClientUserAgentUtil.get_user_agent()
 
 
 def is_url(value: Union[PathLike, str]) -> bool:
@@ -1022,3 +1098,20 @@ def parse_remote_flow_pattern(flow: object) -> str:
             raise UserErrorException(error_message)
         flow_name = match.groups()[0]
     return flow_name
+
+
+def get_connection_operation(connection_provider: str):
+    logger = LoggerFactory.get_logger(LOGGER_NAME)
+    if connection_provider == ConnectionProvider.LOCAL.value:
+        from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+        logger.debug("PFClient using local connection operations.")
+        connection_operation = ConnectionOperations()
+    elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+        from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+        logger.debug("PFClient using local azure connection operations.")
+        connection_operation = LocalAzureConnectionOperations(connection_provider)
+    else:
+        raise ValueError(f"Unsupported connection provider: {connection_provider}")
+    return connection_operation
