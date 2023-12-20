@@ -8,6 +8,7 @@ on:
     paths:
       - src/promptflow/**
       - scripts/building/**
+      - .github/workflows/sdk-cli-perf-monitor-test.yml
 
   schedule:
     - cron: "0 */6 * * *"  # Run every 6 hours
