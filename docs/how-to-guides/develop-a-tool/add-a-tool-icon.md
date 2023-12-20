@@ -6,6 +6,7 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
 ## Prerequisites
 
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.4.2 or later.
+- Please install promptflow package and ensure that its version is 1.1.0 or later.
 - Create a tool package as described in [Create and Use Tool Package](create-and-use-tool-package.md).
 - Prepare custom icon image that meets these requirements:
 
@@ -23,7 +24,7 @@ You can use [pf tool init](../../reference/pf-command-reference.md#pf-tool-init)
 pf tool init --package <package-name> --tool <tool-name> --set icon=<icon-path>
 ```
 
-PF CLI will copy the icon file to the folder `<package-name>/icon/<icon-file-name>` and generate a tool script in the package. The tool icon will be configured in the tool script. Here we use [an existing tool project](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart) as an example, the code is as follows:
+PF CLI will copy the icon file to the folder `<package-name>/icons/<icon-file-name>` and generate a tool script in the package. The tool icon will be configured in the tool script. Here we use [an existing tool](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart) as an example, the code is as follows:
 ```python
 from pathlib import Path
 
@@ -32,11 +33,11 @@ from promptflow.connections import CustomConnection
 
 
 @tool(
-    name="tool_name",
-    description="This is tool_name tool",
-    icon=Path(__file__).parent.parent / "icon" / <your-icon-file-name>,
+    name="My First Tool",
+    description="This is my first tool",
+    icon=Path(__file__).parent.parent / "icons" / "custom-tool-icon.png"
 )
-def tool_name(connection: CustomConnection, input_text: str) -> str:
+def my_tool(connection: CustomConnection, input_text: str) -> str:
     # Replace with your tool code.
     # Usually connection contains configs to connect to an API.
     # Use CustomConnection is a dict. You can use it like: connection.api_key, connection.api_base
@@ -51,7 +52,7 @@ The folder structure of the generated tool package is as follows:
 │   README.md
 │   setup.py
 │
-├───icon
+├───icons
 │       <icon-file-name>
 │
 └───<package-name>
@@ -59,31 +60,6 @@ The folder structure of the generated tool package is as follows:
         utils.py
         __init__.py
 ```
-
-
-
-### Add an icon to an existing package tool
-
-You can follow these steps to add an icon to an existing package tool:
-1. Copy the icon image to the package folder.
-2. Configure the icon for the tool.
-
-    In the tool script, add the `icon` parameter to the decorator method `@tool`, and the parameter value is the `icon path`. The code is as follows:
-    ```python
-    from promptflow import tool
-
-    @tool(name="tool_name", icon=<icon-path>)
-    def tool_func(input_text: str) -> str:
-        # Tool logic
-        pass
-    ```
-3. Update `MANIFEST.in` in the package folder.
-
-    This file is used to determine which files to include in the distribution of the project. You need to add the icon path relative to the package folder to this file.
-    ```
-    include <relative-icon-path>
-    ```
-
 
 ## Verify the tool icon in VS Code extension
 Follow [steps](create-and-use-tool-package.md#use-your-tool-from-vscode-extension) to use your tool from VS Code extension. Your tool displays with the custom icon:  
@@ -108,6 +84,28 @@ The content of `output.html` looks like the following, open it in a web browser 
 </html>
 ```
 
+### Can I add a tool icon to an existing tool package
+
+You can follow these steps to add an icon to an existing package tool:
+1. Copy the icon image to the package folder.
+2. Configure the icon for the tool.
+
+    In the tool script, add the `icon` parameter to the decorator method `@tool`, and the parameter value is the `icon path`. The code is as follows:
+    ```python
+    from promptflow import tool
+
+    @tool(name="tool_name", icon=<icon-path>)
+    def tool_func(input_text: str) -> str:
+        # Tool logic
+        pass
+    ```
+3. Update `MANIFEST.in` in the package folder.
+
+    This file is used to determine which files to include in the distribution of the project. You need to add the icon path relative to the package folder to this file.
+    ```
+    include <relative-icon-path>
+    ```
+
 ### Can I add tool icons for dark and light mode separately?
 Yes, you can add the tool icon data to the tool code as follows:
 ```python
@@ -119,9 +117,9 @@ def tool_func(input_text: str) -> str:
     pass
 ```
 
-Or run the command below in your tool project directory to automatically generate tool code, use _--icon-light_ to add a custom tool icon for the light mode and use _--icon-dark_ to add a custom tool icon for the dark mode:
+Or run the command below in your tool project directory to automatically generate tool code, use _--icon_light_ to add a custom tool icon for the light mode and use _--icon_dark_ to add a custom tool icon for the dark mode:
 ```python
-pf tool init --set icon_dark=<icon-path> icon_light=<icon-path>
+pf tool init --tool <tool-name> --set icon_dark=<icon-path> icon_light=<icon-path>
 ```
 
 Note: Both light and dark icons are optional. If you set either a light or dark icon, it will be used in its respective mode, and the system default icon will be used in the other mode.

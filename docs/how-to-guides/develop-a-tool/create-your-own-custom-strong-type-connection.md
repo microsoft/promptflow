@@ -12,7 +12,7 @@ For other connections types, please refer to [Connections](https://microsoft.git
 
 ## Prerequisites
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to at least version 1.2.1.
-- Please install promptflow package and ensure that its version is 0.1.0b8 or later.
+- Please install promptflow package and ensure that its version is 1.0.0 or later.
   ```
   pip install promptflow>=1.0.0
   ```

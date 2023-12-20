@@ -1,8 +1,14 @@
+from pathlib import Path
+
 from promptflow import tool
 from promptflow.connections import CustomConnection
 
 
-@tool(name="My First Tool", description="This is my first tool")
+@tool(
+    name="My First Tool",
+    description="This is my first tool",
+    icon=Path(__file__).parent.parent / "icons" / "custom-tool-icon.png"
+)
 def my_tool(connection: CustomConnection, input_text: str) -> str:
     # Replace with your tool code.
     # Usually connection contains configs to connect to an API.
