@@ -94,8 +94,8 @@ def flow_serving_client(mocker: MockerFixture):
 
 @pytest.fixture
 def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
-    from promptflow._sdk._serving.utils import encode_dict
     from promptflow._core.connection_manager import ConnectionManager
+    from promptflow._sdk._serving.utils import encode_dict
 
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
     connection_manager = ConnectionManager(connection_dict)
@@ -124,9 +124,7 @@ def create_client_by_model(model_name: str, mocker: MockerFixture, connections: 
     environment_variables = {}
     if extension_type and extension_type == "azureml":
         environment_variables = {"API_TYPE": "${azure_open_ai_connection.api_type}"}
-    app = create_serving_app(
-        environment_variables=environment_variables,
-        extension_type=extension_type)
+    app = create_serving_app(environment_variables=environment_variables, extension_type=extension_type)
     app.config.update(
         {
             "TESTING": True,
@@ -169,7 +167,7 @@ def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixtur
     yield
 
 
-@pytest.fixture
+@pytest.fixture(autouse=not RecordStorage.is_live_mode())
 def recording_injection(mocker: MockerFixture, recording_file_override):
     from promptflow._core.tool import tool as original_tool
 
