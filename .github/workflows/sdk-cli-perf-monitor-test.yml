@@ -54,16 +54,6 @@ jobs:
           setupType: ${{ env.packageSetupType }}
           scriptPath: ${{ env.testWorkingDirectory }}
 
-      - name: Azure login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: generate live test resources (non pull_request workflow)
-        uses: "./.github/actions/step_generate_configs"
-        with:
-          targetFolder: ${{ env.testWorkingDirectory }}
-
       - name: Run Test
         shell: pwsh
         working-directory: ${{ env.testWorkingDirectory }}
