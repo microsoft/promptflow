@@ -263,6 +263,7 @@ class FlowExecutor:
         flow_file: Path,
         node_name: str,
         *,
+        storage: AbstractRunStorage = None,
         output_sub_dir: Optional[str] = None,
         flow_inputs: Optional[Mapping[str, Any]] = None,
         dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
@@ -276,6 +277,10 @@ class FlowExecutor:
         :type flow_file: Path
         :param node_name: The name of the node to be executed.
         :type node_name: str
+        :param storage: The storage to be used for the flow.
+        :type storage: Optional[~promptflow.storage.AbstractRunStorage]
+        :param output_sub_dir: The directory to persist image for the flow. Keep it only for backward compatibility.
+        :type output_sub_dir: Optional[str]
         :param flow_inputs: The inputs to be used for the flow. Default is None.
         :type flow_inputs: Optional[Mapping[str, Any]]
         :param dependency_nodes_outputs: The outputs of the dependency nodes. Default is None.
@@ -350,9 +355,9 @@ class FlowExecutor:
         # so we need to remove them from the inputs before invoking.
         resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
 
-        # TODO: Simplify the logic here
-        sub_dir = "." if output_sub_dir is None else output_sub_dir
-        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+        if storage is None:
+            sub_dir = "." if output_sub_dir is None else output_sub_dir
+            storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
             # Will generate node run in context
@@ -883,9 +888,10 @@ class FlowExecutor:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        should_use_async = all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        should_use_async = (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
         if should_use_async:
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)

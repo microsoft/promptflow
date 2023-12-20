@@ -91,23 +91,24 @@ def get_test_cases_for_node_run():
     ]
 
 
-def contain_image_reference(value):
+def contain_image_reference(value, parent_path="temp"):
     if isinstance(value, (FlowRunInfo, RunInfo)):
-        assert contain_image_reference(value.api_calls)
-        assert contain_image_reference(value.inputs)
-        assert contain_image_reference(value.output)
+        assert contain_image_reference(value.api_calls, parent_path)
+        assert contain_image_reference(value.inputs, parent_path)
+        assert contain_image_reference(value.output, parent_path)
         return True
     assert not isinstance(value, Image)
     if isinstance(value, list):
-        return any(contain_image_reference(item) for item in value)
+        return any(contain_image_reference(item, parent_path) for item in value)
     if isinstance(value, dict):
         if is_multimedia_dict(value):
             v = list(value.values())[0]
             assert isinstance(v, str)
+            assert str(Path(v).parent) == parent_path
             return True
         elif is_multimedia_dict_v2(value):
             return True
-        return any(contain_image_reference(v) for v in value.values())
+        return any(contain_image_reference(v, parent_path) for v in value.values())
     return False
 
 
@@ -154,17 +155,49 @@ class TestExecutorWithImage:
     ):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
         run_info = FlowExecutor.load_and_exec_node(
             get_yaml_file(flow_folder),
             node_name,
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
-            output_sub_dir=("./temp"),
+            storage=storage,
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
         assert contain_image_reference(run_info)
+
+    # Assert image could be persisted to the specified path.
+    @pytest.mark.parametrize(
+        "output_sub_dir, assign_storage, expected_path",
+        [
+            ("test_path", True, "test_storage"),
+            ("test_path", False, "test_path"),
+            (None, True, "test_storage"),
+            (None, False, "."),
+        ],
+    )
+    def test_executor_exec_node_with_image_storage_and_path(self, output_sub_dir, assign_storage, expected_path):
+        flow_folder = SIMPLE_IMAGE_FLOW
+        node_name = "python_node"
+        image = {"data:image/jpg;path": str(get_flow_folder(SIMPLE_IMAGE_FLOW) / "logo.jpg")}
+        flow_inputs = {"image": image}
+        working_dir = get_flow_folder(flow_folder)
+        os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./test_storage"))
+        run_info = FlowExecutor.load_and_exec_node(
+            get_yaml_file(flow_folder),
+            node_name,
+            flow_inputs=flow_inputs,
+            dependency_nodes_outputs=None,
+            connections=None,
+            storage=storage if assign_storage else None,
+            output_sub_dir=output_sub_dir,
+            raise_ex=True,
+        )
+        assert run_info.status == Status.Completed
+        assert contain_image_reference(run_info, parent_path=expected_path)
 
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
@@ -188,13 +221,14 @@ class TestExecutorWithImage:
     ):
         working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
         run_info = FlowExecutor.load_and_exec_node(
             get_yaml_file(flow_folder),
             node_name,
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
-            output_sub_dir=("./temp"),
+            storage=storage,
             raise_ex=True,
         )
         assert run_info.status == Status.Completed
