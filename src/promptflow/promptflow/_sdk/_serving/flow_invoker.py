@@ -93,16 +93,16 @@ class FlowInvoker:
                 executable=self._executable_flow,
                 client=PFClient(config={"connection.provider": connection_provider}),
                 connections_to_ignore=connections_to_ignore,
-                # fetch connections with overriden name
+                # fetch connections with name override
                 connections_to_add=list(self.connections_name_overrides.values()),
             )
             # use original name for connection with name override
-            overriden_name_to_original_name_mapping = {
+            override_name_to_original_name_mapping = {
                 v: k for k, v in self.connections_name_overrides.items()
             }
             for name, conn in connections.items():
-                if name in overriden_name_to_original_name_mapping:
-                    self.connections[overriden_name_to_original_name_mapping[name]] = conn
+                if name in override_name_to_original_name_mapping:
+                    self.connections[override_name_to_original_name_mapping[name]] = conn
                 else:
                     self.connections[name] = conn
         elif isinstance(connection_provider, Callable):

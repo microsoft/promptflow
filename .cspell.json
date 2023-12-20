@@ -155,7 +155,8 @@
     "httpx",
     "tiiuae",
     "nohup",
-    "metagenai"
+    "metagenai",
+    "WBITS"
   ],
   "flagWords": [
     "Prompt Flow"

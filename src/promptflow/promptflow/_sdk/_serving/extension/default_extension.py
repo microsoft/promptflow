@@ -48,7 +48,7 @@ class AppExtension(ABC):
 
         :param flow: The flow to execute.
         :type flow: ~promptflow._sdk.entities._flow.Flow
-        :return: The override connections, first dict is for the overriden connection data, second dict is for the overriden connection name.  # noqa: E501
+        :return: The override connections, first dict is for connection data override, second dict is for connection name override.  # noqa: E501
         :rtype: (dict, dict)
         """
         return {}, {}
