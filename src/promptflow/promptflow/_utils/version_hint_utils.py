@@ -60,7 +60,7 @@ def get_latest_version_from_pypi(package_name):
     pypi_url = f"https://pypi.org/pypi/{package_name}/json"
     try:
         import requests
-        response = requests.get(pypi_url)
+        response = requests.get(pypi_url, timeout=3)
         if response.status_code == 200:
             data = response.json()
             latest_version = data["info"]["version"]
