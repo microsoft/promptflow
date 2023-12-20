@@ -175,9 +175,8 @@ class AsyncRunDownloader:
         async with blob_client:
             with open(local_path, "wb") as f:
                 stream = await blob_client.download_blob()
-                data = await stream.readall()
-                # TODO: File IO may block the event loop, consider using thread pool. e.g. to_thread() method
-                f.write(data)
+                async for chunk in stream.chunks():
+                    f.write(chunk)
         return local_path
 
     async def _download_snapshot(self, httpx_client: httpx.AsyncClient, container_client, snapshot_id):
