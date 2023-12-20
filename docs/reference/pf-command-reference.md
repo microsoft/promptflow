@@ -691,6 +691,7 @@ Manage promptflow tools.
 | --- | --- |
 | [pf tool init](#pf-tool-init) | Initialize a tool directory. |
 | [pf tool list](#pf-tool-list) | List all tools in the environment. |
+| [pf tool validate](#pf-tool-validate) | Validate tools. |
 
 ### pf tool init
 
@@ -770,6 +771,39 @@ pf tool list --flow <path-to-flow-direcotry>
 
 The flow directory.
 
+### pf tool init
+
+Validate tool.
+
+```bash
+pf tool validate --source
+```
+
+#### Examples
+
+Validate single function tool.
+
+```bash
+pf tool validate -–source <package-name>.<module-name>.<tool-function>
+```
+
+Validate all tool in a package tool.
+
+```bash
+pf tool validate -–source <package-name>
+```
+
+Validate tools in a python script.
+
+```bash
+pf tool validate --source <path-to-tool-script>
+```
+
+#### Required Parameter
+
+`--source`
+
+The tool source to be used.
 
 
 ## pf config
