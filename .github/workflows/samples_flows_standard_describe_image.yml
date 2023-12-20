@@ -46,15 +46,13 @@ jobs:
           if [[ -e .env.example ]]; then
             echo "env replacement"
             sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
-            mv .env.example .env
+            mv .env.example gpt4v.yaml
           fi
       - name: Create AOAI Connection from ENV file
         working-directory: examples/flows/standard/describe-image
         run: |
-          if [[ -e .env ]]; then
-            pf connection create --file .env --name aoai_gpt4v_connection
-            pf connection list
-          fi
+          pf connection create --file gpt4v.yaml --name aoai_gpt4v_connection
+          pf connection list
           
       - name: Create run.yml
         working-directory: examples/flows/standard/describe-image
