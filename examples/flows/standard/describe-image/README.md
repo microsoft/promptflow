@@ -45,7 +45,7 @@ Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `co
 pf run list
 
 # get a sample run name
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_variant_0")) | .name'| head -n 1 | tr -d '"')
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("describe_image_variant_0")) | .name'| head -n 1 | tr -d '"')
 
 # show specific run detail
 pf run show --name $name
