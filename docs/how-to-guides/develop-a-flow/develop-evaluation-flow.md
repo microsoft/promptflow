@@ -165,8 +165,6 @@ def example_log_metrics(grades: List[str]):
     metric_key = "accuracy"
     metric_value = round((grades.count("Correct") / len(result)), 2)
     log_metric(metric_key, metric_value)
-
-    return result
 ```
 
 After the run is completed, you can run `pf run show-metrics -n <run_name>` to see the metrics.
