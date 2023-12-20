@@ -29,7 +29,8 @@
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
     "**/setup.py",
-    "scripts/installer/windows/**"
+    "scripts/installer/windows/**",
+    "src/promptflow/promptflow/_sdk/_service/pfsvc.py"
   ],
   "words": [
     "aoai",
@@ -151,7 +152,10 @@
     "llmops",
     "Abhishek",
     "restx",
-    "coreclr"
+    "httpx",
+    "tiiuae",
+    "nohup",
+    "metagenai"
   ],
   "flagWords": [
     "Prompt Flow"

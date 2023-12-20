@@ -88,7 +88,6 @@ class FlowExecutor:
         cache_manager: AbstractCacheManager,
         loaded_tools: Mapping[str, Callable],
         *,
-        worker_count=None,
         raise_ex: bool = False,
         working_dir=None,
         line_timeout_sec=LINE_TIMEOUT_SEC,
@@ -106,8 +105,6 @@ class FlowExecutor:
         :type cache_manager: ~promptflow._core.cache_manager.AbstractCacheManager
         :param loaded_tools: A mapping of tool names to their corresponding functions.
         :type loaded_tools: Mapping[str, Callable]
-        :param worker_count: The number of workers to use for parallel execution of the Flow.
-        :type worker_count: int or None
         :param raise_ex: Whether to raise an exception if an error occurs during execution.
         :type raise_ex: bool
         :param working_dir: The working directory to use for execution.
@@ -126,16 +123,6 @@ class FlowExecutor:
         self._connections = connections
         self._aggregation_inputs_references = get_aggregation_inputs_properties(flow)
         self._aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
-        if worker_count is not None:
-            self._worker_count = worker_count
-        else:
-            try:
-                worker_count = int(os.environ.get("PF_WORKER_COUNT", self._DEFAULT_WORKER_COUNT))
-                self._worker_count = worker_count
-            except Exception:
-                self._worker_count = self._DEFAULT_WORKER_COUNT
-        if self._worker_count <= 0:
-            self._worker_count = self._DEFAULT_WORKER_COUNT
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
@@ -222,13 +209,13 @@ class FlowExecutor:
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
     ):
+        logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
-
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
         flow = Flow(
@@ -247,7 +234,7 @@ class FlowExecutor:
 
         ToolInvoker.activate(DefaultToolInvoker())
 
-        return FlowExecutor(
+        executor = FlowExecutor(
             flow=flow,
             connections=connections,
             run_tracker=run_tracker,
@@ -258,6 +245,8 @@ class FlowExecutor:
             line_timeout_sec=line_timeout_sec,
             flow_file=flow_file,
         )
+        logger.debug("The flow executor is initialized successfully.")
+        return executor
 
     @classmethod
     def load_and_exec_node(
@@ -265,6 +254,7 @@ class FlowExecutor:
         flow_file: Path,
         node_name: str,
         *,
+        storage: AbstractRunStorage = None,
         output_sub_dir: Optional[str] = None,
         flow_inputs: Optional[Mapping[str, Any]] = None,
         dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
@@ -278,6 +268,10 @@ class FlowExecutor:
         :type flow_file: Path
         :param node_name: The name of the node to be executed.
         :type node_name: str
+        :param storage: The storage to be used for the flow.
+        :type storage: Optional[~promptflow.storage.AbstractRunStorage]
+        :param output_sub_dir: The directory to persist image for the flow. Keep it only for backward compatibility.
+        :type output_sub_dir: Optional[str]
         :param flow_inputs: The inputs to be used for the flow. Default is None.
         :type flow_inputs: Optional[Mapping[str, Any]]
         :param dependency_nodes_outputs: The outputs of the dependency nodes. Default is None.
@@ -289,6 +283,10 @@ class FlowExecutor:
         :param raise_ex: Whether to raise exceptions or not. Default is False.
         :type raise_ex: Optional[bool]
         """
+        # Inject OpenAI API to make sure traces and headers injection works and
+        # update OpenAI API configs from environment variables.
+        inject_openai_api()
+
         OperationContext.get_instance().run_mode = RunMode.SingleNode.name
         dependency_nodes_outputs = dependency_nodes_outputs or {}
 
@@ -348,9 +346,9 @@ class FlowExecutor:
         # so we need to remove them from the inputs before invoking.
         resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
 
-        # TODO: Simplify the logic here
-        sub_dir = "." if output_sub_dir is None else output_sub_dir
-        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+        if storage is None:
+            sub_dir = "." if output_sub_dir is None else output_sub_dir
+            storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
             # Will generate node run in context
@@ -582,7 +580,7 @@ class FlowExecutor:
             one_input_value = list(aggregation_inputs.values())[0]
             aggregation_lines = len(one_input_value)
         for key, value in inputs.items():
-            if key not in aggregated_flow_inputs and (value and value.default):
+            if key not in aggregated_flow_inputs and (value and value.default is not None):
                 aggregated_flow_inputs[key] = [value.default] * aggregation_lines
         return aggregated_flow_inputs
 
@@ -623,6 +621,11 @@ class FlowExecutor:
             self._submit_to_scheduler(context, inputs, nodes)
             node_run_infos = run_tracker.collect_child_node_runs(run_id)
             # Output is set as an empty dict, because the aggregation outputs story is not finalized.
+            return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
+        except Exception:
+            if self._raise_ex:
+                raise
+            node_run_infos = run_tracker.collect_child_node_runs(run_id)
             return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
         finally:
             remove_metric_logger(_log_metric)
@@ -833,7 +836,9 @@ class FlowExecutor:
                         "The output type '{output_type}' is currently unsupported. "
                         "Please choose from available types: '{supported_output_type}' and try again."
                     ),
-                    output_type=output.reference.value_type,
+                    output_type=output.reference.value_type.value
+                    if hasattr(output.reference.value_type, "value")
+                    else output.reference.value_type,
                     supported_output_type=[output_type.value for output_type in InputValueType],
                 )
             node = next((n for n in self._flow.nodes if n.name == output.reference.value), None)
@@ -874,7 +879,10 @@ class FlowExecutor:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        should_use_async = all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+        should_use_async = (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
         if should_use_async:
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)

@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from _constants import (
     CONNECTION_FILE,
+    DEFAULT_REGISTRY_NAME,
     DEFAULT_RESOURCE_GROUP_NAME,
     DEFAULT_RUNTIME_NAME,
     DEFAULT_SUBSCRIPTION_ID,
@@ -171,7 +172,7 @@ def mock_module_with_list_func(mock_list_func):
 
 
 # below fixtures are used for pfazure and global config tests
-@pytest.fixture
+@pytest.fixture(scope="session")
 def subscription_id() -> str:
     if is_replay():
         return SanitizedValues.SUBSCRIPTION_ID
@@ -179,7 +180,7 @@ def subscription_id() -> str:
         return os.getenv("PROMPT_FLOW_SUBSCRIPTION_ID", DEFAULT_SUBSCRIPTION_ID)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def resource_group_name() -> str:
     if is_replay():
         return SanitizedValues.RESOURCE_GROUP_NAME
@@ -187,7 +188,7 @@ def resource_group_name() -> str:
         return os.getenv("PROMPT_FLOW_RESOURCE_GROUP_NAME", DEFAULT_RESOURCE_GROUP_NAME)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def workspace_name() -> str:
     if is_replay():
         return SanitizedValues.WORKSPACE_NAME
@@ -195,6 +196,11 @@ def workspace_name() -> str:
         return os.getenv("PROMPT_FLOW_WORKSPACE_NAME", DEFAULT_WORKSPACE_NAME)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def runtime_name() -> str:
     return os.getenv("PROMPT_FLOW_RUNTIME_NAME", DEFAULT_RUNTIME_NAME)
+
+
+@pytest.fixture(scope="session")
+def registry_name() -> str:
+    return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)

@@ -140,13 +140,24 @@ def log_progress(
     logger: logging.Logger,
     count: int,
     total_count: int,
-    formatter="{count} / {total_count} finished.",
+    formatter="Finished {count} / {total_count} lines.",
+    *,
+    last_log_count: Optional[int] = None,
 ):
     # Calculate log_interval to determine when to log progress.
     # If total_count is less than 100, log every 10% of total_count; otherwise, log every 10 lines.
     log_interval = min(10, max(int(total_count / 10), 1))
-    if count > 0 and (count % log_interval == 0 or count == total_count):
-        average_execution_time = round((datetime.now().timestamp() - run_start_time.timestamp()) / count, 2)
+
+    # If last_log_count is not None, determine whether to log based on whether the difference
+    # between the current count and the previous count exceeds log_interval.
+    # Otherwise, decide based on whether the current count is evenly divisible by log_interval.
+    if last_log_count:
+        log_flag = (count - last_log_count) >= log_interval
+    else:
+        log_flag = count % log_interval == 0
+
+    if count > 0 and (log_flag or count == total_count):
+        average_execution_time = round((datetime.utcnow().timestamp() - run_start_time.timestamp()) / count, 2)
         estimated_execution_time = round(average_execution_time * (total_count - count), 2)
         logger.info(formatter.format(count=count, total_count=total_count))
         logger.info(
@@ -157,6 +168,7 @@ def log_progress(
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
     from promptflow._core import tool
+
     tool_file = tool.__file__
     core_folder = os.path.dirname(tool_file)
 
@@ -235,3 +247,30 @@ def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path
         base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
         path = base_dir / sub_dir
     return path
+
+
+def parse_ua_to_dict(ua):
+    """Parse string user agent to dict with name as ua name and value as ua version."""
+    ua_dict = {}
+    ua_list = ua.split(" ")
+    for item in ua_list:
+        if item:
+            key, value = item.split("/")
+            ua_dict[key] = value
+    return ua_dict
+
+
+def get_int_env_var(env_var_name, default_value=None):
+    """
+    The function `get_int_env_var` retrieves an integer environment variable value, with an optional
+    default value if the variable is not set or cannot be converted to an integer.
+
+    :param env_var_name: The name of the environment variable you want to retrieve the value of
+    :param default_value: The default value is the value that will be returned if the environment
+    variable is not found or if it cannot be converted to an integer
+    :return: an integer value.
+    """
+    try:
+        return int(os.environ.get(env_var_name, default_value))
+    except Exception:
+        return default_value

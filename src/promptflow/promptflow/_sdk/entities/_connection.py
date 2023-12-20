@@ -23,7 +23,6 @@ from promptflow._sdk._constants import (
     CustomStrongTypeConnectionConfigs,
 )
 from promptflow._sdk._errors import UnsecureConnectionError
-from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -46,6 +45,7 @@ from promptflow._sdk.schemas._connection import (
     SerpConnectionSchema,
     WeaviateConnectionSchema,
 )
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -415,19 +415,19 @@ class OpenAIConnection(_StrongTypeConnection):
     :type api_key: str
     :param organization: Optional. The unique identifier for your organization which can be used in API requests.
     :type organization: str
-    :param api_base: Optional. Specify when use customized api base, leave None to use open ai default api base.
-    :type api_base: str
+    :param base_url: Optional. Specify when use customized api base, leave None to use open ai default api base.
+    :type base_url: str
     :param name: Connection name.
     :type name: str
     """
 
     TYPE = ConnectionType.OPEN_AI
 
-    def __init__(self, api_key: str, organization: str = None, api_base=None, **kwargs):
-        if api_base == "":
+    def __init__(self, api_key: str, organization: str = None, base_url=None, **kwargs):
+        if base_url == "":
             # Keep empty as None to avoid disturbing openai pick the default api base.
-            api_base = None
-        configs = {"organization": organization, "api_base": api_base}
+            base_url = None
+        configs = {"organization": organization, "base_url": base_url}
         secrets = {"api_key": api_key}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
@@ -446,14 +446,14 @@ class OpenAIConnection(_StrongTypeConnection):
         self.configs["organization"] = value
 
     @property
-    def api_base(self):
+    def base_url(self):
         """Return the connection api base."""
-        return self.configs.get("api_base")
+        return self.configs.get("base_url")
 
-    @api_base.setter
-    def api_base(self, value):
+    @base_url.setter
+    def base_url(self, value):
         """Set the connection api base."""
-        self.configs["api_base"] = value
+        self.configs["base_url"] = value
 
 
 class SerpConnection(_StrongTypeConnection):

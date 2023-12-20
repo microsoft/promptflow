@@ -1,3 +1,6 @@
+import asyncio
+import multiprocessing
+import os
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
@@ -25,6 +28,33 @@ from ..utils import (
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
+
+
+async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
+    batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=connections)
+    await asyncio.sleep(1)
+    return batch_result
+
+
+def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+    os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
+    batch_result, output_dir = submit_batch_run(
+        flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
+    )
+
+    assert isinstance(batch_result, BatchResult)
+    nlines = get_batch_inputs_line(flow_folder)
+    assert batch_result.total_lines == nlines
+    assert batch_result.completed_lines == nlines
+    assert batch_result.start_time < batch_result.end_time
+    assert batch_result.system_metrics.duration > 0
+
+    outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+    assert len(outputs) == nlines
+    for i, output in enumerate(outputs):
+        assert isinstance(output, dict)
+        assert "line_number" in output, f"line_number is not in {i}th output {output}"
+        assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
 
 
 def submit_batch_run(
@@ -111,6 +141,68 @@ class TestBatch:
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
+        if "spawn" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: spawn")
+        p = multiprocessing.Process(
+            target=run_batch_with_start_method, args=("spawn", flow_folder, inputs_mapping, dev_connections)
+        )
+        p.start()
+        p.join()
+        assert p.exitcode == 0
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW,
+                {"url": "${data.url}"},
+            ),
+            (
+                "prompt_tools",
+                {"text": "${data.text}"},
+            ),
+            (
+                "script_with___file__",
+                {"text": "${data.text}"},
+            ),
+            (
+                "sample_flow_with_functions",
+                {"question": "${data.question}"},
+            ),
+        ],
+    )
+    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
+        if "forkserver" not in multiprocessing.get_all_start_methods():
+            pytest.skip("Unsupported start method: forkserver")
+        p = multiprocessing.Process(
+            target=run_batch_with_start_method, args=("forkserver", flow_folder, inputs_mapping, dev_connections)
+        )
+        p.start()
+        p.join()
+        assert p.exitcode == 0
 
     def test_batch_run_then_eval(self, dev_connections):
         batch_resutls, output_dir = submit_batch_run(
@@ -241,3 +333,24 @@ class TestBatch:
         with pytest.raises(error_class) as e:
             submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
         assert error_message in e.value.message
+
+    def test_batch_run_in_existing_loop(self, dev_connections):
+        flow_folder = "prompt_tools"
+        inputs_mapping = {"text": "${data.text}"}
+        batch_result = asyncio.run(async_submit_batch_run(flow_folder, inputs_mapping, dev_connections))
+        assert isinstance(batch_result, BatchResult)
+        assert batch_result.total_lines == batch_result.completed_lines
+
+    def test_batch_run_with_aggregation_failure(self, dev_connections):
+        flow_folder = "aggregation_node_failed"
+        inputs_mapping = {"groundtruth": "${data.groundtruth}", "prediction": "${data.prediction}"}
+        batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
+        assert isinstance(batch_result, BatchResult)
+        assert batch_result.total_lines == batch_result.completed_lines
+        assert batch_result.node_status == get_flow_expected_status_summary(flow_folder)
+        # assert aggregation node error summary
+        assert batch_result.failed_lines == 0
+        aggre_node_error = batch_result.error_summary.aggr_error_dict["aggregate"]
+        assert aggre_node_error["message"] == "Execution failure in 'aggregate': (ZeroDivisionError) division by zero"
+        assert aggre_node_error["code"] == "UserError"
+        assert aggre_node_error["innerError"] == {"code": "ToolExecutionError", "innerError": None}

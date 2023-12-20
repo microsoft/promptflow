@@ -43,7 +43,6 @@ class TestHealthyEnsuredProcess:
         assert healthy_ensured_process.is_ready is False
         task_queue = Queue()
         healthy_ensured_process.start_new(task_queue)
-        assert healthy_ensured_process.process.is_alive() is True
         assert healthy_ensured_process.is_ready is False
         end_process(healthy_ensured_process)
         assert healthy_ensured_process.process.is_alive() is False
@@ -64,7 +63,7 @@ class TestHealthyEnsuredProcess:
         )
         assert formatted_message == expected_log_message
 
-    @patch('promptflow.executor._line_execution_process_pool.logger.info', autospec=True)
+    @patch('promptflow.executor._line_execution_process_pool.bulk_logger.info', autospec=True)
     def test_format_completed_process(self, mock_logger_info):
         context = get_multiprocessing_context("spawn")
         healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func, context)

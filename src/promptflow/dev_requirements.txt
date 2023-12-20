@@ -7,7 +7,7 @@ mock
 nox
 portalocker~=1.2
 pre-commit
-promptflow-tools
+# promptflow-tools Comment this since it will take in unecessary dependencies
 pydash
 PyJWT==2.8.0  # parse token to get tenant id during sanitization
 pytest
@@ -23,3 +23,4 @@ setuptools_rust
 twine==4.0.0
 vcrpy==5.1.0  # record and replay http requests for pfazure tests
 wheel
+httpx

@@ -72,6 +72,8 @@ base_run = pf.run(
     flow=flow,
     data=data,
     stream=True,
+    # map the url field from the data to the url input of the flow
+    column_mapping={"url": "${data.url}"},
 )
 ```
 
@@ -155,7 +157,7 @@ pf run visualize -n "my_first_run,my_first_eval_run"
 
 A web browser will be opened to show the visualization result.
 
-![q_0](../../media/how-to-guides/visualize_run.png)
+![q_0](../../media/how-to-guides/run_visualize.png)
 
 :::
 
@@ -212,7 +214,7 @@ pf.visualize([base_run, eval_run])
 
 A web browser will be opened to show the visualization result.
 
-![q_0](../../media/how-to-guides/visualize_run.png)
+![q_0](../../media/how-to-guides/run_visualize.png)
 
 :::
 

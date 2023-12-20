@@ -7,23 +7,25 @@ import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 from unittest.mock import patch
 
 import jwt
 import pytest
-from azure.ai.ml import MLClient
-from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
-from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockerFixture
 
+from promptflow._sdk._constants import FlowType, RunStatus
+from promptflow._sdk._utils import ClientUserAgentUtil
+from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
+from promptflow.azure._entities._flow import Flow
 
 from ._azure_utils import get_cred
 from .recording_utilities import (
     PFAzureIntegrationTestRecording,
     SanitizedValues,
+    VariableRecorder,
     get_pf_client_for_replay,
     is_live,
     is_replay,
@@ -31,25 +33,53 @@ from .recording_utilities import (
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
+AZUREML_RESOURCE_PROVIDER = "Microsoft.MachineLearningServices"
+RESOURCE_ID_FORMAT = "/subscriptions/{}/resourceGroups/{}/providers/{}/workspaces/{}"
 
 
-@pytest.fixture
+def package_scope_in_live_mode() -> str:
+    """Determine the scope of some expected sharing fixtures.
+
+    We have many tests against flows and runs, and it's very time consuming to create a new flow/run
+    for each test. So we expect to leverage pytest fixture concept to share flows/runs across tests.
+    However, we also have replay tests, which require function scope fixture as it will locate the
+    recording YAML based on the test function info.
+
+    Use this function to determine the scope of the fixtures dynamically. For those fixtures that
+    will request dynamic scope fixture(s), they also need to be dynamic scope.
+    """
+    # package-scope should be enough for Azure tests
+    return "package" if is_live() else "function"
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def user_object_id() -> str:
+    if is_replay():
+        return SanitizedValues.USER_OBJECT_ID
+    credential = get_cred()
+    access_token = credential.get_token("https://management.azure.com/.default")
+    decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
+    return decoded_token["oid"]
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
 def tenant_id() -> str:
     if is_replay():
-        return ""
+        return SanitizedValues.TENANT_ID
     credential = get_cred()
     access_token = credential.get_token("https://management.azure.com/.default")
     decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
     return decoded_token["tid"]
 
 
-@pytest.fixture
+@pytest.fixture(scope=package_scope_in_live_mode())
 def ml_client(
     subscription_id: str,
     resource_group_name: str,
     workspace_name: str,
-) -> MLClient:
+):
     """return a machine learning client using default e2e testing workspace"""
+    from azure.ai.ml import MLClient
 
     return MLClient(
         credential=get_cred(),
@@ -60,33 +90,42 @@ def ml_client(
     )
 
 
-@pytest.fixture
-def remote_client(subscription_id: str, resource_group_name: str, workspace_name: str) -> PFClient:
+@pytest.fixture(scope=package_scope_in_live_mode())
+def remote_client(subscription_id: str, resource_group_name: str, workspace_name: str):
+    from promptflow.azure import PFClient
+
     if is_replay():
-        yield get_pf_client_for_replay()
+        client = get_pf_client_for_replay()
     else:
-        yield PFClient(
+        client = PFClient(
             credential=get_cred(),
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
         )
+    assert "promptflow-sdk" in ClientUserAgentUtil.get_user_agent()
+    assert "promptflow/" not in ClientUserAgentUtil.get_user_agent()
+    yield client
 
 
-@pytest.fixture()
+@pytest.fixture
 def remote_workspace_resource_id(subscription_id: str, resource_group_name: str, workspace_name: str) -> str:
     return "azureml:" + RESOURCE_ID_FORMAT.format(
         subscription_id, resource_group_name, AZUREML_RESOURCE_PROVIDER, workspace_name
     )
 
 
-@pytest.fixture()
-def pf(remote_client: PFClient) -> PFClient:
+@pytest.fixture(scope=package_scope_in_live_mode())
+def pf(remote_client):
+    # do not add annotation here, because PFClient will trigger promptflow.azure imports and break the isolation
+    # between azure and non-azure tests
     yield remote_client
 
 
 @pytest.fixture
-def remote_web_classification_data(remote_client: PFClient) -> Data:
+def remote_web_classification_data(remote_client):
+    from azure.ai.ml.entities import Data
+
     data_name, data_version = "webClassification1", "1"
     try:
         return remote_client.ml_client.data.get(name=data_name, version=data_version)
@@ -96,7 +135,7 @@ def remote_web_classification_data(remote_client: PFClient) -> Data:
         )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def runtime(runtime_name: str) -> str:
     return runtime_name
 
@@ -124,33 +163,50 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
     return app.test_client()
 
 
-@pytest.fixture(scope="function")
-def vcr_recording(request: pytest.FixtureRequest, tenant_id: str) -> PFAzureIntegrationTestRecording:
-    """Fixture to record or replay network traffic.
-
-    If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
-    based on the test file, class and function name, write to (record) or read from (replay) the file.
-    """
-    recording = PFAzureIntegrationTestRecording.from_test_case(
-        test_class=request.cls,
-        test_func_name=request.node.name,
-        tenant_id=tenant_id,
-    )
-    if not is_live():
-        recording.enter_vcr()
-        request.addfinalizer(recording.exit_vcr)
-    yield recording
+@pytest.fixture(scope=package_scope_in_live_mode())
+def variable_recorder() -> VariableRecorder:
+    yield VariableRecorder()
 
 
-@pytest.fixture
-def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], str]:
-    """Return a random UUID."""
+@pytest.fixture(scope=package_scope_in_live_mode())
+def randstr(variable_recorder: VariableRecorder) -> Callable[[str], str]:
+    """Return a "random" UUID."""
 
     def generate_random_string(variable_name: str) -> str:
         random_string = str(uuid.uuid4())
-        return vcr_recording.get_or_record_variable(variable_name, random_string)
+        if is_live():
+            return random_string
+        elif is_replay():
+            return variable_name
+        else:
+            return variable_recorder.get_or_record_variable(variable_name, random_string)
 
     return generate_random_string
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def vcr_recording(
+    request: pytest.FixtureRequest, user_object_id: str, tenant_id: str, variable_recorder: VariableRecorder
+) -> Optional[PFAzureIntegrationTestRecording]:
+    """Fixture to record or replay network traffic.
+
+    If the test mode is "live", nothing will happen.
+    If the test mode is "record" or "replay", this fixture will locate a YAML (recording) file
+    based on the test file, class and function name, write to (record) or read from (replay) the file.
+    """
+    if is_live():
+        yield None
+    else:
+        recording = PFAzureIntegrationTestRecording.from_test_case(
+            test_class=request.cls,
+            test_func_name=request.node.name,
+            user_object_id=user_object_id,
+            tenant_id=tenant_id,
+            variable_recorder=variable_recorder,
+        )
+        recording.enter_vcr()
+        request.addfinalizer(recording.exit_vcr)
+        yield recording
 
 
 # we expect this fixture only work when running live test without recording
@@ -159,7 +215,7 @@ def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], s
 @pytest.fixture(autouse=not is_live())
 def mock_appinsights_log_handler(mocker: MockerFixture) -> None:
     dummy_logger = logging.getLogger("dummy")
-    mocker.patch("promptflow._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
+    mocker.patch("promptflow._sdk._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
     return
 
 
@@ -199,7 +255,7 @@ def mock_set_headers_with_user_aml_token(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def mock_get_azure_pf_client(mocker: MockerFixture, remote_client: PFClient) -> None:
+def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
     """Mock PF Azure client to avoid network traffic during replay test."""
     if not is_live():
         mocker.patch(
@@ -222,3 +278,117 @@ def mock_get_user_identity_info(mocker: MockerFixture) -> None:
             return_value=(SanitizedValues.USER_OBJECT_ID, SanitizedValues.TENANT_ID),
         )
     yield
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
+    """Create a flow for test."""
+    flow_display_name = randstr("flow_display_name")
+    flow_source = FLOWS_DIR + "/simple_hello_world/"
+    description = "test flow description"
+    tags = {"owner": "sdk-test"}
+    result = pf.flows.create_or_update(
+        flow=flow_source, display_name=flow_display_name, type=FlowType.STANDARD, description=description, tags=tags
+    )
+    remote_flow_dag_path = result.path
+
+    # make sure the flow is created successfully
+    assert pf.flows._storage_client._check_file_share_file_exist(remote_flow_dag_path) is True
+    assert result.display_name == flow_display_name
+    assert result.type == FlowType.STANDARD
+    assert result.tags == tags
+    assert result.path.endswith(f"/promptflow/{flow_display_name}/flow.dag.yaml")
+
+    yield result
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
+    """Create a batch run that does not require LLM."""
+    name = randstr("batch_run_name")
+    run = pf.run(
+        # copy test_configs/flows/simple_hello_world to a separate folder
+        # as pf.run will generate .promptflow/flow.tools.json
+        # it will affect Azure file share upload logic and replay test
+        flow=f"{FLOWS_DIR}/hello-world",
+        data=f"{DATAS_DIR}/webClassification3.jsonl",
+        column_mapping={"name": "${data.url}"},
+        runtime=runtime,
+        name=name,
+        display_name="sdk-cli-test-fixture-batch-run-without-llm",
+    )
+    run = pf.runs.stream(run=name)
+    assert run.status == RunStatus.COMPLETED
+    yield run
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def created_eval_run_without_llm(
+    pf: PFClient, randstr: Callable[[str], str], runtime: str, created_batch_run_without_llm: Run
+) -> Run:
+    """Create a evaluation run against batch run without LLM dependency."""
+    name = randstr("eval_run_name")
+    run = pf.run(
+        flow=f"{FLOWS_DIR}/eval-classification-accuracy",
+        data=f"{DATAS_DIR}/webClassification3.jsonl",
+        run=created_batch_run_without_llm,
+        column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.result}"},
+        runtime=runtime,
+        name=name,
+        display_name="sdk-cli-test-fixture-eval-run-without-llm",
+    )
+    run = pf.runs.stream(run=name)
+    assert run.status == RunStatus.COMPLETED
+    yield run
+
+
+@pytest.fixture(scope=package_scope_in_live_mode())
+def created_failed_run(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
+    """Create a failed run."""
+    name = randstr("failed_run_name")
+    run = pf.run(
+        flow=f"{FLOWS_DIR}/partial_fail",
+        data=f"{DATAS_DIR}/webClassification3.jsonl",
+        runtime=runtime,
+        name=name,
+        display_name="sdk-cli-test-fixture-failed-run",
+    )
+    # set raise_on_error to False to promise returning something
+    run = pf.runs.stream(run=name, raise_on_error=False)
+    assert run.status == RunStatus.FAILED
+    yield run
+
+
+@pytest.fixture(autouse=not is_live())
+def mock_vcrpy_for_httpx() -> None:
+    # there is a known issue in vcrpy handling httpx response: https://github.com/kevin1024/vcrpy/pull/591
+    # the related code change has not been merged, so we need such a fixture for patch
+    def _transform_headers(httpx_response):
+        out = {}
+        for key, var in httpx_response.headers.raw:
+            decoded_key = key.decode("utf-8")
+            decoded_var = var.decode("utf-8")
+            if decoded_key.lower() == "content-encoding" and decoded_var in ("gzip", "deflate"):
+                continue
+            out.setdefault(decoded_key, [])
+            out[decoded_key].append(decoded_var)
+        return out
+
+    with patch("vcr.stubs.httpx_stubs._transform_headers", new=_transform_headers):
+        yield
+
+
+@pytest.fixture(autouse=not is_live())
+def mock_to_thread() -> None:
+    # https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread
+    # to_thread actually uses a separate thread, which will break mocks
+    # so we need to mock it to avoid using a separate thread
+    # this is only for AsyncRunDownloader.to_thread
+    async def to_thread(func, /, *args, **kwargs):
+        func(*args, **kwargs)
+
+    with patch(
+        "promptflow.azure.operations._async_run_downloader.to_thread",
+        new=to_thread,
+    ):
+        yield
