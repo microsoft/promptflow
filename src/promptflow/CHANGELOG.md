@@ -5,8 +5,12 @@
 ### Features Added
 - [SDK/CLI] Support `pfazure run cancel` to cancel a run on Azure AI.
 
+### Bugs Fixed
+- [SDK/CLI] Fix single node run doesn't work when consuming sub item of upstream node
+
 ### Improvements
 - Change `ruamel.yaml` lower bound to 0.17.10.
+- [SDK/CLI] Improve `pfazure run download` to handle large run data files.
 
 ## 1.2.0 (2023.12.14)
 
