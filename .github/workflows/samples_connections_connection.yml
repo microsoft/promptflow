@@ -9,7 +9,7 @@ on:
     - cron: "13 22 * * *" # Every day starting at 6:13 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/connections/**, examples/*requirements.txt, .github/workflows/samples_connections_connection.yml ]
+    paths: [ examples/connections/**, examples/*requirements.txt, .github/workflows/samples_connections_connection.yml, '!examples/flows/integrations/**' ]
   workflow_dispatch:
 
 env:
@@ -21,12 +21,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Generate config.json for canary workspace (scheduled runs only)
-        if: github.event_name == 'schedule'
-        run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
-      - name: Generate config.json for production workspace
-        if: github.event_name != 'schedule'
-        run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
       - name: Azure Login
         uses: azure/login@v1
         with:

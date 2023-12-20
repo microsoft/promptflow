@@ -18,16 +18,16 @@ from promptflow._sdk._constants import (
     MAX_SHOW_DETAILS_RESULTS,
     FlowRunProperties,
     ListViewType,
+    RunInfoSources,
     RunStatus,
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
+from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import incremental_print, print_red_error, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._telemetry.activity import ActivityType, monitor_operation
-from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization, VisualizationConfig
 from promptflow.exceptions import UserErrorException
@@ -90,6 +90,9 @@ class RunOperations(TelemetryMixin):
         :return: Run object created or updated.
         :rtype: ~promptflow.entities.Run
         """
+        # create run from an existing run folder
+        if run._run_source == RunInfoSources.EXISTING_RUN:
+            return self._create_run_from_existing_run_folder(run=run, **kwargs)
         # TODO: change to async
         stream = kwargs.pop("stream", False)
         try:
@@ -101,6 +104,23 @@ class RunOperations(TelemetryMixin):
             return created_run
         except RunExistsError:
             raise RunExistsError(f"Run {run.name!r} already exists.")
+
+    def _create_run_from_existing_run_folder(self, run: Run, **kwargs) -> Run:
+        """Create run from existing run folder."""
+        try:
+            self.get(run.name)
+        except RunNotFoundError:
+            pass
+        else:
+            raise RunExistsError(f"Run {run.name!r} already exists.")
+
+        try:
+            run._dump()
+            return run
+        except Exception as e:
+            raise UserErrorException(
+                f"Failed to create run {run.name!r} from existing run folder {run.source!r}: {str(e)}"
+            ) from e
 
     def _print_run_summary(self, run: Run) -> None:
         print("======= Run Summary =======\n")
@@ -284,11 +304,18 @@ class RunOperations(TelemetryMixin):
 
             local_storage = LocalStorageOperations(run)
             detail = local_storage.load_detail()
+            # ad-hoc step: make logs field empty to avoid too big HTML file
+            # we don't provide logs view in visualization page for now
+            # when we enable, we will save those big data (e.g. logs) in separate file(s)
+            # JS load can be faster than static HTML
+            for i in range(len(detail["node_runs"])):
+                detail["node_runs"][i]["logs"] = {"stdout": "", "stderr": ""}
+
             metadata = RunMetadata(
                 name=run.name,
                 display_name=run.display_name,
                 create_time=run.created_on,
-                flow_path=run.properties[FlowRunProperties.FLOW_PATH],
+                flow_path=run.properties.get(FlowRunProperties.FLOW_PATH, None),
                 output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,

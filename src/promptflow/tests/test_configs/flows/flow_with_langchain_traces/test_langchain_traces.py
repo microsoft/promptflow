@@ -1,9 +1,12 @@
 import os
 
+
+from langchain.chat_models import AzureChatOpenAI
+from langchain_core.messages import HumanMessage
 from langchain.agents.agent_types import AgentType
 from langchain.agents.initialize import initialize_agent
 from langchain.agents.load_tools import load_tools
-from langchain.llms.openai import AzureOpenAI
+
 
 from promptflow import tool
 from promptflow.connections import AzureOpenAIConnection
@@ -16,15 +19,20 @@ def test_langchain_traces(question: str, conn: AzureOpenAIConnection):
     os.environ["OPENAI_API_VERSION"] = conn.api_version
     os.environ["AZURE_OPENAI_ENDPOINT"] = conn.api_base
 
-    llm = AzureOpenAI(
+    model = AzureChatOpenAI(
         temperature=0.7,
-        deployment_name="text-davinci-003",
+        azure_deployment="gpt-35-turbo",
     )
-    tools = load_tools(["llm-math"], llm=llm)
+
+    tools = load_tools(["llm-math"], llm=model)
+    # Please keep use agent to enable customized CallBack handler
     agent = initialize_agent(
-        tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=False,
-        callbacks = [PromptFlowCallbackHandler()])
-    try:
-        return agent.run(question)
-    except Exception as e:
-        return str(e)
+        tools, model, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=False,
+        callbacks=[PromptFlowCallbackHandler()]
+    )
+    message = HumanMessage(
+        content=question
+    )
+
+    return agent.run(message)
+

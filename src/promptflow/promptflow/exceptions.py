@@ -11,6 +11,7 @@ class ErrorTarget(str, Enum):
     """The target of the error, indicates which part of the system the error occurs."""
 
     EXECUTOR = "Executor"
+    BATCH = "Batch"
     FLOW_EXECUTOR = "FlowExecutor"
     NODE_EXECUTOR = "NodeExecutor"
     TOOL = "Tool"
@@ -45,23 +46,22 @@ class PromptflowException(Exception):
         **kwargs,
     ):
         self._inner_exception = kwargs.get("error")
-        self._message = str(message)
         self._target = target
         self._module = module
         self._message_format = message_format
         self._kwargs = kwargs
+        if message:
+            self._message = str(message)
+        elif self.message_format:
+            self._message = self.message_format.format(**self.message_parameters)
+        else:
+            self._message = self.__class__.__name__
         super().__init__(self._message)
 
     @property
     def message(self):
         """The error message."""
-        if self._message:
-            return self._message
-
-        if self.message_format:
-            return self.message_format.format(**self.message_parameters)
-
-        return self.__class__.__name__
+        return self._message
 
     @property
     def message_format(self):
@@ -119,10 +119,14 @@ class PromptflowException(Exception):
     @property
     def reference_code(self):
         """The reference code of the error."""
+        # In Python 3.11, the __str__ method of the Enum type returns the name of the enumeration member.
+        # However, in earlier Python versions, the __str__ method returns the value of the enumeration member.
+        # Therefore, when dealing with this situation, we need to make some additional adjustments.
+        target = self.target.value if isinstance(self.target, ErrorTarget) else self.target
         if self.module:
-            return f"{self.target}/{self.module}"
+            return f"{target}/{self.module}"
         else:
-            return self.target
+            return target
 
     @property
     def inner_exception(self):

@@ -1,12 +1,15 @@
 import json
+from functools import partial
 
 from aiohttp import web
 
 
-def run_executor_server(port):
+def run_executor_server(port, has_error=False):
     app = web.Application()
     app.router.add_get("/health", _handle_health)
-    app.router.add_post("/Execution", _handle_execution)
+
+    handle_execution_with_customization = partial(_handle_execution, has_error=has_error)
+    app.router.add_post("/execution", handle_execution_with_customization)
 
     print(f"Starting server on port {port}")
     web.run_app(app, host="localhost", port=port)
@@ -16,20 +19,41 @@ async def _handle_health(request: web.Request):
     return web.Response(text="Healthy")
 
 
-async def _handle_execution(request: web.Request):
+async def _handle_execution(request: web.Request, has_error=False):
     try:
         request = await request.json()
-        response_data = _get_line_result_dict(request)
-        return web.json_response(response_data)
+        return _get_execution_result(request, has_error=has_error)
     except json.JSONDecodeError:
         return web.Response(status=400, text="Bad Request: Invalid JSON")
 
 
-def _get_line_result_dict(request: dict):
+def _get_execution_result(request: dict, has_error=False):
     run_id = request.get("run_id", "dummy_run_id")
     index = request.get("line_number", 1)
     inputs = request.get("inputs", {"question": "Hello world!"})
-    return {
+
+    if has_error and index == 1:
+        # simulate error
+        line_result_dict = {
+            "error": {
+                "message": "error for tests",
+                "messageFormat": "",
+                "messageParameters": {},
+                "referenceCode": None,
+                "debugInfo": {
+                    "type": "Exception",
+                    "message": "error for tests",
+                    "stackTrace": "...",
+                    "innerException": None,
+                },
+                "additionalInfo": None,
+                "code": "UserError",
+                "innerError": {"code": "Exception", "innerError": None},
+            },
+        }
+        return web.json_response(line_result_dict, status=500)
+
+    line_result_dict = {
         "output": {"answer": "Hello world!"},
         "aggregation_inputs": {},
         "run_info": {
@@ -62,3 +86,4 @@ def _get_line_result_dict(request: dict):
             }
         },
     }
+    return web.json_response(line_result_dict)

@@ -3,15 +3,19 @@
 # ---------------------------------------------------------
 
 import asyncio
+import inspect
+import contextvars
 from asyncio import Task
 from typing import Any, Dict, List, Tuple
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.logger_utils import flow_logger
+from promptflow._utils.utils import set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
+from concurrent.futures import ThreadPoolExecutor
 
 
 class AsyncNodesScheduler:
@@ -30,12 +34,31 @@ class AsyncNodesScheduler:
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
+        parent_context = contextvars.copy_context()
+        executor = ThreadPoolExecutor(
+            max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
+        )
+        # Note that we must not use `with` statement to manage the executor.
+        # This is because it will always call `executor.shutdown()` when exiting the `with` block.
+        # Then the event loop will wait for all tasks to be completed before raising the cancellation error.
+        # See reference: https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor
+        outputs = await self._execute_with_thread_pool(executor, nodes, inputs, context)
+        executor.shutdown()
+        return outputs
+
+    async def _execute_with_thread_pool(
+        self,
+        executor: ThreadPoolExecutor,
+        nodes: List[Node],
+        inputs: Dict[str, Any],
+        context: FlowExecutionContext,
+    ) -> Tuple[dict, dict]:
         flow_logger.info(f"Start to run {len(nodes)} nodes with the current event loop.")
         dag_manager = DAGManager(nodes, inputs)
-        task2nodes = self._execute_nodes(dag_manager, context)
+        task2nodes = self._execute_nodes(dag_manager, context, executor)
         while not dag_manager.completed():
             task2nodes = await self._wait_and_complete_nodes(task2nodes, dag_manager)
-            submitted_tasks2nodes = self._execute_nodes(dag_manager, context)
+            submitted_tasks2nodes = self._execute_nodes(dag_manager, context, executor)
             task2nodes.update(submitted_tasks2nodes)
         for node in dag_manager.bypassed_nodes:
             dag_manager.completed_nodes_outputs[node] = None
@@ -55,6 +78,7 @@ class AsyncNodesScheduler:
         self,
         dag_manager: DAGManager,
         context: FlowExecutionContext,
+        executor: ThreadPoolExecutor,
     ) -> Dict[Task, Node]:
         # Bypass nodes and update node run info until there are no nodes to bypass
         nodes_to_bypass = dag_manager.pop_bypassable_nodes()
@@ -63,15 +87,33 @@ class AsyncNodesScheduler:
                 context.bypass_node(node)
             nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         # Create tasks for ready nodes
-        return {self._create_node_task(node, dag_manager, context): node for node in dag_manager.pop_ready_nodes()}
+        return {
+            self._create_node_task(node, dag_manager, context, executor): node
+            for node in dag_manager.pop_ready_nodes()
+        }
 
     def _create_node_task(
         self,
         node: Node,
         dag_manager: DAGManager,
         context: FlowExecutionContext,
+        executor: ThreadPoolExecutor,
     ) -> Task:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
-        task = context.invoke_tool_async(node, f, kwargs)
-        return asyncio.get_event_loop().create_task(task)
+        if inspect.iscoroutinefunction(f):
+            task = context.invoke_tool_async(node, f, kwargs)
+        else:
+            task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
+        return asyncio.create_task(task)
+
+    @staticmethod
+    async def _sync_function_to_async_task(
+        executor: ThreadPoolExecutor,
+        context: FlowExecutionContext, node,
+        f,
+        kwargs,
+    ):
+        return await asyncio.get_running_loop().run_in_executor(
+            executor, context.invoke_tool, node, f, kwargs
+        )
