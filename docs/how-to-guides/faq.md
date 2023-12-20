@@ -75,3 +75,74 @@ Below is the serving logs after setting `PF_LOGGING_LEVEL` to `DEBUG`:
 Compare to the serving logs with `WARNING` level:
 
 ![img](../media/how-to-guides/pf_logging_level_warning.png)
+
+### Set environment variables
+
+Currently, promptflow supports the following environment variables:
+
+**PF_WORKER_COUNT** 
+
+Valid for batch run only. The number of workers to use for parallel execution of the Flow.
+
+**PF_BATCH_METHOD**
+
+Valid for batch run only. Optional values: 'spawn', 'fork'. 
+
+**spawn**
+
+1. The child processes will not inherit resources of the parent process, therefore, each process needs to reinitialize the resources required for the flow, which may use more system memory.
+
+2. Starting a process is slow because it will take some time to initialize the necessary resources.
+ 
+**fork**
+
+1. Use the copy-on-write mechanism, the child processes will inherit all the resources of the parent process, thereby using less system memory.
+
+2. The process starts faster as it doesn't need to reinitialize resources.
+ 
+Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
+
+
+#### You can configure environment variables in the following ways
+
+1. If you are using CLI, you can use this parameter: ```--environment-variable```. Example: ```--environment-variable PF_WORKER_COUNT="2" PF_BATCH_METHOD="spawn"```.
+
+2. If you are using SDK, you can specify environment variables when creating run. Example: 
+
+``` python
+    pf = PFClient(
+        credential=credential,
+        subscription_id="<SUBSCRIPTION_ID>",
+        resource_group_name="<RESOURCE_GROUP>",
+        workspace_name="<AML_WORKSPACE_NAME>",
+    )
+
+    flow = "web-classification"
+    data = "web-classification/data.jsonl"
+    runtime = "example-runtime-ci"
+
+    environment_variables = {"PF_WORKER_COUNT": "2", "PF_BATCH_METHOD": "spawn"}
+
+    # create run
+    base_run = pf.run(
+        flow=flow,
+        data=data,
+        runtime=runtime,
+        environment_variables=environment_variables,
+    )
+```
+
+3. If you are using VSCode Extension to submit batch run, you can configure environment variables in the ```batch_run_create.yaml```. Example:
+
+``` yaml
+    name: flow_name
+    display_name: display_name
+    flow: flow_folder
+    data: data_file
+    column_mapping:
+        customer_info: <Please select a data input>
+        history: <Please select a data input>
+    environment_variables:
+        PF_WORKER_COUNT: "2"
+        PF_BATCH_METHOD: "spawn"
+```

@@ -5,6 +5,8 @@ import sys
 
 from pathlib import Path
 from pytest_mock import MockerFixture  # noqa: E402
+from tests.utils import verify_url_exists
+
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
@@ -46,26 +48,11 @@ def serp_connection():
     return ConnectionManager().get("serp_connection")
 
 
-def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
+def verify_om_llm_custom_connection(connection: CustomConnection) -> bool:
     '''Verify that there is a MIR endpoint up and available for the Custom Connection.
     We explicitly do not pass the endpoint key to avoid the delay in generating a response.
     '''
-
-    import urllib.request
-    from urllib.request import HTTPError
-    from urllib.error import URLError
-
-    try:
-        urllib.request.urlopen(
-            urllib.request.Request(connection.configs['endpoint_url']),
-            timeout=50)
-    except HTTPError as e:
-        # verify that the connection is not authorized, anything else would mean the endpoint is failed
-        return e.code == 403
-    except URLError:
-        # Endpoint does not exist - skip the test
-        return False
-    raise Exception("Task Succeeded unexpectedly.")
+    return verify_url_exists(connection.configs['endpoint_url'])
 
 
 @pytest.fixture
@@ -79,7 +66,7 @@ def llama_chat_custom_connection():
 
 
 @pytest.fixture
-def open_source_llm_ws_service_connection() -> None:
+def open_model_llm_ws_service_connection() -> bool:
     try:
         creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
         subs = json.loads(creds_custom_connection.secrets['service_credential'])
@@ -87,10 +74,9 @@ def open_source_llm_ws_service_connection() -> None:
             os.environ[key] = value
         return True
     except Exception as e:
-        message = f"""=== Skipping Tests ===
-Something failed setting environment variables for service credentials. Error: {e}"""
-        print(message)
-        pytest.skip(message)
+        print(f"""Something failed setting environment variables for service credentials.
+Error: {e}""")
+        return False
 
 
 @pytest.fixture(autouse=True)
@@ -106,9 +92,9 @@ def skip_if_no_api_key(request, mocker):
         elif isinstance(connection, CustomConnection):
             if "endpoint_api_key" not in connection.secrets or "-api-key" in connection.secrets["endpoint_api_key"]:
                 pytest.skip('skipped because no key')
-            # Verify Custom Connections, but only those used by the Open_Source_LLM Tool
+            # Verify Custom Connections, but only those used by the Open_Model_LLM Tool
             if "endpoint_url" in connection.configs and "-endpoint-url" not in connection.configs["endpoint_url"]:
-                if not verify_oss_llm_custom_connection(connection):
+                if not verify_om_llm_custom_connection(connection):
                     pytest.skip('skipped because the connection is not valid')
 
 

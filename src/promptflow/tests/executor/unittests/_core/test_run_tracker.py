@@ -15,6 +15,7 @@ class UnserializableClass:
 @pytest.mark.unittest
 class TestRunTracker:
     def test_run_tracker(self):
+        # TODO: Refactor this test case, it's very confusing now.
         # Initialize run tracker with dummy run storage
         run_tracker = RunTracker.init_dummy()
 
@@ -88,8 +89,32 @@ class TestRunTracker:
         # Test get_status_summary
         status_summary = run_tracker.get_status_summary("test_root_run_id")
         assert status_summary == {
-            "__pf__.lines.completed": 2,
-            "__pf__.lines.failed": 0,
+            "__pf__.lines.completed": 0,
+            "__pf__.lines.failed": 1,
             "__pf__.nodes.node_0.completed": 2,
             "__pf__.nodes.node_aggr.completed": 0,
+        }
+
+    def test_run_tracker_flow_run_without_node_run(self):
+        """When line timeout, there will be flow run info without node run info."""
+        # Initialize run tracker with dummy run storage
+        run_tracker = RunTracker.init_dummy()
+
+        # Start flow run
+        run_tracker.start_flow_run("test_flow_id", "test_root_run_id", "test_flow_run_id_0", index=0)
+        run_tracker.end_run("test_flow_run_id_0", ex=Exception("Timeout"))
+        run_tracker.start_flow_run("test_flow_id", "test_root_run_id", "test_flow_run_id_1", index=1)
+        run_tracker.end_run("test_flow_run_id_1", result={"result": "result"})
+        assert len(run_tracker._flow_runs) == 2
+
+        # Start node runs
+        run_tracker.start_node_run("node_0", "test_root_run_id", "test_flow_run_id_2", "test_node_run_id_1", index=0)
+        run_tracker.end_run("test_node_run_id_1", result={"result": "result"})
+        assert len(run_tracker._node_runs) == 1
+
+        status_summary = run_tracker.get_status_summary("test_root_run_id")
+        assert status_summary == {
+            "__pf__.lines.completed": 1,
+            "__pf__.lines.failed": 1,
+            "__pf__.nodes.node_0.completed": 1,
         }
