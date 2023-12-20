@@ -10,8 +10,7 @@ from promptflow import PFClient
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
-
-from .recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
+from promptflow.recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")

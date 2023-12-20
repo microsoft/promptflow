@@ -32,8 +32,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
-
-from ..recording_utilities import RecordStorage
+from promptflow.recording_utilities import RecordStorage
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 

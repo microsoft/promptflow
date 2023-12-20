@@ -194,7 +194,7 @@ class RecordStorage(object):
     def _parse_output_generator(self, output):
         """
         Special handling for generator type. Since pickle will not work for generator.
-        Returns the real list for reocrding, and create a generator for original output.
+        Returns the real list for recording, and create a generator for original output.
         Parse output has a simplified hypothesis: output is simple dict, list or generator,
         because a full schema of output is too heavy to handle.
         Example: {"answer": <generator>, "a": "b"}, <generator>
@@ -208,14 +208,14 @@ class RecordStorage(object):
             for item in output.items():
                 k, v = item
                 if type(v).__name__ == "generator":
-                    vlist = list(v)
+                    v_list = list(v)
 
-                    def vgenerator():
-                        for vitem in vlist:
-                            yield vitem
+                    def v_generator():
+                        for v_item in v_list:
+                            yield v_item
 
-                    output_value[k] = vlist
-                    output_generator[k] = vgenerator()
+                    output_value[k] = v_list
+                    output_generator[k] = v_generator()
                     output_type = "dict[generator]"
                 else:
                     output_value[k] = v
@@ -247,11 +247,11 @@ class RecordStorage(object):
             for k, v in output.items():
                 if type(v).__name__ == "list":
 
-                    def vgenerator():
+                    def v_generator():
                         for item in v:
                             yield item
 
-                    output_generator[k] = vgenerator()
+                    output_generator[k] = v_generator()
                 else:
                     output_generator[k] = v
         elif output_type == "generator":
