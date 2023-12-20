@@ -1,9 +1,9 @@
-promptflow.tools.openai_gpt4v.OpenAI.chat:
-  name: OpenAI GPT-4V
-  description: Use OpenAI GPT-4V to leverage vision ability.
+promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
+  name: Azure OpenAI GPT-4 Turbo with Vision
+  description: Use Azure OpenAI GPT-4 Turbo with Vision to leverage AOAI vision ability.
   type: custom_llm
-  module: promptflow.tools.openai_gpt4v
-  class_name: OpenAI
+  module: promptflow.tools.aoai_gpt4v
+  class_name: AzureOpenAI
   function: chat
   tool_state: preview
   icon:
@@ -20,11 +20,8 @@ promptflow.tools.openai_gpt4v.OpenAI.chat:
   inputs:
     connection:
       type:
-        - OpenAIConnection
-    model:
-      enum:
-      - gpt-4-vision-preview
-      allow_manual_entry: true
+        - AzureOpenAIConnection
+    deployment_name:
       type:
         - string
     temperature:
