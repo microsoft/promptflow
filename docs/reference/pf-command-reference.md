@@ -771,7 +771,7 @@ pf tool list --flow <path-to-flow-direcotry>
 
 The flow directory.
 
-### pf tool init
+### pf tool validate
 
 Validate tool.
 
