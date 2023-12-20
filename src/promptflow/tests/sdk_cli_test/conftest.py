@@ -93,6 +93,38 @@ def flow_serving_client(mocker: MockerFixture):
 
 
 @pytest.fixture
+def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
+    from promptflow._sdk._serving.utils import encode_dict
+    from promptflow._core.connection_manager import ConnectionManager
+
+    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
+    connection_manager = ConnectionManager(connection_dict)
+    connections = {"PROMPTFLOW_ENCODED_CONNECTIONS": encode_dict(connection_manager.to_connections_dict())}
+    return create_client_by_model("basic-with-connection", mocker, connections, extension_type="azureml")
+
+
+@pytest.fixture
+def serving_client_with_connection_data_override(mocker: MockerFixture):
+    model_name = "llm_connection_override"
+    model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute()
+    # load arm connection template
+    connection_arm_template = json.loads(model_path.joinpath("connection_arm_template.json").read_text())
+    # load local connection info
+    connections = json.loads(Path(CONNECTION_FILE).read_text())
+    aoai_connection = connections["azure_open_ai_connection"]
+    connection_arm_template["properties"]["credentials"]["key"] = aoai_connection["value"]["api_key"]
+    connection_arm_template["properties"]["target"] = aoai_connection["value"]["api_base"]
+    connection_arm_template["properties"]["metadata"]["ApiVersion"] = aoai_connection["value"]["api_version"]
+    override_data = json.dumps(connection_arm_template)
+    connections = {
+        "aoai_connection": override_data,
+        # used a mock one here for we won't really connect to the workspace
+        "PROMPTFLOW_CONNECTION_PROVIDER": "azureml:/subscriptions/123456/resourceGroups/rg/providers/Microsoft.MachineLearningServices/workspaces/ws",  # noqa: E501
+    }
+    return create_client_by_model(model_name, mocker, connections, extension_type="azureml")
+
+
+@pytest.fixture
 def evaluation_flow_serving_client(mocker: MockerFixture):
     model_path = (Path(MODEL_ROOT) / "web_classification").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
@@ -105,10 +137,17 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
     return app.test_client()
 
 
-def create_client_by_model(model_name: str, mocker: MockerFixture):
+def create_client_by_model(model_name: str, mocker: MockerFixture, connections: dict = {}, extension_type=None):
     model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
-    app = create_serving_app()
+    if connections:
+        mocker.patch.dict(os.environ, connections)
+    environment_variables = {}
+    if extension_type and extension_type == "azureml":
+        environment_variables = {"API_TYPE": "${azure_open_ai_connection.api_type}"}
+    app = create_serving_app(
+        environment_variables=environment_variables,
+        extension_type=extension_type)
     app.config.update(
         {
             "TESTING": True,

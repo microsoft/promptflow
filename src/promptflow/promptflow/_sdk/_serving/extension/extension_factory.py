@@ -20,6 +20,8 @@ class ExtensionFactory:
     def create_extension(logger, **kwargs) -> AppExtension:
         """Create extension based on extension type."""
         extension_type_str = kwargs.get("extension_type", ExtensionType.Default.value)
+        if not extension_type_str:
+            extension_type_str = ExtensionType.Default.value
         extension_type = ExtensionType(extension_type_str.lower())
 
         if extension_type == ExtensionType.AzureML:

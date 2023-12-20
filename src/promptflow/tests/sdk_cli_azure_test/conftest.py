@@ -166,17 +166,6 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
 
 
 @pytest.fixture
-def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
-    from promptflow._sdk._serving.utils import encode_dict
-    from promptflow._core.connection_manager import ConnectionManager
-
-    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
-    connection_manager = ConnectionManager(connection_dict)
-    connections = {"PROMPTFLOW_ENCODED_CONNECTIONS": encode_dict(connection_manager.to_connections_dict())}
-    return create_serving_client_with_connections("basic-with-connection", mocker, connections)
-
-
-@pytest.fixture
 def flow_serving_client_with_prt_config_env(mocker: MockerFixture, subscription_id, resource_group_name, workspace_name):  # noqa: E501
     connections = {
             "PRT_CONFIG_OVERRIDE": f"deployment.subscription_id={subscription_id},"
@@ -207,26 +196,6 @@ def serving_client_with_connection_name_override(mocker: MockerFixture, remote_w
         "PROMPTFLOW_CONNECTION_PROVIDER": remote_workspace_resource_id
     }
     return create_serving_client_with_connections("llm_connection_override", mocker, connections)
-
-
-@pytest.fixture
-def serving_client_with_connection_data_override(mocker: MockerFixture, remote_workspace_resource_id):
-    model_name = "llm_connection_override"
-    model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute()
-    # load arm connection template
-    connection_arm_template = json.loads(model_path.joinpath("connection_arm_template.json").read_text())
-    # load local connection info
-    connections = json.loads(Path(CONNECTION_FILE).read_text())
-    aoai_connection = connections["azure_open_ai_connection"]
-    connection_arm_template["properties"]["credentials"]["key"] = aoai_connection["value"]["api_key"]
-    connection_arm_template["properties"]["target"] = aoai_connection["value"]["api_base"]
-    connection_arm_template["properties"]["metadata"]["ApiVersion"] = aoai_connection["value"]["api_version"]
-    override_data = json.dumps(connection_arm_template)
-    connections = {
-        "aoai_connection": override_data,
-        "PROMPTFLOW_CONNECTION_PROVIDER": remote_workspace_resource_id
-    }
-    return create_serving_client_with_connections(model_name, mocker, connections)
 
 
 def create_serving_client_with_connections(
