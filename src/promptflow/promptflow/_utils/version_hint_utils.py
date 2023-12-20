@@ -7,7 +7,7 @@ import sys
 import contextlib
 
 from promptflow._constants import (LAST_HINT_TIME, LAST_CHECK_TIME, PF_VERSION_CHECK, CLI_PACKAGE_NAME,
-                                   HINT_FREQUENCY_DAY, GET_PYPI_FREQUENCY_DAY, LATEST_VERSION, CURRENT_VERSION)
+                                   HINT_INTERVAL_DAY, GET_PYPI_INTERVAL_DAY, LATEST_VERSION, CURRENT_VERSION)
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 
 
@@ -79,7 +79,7 @@ def check_latest_version():
         if LAST_CHECK_TIME in cached_versions else None
 
     if last_check_time is None or (datetime.datetime.now() >
-                                   last_check_time + datetime.timedelta(days=GET_PYPI_FREQUENCY_DAY)):
+                                   last_check_time + datetime.timedelta(days=GET_PYPI_INTERVAL_DAY)):
         version = get_latest_version_from_pypi(CLI_PACKAGE_NAME)
         if version is not None:
             cached_versions[LATEST_VERSION] = version
@@ -100,7 +100,7 @@ def hint_for_update():
         '%Y-%m-%d %H:%M:%S.%f'
     ) if LAST_HINT_TIME in cached_versions else None
     if last_hint_time is None or (datetime.datetime.now() >
-                                  last_hint_time + datetime.timedelta(days=HINT_FREQUENCY_DAY)):
+                                  last_hint_time + datetime.timedelta(days=HINT_INTERVAL_DAY)):
         from promptflow import __version__ as local_version
         cached_versions[CURRENT_VERSION] = local_version
         if LATEST_VERSION in cached_versions:
