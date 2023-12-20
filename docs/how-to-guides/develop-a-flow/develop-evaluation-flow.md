@@ -162,8 +162,9 @@ from promptflow import log_metric, tool
 @tool
 def example_log_metrics(grades: List[str]):
     # this node is an aggregation node so it accepts a list of grades
-    accuracy = round((grades.count("Correct") / len(result)), 2)
-    log_metric("accuracy", accuracy)
+    metric_key = "accuracy"
+    metric_value = round((grades.count("Correct") / len(result)), 2)
+    log_metric(metric_key, metric_value)
 
     return result
 ```
