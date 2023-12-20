@@ -2,7 +2,6 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Tool",
   "type": "object",
-  "additionalProperties": false,
   "properties": {
     "name": {
       "type": "string"
@@ -120,7 +119,6 @@
     },
     "InputDefinition": {
       "type": "object",
-      "additionalProperties": true,
       "properties": {
         "name": {
           "type": "string"
@@ -250,7 +248,6 @@
     },
     "AzureOpenAIModelCapabilities": {
       "type": "object",
-      "additionalProperties": false,
       "properties": {
         "completion": {
           "type": [
@@ -274,7 +271,6 @@
     },
     "ToolInputDynamicList": {
       "type": "object",
-      "additionalProperties": false,
       "properties": {
         "func_path": {
           "type": "string"
@@ -291,7 +287,6 @@
     },
     "ToolInputGeneratedBy": {
       "type": "object",
-      "additionalProperties": false,
       "properties": {
         "func_path": {
           "type": "string"
@@ -323,7 +318,6 @@
     },
     "OutputDefinition": {
       "type": "object",
-      "additionalProperties": false,
       "properties": {
         "name": {
           "type": "string"
