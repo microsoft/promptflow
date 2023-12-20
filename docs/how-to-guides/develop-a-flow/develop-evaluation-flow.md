@@ -150,7 +150,7 @@ In this case, the `grades` value would be `["Correct", "Incorrect"]` and the acc
 
 ## How to log metrics
 :::{admonition} Limitation
-Only `aggregation node` supports logging metrics.
+You can only log metrics in an `aggregation node`, otherwise the metric will be ignored.
 :::
 Promptflow supports logging and tracking experiments using `log_metric` function. A metric is a key-value pair that records a single float measure. In a python node, you can log a metric with below code: 
 
