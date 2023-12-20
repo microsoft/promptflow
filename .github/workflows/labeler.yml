@@ -10,3 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/labeler@v4
+
+    - name: apply a label to PRs from forks
+      if: ${{ github.event.pull_request.head.repo.full_name != 'microsoft/promptflow' }}
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: ['fork']
+          })
