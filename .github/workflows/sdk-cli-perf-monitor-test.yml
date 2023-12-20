@@ -1,5 +1,4 @@
 # execute tests in src/promptflow/tests/sdk_cli_azure_test, src/promptflow/tests/sdk_cli_test with mark perf_monitor_test
-# when pull_request triggers, use live mode
 
 name: sdk-cli-perf-monitor-test
 
