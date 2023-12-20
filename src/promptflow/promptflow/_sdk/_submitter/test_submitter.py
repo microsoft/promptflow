@@ -116,9 +116,12 @@ class TestSubmitter:
                     else:
                         missing_inputs.append(name)
                         continue
-                    dependency_nodes_outputs[value.value] = (
-                        {value.property: dependency_input} if value.property else dependency_input
-                    )
+                    if value.property:
+                        dependency_nodes_outputs[value.value] = dependency_nodes_outputs.get(value.value, {})
+                        if value.property in dependency_input:
+                            dependency_nodes_outputs[value.value][value.property] = dependency_input[value.property]
+                    else:
+                        dependency_nodes_outputs[value.value] = dependency_input
                     merged_inputs[name] = dependency_input
                 elif value.value_type == InputValueType.FLOW_INPUT:
                     input_name = f"{value.prefix}{value.value}"
