@@ -6,6 +6,7 @@ import json
 import sys
 import contextlib
 
+from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._constants import (LAST_HINT_TIME, LAST_CHECK_TIME, PF_VERSION_CHECK, CLI_PACKAGE_NAME,
                                    HINT_INTERVAL_DAY, GET_PYPI_INTERVAL_DAY, LATEST_VERSION, CURRENT_VERSION)
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
@@ -18,6 +19,7 @@ else:
 
 HINT_ACTIVITY_NAME = ["pf.flows.test", "pf.runs.create_or_update", "pfazure.flows.create_or_update",
                       "pfazure.runs.create_or_update"]
+logger = LoggerFactory.get_logger(__name__)
 
 
 @contextlib.contextmanager
@@ -68,7 +70,7 @@ def get_latest_version_from_pypi(package_name):
         else:
             return None
     except Exception as ex:  # pylint: disable=broad-except
-        print(f"Failed to get the latest version from '{pypi_url}'. {str(ex)}")
+        logger.warning(f"Failed to get the latest version from '{pypi_url}'. {str(ex)}")
         return None
 
 
@@ -89,10 +91,9 @@ def check_latest_version():
 
 def hint_for_update():
     """
-    Check if there is a new version of prompt flow available every 7 days. IF yes, print a warning message to hint
+    Check if there is a new version of prompt flow available every 7 days. IF yes, log debug info to hint
     customer to upgrade package.
     """
-    from promptflow._sdk._utils import print_yellow_warning
 
     cached_versions = get_cached_versions()
     last_hint_time = datetime.datetime.strptime(
@@ -109,9 +110,9 @@ def hint_for_update():
                 cached_versions[LAST_HINT_TIME] = str(datetime.datetime.now())
                 message = (f"New prompt flow version available: promptflow-{cached_versions[LATEST_VERSION]}. Running "
                            f"'pip install --upgrade promptflow' to update.")
-                print_yellow_warning(message)
+                logger.debug(message)
             else:
-                print_yellow_warning(
+                logger.debug(
                     "Failed to get the latest version from pypi. Need check Network connection and check "
                     "if new prompt flow version is available manually.")
         dump_cached_versions(cached_versions)
