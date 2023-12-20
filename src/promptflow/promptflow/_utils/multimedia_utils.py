@@ -239,6 +239,11 @@ def get_file_reference_encoder(
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
         if isinstance(obj, PFBytes):
+            if obj.source_url:
+                if version == 1:
+                    return {f"data:{obj._mime_type};url": obj.source_url}
+                else:
+                    return {"type": "image_url", "image_url": {"url": obj.source_url}}
             file_name = str(uuid.uuid4())
             # If use_absolute_path is True, the image file path in image dictionary will be absolute path.
             return _save_image_to_file(obj, file_name, folder_path, relative_path, use_absolute_path, version=version)
