@@ -126,7 +126,7 @@ class AzureMLExtension(AppExtension):
 
     def _get_metrics_recorder(self):
         # currently only support exporting it to azure monitor(application insights)
-        # TODO: add support for dynamic loading otel reader thus user can use their own exporter.
+        # TODO: add support for dynamic loading thus user can customize their own exporter.
         custom_dimensions = self.get_metrics_common_dimensions()
         try:
             from azure.monitor.opentelemetry.exporter import AzureMonitorMetricExporter

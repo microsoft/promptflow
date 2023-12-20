@@ -48,11 +48,11 @@ HISTOGRAM_BOUNDARIES: Sequence[float] = (
 
 
 class ResponseType(Enum):
-    # latency from receving the request to sending the first byte of response, only applicable to streaming flow
+    # latency from receiving the request to sending the first byte of response, only applicable to streaming flow
     FirstByte = "firstbyte"
-    # latency from receving the request to sending the last byte of response, only applicable to streaming flow
+    # latency from receiving the request to sending the last byte of response, only applicable to streaming flow
     LastByte = "lastbyte"
-    # latency from receving the request to sending the whole response, only applicable to non-streaming flow
+    # latency from receiving the request to sending the whole response, only applicable to non-streaming flow
     Default = "default"
 
 

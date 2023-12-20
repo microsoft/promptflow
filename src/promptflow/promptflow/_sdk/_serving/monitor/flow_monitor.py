@@ -13,7 +13,7 @@ from flask import request, g
 
 
 class FlowMonitor:
-    """FlowMonitor is used to collect metrics & data for promprflow serving."""
+    """FlowMonitor is used to collect metrics & data for promptflow serving."""
 
     def __init__(self,
                  logger,
