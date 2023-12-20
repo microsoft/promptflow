@@ -45,6 +45,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
     - [Tune prompts using variants](how-to-guides/tune-prompts-with-variants.md)<br/>
     - [Develop custom tool](how-to-guides/develop-a-tool/create-and-use-tool-package.md)<br/>
     - [Deploy a flow](how-to-guides/deploy-a-flow/index.md)<br/>
+    - [Process image in flow](how-to-guides/process-image-in-flow.md)
   "
 ```
 
