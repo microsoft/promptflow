@@ -201,24 +201,24 @@ def start():
         submit_bt = cols[0].form_submit_button(label=label, type='primary')
         clear_bt = cols[1].form_submit_button(label='Clear')
 
-    if submit_bt:
-        with st.spinner("Loading..."):
-            for flow_input, (default_value, value_type) in flow_inputs.items():
-                if value_type == "list":
-                    input = parse_list_from_html(flow_inputs_params[flow_input])
-                    flow_inputs_params.update({flow_input: copy(input)})
-                elif value_type == "image":
-                    input = parse_image_content(
-                        flow_inputs_params[flow_input],
-                        flow_inputs_params[flow_input].type if flow_inputs_params[flow_input] else None
-                    )
-                    flow_inputs_params.update({flow_input: copy(input)})
-            submit(**flow_inputs_params)
+        if submit_bt:
+            with st.spinner("Loading..."):
+                for flow_input, (default_value, value_type) in flow_inputs.items():
+                    if value_type == "list":
+                        input = parse_list_from_html(flow_inputs_params[flow_input])
+                        flow_inputs_params.update({flow_input: copy(input)})
+                    elif value_type == "image":
+                        input = parse_image_content(
+                            flow_inputs_params[flow_input],
+                            flow_inputs_params[flow_input].type if flow_inputs_params[flow_input] else None
+                        )
+                        flow_inputs_params.update({flow_input: copy(input)})
+                submit(**flow_inputs_params)
 
-    if clear_bt:
-        with st.spinner("Cleaning..."):
-            clear_chat()
-            st.rerun()
+        if clear_bt:
+            with st.spinner("Cleaning..."):
+                clear_chat()
+                st.rerun()
 
 
 if __name__ == "__main__":
