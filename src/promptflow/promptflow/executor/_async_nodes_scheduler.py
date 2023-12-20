@@ -37,10 +37,16 @@ class AsyncNodesScheduler:
         invoker: DefaultToolInvoker,
     ) -> Tuple[dict, dict]:
         parent_context = contextvars.copy_context()
-        with ThreadPoolExecutor(
+        executor = ThreadPoolExecutor(
             max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
-        ) as executor:
-            return await self._execute_with_thread_pool(executor, nodes, inputs, self._invoker)
+        )
+        # Note that we must not use `with` statement to manage the executor.
+        # This is because it will always call `executor.shutdown()` when exiting the `with` block.
+        # Then the event loop will wait for all tasks to be completed before raising the cancellation error.
+        # See reference: https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor
+        outputs = await self._execute_with_thread_pool(executor, nodes, inputs, self._invoker)
+        executor.shutdown()
+        return outputs
 
     async def _execute_with_thread_pool(
         self,
