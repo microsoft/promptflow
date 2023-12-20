@@ -86,6 +86,7 @@ class FlowExecutor:
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
         loaded_tools: Mapping[str, Callable],
+        tool_invoker: DefaultToolInvoker,
         *,
         raise_ex: bool = False,
         working_dir=None,
@@ -128,6 +129,7 @@ class FlowExecutor:
         self._working_dir = working_dir
         self._line_timeout_sec = line_timeout_sec
         self._flow_file = flow_file
+        self._tool_invoker = tool_invoker
         try:
             self._tools_manager = ToolsManager(loaded_tools)
             tool_to_meta = {tool.name: tool for tool in flow.tools}
@@ -213,30 +215,41 @@ class FlowExecutor:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        tool_resolver = ToolResolver.start_tool_resolver(working_dir, connections, package_tool_keys)
+        ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
+
+        if storage is None:
+            storage = DefaultRunStorage()
+        run_tracker = RunTracker(storage)
+        cache_manager = AbstractCacheManager.init_from_env()
+
+        tool_invoker = DefaultToolInvoker.start_invoker(
+            name=flow.name,
+            run_tracker=run_tracker,
+            cache_manager=AbstractCacheManager.init_from_env(),
+        )
 
         with _change_working_dir(working_dir):
-            resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
+            tool_invoker.load_tools(flow.nodes)
         flow = Flow(
-            flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
+            flow.id,
+            flow.name,
+            [tool.node for _, tool in tool_invoker.tools.items()],
+            inputs=flow.inputs,
+            outputs=flow.outputs,
+            tools=[]
         )
         # ensure_flow_valid including validation + resolve
         # Todo: 1) split pure validation + resolve from below method 2) provide completed validation()
         flow = FlowValidator._validate_nodes_topology(flow)
         flow.outputs = FlowValidator._ensure_outputs_valid(flow)
 
-        if storage is None:
-            storage = DefaultRunStorage()
-        run_tracker = RunTracker(storage)
-
-        cache_manager = AbstractCacheManager.init_from_env()
-
         return FlowExecutor(
             flow=flow,
             connections=connections,
             run_tracker=run_tracker,
             cache_manager=cache_manager,
-            loaded_tools={r.node.name: r.callable for r in resolved_tools},
+            loaded_tools={name: tool.callable for name, tool in tool_invoker.tools.items()},
+            tool_invoker=tool_invoker,
             raise_ex=raise_ex,
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
@@ -314,7 +327,7 @@ class FlowExecutor:
         inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
-        tool_resolver = ToolResolver.start_tool_resolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
         # Prepare callable and real inputs here
@@ -865,11 +878,11 @@ class FlowExecutor:
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
         should_use_async = all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
+            inspect.iscoroutinefunction(f) for f in self._tool_invoker.tools.values()
         ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
         if should_use_async:
             flow_logger.info("Start executing nodes in async mode.")
-            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
+            scheduler = AsyncNodesScheduler(self._tool_invoker, self._tools_manager, self._node_concurrency)
             nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, invoker))
         else:
             flow_logger.info("Start executing nodes in thread pool mode.")

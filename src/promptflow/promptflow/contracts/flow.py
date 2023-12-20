@@ -780,6 +780,7 @@ class Flow:
             return yaml.safe_load(file)
 
     def _get_connection_name_from_assistant_tools(self, tools: list):
+        connection_names = {}
         for tool in tools:
             if tool["type"] != "promptflow_tool" or tool.get("pre_assigned_inputs") is None:
                 continue
@@ -795,7 +796,8 @@ class Flow:
                 type=ToolType.PYTHON,
             )
             loaded_tool = self._tool_loader.load_tool_for_node(node)
-            return self._get_connection_name_from_tool(loaded_tool, node)
+            connection_names.update(self._get_connection_name_from_tool(loaded_tool, node))
+        return connection_names
 
     def _get_connection_name_from_tool(self, tool: Tool, node: Node):
         connection_names = {}

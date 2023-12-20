@@ -60,7 +60,7 @@ class ToolResolver(ThreadLocalSingleton):
         self._connection_manager = ConnectionManager(connections)
 
     @classmethod
-    def start_tool_resolver(
+    def start_resolver(
         cls,
         working_dir: Path,
         connections: Optional[dict] = None,

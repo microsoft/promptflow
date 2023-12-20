@@ -21,9 +21,11 @@ from concurrent.futures import ThreadPoolExecutor
 class AsyncNodesScheduler:
     def __init__(
         self,
+        tools_invoker: DefaultToolInvoker,
         tools_manager: ToolsManager,
         node_concurrency: int,
     ) -> None:
+        self._invoker = tools_invoker
         self._tools_manager = tools_manager
         # TODO: Add concurrency control in execution
         self._node_concurrency = node_concurrency
@@ -38,7 +40,7 @@ class AsyncNodesScheduler:
         with ThreadPoolExecutor(
             max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
         ) as executor:
-            return await self._execute_with_thread_pool(executor, nodes, inputs, invoker)
+            return await self._execute_with_thread_pool(executor, nodes, inputs, self._invoker)
 
     async def _execute_with_thread_pool(
         self,
@@ -49,10 +51,10 @@ class AsyncNodesScheduler:
     ) -> Tuple[dict, dict]:
         flow_logger.info(f"Start to run {len(nodes)} nodes with the current event loop.")
         dag_manager = DAGManager(nodes, inputs)
-        task2nodes = self._execute_nodes(dag_manager, invoker, executor)
+        task2nodes = self._execute_nodes(dag_manager, self._invoker, executor)
         while not dag_manager.completed():
             task2nodes = await self._wait_and_complete_nodes(task2nodes, dag_manager)
-            submitted_tasks2nodes = self._execute_nodes(dag_manager, invoker, executor)
+            submitted_tasks2nodes = self._execute_nodes(dag_manager, self._invoker, executor)
             task2nodes.update(submitted_tasks2nodes)
         for node in dag_manager.bypassed_nodes:
             dag_manager.completed_nodes_outputs[node] = None
@@ -78,11 +80,11 @@ class AsyncNodesScheduler:
         nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
             for node in nodes_to_bypass:
-                invoker.bypass_node(node)
+                self._invoker.bypass_node(node)
             nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         # Create tasks for ready nodes
         return {
-            self._create_node_task(node, dag_manager, invoker, executor): node
+            self._create_node_task(node, dag_manager, self._invoker, executor): node
             for node in dag_manager.pop_ready_nodes()
         }
 
@@ -96,9 +98,9 @@ class AsyncNodesScheduler:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         if inspect.iscoroutinefunction(f):
-            task = invoker.invoke_tool_async(node, f, kwargs)
+            task = self._invoker.invoke_tool_async(node, f, kwargs)
         else:
-            task = self._sync_function_to_async_task(executor, invoker, node, f, kwargs)
+            task = self._sync_function_to_async_task(executor, self._invoker, node, f, kwargs)
         return asyncio.create_task(task)
 
     @staticmethod

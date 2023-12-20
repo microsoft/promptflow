@@ -13,7 +13,6 @@ from docutils.core import publish_doctree
 from contextvars import ContextVar
 from functools import partial
 from logging import WARNING
-from pathlib import Path
 from typing import Callable, Optional
 
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
@@ -52,7 +51,12 @@ class DefaultToolInvoker(ThreadLocalSingleton):
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
         self._variant_id = variant_id
+        self._tools = {}
         self._assistant_tools = {}
+
+    @property
+    def tools(self):
+        return self._tools
 
     @classmethod
     def start_invoker(
@@ -71,6 +75,12 @@ class DefaultToolInvoker(ThreadLocalSingleton):
             active_invoker._deactivate_in_context()
         cls._activate_in_context(invoker)
         return invoker
+
+    @classmethod
+    def load_tools(self, nodes: list[Node]):
+        invoker = self.active_instance()
+        tool_resolver = ToolResolver.active_instance()
+        invoker._tools = {node.name: tool_resolver.resolve_tool_by_node(node) for node in nodes}
 
     @classmethod
     def load_assistant_tools(cls, tools: list):
