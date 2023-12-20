@@ -44,7 +44,7 @@ class AzureMLExtension(AppExtension):
         self.connection_provider = None
         if len(self.connections) == 0:
             self._initialize_connection_provider()
-        # initiliaze metrics common dimensions if exist
+        # initialize metrics common dimensions if exist
         self.common_dimensions = {}
         if self.endpoint_name:
             self.common_dimensions["endpoint"] = self.endpoint_name

@@ -56,7 +56,7 @@ def validate_request_data(flow, data):
 
 def streaming_response_required():
     """Check if streaming response is required."""
-    return "text/event-stream" in request.accept_mimetypes.values()  
+    return "text/event-stream" in request.accept_mimetypes.values()
 
 
 def get_sample_json(project_path, logger):

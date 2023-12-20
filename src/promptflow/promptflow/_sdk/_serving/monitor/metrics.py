@@ -65,7 +65,6 @@ try:
     from opentelemetry import metrics
     from opentelemetry.metrics import set_meter_provider
     from opentelemetry.sdk.metrics import MeterProvider
-    from opentelemetry.sdk.metrics.export import MetricReader
     from opentelemetry.sdk.metrics.view import ExplicitBucketHistogramAggregation, SumAggregation, View
 
     # define meter
@@ -144,11 +143,13 @@ except ImportError:
 class MetricsRecorder(object):
     """OpenTelemetry Metrics Recorder"""
 
-    def __init__(self, reader: MetricReader = None, common_dimensions: Dict[str, str] = None) -> None:
+    def __init__(self, reader=None, common_dimensions: Dict[str, str] = None) -> None:
         """initialize metrics recorder
 
         :param reader: metric reader
+        :type reader: opentelemetry.sdk.metrics.export.MetricReader
         :param common_dimensions: common dimensions for all metrics
+        :type common_dimensions: Dict[str, str]
         """
         if not metrics_enabled:
             logger.warning("OpenTelemetry metrics is not enabled, metrics will not be recorded." +
@@ -314,7 +315,7 @@ class MetricsRecorder(object):
         return error_response.innermost_error_code
 
     # configure monitor, by default only expose prometheus metrics
-    def _config_common_monitor(self, common_keys: Set[str] = {}, reader: MetricReader = None):
+    def _config_common_monitor(self, common_keys: Set[str] = {}, reader=None):
         metrics_views = [
             token_view,
             flow_latency_view,
