@@ -30,7 +30,7 @@ class TestTool:
 
         # Load the module's code
         spec.loader.exec_module(module)
-        tools_meta, _ = _client._tools.generate_tool_meta(module)
+        tools_meta, _ = _client.tools._generate_tool_meta(module)
         return tools_meta
 
     def test_python_tool_meta(self):
@@ -204,7 +204,7 @@ class TestTool:
             return f"Hello {input_prefix} {','.join(input_text)}"
 
         with pytest.raises(ToolValidationError) as exception:
-            _client._tools.validate(my_tool, raise_error=True)
+            _client.tools.validate(my_tool, raise_error=True)
         assert "Cannot find invalid_input in the tool inputs." in exception.value.message
 
         # invalid dynamic func input
@@ -226,7 +226,7 @@ class TestTool:
             return f"Hello {input_prefix} {','.join(input_text)}"
 
         with pytest.raises(ToolValidationError) as exception:
-            _client._tools.validate(my_tool, raise_error=True)
+            _client.tools.validate(my_tool, raise_error=True)
         assert "Cannot find invalid_input in the inputs of dynamic_list func" in exception.value.message
 
         # check required inputs of dynamic list func
@@ -246,7 +246,7 @@ class TestTool:
             return f"Hello {input_prefix} {','.join(input_text)}"
 
         with pytest.raises(ToolValidationError) as exception:
-            _client._tools.validate(my_tool, raise_error=True)
+            _client.tools.validate(my_tool, raise_error=True)
         assert "Missing required input(s) of dynamic_list function: ['prefix']" in exception.value.message
 
     def test_enabled_by_with_invalid_input(self):
@@ -258,7 +258,7 @@ class TestTool:
             pass
 
         with pytest.raises(ToolValidationError) as exception:
-            _client._tools.validate(enabled_by_with_invalid_input, raise_error=True)
+            _client.tools.validate(enabled_by_with_invalid_input, raise_error=True)
         assert 'Cannot find the input \\"invalid_input\\"' in exception.value.message
 
     def test_tool_with_file_path_input(self):
@@ -285,11 +285,11 @@ class TestTool:
 
     def test_validate_tool_script(self):
         tool_script_path = TOOL_ROOT / "custom_llm_tool.py"
-        result = _client._tools.validate(tool_script_path)
+        result = _client.tools.validate(tool_script_path)
         assert result.passed
 
         tool_script_path = TOOL_ROOT / "invalid_tool.py"
-        result = _client._tools.validate(tool_script_path)
+        result = _client.tools.validate(tool_script_path)
         assert len(result._errors) == 4
         assert "1 is not of type 'string'" in result.error_messages["invalid_schema_type"]
         assert (
@@ -306,7 +306,7 @@ class TestTool:
         assert all(str(tool_script_path) == item.location for item in result._errors)
 
         with pytest.raises(ToolValidationError):
-            _client._tools.validate(TOOL_ROOT / "invalid_tool.py", raise_error=True)
+            _client.tools.validate(TOOL_ROOT / "invalid_tool.py", raise_error=True)
 
     def test_validate_tool_func(self):
         def load_module_by_path(source):
@@ -321,20 +321,20 @@ class TestTool:
         tool_script_path = TOOL_ROOT / "custom_llm_tool.py"
         module = load_module_by_path(tool_script_path)
         tool_func = getattr(module, "my_tool")
-        result = _client._tools.validate(tool_func)
+        result = _client.tools.validate(tool_func)
         assert result.passed
 
         tool_script_path = TOOL_ROOT / "invalid_tool.py"
         module = load_module_by_path(tool_script_path)
         tool_func = getattr(module, "invalid_schema_type")
-        result = _client._tools.validate(tool_func)
+        result = _client.tools.validate(tool_func)
         assert "invalid_schema_type" in result.error_messages
         assert "1 is not of type 'string'" in result.error_messages["invalid_schema_type"]
         assert "invalid_schema_type" == result._errors[0].function_name
         assert str(tool_script_path) == result._errors[0].location
 
         with pytest.raises(ToolValidationError):
-            _client._tools.validate(tool_func, raise_error=True)
+            _client.tools.validate(tool_func, raise_error=True)
 
     def test_validate_package_tool(self):
         package_tool_path = TOOL_ROOT / "tool_package"
@@ -343,7 +343,7 @@ class TestTool:
         import tool_package
 
         with patch("promptflow._sdk.operations._tool_operations.ToolOperations._is_package_tool", return_value=True):
-            result = _client._tools.validate(tool_package)
+            result = _client.tools.validate(tool_package)
         assert len(result._errors) == 4
         assert "1 is not of type 'string'" in result.error_messages["invalid_schema_type"]
         assert (

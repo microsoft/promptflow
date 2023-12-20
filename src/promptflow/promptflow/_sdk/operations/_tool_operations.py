@@ -47,7 +47,7 @@ class ToolOperations:
                 self._tool_schema = json.load(f)
         return self._tool_schema
 
-    def list_tools_in_package(self, package_name: str, raise_error: bool = False):
+    def _list_tools_in_package(self, package_name: str, raise_error: bool = False):
         """
         List the meta of all tools in the package.
 
@@ -76,7 +76,7 @@ class ToolOperations:
             package = __import__(package_name)
             module_list = pkgutil.walk_packages(package.__path__, prefix=package.__name__ + ".")
             for module in module_list:
-                module_tools, module_validate_result = self.generate_tool_meta(importlib.import_module(module.name))
+                module_tools, module_validate_result = self._generate_tool_meta(importlib.import_module(module.name))
                 package_tools.update(module_tools)
                 merge_validate_result(validate_result, module_validate_result)
         except ImportError:
@@ -93,7 +93,7 @@ class ToolOperations:
 
         return package_tools
 
-    def generate_tool_meta(self, tool_module):
+    def _generate_tool_meta(self, tool_module):
         """
         Generate tools meta in the module.
 
@@ -451,13 +451,13 @@ class ToolOperations:
 
             # Load the module's code
             spec.loader.exec_module(module)
-            _, validate_result = self.generate_tool_meta(module)
+            _, validate_result = self._generate_tool_meta(module)
         elif isinstance(source, ModuleType):
             # Validate package tool
             if not self._is_package_tool(source):
                 raise UserErrorException("Invalid package tool.")
             try:
-                self.list_tools_in_package(package_name=source.__name__, raise_error=True)
+                self._list_tools_in_package(package_name=source.__name__, raise_error=True)
             except ToolValidationError as exception:
                 validate_result = exception._kwargs.get("validate_result")
         else:

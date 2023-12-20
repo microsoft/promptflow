@@ -182,6 +182,11 @@ class PFClient:
         """Run operations that can manage runs."""
         return self._runs
 
+    @property
+    def tools(self) -> ToolOperations:
+        """Run operations that can manage runs."""
+        return self._tools
+
     def _ensure_connection_provider(self) -> str:
         if not self._connection_provider:
             # Get a copy with config override instead of the config instance
