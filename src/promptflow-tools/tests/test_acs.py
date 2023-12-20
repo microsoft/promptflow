@@ -8,7 +8,7 @@ class TestAzureContentSafety:
         text = "I hate you."
         result = analyze_text(
             connection=azure_content_safety_connection,
-            text="This is test input",
+            text=text
         )
         assert "suggested_action" in result
         assert "action_by_category" in result
