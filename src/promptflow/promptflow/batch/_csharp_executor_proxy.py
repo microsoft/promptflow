@@ -7,14 +7,13 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
-from promptflow.executor._result import AggregationResult, LineResult
+from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
-EXECUTOR_SERVICE_DLL = "Promptflow.DotnetService.dll"
+EXECUTOR_SERVICE_DLL = "Promptflow.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
@@ -42,6 +41,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
+            "-e",
             "-p",
             port,
             "--yaml_path",
@@ -55,28 +55,6 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         ]
         process = subprocess.Popen(command)
         return cls(process, port)
-
-    async def exec_line_async(
-        self,
-        inputs: Mapping[str, Any],
-        index: Optional[int] = None,
-        run_id: Optional[str] = None,
-    ) -> LineResult:
-        line_result = await super().exec_line_async(inputs, index, run_id)
-        # TODO: check if we should ask C# executor to keep unmatched inputs, although it's not so straightforward
-        #   for executor service to do so.
-        # local_storage_operations.load_inputs_and_outputs now have an assumption that there is an extra
-        # line_number key in the inputs.
-        # This key will be appended to the inputs in below call stack:
-        # BatchEngine.run =>
-        # BatchInputsProcessor.process_batch_inputs =>
-        # ... =>
-        # BatchInputsProcessor._merge_input_dicts_by_line
-        # For python, it will be kept in the returned line_result.run_info.inputs
-        # For csharp, it will be dropped by executor service for now
-        # Append it here for now to make behavior consistent among ExecutorProxy.
-        line_result.run_info.inputs[LINE_NUMBER_KEY] = index
-        return line_result
 
     def destroy(self):
         """Destroy the executor"""

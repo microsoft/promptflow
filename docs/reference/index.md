@@ -40,6 +40,7 @@ tools-reference/embedding_tool
 tools-reference/open_model_llm_tool
 tools-reference/openai-gpt-4v-tool
 tools-reference/contentsafety_text_tool
+tools-reference/aoai-gpt4-turbo-vision
 ```
 
 ```{toctree}

@@ -138,7 +138,7 @@ def create_image(value: any):
         else:
             raise InvalidImageInput(
                 message_format="Invalid image input format. The image input should be a dictionary like: "
-                "{data:image/<image_type>;[path|base64|url]: <image_data>}.",
+                "{{data:image/<image_type>;[path|base64|url]: <image_data>}}.",
                 target=ErrorTarget.EXECUTOR,
             )
     elif isinstance(value, str):
@@ -170,6 +170,8 @@ def _save_image_to_file(
 def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *, use_absolute_path=False) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
+        if obj.source_url:
+            return {f"data:{obj._mime_type};url": obj.source_url}
         if isinstance(obj, PFBytes):
             file_name = str(uuid.uuid4())
             # If use_absolute_path is True, the image file path in image dictionary will be absolute path.

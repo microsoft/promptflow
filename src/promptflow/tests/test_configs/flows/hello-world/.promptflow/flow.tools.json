@@ -1,0 +1,201 @@
+{
+    "code": {
+        "hello_world.py": {
+            "type": "python",
+            "inputs": {
+                "name": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "source": "hello_world.py",
+            "function": "hello_world"
+        }
+    },
+    "package": {
+        "promptflow.tools.embedding.embedding": {
+            "name": "Embedding",
+            "description": "Use Open AI's embedding model to create an embedding vector representing the input text.",
+            "type": "python",
+            "module": "promptflow.tools.embedding",
+            "function": "embedding",
+            "inputs": {
+                "connection": {
+                    "type": [
+                        "AzureOpenAIConnection",
+                        "OpenAIConnection"
+                    ]
+                },
+                "deployment_name": {
+                    "type": [
+                        "string"
+                    ],
+                    "enabled_by": "connection",
+                    "enabled_by_type": [
+                        "AzureOpenAIConnection"
+                    ],
+                    "capabilities": {
+                        "completion": false,
+                        "chat_completion": false,
+                        "embeddings": true
+                    },
+                    "model_list": [
+                        "text-embedding-ada-002",
+                        "text-search-ada-doc-001",
+                        "text-search-ada-query-001"
+                    ]
+                },
+                "model": {
+                    "type": [
+                        "string"
+                    ],
+                    "enabled_by": "connection",
+                    "enabled_by_type": [
+                        "OpenAIConnection"
+                    ],
+                    "enum": [
+                        "text-embedding-ada-002",
+                        "text-search-ada-doc-001",
+                        "text-search-ada-query-001"
+                    ]
+                },
+                "input": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "package": "promptflow-tools",
+            "package_version": "0.1.0b5"
+        },
+        "promptflow.tools.serpapi.SerpAPI.search": {
+            "name": "Serp API",
+            "description": "Use Serp API to obtain search results from a specific search engine.",
+            "inputs": {
+                "connection": {
+                    "type": [
+                        "SerpConnection"
+                    ]
+                },
+                "engine": {
+                    "default": "google",
+                    "enum": [
+                        "google",
+                        "bing"
+                    ],
+                    "type": [
+                        "string"
+                    ]
+                },
+                "location": {
+                    "default": "",
+                    "type": [
+                        "string"
+                    ]
+                },
+                "num": {
+                    "default": "10",
+                    "type": [
+                        "int"
+                    ]
+                },
+                "query": {
+                    "type": [
+                        "string"
+                    ]
+                },
+                "safe": {
+                    "default": "off",
+                    "enum": [
+                        "active",
+                        "off"
+                    ],
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "type": "python",
+            "module": "promptflow.tools.serpapi",
+            "class_name": "SerpAPI",
+            "function": "search",
+            "package": "promptflow-tools",
+            "package_version": "0.1.0b5"
+        },
+        "my_tool_package.tools.my_tool_1.my_tool": {
+            "function": "my_tool",
+            "inputs": {
+                "connection": {
+                    "type": [
+                        "CustomConnection"
+                    ],
+                    "custom_type": [
+                        "MyFirstConnection",
+                        "MySecondConnection"
+                    ]
+                },
+                "input_text": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "module": "my_tool_package.tools.my_tool_1",
+            "name": "My First Tool",
+            "description": "This is my first tool",
+            "type": "python",
+            "package": "test-custom-tools",
+            "package_version": "0.0.2"
+        },
+        "my_tool_package.tools.my_tool_2.MyTool.my_tool": {
+            "class_name": "MyTool",
+            "function": "my_tool",
+            "inputs": {
+                "connection": {
+                    "type": [
+                        "CustomConnection"
+                    ],
+                    "custom_type": [
+                        "MySecondConnection"
+                    ]
+                },
+                "input_text": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "module": "my_tool_package.tools.my_tool_2",
+            "name": "My Second Tool",
+            "description": "This is my second tool",
+            "type": "python",
+            "package": "test-custom-tools",
+            "package_version": "0.0.2"
+        },
+        "my_tool_package.tools.my_tool_with_custom_strong_type_connection.my_tool": {
+            "function": "my_tool",
+            "inputs": {
+                "connection": {
+                    "custom_type": [
+                        "MyCustomConnection"
+                    ],
+                    "type": [
+                        "CustomConnection"
+                    ]
+                },
+                "input_param": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "module": "my_tool_package.tools.my_tool_with_custom_strong_type_connection",
+            "name": "Tool With Custom Strong Type Connection",
+            "description": "This is my tool with custom strong type connection.",
+            "type": "python",
+            "package": "test-custom-tools",
+            "package_version": "0.0.2"
+        }
+    }
+}
