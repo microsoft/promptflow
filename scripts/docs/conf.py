@@ -49,6 +49,7 @@ exclude_patterns = [
 # Options for the linkcheck builder
 linkcheck_ignore = [
     r"https://platform\.openai\.com/",
+    r"https://help\.openai\.com/"
     # These are used in card links, for example 'xx.html', .md can't be resolved.
     r"^(?!https?)",
     "deploy-using-docker.html",
