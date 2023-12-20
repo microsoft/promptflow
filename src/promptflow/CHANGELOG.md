@@ -9,7 +9,6 @@
 - [SDK/CLI] Fix single node run doesn't work when consuming sub item of upstream node
 
 ### Improvements
-- Change node test's interface, use storage instread of relative path.
 - Change `ruamel.yaml` lower bound to 0.17.10.
 - [SDK/CLI] Improve `pfazure run download` to handle large run data files.
 
