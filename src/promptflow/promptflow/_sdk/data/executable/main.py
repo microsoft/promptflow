@@ -5,6 +5,8 @@ from PIL import Image
 import streamlit as st
 from streamlit_quill import st_quill
 from copy import copy
+from types import GeneratorType
+import time
 
 from promptflow import load_flow
 from promptflow._sdk._utils import dump_flow_result
@@ -13,6 +15,43 @@ from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from utils import dict_iter_render_message, parse_list_from_html, parse_image_content, render_single_dict_message
 
 invoker = None
+generator_record = {}
+
+
+def get_result_output(output):
+    if isinstance(output, GeneratorType):
+        if output in generator_record:
+            if hasattr(generator_record[output], "items"):
+                output = iter(generator_record[output].items)
+            else:
+                output = iter(generator_record[output])
+        else:
+            if hasattr(output.gi_frame.f_locals, "proxy"):
+                proxy = output.gi_frame.f_locals["proxy"]
+                generator_record[output] = proxy
+            else:
+                generator_record[output] = list(output)
+                output = generator_record[output]
+    return output
+
+
+def resolve_generator(flow_result):
+    # resolve generator in flow result
+    for k, v in flow_result.run_info.output.items():
+        if isinstance(v, GeneratorType):
+            flow_output = "".join(get_result_output(v))
+            flow_result.run_info.output[k] = flow_output
+            flow_result.run_info.result[k] = flow_output
+            flow_result.output[k] = flow_output
+
+    # resolve generator in node outputs
+    for node_name, node in flow_result.node_run_infos.items():
+        if isinstance(node.output, GeneratorType):
+            node_output = "".join(get_result_output(node.output))
+            node.output = node_output
+            node.result = node_output
+
+    return flow_result
 
 
 def start():
@@ -39,18 +78,8 @@ def start():
             return st.session_state.history
         return []
 
-    def submit(**kwargs) -> None:
-        st.session_state.messages.append(("user", kwargs))
-        session_state_history = dict()
-        session_state_history.update({"inputs": kwargs})
-        with container:
-            render_message("user", kwargs)
-        # Force append chat history to kwargs
-        if is_chat_flow:
-            response = run_flow({chat_history_input_name: get_chat_history_from_session(), **kwargs})
-        else:
-            response = run_flow(kwargs)
-
+    def post_process_dump_result(response, session_state_history):
+        response = resolve_generator(response)
         # Get base64 for multi modal object
         resolved_outputs = {
             k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True)
@@ -65,6 +94,39 @@ def start():
                 response.output, base_dir=dump_path, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=dump_path, flow_result=response, prefix="chat")
+        return resolved_outputs
+
+    def submit(**kwargs) -> None:
+        st.session_state.messages.append(("user", kwargs))
+        session_state_history = dict()
+        session_state_history.update({"inputs": kwargs})
+        with container:
+            render_message("user", kwargs)
+        # Force append chat history to kwargs
+        if is_chat_flow:
+            response = run_flow({chat_history_input_name: get_chat_history_from_session(), **kwargs})
+        else:
+            response = run_flow(kwargs)
+
+        if stream:
+            # Display assistant response in chat message container
+            with container:
+                with st.chat_message("assistant"):
+                    message_placeholder = st.empty()
+                    full_response = f"{chat_output_name}:"
+                    chat_output = response.output[chat_output_name]
+                    if isinstance(chat_output, GeneratorType):
+                        # Simulate stream of response with milliseconds delay
+                        for chunk in get_result_output(chat_output):
+                            full_response += chunk + " "
+                            time.sleep(0.05)
+                            # Add a blinking cursor to simulate typing
+                            message_placeholder.markdown(full_response + "▌")
+                        message_placeholder.markdown(full_response)
+                        post_process_dump_result(response, session_state_history)
+                        return
+
+        resolved_outputs = post_process_dump_result(response, session_state_history)
         with container:
             render_message("assistant", resolved_outputs)
 
@@ -80,6 +142,7 @@ def start():
             else:
                 os.chdir(flow.parent)
             invoker = load_flow(flow)
+            invoker.context.streaming = stream
         result = invoker.invoke(data)
         return result
 
@@ -138,24 +201,24 @@ def start():
         submit_bt = cols[0].form_submit_button(label=label, type='primary')
         clear_bt = cols[1].form_submit_button(label='Clear')
 
-        if submit_bt:
-            with st.spinner("Loading..."):
-                for flow_input, (default_value, value_type) in flow_inputs.items():
-                    if value_type == "list":
-                        input = parse_list_from_html(flow_inputs_params[flow_input])
-                        flow_inputs_params.update({flow_input: copy(input)})
-                    elif value_type == "image":
-                        input = parse_image_content(
-                            flow_inputs_params[flow_input],
-                            flow_inputs_params[flow_input].type if flow_inputs_params[flow_input] else None
-                        )
-                        flow_inputs_params.update({flow_input: copy(input)})
-                submit(**flow_inputs_params)
+    if submit_bt:
+        with st.spinner("Loading..."):
+            for flow_input, (default_value, value_type) in flow_inputs.items():
+                if value_type == "list":
+                    input = parse_list_from_html(flow_inputs_params[flow_input])
+                    flow_inputs_params.update({flow_input: copy(input)})
+                elif value_type == "image":
+                    input = parse_image_content(
+                        flow_inputs_params[flow_input],
+                        flow_inputs_params[flow_input].type if flow_inputs_params[flow_input] else None
+                    )
+                    flow_inputs_params.update({flow_input: copy(input)})
+            submit(**flow_inputs_params)
 
-        if clear_bt:
-            with st.spinner("Cleaning..."):
-                clear_chat()
-                st.rerun()
+    if clear_bt:
+        with st.spinner("Cleaning..."):
+            clear_chat()
+            st.rerun()
 
 
 if __name__ == "__main__":
@@ -167,5 +230,7 @@ if __name__ == "__main__":
         flow_name = config["flow_name"]
         flow_inputs = config["flow_inputs"]
         label = config["label"]
+        stream = config["stream"]
+        chat_output_name = config["chat_output_name"]
 
     start()

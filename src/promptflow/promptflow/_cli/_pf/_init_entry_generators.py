@@ -263,6 +263,23 @@ class StreamlitFileReplicator:
         return self.flow_dag_path.as_posix()
 
     @property
+    def chat_output_name(self):
+        try:
+            output_name = next(
+                filter(
+                    lambda key: self.executable.outputs[key].is_chat_output,
+                    self.executable.outputs.keys(),
+                )
+            )
+        except StopIteration:
+            output_name = None
+        return output_name
+
+    @property
+    def stream(self):
+        return True if self.is_chat_flow else False
+
+    @property
     def entry_template_keys(self):
         return [
             "flow_name",
@@ -271,6 +288,8 @@ class StreamlitFileReplicator:
             "chat_history_input_name",
             "flow_inputs",
             "label",
+            "chat_output_name",
+            "stream"
         ]
 
     def generate_to_file(self, target):
