@@ -1,7 +1,7 @@
 inputs:
   image:
     type: image
-    default: https://raw.githubusercontent.com/microsoft/promptflow/main/src/promptflow/tests/test_configs/datas/image_inputs/logo_1.png
+    default: logo.jpg
 outputs:
   output:
     type: image
@@ -14,7 +14,7 @@ nodes:
     path: pick_an_image.py
   inputs:
     image_1: ${inputs.image}
-    image_2: https://raw.githubusercontent.com/microsoft/promptflow/main/src/promptflow/tests/test_configs/datas/test_image.jpg
+    image_2: logo_2.png
 - name: python_node_2
   type: python
   source:
@@ -22,4 +22,4 @@ nodes:
     path: pick_an_image.py
   inputs:
     image_1: ${python_node.output}
-    image_2: https://raw.githubusercontent.com/microsoft/promptflow/main/src/promptflow/tests/test_configs/datas/test_image.jpg
+    image_2: logo_2.png
