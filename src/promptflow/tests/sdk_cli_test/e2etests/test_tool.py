@@ -30,7 +30,8 @@ class TestTool:
 
         # Load the module's code
         spec.loader.exec_module(module)
-        return _client._tools.generate_tool_meta(module)
+        tools_meta, _ = _client._tools.generate_tool_meta(module)
+        return tools_meta
 
     def test_python_tool_meta(self):
         tool_path = TOOL_ROOT / "python_tool.py"
