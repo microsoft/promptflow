@@ -1330,6 +1330,7 @@ class TestCli:
             func_name = "func_name"
             run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
             package_folder = Path(temp_dir) / package_name
+            sys.path.append(str(package_folder.absolute()))
             assert (package_folder / package_name / f"{func_name}.py").exists()
             assert (package_folder / package_name / "utils.py").exists()
             assert (package_folder / package_name / "__init__.py").exists()
@@ -1387,6 +1388,7 @@ class TestCli:
                 f"tags={tags}",
                 cwd=temp_dir,
             )
+            sys.path.append(str(package_folder.absolute()))
             spec = importlib.util.spec_from_file_location(
                 f"{package_name}.utils", package_folder / package_name / "utils.py"
             )

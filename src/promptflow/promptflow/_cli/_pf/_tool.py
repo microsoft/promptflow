@@ -113,7 +113,7 @@ pf tool validate --source <path_to_tool_script>
 """  # noqa: E501
 
     def add_param_source(parser):
-        parser.add_argument("--source", type=str, help="The tool source to be used.")
+        parser.add_argument("--source", type=str, help="The tool source to be used.", required=True)
 
     return activate_action(
         name="validate",
@@ -201,6 +201,8 @@ def validate_tool(args):
             source = getattr(module, func_name)
             logger.debug(f"The source {args.source} is used as a function to validate.")
         except Exception:
+            if not Path(args.source).exists():
+                raise UserErrorException("Invalid source to validate tools.")
             logger.debug(f"The source {args.source} is used as a script to validate.")
             source = args.source
     validation_result = pf_client._tools.validate(source)
