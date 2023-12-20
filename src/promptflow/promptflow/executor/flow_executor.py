@@ -809,7 +809,7 @@ class FlowExecutor:
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
             if self._should_use_async():
                 run_tracker.end_run(line_run_id, ex=ex)
-                raise
+            raise
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
             if self._raise_ex:
