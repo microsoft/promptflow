@@ -244,7 +244,7 @@ class TestAzureCli:
             "--flow",
             ".",
             "--set",
-            "name=test_flow",
+            "display_name=test_flow",
             "type=standard",
             "description='test_description'",
             "tags.key1=value1",

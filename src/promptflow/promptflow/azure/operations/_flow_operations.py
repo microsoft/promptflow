@@ -179,7 +179,15 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_creation_parameters(source, flow_display_name, flow_type, **kwargs):
         """Validate the parameters for flow creation operation."""
-        # validate flow source with flow schema, here we use local flow entity to validate
+        # validate the source folder
+        logger.info("Validating flow source.")
+        if not Path(source, DAG_FILE_NAME).exists():
+            raise UserErrorException(
+                f"Flow source must be a directory with flow definition yaml '{DAG_FILE_NAME}'. "
+                f"Got {Path(source).resolve().as_posix()!r}."
+            )
+
+        # validate flow source with flow schema
         logger.info("Validating flow schema.")
         flow_dict = FlowOperations._validate_flow_schema(source, flow_display_name, flow_type, **kwargs)
 
