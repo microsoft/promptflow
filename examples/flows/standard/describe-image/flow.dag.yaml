@@ -28,7 +28,7 @@ nodes:
     path: question_on_image.jinja2
   inputs:
     connection: aoai_gpt4v_connection
-    deployment_name: gpt-4v
+    deployment_name: gpt-4
     max_tokens: 512
     question: ${inputs.question}
     test_image: ${flip_image.output}
