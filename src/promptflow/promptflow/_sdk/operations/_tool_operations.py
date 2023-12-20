@@ -38,14 +38,14 @@ class ToolOperations:
     """ToolOperations."""
 
     def __init__(self):
-        self._tool_schema = None
+        self._tool_schema_dict = None
 
     @property
-    def tool_schema(self):
-        if not self._tool_schema:
+    def _tool_schema(self):
+        if not self._tool_schema_dict:
             with open(TOOL_SCHEMA, "r") as f:
-                self._tool_schema = json.load(f)
-        return self._tool_schema
+                self._tool_schema_dict = json.load(f)
+        return self._tool_schema_dict
 
     def _list_tools_in_package(self, package_name: str, raise_error: bool = False):
         """
@@ -233,7 +233,7 @@ class ToolOperations:
         """
         validate_result = ValidationResultBuilder.success()
         try:
-            jsonschema.validate(instance=tool_dict, schema=self.tool_schema)
+            jsonschema.validate(instance=tool_dict, schema=self._tool_schema)
         except jsonschema.exceptions.ValidationError as e:
             validate_result.append_error(
                 message=str(e), yaml_path=None, function_name=func_name, location=func_path, key="function_name"

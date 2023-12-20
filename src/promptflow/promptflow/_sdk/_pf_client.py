@@ -184,7 +184,7 @@ class PFClient:
 
     @property
     def tools(self) -> ToolOperations:
-        """Run operations that can manage runs."""
+        """Tool operations that can manage tools."""
         return self._tools
 
     def _ensure_connection_provider(self) -> str:
