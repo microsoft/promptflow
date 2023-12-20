@@ -49,19 +49,18 @@ jobs:
           AOAI_API_KEY=${{ secrets.AOAI_GPT_4V_KEY }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_GPT_4V_ENDPOINT }}
           AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
-          if [[ -e .env.example ]]; then
-            echo "env replacement"
-            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
-            mv .env.example .env
-          fi
+          cp ../../../connections/azure_openai.yml ./azure_openai.yml
+          sed -i -e "s/<user-input>/$AOAI_API_KEY/g" -e "s/aoai-api-endpoint/$AOAI_API_ENDPOINT/g" azure_openai.yml
       - name: Create AOAI Connection from ENV file
         working-directory: examples/flows/standard/describe-image
         run: |
           if [[ -e .env ]]; then
             pf connection create --file .env --name aoai_gpt4v_connection
-            pf connection list
           fi
-          
+          if [[ -e azure_openai.yml ]]; then
+            pf connection create --file azure_openai.yml --name aoai_gpt4v_connection
+          fi
+          pf connection list
       - name: Create run.yml
         working-directory: examples/flows/standard/describe-image
         run: |
