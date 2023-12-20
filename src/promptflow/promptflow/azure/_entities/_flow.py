@@ -48,10 +48,6 @@ class Flow(AdditionalIncludesMixin):
             self.code = absolute_path.parent.as_posix()
             self._code_uploaded = False
             self.path = absolute_path.name
-            self._flow_dict = self._load_flow_yaml(absolute_path)
-            self.display_name = self.display_name or absolute_path.parent.name
-            self.description = description or self._flow_dict.get("description", None)
-            self.tags = tags or self._flow_dict.get("tags", None)
         elif self._flow_source == AzureFlowSource.PF_SERVICE:
             self.code = kwargs.get("flow_resource_id", None)
         elif self._flow_source == AzureFlowSource.INDEX:
