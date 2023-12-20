@@ -5,7 +5,6 @@
 import logging
 import os
 import uuid
-import json
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Callable, Optional
@@ -143,7 +142,6 @@ def runtime(runtime_name: str) -> str:
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
-CONNECTION_FILE = (PROMPTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 
 
 @pytest.fixture
