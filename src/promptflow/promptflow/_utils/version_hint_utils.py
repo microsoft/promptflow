@@ -70,7 +70,7 @@ def get_latest_version_from_pypi(package_name):
         else:
             return None
     except Exception as ex:  # pylint: disable=broad-except
-        logger.warning(f"Failed to get the latest version from '{pypi_url}'. {str(ex)}")
+        logger.debug(f"Failed to get the latest version from '{pypi_url}'. {str(ex)}")
         return None
 
 
