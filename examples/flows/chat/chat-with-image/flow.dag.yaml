@@ -7,8 +7,8 @@ inputs:
   question:
     type: list
     default:
-     - How many colors can you see?
-     - {"data:image/png;url": "https://developer.microsoft.com/_devcom/images/logo-ms-social.png"} 
+    - data:image/png;url: https://images.idgesg.net/images/article/2019/11/edge-browser-logo_microsoft-100816808-large.jpg
+    - How many colors can you see?
     is_chat_input: true
 outputs:
   answer:
@@ -20,11 +20,11 @@ nodes:
   type: custom_llm
   source:
     type: package_with_prompt
-    tool: promptflow.tools.openai_gpt4v.OpenAI.chat
+    tool: promptflow.tools.aoai_gpt4v.AzureOpenAI.chat
     path: chat.jinja2
   inputs:
     connection: aoai_gpt4v_connection
-    model: gpt-4-vision-preview
-    max_tokens: 200
+    deployment_name: gpt-4v
+    max_tokens: 512
     chat_history: ${inputs.chat_history}
     question: ${inputs.question}

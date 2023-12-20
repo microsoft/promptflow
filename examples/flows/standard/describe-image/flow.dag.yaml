@@ -13,18 +13,6 @@ outputs:
     type: string
     reference: ${flip_image.output}
 nodes:
-- name: question_on_image
-  type: custom_llm
-  source:
-    type: package_with_prompt
-    tool: promptflow.tools.openai_gpt4v.OpenAI.chat
-    path: question_on_image.jinja2
-  inputs:
-    connection: aoai_gpt4v_connection
-    question: ${inputs.question}
-    test_image: ${flip_image.output}
-    model: gpt-4-vision-preview
-    max_tokens: 200
 - name: flip_image
   type: python
   source:
@@ -32,3 +20,15 @@ nodes:
     path: flip_image.py
   inputs:
     input_image: ${inputs.input_image}
+- name: question_on_image
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: promptflow.tools.aoai_gpt4v.AzureOpenAI.chat
+    path: question_on_image.jinja2
+  inputs:
+    connection: aoai_gpt4v_connection
+    deployment_name: gpt-4v
+    max_tokens: 512
+    question: ${inputs.question}
+    test_image: ${flip_image.output}
