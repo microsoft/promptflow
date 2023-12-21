@@ -43,6 +43,7 @@ class FlowSchema(YamlFileSchema):
 
     # metadata
     type = fields.Str(validate=validate.OneOf(FlowType.get_all_values()))
+    language = fields.Str()
     description = fields.Str()
     display_name = fields.Str()
     tags = fields.Dict(keys=fields.Str(), values=fields.Str())
