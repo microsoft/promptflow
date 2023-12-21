@@ -6,7 +6,6 @@ import json
 from azure.identity import AzureCliCredential
 import logging
 from azure.ai.ml import MLClient
-
 from sseclient import SSEClient 
 
 
