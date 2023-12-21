@@ -184,6 +184,11 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
+        if Path(flow_file).suffix.lower() == ".py":
+            return cls._create_from_py(
+                flow_file, connections, working_dir,
+                storage=storage, raise_ex=raise_ex, line_timeout_sec=line_timeout_sec,
+            )
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
         return cls._create_from_flow(
             flow_file=flow_file,
@@ -194,6 +199,68 @@ class FlowExecutor:
             raise_ex=raise_ex,
             node_override=node_override,
             line_timeout_sec=line_timeout_sec,
+        )
+
+    @classmethod
+    def _create_from_py(
+        cls, flow_file, connections, working_dir,
+        *,
+        storage: Optional[AbstractRunStorage] = None,
+        raise_ex: bool = True,
+        node_override: Optional[Dict[str, Dict[str, Any]]] = None,
+        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+    ):
+        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        tool_resolver = ToolResolver(working_dir, connections, [])
+        relative_path = os.path.relpath(flow_file, working_dir)
+        from promptflow.contracts.flow import ToolSource, FlowOutputDefinition, ValueType, InputAssignment, ToolType
+        dummy_node = Node(
+            name="flow_entry",
+            tool=None,
+            inputs={},
+            source=ToolSource(path=relative_path),
+            type=ToolType.PYTHON,
+        )
+        with _change_working_dir(working_dir):
+            resolved_tool = tool_resolver.resolve_tool_by_node(dummy_node)
+        inputs = {
+            name: FlowInputDefinition(type=i.type[0], default=i.default, description=i.description)
+            for name, i in resolved_tool.definition.inputs.items()
+        }
+        resolved_tool.node.inputs = {
+            name: InputAssignment(value=name, value_type=InputValueType.FLOW_INPUT)
+            for name in inputs
+        }
+        # TODO: Get outputs from the tool interface
+        outputs = {
+            "val1": FlowOutputDefinition(
+                type=ValueType.STRING, reference=InputAssignment.deserialize("${flow_entry.output.val1}")
+            ),
+            "val2": FlowOutputDefinition(
+                type=ValueType.STRING, reference=InputAssignment.deserialize("${flow_entry.output.val2}")
+            ),
+        }
+        dummy_flow = Flow(
+            id="default_flow",
+            name="default_flow",
+            nodes=[resolved_tool.node],
+            inputs=inputs,
+            outputs=outputs,
+            tools=[]
+        )
+        if storage is None:
+            storage = DefaultRunStorage()
+        run_tracker = RunTracker(storage)
+        return FlowExecutor(
+            flow=dummy_flow,
+            connections=connections,
+            run_tracker=run_tracker,
+            cache_manager=AbstractCacheManager.init_from_env(),
+            loaded_tools={resolved_tool.node.name: resolved_tool.callable},
+            raise_ex=raise_ex,
+            working_dir=working_dir,
+            line_timeout_sec=line_timeout_sec,
+            flow_file=flow_file,
         )
 
     @classmethod

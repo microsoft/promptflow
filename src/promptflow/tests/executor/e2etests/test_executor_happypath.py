@@ -241,6 +241,20 @@ class TestExecutor:
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.output["output"] == "Hello World"
 
+    def test_executor_flow_entry(self):
+        executor = FlowExecutor.create(get_yaml_file("flow_no_yaml", file_name="flow_entry.py"), connections={})
+        flow_result = executor.exec_line({"input1": "val1", "wait_seconds": 1})
+        assert flow_result.run_info.status == Status.Completed
+        assert flow_result.output == {'val1': 'val1', 'val2': 'val1'}
+        assert len(flow_result.run_info.api_calls) == 1
+        main_trace = flow_result.run_info.api_calls[0]
+        assert main_trace["name"] == "flow_entry"
+        assert len(main_trace["children"]) == 2
+        assert main_trace["children"][0]["name"] == "passthrough_str_and_wait_sync"
+        assert main_trace["children"][0]["inputs"] == {"input1": "val1", "wait_seconds": 1}
+        assert main_trace["children"][1]["name"] == "passthrough_str_and_wait_sync"
+        assert main_trace["children"][1]["inputs"] == {"input1": "val1", "wait_seconds": 3}
+
 
 def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
     try:
