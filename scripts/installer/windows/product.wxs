@@ -90,7 +90,7 @@
             ExeCommand="wscript.exe promptflow_service.vbs"
             Return="asyncNoWait" />
         <InstallExecuteSequence>
-            <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
+            <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
     </Product>
 
