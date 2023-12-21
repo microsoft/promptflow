@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import argparse
+import importlib
 import os
 import shutil
 import sys
@@ -23,7 +24,7 @@ from promptflow._cli._utils import (
     list_of_dict_to_nested_dict,
 )
 from promptflow._constants import PF_VERSION_CHECK
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PROMPT_FLOW_HOME_DIR_ENV_VAR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
 from promptflow._sdk._utils import (
@@ -285,6 +286,27 @@ class TestUtils:
     def test_get_scrubbed_cloud_role(self, script_name, expected_result):
         with mock.patch("sys.argv", [script_name]):
             assert get_scrubbed_cloud_role() == expected_result
+
+    def test_configure_pf_home_dir(self, tmpdir) -> None:
+        from promptflow._sdk import _constants
+
+        custom_pf_home_dir_path = Path(tmpdir / ".promptflow").resolve()
+        assert not custom_pf_home_dir_path.exists()
+        with patch.dict(os.environ, {PROMPT_FLOW_HOME_DIR_ENV_VAR: custom_pf_home_dir_path.as_posix()}):
+            importlib.reload(_constants)
+            assert _constants.HOME_PROMPT_FLOW_DIR.as_posix() == custom_pf_home_dir_path.as_posix()
+            assert _constants.HOME_PROMPT_FLOW_DIR.is_dir()
+        importlib.reload(_constants)
+
+    def test_configure_pf_home_dir_with_invalid_path(self) -> None:
+        from promptflow._sdk import _constants
+
+        invalid_path = "/invalid:path"
+        with patch.dict(os.environ, {PROMPT_FLOW_HOME_DIR_ENV_VAR: invalid_path}):
+            assert os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR) == invalid_path
+            importlib.reload(_constants)
+            assert _constants.HOME_PROMPT_FLOW_DIR.as_posix() == (Path.home() / ".promptflow").resolve().as_posix()
+        importlib.reload(_constants)
 
 
 @pytest.mark.unittest

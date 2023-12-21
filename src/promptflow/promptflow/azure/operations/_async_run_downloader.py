@@ -249,6 +249,20 @@ class AsyncRunDownloader:
             f.write(logs)
         logger.debug("Downloaded run logs.")
 
+    @classmethod
+    def _from_run_operations(cls, run_ops: "RunOperations", run: str, output_folder: Union[str, Path]):
+        """Create an instance from run operations."""
+        from azure.ai.ml.entities._datastore.azure_storage import AzureBlobDatastore
+
+        datastore = run_ops._workspace_default_datastore
+        if isinstance(datastore, AzureBlobDatastore):
+            return cls(run=run, run_ops=run_ops, output_folder=output_folder)
+        else:
+            raise UserErrorException(
+                f"Cannot download run {run!r} because the workspace default datastore is not supported. Supported ones "
+                f"are ['AzureBlobDatastore'], got {type(datastore).__name__!r}."
+            )
+
 
 async def to_thread(func, /, *args, **kwargs):
     # this is copied from asyncio.to_thread() in Python 3.9

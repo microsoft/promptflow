@@ -46,4 +46,4 @@ LAST_HINT_TIME = 'last_hint_time'
 LAST_CHECK_TIME = 'last_check_time'
 PF_VERSION_CHECK = "pf_version_check.json"
 HINT_INTERVAL_DAY = 7
-GET_PYPI_INTERVAL_DAY = 1
+GET_PYPI_INTERVAL_DAY = 7
