@@ -85,7 +85,7 @@ jobs:
               throw "Version input does not match the version in promptflow package. Version input: $version, version in promptflow package: $run_version"
             }
           } 
-          elif ($env:MSI_PRIVATE_VERSION) {
+          elseif ($env:MSI_PRIVATE_VERSION) {
             $version=$env:MSI_PRIVATE_VERSION
           }
           else {
