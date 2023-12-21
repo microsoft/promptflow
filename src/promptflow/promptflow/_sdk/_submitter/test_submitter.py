@@ -116,9 +116,12 @@ class TestSubmitter:
                     else:
                         missing_inputs.append(name)
                         continue
-                    dependency_nodes_outputs[value.value] = (
-                        {value.property: dependency_input} if value.property else dependency_input
-                    )
+                    if value.property:
+                        dependency_nodes_outputs[value.value] = dependency_nodes_outputs.get(value.value, {})
+                        if value.property in dependency_input:
+                            dependency_nodes_outputs[value.value][value.property] = dependency_input[value.property]
+                    else:
+                        dependency_nodes_outputs[value.value] = dependency_input
                     merged_inputs[name] = dependency_input
                 elif value.value_type == InputValueType.FLOW_INPUT:
                     input_name = f"{value.prefix}{value.value}"
@@ -233,6 +236,7 @@ class TestSubmitter:
             stream=stream,
             credential_list=credential_list,
         ):
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
@@ -240,7 +244,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
-                output_sub_dir=".promptflow/intermediate",
+                storage=storage,
             )
             return result
 
