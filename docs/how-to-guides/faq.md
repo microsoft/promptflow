@@ -84,21 +84,25 @@ Currently, promptflow supports the following environment variables:
 
 Valid for batch run only. The number of workers to use for parallel execution of the Flow.
 
-Default value is 16. If you want more efficiency, you can increase the number to the improve the batch run concurrency, make it run faster.
+Default value is 16. If you have large number of batch run date row count, and want more efficiency, you can increase the concurrency to the improve the batch run concurrency, make it run faster.
 
-If your batch run fails due to rate limit of your LLM endpoint, pls set up PF_WORKER_COUNT to a smaller number. Take Azure OpenAI endpoint as example, you can go to Azure OpenAI Studio, navigate to Deployment tab, check out the capacity of your endpoints. Then you can refer to this expression to set up the concurrency.
+When you modify the concurrency, please consider 2 points:
+
+First, the concurrency should be not bigger than your batch run data row count.  If not, meaning if the concurrency is bigger, it will run slower due to the time taken for process startup and shutdown.
+
+Second, your batch run risks to fail due to rate limit of your LLM endpoint, in this case you need to set up PF_WORKER_COUNT to a smaller number. Take Azure OpenAI endpoint as example, you can go to Azure OpenAI Studio, navigate to Deployment tab, check out the capacity of your endpoints. Then you can refer to this expression to set up the concurrency.
 
 ```
 PF_WORKER_COUNT <= TPM * duration_seconds / token_count / 60
 ```
 TPM: token per minute, capacity rate limit of your LLM endpoint
 
-duration_seconds: single flow run duration en seconds
+duration_seconds: single flow run duration in seconds
 
 token_count: single flow run token count
 
 
-For example, if your endpoint TPM (token per minute) is 40K, the single flow run takes 10k tokens and runs for 30s, pls do not set up PF_WORKER_COUNT bigger than 2. This is a rough estimation. Please also consider collboaration (teammates use the same endpoint at the same time) and tokens consumed in deployed inference endpoints, playground and other cases which might send request to your LLM endpoints.
+For example, if your endpoint TPM (token per minute) is 50K, the single flow run takes 10k tokens and runs for 30s, pls do not set up PF_WORKER_COUNT bigger than 2. This is a rough estimation. Please also consider collboaration (teammates use the same endpoint at the same time) and tokens consumed in deployed inference endpoints, playground and other cases which might send request to your LLM endpoints.
 
 **PF_BATCH_METHOD**
 
