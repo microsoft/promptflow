@@ -11,47 +11,12 @@ import time
 from promptflow import load_flow
 from promptflow._sdk._utils import dump_flow_result
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow._sdk._submitter.utils import get_result_output, resolve_generator
 
 from utils import dict_iter_render_message, parse_list_from_html, parse_image_content, render_single_dict_message
 
 invoker = None
 generator_record = {}
-
-
-def get_result_output(output):
-    if isinstance(output, GeneratorType):
-        if output in generator_record:
-            if hasattr(generator_record[output], "items"):
-                output = iter(generator_record[output].items)
-            else:
-                output = iter(generator_record[output])
-        else:
-            if hasattr(output.gi_frame.f_locals, "proxy"):
-                proxy = output.gi_frame.f_locals["proxy"]
-                generator_record[output] = proxy
-            else:
-                generator_record[output] = list(output)
-                output = generator_record[output]
-    return output
-
-
-def resolve_generator(flow_result):
-    # resolve generator in flow result
-    for k, v in flow_result.run_info.output.items():
-        if isinstance(v, GeneratorType):
-            flow_output = "".join(get_result_output(v))
-            flow_result.run_info.output[k] = flow_output
-            flow_result.run_info.result[k] = flow_output
-            flow_result.output[k] = flow_output
-
-    # resolve generator in node outputs
-    for node_name, node in flow_result.node_run_infos.items():
-        if isinstance(node.output, GeneratorType):
-            node_output = "".join(get_result_output(node.output))
-            node.output = node_output
-            node.result = node_output
-
-    return flow_result
 
 
 def start():
@@ -79,7 +44,7 @@ def start():
         return []
 
     def post_process_dump_result(response, session_state_history):
-        response = resolve_generator(response)
+        response = resolve_generator(response, generator_record)
         # Get base64 for multi modal object
         resolved_outputs = {
             k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True)
@@ -108,7 +73,7 @@ def start():
         else:
             response = run_flow(kwargs)
 
-        if stream:
+        if is_streaming:
             # Display assistant response in chat message container
             with container:
                 with st.chat_message("assistant"):
@@ -117,7 +82,7 @@ def start():
                     chat_output = response.output[chat_output_name]
                     if isinstance(chat_output, GeneratorType):
                         # Simulate stream of response with milliseconds delay
-                        for chunk in get_result_output(chat_output):
+                        for chunk in get_result_output(chat_output, generator_record):
                             full_response += chunk + " "
                             time.sleep(0.05)
                             # Add a blinking cursor to simulate typing
@@ -142,7 +107,7 @@ def start():
             else:
                 os.chdir(flow.parent)
             invoker = load_flow(flow)
-            invoker.context.streaming = stream
+            invoker.context.streaming = is_streaming
         result = invoker.invoke(data)
         return result
 
@@ -230,7 +195,7 @@ if __name__ == "__main__":
         flow_name = config["flow_name"]
         flow_inputs = config["flow_inputs"]
         label = config["label"]
-        stream = config["stream"]
+        is_streaming = config["is_streaming"]
         chat_output_name = config["chat_output_name"]
 
     start()

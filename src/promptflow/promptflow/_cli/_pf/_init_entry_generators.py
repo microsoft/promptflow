@@ -276,7 +276,7 @@ class StreamlitFileReplicator:
         return output_name
 
     @property
-    def stream(self):
+    def is_streaming(self):
         return True if self.is_chat_flow else False
 
     @property
@@ -289,7 +289,7 @@ class StreamlitFileReplicator:
             "flow_inputs",
             "label",
             "chat_output_name",
-            "stream"
+            "is_streaming"
         ]
 
     def generate_to_file(self, target):
