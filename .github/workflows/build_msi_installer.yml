@@ -17,13 +17,9 @@ on:
 
       set_msi_private_version:
         type: string
-        default: "0.3.0rc1"
+        default: ""
         required: false
         description: 'Set the version of the private msi installer'
-
-  pull_request:
-    branches:
-      - main
 
 env:
   packageSetupType: promptflow_with_extra
