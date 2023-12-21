@@ -408,10 +408,12 @@ def mock_isinstance_for_mock_datastore() -> None:
 
         from .recording_utilities.utils import MockDatastore
 
+        original_isinstance = isinstance
+
         def mock_isinstance(*args):
-            if isinstance(args[0], MockDatastore) and args[1] == AzureBlobDatastore:
+            if original_isinstance(args[0], MockDatastore) and args[1] == AzureBlobDatastore:
                 return True
-            return isinstance(*args)
+            return original_isinstance(*args)
 
         with patch("builtins.isinstance", new=mock_isinstance):
             yield
