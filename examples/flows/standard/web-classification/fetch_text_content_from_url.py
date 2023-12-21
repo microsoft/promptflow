@@ -22,7 +22,7 @@ def fetch_url(url):
         }
         response = requests.get(url, headers=headers)
         sleep()
-        response.raise_for_status(response)
+        response.raise_for_status()
         return response.text
     except HTTPError as e:
         print(
@@ -39,10 +39,12 @@ def fetch_url(url):
 def fetch_text_content_from_url(url: str):
     # Send a request to the URL
     try:
-        text = fetch_url(url)
-        # Parse the HTML content using BeautifulSoup
-        soup = bs4.BeautifulSoup(text, "html.parser")
-        soup.prettify()
+        for i in range(3):
+            print("Try {} to fetch url: {}".format(i, url))
+            text = fetch_url(url)
+            # Parse the HTML content using BeautifulSoup
+            soup = bs4.BeautifulSoup(text, "html.parser")
+            soup.prettify()
         return soup.get_text()[:2000]
     except Exception as e:
         print("Get url failed with error: {}".format(e))
