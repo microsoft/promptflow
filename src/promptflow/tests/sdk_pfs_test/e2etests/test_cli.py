@@ -48,7 +48,7 @@ class TestPromptflowServiceCLI:
             self._test_start_service(port=random_port)
 
             # Force start pfs
-            start_pfs = subprocess.Popen(["pfs", "start"], shell=True)
+            start_pfs = subprocess.Popen("pfs start", shell=True)
             self._test_start_service(force=True)
             # previous pfs is killed
             assert start_pfs.poll() is not None
@@ -65,5 +65,5 @@ class TestPromptflowServiceCLI:
         sleep(5)
         self._run_pfs_command("show-status")
         output, _ = capsys.readouterr()
-        assert get_port_from_config() in output
+        assert str(get_port_from_config()) in output
         start_pfs.terminate()
