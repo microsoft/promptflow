@@ -11,29 +11,33 @@ from promptflow._utils.logger_utils import LoggerFactory
 LOGGER_NAME = "promptflow"
 _logger = LoggerFactory.get_logger(LOGGER_NAME)
 
+PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
 PROMPT_FLOW_DIR_NAME = ".promptflow"
 
-# prepare prompt flow home directory
-# user can configure by setting the environment variable: `PF_HOME_DIRECTORY`
-PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
-HOME_PROMPT_FLOW_DIR = None
-if PROMPT_FLOW_HOME_DIR_ENV_VAR in os.environ:
+
+def _prepare_home_dir() -> Path:
+    """Prepare prompt flow home directory.
+
+    User can configure it by setting environment variable: `PF_HOME_DIRECTORY`;
+    if not configured, or configured value is not valid, use default value: "~/.promptflow/".
+    """
+    if PROMPT_FLOW_HOME_DIR_ENV_VAR in os.environ:
+        try:
+            pf_home_dir = Path(os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)).resolve()
+            pf_home_dir.mkdir(exist_ok=True)
+            return pf_home_dir
+        except Exception as e:  # pylint: disable=broad-except
+            _warning_message = (
+                "Invalid configuration for prompt flow home directory: "
+                f"{os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)!r}: {str(e)!r}.\n"
+                'Fall back to use default value: "~/.promptflow/".'
+            )
+            _logger.warning(_warning_message)
+
     try:
-        _pf_home_dir = Path(os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)).resolve()
-        _pf_home_dir.mkdir(exist_ok=True)
-        HOME_PROMPT_FLOW_DIR = _pf_home_dir
-    except Exception as e:  # pylint: disable=broad-except
-        _warning_message = (
-            "Invalid configuration for prompt flow home directory: "
-            f"{os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)!r}: {str(e)!r}.\n"
-            'Fall back to use default value: "~/.promptflow/".'
-        )
-        _logger.warning(_warning_message)
-# if configured value is not valid/not set, use default value: "~/.promptflow/"
-if HOME_PROMPT_FLOW_DIR is None:
-    try:
-        HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
-        HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)
+        pf_home_dir = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
+        pf_home_dir.mkdir(exist_ok=True)
+        return pf_home_dir
     except Exception as e:  # pylint: disable=broad-except
         _error_message = (
             f"Cannot create prompt flow home directory: {str(e)!r}.\n"
@@ -43,6 +47,9 @@ if HOME_PROMPT_FLOW_DIR is None:
         )
         _logger.error(_error_message)
         raise Exception(_error_message)
+
+
+HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
 DAG_FILE_NAME = "flow.dag.yaml"
 NODE_VARIANTS = "node_variants"
