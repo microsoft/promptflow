@@ -58,13 +58,11 @@ def get_random_port():
 def _get_process_by_port(port):
     for proc in psutil.process_iter(["pid", "connections", "create_time"]):
         try:
-            connections = proc.info["connections"]
-        except psutil.AccessDenied:
-            pass
-        else:
-            for connection in connections:
+            for connection in proc.connections():
                 if connection.laddr.port == port:
                     return proc
+        except psutil.AccessDenied:
+            pass
 
 
 def kill_exist_service(port):
