@@ -787,6 +787,7 @@ class TestFlowRun:
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_download_run(self, pf: PFClient, created_batch_run_without_llm: Run):
         expected_files = [
             DownloadedRun.RUN_METADATA_FILE_NAME,
