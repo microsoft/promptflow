@@ -3,8 +3,8 @@
 # ---------------------------------------------------------
 import datetime
 import json
+import logging
 
-from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._constants import (LAST_HINT_TIME, LAST_CHECK_TIME, PF_VERSION_CHECK, CLI_PACKAGE_NAME,
                                    HINT_INTERVAL_DAY, GET_PYPI_INTERVAL_DAY, LATEST_VERSION, CURRENT_VERSION)
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
@@ -13,7 +13,7 @@ from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 
 HINT_ACTIVITY_NAME = ["pf.flows.test", "pf.runs.create_or_update", "pfazure.flows.create_or_update",
                       "pfazure.runs.create_or_update"]
-logger = LoggerFactory.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def get_cached_versions():
@@ -85,8 +85,4 @@ def hint_for_update():
                 message = (f"New prompt flow version available: promptflow-{cached_versions[LATEST_VERSION]}. Running "
                            f"'pip install --upgrade promptflow' to update.")
                 logger.debug(message)
-        else:
-            logger.debug(
-                "Failed to get the latest version from pypi. Need check network connection and check whether new "
-                "prompt flow version is available manually.")
         dump_cached_versions(cached_versions)
