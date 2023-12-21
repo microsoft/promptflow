@@ -68,6 +68,7 @@
     "ROBOCOPY",
     "undoc",
     "retriable",
+    "pfcli",
     "pfutil",
     "mgmt",
     "wsid",
