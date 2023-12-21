@@ -6,10 +6,7 @@ import os
 from enum import Enum
 from pathlib import Path
 
-from promptflow._utils.logger_utils import LoggerFactory
-
 LOGGER_NAME = "promptflow"
-_logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
 PROMPT_FLOW_DIR_NAME = ".promptflow"
@@ -21,6 +18,10 @@ def _prepare_home_dir() -> Path:
     User can configure it by setting environment variable: `PF_HOME_DIRECTORY`;
     if not configured, or configured value is not valid, use default value: "~/.promptflow/".
     """
+    from promptflow._utils.logger_utils import LoggerFactory
+
+    logger = LoggerFactory.get_logger(LOGGER_NAME)
+
     if PROMPT_FLOW_HOME_DIR_ENV_VAR in os.environ:
         try:
             pf_home_dir = Path(os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)).resolve()
@@ -32,7 +33,7 @@ def _prepare_home_dir() -> Path:
                 f"{os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)!r}: {str(e)!r}.\n"
                 'Fall back to use default value: "~/.promptflow/".'
             )
-            _logger.warning(_warning_message)
+            logger.warning(_warning_message)
 
     try:
         pf_home_dir = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
@@ -45,7 +46,7 @@ def _prepare_home_dir() -> Path:
             f"{HOME_PROMPT_FLOW_DIR.as_posix()!r}; or configure it via "
             f"environment variable {PROMPT_FLOW_HOME_DIR_ENV_VAR!r}.\n"
         )
-        _logger.error(_error_message)
+        logger.error(_error_message)
         raise Exception(_error_message)
 
 
