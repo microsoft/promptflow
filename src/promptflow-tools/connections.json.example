@@ -68,5 +68,17 @@
       "organization": "openai-api-org"
     },
     "module": "promptflow.connections"
+  },
+  ,
+  "azure_content_safety_connection": {
+    "type": "AzureContentSafetyConnection",
+    "value": {
+      "api_key": "acs-api-key",
+      "endpoint": "acs-endpoint",
+      "api_version": "2023-10-01",
+      "api_type": "Content Safety",
+      "name": "prompt-flow-acs-tool-test"
+    },
+    "module": "promptflow.connections"
   }
 }
