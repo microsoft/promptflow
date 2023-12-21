@@ -28,7 +28,7 @@ def _prepare_home_dir() -> Path:
         )
         try:
             pf_home_dir = Path(os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)).resolve()
-            pf_home_dir.mkdir(exist_ok=True)
+            pf_home_dir.mkdir(parents=True, exist_ok=True)
             return pf_home_dir
         except Exception as e:  # pylint: disable=broad-except
             _warning_message = (
@@ -41,7 +41,7 @@ def _prepare_home_dir() -> Path:
     try:
         logger.debug("preparing home directory with default value.")
         pf_home_dir = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
-        pf_home_dir.mkdir(exist_ok=True)
+        pf_home_dir.mkdir(parents=True, exist_ok=True)
         return pf_home_dir
     except Exception as e:  # pylint: disable=broad-except
         _error_message = (
