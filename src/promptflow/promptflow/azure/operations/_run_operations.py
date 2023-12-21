@@ -952,8 +952,9 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
         from promptflow.azure.operations._async_run_downloader import AsyncRunDownloader
 
+        run = Run._validate_and_return_run_name(run)
         run_folder = self._validate_for_run_download(run=run, output=output, overwrite=overwrite)
-        run_downloader = AsyncRunDownloader(run=run, run_ops=self, output_folder=run_folder)
+        run_downloader = AsyncRunDownloader._from_run_operations(run_ops=self, run=run, output_folder=run_folder)
         if platform.system().lower() == "windows":
             # Reference: https://stackoverflow.com/questions/45600579/asyncio-event-loop-is-closed-when-getting-loop
             # On Windows seems to be a problem with EventLoopPolicy, use this snippet to work around it

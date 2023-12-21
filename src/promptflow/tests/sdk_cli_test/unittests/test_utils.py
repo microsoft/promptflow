@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import argparse
+import importlib
 import os
 import shutil
 import sys
@@ -10,6 +11,7 @@ import tempfile
 import threading
 from pathlib import Path
 from unittest.mock import patch
+import datetime
 
 import mock
 import pandas as pd
@@ -21,7 +23,8 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
+from promptflow._constants import PF_VERSION_CHECK
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PROMPT_FLOW_HOME_DIR_ENV_VAR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
 from promptflow._sdk._utils import (
@@ -35,6 +38,7 @@ from promptflow._sdk._utils import (
     snake_to_camel,
 )
 from promptflow._utils.load_data import load_data
+from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -198,6 +202,19 @@ class TestUtils:
         for thread in threads:
             thread.join()
 
+    @pytest.mark.parametrize("concurrent_count", [1, 2, 4, 8])
+    def test_concurrent_hint_for_update(self, concurrent_count):
+        from concurrent.futures import ThreadPoolExecutor
+        with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
+            mock_datetime.datetime.now.return_value = datetime.datetime.now()
+            mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
+            mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
+            hint_for_update()
+            with ThreadPoolExecutor(max_workers=concurrent_count) as pool:
+                pool.submit(check_latest_version)
+
+            assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
+
     @pytest.mark.parametrize(
         "data_path",
         [
@@ -269,6 +286,27 @@ class TestUtils:
     def test_get_scrubbed_cloud_role(self, script_name, expected_result):
         with mock.patch("sys.argv", [script_name]):
             assert get_scrubbed_cloud_role() == expected_result
+
+    def test_configure_pf_home_dir(self, tmpdir) -> None:
+        from promptflow._sdk import _constants
+
+        custom_pf_home_dir_path = Path(tmpdir / ".promptflow").resolve()
+        assert not custom_pf_home_dir_path.exists()
+        with patch.dict(os.environ, {PROMPT_FLOW_HOME_DIR_ENV_VAR: custom_pf_home_dir_path.as_posix()}):
+            importlib.reload(_constants)
+            assert _constants.HOME_PROMPT_FLOW_DIR.as_posix() == custom_pf_home_dir_path.as_posix()
+            assert _constants.HOME_PROMPT_FLOW_DIR.is_dir()
+        importlib.reload(_constants)
+
+    def test_configure_pf_home_dir_with_invalid_path(self) -> None:
+        from promptflow._sdk import _constants
+
+        invalid_path = "/invalid:path"
+        with patch.dict(os.environ, {PROMPT_FLOW_HOME_DIR_ENV_VAR: invalid_path}):
+            assert os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR) == invalid_path
+            importlib.reload(_constants)
+            assert _constants.HOME_PROMPT_FLOW_DIR.as_posix() == (Path.home() / ".promptflow").resolve().as_posix()
+        importlib.reload(_constants)
 
 
 @pytest.mark.unittest
