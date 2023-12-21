@@ -10,7 +10,6 @@ from promptflow._constants import (LAST_HINT_TIME, LAST_CHECK_TIME, PF_VERSION_C
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 
 
-
 HINT_ACTIVITY_NAME = ["pf.flows.test", "pf.runs.create_or_update", "pfazure.flows.create_or_update",
                       "pfazure.runs.create_or_update"]
 logger = logging.getLogger(__name__)
