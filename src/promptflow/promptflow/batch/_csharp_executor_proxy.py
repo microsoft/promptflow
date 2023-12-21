@@ -41,6 +41,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
+            "-e",
             "-p",
             port,
             "--yaml_path",
