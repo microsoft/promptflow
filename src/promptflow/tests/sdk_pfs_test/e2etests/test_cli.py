@@ -33,6 +33,7 @@ class TestPromptflowServiceCLI:
         sleep(5)
         assert self._is_service_healthy()
         start_pfs.terminate()
+        start_pfs.wait(10)
 
     def _is_service_healthy(self, port=None):
         port = port or get_port_from_config()
@@ -67,3 +68,4 @@ class TestPromptflowServiceCLI:
         output, _ = capsys.readouterr()
         assert str(get_port_from_config()) in output
         start_pfs.terminate()
+        start_pfs.wait(10)
