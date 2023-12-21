@@ -95,44 +95,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         endpoint = self._service_caller._service_endpoint
         return endpoint + "index/v1.0" + self._service_caller._common_azure_url_pattern
 
-    def _get_flow_portal_url_from_resource_id(self, flow_resource_id: str):
-        """Get the portal url for the run."""
-        match = self._FLOW_RESOURCE_PATTERN.match(flow_resource_id)
-        if not match or len(match.groups()) != 2:
-            logger.warning("Failed to parse flow resource id '%s'", flow_resource_id)
-            return None
-        experiment_id, flow_id = match.groups()
-        return self._get_flow_portal_url(experiment_id, flow_id)
-
-    def _get_flow_portal_url_from_index_entity(self, entity: Dict):
-        """Enrich the index entity with flow portal url."""
-        result = None
-        experiment_id = entity["properties"].get("experimentId", None)
-        flow_id = entity["properties"].get("flowId", None)
-
-        if experiment_id and flow_id:
-            result = self._get_flow_portal_url(experiment_id, flow_id)
-        return result
-
-    def _get_flow_portal_url(self, experiment_id, flow_id):
-        """Get the portal url for the run."""
-        # TODO[2785705]: Handle the case when endpoint is other clouds
-        workspace_kind = str(self._workspace._kind).lower()
-        # default refers to azure machine learning studio
-        if workspace_kind == "default":
-            return (
-                f"https://ml.azure.com/prompts/flow/{experiment_id}/{flow_id}/"
-                f"details?wsid={self._service_caller._common_azure_url_pattern}"
-            )
-        # project refers to azure ai studio
-        elif workspace_kind == "project":
-            return (
-                f"https://ai.azure.com/projectflows/{flow_id}/{experiment_id}/"
-                f"details/Flow?wsid={self._service_caller._common_azure_url_pattern}"
-            )
-        else:
-            raise FlowOperationError(f"Workspace kind {workspace_kind!r} is not supported for promptflow operations.")
-
     @monitor_operation(activity_name="pfazure.flows.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, flow: Union[str, Path], display_name=None, type=None, **kwargs) -> Flow:
         """Create a flow to remote from local source.
@@ -170,7 +132,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             **kwargs,
         )
         result_flow = Flow._from_pf_service(rest_flow)
-        result_flow.flow_portal_url = self._get_flow_portal_url_from_resource_id(rest_flow.flow_resource_id)
         flow_dict = result_flow._to_dict()
         print(f"Flow created successfully:\n{json.dumps(flow_dict, indent=4)}")
 
@@ -348,7 +309,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 raise FlowOperationError(f"Failed to get flow {name!r} due to: {str(e)}.") from e
 
         flow = Flow._from_pf_service(rest_flow)
-        flow.flow_portal_url = self._get_flow_portal_url_from_resource_id(rest_flow.flow_resource_id)
         return flow
 
     @monitor_operation(activity_name="pfazure.flows.list", activity_type=ActivityType.PUBLICAPI)
@@ -439,8 +399,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         flow_instances = []
         for entity in flow_entities:
             flow = Flow._from_index_service(entity)
-            # add flow portal url
-            flow.flow_portal_url = self._get_flow_portal_url_from_index_entity(entity)
             flow_instances.append(flow)
 
         return flow_instances
