@@ -261,6 +261,7 @@ class RunInfoSources(str, Enum):
     INDEX_SERVICE = "index_service"
     RUN_HISTORY = "run_history"
     MT_SERVICE = "mt_service"
+    EXISTING_RUN = "existing_run"
 
 
 class ConfigValueType(str, Enum):
@@ -283,6 +284,11 @@ class ConnectionType(str, Enum):
     CUSTOM = "Custom"
 
 
+ALL_CONNECTION_TYPES = set(
+    map(lambda x: f"{x.value}Connection", filter(lambda x: x != ConnectionType._NOT_SET, ConnectionType))
+)
+
+
 class ConnectionFields(str, Enum):
     CONNECTION = "connection"
     DEPLOYMENT_NAME = "deployment_name"
@@ -299,11 +305,8 @@ SUPPORTED_CONNECTION_FIELDS = {
 class RunDataKeys:
     PORTAL_URL = "portal_url"
     DATA = "data"
-    DATA_PORTAL_URL = "data_portal_url"
     RUN = "run"
-    INPUT_RUN_PORTAL_URL = "input_run_portal_url"
     OUTPUT = "output"
-    OUTPUT_PORTAL_URL = "output_portal_url"
 
 
 class RunHistoryKeys:
@@ -340,3 +343,10 @@ class AzureFlowSource:
     LOCAL = "local"
     PF_SERVICE = "pf_service"
     INDEX = "index"
+
+
+class DownloadedRun:
+    SNAPSHOT_FOLDER = LocalStorageFilenames.SNAPSHOT_FOLDER
+    METRICS_FILE_NAME = LocalStorageFilenames.METRICS
+    LOGS_FILE_NAME = LocalStorageFilenames.LOG
+    RUN_METADATA_FILE_NAME = "run_metadata.json"

@@ -22,6 +22,7 @@ from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -1557,9 +1558,9 @@ class TestCli:
                     "--name",
                     "not_exist",
                 )
-        user_agent = context.get_user_agent()
+        user_agent = ClientUserAgentUtil.get_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
-        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow"}
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli"}
 
     def test_config_set_pure_flow_directory_macro(self, capfd: pytest.CaptureFixture) -> None:
         run_pf_command(
@@ -1593,9 +1594,9 @@ class TestCli:
                 "--user-agent",
                 "a/1.0.0 b/2.0",
             )
-        user_agent = context.get_user_agent()
+        user_agent = ClientUserAgentUtil.get_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
-        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow", "a", "b"}
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "a", "b"}
         context.user_agent = ""
 
     def test_node_run_telemetry(self, local_client):
@@ -1637,6 +1638,38 @@ class TestCli:
                     "--inputs",
                     "key=API_BASE",
                 )
+
+    def test_run_create_with_existing_run_folder(self):
+        run_name = "web_classification_variant_0_20231205_120253_104100"
+        # clean the run if exists
+        from promptflow import PFClient
+        from promptflow._cli._utils import _try_delete_existing_run_record
+
+        pf = PFClient()
+        _try_delete_existing_run_record(run_name)
+
+        # assert the run doesn't exist
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(run_name)
+
+        uuid_str = str(uuid.uuid4())
+        run_folder = Path(RUNS_DIR) / run_name
+        run_pf_command(
+            "run",
+            "create",
+            "--source",
+            Path(run_folder).resolve().as_posix(),
+            "--set",
+            f"display_name={uuid_str}",
+            f"description={uuid_str}",
+            f"tags.tag1={uuid_str}",
+        )
+
+        # check run results
+        run = pf.runs.get(run_name)
+        assert run.display_name == uuid_str
+        assert run.description == uuid_str
+        assert run.tags["tag1"] == uuid_str
 
     def test_cli_command_no_sub_command(self, capfd):
         try:
