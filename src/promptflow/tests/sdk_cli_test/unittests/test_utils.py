@@ -11,7 +11,6 @@ import threading
 from pathlib import Path
 from unittest.mock import patch
 import datetime
-import json
 
 import mock
 import pandas as pd
@@ -23,7 +22,7 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._constants import PF_VERSION_CHECK, CURRENT_VERSION, LAST_CHECK_TIME, LATEST_VERSION
+from promptflow._constants import PF_VERSION_CHECK
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
