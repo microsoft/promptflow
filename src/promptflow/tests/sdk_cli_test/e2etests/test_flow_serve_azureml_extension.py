@@ -1,8 +1,9 @@
 import json
+
 import pytest
 
 
-@pytest.mark.usefixtures("flow_serving_client_with_encoded_connection")
+@pytest.mark.usefixtures("recording_injection")
 @pytest.mark.e2etest
 def test_azureml_serving_api_with_encoded_connection(flow_serving_client_with_encoded_connection):
     response = flow_serving_client_with_encoded_connection.get("/health")
