@@ -10,11 +10,10 @@ from promptflow._core.tools_manager import APINotFound
 from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch import BatchEngine
-from promptflow.contracts._errors import FailedToImportModule
+from promptflow.contracts._errors import FailedToImportModule, DuplicateNodeName
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import (
     ConnectionNotFound,
-    DuplicateNodeName,
     EmptyOutputReference,
     InputNotFound,
     InputReferenceNotFound,
@@ -43,10 +42,10 @@ class TestValidation:
                 DuplicateNodeName,
                 None,
                 (
-                    "Invalid node definitions found in the flow graph. Node with name 'stringify_num' appears more "
-                    "than once in the node definitions in your flow, which is not allowed. To "
-                    "address this issue, please review your flow and either rename or remove "
-                    "nodes with identical names."
+                    "Invalid node definitions found in the flow graph. Node with name '['stringify_num']' "
+                    "appears more than once in the node definitions in your flow, which is not allowed. To "
+                    "address this issue, please review your flow and either rename or remove nodes with "
+                    "identical names."
                 ),
             ),
             (

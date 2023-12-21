@@ -215,7 +215,7 @@ class FlowExecutor:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys, tool_loader=flow.tool_loader)
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
         flow = Flow(
