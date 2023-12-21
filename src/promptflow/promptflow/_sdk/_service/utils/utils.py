@@ -7,7 +7,6 @@ from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
 
-from time import sleep
 import psutil
 import yaml
 from flask import abort, request
