@@ -23,6 +23,9 @@ def _prepare_home_dir() -> Path:
     logger = LoggerFactory.get_logger(LOGGER_NAME)
 
     if PROMPT_FLOW_HOME_DIR_ENV_VAR in os.environ:
+        logger.debug(
+            f"environment variable {PROMPT_FLOW_HOME_DIR_ENV_VAR!r} is set, honor it preparing home directory."
+        )
         try:
             pf_home_dir = Path(os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)).resolve()
             pf_home_dir.mkdir(exist_ok=True)
@@ -36,6 +39,7 @@ def _prepare_home_dir() -> Path:
             logger.warning(_warning_message)
 
     try:
+        logger.debug("preparing home directory with default value.")
         pf_home_dir = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
         pf_home_dir.mkdir(exist_ok=True)
         return pf_home_dir
