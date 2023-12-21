@@ -17,7 +17,7 @@ on:
 
       set_msi_private_version:
         type: string
-        default: ""
+        default: "0.3.0rc1"
         required: false
         description: 'Set the version of the private msi installer'
 
