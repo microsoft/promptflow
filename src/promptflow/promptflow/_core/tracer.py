@@ -75,7 +75,7 @@ class Tracer(ThreadLocalSingleton):
         all_kwargs.pop("self", None)
         trace = Trace(
             name=f.__qualname__,
-            type=TraceType.FUNCTION,
+            type=trace_type,
             start_time=datetime.utcnow().timestamp(),
             inputs=all_kwargs,
         )
