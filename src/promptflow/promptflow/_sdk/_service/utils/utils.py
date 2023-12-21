@@ -69,7 +69,7 @@ def _get_process_by_port(port):
 def kill_exist_service(port):
     proc = _get_process_by_port(port)
     if proc:
-        proc.kill()
+        proc.terminate()
         proc.wait(10)
 
 
