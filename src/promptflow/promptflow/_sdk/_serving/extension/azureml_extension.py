@@ -52,6 +52,13 @@ class AzureMLExtension(AppExtension):
             self.common_dimensions["deployment"] = self.deployment_name
         env_dimensions = self._get_common_dimensions_from_env()
         self.common_dimensions.update(env_dimensions)
+        # initialize flow monitor
+        data_collector = FlowDataCollector(self.logger)
+        metrics_recorder = self._get_metrics_recorder()
+        self.flow_monitor = FlowMonitor(self.logger,
+                                        self.get_flow_name(),
+                                        data_collector,
+                                        metrics_recorder=metrics_recorder)
 
     def get_flow_project_path(self) -> str:
         return self.project_path
@@ -66,9 +73,7 @@ class AzureMLExtension(AppExtension):
         return self._get_default_blueprints()
 
     def get_flow_monitor(self) -> FlowMonitor:
-        data_collector = FlowDataCollector()
-        metrics_recorder = self._get_metrics_recorder()
-        return FlowMonitor(self.logger, self.get_flow_name(), data_collector, metrics_recorder=metrics_recorder)
+        return self.flow_monitor
 
     def get_override_connections(self, flow: Flow) -> (dict, dict):
         connection_names = flow.get_connection_names()
@@ -137,9 +142,11 @@ class AzureMLExtension(AppExtension):
                 self.logger.info("Initialize metrics recorder with azure monitor metrics exporter...")
                 exporter = AzureMonitorMetricExporter(connection_string=f"InstrumentationKey={instrumentation_key}")
                 reader = PeriodicExportingMetricReader(exporter=exporter, export_interval_millis=60000)
-                return MetricsRecorder(reader=reader, common_dimensions=custom_dimensions)
-        except ImportError as e:
-            self.logger.warning(f"Failed to import azure monitor metrics exporter: {e}")
+                return MetricsRecorder(self.logger, reader=reader, common_dimensions=custom_dimensions)
+            else:
+                self.logger.info("Azure monitor metrics exporter is not enabled, metrics will not be collected.")
+        except ImportError:
+            self.logger.warning("No metrics exporter module found, metrics will not be collected.")
         return None
 
     def _initialize_connection_provider(self):

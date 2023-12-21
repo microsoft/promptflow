@@ -9,7 +9,6 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request, g
 
-from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._sdk._serving.response_creator import ResponseCreator
@@ -32,7 +31,8 @@ from promptflow.exceptions import SystemErrorException
 
 from .swagger import generate_swagger
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = LoggerFactory.get_logger("pfserving-app", target_stdout=True)
+print("second")
 DEFAULT_STATIC_PATH = Path(__file__).parent / "static"
 USER_AGENT = f"promptflow-local-serving/{VERSION}"
 
@@ -179,6 +179,7 @@ def add_default_routes(app: PromptflowServingApp):
 
 def create_app(**kwargs):
     app = PromptflowServingApp(__name__)
+    print("create_app: ", __name__)
     if __name__ != "__main__":
         app.logger.handlers = logger.handlers
         app.logger.setLevel(logger.level)

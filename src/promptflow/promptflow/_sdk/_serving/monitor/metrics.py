@@ -5,12 +5,9 @@
 from enum import Enum
 from typing import Dict, Sequence, Set, List, Any
 
-from promptflow._sdk._constants import LOGGER_NAME
-from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 # define metrics dimension keys
 FLOW_KEY = "flow"
@@ -143,23 +140,27 @@ except ImportError:
 class MetricsRecorder(object):
     """OpenTelemetry Metrics Recorder"""
 
-    def __init__(self, reader=None, common_dimensions: Dict[str, str] = None) -> None:
+    def __init__(self, logger, reader=None, common_dimensions: Dict[str, str] = None) -> None:
         """initialize metrics recorder
 
+        :param logger: logger
+        :type logger: Logger
         :param reader: metric reader
         :type reader: opentelemetry.sdk.metrics.export.MetricReader
         :param common_dimensions: common dimensions for all metrics
         :type common_dimensions: Dict[str, str]
         """
+        self.logger = logger
         if not metrics_enabled:
-            logger.warning("OpenTelemetry metrics is not enabled, metrics will not be recorded." +
-                           "Please enable 'monitoring' extra requirement when installing promptflow: " +
-                           "'pip install promptflow[monitoring]'")
+            logger.warning("OpenTelemetry metric is not enabled, metrics will not be recorded." +
+                           "If you want to collect metrics, please enable 'azureml-serving' extra requirement " +
+                           "for promptflow: 'pip install promptflow[azureml-serving]'")
             return
         self.common_dimensions = common_dimensions or {}
         self.reader = reader
         dimension_keys = {key for key in common_dimensions}
         self._config_common_monitor(dimension_keys, reader)
+        logger.info("OpenTelemetry metric is enabled, metrics will be recorded.")
 
     def record_flow_request(self, flow_id: str, response_code: int, exception: str, streaming: bool):
         if not metrics_enabled:
@@ -176,7 +177,7 @@ class MetricsRecorder(object):
                 },
             )
         except Exception as e:
-            logger.warning("failed to record flow request metrics: %s", e)
+            self.logger.warning("failed to record flow request metrics: %s", e)
 
     def record_flow_latency(
         self, flow_id: str, response_code: int, streaming: bool, response_type: str, duration: float
@@ -195,7 +196,7 @@ class MetricsRecorder(object):
                 },
             )
         except Exception as e:
-            logger.warning("failed to record flow latency metrics: %s", e)
+            self.logger.warning("failed to record flow latency metrics: %s", e)
 
     def record_flow_streaming_response_duration(self, flow_id: str, duration: float):
         if not metrics_enabled:
@@ -203,7 +204,7 @@ class MetricsRecorder(object):
         try:
             streaming_response_duration.record(duration, {FLOW_KEY: flow_id, **self.common_dimensions})
         except Exception as e:
-            logger.warning("failed to record streaming duration metrics: %s", e)
+            self.logger.warning("failed to record streaming duration metrics: %s", e)
 
     def record_tracing_metrics(self, flow_run: FlowRunInfo, node_runs: Dict[str, RunInfo]):
         if not metrics_enabled:
@@ -268,7 +269,7 @@ class MetricsRecorder(object):
                             continue
                         self._record_api_call_metrics(flow_id, run.node, api_calls)
         except Exception as e:
-            logger.warning(f"failed to record metrics: {e}, flow_run: {flow_run}, node_runs: {node_runs}")
+            self.logger.warning(f"failed to record metrics: {e}, flow_run: {flow_run}, node_runs: {node_runs}")
 
     def _record_api_call_metrics(self, flow_id, node, api_calls: List[Dict[str, Any]], prefix: str = None):
         if api_calls and len(api_calls) > 0:

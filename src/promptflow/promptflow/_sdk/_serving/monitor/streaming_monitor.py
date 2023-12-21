@@ -2,18 +2,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._serving.utils import get_cost_up_to_now
 from promptflow._sdk._serving.monitor.metrics import ResponseType
-from promptflow._utils.logger_utils import LoggerFactory
-
-logger = LoggerFactory.get_logger(LOGGER_NAME)
 
 
 class StreamingMonitor:
     """StreamingMonitor is used to collect metrics & data for streaming response."""
 
     def __init__(self,
+                 logger,
                  flow_id: str,
                  start_time: float,
                  inputs: dict,
@@ -23,6 +20,7 @@ class StreamingMonitor:
                  metric_recorder,
                  data_collector,
                  ) -> None:
+        self.logger = logger,
         self.flow_id = flow_id
         self.start_time = start_time
         self.inputs = inputs
@@ -35,7 +33,7 @@ class StreamingMonitor:
 
     def on_stream_start(self):
         """stream start call back function, record flow latency when first byte received."""
-        logger.info("start streaming response...")
+        self.logger.info("start streaming response...")
         if self.metric_recorder:
             duration = get_cost_up_to_now(self.start_time)
             self.metric_recorder.record_flow_latency(self.flow_id, 200, True, ResponseType.FirstByte.value, duration)
@@ -51,7 +49,7 @@ class StreamingMonitor:
             if self.streaming_field_name in self.outputs:
                 self.outputs[self.streaming_field_name] = response_content
             self.data_collector.collect_flow_data(self.inputs, self.outputs, self.req_id)
-        logger.info("finish streaming response.")
+        self.logger.info("finish streaming response.")
 
     def on_stream_event(self, message: str):
         """stream event call back function, record streaming response data chunk."""

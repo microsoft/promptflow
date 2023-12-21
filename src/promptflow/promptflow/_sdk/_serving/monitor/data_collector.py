@@ -2,22 +2,17 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow._sdk._constants import LOGGER_NAME
-from promptflow._utils.logger_utils import LoggerFactory
-
-logger = LoggerFactory.get_logger(LOGGER_NAME)
-
-
 class FlowDataCollector:
     """FlowDataCollector is used to collect flow data via MDC for monitoring."""
 
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
         self._init_success = self._init_data_collector()
         logger.info(f"Mdc init status: {self._init_success}")
 
     def _init_data_collector(self) -> bool:
         """init data collector."""
-        logger.info("Init mdc...")
+        self.logger.info("Init mdc...")
         try:
             from azureml.ai.monitoring import Collector
 
@@ -25,10 +20,10 @@ class FlowDataCollector:
             self.outputs_collector = Collector(name="model_outputs")
             return True
         except ImportError as e:
-            logger.warn(f"Load mdc related module failed: {e}")
+            self.logger.warn(f"Load mdc related module failed: {e}")
             return False
         except Exception as e:
-            logger.warn(f"Init mdc failed: {e}")
+            self.logger.warn(f"Init mdc failed: {e}")
             return False
 
     def collect_flow_data(self, input: dict, output: dict, req_id: str = None, client_req_id: str = None):
@@ -51,6 +46,6 @@ class FlowDataCollector:
             # collect outputs data, pass in correlation_context so inputs and outputs data can be correlated later
             self.outputs_collector.collect(output_df, ctx)
         except ImportError as e:
-            logger.warn(f"Load mdc related module failed: {e}")
+            self.logger.warn(f"Load mdc related module failed: {e}")
         except Exception as e:
-            logger.warn(f"Collect flow data failed: {e}")
+            self.logger.warn(f"Collect flow data failed: {e}")

@@ -31,8 +31,6 @@ from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
-
 
 class FlowInvoker:
     """
@@ -64,6 +62,7 @@ class FlowInvoker:
         raise_ex: bool = True,
         **kwargs,
     ):
+        self.logger = kwargs.get("logger", LoggerFactory.get_logger(LOGGER_NAME))
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
         self._executable_flow = ExecutableFlow._from_dict(
             flow_dag=self.flow_entity.dag, working_dir=self.flow_entity.code
@@ -85,7 +84,7 @@ class FlowInvoker:
         self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(self._executable_flow)
         connection_provider = "local" if connection_provider is None else connection_provider
         if isinstance(connection_provider, str):
-            logger.info(f"Getting connections from pf client with provider {connection_provider}...")
+            self.logger.info(f"Getting connections from pf client with provider {connection_provider}...")
             connections_to_ignore = list(self.connections.keys())
             connections_to_ignore.extend(self.connections_name_overrides.keys())
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
@@ -106,7 +105,7 @@ class FlowInvoker:
                 else:
                     self.connections[name] = conn
         elif isinstance(connection_provider, Callable):
-            logger.info("Getting connections from custom connection provider...")
+            self.logger.info("Getting connections from custom connection provider...")
             connection_list = connection_provider()
             if not isinstance(connection_list, list):
                 raise UnexpectedConnectionProviderReturn(
@@ -125,10 +124,10 @@ class FlowInvoker:
         override_connection_config_with_environment_variable(self.connections)
         resolve_connections_environment_variable_reference(self.connections)
         update_environment_variables_with_connections(self.connections)
-        logger.info(f"Promptflow get connections successfully. keys: {self.connections.keys()}")
+        self.logger.info(f"Promptflow get connections successfully. keys: {self.connections.keys()}")
 
     def _init_executor(self):
-        logger.info("Promptflow executor starts initializing...")
+        self.logger.info("Promptflow executor starts initializing...")
         storage = None
         if self._dump_to:
             storage = DefaultRunStorage(base_dir=self._dump_to, sub_dir=Path(".promptflow/intermediate"))
@@ -142,7 +141,7 @@ class FlowInvoker:
             storage=storage,
         )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
-        logger.info("Promptflow executor initiated successfully.")
+        self.logger.info("Promptflow executor initiated successfully.")
 
     def _invoke(self, data: dict, run_id=None, disable_input_output_logging=False):
         """
@@ -156,9 +155,9 @@ class FlowInvoker:
         :rtype: ~promptflow.executor._result.LineResult
         """
         log_data = "<REDACTED>" if disable_input_output_logging else data
-        logger.info(f"Validating flow input with data {log_data!r}")
+        self.logger.info(f"Validating flow input with data {log_data!r}")
         validate_request_data(self.flow, data)
-        logger.info(f"Execute flow with data {log_data!r}")
+        self.logger.info(f"Execute flow with data {log_data!r}")
         # Pass index 0 as extension require for dumped result.
         # TODO: Remove this index after extension remove this requirement.
         result = self.executor.exec_line(data, index=0, run_id=run_id, allow_generator_output=self.streaming())
@@ -181,7 +180,7 @@ class FlowInvoker:
         resolved_outputs = self._convert_multimedia_data_to_base64(result)
         self._dump_invoke_result(result)
         log_outputs = "<REDACTED>" if disable_input_output_logging else result.output
-        logger.info(f"Flow run result: {log_outputs}")
+        self.logger.info(f"Flow run result: {log_outputs}")
         if not self.raise_ex:
             # If raise_ex is False, we will return the trace flow & node run info.
             return FlowResult(
