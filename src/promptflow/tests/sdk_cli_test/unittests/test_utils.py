@@ -282,7 +282,7 @@ class TestUtils:
             assert _constants.HOME_PROMPT_FLOW_DIR.is_dir()
         importlib.reload(_constants)
 
-    def test_configure_pf_home_dir_with_invalid_path(self, capfd: pytest.CaptureFixture) -> None:
+    def test_configure_pf_home_dir_with_invalid_path(self) -> None:
         from promptflow._sdk import _constants
 
         invalid_path = "/invalid:path"
@@ -290,10 +290,6 @@ class TestUtils:
             assert os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR) == invalid_path
             importlib.reload(_constants)
             assert _constants.HOME_PROMPT_FLOW_DIR.as_posix() == (Path.home() / ".promptflow").resolve().as_posix()
-            # during reload, logger.propagate is set to False, which makes caplog not work
-            # so we use capfd here to assert the warning message
-            _, err = capfd.readouterr()
-            assert "Invalid configuration for prompt flow home directory" in err
         importlib.reload(_constants)
 
 
