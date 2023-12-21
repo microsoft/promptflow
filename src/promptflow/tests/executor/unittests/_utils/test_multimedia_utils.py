@@ -15,8 +15,9 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data,
     persist_multimedia_data,
     resolve_multimedia_data_recursively,
+    InvalidImageInput,
+    LoadMultimediaDataError,
 )
-from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import ValueType
@@ -194,10 +195,12 @@ class TestMultimediaUtils:
         }
 
         # Case 3: Test invalid input type
-        with pytest.raises(InvalidImageInput) as ex:
+        with pytest.raises(LoadMultimediaDataError) as ex:
             line_inputs = {"image": 0}
             load_multimedia_data(inputs, line_inputs)
-        assert "Failed to load image for input 'image': Unsupported image input type" in ex.value.message_format
+        assert (
+            "Failed to load image for input 'image': "
+            "(InvalidImageInput) Unsupported image input type") in ex.value.message
 
     def test_resolve_multimedia_data_recursively(self):
         image_dict = {"data:image/jpg;path": "logo.jpg"}

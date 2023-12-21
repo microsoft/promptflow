@@ -13,9 +13,8 @@ from typing import Callable, List, Optional
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
-from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively, InvalidImageInput
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
-from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
