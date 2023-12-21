@@ -50,6 +50,8 @@ class TestPromptflowServiceCLI:
 
             # Force start pfs
             start_pfs = subprocess.Popen("pfs start", shell=True)
+            # Wait for service to be started
+            sleep(5)
             self._test_start_service(force=True)
             # previous pfs is killed
             assert start_pfs.poll() is not None
