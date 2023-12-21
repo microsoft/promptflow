@@ -172,7 +172,7 @@ def trace(
                 # We directly call func instead of calling Tracer.invoke,
                 # because we want to avoid long stack trace when hitting an exception.
                 try:
-                    Tracer.push_func(func, args, kwargs)
+                    Tracer.push_function(func, args, kwargs)
                     output = await func(*args, **kwargs)
                     return Tracer.pop(output)
                 except Exception as e:
@@ -192,7 +192,7 @@ def trace(
                 # We directly call func instead of calling Tracer.invoke,
                 # because we want to avoid long stack trace when hitting an exception.
                 try:
-                    Tracer.push_func(func, args, kwargs)
+                    Tracer.push_function(func, args, kwargs)
                     output = func(*args, **kwargs)
                     return Tracer.pop(output)
                 except Exception as e:

@@ -83,7 +83,7 @@ class Tracer(ThreadLocalSingleton):
         return trace
 
     @classmethod
-    def push_func(cls, f, args=[], kwargs={}):
+    def push_function(cls, f, args=[], kwargs={}):
         obj = cls.active_instance()
         sig = inspect.signature(f).parameters
         all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
