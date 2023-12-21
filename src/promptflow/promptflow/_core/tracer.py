@@ -63,27 +63,7 @@ class Tracer(ThreadLocalSingleton):
         return tracer.to_json()
 
     @classmethod
-    def push_tool(cls, f, args=[], kwargs={}):
-        obj = cls.active_instance()
-        sig = inspect.signature(f).parameters
-        all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-        all_kwargs = {
-            k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
-            for k, v in all_kwargs.items()
-        }
-        # TODO: put parameters in self to inputs for builtin tools
-        all_kwargs.pop("self", None)
-        trace = Trace(
-            name=f.__qualname__,
-            type=TraceType.TOOL,
-            start_time=datetime.utcnow().timestamp(),
-            inputs=all_kwargs,
-        )
-        obj._push(trace)
-        return trace
-
-    @classmethod
-    def push_function(cls, f, args=[], kwargs={}):
+    def push_function(cls, f, args=[], kwargs={}, trace_type=TraceType.FUNCTION):
         obj = cls.active_instance()
         sig = inspect.signature(f).parameters
         all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
@@ -101,6 +81,10 @@ class Tracer(ThreadLocalSingleton):
         )
         obj._push(trace)
         return trace
+
+    @classmethod
+    def push_tool(cls, f, args=[], kwargs={}):
+        return cls.push_function(f, args, kwargs, trace_type=TraceType.TOOL)
 
     @classmethod
     def push(cls, trace: Trace):
