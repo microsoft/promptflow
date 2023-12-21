@@ -73,8 +73,8 @@
   "azure_content_safety_connection": {
     "type": "AzureContentSafetyConnection",
     "value": {
-      "api_key": "acs-api-key",
-      "endpoint": "acs-endpoint",
+      "api_key": "azure-content-safety-api-key",
+      "endpoint": "azure-content-safety-endpoint-url",
       "api_version": "2023-10-01",
       "api_type": "Content Safety",
       "name": "prompt-flow-acs-tool-test"
