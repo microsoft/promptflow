@@ -60,13 +60,15 @@ class QueueRunStorage(AbstractRunStorage):
 
 
 class HealthyEnsuredProcess:
-    def __init__(self, executor_creation_func, context):
+    def __init__(self, executor_creation_func, context, process_creation_signals_queue, process_queue):
         self.process = None
         self.input_queue = None
         self.output_queue = None
         self.is_ready = False
         self._executor_creation_func = executor_creation_func
         self.context = context
+        self.process_creation_signals_queue = process_creation_signals_queue
+        self.process_queue = process_queue
 
     def start_new(self, task_queue: Queue):
         input_queue = self.context.Queue()
@@ -78,23 +80,34 @@ class HealthyEnsuredProcess:
         # Test if the subprocess can receive the message.
         input_queue.put("start")
 
-        current_log_context = LogContext.get_current()
-        process = self.context.Process(
-            target=_process_wrapper,
-            args=(
-                self._executor_creation_func,
-                input_queue,
-                output_queue,
-                current_log_context.get_initializer() if current_log_context else None,
-                OperationContext.get_instance().get_context_dict(),
-            ),
-            # Set the process as a daemon process to automatically terminated and release system resources
-            # when the main process exits.
-            daemon=True,
-        )
+        # current_log_context = LogContext.get_current()
+        # log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None,
 
-        self.process = process
-        process.start()
+        self.process_creation_signals_queue.put
+        (
+            self._executor_creation_func,
+            input_queue,
+            output_queue,
+
+        )
+        # self.process_creation_signals_queue.put("test")
+
+        # process = self.context.Process(
+        #     target=_process_wrapper,
+        #     args=(
+        #         self._executor_creation_func,
+        #         input_queue,
+        #         output_queue,
+        #         log_context_initialization_func,
+        #         OperationContext.get_instance().get_context_dict(),
+        #     ),
+        #     # Set the process as a daemon process to automatically terminated and release system resources
+        #     # when the main process exits.
+        #     daemon=True,
+        # )
+
+        self.process = self.process_queue.get()
+        self.process.start()
 
         try:
             # Wait for subprocess send a ready message.
@@ -135,6 +148,43 @@ class HealthyEnsuredProcess:
         return f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
 
 
+def create_process_fork(process_creation_signals_queue, process_queue):
+    current_log_context = LogContext.get_current()
+    log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
+
+    context = multiprocessing.get_context("fork")
+    while True:
+        try:
+            args = process_creation_signals_queue.get(timeout=1)
+            executor_creation_func, input_queue, output_queue = args
+            process = context.Process(
+                target=_process_wrapper,
+                args=(
+                    executor_creation_func,
+                    input_queue,
+                    output_queue,
+                    log_context_initialization_func,
+                    OperationContext.get_instance().get_context_dict()
+                )
+            )
+            process_queue.put(process)
+        except queue.Empty:
+            # Do nothing until the process_queue have not content or process is killed
+            pass
+
+
+def create_process_spawn():
+    process_creation_signals_queue = Queue()
+    process_queue = Queue()
+    context = multiprocessing.get_context("spawn")
+    process = context.Process(
+        target=create_process_fork,
+        args=(process_creation_signals_queue, process_queue,)
+    )
+    process.start()
+    return process_creation_signals_queue, process_queue
+
+
 class LineExecutionProcessPool:
     _DEFAULT_WORKER_COUNT = 16
 
@@ -165,6 +215,7 @@ class LineExecutionProcessPool:
         # When using fork, we use this method to create the executor to avoid reloading the flow
         # which will introduce a lot more memory.
         if use_fork:
+            self.process_creation_signals_queue, self.process_queue = create_process_spawn()
             self._executor_creation_func = partial(create_executor_fork, flow_executor=flow_executor)
         elif flow_executor._flow_file:
             self._executor_creation_func = partial(
@@ -208,7 +259,8 @@ class LineExecutionProcessPool:
             self._pool.join()
 
     def _timeout_process_wrapper(self, run_start_time: datetime, task_queue: Queue, timeout_time, result_list):
-        healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func, self.context)
+        healthy_ensured_process = HealthyEnsuredProcess(
+            self._executor_creation_func, self.context, self.process_creation_signals_queue, self.process_queue)
         healthy_ensured_process.start_new(task_queue)
 
         if not healthy_ensured_process.process.is_alive():
