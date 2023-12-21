@@ -236,6 +236,7 @@ class TestSubmitter:
             stream=stream,
             credential_list=credential_list,
         ):
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
@@ -243,7 +244,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
-                output_sub_dir=".promptflow/intermediate",
+                storage=storage,
             )
             return result
 
