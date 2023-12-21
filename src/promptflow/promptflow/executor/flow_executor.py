@@ -46,7 +46,6 @@ from promptflow.executor._flow_nodes_scheduler import (
     FlowNodesScheduler,
 )
 from promptflow.executor._result import AggregationResult, LineResult
-from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
@@ -87,7 +86,6 @@ class FlowExecutor:
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
         loaded_tools: Mapping[str, Callable],
-        tool_invoker: DefaultToolInvoker,
         *,
         raise_ex: bool = False,
         working_dir=None,
@@ -130,7 +128,6 @@ class FlowExecutor:
         self._working_dir = working_dir
         self._line_timeout_sec = line_timeout_sec
         self._flow_file = flow_file
-        self._tool_invoker = tool_invoker
         try:
             self._tools_manager = ToolsManager(loaded_tools)
             tool_to_meta = {tool.name: tool for tool in flow.tools}
@@ -217,36 +214,31 @@ class FlowExecutor:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
-
-        if storage is None:
-            storage = DefaultRunStorage()
-        run_tracker = RunTracker(storage)
-        cache_manager = AbstractCacheManager.init_from_env()
+        tool_resolver = ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
 
         with _change_working_dir(working_dir):
-            tool_invoker = DefaultToolInvoker.load_tools(flow.nodes)
+            resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
 
         flow = Flow(
-            flow.id,
-            flow.name,
-            [tool.node for _, tool in tool_invoker.tools.items()],
-            inputs=flow.inputs,
-            outputs=flow.outputs,
-            tools=[]
+            flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
         )
         # ensure_flow_valid including validation + resolve
         # Todo: 1) split pure validation + resolve from below method 2) provide completed validation()
         flow = FlowValidator._validate_nodes_topology(flow)
         flow.outputs = FlowValidator._ensure_outputs_valid(flow)
 
+        if storage is None:
+            storage = DefaultRunStorage()
+        run_tracker = RunTracker(storage)
+
+        cache_manager = AbstractCacheManager.init_from_env()
+
         executor = FlowExecutor(
             flow=flow,
             connections=connections,
             run_tracker=run_tracker,
             cache_manager=cache_manager,
-            loaded_tools={name: tool.callable for name, tool in tool_invoker.tools.items()},
-            tool_invoker=tool_invoker,
+            loaded_tools={r.node.name: r.callable for r in resolved_tools},
             raise_ex=raise_ex,
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
@@ -358,11 +350,11 @@ class FlowExecutor:
             storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
+            # Will generate node run in context
             context = FlowExecutionContext(
                 name=flow.name,
                 run_tracker=run_tracker,
                 cache_manager=AbstractCacheManager.init_from_env(),
-                tool_invoker=DefaultToolInvoker.load_tools(flow.nodes),
             )
 
             try:
@@ -615,7 +607,6 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
-            tool_invoker=self._tool_invoker,
             run_id=run_id,
             flow_id=self._flow_id,
         )
@@ -795,7 +786,6 @@ class FlowExecutor:
             name=self._flow.name,
             run_tracker=run_tracker,
             cache_manager=self._cache_manager,
-            tool_invoker=self._tool_invoker,
             run_id=run_id,
             flow_id=self._flow_id,
             line_number=line_number,
@@ -807,7 +797,6 @@ class FlowExecutor:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             inputs = load_multimedia_data(self._flow.inputs, inputs)
-            # inputs = self.load_assistant_tools(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
@@ -890,7 +879,7 @@ class FlowExecutor:
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
         should_use_async = (
-            all(inspect.iscoroutinefunction(f) for f in self._tool_invoker.tools.values())
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
             or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
         )
         if should_use_async:

@@ -21,7 +21,6 @@ from promptflow._utils.utils import generate_elapsed_time_messages
 from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
 from promptflow.exceptions import PromptflowException
-from promptflow.executor._tool_invoker import DefaultToolInvoker
 
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
@@ -39,7 +38,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         name,
         run_tracker: RunTracker,
         cache_manager: AbstractCacheManager,
-        tool_invoker: DefaultToolInvoker,
         run_id=None,
         flow_id=None,
         line_number=None,
@@ -48,7 +46,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._name = name
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
-        self._tools_invoker = tool_invoker
         self._run_id = run_id or str(uuid.uuid4())
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
@@ -59,7 +56,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             name=self._name,
             run_tracker=self._run_tracker,
             cache_manager=self._cache_manager,
-            tool_invoker=self._tools_invoker,
             run_id=self._run_id,
             flow_id=self._flow_id,
             line_number=self._line_number,
