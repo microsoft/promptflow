@@ -173,13 +173,11 @@ def monitor_operation(
             # update activity name according to kwargs.
             _activity_name = update_activity_name(activity_name, kwargs=kwargs)
             with log_activity(logger, _activity_name, activity_type, custom_dimensions):
-                try:
-                    return f(self, *args, **kwargs)
-                finally:
                     if _activity_name in HINT_ACTIVITY_NAME:
+                        hint_for_update()
                         with ThreadPoolExecutor() as pool:
-                            tasks = [pool.submit(check_latest_version), pool.submit(hint_for_update)]
-                            concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
+                            pool.submit(check_latest_version)
+                    return f(self, *args, **kwargs)
         return wrapper
 
     return monitor
