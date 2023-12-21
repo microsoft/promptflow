@@ -9,6 +9,7 @@ import sys
 
 import waitress
 
+from promptflow._cli._utils import _get_cli_activity_name
 from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._service.app import create_app
@@ -18,6 +19,7 @@ from promptflow._sdk._service.utils.utils import (
     is_port_in_use,
     kill_exist_service,
 )
+from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
 from promptflow._version import VERSION
 from promptflow.exceptions import UserErrorException
@@ -84,7 +86,10 @@ def main():
         user_agent = f"local_pfs/{VERSION}"
     os.environ["USER_AGENT"] = user_agent
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
+    entry(command_args)
 
+
+def entry(command_args):
     parser = argparse.ArgumentParser(
         prog="pfs",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -99,6 +104,15 @@ def main():
     add_show_status_action(subparsers)
 
     args = parser.parse_args(command_args)
+
+    activity_name = _get_cli_activity_name(cli=parser.prog, args=args)
+    logger = get_telemetry_logger()
+
+    with log_activity(logger, activity_name, activity_type=ActivityType.INTERNALCALL):
+        run_command(args)
+
+
+def run_command(args):
     if args.version:
         print_pf_version()
         return
