@@ -46,7 +46,7 @@ class TestPromptflowServiceCLI:
             self._test_start_service()
             # Start pfs by specified port
             random_port = get_random_port()
-            self._test_start_service(port=random_port)
+            self._test_start_service(port=random_port, force=True)
 
             # Force start pfs
             start_pfs = subprocess.Popen("pfs start", shell=True)
