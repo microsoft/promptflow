@@ -30,6 +30,7 @@ class FlowMonitor:
         # set streaming callback functions if the response is streaming
         if g.streaming:
             streaming_monitor = StreamingMonitor(
+                self.logger,
                 flow_id=g.get("flow_id", self.flow_name),
                 start_time=g.start_time,
                 inputs=data,
