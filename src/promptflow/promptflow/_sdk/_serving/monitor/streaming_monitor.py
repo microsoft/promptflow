@@ -20,7 +20,7 @@ class StreamingMonitor:
                  metric_recorder,
                  data_collector,
                  ) -> None:
-        self.logger = logger,
+        self.logger = logger
         self.flow_id = flow_id
         self.start_time = start_time
         self.inputs = inputs
