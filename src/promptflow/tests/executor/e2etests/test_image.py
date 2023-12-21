@@ -7,6 +7,7 @@ import pytest
 from promptflow._utils.multimedia_utils import (
     MIME_PATTERN,
     _create_image_from_file,
+    _is_url,
     is_multimedia_dict,
     is_multimedia_dict_v2
 )
@@ -104,7 +105,7 @@ def contain_image_reference(value, parent_path="temp"):
         if is_multimedia_dict(value):
             v = list(value.values())[0]
             assert isinstance(v, str)
-            assert str(Path(v).parent) == parent_path
+            assert _is_url(v) or str(Path(v).parent) == parent_path
             return True
         elif is_multimedia_dict_v2(value):
             return True
