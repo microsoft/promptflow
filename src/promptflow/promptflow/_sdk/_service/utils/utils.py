@@ -7,6 +7,7 @@ from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
 
+from time import sleep
 import psutil
 import yaml
 from flask import abort, request
@@ -69,6 +70,7 @@ def kill_exist_service(port):
     proc = _get_process_by_port(port)
     if proc:
         proc.kill()
+        proc.wait(10)
 
 
 def get_started_service_info(port):
