@@ -84,7 +84,7 @@ Currently, promptflow supports the following environment variables:
 
 Valid for batch run only. The number of workers to use for parallel execution of the Flow.
 
-Default value is 16. If you have large number of batch run date row count, and want more efficiency, you can increase the concurrency to the improve the batch run concurrency, make it run faster.
+Default value is 16. If you have large number of batch run date row count, and want more efficiency, you can increase the PF_WORKER_COUNT to improve the batch run concurrency, make it run faster.
 
 When you modify the concurrency, please consider 2 points:
 
