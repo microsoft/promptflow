@@ -827,9 +827,17 @@ class Flow:
                 continue
             if node.type == ToolType.PROMPT or node.type == ToolType.LLM:
                 continue
+            logger.debug(f"Try loading connection names for node {node.name}.")
             tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
             if tool:
-                connection_names.update(self._get_connection_name_from_tool(tool, node).values())
+                node_connection_names = list(self._get_connection_name_from_tool(tool, node).values())
+            else:
+                node_connection_names = []
+            if node_connection_names:
+                logger.debug(f"Connection names of node {node.name}: {node_connection_names}")
+            else:
+                logger.debug(f"Node {node.name} doesn't reference any connection.")
+            connection_names.update(node_connection_names)
         return set({item for item in connection_names if item})
 
     def get_connection_input_names_for_node(self, node_name):

@@ -32,14 +32,21 @@ from .utils import (
     is_live,
     is_record,
     is_replay,
-    sanitize_pfs_body,
+    sanitize_pfs_request_body,
     sanitize_upload_hash,
 )
 from .variable_recorder import VariableRecorder
 
 
 class PFAzureIntegrationTestRecording:
-    def __init__(self, test_class, test_func_name: str, user_object_id: str, tenant_id: str):
+    def __init__(
+        self,
+        test_class,
+        test_func_name: str,
+        user_object_id: str,
+        tenant_id: str,
+        variable_recorder: VariableRecorder,
+    ):
         self.test_class = test_class
         self.test_func_name = test_func_name
         self.user_object_id = user_object_id
@@ -49,20 +56,26 @@ class PFAzureIntegrationTestRecording:
         self.vcr = self._init_vcr()
         self._cm = None  # context manager from VCR
         self.cassette = None
-        self.variable_recorder = VariableRecorder()
+        self.variable_recorder = variable_recorder
 
     @staticmethod
     def from_test_case(test_class, test_func_name: str, **kwargs) -> "PFAzureIntegrationTestRecording":
         test_class_name = test_class.__name__
-        user_object_id = kwargs.get("user_object_id", "")
-        tenant_id = kwargs.get("tenant_id", "")
         if test_class_name in TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING:
             return PFAzureRunIntegrationTestRecording(
-                test_class, test_func_name, user_object_id=user_object_id, tenant_id=tenant_id
+                test_class=test_class,
+                test_func_name=test_func_name,
+                user_object_id=kwargs["user_object_id"],
+                tenant_id=kwargs["tenant_id"],
+                variable_recorder=kwargs["variable_recorder"],
             )
         else:
             return PFAzureIntegrationTestRecording(
-                test_class, test_func_name, user_object_id=user_object_id, tenant_id=tenant_id
+                test_class=test_class,
+                test_func_name=test_func_name,
+                user_object_id=kwargs["user_object_id"],
+                tenant_id=kwargs["tenant_id"],
+                variable_recorder=kwargs["variable_recorder"],
             )
 
     def _get_recording_file(self) -> Path:
@@ -180,13 +193,6 @@ class PFAzureIntegrationTestRecording:
             UserInfoProcessor(user_object_id=self.user_object_id, tenant_id=self.tenant_id),
         ]
 
-    def get_or_record_variable(self, variable: str, default: str) -> str:
-        if not is_replay():
-            return self.variable_recorder.get_or_record_variable(variable, default)
-        else:
-            # return variable when playback, which is expected to be sanitized
-            return variable
-
     def _postprocess_recording(self) -> None:
         self._apply_replacement_for_recordings()
         return
@@ -285,7 +291,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
             # otherwise it will be sanitized multiple times with many zeros
             _r1 = copy.deepcopy(r1)
             body1 = _r1.body.decode("utf-8")
-            body1 = sanitize_pfs_body(body1)
+            body1 = sanitize_pfs_request_body(body1)
             body1 = sanitize_upload_hash(body1)
             _r1.body = body1.encode("utf-8")
             return matchers.body(_r1, r2)

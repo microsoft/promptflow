@@ -286,13 +286,6 @@ class TestFlowRun:
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
     ):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         result = pf.run(
             flow=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection",
             data=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection/data.jsonl",
