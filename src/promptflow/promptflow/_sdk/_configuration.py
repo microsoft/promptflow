@@ -45,6 +45,7 @@ class Configuration(object):
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
     RUN_OUTPUT_PATH = "run.output_path"
+    USER_AGENT = "user_agent"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -214,3 +215,10 @@ class Configuration(object):
                     "please use its child folder, e.g. '${flow_directory}/.runs'."
                 )
         return
+
+    def get_user_agent(self) -> Optional[str]:
+        """Get customer set user agent. If set, will add prefix `PFCustomer_`"""
+        user_agent = self.get_config(key=self.USER_AGENT)
+        if user_agent:
+            return f"PFCustomer_{user_agent}"
+        return user_agent

@@ -878,16 +878,28 @@ class ClientUserAgentUtil:
             if env_name in os.environ:
                 cls.append_user_agent(os.environ[env_name])
 
+    @classmethod
+    def update_user_agent_from_config(cls):
+        """Update user agent from config. 1p customer will set it. We'll add PFCustomer_ as prefix."""
+        from promptflow._sdk._configuration import Configuration
+
+        config = Configuration.get_instance()
+        user_agent = config.get_user_agent()
+        if user_agent:
+            cls.append_user_agent(user_agent)
+
 
 def setup_user_agent_to_operation_context(user_agent):
     """Setup user agent to OperationContext.
     For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
     For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
     For calls from SDK, ua will be like: promptflow-sdk/
+    For 1p customer call which set user agent in config, ua will be like: PFCustomer_XXX/
     """
     # add user added UA after SDK/CLI
     ClientUserAgentUtil.append_user_agent(user_agent)
     ClientUserAgentUtil.update_user_agent_from_env_var()
+    ClientUserAgentUtil.update_user_agent_from_config()
     return ClientUserAgentUtil.get_user_agent()
 
 
