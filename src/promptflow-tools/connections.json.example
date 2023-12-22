@@ -69,7 +69,6 @@
     },
     "module": "promptflow.connections"
   },
-  ,
   "azure_content_safety_connection": {
     "type": "AzureContentSafetyConnection",
     "value": {
