@@ -43,7 +43,6 @@ from promptflow._sdk._constants import (
     KEYRING_ENCRYPTION_KEY_NAME,
     KEYRING_ENCRYPTION_LOCK_PATH,
     KEYRING_SYSTEM,
-    LOGGER_NAME,
     NODE,
     NODE_VARIANTS,
     NODES,
@@ -65,9 +64,11 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.tool import ToolType
 from promptflow.exceptions import UserErrorException
+
+logger = get_cli_sdk_logger()
 
 
 def snake_to_camel(name):
@@ -336,7 +337,6 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
     'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the
     original value as a fallback.
     """
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
     for connection_name, connection in connections.items():
         values = connection.get("value", {})
         for key, val in values.items():
@@ -482,7 +482,6 @@ def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
 
     def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
@@ -606,7 +605,6 @@ def _generate_tool_meta(
         If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
     :return: tool meta dict
     """
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
         manager = multiprocessing.Manager()
@@ -878,16 +876,28 @@ class ClientUserAgentUtil:
             if env_name in os.environ:
                 cls.append_user_agent(os.environ[env_name])
 
+    @classmethod
+    def update_user_agent_from_config(cls):
+        """Update user agent from config. 1p customer will set it. We'll add PFCustomer_ as prefix."""
+        from promptflow._sdk._configuration import Configuration
+
+        config = Configuration.get_instance()
+        user_agent = config.get_user_agent()
+        if user_agent:
+            cls.append_user_agent(user_agent)
+
 
 def setup_user_agent_to_operation_context(user_agent):
     """Setup user agent to OperationContext.
     For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
     For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
     For calls from SDK, ua will be like: promptflow-sdk/
+    For 1p customer call which set user agent in config, ua will be like: PFCustomer_XXX/
     """
     # add user added UA after SDK/CLI
     ClientUserAgentUtil.append_user_agent(user_agent)
     ClientUserAgentUtil.update_user_agent_from_env_var()
+    ClientUserAgentUtil.update_user_agent_from_config()
     return ClientUserAgentUtil.get_user_agent()
 
 
@@ -925,15 +935,20 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(executable, client, connections_to_ignore: List[str] = None):
+def get_local_connections_from_executable(
+    executable, client, connections_to_ignore: List[str] = None, connections_to_add: List[str] = None
+):
     """Get local connections from executable.
 
     executable: The executable flow object.
     client: Local client to get connections.
     connections_to_ignore: The connection names to ignore when getting connections.
+    connections_to_add: The connection names to add when getting connections.
     """
 
     connection_names = executable.get_connection_names()
+    if connections_to_add:
+        connection_names.update(connections_to_add)
     connections_to_ignore = connections_to_ignore or []
     result = {}
     for n in connection_names:
@@ -1101,7 +1116,6 @@ def parse_remote_flow_pattern(flow: object) -> str:
 
 
 def get_connection_operation(connection_provider: str):
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
     if connection_provider == ConnectionProvider.LOCAL.value:
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
 

@@ -8,14 +8,14 @@ from functools import partial
 
 from promptflow._cli._params import add_param_all_results, add_param_max_results, add_param_set, base_params
 from promptflow._cli._utils import activate_action, confirm, exception_handler, get_secret_input, print_yellow_warning
-from promptflow._sdk._constants import LOGGER_NAME, MAX_LIST_CLI_RESULTS
+from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import load_yaml
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 _client = None
 
 

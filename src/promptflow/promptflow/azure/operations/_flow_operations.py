@@ -4,7 +4,6 @@
 # pylint: disable=protected-access
 import copy
 import json
-import logging
 import os
 import re
 from datetime import datetime
@@ -30,7 +29,6 @@ from promptflow._sdk._constants import (
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
     FLOW_TOOLS_JSON,
-    LOGGER_NAME,
     MAX_LIST_CLI_RESULTS,
     PROMPT_FLOW_DIR_NAME,
     WORKSPACE_LINKED_DATASTORE_NAME,
@@ -41,7 +39,7 @@ from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json, load_from_dict
 from promptflow._sdk._vendor._asset_utils import traverse_directory
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
@@ -50,7 +48,7 @@ from promptflow.azure.operations._artifact_utilities import _get_datastore_name,
 from promptflow.azure.operations._fileshare_storeage_helper import FlowFileStorageClient
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+logger = get_cli_sdk_logger()
 
 
 class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
@@ -457,7 +455,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                         ignore_file=ignore_file,
                     )
                 )
-            logger = LoggerFactory.get_logger(LOGGER_NAME)
 
             ignore_files = code._ignore_file._get_ignore_list()
             for file_path in ignore_files:

@@ -17,16 +17,15 @@ from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
-    LOGGER_NAME,
     PROMPT_FLOW_DIR_NAME,
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import resolve_flow_path
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 class FlowBase(abc.ABC):

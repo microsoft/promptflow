@@ -11,7 +11,7 @@ from types import GeneratorType
 from typing import Any, Mapping
 
 from promptflow._internal import ConnectionManager
-from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import FlowContext, ProtectedFlow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
@@ -25,10 +25,10 @@ from promptflow.exceptions import UserErrorException
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..._utils.async_utils import async_run_allowing_running_loop
-from ..._utils.logger_utils import LoggerFactory
+from ..._utils.logger_utils import get_cli_sdk_logger
 from .utils import SubmitterHelper, variant_overwrite_context
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 class TestSubmitter:
@@ -116,9 +116,12 @@ class TestSubmitter:
                     else:
                         missing_inputs.append(name)
                         continue
-                    dependency_nodes_outputs[value.value] = (
-                        {value.property: dependency_input} if value.property else dependency_input
-                    )
+                    if value.property:
+                        dependency_nodes_outputs[value.value] = dependency_nodes_outputs.get(value.value, {})
+                        if value.property in dependency_input:
+                            dependency_nodes_outputs[value.value][value.property] = dependency_input[value.property]
+                    else:
+                        dependency_nodes_outputs[value.value] = dependency_input
                     merged_inputs[name] = dependency_input
                 elif value.value_type == InputValueType.FLOW_INPUT:
                     input_name = f"{value.prefix}{value.value}"
@@ -233,6 +236,7 @@ class TestSubmitter:
             stream=stream,
             credential_list=credential_list,
         ):
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
@@ -240,7 +244,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
-                output_sub_dir=".promptflow/intermediate",
+                storage=storage,
             )
             return result
 
