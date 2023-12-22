@@ -14,6 +14,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
+from ..conftest import MockSpawnProcess, recording_injection_decorator_compatible_with_spawn
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -36,6 +37,7 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     return batch_result
 
 
+@recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
 def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
     os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
@@ -163,6 +165,7 @@ class TestBatch:
             ),
         ],
     )
+    @recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
     def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         if "spawn" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: spawn")
