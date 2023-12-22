@@ -176,7 +176,6 @@ class RunTracker(ThreadLocalSingleton):
         run_info.api_calls = {
             "start_time": run_info.start_time,
             "end_time": run_info.end_time,
-            "duration": run_info.duration,
             "children": self._collect_traces_from_nodes(run_id),
             "system_metrics": run_info.system_metrics
             }
