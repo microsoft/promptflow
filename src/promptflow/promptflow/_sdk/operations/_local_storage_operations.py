@@ -296,8 +296,8 @@ class LocalStorageOperations(AbstractRunStorage):
             for line_error in batch_result.error_summary.error_list:
                 errors.append(line_error.to_dict())
             # collect aggregation node error
-            for aggr_error in batch_result.error_summary.aggr_error_dict.values():
-                errors.append({"error": aggr_error})
+            for node_name, aggr_error in batch_result.error_summary.aggr_error_dict.items():
+                errors.append({"error": aggr_error, "aggregation_node_name": node_name})
         if errors:
             try:
                 # use first line run error message as exception message if no exception raised
