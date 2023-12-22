@@ -16,7 +16,6 @@ from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
-from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -161,14 +160,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                 response = await client.get(health_url)
             if response.status_code != 200:
                 bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Response: {response.status_code} - {response.text}")
-                try:
-                    error_dict = response.json()
-                    raise ValidationException(message=error_dict["error"]["message"], target=ErrorTarget.BATCH)
-                except (JSONDecodeError, KeyError):
-                    return False
+                return False
             return True
         except Exception as e:
-            if isinstance(e, ValidationException):
-                raise e
             bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
             return False
