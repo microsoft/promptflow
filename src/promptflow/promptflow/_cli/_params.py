@@ -227,6 +227,7 @@ def add_parser_build(subparsers, entity_name: str):
         help=argparse.SUPPRESS,
     )
     add_params = [
+        add_param_source,
         add_param_build_output,
         add_param_format,
         add_param_flow_only,
