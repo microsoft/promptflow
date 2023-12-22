@@ -6,7 +6,6 @@ import concurrent
 import copy
 import hashlib
 import json
-import logging
 import os
 import shutil
 import sys
@@ -32,7 +31,6 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
     LINE_NUMBER,
-    LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
     PROMPT_FLOW_DIR_NAME,
@@ -51,7 +49,7 @@ from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_re
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.flow_utils import get_flow_lineage_id
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
     AUTOMATIC_RUNTIME_NAME,
@@ -68,7 +66,7 @@ from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+logger = get_cli_sdk_logger()
 
 
 class RunRequestException(Exception):

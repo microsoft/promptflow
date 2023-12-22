@@ -43,7 +43,6 @@ from promptflow._sdk._constants import (
     KEYRING_ENCRYPTION_KEY_NAME,
     KEYRING_ENCRYPTION_LOCK_PATH,
     KEYRING_SYSTEM,
-    LOGGER_NAME,
     NODE,
     NODE_VARIANTS,
     NODES,
@@ -65,9 +64,11 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.tool import ToolType
 from promptflow.exceptions import UserErrorException
+
+logger = get_cli_sdk_logger()
 
 
 def snake_to_camel(name):
@@ -336,7 +337,6 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
     'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the
     original value as a fallback.
     """
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
     for connection_name, connection in connections.items():
         values = connection.get("value", {})
         for key, val in values.items():
@@ -482,7 +482,6 @@ def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
 
     def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
@@ -606,7 +605,6 @@ def _generate_tool_meta(
         If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
     :return: tool meta dict
     """
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
         manager = multiprocessing.Manager()
@@ -1113,7 +1111,6 @@ def parse_remote_flow_pattern(flow: object) -> str:
 
 
 def get_connection_operation(connection_provider: str):
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
     if connection_provider == ConnectionProvider.LOCAL.value:
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
