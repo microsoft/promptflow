@@ -439,7 +439,6 @@ builtins = {}
 apis = {}
 connections = {}
 connection_type_to_api_mapping = {}
-reserved_keys = {}
 
 
 def _register(provider_cls, collection, type):
@@ -475,22 +474,12 @@ def _register_method(provider_method, collection, type):
     module_logger.debug(f"Registered {name} as {type} function")
 
 
-def _get_llm_reserved_keys():
-    params = []
-    for k, v in apis.items():
-        if isinstance(v, Tool):
-            params.extend(v.inputs.keys())
-    return set(params)
-
-
 def register_builtins(provider_cls):
     _register(provider_cls, builtins, ToolType.PYTHON)
 
 
 def register_apis(provider_cls):
     _register(provider_cls, apis, ToolType._ACTION)
-    global reserved_keys
-    reserved_keys = _get_llm_reserved_keys()
 
 
 def register_builtin_method(provider_method):

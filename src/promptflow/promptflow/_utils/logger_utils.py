@@ -16,6 +16,7 @@ from functools import partial
 from typing import List, Optional
 
 from promptflow._constants import PF_LOGGING_LEVEL
+from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_mode import RunMode
@@ -172,7 +173,7 @@ valid_logging_level = {"CRITICAL", "FATAL", "ERROR", "WARN", "WARNING", "INFO", 
 
 
 def get_pf_logging_level(default=logging.INFO):
-    logging_level = os.environ.get(PF_LOGGING_LEVEL, logging.INFO)
+    logging_level = os.environ.get(PF_LOGGING_LEVEL, None)
     if logging_level not in valid_logging_level:
         # Fall back to info if user input is invalid.
         logging_level = default
@@ -364,3 +365,9 @@ class LoggerFactory:
         handler.setFormatter(formatter)
         handler.setLevel(verbosity)
         logger.addHandler(handler)
+
+
+def get_cli_sdk_logger():
+    """Get logger used by CLI SDK."""
+    # cli sdk logger default logging level is WARNING
+    return LoggerFactory.get_logger(LOGGER_NAME, verbosity=logging.WARNING)
