@@ -6,7 +6,6 @@ from typing import Callable, Union
 
 from promptflow import PFClient
 from promptflow._constants import LINE_NUMBER_KEY
-from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.utils import validate_request_data
@@ -26,7 +25,7 @@ from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = LoggerFactory.get_logger("FlowInvoker")
 
 
 class FlowInvoker:
