@@ -11,7 +11,7 @@ from types import GeneratorType
 from typing import Any, Mapping
 
 from promptflow._internal import ConnectionManager
-from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import FlowContext, ProtectedFlow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
@@ -25,10 +25,10 @@ from promptflow.exceptions import UserErrorException
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..._utils.async_utils import async_run_allowing_running_loop
-from ..._utils.logger_utils import LoggerFactory
+from ..._utils.logger_utils import get_cli_sdk_logger
 from .utils import SubmitterHelper, variant_overwrite_context
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 class TestSubmitter:

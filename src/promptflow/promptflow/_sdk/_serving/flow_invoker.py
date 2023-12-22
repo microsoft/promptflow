@@ -7,14 +7,10 @@ from typing import Callable, Union
 
 from promptflow import PFClient
 from promptflow._constants import LINE_NUMBER_KEY
-from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_flow
-from promptflow._sdk._serving._errors import (
-    UnexpectedConnectionProviderReturn,
-    UnsupportedConnectionProvider,
-)
-from promptflow._sdk._serving.utils import validate_request_data
+from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.flow_result import FlowResult
+from promptflow._sdk._serving.utils import validate_request_data
 from promptflow._sdk._utils import (
     dump_flow_result,
     get_local_connections_from_executable,
@@ -62,7 +58,7 @@ class FlowInvoker:
         raise_ex: bool = True,
         **kwargs,
     ):
-        self.logger = kwargs.get("logger", LoggerFactory.get_logger(LOGGER_NAME))
+        self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
         self._executable_flow = ExecutableFlow._from_dict(
             flow_dag=self.flow_entity.dag, working_dir=self.flow_entity.code
@@ -96,9 +92,7 @@ class FlowInvoker:
                 connections_to_add=list(self.connections_name_overrides.values()),
             )
             # use original name for connection with name override
-            override_name_to_original_name_mapping = {
-                v: k for k, v in self.connections_name_overrides.items()
-            }
+            override_name_to_original_name_mapping = {v: k for k, v in self.connections_name_overrides.items()}
             for name, conn in connections.items():
                 if name in override_name_to_original_name_mapping:
                     self.connections[override_name_to_original_name_mapping[name]] = conn

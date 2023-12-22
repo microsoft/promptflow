@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import logging
 from typing import Dict
 
 from azure.ai.ml._scope_dependent_operations import (
@@ -11,14 +10,13 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 
-from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._entities._workspace_connection_spec import WorkspaceConnectionSpec
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+logger = get_cli_sdk_logger()
 
 
 class ConnectionOperations(_ScopeDependentOperations):

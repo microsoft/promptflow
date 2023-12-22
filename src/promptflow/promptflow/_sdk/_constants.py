@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 import os
 from enum import Enum
 from pathlib import Path
@@ -18,9 +17,9 @@ def _prepare_home_dir() -> Path:
     User can configure it by setting environment variable: `PF_HOME_DIRECTORY`;
     if not configured, or configured value is not valid, use default value: "~/.promptflow/".
     """
-    from promptflow._utils.logger_utils import LoggerFactory
+    from promptflow._utils.logger_utils import get_cli_sdk_logger
 
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
+    logger = get_cli_sdk_logger()
 
     if PROMPT_FLOW_HOME_DIR_ENV_VAR in os.environ:
         logger.debug(

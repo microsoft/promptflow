@@ -12,22 +12,16 @@ import yaml
 from marshmallow import Schema
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
-from promptflow._sdk._constants import (
-    BASE_PATH_CONTEXT_KEY,
-    DEFAULT_ENCODING,
-    FLOW_TOOLS_JSON,
-    LOGGER_NAME,
-    PROMPT_FLOW_DIR_NAME,
-)
+from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from ..._utils.flow_utils import resolve_flow_path
-from ..._utils.logger_utils import LoggerFactory
+from ..._utils.logger_utils import get_cli_sdk_logger
 from .._constants import DAG_FILE_NAME
 from ._connection import _Connection
 from ._validation import SchemaValidatableMixin
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 class FlowBase(abc.ABC):
