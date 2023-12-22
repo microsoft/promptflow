@@ -44,7 +44,7 @@ class ResolvedTool:
 
 
 class ToolResolver(ThreadLocalSingleton):
-    CONTEXT_VAR_NAME = "ToolResolver"
+    CONTEXT_VAR_NAME = "Resolver"
     context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
     def __init__(

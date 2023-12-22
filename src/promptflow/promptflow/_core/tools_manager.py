@@ -384,10 +384,6 @@ class ToolLoader:
         # Used to handle backward compatibility of tool ID changes.
         self._deprecated_tools = _find_deprecated_tools(self._package_tools)
 
-    def update_package_tool_keys(self, package_tool_keys: List[str]) -> None:
-        keys = [key for key in package_tool_keys if key not in self._package_tools]
-        self._package_tools.update(collect_package_tools(keys))
-
     # TODO: Replace NotImplementedError with NotSupported in the future.
     def load_tool_for_node(self, node: Node) -> Tool:
         if node.source is None:

@@ -3,24 +3,13 @@
 # ---------------------------------------------------------
 
 import docutils.nodes
-import functools
-import threading
-import time
 from docutils.core import publish_doctree
 from contextvars import ContextVar
 from functools import partial
-from logging import WARNING
-from typing import Callable, List, Optional
+from typing import List, Optional
 
-from promptflow._core._errors import ToolExecutionError
-# from promptflow._core.thread_local_singleton import ThreadLocalSingleton
-from promptflow._core.tracer import Tracer
-from promptflow._utils.logger_utils import logger
-from promptflow._utils.thread_utils import RepeatLogTimer
-from promptflow._utils.utils import generate_elapsed_time_messages
 from promptflow.contracts.flow import InputAssignment, Node, ToolSource
 from promptflow.executor._tool_resolver import ToolResolver
-from promptflow.exceptions import PromptflowException
 
 
 class DefaultToolInvoker():
@@ -124,61 +113,3 @@ class DefaultToolInvoker():
                 }
             }
         }
-
-    def invoke_tool(self, node: Node, f: Callable, run_id: str, line_number, kwargs):
-        Tracer.start_tracing(run_id, node.name)
-        result = self._invoke_tool_with_timer(node, f, line_number, kwargs)
-        traces = Tracer.end_tracing(run_id)
-        return result, traces
-
-    async def invoke_tool_async(self, node: Node, f: Callable, run_id: str, kwargs):
-        Tracer.start_tracing(run_id, node.name)
-        result = await self._invoke_tool_async_inner(node, f, kwargs)
-        traces = Tracer.end_tracing(run_id)
-        return result, traces
-
-    async def _invoke_tool_async_inner(self, node: Node, f: Callable, kwargs):
-        module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
-        try:
-            return await f(**kwargs)
-        except PromptflowException as e:
-            # All the exceptions from built-in tools are PromptflowException.
-            # For these cases, raise the exception directly.
-            if module is not None:
-                e.module = module
-            raise e
-        except Exception as e:
-            # Otherwise, we assume the error comes from user's tool.
-            # For these cases, raise ToolExecutionError, which is classified as UserError
-            # and shows stack trace in the error message to make it easy for user to troubleshoot.
-            raise ToolExecutionError(node_name=node.name, module=module) from e
-
-    def _invoke_tool_with_timer(self, node: Node, f: Callable, line_number, kwargs):
-        module = f.func.__module__ if isinstance(f, functools.partial) else f.__module__
-        node_name = node.name
-        try:
-            logging_name = node_name
-            if line_number is not None:
-                logging_name = f"{node_name} in line {line_number}"
-            interval_seconds = 60
-            start_time = time.perf_counter()
-            thread_id = threading.current_thread().ident
-            with RepeatLogTimer(
-                interval_seconds=interval_seconds,
-                logger=logger,
-                level=WARNING,
-                log_message_function=generate_elapsed_time_messages,
-                args=(logging_name, start_time, interval_seconds, thread_id),
-            ):
-                return f(**kwargs)
-        except PromptflowException as e:
-            # All the exceptions from built-in tools are PromptflowException.
-            # For these cases, raise the exception directly.
-            if module is not None:
-                e.module = module
-            raise e
-        except Exception as e:
-            # Otherwise, we assume the error comes from user's tool.
-            # For these cases, raise ToolExecutionError, which is classified as UserError
-            # and shows stack trace in the error message to make it easy for user to troubleshoot.
-            raise ToolExecutionError(node_name=node_name, module=module) from e
