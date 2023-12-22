@@ -2,13 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import functools
 import inspect
 import logging
 from abc import ABC
 from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
+from promptflow._core.tracer import trace
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
@@ -73,6 +73,7 @@ def tool(
         if type is not None and type not in [k.value for k in ToolType]:
             raise UserErrorException(f"Tool type {type} is not supported yet.")
 
+        # All the tools should be traced.
         new_f = trace(func)
 
         new_f.__original_function = func
@@ -85,62 +86,6 @@ def tool(
         new_f.__extra_info = kwargs
         if streaming_option_parameter and isinstance(streaming_option_parameter, str):
             setattr(new_f, STREAMING_OPTION_PARAMETER_ATTR, streaming_option_parameter)
-
-        return new_f
-
-    # enable use decorator without "()" if all arguments are default values
-    if func is not None:
-        return tool_decorator(func)
-    return tool_decorator
-
-
-def trace(
-    func=None,
-) -> Callable:
-    """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.
-    """
-
-    def tool_decorator(func: Callable) -> Callable:
-        if inspect.iscoroutinefunction(func):
-
-            @functools.wraps(func)
-            async def decorated_tool(*args, **kwargs):
-                from .tracer import Tracer
-
-                if Tracer.active_instance() is None:
-                    return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push_function(func, args, kwargs)
-                    output = await func(*args, **kwargs)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-            new_f = decorated_tool
-        else:
-
-            @functools.wraps(func)
-            def decorated_tool(*args, **kwargs):
-                from .tracer import Tracer
-
-                if Tracer.active_instance() is None:
-                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push_function(func, args, kwargs)
-                    output = func(*args, **kwargs)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-            new_f = decorated_tool
 
         return new_f
 
