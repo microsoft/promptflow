@@ -172,7 +172,7 @@ valid_logging_level = {"CRITICAL", "FATAL", "ERROR", "WARN", "WARNING", "INFO", 
 
 
 def get_pf_logging_level(default=logging.INFO):
-    logging_level = os.environ.get(PF_LOGGING_LEVEL, logging.INFO)
+    logging_level = os.environ.get(PF_LOGGING_LEVEL, None)
     if logging_level not in valid_logging_level:
         # Fall back to info if user input is invalid.
         logging_level = default

@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import logging
 import os
 from enum import Enum
 from pathlib import Path
@@ -20,7 +20,7 @@ def _prepare_home_dir() -> Path:
     """
     from promptflow._utils.logger_utils import LoggerFactory
 
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
+    logger = LoggerFactory.get_logger(LOGGER_NAME, verbosity=logging.WARNING)
 
     if PROMPT_FLOW_HOME_DIR_ENV_VAR in os.environ:
         logger.debug(
