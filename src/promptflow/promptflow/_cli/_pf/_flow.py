@@ -175,7 +175,8 @@ pf flow validate --source <path_to_flow>
         epilog=epilog,
         add_params=[
             add_param_source,
-        ],
+        ]
+        + base_params,
         subparsers=subparsers,
         help_message="Validate a flow. Will raise error if the flow is not valid.",
         action_param_name="sub_action",
