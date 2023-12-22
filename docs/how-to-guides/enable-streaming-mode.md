@@ -227,7 +227,7 @@ If the response code is "424 Model Error", it means that the error is caused by 
 
 ### Consume using Python
 
-We have created [a utility file](../media/how-to-guides/how-to-enable-streaming-mode/scripts/event_stream.py) as an example to demonstrate how to consume the server-sent event. A sample usage would like:
+A sample usage would like:
 
 ```python
 try:
@@ -236,8 +236,8 @@ try:
 
     content_type = response.headers.get('Content-Type')
     if "text/event-stream" in content_type:
-        event_stream = EventStream(response.iter_lines())
-        for event in event_stream:
+        client = SSEClient(response)
+        for event in client.events():
             # Handle event, i.e. print to stdout
     else:
         # Handle json response

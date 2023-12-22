@@ -85,7 +85,7 @@ def score(url, api_key, body, stream=True, on_event=None):
         content_type = response.headers.get('Content-Type')
         if "text/event-stream" in content_type:
             output = {}
-            client = SSEClient(response)  
+            client = SSEClient(response)
             for event in client.events():
                 if on_event:
                     on_event(event)
