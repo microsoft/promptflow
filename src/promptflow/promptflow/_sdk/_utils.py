@@ -937,15 +937,21 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(executable, client, connections_to_ignore: List[str] = None):
+def get_local_connections_from_executable(executable,
+                                          client,
+                                          connections_to_ignore: List[str] = None,
+                                          connections_to_add: List[str] = None):
     """Get local connections from executable.
 
     executable: The executable flow object.
     client: Local client to get connections.
     connections_to_ignore: The connection names to ignore when getting connections.
+    connections_to_add: The connection names to add when getting connections.
     """
 
     connection_names = executable.get_connection_names()
+    if connections_to_add:
+        connection_names.update(connections_to_add)
     connections_to_ignore = connections_to_ignore or []
     result = {}
     for n in connection_names:

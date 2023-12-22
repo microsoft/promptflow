@@ -87,6 +87,17 @@ setup(
         "pfs": [
             "flask-restx>=1.2.0,<2.0.0",
         ],
+        "azureml-serving": [
+            # AzureML connection dependencies
+            "azure-identity>=1.12.0,<2.0.0",
+            "azure-ai-ml>=1.11.0,<2.0.0",
+            # OTel dependencies for monitoring
+            "opentelemetry-api>=1.21.0,<2.0.0",
+            "opentelemetry-sdk>=1.21.0,<2.0.0",
+            "azure-monitor-opentelemetry>=1.1.1,<2.0.0",
+            # MDC dependencies for monitoring
+            "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
+        ]
     },
     packages=find_packages(),
     entry_points={
