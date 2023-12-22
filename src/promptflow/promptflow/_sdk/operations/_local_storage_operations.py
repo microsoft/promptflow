@@ -291,11 +291,13 @@ class LocalStorageOperations(AbstractRunStorage):
         :param batch_result: Bulk run outputs. If exception not raised, store line run error messages.
         """
         # extract line run errors
-        message = ""
         errors = []
         if batch_result:
             for line_error in batch_result.error_summary.error_list:
                 errors.append(line_error.to_dict())
+            # collect aggregation node error
+            for aggr_error in batch_result.error_summary.aggr_error_dict.values():
+                errors.append({"error": aggr_error})
         if errors:
             try:
                 # use first line run error message as exception message if no exception raised
@@ -319,7 +321,7 @@ class LocalStorageOperations(AbstractRunStorage):
                 error=exception,
                 failed_lines=batch_result.failed_lines if batch_result else "unknown",
                 total_lines=batch_result.total_lines if batch_result else "unknown",
-                line_errors={"errors": errors},
+                errors={"errors": errors},
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(
