@@ -373,6 +373,8 @@ class TestFlowRun:
             description=new_description,
             tags=new_tags,
         )
+        # sleep to wait for update to take effect
+        sleep(3)
         assert run.display_name == new_display_name
         assert run.description == new_description
         assert run.tags["test_tag"] == test_mark
@@ -382,6 +384,8 @@ class TestFlowRun:
             run=run_id,
             tags={"test_tag": {"a": 1}},
         )
+        # sleep to wait for update to take effect
+        sleep(3)
         assert run.display_name == new_display_name
         assert run.description == new_description
         assert run.tags["test_tag"] == test_mark
@@ -783,6 +787,7 @@ class TestFlowRun:
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_download_run(self, pf: PFClient, created_batch_run_without_llm: Run):
         expected_files = [
             DownloadedRun.RUN_METADATA_FILE_NAME,

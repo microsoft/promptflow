@@ -463,3 +463,28 @@ def mock_to_thread() -> None:
         new=to_thread,
     ):
         yield
+
+
+@pytest.fixture
+def mock_isinstance_for_mock_datastore() -> None:
+    """Mock built-in function isinstance.
+
+    We have an isinstance check during run download for datastore type for better error message;
+    while our mock datastore in replay mode is not a valid type, so mock it with strict condition.
+    """
+    if not is_replay():
+        yield
+    else:
+        from azure.ai.ml.entities._datastore.azure_storage import AzureBlobDatastore
+
+        from .recording_utilities.utils import MockDatastore
+
+        original_isinstance = isinstance
+
+        def mock_isinstance(*args):
+            if original_isinstance(args[0], MockDatastore) and args[1] == AzureBlobDatastore:
+                return True
+            return original_isinstance(*args)
+
+        with patch("builtins.isinstance", new=mock_isinstance):
+            yield
