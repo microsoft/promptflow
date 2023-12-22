@@ -306,7 +306,7 @@ class TestSubmitter:
 
             print(f"{Fore.YELLOW}Bot: ", end="")
             print_chat_output(flow_result.output[output_name], generator_record)
-            flow_result = resolve_generator(flow_result)
+            flow_result = resolve_generator(flow_result, generator_record)
             flow_outputs = {k: v for k, v in flow_result.output.items()}
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
             chat_history.append(history)
