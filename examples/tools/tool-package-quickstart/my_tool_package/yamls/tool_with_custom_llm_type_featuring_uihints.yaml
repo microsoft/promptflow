@@ -1,8 +1,8 @@
-my_tool_package.tools.tool_with_custom_llm_type_add_uihints.my_tool:
+my_tool_package.tools.tool_with_custom_llm_type_featuring_uihints.my_tool:
   name: Custom LLM Tool with UI Hints
   description: This is a custom LLM tool with UI hints.
   type: custom_llm
-  module: my_tool_package.tools.tool_with_custom_llm_type_add_uihints
+  module: my_tool_package.tools.tool_with_custom_llm_type_featuring_uihints
   function: my_tool
   inputs:
     connection:
