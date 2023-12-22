@@ -810,6 +810,13 @@ class FlowExecutor:
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+        except KeyboardInterrupt as ex:
+            # Run will be cancelled when the process receives a SIGINT signal.
+            # KeyboardInterrupt will be raised after asyncio finishes its signal handling
+            # End run with the KeyboardInterrupt exception, so that its status will be Canceled
+            flow_logger.info("Received KeyboardInterrupt, cancel the run.")
+            run_tracker.end_run(line_run_id, ex=ex)
+            raise
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
             if self._raise_ex:
@@ -875,15 +882,16 @@ class FlowExecutor:
             )
         return outputs
 
+    def _should_use_async(self):
+        return all(
+            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
+        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        should_use_async = (
-            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
-            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
-        )
-        if should_use_async:
+        if self._should_use_async():
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
             nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
