@@ -15,7 +15,8 @@
                     ]
                 }
             },
-            "function": "grade"
+            "function": "grade",
+            "scope": "experiment"
         },
         "calculate_accuracy.py": {
             "type": "python",

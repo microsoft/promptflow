@@ -13,6 +13,7 @@ from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS
 from ._user_agent import USER_AGENT
 from ._utils import get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
+from .entities._orchestration import Orchestration
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._flow_operations import FlowOperations
@@ -104,12 +105,16 @@ class PFClient:
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
-        if not os.path.exists(flow):
-            raise FileNotFoundError(f"flow path {flow} does not exist")
-        if data and not os.path.exists(data):
-            raise FileNotFoundError(f"data path {data} does not exist")
-        if not run and not data:
-            raise ValueError("at least one of data or run must be provided")
+        if isinstance(flow, Orchestration):
+            data = flow.data
+        else:
+            if not os.path.exists(flow):
+                raise FileNotFoundError(f"flow path {flow} does not exist")
+            if data and not os.path.exists(data):
+                raise FileNotFoundError(f"data path {data} does not exist")
+            if not run and not data:
+                raise ValueError("at least one of data or run must be provided")
+            flow = Path(flow)
 
         run = Run(
             name=name,
@@ -119,7 +124,7 @@ class PFClient:
             column_mapping=column_mapping,
             run=run,
             variant=variant,
-            flow=Path(flow),
+            flow=flow,
             connections=connections,
             environment_variables=environment_variables,
             config=Configuration(overrides=self._config),

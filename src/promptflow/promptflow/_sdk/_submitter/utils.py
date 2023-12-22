@@ -4,10 +4,14 @@
 # this file is a middle layer between the local SDK and executor, it'll have some similar logic with cloud PFS.
 
 import contextlib
+import json
 import os
+import re
+import shutil
 import tempfile
 from os import PathLike
 from pathlib import Path
+from typing import Union
 
 from dotenv import load_dotenv
 from pydash import objects
@@ -22,12 +26,14 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     ConnectionFields,
+    JobType,
 )
 from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
+    dump_yaml,
     get_local_connections_from_executable,
     get_used_connection_names_from_dict,
     update_dict_value_with_connections,
@@ -36,6 +42,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.flow_utils import dump_flow_dag, load_flow_dag
 from promptflow.contracts.flow import Flow as ExecutableFlow
+from promptflow.exceptions import UserErrorException
 
 
 def overwrite_variant(flow_dag: dict, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
@@ -198,7 +205,10 @@ class SubmitterHelper:
         )
 
     @staticmethod
-    def resolve_connection_names_from_tool_meta(tools_meta: dict, flow_dag: dict,):
+    def resolve_connection_names_from_tool_meta(
+        tools_meta: dict,
+        flow_dag: dict,
+    ):
         connection_names = set({})
         tool_names = set({})
         if tools_meta:
@@ -236,3 +246,144 @@ class SubmitterHelper:
                 if raise_error:
                     raise e
         return result
+
+    @staticmethod
+    def extend_aggregation_job_to_flow(job, base_path):
+        """
+        Extend aggregation job to a flow with a single node.
+        """
+        # TODO: Need to load the tool and get the input type.
+        # from promptflow.executor._tool_resolver import ToolResolver
+        # from promptflow._core.tools_manager import ToolLoader
+        # package_tool_keys = [job.name] if job.source and job.source.get("tool") else []
+        # tool_resolver = ToolResolver(job.base_path, connections, package_tool_keys)
+        # tool = tool_resolver.resolve_tool_by_node()
+
+        source_dict = {**job.source}
+        # TODO: Refine the flow dump dir
+        target = Path(base_path) / ".temp" / job.name
+        target.mkdir(parents=True, exist_ok=True)
+        tool_path = source_dict.get("path")
+        if tool_path:
+            shutil.copy2(base_path / tool_path, target / Path(tool_path).name)
+            source_dict["path"] = Path(tool_path).name
+        flow_dict = {
+            "$schema": "https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json",
+            "inputs": {key: {"type": "string"} for key in job.inputs.keys()},  # Hard code to string for now
+            "outputs": {},
+            "nodes": [
+                {
+                    "name": job.name,
+                    "aggregation": True,
+                    "type": "python",
+                    "source": source_dict,
+                    # Make inputs refer to flow inputs
+                    "inputs": {key: f"${{inputs.{key}}}" for key in job.inputs.keys()},  # results: ${inputs.results}
+                }
+            ],
+        }
+        with open(target / "flow.dag.yaml", "w", encoding="utf-8") as f:
+            f.write(dump_yaml(flow_dict, sort_keys=False))
+        return target
+
+    @staticmethod
+    def resolve_single_job_inputs(inputs, inputs_mapping):
+        # TODO: Refine this func
+        job_inputs = {}
+        for name, value in inputs_mapping.items():
+            if not isinstance(value, str):
+                job_inputs[name] = value
+                continue
+            match = re.search(r"^\${([^{}]+)}$", value)
+            if match is None:
+                job_inputs[name] = value
+                continue
+
+            pattern = match.group(1)
+            parts = pattern.split(".")
+            key = parts[0]
+            if key not in inputs:
+                raise UserErrorException(f"Cannot find input {key} in the flow results {inputs}.")
+            # ${data.answer} vs ${main.outputs.category}
+            output_name = parts[1] if key == "data" else parts[2]
+            job_inputs[name] = inputs[key].get(output_name)
+        return job_inputs
+
+    @staticmethod
+    def build_flow_for_orchestration(orchestration):
+        """
+        Extend aggregation job to a flow with a single node.
+        """
+        nodes = []
+        base_path = orchestration._base_path
+        # TODO: Refine the flow dump dir
+        target = Path(base_path) / ".temp" / "orch"
+        target.mkdir(parents=True, exist_ok=True)
+
+        def column_mapping_to_input(column_mapping):
+            result = {}
+            data_exists = False
+            for name, value in column_mapping.items():
+                if not isinstance(value, str) or not value.startswith("${"):
+                    result[name] = value
+                    continue
+                if value.startswith("${data"):
+                    data_exists = True
+                    result[name] = value
+                else:
+                    # ${main.outputs.answer} -> ${main.output}
+                    result[name] = f"{value.split('.')[0]}.output}}"
+            return result, data_exists
+
+        data_exists = False
+        tools_json_list = {}
+        tool_template = "from promptflow import tool\n@tool\ndef {}({})->str:\n    return ''"
+        # Generate dag
+        for job in orchestration.jobs:
+            if job.type == JobType.AGGREGATION:
+                inputs = job.inputs
+            else:
+                inputs, data_exists = column_mapping_to_input(job.column_mapping)
+            # generate tool code
+            tool_code = tool_template.format(job.name, ", ".join([f"{k}: str" for k in inputs.keys()]))
+            tool_code_file_name = f"{job.name}.py"
+            with open(target / tool_code_file_name, "w", encoding="utf-8") as f:
+                f.write(tool_code)
+            # generate tool json
+            tools_json_list[tool_code_file_name] = {
+                "inputs": {k: {"type": ["string"]} for k in inputs.keys()},
+                "type": "python",
+                "source": tool_code_file_name,
+                "function": job.name,
+            }
+            nodes += [
+                {
+                    "name": job.name,
+                    "aggregation": job.type == JobType.AGGREGATION,
+                    "inputs": inputs,
+                    "type": "python",
+                    "source": {"type": "code", "path": f"{job.name}.py"},
+                }
+            ]
+        flow_inputs = {"data": {"type": "object"}} if data_exists else {}
+        flow_dict = {
+            "$schema": "https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json",
+            "inputs": flow_inputs,
+            "nodes": nodes,
+        }
+        with open(target / "flow.dag.yaml", "w", encoding="utf-8") as f:
+            f.write(dump_yaml(flow_dict, sort_keys=False))
+        # Generate .promptflow/flow.tools.json
+        tools_json = {"package": {}, "code": tools_json_list}
+        tools_json_dir = target / ".promptflow"
+        tools_json_dir.mkdir(parents=True, exist_ok=True)
+        with open(tools_json_dir / "flow.tools.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(tools_json, indent=4))
+        return target
+
+    @staticmethod
+    def load_jsonl(source: Union[str, Path]) -> list:
+        """Load jsonl file to list"""
+        with open(source, "r") as f:
+            loaded_data = [json.loads(line.strip()) for line in f]
+        return loaded_data

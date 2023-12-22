@@ -30,7 +30,8 @@ from promptflow._sdk._utils import (
     generate_random_string,
     parse_variant,
 )
-from promptflow._sdk.entities._flow import ProtectedFlow
+from promptflow._sdk.entities._flow import FlowContext, ProtectedFlow
+from promptflow._sdk.entities._orchestration import Orchestration
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
@@ -73,6 +74,11 @@ class FlowOperations(TelemetryMixin):
         :return: The result of flow or node
         :rtype: dict
         """
+        if isinstance(flow, Orchestration):
+            # TODO: Refine logic here
+            return TestSubmitter(flow=flow, flow_context=FlowContext(), client=self._client).orchestration_test(
+                inputs=inputs, environment_variables=environment_variables, **kwargs
+            )
         result = self._test(
             flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables, **kwargs
         )

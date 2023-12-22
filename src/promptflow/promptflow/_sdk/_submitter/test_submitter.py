@@ -11,7 +11,7 @@ from types import GeneratorType
 from typing import Any, Mapping
 
 from promptflow._internal import ConnectionManager
-from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, JobType
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import Flow, FlowContext
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
@@ -160,6 +160,45 @@ class TestSubmitter:
             merged_inputs.update(inputs)
         logger.info(f"{prefix} input(s): {merged_inputs}")
         return flow_inputs, dependency_nodes_outputs
+
+    def orchestration_test(
+        self,
+        inputs: Mapping[str, Any],
+        environment_variables: dict = None,
+    ):
+        from promptflow._sdk._load_functions import load_flow
+
+        logger.debug("Start to test orchestration.")
+        environment_variables = environment_variables or {}
+        job_results = {"data": inputs}
+        orchestration = self.flow
+        # Execute flow
+        # TODO: Change this to a real orchestrator with multi-process
+        for job in orchestration.jobs:
+            column_mapping = job.column_mapping if job.type == JobType.FLOW else job.inputs
+            job_inputs = SubmitterHelper.resolve_single_job_inputs(job_results, column_mapping)
+            if job.type == JobType.FLOW:
+                flow = load_flow(source=orchestration._base_path / job.flow)
+                submitter = TestSubmitter(
+                    flow=flow, flow_context=FlowContext(variant=job.variant, connections=job.connections)
+                )
+            elif job.type == JobType.AGGREGATION:
+                flow = load_flow(source=SubmitterHelper.extend_aggregation_job_to_flow(job, orchestration._base_path))
+                # Mock the aggregation action for test
+                job_inputs = {key: [val] for key, val in job_inputs.items()}
+                submitter = TestSubmitter(flow=flow, flow_context=FlowContext())
+            else:
+                raise UserErrorException(f"Unsupported job type {job.type}.")
+            job_environment_variables = {**environment_variables, **job.environment_variables}
+            line_result = submitter.flow_test(
+                inputs=job_inputs,
+                environment_variables=job_environment_variables,
+            )
+            # TODO: Error handling if the job failed. Read run info in line result.
+            job_results.update({job.name: line_result.output})
+
+        # Dump results
+        return job_results
 
     def flow_test(
         self,

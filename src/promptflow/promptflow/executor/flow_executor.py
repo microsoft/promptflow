@@ -787,7 +787,8 @@ class FlowExecutor:
             inputs = load_multimedia_data(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
-            output, nodes_outputs = self._traverse_nodes(inputs, context)
+            output, nodes_outputs, metrics = self._traverse_nodes(inputs, context)
+            run_info.metrics = metrics
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
             generator_output_nodes = [
@@ -862,20 +863,29 @@ class FlowExecutor:
             )
         return outputs
 
-    def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
+    def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
         should_use_async = all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
-        if should_use_async:
-            flow_logger.info("Start executing nodes in async mode.")
-            scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
-        else:
-            flow_logger.info("Start executing nodes in thread pool mode.")
-            nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
-        outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
-        return outputs, nodes_outputs
+        metrics = {}
+
+        def _log_metric(key, value):
+            metrics[key] = value
+
+        add_metric_logger(_log_metric)
+        try:
+            if should_use_async:
+                flow_logger.info("Start executing nodes in async mode.")
+                scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
+                nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
+            else:
+                flow_logger.info("Start executing nodes in thread pool mode.")
+                nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+            outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
+        finally:
+            remove_metric_logger(_log_metric)
+        return outputs, nodes_outputs, metrics
 
     def _stringify_generator_output(self, outputs: dict):
         for k, v in outputs.items():

@@ -49,6 +49,7 @@ def get_flow_lineage_id(flow_dir: Union[str, PathLike]):
 
 def resolve_flow_path(flow_path: Path):
     """Resolve given flow path to dag file path."""
+    flow_path = Path(flow_path)
     if flow_path.is_dir():
         flow_path = flow_path / DAG_FILE_NAME
     return flow_path

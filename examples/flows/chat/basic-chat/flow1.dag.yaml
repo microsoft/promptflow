@@ -1,0 +1,37 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  url:
+    type: string
+outputs: ${accuracy1.output}
+nodes:
+  - name: gen_data
+    type: python
+    source:
+      type: code
+      path: gen_data.py
+    inputs: ${inputs}
+  - name: main
+    aggregation: false
+    inputs:
+      url: ${gen_data.output.url}
+    type: python
+    source:
+      type: code
+      path: main.py
+  - name: eval1
+    aggregation: false
+    inputs:
+      groundtruth: ${gen_data.output.answer}
+      prediction: ${main.output}
+    type: python
+    source:
+      type: code
+      path: eval1.py
+  - name: accuracy1
+    aggregation: true
+    inputs:
+      grades: ${eval1.outputs.grade}
+    type: python
+    source:
+      type: code
+      path: accuracy1.py

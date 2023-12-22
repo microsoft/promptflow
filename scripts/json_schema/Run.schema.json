@@ -1,0 +1,140 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ResourcesSchema": {
+            "type": "object",
+            "properties": {
+                "idle_time_before_shutdown_minutes": {
+                    "title": "idle_time_before_shutdown_minutes",
+                    "type": "integer"
+                },
+                "instance_type": {
+                    "title": "instance_type",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "RunSchema": {
+            "type": "object",
+            "properties": {
+                "column_mapping": {
+                    "title": "column_mapping",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "connections": {
+                    "title": "connections",
+                    "type": "object",
+                    "additionalProperties": {
+                        "title": "connections",
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "data": {
+                    "anyOf": [
+                        {
+                            "title": "data",
+                            "type": "string"
+                        },
+                        {
+                            "title": "data",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "display_name": {
+                    "title": "display_name",
+                    "type": "string"
+                },
+                "environment_variables": {
+                    "anyOf": [
+                        {
+                            "title": "environment_variables",
+                            "type": "object",
+                            "additionalProperties": {
+                                "title": "environment_variables",
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "title": "environment_variables",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "flow": {
+                    "anyOf": [
+                        {
+                            "title": "flow",
+                            "type": "string"
+                        },
+                        {
+                            "title": "flow",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                },
+                "properties": {
+                    "title": "properties",
+                    "type": "object",
+                    "additionalProperties": {
+                        "title": "properties",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "resources": {
+                    "type": "object",
+                    "$ref": "#/definitions/ResourcesSchema"
+                },
+                "run": {
+                    "title": "run",
+                    "type": "string"
+                },
+                "runtime": {
+                    "title": "runtime",
+                    "type": "string"
+                },
+                "$schema": {
+                    "title": "$schema",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "status": {
+                    "title": "status",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "tags": {
+                    "title": "tags",
+                    "type": "object",
+                    "additionalProperties": {
+                        "title": "tags",
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "variant": {
+                    "title": "variant",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "$ref": "#/definitions/RunSchema"
+}

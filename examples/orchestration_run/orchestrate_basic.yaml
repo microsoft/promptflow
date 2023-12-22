@@ -3,52 +3,32 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OrchestrationRun
 data: data.jsonl
 
 jobs:
+#  - type: script
+#    name: gen_data
+#    source:
+#      type: code
+#      path: generate_data.py
+#    inputs:
+#      site_list_file: site_list.jsonl  # File path as input
+
 # flows
-  main:
-    type: flow
-    flow: .
+  - type: flow
+    name: main
+    flow: ../flows/standard/web-classification/flow.dag.yaml
     column_mapping:
-      question: ${data.question}
-  eval1:
-    type: flow
-    flow: ../evaluation/similarity.yaml
+      url: ${data.url}
+    variant: ${summarize_text_content.variant_0}
+  - type: flow
+    name: eval1
+    flow: ../flows/evaluation/eval-classification-accuracy-new1
     column_mapping:
-      temperature: 0.5
-      ground_truth: ${data.ground_truth}
-      prediction: ${main.outputs.chat_output}
-  eval2:
-    type: flow
-    flow: ../evaluation/asserts.yaml
-    column_mapping: # inputs
-      asserts: ${data.asserts}
-      answer: ${main.outputs.chat_output}
-    connections:
-      node1.connection: open_ai_connection  # Override flow node connection
+      groundtruth: ${gen_data.outputs.answer}
+      prediction: ${main.outputs.category}
 # aggregations
-  pass_rate_asserts:
-    type: aggregation
+  - type: script
+    name: accuracy1
     source:
       type: code
-      path: pass_rate.py
+      path: calculate_accuracy.py
     inputs:
-      results: ${eval_flow1.outputs}  # Aggregated list of flow output lines
-    runtime: ci-runtime               # Use precreated runtime
-  pass_rate_asserts1:
-    type: aggregation
-    source:
-      type: package
-      tool: my_tool_package.tools.my_aggregation_tool
-    inputs:
-      results: ${eval_flow2.outputs}  # Aggregated list of flow output lines
-    environment:                      # Use automatic runtime created from this environment
-      python_requirements_txt: requirements.txt
-  avg_similarity:
-    type: aggregation 
-    op: AVG                           # predefined aggregation
-    input: ${eval1.outputs.score}
-    # Use automatic runtime default to promptlow runtime base image
-  p95_similarity:
-    type: aggregation
-    op: p95                           # predefined aggregation
-    input: ${eval1.outputs.score}
-    # Use automatic runtime default to promptlow runtime base image
+      grades: ${eval1.outputs.grade}  # Aggregated list of flow output lines

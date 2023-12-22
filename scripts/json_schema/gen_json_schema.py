@@ -145,7 +145,7 @@ from promptflow._sdk.schemas._flow import FlowSchema
 
 
 if __name__ == "__main__":
-    cls_list = [FlowSchema]
+    cls_list = [FlowSchema, RunSchema, OpenAIConnectionSchema]
     for cls in cls_list:
         target_schema = PatchedJSONSchema().dump(cls(context={"base_path": "./"}))
         # print(target_schema)

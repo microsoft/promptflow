@@ -1,0 +1,64 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "OpenAIConnectionSchema": {
+            "type": "object",
+            "required": [
+                "api_key",
+                "type"
+            ],
+            "properties": {
+                "api_key": {
+                    "title": "api_key",
+                    "type": "string"
+                },
+                "base_url": {
+                    "title": "base_url",
+                    "type": "string"
+                },
+                "created_date": {
+                    "title": "created_date",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "expiry_time": {
+                    "title": "expiry_time",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "last_modified_date": {
+                    "title": "last_modified_date",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "module": {
+                    "title": "module",
+                    "type": "string",
+                    "default": "promptflow.connections"
+                },
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                },
+                "organization": {
+                    "title": "organization",
+                    "type": "string"
+                },
+                "$schema": {
+                    "title": "$schema",
+                    "type": "string",
+                    "readOnly": true
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "open_ai"
+                    ],
+                    "title": "type"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "$ref": "#/definitions/OpenAIConnectionSchema"
+}

@@ -1,0 +1,117 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "FlowInputSchema": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "default": {
+                    "title": "default"
+                },
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "is_chat_history": {
+                    "title": "is_chat_history",
+                    "type": "boolean"
+                },
+                "is_chat_input": {
+                    "title": "is_chat_input",
+                    "type": "boolean"
+                },
+                "type": {
+                    "title": "type",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "FlowOutputSchema": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "is_chat_output": {
+                    "title": "is_chat_output",
+                    "type": "boolean"
+                },
+                "reference": {
+                    "title": "reference",
+                    "type": "string"
+                },
+                "type": {
+                    "title": "type",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        },
+        "FlowSchema": {
+            "type": "object",
+            "properties": {
+                "additional_includes": {
+                    "title": "additional_includes",
+                    "type": "array",
+                    "items": {
+                        "title": "additional_includes",
+                        "type": "string"
+                    }
+                },
+                "environment": {
+                    "title": "environment",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "inputs": {
+                    "title": "inputs",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "$ref": "#/definitions/FlowInputSchema"
+                    }
+                },
+                "node_variants": {
+                    "title": "node_variants",
+                    "type": "object",
+                    "additionalProperties": {
+                        "title": "node_variants",
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "nodes": {
+                    "title": "nodes",
+                    "type": "array",
+                    "items": {
+                        "title": "nodes",
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "outputs": {
+                    "title": "outputs",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "$ref": "#/definitions/FlowOutputSchema"
+                    }
+                },
+                "$schema": {
+                    "title": "$schema",
+                    "type": "string",
+                    "readOnly": true
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "$ref": "#/definitions/FlowSchema"
+}

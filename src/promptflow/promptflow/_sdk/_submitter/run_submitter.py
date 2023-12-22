@@ -4,10 +4,11 @@
 # this file is a middle layer between the local SDK and executor, it'll have some similar logic with cloud PFS.
 
 import datetime
+import shutil
 from pathlib import Path
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
-from promptflow._sdk._constants import FlowRunProperties
+from promptflow._sdk._constants import FlowRunProperties, JobType
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
@@ -20,6 +21,8 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 
 from ..._utils.logger_utils import LoggerFactory
+from ..._utils.utils import dump_list_to_jsonl
+from ..entities._orchestration import Orchestration
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -32,8 +35,112 @@ class RunSubmitter:
         self.run_operations = run_operations
 
     def submit(self, run: Run, stream=False, **kwargs):
+        if isinstance(run.flow, Orchestration):
+            self._run_orchestration(run, orchestration=run.flow)
+            return self.run_operations.get(name=run.name)
         self._run_bulk(run=run, stream=stream, **kwargs)
         return self.run_operations.get(name=run.name)
+
+    def _resolve_job_inputs(self, flow_job_results, job, base_path):
+        # TODO: Fill the default value to column mapping
+        job_inputs = []
+        results_lines = []
+        for job_name, result_list in flow_job_results.items():  # {data: [{url:xx}], main: [{answer:xx}]}
+            for i, result in enumerate(result_list):
+                if len(results_lines) <= i:
+                    results_lines.append({})
+                for key, value in flow_job_results.items():
+                    results_lines[i][key] = value[i]  # [{data: {url}, main: {answer}}], []
+        column_mapping = job.column_mapping if job.type == JobType.FLOW else job.inputs
+        for i, results_line in enumerate(results_lines):
+            inputs_line = SubmitterHelper.resolve_single_job_inputs(results_line, column_mapping)
+            job_inputs.append(inputs_line)
+        target = Path(base_path) / ".temp" / "data"
+        target.mkdir(exist_ok=True, parents=True)
+        target = target / f"{job.name}_input_data.jsonl"
+        dump_list_to_jsonl(target, job_inputs)
+        return target
+
+    def _run_orchestration(self, run, orchestration: Orchestration):
+        # Make data as the first job inputs
+        run.flow = SubmitterHelper.build_flow_for_orchestration(orchestration)
+        flow_inputs = run.data
+        # TODO: Refine data handling logic
+        flow_job_results = {"data": SubmitterHelper.load_jsonl(flow_inputs)}
+        child_runs = {}
+        # TODO: Change this to a real orchestrator with multi-process
+        for job in orchestration.jobs:
+            flow = None
+            job_inputs = self._resolve_job_inputs(flow_job_results, job, orchestration._base_path)
+            if job.type == JobType.FLOW:
+                flow = Path(job.flow)
+                child_run = Run(
+                    # Fix this name?
+                    # name=job.name,
+                    display_name=job.display_name,
+                    tags=job.tags,
+                    data=job_inputs,
+                    # Colum mapping can't be used here.
+                    # column_mapping=job.column_mapping,
+                    variant=job.variant,
+                    flow=flow,
+                    connections=job.connections,
+                    environment_variables=job.environment_variables,
+                    config=run._config,
+                )
+            elif job.type == JobType.AGGREGATION:
+                flow = SubmitterHelper.extend_aggregation_job_to_flow(job=job, base_path=orchestration._base_path)
+                child_run = Run(
+                    # Fix this name?
+                    # name=job.name,
+                    display_name=job.display_name,
+                    # tags=job.tags,
+                    data=job_inputs,
+                    # Colum mapping can't be used here.
+                    # column_mapping=job.column_mapping,
+                    # variant=job.variant,
+                    flow=flow,
+                    environment_variables=job.environment_variables,
+                )
+            child_run = self.run_operations.create_or_update(run=child_run)
+            if child_run.status != Status.Completed.value:
+                raise ValueError(
+                    f"Referenced run {child_run.name} is not completed, got status {child_run.status}, please check"
+                    f" {child_run._output_path} for details."
+                )
+            child_runs.update({job.name: child_run})
+            flow_job_results.update({job.name: SubmitterHelper.load_jsonl(child_run._output_path / "outputs.jsonl")})
+        # create run to db when fully prepared to run in executor, otherwise won't create it
+        run._dump()  # pylint: disable=protected-access
+        # Update status to completed
+        self.run_operations.update(
+            name=run.name,
+            status=Status.Completed.value,
+            end_time=datetime.datetime.now(),
+            # TODO: Finalize the things needs to be pop up to parent run, use last child run for now
+            # system_metrics=child_run.properties.get("system_metrics"),
+        )
+        self._post_process_orchestration(run, child_runs)
+        return self.run_operations.get(name=run.name)
+
+    def _post_process_orchestration(self, run, child_runs):
+        # TODO: Remove this. Copy metrics to parent run for now.
+        base_output_path = Path(run.properties.get("output_path"))
+        flow_output_path = base_output_path / "flow_outputs"
+        flow_output_path.mkdir(exist_ok=True, parents=True)
+        # Copy the last run's metrics
+        target = Path(list(child_runs.values())[-1]._output_path)
+        logger.debug(f"Copying metrics from {target} metrics to {flow_output_path}")
+        shutil.copy2(target / "metrics.json", base_output_path / "metrics.json")
+        # Copy the main run's output
+        target = Path(child_runs["main"]._output_path)
+        logger.debug(f"Copying outputs from {target} metrics to {flow_output_path}")
+        shutil.copy2(target / "flow_outputs" / "output.jsonl", flow_output_path / "output.jsonl")
+        shutil.copy2(target / "outputs.jsonl", base_output_path / "outputs.jsonl")
+        # Copy flow runs
+        shutil.copytree(target / "flow_artifacts", base_output_path / "flow_artifacts")
+        # Copy snapshot
+        shutil.copytree(run.flow, base_output_path / "snapshot")
 
     def _run_bulk(self, run: Run, stream=False, **kwargs):
         # validate & resolve variant

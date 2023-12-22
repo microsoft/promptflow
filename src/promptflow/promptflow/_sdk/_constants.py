@@ -340,3 +340,8 @@ class AzureFlowSource:
     LOCAL = "local"
     PF_SERVICE = "pf_service"
     INDEX = "index"
+
+
+class JobType:
+    FLOW = "flow"
+    AGGREGATION = "script"

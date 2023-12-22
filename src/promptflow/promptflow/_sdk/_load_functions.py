@@ -11,6 +11,7 @@ from ._utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._flow import Flow, ProtectedFlow
+from .entities._orchestration import Orchestration
 
 
 def load_common(
@@ -94,6 +95,27 @@ def load_run(
     """
     data = load_yaml(source=source)
     return Run._load(data=data, yaml_path=source, params_override=params_override, **kwargs)
+
+
+def load_orchestration(
+    source: Union[str, PathLike, IO[AnyStr]],
+    params_override: Optional[list] = None,
+    **kwargs,
+) -> Orchestration:
+    """Load run from YAML file.
+
+    :param source: The local yaml source of a run. Must be a path to a local file.
+        If the source is a path, it will be open and read.
+        An exception is raised if the file does not exist.
+    :type source: Union[PathLike, str]
+    :param params_override: Fields to overwrite on top of the yaml file.
+        Format is [{"field1": "value1"}, {"field2": "value2"}]
+    :type params_override: List[Dict]
+    :return: An orchestration object
+    :rtype: Orchestration
+    """
+    data = load_yaml(source=source)
+    return Orchestration._load(data=data, yaml_path=source, params_override=params_override, **kwargs)
 
 
 def load_connection(

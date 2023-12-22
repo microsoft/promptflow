@@ -4,19 +4,16 @@ inputs:
     type: string
     description: Please specify the groundtruth column, which contains the true label
       to the outputs that your flow produces.
-    default: APP
+#    default: APP
   prediction:
     type: string
     description: Please specify the prediction column, which contains the predicted
       outputs that your flow produces.
-    default: APP
+#    default: APP
 outputs:
   grade:
     type: string
     reference: ${grade.output}
-  accuracy:
-    type: string
-    reference: ${calculate_accuracy.output}
 nodes:
 - name: grade
   type: python
@@ -26,13 +23,3 @@ nodes:
   inputs:
     groundtruth: ${inputs.groundtruth}
     prediction: ${inputs.prediction}
-- name: calculate_accuracy
-  type: python
-  source:
-    type: code
-    path: calculate_accuracy.py
-  inputs:
-    grades: ${grade.output}
-  aggregation: true
-environment:
-    python_requirements_txt: requirements.txt
