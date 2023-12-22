@@ -50,7 +50,7 @@ class TestFlowContract:
         flow_folder = PACKAGE_TOOL_BASE / "custom_llm_tool"
         flow_file = flow_folder / "flow.dag.yaml"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)
-        mocker.patch("promptflow._core.tools_manager.collect_package_tools", return_value=package_tool_definition)
+        mocker.patch("promptflow.executor._tool_loader.collect_package_tools", return_value=package_tool_definition)
         flow = Flow.from_yaml(flow_file)
         connection_names = flow.get_connection_names()
         assert connection_names == {"azure_open_ai_connection"}
@@ -59,7 +59,7 @@ class TestFlowContract:
         flow_folder = PACKAGE_TOOL_BASE / "custom_llm_tool"
         flow_file = flow_folder / "flow.dag.yaml"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)
-        mocker.patch("promptflow._core.tools_manager.collect_package_tools", return_value=package_tool_definition)
+        mocker.patch("promptflow.executor._tool_loader.collect_package_tools", return_value=package_tool_definition)
         flow = Flow.from_yaml(flow_file)
         connection_names = flow.get_connection_input_names_for_node(flow.nodes[0].name)
         assert connection_names == ["connection", "connection_2"]
@@ -325,9 +325,10 @@ class TestFlow:
 
     def test_get_tool(self):
         tool = Tool(name="tool", type=ToolType.PYTHON, inputs={})
-        flow = Flow(id="id", name="name", nodes=[], inputs={}, outputs={}, tools=[tool])
-        assert flow.get_tool("tool") is tool
-        assert flow.get_tool("other_tool") is None
+        node = Node(name="node", tool="tool", inputs={})
+        flow = Flow(id="id", name="name", nodes=[node], inputs={}, outputs={}, tools=[tool])
+        assert flow.get_tool("node") is tool
+        assert flow.get_tool("other_node") is None
 
     def test_is_reduce_node(self):
         llm_node = Node(name="llm_node", tool=None, inputs={})

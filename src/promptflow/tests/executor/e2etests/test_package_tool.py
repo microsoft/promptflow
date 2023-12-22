@@ -13,7 +13,7 @@ from promptflow.executor._result import LineResult
 from ..utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_flow_sample_inputs, get_yaml_file
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent / "package_tools"
-PACKAGE_TOOL_ENTRY = "promptflow._core.tools_manager.collect_package_tools"
+PACKAGE_TOOL_ENTRY = "promptflow.executor._tool_loader.collect_package_tools"
 
 sys.path.insert(0, str(PACKAGE_TOOL_BASE.resolve()))
 

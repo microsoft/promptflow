@@ -5,6 +5,7 @@
 import json
 import logging
 import sys
+from collections import Counter
 from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
@@ -18,7 +19,7 @@ from .._constants import LANGUAGE_KEY, FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import FailedToImportModule
+from ._errors import DuplicateNodeName, FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -535,6 +536,8 @@ class Flow:
     node_variants: Dict[str, NodeVariants] = None
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
+    working_dir: Path = None
+    tool_loader = None
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -648,8 +651,23 @@ class Flow:
         """Load flow from dict."""
         cls._update_working_dir(working_dir)
         flow = Flow.deserialize(flow_dag)
-        flow._set_tool_loader(working_dir)
+        Flow._ensure_no_duplicated_node_names(flow)
+        flow.working_dir = working_dir
         return flow
+
+    @classmethod
+    def _ensure_no_duplicated_node_names(cls, flow: "Flow"):
+        counter = Counter([node.name for node in flow.nodes])
+        duplicated_names = [name for name, count in counter.items() if count > 1]
+        if duplicated_names:
+            raise DuplicateNodeName(
+                message_format=(
+                    "Invalid node definitions found in the flow graph. Node with name '{duplicated_names}' appears "
+                    "more than once in the node definitions in your flow, which is not allowed. To address "
+                    "this issue, please review your flow and either rename or remove nodes with identical names."
+                ),
+                duplicated_names=duplicated_names,
+            )
 
     @classmethod
     def load_env_variables(
@@ -672,14 +690,6 @@ class Flow:
             for k, v in environment_variables_overrides.items():
                 environment_variables[k] = v
         return environment_variables
-
-    def _set_tool_loader(self, working_dir):
-        package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
-        from promptflow._core.tools_manager import ToolLoader
-
-        # TODO: consider refactor this. It will raise an error if promptflow-tools
-        #  is not installed even for csharp flow.
-        self._tool_loader = ToolLoader(working_dir, package_tool_keys)
 
     def _apply_node_overrides(self, node_overrides):
         """Apply node overrides to update the nodes in the flow.
@@ -715,9 +725,17 @@ class Flow:
         """Return the node with the given name."""
         return next((n for n in self.nodes if n.name == node_name), None)
 
-    def get_tool(self, tool_name):
-        """Return the tool with the given name."""
-        return next((t for t in self.tools if t.name == tool_name), None)
+    def get_tool(self, node_name):
+        """Return the tool with the given node name."""
+        node = self.get_node(node_name)
+        if node is None:
+            return None
+        if node.tool is None:
+            if self.tool_loader is None:
+                self._create_tool_loader()
+            return self.tool_loader.load_tool_for_node(node)
+        else:
+            return next((t for t in self.tools if t.name == node.tool), None)
 
     def is_reduce_node(self, node_name):
         """Return whether the node is a reduce node."""
@@ -771,6 +789,11 @@ class Flow:
         """Return the name of the chat output."""
         return next((name for name, o in self.outputs.items() if o.is_chat_output), None)
 
+    def _create_tool_loader(self):
+        from promptflow.executor._tool_loader import ToolLoader
+        package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
+        self.tool_loader = ToolLoader(self.working_dir, package_tool_keys)
+
     def _get_connection_name_from_tool(self, tool: Tool, node: Node):
         connection_names = {}
         value_types = set({v.value for v in ValueType.__members__.values()})
@@ -799,7 +822,8 @@ class Flow:
             if node.type == ToolType.PROMPT or node.type == ToolType.LLM:
                 continue
             logger.debug(f"Try loading connection names for node {node.name}.")
-            tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
+            tool = self.get_tool(node.name)
+
             if tool:
                 node_connection_names = list(self._get_connection_name_from_tool(tool, node).values())
             else:
@@ -819,7 +843,8 @@ class Flow:
         # Ignore Prompt node and LLM node, due to they do not have connection inputs.
         if not node or node.type == ToolType.PROMPT or node.type == ToolType.LLM:
             return []
-        tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
+        tool = self.get_tool(node.name)
+
         if tool:
             return list(self._get_connection_name_from_tool(tool, node).keys())
         return []

@@ -12,7 +12,7 @@ from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
-from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
+from promptflow._core.tools_manager import BuiltinsManager, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts._errors import InvalidImageInput
@@ -30,6 +30,7 @@ from promptflow.executor._errors import (
     ResolveToolError,
     ValueTypeUnresolved,
 )
+from promptflow.executor._tool_loader import ToolLoader
 
 
 @dataclass
@@ -42,14 +43,18 @@ class ResolvedTool:
 
 class ToolResolver:
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
+        self,
+        working_dir: Path,
+        connections: Optional[dict] = None,
+        package_tool_keys: Optional[List[str]] = None,
+        tool_loader: Optional[ToolLoader] = None
     ):
         try:
             # Import openai and aoai for llm tool
             from promptflow.tools import aoai, openai  # noqa: F401
         except ImportError:
             pass
-        self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
+        self._tool_loader = tool_loader or ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
 

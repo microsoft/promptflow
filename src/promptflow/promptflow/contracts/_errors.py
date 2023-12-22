@@ -7,3 +7,7 @@ class FailedToImportModule(UserErrorException):
 
 class InvalidImageInput(ValidationException):
     pass
+
+
+class DuplicateNodeName(ValidationException):
+    pass

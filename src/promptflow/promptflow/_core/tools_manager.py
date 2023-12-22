@@ -7,7 +7,6 @@ import importlib.util
 import inspect
 import logging
 import traceback
-import types
 from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
@@ -17,14 +16,9 @@ import yaml
 from promptflow._core._errors import (
     InputTypeMismatch,
     MissingRequiredInputs,
-    PackageToolNotFoundError,
     ToolLoadError,
 )
-from promptflow._core.tool_meta_generator import (
-    _parse_tool_from_function,
-    collect_tool_function_in_module,
-    load_python_module_from_file,
-)
+from promptflow._core.tool_meta_generator import load_python_module_from_file
 from promptflow._utils.connection_utils import (
     generate_custom_strong_type_connection_spec,
     generate_custom_strong_type_connection_template,
@@ -33,7 +27,6 @@ from promptflow._utils.tool_utils import (
     _DEPRECATED_TOOLS,
     DynamicListError,
     RetrieveToolFuncResultError,
-    _find_deprecated_tools,
     append_workspace_triple_to_func_input_params,
     function_to_tool_definition,
     get_prompt_param_name_from_func,
@@ -41,7 +34,7 @@ from promptflow._utils.tool_utils import (
     validate_dynamic_list_func_response_type,
     validate_tool_func_result,
 )
-from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
@@ -375,64 +368,6 @@ class ToolsManager:
         if func_name not in f_globals:
             raise MissingTargetFunction(f"Cannot find function {func_name} in the code of node {node_name}.")
         return f_globals[func_name]
-
-
-class ToolLoader:
-    def __init__(self, working_dir: str, package_tool_keys: Optional[List[str]] = None) -> None:
-        self._working_dir = working_dir
-        self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
-        # Used to handle backward compatibility of tool ID changes.
-        self._deprecated_tools = _find_deprecated_tools(self._package_tools)
-
-    # TODO: Replace NotImplementedError with NotSupported in the future.
-    def load_tool_for_node(self, node: Node) -> Tool:
-        if node.source is None:
-            raise UserErrorException(f"Node {node.name} does not have source defined.")
-        if node.type == ToolType.PYTHON:
-            if node.source.type == ToolSourceType.Package:
-                return self.load_tool_for_package_node(node)
-            elif node.source.type == ToolSourceType.Code:
-                _, tool = self.load_tool_for_script_node(node)
-                return tool
-            raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
-        elif node.type == ToolType.CUSTOM_LLM:
-            if node.source.type == ToolSourceType.PackageWithPrompt:
-                return self.load_tool_for_package_node(node)
-            raise NotImplementedError(f"Tool source type {node.source.type} for custom_llm tool is not supported yet.")
-        else:
-            raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
-
-    def load_tool_for_package_node(self, node: Node) -> Tool:
-        if node.source.tool in self._package_tools:
-            return Tool.deserialize(self._package_tools[node.source.tool])
-
-        # If node source tool is not in package tools, try to find the tool ID in deprecated tools.
-        # If found, load the tool with the new tool ID for backward compatibility.
-        if node.source.tool in self._deprecated_tools:
-            new_tool_id = self._deprecated_tools[node.source.tool]
-            # Used to collect deprecated tool usage and warn user to replace the deprecated tool with the new one.
-            module_logger.warning(f"Tool ID '{node.source.tool}' is deprecated. Please use '{new_tool_id}' instead.")
-            return Tool.deserialize(self._package_tools[new_tool_id])
-
-        raise PackageToolNotFoundError(
-            f"Package tool '{node.source.tool}' is not found in the current environment. "
-            f"All available package tools are: {list(self._package_tools.keys())}.",
-            target=ErrorTarget.EXECUTOR,
-        )
-
-    def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Callable, Tool]:
-        if node.source.path is None:
-            raise UserErrorException(f"Node {node.name} does not have source path defined.")
-        path = node.source.path
-        m = load_python_module_from_file(self._working_dir / path)
-        if m is None:
-            raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-        f, init_inputs = collect_tool_function_in_module(m)
-        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
-
-    def load_tool_for_llm_node(self, node: Node) -> Tool:
-        api_name = f"{node.provider}.{node.api}"
-        return BuiltinsManager._load_llm_api(api_name)
 
 
 builtins = {}
