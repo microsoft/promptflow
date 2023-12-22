@@ -175,9 +175,8 @@ class AsyncRunDownloader:
         async with blob_client:
             with open(local_path, "wb") as f:
                 stream = await blob_client.download_blob()
-                data = await stream.readall()
-                # TODO: File IO may block the event loop, consider using thread pool. e.g. to_thread() method
-                f.write(data)
+                async for chunk in stream.chunks():
+                    f.write(chunk)
         return local_path
 
     async def _download_snapshot(self, httpx_client: httpx.AsyncClient, container_client, snapshot_id):
@@ -249,6 +248,20 @@ class AsyncRunDownloader:
         with open(self.output_folder / DownloadedRun.LOGS_FILE_NAME, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(logs)
         logger.debug("Downloaded run logs.")
+
+    @classmethod
+    def _from_run_operations(cls, run_ops: "RunOperations", run: str, output_folder: Union[str, Path]):
+        """Create an instance from run operations."""
+        from azure.ai.ml.entities._datastore.azure_storage import AzureBlobDatastore
+
+        datastore = run_ops._workspace_default_datastore
+        if isinstance(datastore, AzureBlobDatastore):
+            return cls(run=run, run_ops=run_ops, output_folder=output_folder)
+        else:
+            raise UserErrorException(
+                f"Cannot download run {run!r} because the workspace default datastore is not supported. Supported ones "
+                f"are ['AzureBlobDatastore'], got {type(datastore).__name__!r}."
+            )
 
 
 async def to_thread(func, /, *args, **kwargs):
