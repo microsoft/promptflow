@@ -32,7 +32,6 @@ from promptflow.exceptions import SystemErrorException
 from .swagger import generate_swagger
 
 logger = LoggerFactory.get_logger("pfserving-app", target_stdout=True)
-print("second")
 DEFAULT_STATIC_PATH = Path(__file__).parent / "static"
 USER_AGENT = f"promptflow-local-serving/{VERSION}"
 
@@ -179,7 +178,6 @@ def add_default_routes(app: PromptflowServingApp):
 
 def create_app(**kwargs):
     app = PromptflowServingApp(__name__)
-    print("create_app: ", __name__)
     if __name__ != "__main__":
         app.logger.handlers = logger.handlers
         app.logger.setLevel(logger.level)
