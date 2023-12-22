@@ -27,6 +27,7 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
+from promptflow.exceptions import UserErrorException
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
@@ -1142,6 +1143,22 @@ class TestCli:
             assert connection_path.exists()
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
+
+    def test_flow_build_with_ua(self):
+        with pytest.raises(UserErrorException) as e:
+            run_pf_command(
+                "flow",
+                "build",
+                "--source",
+                "not_exist",
+                "--output",
+                "dist",
+                "--format",
+                "docker",
+                "--user-agent",
+                "test/1.0.0",
+            )
+        assert "not exist" in str(e.value)
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",

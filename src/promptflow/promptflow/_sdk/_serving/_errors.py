@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
@@ -27,6 +28,18 @@ class UnsupportedConnectionProvider(FlowConnectionError):
             provider=provider,
             target=ErrorTarget.FLOW_INVOKER,
         )
+
+
+class MissingConnectionProvider(FlowConnectionError):
+    pass
+
+
+class InvalidConnectionData(FlowConnectionError):
+    def __init__(self, connection_name):
+        super().__init__(
+            message_format="Invalid connection data detected while overriding connection {connection_name}.",
+            connection_name=connection_name,
+            target=ErrorTarget.FLOW_INVOKER)
 
 
 class UnexpectedConnectionProviderReturn(FlowConnectionError):

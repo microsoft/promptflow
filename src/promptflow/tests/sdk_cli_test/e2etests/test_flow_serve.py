@@ -123,11 +123,14 @@ def test_user_agent(flow_serving_client):
     assert "promptflow-local-serving" in operation_context.get_user_agent()
 
 
-@pytest.mark.usefixtures("flow_serving_client", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_serving_api(flow_serving_client):
     response = flow_serving_client.get("/health")
     assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
+    response = flow_serving_client.get("/")
+    print(response.data)
+    assert response.status_code == 200
     response = flow_serving_client.post("/score", data=json.dumps({"text": "hi"}))
     assert (
         response.status_code == 200
@@ -137,7 +140,7 @@ def test_serving_api(flow_serving_client):
     assert os.environ["API_TYPE"] == "azure"
 
 
-@pytest.mark.usefixtures("evaluation_flow_serving_client", "recording_injection", "setup_local_connection")
+@pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
 def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
     response = evaluation_flow_serving_client.post("/score", data=json.dumps({"url": "https://www.microsoft.com/"}))
