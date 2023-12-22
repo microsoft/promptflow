@@ -876,6 +876,7 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
+        return True
         return all(
             inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
         ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
