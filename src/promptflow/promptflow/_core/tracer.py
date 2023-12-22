@@ -181,8 +181,6 @@ def trace(func: Callable) -> Callable:
 
         @functools.wraps(func)
         async def wrapped(*args, **kwargs):
-            from .tracer import Tracer
-
             if Tracer.active_instance() is None:
                 return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
             # Should not extract these codes to a separate function here.
@@ -202,8 +200,6 @@ def trace(func: Callable) -> Callable:
 
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            from .tracer import Tracer
-
             if Tracer.active_instance() is None:
                 return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
             # Should not extract these codes to a separate function here.
