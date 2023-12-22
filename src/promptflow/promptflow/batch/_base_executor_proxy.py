@@ -168,5 +168,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                     return False
             return True
         except Exception as e:
+            if isinstance(e, ValidationException):
+                raise e
             bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
             return False
