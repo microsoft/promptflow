@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._flow_nodes_scheduler import (
@@ -13,6 +12,7 @@ from promptflow.executor._flow_nodes_scheduler import (
     FlowNodesScheduler,
     NoNodeExecutedError,
 )
+from promptflow.executor._tool_invoker import DefaultToolInvoker
 
 
 @pytest.mark.unittest
@@ -20,12 +20,12 @@ class TestFlowNodesScheduler:
     def setup_method(self):
         # Define mock objects and methods
         self.tools_manager = MagicMock()
-        self.context = MagicMock(spec=FlowExecutionContext)
-        self.context.invoke_tool.side_effect = lambda _, func, kwargs: func(**kwargs)
-        self.scheduler = FlowNodesScheduler(self.tools_manager, {}, [], DEFAULT_CONCURRENCY_BULK, self.context)
+        self.invoker = MagicMock(spec=DefaultToolInvoker)
+        self.invoker.invoke_tool.side_effect = lambda _, func, kwargs: func(**kwargs)
+        self.scheduler = FlowNodesScheduler(self.tools_manager, {}, [], DEFAULT_CONCURRENCY_BULK, self.invoker)
 
     def test_maximun_concurrency(self):
-        scheduler = FlowNodesScheduler(self.tools_manager, {}, [], 1000, self.context)
+        scheduler = FlowNodesScheduler(self.tools_manager, {}, [], 1000, self.invoker)
         assert scheduler._node_concurrency == DEFAULT_CONCURRENCY_FLOW
 
     def test_collect_outputs(self):
@@ -55,7 +55,7 @@ class TestFlowNodesScheduler:
         dag_manager.pop_bypassable_nodes.side_effect = ([node1], [])
         self.scheduler._dag_manager = dag_manager
         self.scheduler._execute_nodes(executor)
-        self.scheduler._context.bypass_node.assert_called_once_with(node1)
+        self.scheduler._invoker.bypass_node.assert_called_once_with(node1)
 
     def test_submit_nodes(self):
         executor = MagicMock()
@@ -69,7 +69,7 @@ class TestFlowNodesScheduler:
         dag_manager.pop_ready_nodes.return_value = [node1]
         self.scheduler._dag_manager = dag_manager
         self.scheduler._execute_nodes(executor)
-        self.scheduler._context.bypass_node.assert_not_called()
+        self.scheduler._invoker.bypass_node.assert_not_called()
         assert node1 in self.scheduler._future_to_node.values()
 
     def test_future_cancelled_for_exception(self):

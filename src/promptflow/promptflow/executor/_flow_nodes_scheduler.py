@@ -9,13 +9,13 @@ from concurrent import futures
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Dict, List, Tuple
 
-from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.utils import set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
+from promptflow.executor._tool_invoker import DefaultToolInvoker
 
 RUN_FLOW_NODES_LINEARLY = 1
 DEFAULT_CONCURRENCY_BULK = 2
@@ -29,14 +29,14 @@ class FlowNodesScheduler:
         inputs: Dict,
         nodes_from_invoker: List[Node],
         node_concurrency: int,
-        context: FlowExecutionContext,
+        invoker: DefaultToolInvoker,
     ) -> None:
         self._tools_manager = tools_manager
         self._future_to_node: Dict[Future, Node] = {}
         self._node_concurrency = min(node_concurrency, DEFAULT_CONCURRENCY_FLOW)
         flow_logger.info(f"Start to run {len(nodes_from_invoker)} nodes with concurrency level {node_concurrency}.")
         self._dag_manager = DAGManager(nodes_from_invoker, inputs)
-        self._context = context
+        self._invoker = invoker
 
     def execute(
         self,
@@ -76,7 +76,7 @@ class FlowNodesScheduler:
         nodes_to_bypass = self._dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
             for node in nodes_to_bypass:
-                self._context.bypass_node(node)
+                self._invoker.bypass_node(node)
             nodes_to_bypass = self._dag_manager.pop_bypassable_nodes()
 
         # Submit nodes that are ready to run
@@ -101,12 +101,12 @@ class FlowNodesScheduler:
         node, dag_manager = args
         # We are using same run tracker and cache manager for all threads, which may not thread safe.
         # But for bulk run scenario, we've doing this for a long time, and it works well.
-        context = self._context
+        invoker = self._invoker
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         if inspect.iscoroutinefunction(f):
             # TODO: Run async functions in flow level event loop
-            result = asyncio.run(context.invoke_tool_async(node, f, kwargs=kwargs))
+            result = asyncio.run(invoker.invoke_tool_async(node, f, kwargs=kwargs))
         else:
-            result = context.invoke_tool(node, f, kwargs=kwargs)
+            result = invoker.invoke_tool(node, f, kwargs=kwargs)
         return result

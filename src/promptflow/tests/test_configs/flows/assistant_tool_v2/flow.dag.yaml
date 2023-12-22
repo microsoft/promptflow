@@ -1,0 +1,22 @@
+inputs:
+  content:
+    type: string
+    default: I'm going to run for 2 hours today, how much calories will I burn?
+  assistant_id:
+    type: string
+    default: asst_yWhdFYoCS1UatnRRQZGY85aL
+outputs:
+  assistant_output:
+    type: string
+    reference: ${assistant_play.output}
+nodes:
+- name: assistant_play
+  type: python
+  source:
+    type: code
+    path: oai_assistant.py
+  inputs:
+    conn: openai_connection
+    content: ${inputs.content}
+    assistant_id: ${inputs.assistant_id}
+    assistant_definition: assistant_definition.yaml
