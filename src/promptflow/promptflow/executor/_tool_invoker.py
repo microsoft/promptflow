@@ -4,50 +4,31 @@
 
 import docutils.nodes
 from docutils.core import publish_doctree
-from contextvars import ContextVar
 from functools import partial
-from typing import List, Optional
+from typing import Optional
 
+from promptflow._core.tool import ToolInvoker
 from promptflow.contracts.flow import InputAssignment, Node, ToolSource
 from promptflow.executor._tool_resolver import ToolResolver
 
 
-class DefaultToolInvoker():
-    CONTEXT_VAR_NAME = "Invoker"
-    context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
+class DefaultToolInvoker(ToolInvoker):
+    def invoke_tool(self, f, *args, **kwargs):
+        return f(*args, **kwargs)  # Do nothing
 
+
+class AssistantToolInvoker():
     def __init__(self):
-        self._tools = {}
         self._assistant_tools = {}
 
-    @property
-    def tools(self):
-        return self._tools
-
-    # @classmethod
-    # def start_invoker(cls):
-    #     invoker = cls()
-    #     active_invoker = cls.active_instance()
-    #     if active_invoker:
-    #         active_invoker._deactivate_in_context()
-    #     cls._activate_in_context(invoker)
-    #     return invoker
-
     @classmethod
-    def load_tools(self, nodes: List[Node]):
-        invoker = DefaultToolInvoker()
-        tool_resolver = ToolResolver.active_instance()
-        invoker._tools = {node.name: tool_resolver.resolve_tool_by_node(node) for node in nodes}
-        return invoker
-
-    @classmethod
-    def load_assistant_tools(cls, tools: list):
-        invoker = DefaultToolInvoker()
+    def load_tools(cls, tools: list):
+        invoker = AssistantToolInvoker()
         tool_resolver = ToolResolver.active_instance()
         for tool in tools:
             if tool["type"] != "promptflow_tool":
                 continue
-            inputs = tool.get("pre_assigned_inputs", {})
+            inputs = tool.get("predefined_inputs", {})
             updated_inputs = {}
             for input_name, value in inputs.items():
                 updated_inputs[input_name] = InputAssignment.deserialize(value)
@@ -65,16 +46,27 @@ class DefaultToolInvoker():
             invoker._assistant_tools[resolved_tool.definition.function] = resolved_tool
         return invoker
 
-    def invoke_assistant_tool(self, func_name, kwargs):
+    def invoke_tool(self, func_name, kwargs):
         return self._assistant_tools[func_name].callable(**kwargs)
 
     def to_openai_tools(self):
         openai_tools = []
-        for name, tool in self._assistant_tools.items():
+        for _, tool in self._assistant_tools.items():
+            description = tool.definition.structured_description
             preset_inputs = [name for name, _ in tool.node.inputs.items()]
-            description = self._get_openai_tool_description(name, tool.definition.description, preset_inputs)
-            openai_tools.append(description)
+            # description = self._get_openai_tool_description(name, tool.definition.description, preset_inputs)
+            if preset_inputs:
+                description = self._remove_predefined_inputs(description, preset_inputs)
+            openai_tools.append(tool.definition.structured_description)
         return openai_tools
+
+    def _remove_predefined_inputs(self, description: dict, preset_inputs: Optional[list] = None):
+        param_names = description["function"]["parameters"]["required"]
+        params = description["function"]["parameters"]["properties"]
+        for input_name in preset_inputs:
+            param_names.remove(input_name)
+            params.pop(input_name)
+        return description
 
     def _get_openai_tool_description(self, func_name: str, docstring: str, preset_inputs: Optional[list] = None):
         to_openai_type = {"str": "string", "int": "number"}

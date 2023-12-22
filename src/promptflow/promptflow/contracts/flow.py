@@ -648,7 +648,7 @@ class Flow:
         """Load flow from dict."""
         cls._update_working_dir(working_dir)
         flow = Flow.deserialize(flow_dag)
-        flow._working_dir = working_dir
+        flow._set_working_dir(working_dir)
         flow._set_tool_loader(working_dir)
         return flow
 
@@ -673,6 +673,9 @@ class Flow:
             for k, v in environment_variables_overrides.items():
                 environment_variables[k] = v
         return environment_variables
+
+    def _set_working_dir(self, working_dir):
+        self._working_dir = working_dir
 
     def _set_tool_loader(self, working_dir):
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
@@ -782,9 +785,9 @@ class Flow:
     def _get_connection_name_from_assistant_tools(self, tools: list):
         connection_names = {}
         for tool in tools:
-            if tool["type"] != "promptflow_tool" or tool.get("pre_assigned_inputs") is None:
+            if tool["type"] != "promptflow_tool" or tool.get("predefined_inputs") is None:
                 continue
-            inputs = tool.get("pre_assigned_inputs")
+            inputs = tool.get("predefined_inputs")
             updated_inputs = {}
             for input_name, value in inputs.items():
                 updated_inputs[input_name] = InputAssignment.deserialize(value)
