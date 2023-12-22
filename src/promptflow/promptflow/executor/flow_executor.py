@@ -814,6 +814,7 @@ class FlowExecutor:
             # Run will be cancelled when the process receives a SIGINT signal.
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
+            flow_logger.info("Received KeyboardInterrupt, cancel the run.")
             run_tracker.end_run(line_run_id, ex=ex)
             raise
         except Exception as e:
