@@ -2,7 +2,7 @@ import pytest
 import unittest
 
 from promptflow.connections import CustomConnection
-from my_tool_package.tools.tool_with_custom_llm_type import my_tool
+from my_tool_package.tools.tool_with_custom_llm_type_featuring_uihints import my_tool
 
 
 @pytest.fixture
@@ -17,8 +17,8 @@ def my_custom_connection() -> CustomConnection:
     return my_custom_connection
 
 
-class TestToolWithCustomLLMTypeAddUIHints:
-    def test_tool_with_custom_llm_type_add_uihints(self, my_custom_connection):
+class TestToolWithCustomLLMTypeFeaturingUIHints:
+    def test_tool_with_custom_llm_type_featuring_uihints(self, my_custom_connection):
         result = my_tool(
             my_custom_connection,
             "my-endpoint-name",

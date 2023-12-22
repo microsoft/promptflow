@@ -1,4 +1,4 @@
-# Flow with custom_llm tool
+# Flow with custom_llm tool featuring ui_hints
 This is a flow demonstrating how to use a `custom_llm` tool with `ui_hints`, which enables users to customize text box size for the tool inputs.
 
 Tools used in this flow:
