@@ -24,7 +24,8 @@ from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import LoggerFactory
-from .utils import SubmitterHelper, variant_overwrite_context, print_chat_output, resolve_generator, show_node_log_and_output
+from .utils import (SubmitterHelper, variant_overwrite_context, print_chat_output, resolve_generator,
+                    show_node_log_and_output)
 
 logger = LoggerFactory.get_logger(LOGGER_NAME)
 

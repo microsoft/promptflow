@@ -286,6 +286,7 @@ def show_node_log_and_output(node_run_infos, show_node_output, generator_record)
                 node_output = "".join(get_result_output(node_output, generator_record))
             print(f"{Fore.LIGHTWHITE_EX}{node_output}")
 
+
 def print_chat_output(output, generator_record):
     if isinstance(output, GeneratorType):
         for event in get_result_output(output, generator_record):
@@ -296,6 +297,7 @@ def print_chat_output(output, generator_record):
         print()
     else:
         print(output)
+
 
 def get_result_output(output, generator_record):
     if isinstance(output, GeneratorType):
@@ -312,6 +314,7 @@ def get_result_output(output, generator_record):
                 generator_record[output] = list(output)
                 output = generator_record[output]
     return output
+
 
 def resolve_generator(flow_result, generator_record):
     # resolve generator in flow result
