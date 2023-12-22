@@ -10,10 +10,11 @@ from urllib.parse import urlparse
 import filetype
 import requests
 
+from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.contracts.tool import ValueType
-from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget
 
 MIME_PATTERN = re.compile(r"^data:image/(.*);(path|base64|url)$")
 
@@ -237,8 +238,7 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
             error_type_and_message = f"({ex.__class__.__name__}) {ex}"
             raise LoadMultimediaDataError(
                 message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                key=key,
-                error_type_and_message=error_type_and_message,
+                key=key, error_type_and_message=error_type_and_message,
                 target=ex.target
             ) from ex
     return updated_inputs
@@ -275,11 +275,3 @@ def resolve_image_path(input_dir: Path, image_dict: dict):
             if resource == "path":
                 image_dict[key] = str(input_dir / image_dict[key])
     return image_dict
-
-
-class InvalidImageInput(ValidationException):
-    pass
-
-
-class LoadMultimediaDataError(UserErrorException):
-    pass

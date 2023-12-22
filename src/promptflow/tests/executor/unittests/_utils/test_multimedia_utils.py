@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
+from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
 from promptflow._utils.multimedia_utils import (
     _create_image_from_base64,
     _create_image_from_file,
@@ -15,8 +16,6 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data,
     persist_multimedia_data,
     resolve_multimedia_data_recursively,
-    InvalidImageInput,
-    LoadMultimediaDataError,
 )
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image
