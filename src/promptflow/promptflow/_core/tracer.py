@@ -63,7 +63,7 @@ class Tracer(ThreadLocalSingleton):
         return tracer.to_json()
 
     @classmethod
-    def push_tool(cls, f, args=[], kwargs={}):
+    def push_function(cls, f, args=[], kwargs={}, trace_type=TraceType.FUNCTION):
         obj = cls.active_instance()
         sig = inspect.signature(f).parameters
         all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
@@ -75,12 +75,16 @@ class Tracer(ThreadLocalSingleton):
         all_kwargs.pop("self", None)
         trace = Trace(
             name=f.__qualname__,
-            type=TraceType.TOOL,
+            type=trace_type,
             start_time=datetime.utcnow().timestamp(),
             inputs=all_kwargs,
         )
         obj._push(trace)
         return trace
+
+    @classmethod
+    def push_tool(cls, f, args=[], kwargs={}):
+        return cls.push_function(f, args, kwargs, trace_type=TraceType.TOOL)
 
     @classmethod
     def push(cls, trace: Trace):
