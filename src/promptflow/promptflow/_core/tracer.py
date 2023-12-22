@@ -159,22 +159,23 @@ class Tracer(ThreadLocalSingleton):
 def trace(func: Callable) -> Callable:
     """A decorator to add tracing to a function.
 
-    Use like this:
+    It can be used for both sync and async functions.
+    For sync functions, it will return a sync function.
+    For async functions, it will return an async function.
+
+    Here are some examples for these two cases:
 
         @trace
         def greetings(name):
             return f"Hello, {name}"
-
-    This the function name, inputs, outputs, start time, end time, and error (if any) will be recorded.
-
-    Note that this decorator can be applied to both async and sync functions.
-    For async functions, the decorator will return an async function.
 
         @trace
         async def greetings_async(name):
             await asyncio.sleep(1)
             return f"Hello, {name}"
 
+    When using this decorator, the function name, inputs, outputs, start time, end time,
+    and error (if any) will be recorded.
     """
     if inspect.iscoroutinefunction(func):
 
