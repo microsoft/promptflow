@@ -228,6 +228,7 @@ If the response code is "424 Model Error", it means that the error is caused by 
 ### Consume using Python
 
 In this sample usage, we are using the `SSEClient` class. This class is not a built-in Python class and needs to be installed separately. You can install it via pip:
+
 ```bash
 pip install sseclient-py  
 ```
