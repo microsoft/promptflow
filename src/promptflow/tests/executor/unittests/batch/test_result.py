@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from promptflow.batch._result import BatchResult, LineError
+from promptflow.batch._result import BatchResult, ErrorSummary, LineError
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -63,11 +63,15 @@ def get_line_results(line_dict: dict, api_calls=None):
     ]
 
 
+def get_aggregation_result(aggr_dict: dict, api_calls=None):
+    return AggregationResult(
+        output={}, metrics={}, node_run_infos=get_node_run_infos(node_dict=aggr_dict, api_calls=api_calls)
+    )
+
+
 def get_batch_result(line_dict, aggr_dict, line_api_calls=None, aggr_api_calls=None):
     line_results = get_line_results(line_dict=line_dict, api_calls=line_api_calls)
-    aggr_result = AggregationResult(
-        output={}, metrics={}, node_run_infos=get_node_run_infos(node_dict=aggr_dict, api_calls=aggr_api_calls)
-    )
+    aggr_result = get_aggregation_result(aggr_dict=aggr_dict, api_calls=aggr_api_calls)
     return BatchResult.create(datetime.utcnow(), datetime.utcnow(), line_results=line_results, aggr_result=aggr_result)
 
 
@@ -214,4 +218,19 @@ class TestBatchResult:
 @pytest.mark.unittest
 class TestErrorSummary:
     def test_create(self):
-        pass
+        line_dict = {
+            0: {"node_0": Status.Failed, "node_1": Status.Completed, "node_2": Status.Completed},
+            1: {"node_0": Status.Completed, "node_1": Status.Failed, "node_2": Status.Completed},
+        }
+        line_results = get_line_results(line_dict)
+        line_results[0].run_info.error = {"code": "SystemError", "message": "test system error message"}
+        aggr_dict = {"aggr_0": Status.Completed, "aggr_1": Status.Failed}
+        aggr_result = get_aggregation_result(aggr_dict)
+        error_summary = ErrorSummary.create(line_results, aggr_result)
+        assert error_summary.failed_user_error_lines == 1
+        assert error_summary.failed_system_error_lines == 1
+        assert error_summary.error_list == [
+            LineError(line_number=0, error={"code": "SystemError", "message": "test system error message"}),
+            LineError(line_number=1, error={"code": "UserError", "message": "test message"}),
+        ]
+        assert error_summary.aggr_error_dict == {"aggr_1": {"code": "UserError", "message": "test message"}}
