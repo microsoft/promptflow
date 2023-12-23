@@ -234,3 +234,9 @@ class TestErrorSummary:
             LineError(line_number=1, error={"code": "UserError", "message": "test message"}),
         ]
         assert error_summary.aggr_error_dict == {"aggr_1": {"code": "UserError", "message": "test message"}}
+
+
+@pytest.mark.unittest
+class TestSystemMetrics:
+    def test_get_openai_metrics(slef):
+        pass
