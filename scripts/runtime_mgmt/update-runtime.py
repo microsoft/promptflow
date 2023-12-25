@@ -56,6 +56,7 @@ class PFSRuntimeHelper:
                 wait_seconds *= 2
                 continue
             response.raise_for_status()
+            break
 
 
 def parse_args() -> argparse.Namespace:
