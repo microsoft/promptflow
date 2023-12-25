@@ -210,8 +210,6 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                     Tracer.pop(None, e)
                     raise
 
-            return wrapped
-
         else:
 
             @functools.wraps(func)
@@ -229,7 +227,10 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                     Tracer.pop(None, e)
                     raise
 
-            return wrapped
+        wrapped.__original_function = func
+        func.__wrapped_function = wrapped
+
+        return wrapped
 
     # enable use decorator without "()" if all arguments are default values
     if func is not None:
