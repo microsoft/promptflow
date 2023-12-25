@@ -48,7 +48,7 @@ pfcli_exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     contents_directory='.',
-    icon='../resources/logo32.ico',
+    icon='../resources/logo.svg',
     version="./version_info.txt",
 )
 

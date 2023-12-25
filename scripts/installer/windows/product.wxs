@@ -56,7 +56,7 @@
 
         <Media Id="1" Cabinet="promptflow.cab" EmbedCab="yes" CompressionLevel="high" />
 
-        <Icon Id="PromptflowIcon" SourceFile="$(var.ProductResources)logo32.ico" />
+        <Icon Id="PromptflowIcon" SourceFile="$(var.ProductResources)logo.svg" />
 
         <Property Id="ARPPRODUCTICON" Value="PromptflowIcon" />
         <Property Id="ARPHELPLINK" Value="https://microsoft.github.io/promptflow/how-to-guides/quick-start.html" />
@@ -133,7 +133,7 @@
                           Target="[#promptflow_service.vbs]"
                           WorkingDirectory="APPLICATIONFOLDER"
                           Advertise="no">
-                          <Icon Id="PromptflowServiceIcon" SourceFile="$(var.ProductResources)logo32.ico" />
+                          <Icon Id="PromptflowServiceIcon" SourceFile="$(var.ProductResources)logo.svg" />
                 </Shortcut>
                 <RemoveFile Id="CleanUpShortCut" Directory="StartupFolder" Name="Prompt flow service" On="uninstall"/>
                 <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="createAndRemoveOnUninstall">
