@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
+from promptflow._core.flow import flow
 from promptflow._core.metric_logger import log_metric
 
 # flake8: noqa
@@ -20,12 +21,4 @@ log_flow_metric = log_metric
 
 __version__ = VERSION
 
-__all__ = [
-    "PFClient",
-    "load_flow",
-    "load_run",
-    "log_metric",
-    "ToolProvider",
-    "tool",
-    "trace",
-]
+__all__ = ["PFClient", "load_flow", "load_run", "log_metric", "ToolProvider", "tool", "trace", "flow"]

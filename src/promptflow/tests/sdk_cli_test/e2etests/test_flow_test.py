@@ -198,3 +198,9 @@ class TestFlowTest:
         }
         result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
         assert result.status.value == "Completed"
+
+    def test_eager_flow_test(self):
+        # TODO: support load from folder.
+        flow_path = Path(f"{FLOWS_DIR}/simple_eager_flow/entry.py").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input1": "val1", "wait_seconds": 1})
+        assert result.run_info.status.value == "Completed"

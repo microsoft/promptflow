@@ -12,6 +12,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
+import pydash
 import yaml
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
@@ -128,11 +129,13 @@ class FlowOperations(TelemetryMixin):
 
         inputs = inputs or {}
         flow = load_flow(flow)
-        flow.context.variant = variant
+        if variant:
+            flow.context.variant = variant
         from promptflow._constants import FlowLanguage
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        from promptflow._sdk.entities._eager_flow import EagerFlow
 
-        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+        if pydash.get(flow, f"dag.{LANGUAGE_KEY}", FlowLanguage.Python) == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
                 is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
                 flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
@@ -157,10 +160,14 @@ class FlowOperations(TelemetryMixin):
                     )
 
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
-            is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
-            flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
-                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
-            )
+            if isinstance(flow, EagerFlow):
+                is_chat_flow, chat_history_input_name = False, None
+                flow_inputs, dependency_nodes_outputs = inputs, None
+            else:
+                is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
+                flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
+                    node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
+                )
 
             if node:
                 return submitter.node_test(

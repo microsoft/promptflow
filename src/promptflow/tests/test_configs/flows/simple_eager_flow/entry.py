@@ -1,14 +1,6 @@
-from promptflow import tool, trace
+from promptflow import flow, trace
 import time
-import random
-
 # from passthrough import passthrough_str_and_wait_sync
-
-@trace
-def sleep(seconds):
-    time.sleep(seconds)
-    if random.random() < 0.5:
-        raise ValueError("Random error")
 
 @trace
 def passthrough_str_and_wait_sync(input1: str, wait_seconds=3) -> str:
@@ -16,11 +8,11 @@ def passthrough_str_and_wait_sync(input1: str, wait_seconds=3) -> str:
     print("Wait for", wait_seconds, "seconds in sync function")
     for i in range(wait_seconds):
         print(i)
-        sleep(1)
+        time.sleep(1)
     return input1
 
 
-@tool
+@flow
 def flow_entry(input1: str, wait_seconds=3):
     val1 = passthrough_str_and_wait_sync(input1, wait_seconds)
     val2 = passthrough_str_and_wait_sync(input1, wait_seconds + 2)

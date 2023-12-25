@@ -24,9 +24,13 @@ from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
-from .utils import (SubmitterHelper, variant_overwrite_context, print_chat_output, resolve_generator,
-                    show_node_log_and_output)
-
+from .utils import (
+    SubmitterHelper,
+    print_chat_output,
+    resolve_generator,
+    show_node_log_and_output,
+    variant_overwrite_context,
+)
 
 logger = get_cli_sdk_logger()
 
@@ -51,28 +55,39 @@ class TestSubmitter:
 
     @contextlib.contextmanager
     def init(self):
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
         if self.flow_context.variant:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
             tuning_node, node_variant = None, None
 
-        with variant_overwrite_context(
-            flow_path=self._origin_flow.code,
-            tuning_node=tuning_node,
-            variant=node_variant,
-            connections=self.flow_context.connections,
-            overrides=self.flow_context.overrides,
-        ) as temp_flow:
-            # TODO execute flow test in a separate process.
-            with _change_working_dir(temp_flow.code):
-                self.flow = temp_flow
+        if isinstance(self.flow, EagerFlow):
+            with _change_working_dir(self.flow.code):
                 self._tuning_node = tuning_node
                 self._node_variant = node_variant
                 yield self
-                self.flow = self._origin_flow
                 self._dataplane_flow = None
                 self._tuning_node = None
                 self._node_variant = None
+        else:
+            with variant_overwrite_context(
+                flow_path=self._origin_flow.code,
+                tuning_node=tuning_node,
+                variant=node_variant,
+                connections=self.flow_context.connections,
+                overrides=self.flow_context.overrides,
+            ) as temp_flow:
+                # TODO execute flow test in a separate process.
+                with _change_working_dir(temp_flow.code):
+                    self.flow = temp_flow
+                    self._tuning_node = tuning_node
+                    self._node_variant = node_variant
+                    yield self
+                    self.flow = self._origin_flow
+                    self._dataplane_flow = None
+                    self._tuning_node = None
+                    self._node_variant = None
 
     def resolve_data(
         self, node_name: str = None, inputs: dict = None, chat_history_name: str = None, dataplane_flow=None

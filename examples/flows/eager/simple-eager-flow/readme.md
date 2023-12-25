@@ -47,6 +47,7 @@ pf run create --flow . --data ./data.jsonl --column-mapping groundtruth='${data.
 
 ## TODO list
 
+- Support @flow.
 - Support output annotation.
 - Line result contract change, no node for eager flow.
 - Aggregation support.

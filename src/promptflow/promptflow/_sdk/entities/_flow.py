@@ -164,13 +164,14 @@ class Flow(FlowBase):
 
         flow_path = resolve_flow_path(source_path)
         if flow_path.exists():
-            # TODO: for file, we should read the yaml to get code and set path to source_path
-            # read flow file to get hash
-            with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
-                flow_content = f.read()
-                flow_dag = yaml.safe_load(flow_content)
-                kwargs["content_hash"] = hash(flow_content)
-            return cls(code=flow_path.parent.absolute().as_posix(), dag=flow_dag, **kwargs)
+            if flow_path.suffix == ".py":
+                from promptflow._sdk.entities._eager_flow import EagerFlow
+
+                return EagerFlow._load(flow_path=flow_path, **kwargs)
+            elif flow_path.suffix in [".yaml", ".yml"]:
+                return ProtectedFlow._load(flow_path=flow_path, **kwargs)
+            else:
+                raise UserErrorException(f"Unsupported file type {flow_path.suffix} for {flow_path.absolute()}")
 
         raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
@@ -296,6 +297,16 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         return {k: v.type.value for k, v in self._executable.outputs.items()}
 
     # endregion
+
+    @classmethod
+    def _load(cls, flow_path, **kwargs):
+        # TODO: for file, we should read the yaml to get code and set path to source_path
+        # read flow file to get hash
+        with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
+            flow_content = f.read()
+            flow_dag = yaml.safe_load(flow_content)
+            kwargs["content_hash"] = hash(flow_content)
+        return cls(code=flow_path.parent.absolute().as_posix(), dag=flow_dag, **kwargs)
 
     def __call__(self, *args, **kwargs):
         """Calling flow as a function, the inputs should be provided with key word arguments.
