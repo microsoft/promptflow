@@ -9,6 +9,7 @@ from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
 from promptflow._core.tracer import trace
+from promptflow.contracts.trace import TraceType
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
@@ -74,7 +75,7 @@ def tool(
             raise UserErrorException(f"Tool type {type} is not supported yet.")
 
         # All the tools should be traced.
-        new_f = trace(func)
+        new_f = trace(func, trace_type=TraceType.TOOL)
 
         new_f.__original_function = func
         func.__wrapped_function = new_f
