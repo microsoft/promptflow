@@ -243,7 +243,11 @@ class TestExecutor:
 
     def test_executor_flow_entry(self):
         run_storage = MemoryRunStorage()
-        executor = FlowExecutor.create(get_yaml_file("flow_no_yaml", file_name="flow_entry.py"), connections={}, storage=run_storage)
+        executor = FlowExecutor.create(
+            get_yaml_file("flow_no_yaml", file_name="flow_entry.py"),
+            connections={},
+            storage=run_storage,
+        )
         try:
             flow_result = executor.exec_line({"input1": "val1", "wait_seconds": 1})
         except Exception as ex:
