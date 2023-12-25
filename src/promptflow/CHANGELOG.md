@@ -6,6 +6,7 @@
 - [SDK/CLI] Support `pfazure run cancel` to cancel a run on Azure AI.
 - Add support to configure prompt flow home directory via environment variable `PF_HOME_DIRECTORY`.
   - Please set before importing `promptflow`, otherwise it won't take effect.
+- [Executor] Handle KeyboardInterrupt in flow test so that the final state is Canceled.
 
 ### Bugs Fixed
 - [SDK/CLI] Fix single node run doesn't work when consuming sub item of upstream node

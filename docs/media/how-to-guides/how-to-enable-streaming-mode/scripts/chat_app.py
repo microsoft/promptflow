@@ -6,7 +6,7 @@ import json
 from azure.identity import AzureCliCredential
 import logging
 from azure.ai.ml import MLClient
-from event_stream import EventStream
+from sseclient import SSEClient 
 
 
 class ColoredFormatter(logging.Formatter):
@@ -85,8 +85,8 @@ def score(url, api_key, body, stream=True, on_event=None):
         content_type = response.headers.get('Content-Type')
         if "text/event-stream" in content_type:
             output = {}
-            event_stream = EventStream(response.iter_lines())
-            for event in event_stream:
+            client = SSEClient(response)
+            for event in client.events():
                 if on_event:
                     on_event(event)
 
