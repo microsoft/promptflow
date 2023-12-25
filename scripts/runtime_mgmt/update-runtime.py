@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import argparse
+import docker
 import time
 from pathlib import Path
 
@@ -50,6 +51,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def get_runtime_latest_image_sha256(repo_name: str) -> str:
+    client = docker.from_env()
+    image = client.images.pull(repo_name, tag="latest")
+    sha256_digest = image.attrs['RepoDigests'][0]
+    return sha256_digest.split("@")[1]
+
+
 def init_ml_client(
     subscription_id: str,
     resource_group_name: str,
@@ -64,6 +72,18 @@ def init_ml_client(
 
 
 def create_environment(ml_client: MLClient) -> str:
+    # replace @latest with sha256 digest
+    dockerfile_path = (ENVIRONMENT_YAML.parent / "context" / "Dockerfile").resolve()
+    with open(dockerfile_path, "r") as f:
+        content = f.readlines()
+    # expected first line: FROM mcr.microsoft.com/azureml/promptflow/promptflow-runtime:latest
+    base_image_name = content[0].split()[1].split(":")[0]
+    sha256 = get_runtime_latest_image_sha256(base_image_name)
+    content[0] = f"FROM {base_image_name}@{sha256}\n"
+    with open(dockerfile_path, "w") as f:
+        f.writelines(content)
+
+    # create environment
     environment = load_environment(source=ENVIRONMENT_YAML)
     env = ml_client.environments.create_or_update(environment)
 
