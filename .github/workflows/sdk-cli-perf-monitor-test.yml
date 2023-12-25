@@ -36,6 +36,12 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
+      - name: Set PR Number to an Environment Variable
+        run: echo "PR_NUMBER=${{ github.event.number }}" >> $GITHUB_ENV
+
+      - name: Print PR Number
+        run: echo "PR Number is $PR_NUMBER"
+
       - name: Display and Set Environment Variables
         run: |
           export pyVersion="3.9";
