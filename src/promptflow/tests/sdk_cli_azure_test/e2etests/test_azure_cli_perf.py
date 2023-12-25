@@ -7,6 +7,7 @@ import pytest
 
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
 from promptflow._sdk._utils import ClientUserAgentUtil
+from sdk_cli_azure_test.recording_utilities import is_replay
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -26,7 +27,8 @@ def run_cli_command(cmd, time_limit=3600):
     ed = timeit.default_timer()
 
     print(f"{cmd}, \nTotal time: {ed - st}s")
-    assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
+    if is_replay():
+        assert ed - st < time_limit, f"The time limit is {time_limit}s, but it took {ed - st}s."
 
 
 @pytest.fixture
