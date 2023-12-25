@@ -174,6 +174,7 @@ class RunTracker(ThreadLocalSingleton):
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
         run_info.api_calls = {
+            "name": "root",
             "start_time": run_info.start_time,
             "end_time": run_info.end_time,
             "children": self._collect_traces_from_nodes(run_id),
