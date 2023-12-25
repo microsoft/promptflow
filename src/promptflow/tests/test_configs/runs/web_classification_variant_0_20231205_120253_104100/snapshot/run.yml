@@ -1,0 +1,6 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
+flow: .
+data: data.jsonl
+variant: ${summarize_text_content.variant_1}
+column_mapping:
+   url: ${data.url}

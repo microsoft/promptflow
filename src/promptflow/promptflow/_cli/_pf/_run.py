@@ -33,6 +33,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
 from promptflow._sdk.entities import Run
+from promptflow.exceptions import UserErrorException
 
 
 def add_run_parser(subparsers):
@@ -119,13 +120,18 @@ Examples:
 pf run create -f <yaml-filename>
 # Create a run from flow directory and reference a run:
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
+# Create a run from an existing run record folder
+pf run create --source <path-to-run-folder>
 """
 
     # data for pf has different help doc than pfazure
     def add_param_data(parser):
         parser.add_argument("--data", type=str, help="Local path to the data file.")
 
-    add_run_create_common(subparsers, [add_param_data], epilog=epilog)
+    def add_param_source(parser):
+        parser.add_argument("--source", type=str, help="Local path to the existing run record folder.")
+
+    add_run_create_common(subparsers, [add_param_data, add_param_source], epilog=epilog)
 
 
 def add_run_cancel(subparsers):
@@ -521,6 +527,7 @@ def _parse_kv_pair(kv_pairs: str) -> Dict[str, str]:
 def create_run(create_func: Callable, args):
     file = args.file
     flow = args.flow
+    run_source = getattr(args, "source", None)  # source is only available for pf args, not pfazure.
     data = args.data
     column_mapping = args.column_mapping
     variant = args.variant
@@ -529,7 +536,7 @@ def create_run(create_func: Callable, args):
     stream = args.stream
     environment_variables = args.environment_variables
     connections = args.connections
-    params_override = args.params_override
+    params_override = args.params_override or []
 
     if environment_variables:
         environment_variables = list_of_dict_to_dict(environment_variables)
@@ -538,7 +545,6 @@ def create_run(create_func: Callable, args):
     if column_mapping:
         column_mapping = list_of_dict_to_dict(column_mapping)
 
-    params_override = params_override or []
     if file:
         for param_key, param in {
             "name": name,
@@ -555,9 +561,7 @@ def create_run(create_func: Callable, args):
             params_override.append({param_key: param})
 
         run = load_run(source=file, params_override=params_override)
-    elif flow is None:
-        raise ValueError("--flow is required when not using --file.")
-    else:
+    elif flow:
         run_data = {
             "name": name,
             "flow": flow,
@@ -572,6 +576,16 @@ def create_run(create_func: Callable, args):
         run_data = {k: v for k, v in run_data.items() if v is not None}
 
         run = Run._load(data=run_data, params_override=params_override)
+    elif run_source:
+        display_name, description, tags = _parse_metadata_args(params_override)
+        processed_params = {
+            "display_name": display_name,
+            "description": description,
+            "tags": tags,
+        }
+        run = Run._load_from_source(source=run_source, params_override=processed_params)
+    else:
+        raise UserErrorException("To create a run, one of [file, flow, source] must be specified.")
     run = create_func(run=run, stream=stream)
     if stream:
         print("\n")  # change new line to show run info

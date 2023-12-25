@@ -7,14 +7,13 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
-from promptflow.executor._result import AggregationResult, LineResult
+from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
-EXECUTOR_SERVICE_DLL = "Promptflow.DotnetService.dll"
+EXECUTOR_SERVICE_DLL = "Promptflow.dll"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
@@ -42,6 +41,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
+            "-e",
             "-p",
             port,
             "--yaml_path",
@@ -55,28 +55,6 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         ]
         process = subprocess.Popen(command)
         return cls(process, port)
-
-    async def exec_line_async(
-        self,
-        inputs: Mapping[str, Any],
-        index: Optional[int] = None,
-        run_id: Optional[str] = None,
-    ) -> LineResult:
-        line_result = await super().exec_line_async(inputs, index, run_id)
-        # TODO: check if we should ask C# executor to keep unmatched inputs, although it's not so straightforward
-        #   for executor service to do so.
-        # local_storage_operations.load_inputs_and_outputs now have an assumption that there is an extra
-        # line_number key in the inputs.
-        # This key will be appended to the inputs in below call stack:
-        # BatchEngine.run =>
-        # BatchInputsProcessor.process_batch_inputs =>
-        # ... =>
-        # BatchInputsProcessor._merge_input_dicts_by_line
-        # For python, it will be kept in the returned line_result.run_info.inputs
-        # For csharp, it will be dropped by executor service for now
-        # Append it here for now to make behavior consistent among ExecutorProxy.
-        line_result.run_info.inputs[LINE_NUMBER_KEY] = index
-        return line_result
 
     def destroy(self):
         """Destroy the executor"""
@@ -96,12 +74,21 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         return AggregationResult({}, {}, {})
 
     @classmethod
-    def generate_tool_metadata(cls, working_dir: Path) -> dict:
-        promptflow_folder = working_dir / PROMPT_FLOW_DIR_NAME
-        if promptflow_folder.exists():
-            with open(promptflow_folder / FLOW_TOOLS_JSON, mode="r", encoding=DEFAULT_ENCODING) as f:
-                return json.load(f)
-        return {}
+    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
+        flow_tools_json_path = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        if flow_tools_json_path.is_file():
+            with open(flow_tools_json_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError:
+                    raise RuntimeError(
+                        f"Failed to fetch meta of tools: {flow_tools_json_path.absolute().as_posix()} "
+                        f"is not a valid json file."
+                    )
+        raise FileNotFoundError(
+            f"Failed to fetch meta of tools: cannot find {flow_tools_json_path.absolute().as_posix()}, "
+            f"please build the flow project first."
+        )
 
     @classmethod
     def find_available_port(cls) -> str:

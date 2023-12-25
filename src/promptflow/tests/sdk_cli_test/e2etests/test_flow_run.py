@@ -286,13 +286,6 @@ class TestFlowRun:
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
     ):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         result = pf.run(
             flow=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection",
             data=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection/data.jsonl",
@@ -1037,3 +1030,53 @@ class TestFlowRun:
         exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
         assert "additionalInfo" in default["error"] and "additionalInfo" not in exclude["error"]
         assert "debugInfo" in default["error"] and "debugInfo" not in exclude["error"]
+
+    def test_create_run_with_existing_run_folder(self, pf):
+        # TODO: Should use fixture to create an run and download it to be used here.
+        run_name = "web_classification_variant_0_20231205_120253_104100"
+
+        # clean the run if exists
+        from promptflow._cli._utils import _try_delete_existing_run_record
+
+        _try_delete_existing_run_record(run_name)
+
+        # assert the run doesn't exist
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(run_name)
+
+        # create the run with run folder
+        run_folder = f"{RUNS_DIR}/{run_name}"
+        run = Run._load_from_source(source=run_folder)
+        pf.runs.create_or_update(run)
+
+        # test with other local run operations
+        run = pf.runs.get(run_name)
+        assert run.name == run_name
+        details = pf.get_details(run_name)
+        assert details.shape == (3, 5)
+        metrics = pf.runs.get_metrics(run_name)
+        assert metrics == {}
+        pf.stream(run_name)
+        pf.visualize([run_name])
+
+    def test_aggregation_node_failed(self, pf):
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/aggregation_node_failed",
+            data=f"{FLOWS_DIR}/aggregation_node_failed/data.jsonl",
+        )
+        # even if all lines failed, the bulk run's status is completed.
+        assert failed_run.status == "Completed"
+        # error messages will store in local
+        local_storage = LocalStorageOperations(failed_run)
+
+        assert os.path.exists(local_storage._exception_path)
+        exception = local_storage.load_exception()
+        assert "First error message is" in exception["message"]
+        # line run failures will be stored in additionalInfo
+        assert len(exception["additionalInfo"][0]["info"]["errors"]) == 1
+
+        # show run will get error message
+        run = pf.runs.get(name=failed_run.name)
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert run_dict["error"] == exception

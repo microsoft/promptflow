@@ -1,4 +1,4 @@
-# Create and Use Your Own Custom Strong Type Connection
+# Create and use your own custom strong type connection
 Connections provide a secure method for managing credentials for external APIs and data sources in prompt flow. This guide explains how to create and use a custom strong type connection.
 
 ## What is a Custom Strong Type Connection?
@@ -12,9 +12,9 @@ For other connections types, please refer to [Connections](https://microsoft.git
 
 ## Prerequisites
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to at least version 1.2.1.
-- Please install promptflow package and ensure that its version is 0.1.0b8 or later.
+- Please install promptflow package and ensure that its version is 1.0.0 or later.
   ```
-  pip install promptflow>=0.1.0b8
+  pip install promptflow>=1.0.0
   ```
 
 ## Create a custom strong type connection

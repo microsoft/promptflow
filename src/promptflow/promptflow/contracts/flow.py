@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import json
 import logging
 import sys
 from dataclasses import asdict, dataclass
@@ -521,6 +522,8 @@ class Flow:
     :type node_variants: Dict[str, NodeVariants]
     :param program_language: The program language of the flow.
     :type program_language: str
+    :param environment_variables: The default environment variables of the flow.
+    :type environment_variables: Dict[str, object]
     """
 
     id: str
@@ -531,6 +534,7 @@ class Flow:
     tools: List[Tool]
     node_variants: Dict[str, NodeVariants] = None
     program_language: str = FlowLanguage.Python
+    environment_variables: Dict[str, object] = None
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -591,6 +595,7 @@ class Flow:
             tools=tools,
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
+            environment_variables=data.get("environment_variables") or {},
         )
 
     def _apply_default_node_variants(self: "Flow"):
@@ -645,6 +650,28 @@ class Flow:
         flow = Flow.deserialize(flow_dag)
         flow._set_tool_loader(working_dir)
         return flow
+
+    @classmethod
+    def load_env_variables(
+        cls, flow_file: Path, working_dir=None, environment_variables_overrides: Dict[str, str] = None
+    ) -> Dict[str, str]:
+        """
+        Read flow_environment_variables from flow yaml.
+        If environment_variables_overrides exists, override yaml level configuration.
+        Returns the merged environment variables dict.
+        """
+        working_dir = cls._parse_working_dir(flow_file, working_dir)
+        with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
+            flow_dag = yaml.safe_load(fin)
+        flow = Flow.deserialize(flow_dag)
+
+        environment_variables = {
+            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in flow.environment_variables.items()
+        }
+        if environment_variables_overrides is not None:
+            for k, v in environment_variables_overrides.items():
+                environment_variables[k] = v
+        return environment_variables
 
     def _set_tool_loader(self, working_dir):
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
@@ -771,9 +798,17 @@ class Flow:
                 continue
             if node.type == ToolType.PROMPT or node.type == ToolType.LLM:
                 continue
+            logger.debug(f"Try loading connection names for node {node.name}.")
             tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
             if tool:
-                connection_names.update(self._get_connection_name_from_tool(tool, node).values())
+                node_connection_names = list(self._get_connection_name_from_tool(tool, node).values())
+            else:
+                node_connection_names = []
+            if node_connection_names:
+                logger.debug(f"Connection names of node {node.name}: {node_connection_names}")
+            else:
+                logger.debug(f"Node {node.name} doesn't reference any connection.")
+            connection_names.update(node_connection_names)
         return set({item for item in connection_names if item})
 
     def get_connection_input_names_for_node(self, node_name):

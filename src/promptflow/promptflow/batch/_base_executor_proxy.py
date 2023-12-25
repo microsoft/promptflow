@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
@@ -22,6 +23,15 @@ EXECUTOR_UNHEALTHY_MESSAGE = "The executor service is currently not in a healthy
 
 
 class AbstractExecutorProxy:
+    @classmethod
+    def get_tool_metadata(cls, flow_file: Path, working_dir: Optional[Path] = None) -> dict:
+        """Generate tool metadata file for the specified flow."""
+        return cls._get_tool_metadata(flow_file, working_dir or flow_file.parent)
+
+    @classmethod
+    def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
+        raise NotImplementedError()
+
     @classmethod
     def create(
         cls,
@@ -57,6 +67,10 @@ class AbstractExecutorProxy:
         """Execute aggregation nodes"""
         raise NotImplementedError()
 
+    async def ensure_executor_health(self):
+        """Ensure the executor service is healthy before execution"""
+        pass
+
 
 class APIBasedExecutorProxy(AbstractExecutorProxy):
     @property
@@ -75,10 +89,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
     ) -> LineResult:
         start_time = datetime.utcnow()
-        # ensure service health
-        await self._ensure_executor_health()
         # call execution api to get line results
-        url = self.api_endpoint + "/Execution"
+        url = self.api_endpoint + "/execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
@@ -95,15 +107,32 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         aggregation_inputs: Mapping[str, Any],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
-        # ensure service health
-        await self._ensure_executor_health()
         # call aggregation api to get aggregation result
         async with httpx.AsyncClient() as client:
-            url = self.api_endpoint + "/Aggregation"
+            url = self.api_endpoint + "/aggregation"
             payload = {"run_id": run_id, "batch_inputs": batch_inputs, "aggregation_inputs": aggregation_inputs}
             response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
         result = self._process_http_response(response)
         return AggregationResult.deserialize(result)
+
+    async def ensure_executor_health(self):
+        """Ensure the executor service is healthy before calling the API to get the results
+
+        During testing, we observed that the executor service started quickly on Windows.
+        However, there is a noticeable delay in booting on Linux.
+
+        So we set a specific waiting period. If the executor service fails to return to normal
+        within the allocated timeout, an exception is thrown to indicate a potential problem.
+        """
+        retry_count = 0
+        max_retry_count = 10
+        while retry_count < max_retry_count:
+            if await self._check_health():
+                return
+            # wait for 1s to prevent calling the API too frequently
+            await asyncio.sleep(1)
+            retry_count += 1
+        raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
     def _process_http_response(self, response: httpx.Response):
         if response.status_code == 200:
@@ -123,22 +152,6 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                     message_format=message_format, status_code=response.status_code, error=response.text
                 )
                 return ExceptionPresenter.create(unexpected_error).to_dict()
-
-    async def _ensure_executor_health(self):
-        """Ensure the executor service is healthy before calling the API to get the results
-
-        During testing, we observed that the executor service started quickly on Windows.
-        However, there is a noticeable delay in booting on Linux.
-
-        So we set a specific waiting period. If the executor service fails to return to normal
-        within the allocated timeout, an exception is thrown to indicate a potential problem.
-        """
-        waiting_health_timeout = 5
-        start_time = datetime.utcnow()
-        while (datetime.utcnow() - start_time).seconds < waiting_health_timeout:
-            if await self._check_health():
-                return
-        raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
     async def _check_health(self):
         try:
