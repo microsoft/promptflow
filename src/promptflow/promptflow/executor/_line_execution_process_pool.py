@@ -137,6 +137,8 @@ def format_current_process(process_name, pid, line_number: int, is_completed=Fal
 
 
 def create_process_fork(
+        log_context_initialization_func,
+        current_operation_context,
         input_queues,
         output_queues,
         restart_queue,
@@ -146,8 +148,6 @@ def create_process_fork(
         raise_ex,
 ):
     process_info = {}
-    current_log_context = LogContext.get_current()
-    log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
     context = multiprocessing.get_context("fork")
     run_storage = QueueRunStorage(output_queues[0])
     executor = FlowExecutor.create(
@@ -167,7 +167,7 @@ def create_process_fork(
                 input_queues[i],
                 output_queues[i],
                 log_context_initialization_func,
-                OperationContext.get_instance().get_context_dict()
+                current_operation_context
             ),
             daemon=True
         )
@@ -216,10 +216,15 @@ def create_process_spawn(
         raise_ex
 ):
     context = multiprocessing.get_context("spawn")
+    current_log_context = LogContext.get_current()
+    log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
+    current_operation_context = OperationContext.get_instance().get_context_dict()
 
     process = context.Process(
         target=create_process_fork,
         args=(
+            log_context_initialization_func,
+            current_operation_context,
             input_queues,
             output_queues,
             restart_queue,
@@ -355,7 +360,10 @@ class LineExecutionProcessPool:
                     args = task_queue.get(timeout=1)
                 except queue.Empty:
                     self._restart_queue.put((pid, index, "del"))
-                    return
+                    while True:
+                        if not psutil.pid_exists(pid):
+                            return
+                        time.sleep(1)
 
                 input_queue.put(args)
                 inputs, line_number, run_id = args[:3]
