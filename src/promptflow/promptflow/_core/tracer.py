@@ -166,26 +166,31 @@ def trace(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
     When using this decorator, the function name, inputs, outputs, start time, end time,
     and error (if any) will be recorded.
 
-    Args:
-        func (Callable): The function to be traced.
-        trace_type (TraceType): The type of the trace. Defaults to TraceType.FUNCTION.
+    :param func: The function to be traced.
+    :type func: Callable
+    :param trace_type: The type of the trace. Defaults to TraceType.FUNCTION.
+    :type trace_type: TraceType, optional
+    :return: The traced function.
+    :rtype: Callable
 
-    Returns:
-        Callable: The traced function.
+    :Examples:
 
-    Examples:
-        Synchronous function usage:
+    Synchronous function usage:
 
-            @trace
-            def greetings(name):
-                return f"Hello, {name}"
+    .. code-block:: python
 
-        Asynchronous function usage:
+        @trace
+        def greetings(name):
+            return f"Hello, {name}"
 
-            @trace
-            async def greetings_async(name):
-                await asyncio.sleep(1)
-                return f"Hello, {name}"
+    Asynchronous function usage:
+
+    .. code-block:: python
+
+        @trace
+        async def greetings_async(name):
+            await asyncio.sleep(1)
+            return f"Hello, {name}"
     """
     def wrapper(func):
         if inspect.iscoroutinefunction(func):
