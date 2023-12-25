@@ -371,4 +371,5 @@ def get_cli_sdk_logger():
     # cli sdk logger default logging level is WARNING
     # here the logger name "promptflow" is from promptflow._sdk._constants.LOGGER_NAME,
     # to avoid circular import error, use plain string here instead of importing from _constants
+    # because this function is also called in _prepare_home_dir which is in _constants
     return LoggerFactory.get_logger("promptflow", verbosity=logging.WARNING)
