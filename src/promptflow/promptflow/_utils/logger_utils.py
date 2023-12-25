@@ -369,6 +369,6 @@ class LoggerFactory:
 def get_cli_sdk_logger():
     """Get logger used by CLI SDK."""
     # cli sdk logger default logging level is WARNING
-    from promptflow._sdk._constants import LOGGER_NAME
-
-    return LoggerFactory.get_logger(LOGGER_NAME, verbosity=logging.WARNING)
+    # here the logger name "promptflow" is from promptflow._sdk._constants.LOGGER_NAME,
+    # to avoid circular import error, use plain string here instead of importing from _constants
+    return LoggerFactory.get_logger("promptflow", verbosity=logging.WARNING)
