@@ -33,6 +33,12 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: set test mode
+        run: echo "PROMPT_FLOW_TEST_MODE=replay" >> $GITHUB_ENV
+
+      - name: check test mode from env
+        run: echo $PROMPT_FLOW_TEST_MODE
+
       - name: checkout
         uses: actions/checkout@v4
 

@@ -49,7 +49,7 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
     "vcr_recording",
 )
 class TestAzureCliPerf:
-    def test_pfazure_run_create(self, operation_scope_args, runtime: str, randstr: Callable[[str], str], time_limit=30):
+    def test_pfazure_run_create(self, operation_scope_args, runtime: str, randstr: Callable[[str], str], time_limit=15):
         name = randstr("name")
         run_cli_command(
             cmd=(
@@ -69,7 +69,7 @@ class TestAzureCliPerf:
             time_limit=time_limit,
         )
 
-    def test_pfazure_run_update(self, operation_scope_args, time_limit=30):
+    def test_pfazure_run_update(self, operation_scope_args, time_limit=15):
         run_cli_command(
             cmd=(
                 "pfazure",
@@ -86,7 +86,7 @@ class TestAzureCliPerf:
             time_limit=time_limit,
         )
 
-    def test_run_restore(self, operation_scope_args, time_limit=30):
+    def test_run_restore(self, operation_scope_args, time_limit=15):
         run_cli_command(
             cmd=(
                 "pfazure",

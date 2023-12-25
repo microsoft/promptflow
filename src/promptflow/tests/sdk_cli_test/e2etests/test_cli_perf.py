@@ -57,7 +57,7 @@ def subprocess_run_cli_command(cmd, time_limit=3600):
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
 @pytest.mark.perf_monitor_test
 class TestCliPerf:
-    def test_pf_run_create(self, time_limit=35) -> None:
+    def test_pf_run_create(self, time_limit=20) -> None:
         res = subprocess_run_cli_command(
             cmd=(
                 "pf",
@@ -112,7 +112,7 @@ class TestCliPerf:
         output_path = Path(FLOWS_DIR) / "print_input_flow" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
 
-    def test_pf_flow_build(self, time_limit=35):
+    def test_pf_flow_build(self, time_limit=20):
         with tempfile.TemporaryDirectory() as temp_dir:
             subprocess_run_cli_command(
                 cmd=(
