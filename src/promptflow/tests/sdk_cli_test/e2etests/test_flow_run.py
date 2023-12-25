@@ -1080,3 +1080,13 @@ class TestFlowRun:
         run_dict = run._to_dict()
         assert "error" in run_dict
         assert run_dict["error"] == exception
+
+    @pytest.mark.skip(reason="TODO: batch engine not support python flow yet.")
+    def test_eager_flow_run(self, pf):
+        flow_path = Path(f"{FLOWS_DIR}/simple_eager_flow/entry.py").absolute()
+        run = pf.run(
+            flow=flow_path,
+            data=f"{FLOWS_DIR}/simple_eager_flow/data.jsonl",
+        )
+        print(run)
+        assert run.status == "Completed"

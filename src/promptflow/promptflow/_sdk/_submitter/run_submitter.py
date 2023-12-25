@@ -4,7 +4,8 @@
 # this file is a middle layer between the local SDK and executor, it'll have some similar logic with cloud PFS.
 
 import datetime
-from pathlib import Path
+
+import pydash
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
@@ -19,6 +20,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 
+from ... import load_flow
 from ..._utils.logger_utils import LoggerFactory
 from .utils import SubmitterHelper, variant_overwrite_context
 
@@ -57,14 +59,17 @@ class RunSubmitter:
             raise ValueError("Either run or data must be specified for flow run.")
 
         # running specified variant
-        with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-            local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
-            with local_storage.logger:
-                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+        local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
+        with local_storage.logger:
+            if run.flow.suffix == ".py":
+                self._submit_bulk_run(flow=load_flow(run.flow), run=run, local_storage=local_storage)
+            else:
+                with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
+                    self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
-        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+        if pydash.get(flow, f"dag.{LANGUAGE_KEY}", FlowLanguage.Python) == FlowLanguage.CSharp:
             connections = []
         else:
             with _change_working_dir(flow.code):
