@@ -31,18 +31,31 @@ class PFSRuntimeHelper:
         token = ml_client._credential.get_token("https://management.azure.com/.default").token
         self._headers = {"Authorization": f"Bearer {token}"}
 
-    def update_runtime(self, name: str, env_asset_id: str) -> None:
-        body = {
-            "runtimeDescription": "Runtime hosted on compute instance, serves for examples checks.",
-            "environment": env_asset_id,
-            "instanceCount": "",
-        }
-        response = requests.put(
-            f"{self._request_url_prefix}/{name}",
-            headers=self._headers,
-            json=body,
-        )
-        response.raise_for_status()
+    def update_runtime(self, name: str, env_asset_id: str, max_retries: int = 10) -> None:
+        # EMS needs some time to build the environment, and we will run into 404 from PFS:
+        # Environment image not found: ImageExistsInRegistry
+        # and we have no good way to retrieve environment build status
+        # so we simply retry with limited attempts (~5000s with 10 attempts)
+        attempts = 0
+        wait_seconds = 5
+        while attempts < max_retries:
+            body = {
+                "runtimeDescription": "Runtime hosted on compute instance, serves for examples checks.",
+                "environment": env_asset_id,
+                "instanceCount": "",
+            }
+            response = requests.put(
+                f"{self._request_url_prefix}/{name}",
+                headers=self._headers,
+                json=body,
+            )
+            if response.status_code == 404:
+                print(f"PFS returned status code 404, retry attempt: {attempts} out of {max_retries}")
+                time.sleep(wait_seconds)
+                attempts += 1
+                wait_seconds *= 2
+                continue
+            response.raise_for_status()
 
 
 def parse_args() -> argparse.Namespace:
