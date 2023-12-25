@@ -156,7 +156,7 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
-def trace(func: Callable) -> Callable:
+def trace(func=None, *, trace_type=TraceType.FUNCTION) -> Callable:
     """A decorator to add tracing to a function.
 
     It can be used for both sync and async functions.
@@ -177,40 +177,46 @@ def trace(func: Callable) -> Callable:
     When using this decorator, the function name, inputs, outputs, start time, end time,
     and error (if any) will be recorded.
     """
-    if inspect.iscoroutinefunction(func):
+    def wrapper(func):
+        if inspect.iscoroutinefunction(func):
 
-        @functools.wraps(func)
-        async def wrapped(*args, **kwargs):
-            if Tracer.active_instance() is None:
-                return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-            # Should not extract these codes to a separate function here.
-            # We directly call func instead of calling Tracer.invoke,
-            # because we want to avoid long stack trace when hitting an exception.
-            try:
-                Tracer.push_function(func, args, kwargs)
-                output = await func(*args, **kwargs)
-                return Tracer.pop(output)
-            except Exception as e:
-                Tracer.pop(None, e)
-                raise
+            @functools.wraps(func)
+            async def wrapped(*args, **kwargs):
+                if Tracer.active_instance() is None:
+                    return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push_function(func, args, kwargs, trace_type)
+                    output = await func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
 
-        return wrapped
+            return wrapped
 
-    else:
+        else:
 
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            if Tracer.active_instance() is None:
-                return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-            # Should not extract these codes to a separate function here.
-            # We directly call func instead of calling Tracer.invoke,
-            # because we want to avoid long stack trace when hitting an exception.
-            try:
-                Tracer.push_function(func, args, kwargs)
-                output = func(*args, **kwargs)
-                return Tracer.pop(output)
-            except Exception as e:
-                Tracer.pop(None, e)
-                raise
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                if Tracer.active_instance() is None:
+                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push_function(func, args, kwargs, trace_type)
+                    output = func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
 
-        return wrapped
+            return wrapped
+
+    # enable use decorator without "()" if all arguments are default values
+    if func is not None:
+        return wrapper(func)
+    return wrapper
