@@ -65,7 +65,6 @@ class HealthyEnsuredProcess:
         self.process = None
         self.input_queue = None
         self.output_queue = None
-        self.is_ready = False
         self._executor_creation_func = executor_creation_func
         self.context = context
 
@@ -106,20 +105,6 @@ class HealthyEnsuredProcess:
 
     def get(self):
         return self.output_queue.get(timeout=1)
-
-    def format_current_process(self, line_number: int, is_completed=False):
-        process_name = self.process.name if self.process else None
-        process_pid = self.process.pid if self.process else None
-        if is_completed:
-            bulk_logger.info(
-                f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed."
-            )
-        else:
-            bulk_logger.info(
-                f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution."
-            )
-
-        return f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
 
 
 def format_current_process(process_name, pid, line_number: int, is_completed=False):
