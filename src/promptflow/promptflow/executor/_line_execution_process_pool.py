@@ -12,6 +12,7 @@ from multiprocessing.pool import ThreadPool
 from typing import Union
 
 import psutil
+import time
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import ProcessPoolError
@@ -46,19 +47,6 @@ def signal_handler(signum, frame):
         sys.exit(1)
 
 
-def end_process_by_pid(pid):
-    try:
-        process = psutil.Process(pid)
-        process.terminate()
-    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.Error) as e:
-        print(f"Error: {e}")
-        pass
-
-
-def get_process(pid):
-    return psutil.Process(pid)
-
-
 class QueueRunStorage(AbstractRunStorage):
     """This storage persists run info by putting it into a queue."""
 
@@ -87,16 +75,11 @@ class HealthyEnsuredProcess:
         self.input_queue = input_queue
         self.output_queue = output_queue
 
-        # Put a start message and wait the subprocess be ready.
-        # Test if the subprocess can receive the message.
-        input_queue.put("start")
-
         current_log_context = LogContext.get_current()
         process = self.context.Process(
             target=_process_wrapper,
             args=(
                 self._executor_creation_func,
-                None,
                 input_queue,
                 output_queue,
                 current_log_context.get_initializer() if current_log_context else None,
@@ -109,16 +92,6 @@ class HealthyEnsuredProcess:
 
         self.process = process
         process.start()
-
-        try:
-            # Wait for subprocess send a ready message.
-            output_queue.get(timeout=30)
-            self.is_ready = True
-        except queue.Empty:
-            self.end()
-            # If there are no more tasks, the process is not re-created
-            if not task_queue.empty():
-                self.start_new(task_queue)
 
     def end(self):
         # When process failed to start and the task_queue is empty.
@@ -149,19 +122,17 @@ class HealthyEnsuredProcess:
         return f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
 
 
-def format_current_process(process, line_number: int, is_completed=False):
-    process_name = process.name if process else None
-    process_pid = process.pid if process else None
+def format_current_process(process_name, pid, line_number: int, is_completed=False):
     if is_completed:
         bulk_logger.info(
-            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed."
+            f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} completed."
         )
     else:
         bulk_logger.info(
-            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution."
+            f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} start execution."
         )
 
-    return f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
+    return f"Process name({process_name})-Process id({pid})-Line number({line_number})"
 
 
 def create_process_fork(
@@ -177,43 +148,58 @@ def create_process_fork(
     current_log_context = LogContext.get_current()
     log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
     context = multiprocessing.get_context("fork")
+    run_storage = QueueRunStorage(output_queues[0])
+    executor = FlowExecutor.create(
+        flow_file=flow_file,
+        connections=connections,
+        working_dir=working_dir,
+        raise_ex=raise_ex,
+        storage=run_storage
+    )
+    executor_creation_func = partial(create_executor_fork, flow_executor=executor)
 
     def new_process(i):
-        run_storage = QueueRunStorage(output_queues[i])
-        executor = FlowExecutor.create(
-            flow_file=flow_file,
-            connections=connections,
-            working_dir=working_dir,
-            raise_ex=raise_ex,
-            storage=run_storage
-        )
         process = context.Process(
             target=_process_wrapper,
             args=(
-                None,
-                executor,
+                executor_creation_func,
                 input_queues[i],
                 output_queues[i],
                 log_context_initialization_func,
                 OperationContext.get_instance().get_context_dict()
-            )
+            ),
+            daemon=True
         )
         process.start()
         return process
 
     for i in range(len(input_queues)):
         process = new_process(i)
-        input_queues[i].put((i, process.pid))
-        process_info[process.pid] = {'index': i, 'input_queue': input_queues[i], 'output_queue': output_queues[i]}
+        input_queues[i].put((i, process.pid, process.name))
+        process_info[process.pid] = {'process': process, 'index': i,
+                                     'input_queue': input_queues[i], 'output_queue': output_queues[i]}
+
+    def kill_and_remove_process(pid):
+        process = process_info[pid]['process']
+        while process.is_alive():
+            process.kill()
+            time.sleep(0.1)
+        process_info.pop(pid)
+
+    def handle_signals(pid, signal, index):
+        if signal == "del":
+            kill_and_remove_process(pid)
+        elif signal == "start":
+            kill_and_remove_process(pid)
+            new_process(index)
 
     while True:
+        # Check if at least one process is alive.
+        if not any(p_info['process'].is_alive() for p_info in process_info.values()):
+            break
         try:
             pid, index, signal = restart_queue.get(timeout=1)
-            if signal == "del":
-                end_process_by_pid(pid)
-            elif signal == "start":
-                end_process_by_pid(pid)
-                new_process(index)
+            handle_signals(pid, signal, index)
         except queue.Empty:
             # Do nothing until the process_queue have not content or process is killed
             pass
@@ -275,7 +261,7 @@ class LineExecutionProcessPool:
         # When using fork, we use this method to create the executor to avoid reloading the flow
         # which will introduce a lot more memory.
         if use_fork:
-            self._executor_creation_func = partial(create_executor_fork, flow_executor=flow_executor)
+            pass
         elif flow_executor._flow_file:
             self._executor_creation_func = partial(
                 FlowExecutor.create,
@@ -332,6 +318,26 @@ class LineExecutionProcessPool:
             self._pool.close()
             self._pool.join()
 
+    def _process_message(self, message, result_list):
+        if isinstance(message, LineResult):
+            message = self._process_multimedia(message)
+            result_list.append(message)
+            return True
+        elif isinstance(message, FlowRunInfo):
+            self._storage.persist_flow_run(message)
+        elif isinstance(message, NodeRunInfo):
+            self._storage.persist_node_run(message)
+
+        return False
+
+    def handle_line_timeout(self, line_number, timeout_time, inputs, run_id, start_time, result_list):
+        bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
+        ex = LineExecutionTimeoutError(line_number, timeout_time)
+        result = self._generate_line_result_for_exception(
+            inputs, run_id, line_number, self._flow_id, start_time, ex
+        )
+        result_list.append(result)
+
     def _timeout_process_wrapper(
             self,
             run_start_time: datetime,
@@ -342,7 +348,7 @@ class LineExecutionProcessPool:
             output_queue=None
     ):
         if self._use_fork:
-            index, pid = input_queue.get()
+            index, pid, process_name = input_queue.get()
             while True:
                 try:
                     args = task_queue.get(timeout=1)
@@ -352,8 +358,8 @@ class LineExecutionProcessPool:
 
                 input_queue.put(args)
                 inputs, line_number, run_id = args[:3]
-                process = get_process(pid)
-                self._processing_idx[line_number] = format_current_process(process, line_number)
+
+                self._processing_idx[line_number] = format_current_process(process_name, pid, line_number)
                 start_time = datetime.utcnow()
                 completed = False
 
@@ -362,29 +368,17 @@ class LineExecutionProcessPool:
                         # Responsible for checking the output queue messages and
                         # processing them within a specified timeout period.
                         message = output_queue.get(timeout=1)
-                        if isinstance(message, LineResult):
-                            completed = True
-                            message = self._process_multimedia(message)
-                            result_list.append(message)
+                        completed = self._process_message(message, result_list)
+                        if completed:
                             break
-                        elif isinstance(message, FlowRunInfo):
-                            self._storage.persist_flow_run(message)
-                        elif isinstance(message, NodeRunInfo):
-                            self._storage.persist_node_run(message)
                     except queue.Empty:
                         continue
 
-                self._completed_idx[line_number] = format_current_process(
-                    process, line_number, True)
+                self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
 
                 if not completed:
-                    bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
-                    ex = LineExecutionTimeoutError(line_number, timeout_time)
-                    result = self._generate_line_result_for_exception(
-                        inputs, run_id, line_number, self._flow_id, start_time, ex
-                    )
-                    result_list.append(result)
-                    self._completed_idx[line_number] = format_current_process(process, line_number, True)
+                    self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
+                    self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
                     if not task_queue.empty():
                         self._restart_queue.put((pid, index, "restart"))
 
@@ -396,10 +390,10 @@ class LineExecutionProcessPool:
                     count=len(result_list),
                     total_count=self._nlines,
                 )
-
         else:
             healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func, self.context)
             healthy_ensured_process.start_new(task_queue)
+            process = healthy_ensured_process.process
 
             if not healthy_ensured_process.process.is_alive():
                 return
@@ -413,7 +407,7 @@ class LineExecutionProcessPool:
 
                 healthy_ensured_process.put(args)
                 inputs, line_number, run_id = args[:3]
-                self._processing_idx[line_number] = healthy_ensured_process.format_current_process(line_number)
+                self._processing_idx[line_number] = format_current_process(process.name, process.pid, line_number)
 
                 start_time = datetime.utcnow()
                 completed = False
@@ -423,28 +417,18 @@ class LineExecutionProcessPool:
                         # Responsible for checking the output queue messages and
                         # processing them within a specified timeout period.
                         message = healthy_ensured_process.get()
-                        if isinstance(message, LineResult):
-                            completed = True
-                            message = self._process_multimedia(message)
-                            result_list.append(message)
+                        completed = self._process_message(message, result_list)
+                        if completed:
                             break
-                        elif isinstance(message, FlowRunInfo):
-                            self._storage.persist_flow_run(message)
-                        elif isinstance(message, NodeRunInfo):
-                            self._storage.persist_node_run(message)
                     except queue.Empty:
                         continue
 
-                self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number, True)
+                self._completed_idx[line_number] = format_current_process(process.name, process.pid, line_number, True)
                 # Handling the timeout of a line execution process.
                 if not completed:
-                    bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
-                    ex = LineExecutionTimeoutError(line_number, timeout_time)
-                    result = self._generate_line_result_for_exception(
-                        inputs, run_id, line_number, self._flow_id, start_time, ex
-                    )
-                    result_list.append(result)
-                    self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number, True)
+                    self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
+                    self._completed_idx[line_number] = format_current_process(
+                        process.name, process.pid, line_number, True)
                     if not task_queue.empty():
                         healthy_ensured_process.end()
                         healthy_ensured_process.start_new(task_queue)
@@ -700,7 +684,6 @@ def _exec_line(
 
 def _process_wrapper(
     executor_creation_func,
-    executor,
     input_queue: Queue,
     output_queue: Queue,
     log_context_initialization_func,
@@ -711,9 +694,9 @@ def _process_wrapper(
     if log_context_initialization_func:
         with log_context_initialization_func():
             bulk_logger.info(f"Process {os.getpid()} started.")
-            exec_line_for_queue(executor_creation_func, executor, input_queue, output_queue)
+            exec_line_for_queue(executor_creation_func, input_queue, output_queue)
     else:
-        exec_line_for_queue(executor_creation_func, executor, input_queue, output_queue)
+        exec_line_for_queue(executor_creation_func, input_queue, output_queue)
 
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
@@ -729,16 +712,9 @@ def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSto
     )
 
 
-def exec_line_for_queue(executor_creation_func, executor, input_queue: Queue, output_queue: Queue):
-    if executor_creation_func is not None:
-        run_storage = QueueRunStorage(output_queue)
-        executor: FlowExecutor = executor_creation_func(storage=run_storage)
-
-        # Wait for the start signal message
-        input_queue.get()
-
-        # Send a ready signal message
-        output_queue.put("ready")
+def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
+    run_storage = QueueRunStorage(output_queue)
+    executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
     while True:
         try:
