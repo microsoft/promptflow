@@ -38,6 +38,6 @@ jobs:
         shell: pwsh
         working-directory: ${{ github.workspace }}/scripts/runtime_mgmt
         run: |
-          pip install promptflow[azure]
+          pip install docker promptflow[azure]
           python update-runtime.py --path canary.json
           python update-runtime.py --path production.json
