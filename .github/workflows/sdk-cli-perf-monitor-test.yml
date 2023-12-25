@@ -36,11 +36,11 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: Set PR Number to an Environment Variable
-        run: echo "PR_NUMBER=${{ github.event.number }}" >> $GITHUB_ENV
+      - name: Set Flow Run Id to an Environment Variable
+        run: echo "FLOW_RUN_ID=${{ github.run_id }}" >> $GITHUB_ENV
 
-      - name: Print PR Number
-        run: echo "PR Number is $PR_NUMBER"
+      - name: Print Flow Run Id
+        run: echo "Flow Run Id is $FLOW_RUN_ID"
 
       - name: Display and Set Environment Variables
         run: |

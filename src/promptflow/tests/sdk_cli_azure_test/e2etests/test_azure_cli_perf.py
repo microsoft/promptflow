@@ -17,7 +17,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 def get_custom_dimensions(*args, **kwargs):
     custom_dimensions = _get_custom_dimensions(*args, **kwargs)
-    custom_dimensions["pr_number"] = os.environ.get("PR_NUMBER")
+    custom_dimensions["flow_run_id"] = os.environ.get("FLOW_RUN_ID")
 
     return custom_dimensions
 
