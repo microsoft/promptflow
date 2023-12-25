@@ -20,7 +20,6 @@ from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
     LOCAL_STORAGE_BATCH_SIZE,
-    LOGGER_NAME,
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
 )
@@ -30,7 +29,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
-from promptflow._utils.logger_utils import LogContext, LoggerFactory
+from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import get_file_reference_encoder
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -41,7 +40,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 from promptflow.storage import AbstractRunStorage
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 RunInputs = NewType("RunInputs", Dict[str, List[Any]])
 RunOutputs = NewType("RunOutputs", Dict[str, List[Any]])
@@ -291,11 +290,13 @@ class LocalStorageOperations(AbstractRunStorage):
         :param batch_result: Bulk run outputs. If exception not raised, store line run error messages.
         """
         # extract line run errors
-        message = ""
         errors = []
         if batch_result:
             for line_error in batch_result.error_summary.error_list:
                 errors.append(line_error.to_dict())
+            # collect aggregation node error
+            for node_name, aggr_error in batch_result.error_summary.aggr_error_dict.items():
+                errors.append({"error": aggr_error, "aggregation_node_name": node_name})
         if errors:
             try:
                 # use first line run error message as exception message if no exception raised
@@ -319,7 +320,7 @@ class LocalStorageOperations(AbstractRunStorage):
                 error=exception,
                 failed_lines=batch_result.failed_lines if batch_result else "unknown",
                 total_lines=batch_result.total_lines if batch_result else "unknown",
-                line_errors={"errors": errors},
+                errors={"errors": errors},
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(
