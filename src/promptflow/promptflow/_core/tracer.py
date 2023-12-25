@@ -156,7 +156,7 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
-def inject_trace(trace_type=TraceType.FUNCTION) -> Callable:
+def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
     """A decorator to add tracing to a function.
 
     It can be used for both sync and async functions.
@@ -231,12 +231,11 @@ def inject_trace(trace_type=TraceType.FUNCTION) -> Callable:
 
             return wrapped
 
+    # enable use decorator without "()" if all arguments are default values
+    if func is not None:
+        return wrapper(func)
     return wrapper
 
 
 def trace(func: Callable = None) -> Callable:
-    # enable use decorator without "()" if all arguments are default values
-    decorator = inject_trace(trace_type=TraceType.FUNCTION)
-    if func is not None:
-        return decorator(func)
-    return decorator
+    return _traced(func, trace_type=TraceType.FUNCTION)

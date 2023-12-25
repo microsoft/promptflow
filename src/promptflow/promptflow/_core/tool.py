@@ -8,7 +8,7 @@ from abc import ABC
 from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
-from promptflow._core.tracer import inject_trace
+from promptflow._core.tracer import _traced
 from promptflow.contracts.trace import TraceType
 
 module_logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def tool(
             raise UserErrorException(f"Tool type {type} is not supported yet.")
 
         # All the tools should be traced.
-        new_f = inject_trace(trace_type=TraceType.TOOL)(func)
+        new_f = _traced(func, trace_type=TraceType.TOOL)
 
         new_f.__original_function = func
         func.__wrapped_function = new_f
