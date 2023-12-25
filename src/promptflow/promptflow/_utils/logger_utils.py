@@ -16,7 +16,6 @@ from functools import partial
 from typing import List, Optional
 
 from promptflow._constants import PF_LOGGING_LEVEL
-from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_mode import RunMode
@@ -370,4 +369,6 @@ class LoggerFactory:
 def get_cli_sdk_logger():
     """Get logger used by CLI SDK."""
     # cli sdk logger default logging level is WARNING
+    from promptflow._sdk._constants import LOGGER_NAME
+
     return LoggerFactory.get_logger(LOGGER_NAME, verbosity=logging.WARNING)
