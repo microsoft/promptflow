@@ -237,7 +237,7 @@ class LineExecutionProcessPool:
         self._run_id = run_id
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
-        multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
+        multiprocessing_start_method = "spawn"
         sys_start_methods = multiprocessing.get_all_start_methods()
         if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
             bulk_logger.warning(
