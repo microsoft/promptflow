@@ -5,13 +5,15 @@ from openai import AsyncOpenAI
 
 from promptflow import tool
 from promptflow.connections import OpenAIConnection
-from promptflow.contracts.types import PromptTemplate
 from promptflow.executor._tool_invoker import AssistantToolInvoker
 
 
 @tool
-async def oai_assistant(conn: OpenAIConnection, content: PromptTemplate, assistant_id: str, assistant_definition: dict):
+async def oai_assistant(
+    conn: OpenAIConnection, content: str, assistant_id: str, thread_id: str, assistant_definition: dict
+):
     cli = AsyncOpenAI(api_key=conn.api_key, organization=conn.organization)
+    # Can use the input thread_id or create a new thread
     thread = await cli.beta.threads.create()
     await cli.beta.threads.messages.create(
         thread_id=thread.id,
@@ -25,7 +27,6 @@ async def oai_assistant(conn: OpenAIConnection, content: PromptTemplate, assista
         tools=invoker.to_openai_tools()
     )
 
-    outputs = []
     while run.status != "completed":
         await asyncio.sleep(1)
         run = await cli.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
@@ -39,14 +40,11 @@ async def oai_assistant(conn: OpenAIConnection, content: PromptTemplate, assista
                     "tool_call_id": tool_call.id,
                     "output": str(output),
                 })
-                outputs.append({
-                    "function": tool_call.function.name,
-                    "arguments": tool_call.function.arguments,
-                    "output": str(output)
-                })
                 await cli.beta.threads.runs.submit_tool_outputs(
                     thread_id=thread.id,
                     run_id=run.id,
                     tool_outputs=tool_outputs,
                 )
-    return outputs
+
+    messages = await cli.beta.threads.messages.list(thread_id=thread.id)
+    return messages.data[0].content[0].text.value

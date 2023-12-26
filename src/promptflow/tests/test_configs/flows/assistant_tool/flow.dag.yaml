@@ -19,6 +19,7 @@ nodes:
     conn: openai_connection
     content: ${inputs.content}
     assistant_id: ${inputs.assistant_id}
+    thread_id: dummy_thread_id
     assistant_definition:
       module: gpt-4-1106-preview
       instructions: You are a helpful assistant.
