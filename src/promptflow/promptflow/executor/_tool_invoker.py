@@ -19,9 +19,7 @@ class AssistantToolInvoker():
     def __init__(self):
         self._assistant_tools = {}
 
-    @classmethod
-    def load_tools(cls, tools: list):
-        invoker = AssistantToolInvoker()
+    def load_tools(self, tools: list):
         tool_resolver = ToolResolver.active_instance()
         for tool in tools:
             if tool["type"] != "promptflow_tool":
@@ -41,8 +39,7 @@ class AssistantToolInvoker():
                 inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
                 callable = partial(resolved_tool.callable, **inputs)
                 resolved_tool.callable = callable
-            invoker._assistant_tools[resolved_tool.definition.function] = resolved_tool
-        return invoker
+            self._assistant_tools[resolved_tool.definition.function] = resolved_tool
 
     def invoke_tool(self, func_name, kwargs):
         return self._assistant_tools[func_name].callable(**kwargs)

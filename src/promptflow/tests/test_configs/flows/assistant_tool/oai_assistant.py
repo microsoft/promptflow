@@ -20,7 +20,8 @@ async def oai_assistant(
         role="user",
         content=content,
     )
-    invoker = AssistantToolInvoker.load_tools(assistant_definition["tools"])
+    invoker = AssistantToolInvoker()
+    invoker.load_tools(assistant_definition["tools"])
     run = await cli.beta.threads.runs.create(
         thread_id=thread.id, assistant_id=assistant_id,
         instructions=assistant_definition["instructions"],
