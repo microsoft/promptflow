@@ -132,16 +132,23 @@ def create_process_fork(
         raise_ex,
 ):
     process_info = {}
-    context = multiprocessing.get_context("fork")
-    run_storage = QueueRunStorage(output_queues[0])
-    executor = FlowExecutor.create(
+    context = multiprocessing.get_context("spawn")
+    # run_storage = QueueRunStorage(output_queues[0])
+    # executor = FlowExecutor.create(
+    #     flow_file=flow_file,
+    #     connections=connections,
+    #     working_dir=working_dir,
+    #     raise_ex=raise_ex,
+    #     storage=run_storage
+    # )
+    # executor_creation_func = partial(create_executor_fork, flow_executor=executor)
+    executor_creation_func = partial(
+        FlowExecutor.create,
         flow_file=flow_file,
         connections=connections,
         working_dir=working_dir,
         raise_ex=raise_ex,
-        storage=run_storage
     )
-    executor_creation_func = partial(create_executor_fork, flow_executor=executor)
 
     def new_process(i):
         process = context.Process(
