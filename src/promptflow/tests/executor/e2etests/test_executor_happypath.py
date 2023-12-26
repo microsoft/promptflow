@@ -281,8 +281,16 @@ def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependenc
             connections=connections,
             raise_ex=raise_ex
         )
-        assert len(result.api_calls) == 1
         # Assert llm single node run contains openai traces
-        assert result.api_calls[0]["children"]
+        # And the traces contains system metrics
+        OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
+        assert len(result.api_calls) == 1
+        assert len(result.api_calls[0]["children"]) == 1
+        assert isinstance(result.api_calls[0]["children"][0]["system_metrics"], dict)
+        for key in OPENAI_AGGREGATE_METRICS:
+            assert key in result.api_calls[0]["children"][0]["system_metrics"]
+        for key in OPENAI_AGGREGATE_METRICS:
+            assert result.api_calls[0]["system_metrics"][key] == \
+                result.api_calls[0]["children"][0]["system_metrics"][key]
     except Exception as ex:
         queue.put(ex)
