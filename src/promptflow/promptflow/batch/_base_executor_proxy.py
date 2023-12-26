@@ -12,10 +12,12 @@ import httpx
 
 from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow._core._errors import UnexpectedError
-from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
+from promptflow._utils.utils import load_json
 from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.contracts.run_info import FlowRunInfo
+from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -33,7 +35,7 @@ class AbstractExecutorProxy:
         raise NotImplementedError()
 
     @classmethod
-    def create(
+    async def create(
         cls,
         flow_file: Path,
         working_dir: Optional[Path] = None,
@@ -45,7 +47,7 @@ class AbstractExecutorProxy:
         """Create a new executor"""
         raise NotImplementedError()
 
-    def destroy(self):
+    async def destroy(self):
         """Destroy the executor"""
         pass
 
@@ -81,6 +83,15 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         line results and aggregation result through this endpoint.
         """
         raise NotImplementedError()
+
+    @classmethod
+    def check_startup_error_from_file(cls, file_path: Path) -> Exception:
+        error_dict = load_json(file_path)
+        if error_dict:
+            bulk_logger.error(f"Error when starting the executor service: {error_dict}")
+            error_response = ErrorResponse.from_error_dict(error_dict)
+            return ValidationException(error_response.message, target=ErrorTarget.BATCH)
+        return None
 
     async def exec_line_async(
         self,
@@ -134,6 +145,19 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             retry_count += 1
         raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
+    async def _check_health(self):
+        try:
+            health_url = self.api_endpoint + "/health"
+            async with httpx.AsyncClient() as client:
+                response = await client.get(health_url)
+            if response.status_code != 200:
+                bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Response: {response.status_code} - {response.text}")
+                return False
+            return True
+        except Exception as e:
+            bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
+            return False
+
     def _process_http_response(self, response: httpx.Response):
         if response.status_code == 200:
             # if the status code is 200, the response is the json dict of a line result
@@ -152,16 +176,3 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                     message_format=message_format, status_code=response.status_code, error=response.text
                 )
                 return ExceptionPresenter.create(unexpected_error).to_dict()
-
-    async def _check_health(self):
-        try:
-            health_url = self.api_endpoint + "/health"
-            async with httpx.AsyncClient() as client:
-                response = await client.get(health_url)
-            if response.status_code != 200:
-                bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Response: {response.status_code} - {response.text}")
-                return False
-            return True
-        except Exception as e:
-            bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
-            return False

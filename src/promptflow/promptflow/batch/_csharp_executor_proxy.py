@@ -9,11 +9,13 @@ from typing import Any, Mapping, Optional
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
+from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
 EXECUTOR_SERVICE_DLL = "Promptflow.dll"
+EXECUTOR_INIT_ERROR_FILE = "init_error.json"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
@@ -26,7 +28,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         return EXECUTOR_SERVICE_DOMAIN + self._port
 
     @classmethod
-    def create(
+    async def create(
         cls,
         flow_file: Path,
         working_dir: Optional[Path] = None,
@@ -38,6 +40,8 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
+        init_error_file = Path(working_dir) / EXECUTOR_INIT_ERROR_FILE
+        init_error_file.touch()
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
@@ -52,11 +56,20 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             log_path,
             "--log_level",
             "Warning",
+            "--init_error_file",
+            EXECUTOR_INIT_ERROR_FILE,
         ]
         process = subprocess.Popen(command)
-        return cls(process, port)
+        csharp_executor_proxy = cls(process, port)
+        try:
+            await csharp_executor_proxy.ensure_executor_health()
+        except ExecutorServiceUnhealthy as ex:
+            # raise the init error if there is any
+            init_ex = cls.check_startup_error_from_file(init_error_file)
+            raise init_ex or ex
+        return csharp_executor_proxy
 
-    def destroy(self):
+    async def destroy(self):
         """Destroy the executor"""
         if self._process and self._process.poll() is None:
             self._process.terminate()

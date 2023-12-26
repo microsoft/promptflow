@@ -21,7 +21,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         self._flow_executor = flow_executor
 
     @classmethod
-    def create(
+    async def create(
         cls,
         flow_file: Path,
         working_dir: Optional[Path] = None,

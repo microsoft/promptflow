@@ -89,8 +89,13 @@ class BatchEngine:
 
         executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
         with _change_working_dir(self._working_dir):
-            self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
-                flow_file, self._working_dir, connections=connections, storage=storage, **kwargs
+            self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
+                executor_proxy_cls.create,
+                flow_file,
+                self._working_dir,
+                connections=connections,
+                storage=storage,
+                **kwargs,
             )
         self._storage = storage
         # set it to True when the batch run is canceled
@@ -152,7 +157,7 @@ class BatchEngine:
                 )
                 raise unexpected_error from e
         finally:
-            self._executor_proxy.destroy()
+            async_run_allowing_running_loop(self._executor_proxy.destroy)
 
     def cancel(self):
         """Cancel the batch run"""

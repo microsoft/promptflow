@@ -81,7 +81,7 @@ class MockCSharpExecutorProxy(CSharpExecutorProxy):
         self._port = port
 
     @classmethod
-    def create(
+    async def create(
         cls,
         flow_file: Path,
         working_dir: Optional[Path] = None,
@@ -103,7 +103,7 @@ class MockCSharpExecutorProxy(CSharpExecutorProxy):
         process.start()
         return cls(process, port)
 
-    def destroy(self):
+    async def destroy(self):
         """Destroy the executor"""
         if self._process and self._process.is_alive():
             self._process.terminate()
