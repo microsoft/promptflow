@@ -106,9 +106,9 @@ class TestCli:
         with open(local_storage._log_path, "r") as file:
             logs = file.read()
 
-        connection_file_path = os.environ.get('PROMPTFLOW_CONNECTIONS')
-        print(f"PROMPTFLOW_CONNECTIONS in main process = {connection_file_path}")
         try:
+            connection_file_path = os.environ.get('PROMPTFLOW_CONNECTIONS', None)
+            print(f"PROMPTFLOW_CONNECTIONS in main process = {connection_file_path}")
             with open(connection_file_path, "r") as file:
                 connections = json.load(file)
                 print(f"connections = {connections}")
