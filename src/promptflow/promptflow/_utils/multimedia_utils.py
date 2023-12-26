@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 import filetype
 import requests
 
-from promptflow.contracts._errors import InvalidImageInput
+from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes, Text
 from promptflow.contracts.tool import ValueType
@@ -201,6 +201,10 @@ def create_image(value: any):
                 target=ErrorTarget.EXECUTOR,
             )
     elif isinstance(value, str):
+        if not value:
+            raise InvalidImageInput(
+                message_format="The image input should not be empty.", target=ErrorTarget.EXECUTOR
+            )
         return _create_image_from_string(value)
     else:
         raise InvalidImageInput(
@@ -297,14 +301,22 @@ def _process_recursively(value: Any, process_funcs: Dict[type, Callable] = None,
 def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: dict, version=1):
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
-        if value.type == ValueType.IMAGE:
-            if isinstance(updated_inputs[key], list):
-                # For aggregation node, the image input is a list.
-                updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
-            else:
-                updated_inputs[key] = create_image(updated_inputs[key])
-        elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
-            updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key], version=version)
+        try:
+            if value.type == ValueType.IMAGE:
+                if isinstance(updated_inputs[key], list):
+                    # For aggregation node, the image input is a list.
+                    updated_inputs[key] = [create_image(item) for item in updated_inputs[key]]
+                else:
+                    updated_inputs[key] = create_image(updated_inputs[key])
+            elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
+                updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+        except Exception as ex:
+            error_type_and_message = f"({ex.__class__.__name__}) {ex}"
+            raise LoadMultimediaDataError(
+                message_format="Failed to load image for input '{key}': {error_type_and_message}",
+                key=key, error_type_and_message=error_type_and_message,
+                target=ErrorTarget.EXECUTOR,
+            ) from ex
     return updated_inputs
 
 

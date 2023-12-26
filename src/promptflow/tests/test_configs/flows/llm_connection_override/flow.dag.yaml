@@ -1,0 +1,13 @@
+inputs: {}
+outputs:
+  output:
+    type: string
+    reference: ${conn_node.output}
+nodes:
+- name: conn_node
+  type: python
+  source:
+    type: code
+    path: conn_tool.py
+  inputs:
+    conn: aoai connection

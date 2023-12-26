@@ -35,6 +35,7 @@ jobs:
         run: |
           echo "uploadAsLatest: ${{ inputs.uploadAsLatest }}"
           echo "version: ${{ inputs.version }}"
+          echo "set_msi_private_version: ${{ inputs.set_msi_private_version }}"
 
       - name: Checkout Repo
         uses: actions/checkout@v3
