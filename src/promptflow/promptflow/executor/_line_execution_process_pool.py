@@ -208,6 +208,7 @@ class LineExecutionProcessPool:
             self._pool.join()
 
     def _timeout_process_wrapper(self, run_start_time: datetime, task_queue: Queue, timeout_time, result_list):
+        bulk_logger.info("just for test")
         healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func, self.context)
         healthy_ensured_process.start_new(task_queue)
 
