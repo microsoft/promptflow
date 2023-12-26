@@ -169,7 +169,7 @@ class FlowInvoker:
         :return: The flow output dict, for example: {"answer": "ChatGPT is a chatbot."}.
         :rtype: dict
         """
-        result = self._invoke(data, run_id=run_id)
+        result = self._invoke(data, run_id=run_id, disable_input_output_logging=disable_input_output_logging)
         # Get base64 for multi modal object
         resolved_outputs = self._convert_multimedia_data_to_base64(result)
         self._dump_invoke_result(result)
