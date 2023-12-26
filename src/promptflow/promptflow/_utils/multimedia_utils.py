@@ -82,16 +82,15 @@ def _is_url(value: str):
 
 
 def _is_base64(value: str):
+    prefix_regex = re.compile(r"^data:image/(.*);base64")
     base64_regex = re.compile(r"^([A-Za-z0-9+/]{4})*(([A-Za-z0-9+/]{2})*(==|[A-Za-z0-9+/]=)?)?$")
-    if re.match(base64_regex, value):
-        return True
-    return False
-
-
-def _is_base64_with_prefix(value: str):
-    prefix = value.split(",")[0]
-    if re.match(r"^data:image/(.*);base64$", prefix):
-        return _is_base64(value.split(",")[1])
+    base64_with_prefix = value.split(",")
+    if len(base64_with_prefix) == 2:
+        if re.match(prefix_regex, base64_with_prefix[0]) and re.match(base64_regex, base64_with_prefix[1]):
+            return True
+    elif len(base64_with_prefix) == 1:
+        if re.match(base64_regex, value):
+            return True
     return False
 
 
@@ -103,6 +102,7 @@ def _create_image_from_file(f: Path, mime_type: str = None):
 
 
 def _create_image_from_base64(base64_str: str, mime_type: str = None):
+    base64_str = base64_str.split(",")[-1]
     image_bytes = base64.b64decode(base64_str)
     if not mime_type:
         mime_type = filetype.guess_mime(image_bytes)
@@ -156,7 +156,7 @@ def _create_image_from_dict_v1(image_dict: dict):
 def _create_image_from_dict_v2(image_dict: dict):
     image_type = image_dict["type"]
     if image_type == "image_url":
-        if _is_base64_with_prefix(image_dict["image_url"]["url"]):
+        if _is_base64(image_dict["image_url"]["url"]):
             base64_str = image_dict["image_url"]["url"].split(",")[1]
             return _create_image_from_base64(base64_str)
         elif _is_url(image_dict["image_url"]["url"]):
