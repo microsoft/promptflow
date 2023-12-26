@@ -238,6 +238,8 @@ def get_file_reference_encoder(
 ) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
+        if obj.source_url:
+            return {f"data:{obj._mime_type};url": obj.source_url}
         if isinstance(obj, PFBytes):
             if obj.source_url and version == 2:
                 return {"type": "image_url", "image_url": {"url": obj.source_url}}
