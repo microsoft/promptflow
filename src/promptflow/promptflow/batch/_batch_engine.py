@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import signal
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -88,6 +90,8 @@ class BatchEngine:
         FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
         executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
+        if isinstance(executor_proxy_cls, PythonExecutorProxy):
+            signal.signal(signal.SIGINT, signal_handler)
         with _change_working_dir(self._working_dir):
             self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
                 executor_proxy_cls.create,
