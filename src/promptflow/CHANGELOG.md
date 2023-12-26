@@ -1,6 +1,6 @@
 # Release History
 
-## 1.3.0 (Upcoming)
+## 1.3.0 (2023.12.27)
 
 ### Features Added
 - [SDK/CLI] Support `pfazure run cancel` to cancel a run on Azure AI.
