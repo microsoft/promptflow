@@ -217,6 +217,9 @@ class LocalStorageOperations(AbstractRunStorage):
         with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, f, ensure_ascii=False)
 
+    def _is_eager_flow(self) -> bool:
+        return self._run.flow.suffix == ".py"
+
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
         patterns = [pattern for pattern in PromptflowIgnoreFile.IGNORE_FILE]
@@ -229,14 +232,20 @@ class LocalStorageOperations(AbstractRunStorage):
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one
-        self._dag_path.unlink()
-        shutil.copy(flow.path, self._dag_path)
+        if not self._is_eager_flow():
+            self._dag_path.unlink()
+            shutil.copy(flow.path, self._dag_path)
 
     def load_dag_as_string(self) -> str:
+        if self._is_eager_flow():
+            return ""
         with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             return f.read()
 
     def load_flow_tools_json(self) -> dict:
+        if self._is_eager_flow():
+            # TODO: generate flow json for eager flow
+            return {}
         if not self._flow_tools_json_path.is_file():
             return generate_flow_tools_json(self._snapshot_folder_path, dump=False)
         else:

@@ -40,13 +40,13 @@ Testing flow/node:
 
 ```bash
 # test with default input value in entry.py
-pf flow test --flow .\entry.py --inputs prompt='write me a python hello world'
+pf flow test --flow ./entry.py --inputs prompt='write me a python hello world'
 ```
 
 ### 2. create flow run with multi line data
 
 ```bash
-pf run create --flow . --data ./data.jsonl --column-mapping text='${data.text}' --stream
+pf run create --flow ./entry.py --data ./data.jsonl --column-mapping text='${data.text}' --stream
 ```
 
 ## TODO list
@@ -57,7 +57,6 @@ pf run create --flow . --data ./data.jsonl --column-mapping text='${data.text}' 
 - Support output annotation.
 - Support specifying @flow function name when executing.
   - We only support 1 @flow function in fixed script "entry.py" for now.
-- Support python flow in BatchEngine.
 - Line result contract change, no node for eager flow.
 - Support flow context:
   - Connection override
