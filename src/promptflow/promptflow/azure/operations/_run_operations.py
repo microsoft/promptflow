@@ -758,18 +758,19 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             # output
             outputs[LINE_NUMBER].append(index)
             # for failed line run, output is None, instead of a dict
-            if isinstance(run_outputs, dict):
-                for k, v in run_outputs.items():
-                    if k not in outputs:
-                        outputs[k] = []
-                    outputs[k].append(v)
-            else:
+            # in this case, we append an empty line
+            if not isinstance(run_outputs, dict):
                 for k in outputs_keys:
                     if k == LINE_NUMBER:
                         continue
                     if k not in outputs:
                         outputs[k] = []
                     outputs[k].append(None)
+            else:
+                for k, v in run_outputs.items():
+                    if k not in outputs:
+                        outputs[k] = []
+                    outputs[k].append(v)
         return inputs, outputs
 
     @monitor_operation(activity_name="pfazure.runs.visualize", activity_type=ActivityType.PUBLICAPI)
