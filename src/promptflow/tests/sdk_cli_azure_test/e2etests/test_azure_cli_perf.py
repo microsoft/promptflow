@@ -17,7 +17,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 def get_custom_dimensions(*args, **kwargs):
     custom_dimensions = _get_custom_dimensions(*args, **kwargs)
-    custom_dimensions["flow run: "] = "https://github.com/microsoft/promptflow/actions/runs/{0}".format(
+    custom_dimensions["custom_message"] = "flow run: https://github.com/microsoft/promptflow/actions/runs/{0}".format(
         os.environ.get("FLOW_RUN_ID")
     )
 

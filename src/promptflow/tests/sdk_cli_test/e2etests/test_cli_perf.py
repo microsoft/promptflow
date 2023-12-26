@@ -13,6 +13,7 @@ import pytest
 
 from promptflow._cli._pf.entry import _get_custom_dimensions
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
+from promptflow._sdk._telemetry import log_activity
 from promptflow._sdk._utils import ClientUserAgentUtil
 
 FLOWS_DIR = "./tests/test_configs/flows"
@@ -22,7 +23,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 def get_custom_dimensions():
     custom_dimensions = _get_custom_dimensions()
-    custom_dimensions["flow run: "] = "https://github.com/microsoft/promptflow/actions/runs/{0}".format(
+    custom_dimensions["custom_message"] = "flow run: https://github.com/microsoft/promptflow/actions/runs/{0}".format(
         os.environ.get("FLOW_RUN_ID")
     )
 
