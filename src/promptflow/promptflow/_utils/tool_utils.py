@@ -210,7 +210,10 @@ def get_inputs_for_prompt_template(template_str):
     """
     env = Environment()
     template = env.parse(template_str)
-    inputs = sorted(meta.find_undeclared_variables(template), key=lambda x: _find_template_variable_index(template_str, x))
+    inputs = sorted(
+        meta.find_undeclared_variables(template),
+        key=lambda x: _find_template_variable_index(template_str, x)
+    )
     result_dict = {i: InputDefinition(type=[ValueType.STRING], ui_hints={"index": inputs.index(i)}) for i in inputs}
 
     # currently we only support image type
@@ -219,7 +222,10 @@ def get_inputs_for_prompt_template(template_str):
 
     for match in matches:
         input_name = match.group(2).strip()
-        result_dict[input_name] = InputDefinition(type=[ValueType(match.group(1).strip())], ui_hints={"index": inputs.index(input_name)})
+        result_dict[input_name] = InputDefinition(
+            type=[ValueType(match.group(1).strip())],
+            ui_hints={"index": inputs.index(input_name)}
+        )
 
     return result_dict
 
@@ -364,7 +370,7 @@ def _find_template_variable_index(template_str, variable):
     for match in matches:
         if variable in match.group(1):
             return match.start(1) + match.group(1).find(variable)
-    
+
     return 0
 
 

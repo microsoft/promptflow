@@ -69,7 +69,7 @@ def set_default_input_index_ui_hint(tool):
         settings["ui_hints"]["index"] = input_index
         input_index += 1
 
-        
+
 def _get_entry_points_by_group(group):
     # lazy load to improve performance for scenarios that don't need to load package tools
     import importlib.metadata
