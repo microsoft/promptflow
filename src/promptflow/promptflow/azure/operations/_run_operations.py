@@ -739,6 +739,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         inputs = {}
         outputs = {}
         outputs[LINE_NUMBER] = []
+        runs.sort(key=lambda x: x["index"])
         # 1st loop, until have all outputs keys
         outputs_keys = []
         for run in runs:
