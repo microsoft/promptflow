@@ -5,11 +5,12 @@ import re
 import pytest
 
 from promptflow._core.operation_context import OperationContext
+from promptflow._sdk._serving.app import PromptflowServingApp
 
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
-def test_swagger(flow_serving_client):
+def test_swagger(flow_serving_client: PromptflowServingApp):
     swagger_dict = json.loads(flow_serving_client.get("/swagger.json").data.decode())
     assert swagger_dict == {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
@@ -58,7 +59,7 @@ def test_swagger(flow_serving_client):
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
-def test_chat_swagger(serving_client_llm_chat):
+def test_chat_swagger(serving_client_llm_chat: PromptflowServingApp):
     swagger_dict = json.loads(serving_client_llm_chat.get("/swagger.json").data.decode())
     assert swagger_dict == {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
@@ -117,7 +118,7 @@ def test_chat_swagger(serving_client_llm_chat):
 
 @pytest.mark.usefixtures("recording_injection", "setup_local_connection")
 @pytest.mark.e2etest
-def test_user_agent(flow_serving_client):
+def test_user_agent(flow_serving_client: PromptflowServingApp):
     operation_context = OperationContext.get_instance()
     assert "test-user-agent" in operation_context.get_user_agent()
     assert "promptflow-local-serving" in operation_context.get_user_agent()
