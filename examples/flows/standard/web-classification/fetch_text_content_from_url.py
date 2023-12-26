@@ -1,11 +1,11 @@
 import bs4
 import requests
-from requests.exceptions import HTTPError
 
 from promptflow import tool
 
 
-def fetch_url(url):
+@tool
+def fetch_text_content_from_url(url: str):
     # Send a request to the URL
     try:
         headers = {
@@ -13,28 +13,18 @@ def fetch_url(url):
             "Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35"
         }
         response = requests.get(url, headers=headers)
-        response.raise_for_status(response)
-        return response.text
-    except HTTPError as e:
-        print(
-            f"Get url failed with status code {e.status_code}.\nURL: {url}\nResponse: "
-            f"{e.response.text[:100]}"
-        )
-        raise
-    except Exception as e:
-        print("Get url failed with error: {}".format(e))
-        raise
-
-
-@tool
-def fetch_text_content_from_url(url: str):
-    # Send a request to the URL
-    try:
-        text = fetch_url(url)
-        # Parse the HTML content using BeautifulSoup
-        soup = bs4.BeautifulSoup(text, "html.parser")
-        soup.prettify()
-        return soup.get_text()[:2000]
+        if response.status_code == 200:
+            # Parse the HTML content using BeautifulSoup
+            soup = bs4.BeautifulSoup(response.text, "html.parser")
+            soup.prettify()
+            return soup.get_text()[:2000]
+        else:
+            msg = (
+                f"Get url failed with status code {response.status_code}.\nURL: {url}\nResponse: "
+                f"{response.text[:100]}"
+            )
+            print(msg)
+            return "No available content"
     except Exception as e:
         print("Get url failed with error: {}".format(e))
         return "No available content"
