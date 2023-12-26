@@ -1,7 +1,6 @@
 import random
 
 from promptflow import tool
-from promptflow.connections import AzureOpenAIConnection
 
 
 @tool
