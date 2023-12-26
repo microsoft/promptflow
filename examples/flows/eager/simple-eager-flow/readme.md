@@ -55,8 +55,6 @@ pf run create --flow ./entry.py --data ./data.jsonl --column-mapping text='${dat
   - Add @flow decorator.
   - Executor recognize @flow. instead of @tool
 - Support output annotation.
-- Support specifying @flow function name when executing.
-  - We only support 1 @flow function in fixed script "entry.py" for now.
 - Line result contract change, no node for eager flow.
 - Support flow context:
   - Connection override
