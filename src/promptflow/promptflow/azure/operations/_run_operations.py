@@ -739,19 +739,37 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         inputs = {}
         outputs = {}
         outputs[LINE_NUMBER] = []
+        # 1st loop, until have all outputs keys
+        outputs_keys = []
+        for run in runs:
+            run_outputs = run["output"]
+            if isinstance(run_outputs, dict):
+                for k in run_outputs:
+                    outputs_keys.append(k)
+                break
+        # 2nd complete loop, get values
         for run in runs:
             index, run_inputs, run_outputs = run["index"], run["inputs"], run["output"]
-            if isinstance(run_inputs, dict):
-                for k, v in run_inputs.items():
-                    if k not in inputs:
-                        inputs[k] = []
-                    inputs[k].append(v)
+            # input should always available as a dict
+            for k, v in run_inputs.items():
+                if k not in inputs:
+                    inputs[k] = []
+                inputs[k].append(v)
+            # output
+            outputs[LINE_NUMBER].append(index)
+            # for failed line run, output is None, instead of a dict
             if isinstance(run_outputs, dict):
                 for k, v in run_outputs.items():
                     if k not in outputs:
                         outputs[k] = []
                     outputs[k].append(v)
-                outputs[LINE_NUMBER].append(index)
+            else:
+                for k in outputs_keys:
+                    if k == LINE_NUMBER:
+                        continue
+                    if k not in outputs:
+                        outputs[k] = []
+                    outputs[k].append(None)
         return inputs, outputs
 
     @monitor_operation(activity_name="pfazure.runs.visualize", activity_type=ActivityType.PUBLICAPI)
