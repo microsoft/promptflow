@@ -78,7 +78,7 @@ class TestTool:
                 "name": "My Custom LLM Tool",
                 "type": "custom_llm",
                 "inputs": {
-                    "connection": {"type": ["AzureOpenAIConnection"], "ui_hints": {"index": 0}}, 
+                    "connection": {"type": ["AzureOpenAIConnection"], "ui_hints": {"index": 0}},
                     "api": {"type": ["string"], "ui_hints": {"index": 1}}
                 },
                 "description": "This is a tool to demonstrate the custom_llm tool type",

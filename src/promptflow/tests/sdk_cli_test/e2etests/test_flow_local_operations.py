@@ -505,7 +505,10 @@ class TestFlowLocalOperations:
                         "custom_type": ["MySecondConnection"],
                         "ui_hints": {"index": 0},
                     },
-                    "input_text": {"type": ["string"], "ui_hints": {"index": 1},},
+                    "input_text": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 1}, 
+                    },
                 },
                 "module": "my_tool_package.tools.my_tool_2",
                 "name": "My Second Tool",
