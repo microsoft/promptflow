@@ -111,7 +111,8 @@ class RunSubmitter:
                 error_logs.append(
                     f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
                 )
-            logger.warning("\n".join(error_logs))
+            if error_logs:
+                logger.warning("\n".join(error_logs))
             # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:
