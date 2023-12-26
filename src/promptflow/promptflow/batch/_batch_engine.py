@@ -30,6 +30,7 @@ from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._result import AggregationResult, LineResult
+from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -84,7 +85,10 @@ class BatchEngine:
         :type kwargs: Any
         """
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
+        if flow_file.suffix == ".py":
+            self._flow, _ = FlowExecutor._construct_flow_from_python_file(flow_file, connections, self._working_dir)
+        else:
+            self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
         FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
         executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]

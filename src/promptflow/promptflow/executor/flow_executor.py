@@ -186,8 +186,12 @@ class FlowExecutor:
         """
         if Path(flow_file).suffix.lower() == ".py":
             return cls._create_from_py(
-                flow_file, connections, working_dir,
-                storage=storage, raise_ex=raise_ex, line_timeout_sec=line_timeout_sec,
+                flow_file,
+                connections,
+                working_dir,
+                storage=storage,
+                raise_ex=raise_ex,
+                line_timeout_sec=line_timeout_sec,
             )
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
         return cls._create_from_flow(
@@ -202,18 +206,11 @@ class FlowExecutor:
         )
 
     @classmethod
-    def _create_from_py(
-        cls, flow_file, connections, working_dir,
-        *,
-        storage: Optional[AbstractRunStorage] = None,
-        raise_ex: bool = True,
-        node_override: Optional[Dict[str, Dict[str, Any]]] = None,
-        line_timeout_sec: int = LINE_TIMEOUT_SEC,
-    ):
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+    def _construct_flow_from_python_file(cls, flow_file, connections, working_dir):
         tool_resolver = ToolResolver(working_dir, connections, [])
         relative_path = os.path.relpath(flow_file, working_dir)
-        from promptflow.contracts.flow import ToolSource, FlowOutputDefinition, ValueType, InputAssignment, ToolType
+        from promptflow.contracts.flow import FlowOutputDefinition, InputAssignment, ToolSource, ToolType, ValueType
+
         dummy_node = Node(
             name="flow_entry",
             tool=None,
@@ -228,8 +225,7 @@ class FlowExecutor:
             for name, i in resolved_tool.definition.inputs.items()
         }
         resolved_tool.node.inputs = {
-            name: InputAssignment(value=name, value_type=InputValueType.FLOW_INPUT)
-            for name in inputs
+            name: InputAssignment(value=name, value_type=InputValueType.FLOW_INPUT) for name in inputs
         }
         # TODO: Get outputs from the tool interface
         outputs = {
@@ -241,13 +237,24 @@ class FlowExecutor:
             ),
         }
         dummy_flow = Flow(
-            id="default_flow",
-            name="default_flow",
-            nodes=[resolved_tool.node],
-            inputs=inputs,
-            outputs=outputs,
-            tools=[]
+            id="default_flow", name="default_flow", nodes=[resolved_tool.node], inputs=inputs, outputs=outputs, tools=[]
         )
+        return dummy_flow, resolved_tool
+
+    @classmethod
+    def _create_from_py(
+        cls,
+        flow_file,
+        connections,
+        working_dir,
+        *,
+        storage: Optional[AbstractRunStorage] = None,
+        raise_ex: bool = True,
+        node_override: Optional[Dict[str, Dict[str, Any]]] = None,
+        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+    ):
+        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        dummy_flow, resolved_tool = cls._construct_flow_from_python_file(flow_file, connections, working_dir)
         if storage is None:
             storage = DefaultRunStorage()
         run_tracker = RunTracker(storage)
@@ -950,9 +957,10 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
-        return all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        return (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
