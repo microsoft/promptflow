@@ -156,26 +156,41 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
-def trace(func=None, *, trace_type=TraceType.FUNCTION) -> Callable:
+def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
     """A decorator to add tracing to a function.
 
     It can be used for both sync and async functions.
     For sync functions, it will return a sync function.
     For async functions, it will return an async function.
 
-    Here are some examples for these two cases:
+    When using this decorator, the function name, inputs, outputs, start time, end time,
+    and error (if any) will be recorded.
+
+    :param func: The function to be traced.
+    :type func: Callable
+    :param trace_type: The type of the trace. Defaults to TraceType.FUNCTION.
+    :type trace_type: TraceType, optional
+    :return: The traced function.
+    :rtype: Callable
+
+    :Examples:
+
+    Synchronous function usage:
+
+    .. code-block:: python
 
         @trace
         def greetings(name):
             return f"Hello, {name}"
 
+    Asynchronous function usage:
+
+    .. code-block:: python
+
         @trace
         async def greetings_async(name):
             await asyncio.sleep(1)
             return f"Hello, {name}"
-
-    When using this decorator, the function name, inputs, outputs, start time, end time,
-    and error (if any) will be recorded.
     """
     def wrapper(func):
         if inspect.iscoroutinefunction(func):
@@ -195,8 +210,6 @@ def trace(func=None, *, trace_type=TraceType.FUNCTION) -> Callable:
                     Tracer.pop(None, e)
                     raise
 
-            return wrapped
-
         else:
 
             @functools.wraps(func)
@@ -214,9 +227,16 @@ def trace(func=None, *, trace_type=TraceType.FUNCTION) -> Callable:
                     Tracer.pop(None, e)
                     raise
 
-            return wrapped
+        wrapped.__original_function = func
+        func.__wrapped_function = wrapped
+
+        return wrapped
 
     # enable use decorator without "()" if all arguments are default values
     if func is not None:
         return wrapper(func)
     return wrapper
+
+
+def trace(func: Callable = None) -> Callable:
+    return _traced(func, trace_type=TraceType.FUNCTION)
