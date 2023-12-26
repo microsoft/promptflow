@@ -9,7 +9,6 @@ from typing import Any, Mapping, Optional
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
-from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
 
@@ -60,14 +59,9 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             EXECUTOR_INIT_ERROR_FILE,
         ]
         process = subprocess.Popen(command)
-        csharp_executor_proxy = cls(process, port)
-        try:
-            await csharp_executor_proxy.ensure_executor_health()
-        except ExecutorServiceUnhealthy as ex:
-            # raise the init error if there is any
-            init_ex = cls.check_startup_error_from_file(init_error_file)
-            raise init_ex or ex
-        return csharp_executor_proxy
+        executor_proxy = cls(process, port)
+        await executor_proxy.ensure_executor_startup(init_error_file)
+        return executor_proxy
 
     async def destroy(self):
         """Destroy the executor"""

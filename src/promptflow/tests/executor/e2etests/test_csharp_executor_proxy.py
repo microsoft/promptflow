@@ -1,3 +1,4 @@
+import json
 import multiprocessing
 import threading
 from pathlib import Path
@@ -7,10 +8,13 @@ from typing import Optional, Tuple, Union
 import pytest
 
 from promptflow._constants import FlowLanguage
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.batch._batch_engine import BatchEngine
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
+from promptflow.exceptions import ErrorTarget, ValidationException
+from promptflow.executor._errors import ConnectionNotFound
 from promptflow.storage._run_storage import AbstractRunStorage
 
 from ..mock_execution_server import run_executor_server
@@ -30,13 +34,28 @@ class TestCSharpExecutorProxy:
         assert batch_result.system_metrics.duration > 0
         assert batch_result.completed_lines > 0
 
-    def test_batch_error(self):
+    def test_batch_execution_error(self):
         # submit a batch run
         _, batch_result = self._submit_batch_run(has_error=True)
         assert batch_result.status == Status.Completed
         assert batch_result.total_lines == 3
         assert batch_result.failed_lines == 1
         assert batch_result.system_metrics.duration > 0
+
+    def test_batch_validation_error(self):
+        # prepare the init error file to mock the validation error
+        error_message = "'test_connection' not found."
+        test_exception = ConnectionNotFound(message=error_message)
+        error_dict = ExceptionPresenter.create(test_exception).to_dict()
+        init_error_file = Path(mkdtemp()) / "init_error.json"
+        with open(init_error_file, "w") as file:
+            json.dump(error_dict, file)
+        # submit a batch run
+        with pytest.raises(ValidationException) as e:
+            self._submit_batch_run(init_error_file=init_error_file)
+        assert error_message in e.value.message
+        assert e.value.error_codes == ["UserError", "ValidationError"]
+        assert e.value.target == ErrorTarget.BATCH
 
     def test_batch_cancel(self):
         # use a thread to submit a batch run
@@ -51,13 +70,17 @@ class TestCSharpExecutorProxy:
         assert batch_result_global.system_metrics.duration > 0
 
     def _submit_batch_run(
-        self, run_in_thread=False, has_error=False
+        self, run_in_thread=False, has_error=False, init_error_file=None
     ) -> Union[Tuple[BatchEngine, threading.Thread], Tuple[BatchEngine, BatchResult]]:
         flow_folder = "csharp_flow"
         mem_run_storage = MemoryRunStorage()
         # init the batch engine
         batch_engine = BatchEngine(
-            get_yaml_file(flow_folder), get_flow_folder(flow_folder), storage=mem_run_storage, has_error=has_error
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            storage=mem_run_storage,
+            has_error=has_error,
+            init_error_file=init_error_file,
         )
         # prepare the inputs
         input_dirs = {"data": get_flow_inputs_file(flow_folder)}
@@ -92,16 +115,21 @@ class MockCSharpExecutorProxy(CSharpExecutorProxy):
     ) -> "MockCSharpExecutorProxy":
         """Create a new executor"""
         has_error = kwargs.get("has_error", False)
+        init_error_file = kwargs.get("init_error_file", None)
         port = cls.find_available_port()
         process = multiprocessing.Process(
             target=run_executor_server,
             args=(
                 int(port),
                 has_error,
+                init_error_file,
             ),
         )
         process.start()
-        return cls(process, port)
+        executor_proxy = cls(process, port)
+        if init_error_file:
+            await executor_proxy.ensure_executor_startup(init_error_file)
+        return executor_proxy
 
     async def destroy(self):
         """Destroy the executor"""

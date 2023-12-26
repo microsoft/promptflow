@@ -84,15 +84,6 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         """
         raise NotImplementedError()
 
-    @classmethod
-    def check_startup_error_from_file(cls, file_path: Path) -> Exception:
-        error_dict = load_json(file_path)
-        if error_dict:
-            bulk_logger.error(f"Error when starting the executor service: {error_dict}")
-            error_response = ErrorResponse.from_error_dict(error_dict)
-            return ValidationException(error_response.message, target=ErrorTarget.BATCH)
-        return None
-
     async def exec_line_async(
         self,
         inputs: Mapping[str, Any],
@@ -126,6 +117,15 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         result = self._process_http_response(response)
         return AggregationResult.deserialize(result)
 
+    async def ensure_executor_startup(self, error_file):
+        """Ensure the executor service is initialized before calling the API to get the results"""
+        try:
+            await self.ensure_executor_health()
+        except ExecutorServiceUnhealthy as ex:
+            # raise the init error if there is any
+            init_ex = self._check_startup_error_from_file(error_file)
+            raise init_ex or ex
+
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
 
@@ -157,6 +157,14 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         except Exception as e:
             bulk_logger.warning(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Error: {str(e)}")
             return False
+
+    def _check_startup_error_from_file(self, error_file) -> Exception:
+        error_dict = load_json(error_file)
+        if error_dict:
+            bulk_logger.error(f"Error when starting the executor service: {error_dict}")
+            error_response = ErrorResponse.from_error_dict(error_dict)
+            return ValidationException(error_response.message, target=ErrorTarget.BATCH)
+        return None
 
     def _process_http_response(self, response: httpx.Response):
         if response.status_code == 200:
