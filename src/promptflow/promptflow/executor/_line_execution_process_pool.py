@@ -722,8 +722,12 @@ def _process_wrapper(
 
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
-    bulk_logger.info(
-        f"create_executor_fork: {flow_executor._connections['azure_open_ai_connection']['value']['api_base']}")
+    try:
+        bulk_logger.info(
+            f"create_executor_fork: {flow_executor._connections['azure_open_ai_connection']['value']['api_base']}")
+    except Exception as e:
+        print(f"e:{e}")
+        pass
     run_tracker = RunTracker(run_storage=storage, run_mode=flow_executor._run_tracker._run_mode)
     return FlowExecutor(
         flow=flow_executor._flow,
