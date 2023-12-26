@@ -195,22 +195,30 @@ class TestFlowLocalOperations:
             assert yaml.safe_load(flow_tools_path.read_text())["code"] == {
                 "classify_with_llm.jinja2": {
                     "inputs": {
-                        "examples": {"type": ["string"]},
-                        "text_content": {"type": ["string"]},
-                        "url": {"type": ["string"]},
+                        "examples": {
+                            "type": ["string"],
+                            "ui_hints": {"index": 0}},
+                        "text_content": {
+                            "type": ["string"],
+                            "ui_hints": {"index": 2}
+                        },
+                        "url": {
+                            "type": ["string"],
+                            "ui_hints": {"index": 1}
+                        },
                     },
                     "source": "classify_with_llm.jinja2",
                     "type": "llm",
                 },
                 "convert_to_dict.py": {
                     "function": "convert_to_dict",
-                    "inputs": {"input_str": {"type": ["string"]}},
+                    "inputs": {"input_str": {"type": ["string"], "ui_hints": {"index": 0}}},
                     "source": "convert_to_dict.py",
                     "type": "python",
                 },
                 "fetch_text_content_from_url.py": {
                     "function": "fetch_text_content_from_url",
-                    "inputs": {"url": {"type": ["string"]}},
+                    "inputs": {"url": {"type": ["string"], "ui_hints": {"index": 0}}},
                     "source": "fetch_text_content_from_url.py",
                     "type": "python",
                 },
@@ -220,7 +228,7 @@ class TestFlowLocalOperations:
                     "type": "python",
                 },
                 "summarize_text_content.jinja2": {
-                    "inputs": {"text": {"type": ["string"]}},
+                    "inputs": {"text": {"type": ["string"], "ui_hints": {"index": 0}}},
                     "source": "summarize_text_content.jinja2",
                     "type": "llm",
                 },
@@ -240,22 +248,30 @@ class TestFlowLocalOperations:
         assert yaml.safe_load(flow_tools_path.read_text())["code"] == {
             "classify_with_llm.jinja2": {
                 "inputs": {
-                    "examples": {"type": ["string"]},
-                    "text_content": {"type": ["string"]},
-                    "url": {"type": ["string"]},
+                    "examples": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 0}},
+                    "text_content": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 2}
+                    },
+                    "url": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 1}
+                    },
                 },
                 "source": "classify_with_llm.jinja2",
                 "type": "llm",
             },
             "convert_to_dict.py": {
                 "function": "convert_to_dict",
-                "inputs": {"input_str": {"type": ["string"]}},
+                "inputs": {"input_str": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": os.path.join("..", "external_files", "convert_to_dict.py"),
                 "type": "python",
             },
             "fetch_text_content_from_url.py": {
                 "function": "fetch_text_content_from_url",
-                "inputs": {"url": {"type": ["string"]}},
+                "inputs": {"url": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": os.path.join("..", "external_files", "fetch_text_content_from_url.py"),
                 "type": "python",
             },
@@ -265,12 +281,12 @@ class TestFlowLocalOperations:
                 "type": "python",
             },
             "summarize_text_content.jinja2": {
-                "inputs": {"text": {"type": ["string"]}},
+                "inputs": {"text": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": os.path.join("..", "external_files", "summarize_text_content.jinja2"),
                 "type": "llm",
             },
             "summarize_text_content__variant_1.jinja2": {
-                "inputs": {"text": {"type": ["string"]}},
+                "inputs": {"text": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": "summarize_text_content__variant_1.jinja2",
                 "type": "llm",
             },
@@ -304,36 +320,52 @@ class TestFlowLocalOperations:
         assert flow_tools["code"] == {
             "classify_with_llm.jinja2": {
                 "inputs": {
-                    "examples": {"type": ["string"]},
-                    "text_content": {"type": ["string"]},
-                    "url": {"type": ["string"]},
+                    "examples": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 0}},
+                    "text_content": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 2}
+                    },
+                    "url": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 1}
+                    },
                 },
                 "source": "classify_with_llm.jinja2",
                 "type": "prompt",
             },
             "./classify_with_llm.jinja2": {
                 "inputs": {
-                    "examples": {"type": ["string"]},
-                    "text_content": {"type": ["string"]},
-                    "url": {"type": ["string"]},
+                    "examples": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 0}},
+                    "text_content": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 2}
+                    },
+                    "url": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 1}
+                    },
                 },
                 "source": "./classify_with_llm.jinja2",
                 "type": "llm",
             },
             "convert_to_dict.py": {
                 "function": "convert_to_dict",
-                "inputs": {"input_str": {"type": ["string"]}},
+                "inputs": {"input_str": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": "convert_to_dict.py",
                 "type": "python",
             },
             "fetch_text_content_from_url.py": {
                 "function": "fetch_text_content_from_url",
-                "inputs": {"url": {"type": ["string"]}},
+                "inputs": {"url": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": os.path.join("..", "external_files", "fetch_text_content_from_url.py"),
                 "type": "python",
             },
             "summarize_text_content__variant_1.jinja2": {
-                "inputs": {"text": {"type": ["string"]}},
+                "inputs": {"text": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": "summarize_text_content__variant_1.jinja2",
                 "type": "llm",
             },
@@ -346,36 +378,52 @@ class TestFlowLocalOperations:
         assert tools_meta["code"] == {
             "classify_with_llm.jinja2": {
                 "inputs": {
-                    "examples": {"type": ["string"]},
-                    "text_content": {"type": ["string"]},
-                    "url": {"type": ["string"]},
+                    "examples": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 0}},
+                    "text_content": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 2}
+                    },
+                    "url": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 1}
+                    },
                 },
                 "source": "classify_with_llm.jinja2",
                 "type": "prompt",
             },
             "./classify_with_llm.jinja2": {
                 "inputs": {
-                    "examples": {"type": ["string"]},
-                    "text_content": {"type": ["string"]},
-                    "url": {"type": ["string"]},
+                    "examples": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 0}},
+                    "text_content": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 2}
+                    },
+                    "url": {
+                        "type": ["string"],
+                        "ui_hints": {"index": 1}
+                    },
                 },
                 "source": "./classify_with_llm.jinja2",
                 "type": "llm",
             },
             "convert_to_dict.py": {
                 "function": "convert_to_dict",
-                "inputs": {"input_str": {"type": ["string"]}},
+                "inputs": {"input_str": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": "convert_to_dict.py",
                 "type": "python",
             },
             "fetch_text_content_from_url.py": {
                 "function": "fetch_text_content_from_url",
-                "inputs": {"url": {"type": ["string"]}},
+                "inputs": {"url": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": os.path.join("..", "external_files", "fetch_text_content_from_url.py"),
                 "type": "python",
             },
             "summarize_text_content__variant_1.jinja2": {
-                "inputs": {"text": {"type": ["string"]}},
+                "inputs": {"text": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "source": "summarize_text_content__variant_1.jinja2",
                 "type": "llm",
             },
@@ -397,7 +445,7 @@ class TestFlowLocalOperations:
             "code": {
                 "fetch_text_content_from_url.py": {
                     "function": "fetch_text_content_from_url",
-                    "inputs": {"url": {"type": ["string"]}},
+                    "inputs": {"url": {"type": ["string"], "ui_hints": {"index": 0}}},
                     "source": os.path.join("..", "external_files", "fetch_text_content_from_url.py"),
                     "type": "python",
                 },
@@ -437,8 +485,9 @@ class TestFlowLocalOperations:
                     "connection": {
                         "type": ["CustomConnection"],
                         "custom_type": ["MyFirstConnection", "MySecondConnection"],
+                        "ui_hints": {"index": 0},
                     },
-                    "input_text": {"type": ["string"]},
+                    "input_text": {"type": ["string"], "ui_hints": {"index": 1}},
                 },
                 "module": "my_tool_package.tools.my_tool_1",
                 "name": "My First Tool",
@@ -451,8 +500,12 @@ class TestFlowLocalOperations:
                 "class_name": "MyTool",
                 "function": "my_tool",
                 "inputs": {
-                    "connection": {"type": ["CustomConnection"], "custom_type": ["MySecondConnection"]},
-                    "input_text": {"type": ["string"]},
+                    "connection": {
+                        "type": ["CustomConnection"],
+                        "custom_type": ["MySecondConnection"],
+                        "ui_hints": {"index": 0},
+                    },
+                    "input_text": {"type": ["string"], "ui_hints": {"index": 1},},
                 },
                 "module": "my_tool_package.tools.my_tool_2",
                 "name": "My Second Tool",
@@ -472,7 +525,10 @@ class TestFlowLocalOperations:
         assert tools_meta["code"] == {
             "my_script_tool.py": {
                 "function": "my_tool",
-                "inputs": {"connection": {"type": ["CustomConnection"]}, "input_param": {"type": ["string"]}},
+                "inputs": {
+                    "connection": {"type": ["CustomConnection"], "ui_hints": {"index": 0}},
+                    "input_param": {"type": ["string"], "ui_hints": {"index": 1}}
+                },
                 "source": "my_script_tool.py",
                 "type": "python",
             }
