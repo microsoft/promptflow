@@ -96,16 +96,22 @@ class RunSubmitter:
                 output_dir=local_storage.outputs_folder,
                 run_id=run_id,
             )
-
+            error_logs = []
             if batch_result.failed_lines > 0:
                 # Log warning message when there are failed line run in bulk run.
-                error_log = f"{batch_result.failed_lines} out of {batch_result.total_lines} runs failed in batch run."
-                if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
-                    error_log = (
-                        error_log
-                        + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
-                    )
-                logger.warning(error_log)
+                error_logs.append(
+                    f"{batch_result.failed_lines} out of {batch_result.total_lines} runs failed in batch run."
+                )
+            if batch_result.error_summary.aggr_error_dict:
+                # log warning message when there are failed aggregation nodes in bulk run.
+                aggregation_nodes = list(batch_result.error_summary.aggr_error_dict.keys())
+                error_logs.append(f"aggregation nodes {aggregation_nodes} failed in batch run.")
+            # update error log
+            if error_logs and run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
+                error_logs.append(
+                    f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                )
+            logger.warning("\n".join(error_logs))
             # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:

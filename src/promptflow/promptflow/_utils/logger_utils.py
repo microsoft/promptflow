@@ -16,7 +16,6 @@ from functools import partial
 from typing import List, Optional
 
 from promptflow._constants import PF_LOGGING_LEVEL
-from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_mode import RunMode
@@ -370,4 +369,7 @@ class LoggerFactory:
 def get_cli_sdk_logger():
     """Get logger used by CLI SDK."""
     # cli sdk logger default logging level is WARNING
-    return LoggerFactory.get_logger(LOGGER_NAME, verbosity=logging.WARNING)
+    # here the logger name "promptflow" is from promptflow._sdk._constants.LOGGER_NAME,
+    # to avoid circular import error, use plain string here instead of importing from _constants
+    # because this function is also called in _prepare_home_dir which is in _constants
+    return LoggerFactory.get_logger("promptflow", verbosity=logging.WARNING)

@@ -1,6 +1,7 @@
 import contextlib
 import os
 import sys
+from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
 
@@ -9,6 +10,10 @@ import pytest
 from pytest_mock import MockFixture
 
 from promptflow._sdk._constants import VIS_PORTAL_URL_TMPL
+
+tests_root_dir = Path(__file__).parent.parent.parent
+flow_test_dir = tests_root_dir / "test_configs/flows"
+data_dir = tests_root_dir / "test_configs/datas"
 
 
 def run_pf_command(*args, cwd=None):
@@ -238,19 +243,33 @@ class TestAzureCli:
 
         mocked = mocker.patch.object(FlowOperations, "create_or_update")
         mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        flow_dir = Path(flow_test_dir, "web_classification").resolve().as_posix()
         run_pf_command(
             "flow",
             "create",
             "--flow",
-            ".",
+            flow_dir,
             "--set",
-            "name=test_flow",
+            "display_name=test_flow",
             "type=standard",
             "description='test_description'",
             "tags.key1=value1",
             *operation_scope_args,
         )
         mocked.assert_called_once()
+
+    def test_flow_create_with_invalid_parameters(self, pf):
+        flow_dir = Path(flow_test_dir, "web_classification").resolve().as_posix()
+        # process should fail due to schema unknown field error: random_key
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "create",
+                "--flow",
+                flow_dir,
+                "--set",
+                "random_key=random_value",
+            )
 
     def test_flow_list(
         self,

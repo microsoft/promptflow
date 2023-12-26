@@ -68,7 +68,7 @@ def start_service(args):
             app.logger.warning(f"Service port {port} is used.")
             raise UserErrorException(f"Service port {port} is used.")
     # Set host to localhost, only allow request from localhost.
-    app.logger.info(f"Start Prompt Flow Service on http://localhost:{port}")
+    app.logger.info(f"Start Prompt Flow Service on http://localhost:{port}, version: {get_promptflow_sdk_version()}")
     waitress.serve(app, host="127.0.0.1", port=port)
 
 

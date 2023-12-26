@@ -166,7 +166,9 @@ class ToolResolver(ThreadLocalSingleton):
                         target=ErrorTarget.EXECUTOR,
                     ) from e
                 try:
-                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
+                    updated_inputs[k].value = load_multimedia_data_recursively(
+                        updated_inputs[k].value, version=self._version
+                    )
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
