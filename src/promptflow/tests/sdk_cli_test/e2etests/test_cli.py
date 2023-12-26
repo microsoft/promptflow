@@ -1432,8 +1432,8 @@ class TestCli:
                 "inputs": {
                     "chat_history": {"type": ["string"], "ui_hints": {"index": 0}},
                     "question": {"type": ["string"], "ui_hints": {"index": 1}}
-                }, 
-                "source": "chat.jinja2", 
+                },
+                "source": "chat.jinja2",
                 "type": "llm",
             },
             "show_answer.py": {
