@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 from promptflow._constants import CONNECTION_NAME_PROPERTY
 
 from .multimedia import Image
-from .types import AssistantDefinition, FilePath, PromptTemplate, Secret
+from .types import FilePath, PromptTemplate, Secret
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Enum")
@@ -39,7 +39,6 @@ class ValueType(str, Enum):
     OBJECT = "object"
     FILE_PATH = "file_path"
     IMAGE = "image"
-    ASSISTANT_DEFINITION = "assistant_definition"
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":
@@ -68,8 +67,6 @@ class ValueType(str, Enum):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
-        if isinstance(t, AssistantDefinition):
-            return ValueType.ASSISTANT_DEFINITION
         return ValueType.OBJECT
 
     @staticmethod
@@ -100,8 +97,6 @@ class ValueType(str, Enum):
             return ValueType.FILE_PATH
         if t == Image:
             return ValueType.IMAGE
-        if t == AssistantDefinition:
-            return ValueType.ASSISTANT_DEFINITION
         return ValueType.OBJECT
 
     def parse(self, v: Any) -> Any:  # noqa: C901

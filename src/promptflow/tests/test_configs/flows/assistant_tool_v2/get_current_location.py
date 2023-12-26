@@ -5,13 +5,11 @@ from promptflow.connections import AzureOpenAIConnection
 
 
 @tool
-def get_current_location(preset_int: int, preset_conn: AzureOpenAIConnection):
+def get_current_location(predefined_input: int):
     """Get the location of the current user.
 
-    :param preset_int: The preset int.
-    :type preset_int: int
-    :param preset_conn: The preset connection.
-    :type preset_conn: AzureOpenAIConnection
+    :param predefined_input: The preset int.
+    :type predefined_input: int
     """
 
     return random.choice(["Beijing", "Shanghai"])

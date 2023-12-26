@@ -6,7 +6,6 @@ import docutils.nodes
 import copy
 import inspect
 import types
-import yaml
 from contextvars import ContextVar
 from dataclasses import dataclass
 from docutils.core import publish_doctree
@@ -22,7 +21,7 @@ from promptflow._utils.multimedia_utils import create_image, load_multimedia_dat
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
-from promptflow.contracts.types import AssistantDefinition, PromptTemplate
+from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -70,9 +69,6 @@ class ToolResolver(ThreadLocalSingleton):
         resolver = cls(working_dir, connections, package_tool_keys)
         resolver._activate_in_context(force=True)
         return resolver
-
-    def update_package_tool_keys(self, package_tool_keys: Optional[List[str]] = None):
-        self._tool_loader.update_package_tool_keys(package_tool_keys)
 
     def _convert_to_connection_value(self, k: str, v: InputAssignment, node: Node, conn_types: List[ValueType]):
         connection_value = self._connection_manager.get(v.value)
@@ -135,9 +131,6 @@ class ToolResolver(ThreadLocalSingleton):
                         key=k, error_type_and_message=error_type_and_message,
                         target=ErrorTarget.EXECUTOR
                     ) from e
-            elif value_type == ValueType.ASSISTANT_DEFINITION:
-                definition = self._load_json_from_file(v.value, k, node.name)
-                updated_inputs[k].value = AssistantDefinition.deserialize(definition)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
@@ -195,19 +188,6 @@ class ToolResolver(ThreadLocalSingleton):
             if isinstance(e, PromptflowException) and e.target != ErrorTarget.UNKNOWN:
                 raise ResolveToolError(node_name=node.name, target=e.target, module=e.module) from e
             raise ResolveToolError(node_name=node.name) from e
-
-    def _load_json_from_file(self, path: str, input_name: str, node_name: str) -> str:
-        if path is None or not (self._working_dir / path).is_file():
-            raise InvalidSource(
-                target=ErrorTarget.EXECUTOR,
-                message_format="Node input '{input_name}' path '{source_path}' is invalid on node '{node_name}'.",
-                input_name=input_name,
-                source_path=path if path is not None else None,
-                node_name=node_name,
-            )
-        file = self._working_dir / path
-        with open(file, "r", encoding="utf-8") as file:
-            return yaml.safe_load(file)
 
     def _load_source_content(self, node: Node) -> str:
         source = node.source
@@ -350,8 +330,12 @@ class ToolResolver(ThreadLocalSingleton):
 
     def _resolve_script_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         m, tool = self._tool_loader.load_tool_for_script_node(node)
-        if tool.description:
-            tool.structured_description = self._load_structured_description(tool.name, tool.description)
+        try:
+            if tool.description:
+                tool.structured_description = self._load_structured_description(tool.name, tool.description)
+        except Exception:
+            # Ignore the error if failed to load structured description
+            pass
         # We only want to load script tool module once.
         # Reloading the same module changes the ID of the class, which can cause issues with isinstance() checks.
         # This is important when working with connection class checks. For instance, in user tool script it writes:
