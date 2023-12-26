@@ -507,7 +507,7 @@ class TestFlowLocalOperations:
                     },
                     "input_text": {
                         "type": ["string"],
-                        "ui_hints": {"index": 1}, 
+                        "ui_hints": {"index": 1},
                     },
                 },
                 "module": "my_tool_package.tools.my_tool_2",
