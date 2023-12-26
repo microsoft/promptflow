@@ -177,7 +177,7 @@ def _create_image_from_dict_v2(image_dict: dict):
 
 
 def _create_image_from_string(value: str):
-    if _is_base64(value) or _is_base64_with_prefix(value):
+    if _is_base64(value):
         return _create_image_from_base64(value)
     elif _is_url(value):
         return _create_image_from_url(value)
