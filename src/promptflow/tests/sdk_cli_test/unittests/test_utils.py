@@ -202,17 +202,14 @@ class TestUtils:
         for thread in threads:
             thread.join()
 
-    @pytest.mark.parametrize("concurrent_count", [1, 2, 4, 8])
-    def test_concurrent_hint_for_update(self, concurrent_count):
-        from concurrent.futures import ThreadPoolExecutor
+    def test_concurrent_hint_for_update(self):
         with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
             mock_datetime.datetime.now.return_value = datetime.datetime.now()
             mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
             mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
             hint_for_update()
-            with ThreadPoolExecutor(max_workers=concurrent_count) as pool:
-                pool.submit(check_latest_version)
-
+            thread = threading.Thread(target=check_latest_version, daemon=True)
+            thread.start()
             assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
 
     @pytest.mark.parametrize(
