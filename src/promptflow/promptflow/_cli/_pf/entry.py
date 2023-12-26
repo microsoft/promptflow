@@ -101,12 +101,6 @@ def get_parser_args(argv):
     return parser.prog, parser.parse_args(argv)
 
 
-def _get_custom_dimensions():
-    """Currently, it returns empty directly here, but externally it will mock the _get_custom_dimensions"""
-
-    return {}
-
-
 def entry(argv):
     """
     Control plane CLI tools for promptflow.
@@ -117,12 +111,10 @@ def entry(argv):
     logger = get_telemetry_logger()
     activity_name = _get_cli_activity_name(cli=prog, args=args)
     activity_name = update_activity_name(activity_name, args=args)
-    custom_dimensions = _get_custom_dimensions()
     with log_activity(
             logger,
             activity_name,
             activity_type=ActivityType.PUBLICAPI,
-            custom_dimensions=custom_dimensions,
     ):
         run_command(args)
 

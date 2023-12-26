@@ -104,10 +104,6 @@ def _get_workspace_info(args):
         return {}
 
 
-def _get_custom_dimensions(args):
-    return _get_workspace_info(args)
-
-
 def entry(argv):
     """
     Control plane CLI tools for promptflow cloud version.
@@ -116,7 +112,7 @@ def entry(argv):
     if hasattr(args, "user_agent"):
         setup_user_agent_to_operation_context(args.user_agent)
     logger = get_telemetry_logger()
-    custom_dimensions = _get_custom_dimensions(args)
+    custom_dimensions = _get_workspace_info(args)
     with log_activity(
         logger,
         _get_cli_activity_name(cli=prog, args=args),

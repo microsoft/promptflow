@@ -6,8 +6,8 @@ from unittest import mock
 
 import pytest
 
-from promptflow._cli._pf_azure.entry import _get_custom_dimensions
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
+from promptflow._sdk._telemetry import log_activity
 from promptflow._sdk._utils import ClientUserAgentUtil
 from sdk_cli_azure_test.recording_utilities import is_replay
 
@@ -15,13 +15,16 @@ FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-def get_custom_dimensions(*args, **kwargs):
-    custom_dimensions = _get_custom_dimensions(*args, **kwargs)
-    custom_dimensions["custom_message"] = "flow run: https://github.com/microsoft/promptflow/actions/runs/{0}".format(
+def mock_log_activity(*args, **kwargs):
+    custom_message = "flow run: https://github.com/microsoft/promptflow/actions/runs/{0}".format(
         os.environ.get("FLOW_RUN_ID")
     )
+    if "custom_dimensions" in kwargs and kwargs["custom_dimensions"] is not None:
+        kwargs["custom_dimensions"]["custom_message"] = custom_message
+    else:
+        kwargs["custom_dimensions"] = {"custom_message": custom_message}
 
-    return custom_dimensions
+    return log_activity(*args, **kwargs)
 
 
 def run_cli_command(cmd, time_limit=3600):
@@ -30,7 +33,7 @@ def run_cli_command(cmd, time_limit=3600):
     sys.argv = list(cmd)
     st = timeit.default_timer()
     with (mock.patch.object(ClientUserAgentUtil, "get_user_agent") as get_user_agent_fun,
-          mock.patch("promptflow._cli._pf_azure.entry._get_custom_dimensions", side_effect=get_custom_dimensions)):
+          mock.patch("promptflow._sdk._telemetry.log_activity", side_effect=mock_log_activity)):
         # Client side will modify user agent only through ClientUserAgentUtil to avoid impact executor/runtime.
         get_user_agent_fun.return_value = f"{CLI_USER_AGENT} perf_monitor/1.0"
         user_agent = ClientUserAgentUtil.get_user_agent()
