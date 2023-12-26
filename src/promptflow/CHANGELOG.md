@@ -7,6 +7,7 @@
 - Add support to configure prompt flow home directory via environment variable `PF_HOME_DIRECTORY`.
   - Please set before importing `promptflow`, otherwise it won't take effect.
 - [Executor] Handle KeyboardInterrupt in flow test so that the final state is Canceled.
+- [Executor] Calculate system_metrics recursively in api_calls.
 
 ### Bugs Fixed
 - [SDK/CLI] Fix single node run doesn't work when consuming sub item of upstream node
