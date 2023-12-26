@@ -2,13 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import functools
 import inspect
 import json
 import logging
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
-from typing import Optional
+from typing import Callable, Optional
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._utils.dataclass_serializer import serialize
@@ -63,7 +64,7 @@ class Tracer(ThreadLocalSingleton):
         return tracer.to_json()
 
     @classmethod
-    def push_tool(cls, f, args=[], kwargs={}):
+    def push_function(cls, f, args=[], kwargs={}, trace_type=TraceType.FUNCTION):
         obj = cls.active_instance()
         sig = inspect.signature(f).parameters
         all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
@@ -75,12 +76,16 @@ class Tracer(ThreadLocalSingleton):
         all_kwargs.pop("self", None)
         trace = Trace(
             name=f.__qualname__,
-            type=TraceType.TOOL,
+            type=trace_type,
             start_time=datetime.utcnow().timestamp(),
             inputs=all_kwargs,
         )
         obj._push(trace)
         return trace
+
+    @classmethod
+    def push_tool(cls, f, args=[], kwargs={}):
+        return cls.push_function(f, args, kwargs, trace_type=TraceType.TOOL)
 
     @classmethod
     def push(cls, trace: Trace):
@@ -149,3 +154,89 @@ class Tracer(ThreadLocalSingleton):
             "message": str(error),
             "type": type(error).__qualname__,
         }
+
+
+def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
+    """A decorator to add tracing to a function.
+
+    It can be used for both sync and async functions.
+    For sync functions, it will return a sync function.
+    For async functions, it will return an async function.
+
+    When using this decorator, the function name, inputs, outputs, start time, end time,
+    and error (if any) will be recorded.
+
+    :param func: The function to be traced.
+    :type func: Callable
+    :param trace_type: The type of the trace. Defaults to TraceType.FUNCTION.
+    :type trace_type: TraceType, optional
+    :return: The traced function.
+    :rtype: Callable
+
+    :Examples:
+
+    Synchronous function usage:
+
+    .. code-block:: python
+
+        @trace
+        def greetings(name):
+            return f"Hello, {name}"
+
+    Asynchronous function usage:
+
+    .. code-block:: python
+
+        @trace
+        async def greetings_async(name):
+            await asyncio.sleep(1)
+            return f"Hello, {name}"
+    """
+    def wrapper(func):
+        if inspect.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def wrapped(*args, **kwargs):
+                if Tracer.active_instance() is None:
+                    return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push_function(func, args, kwargs, trace_type)
+                    output = await func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+
+        else:
+
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                if Tracer.active_instance() is None:
+                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push_function(func, args, kwargs, trace_type)
+                    output = func(*args, **kwargs)
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
+
+        wrapped.__original_function = func
+        func.__wrapped_function = wrapped
+
+        return wrapped
+
+    # enable use decorator without "()" if all arguments are default values
+    if func is not None:
+        return wrapper(func)
+    return wrapper
+
+
+def trace(func: Callable = None) -> Callable:
+    return _traced(func, trace_type=TraceType.FUNCTION)
