@@ -198,7 +198,7 @@ class DynamicList:
         self._func_obj, self.func_path = _get_function_path(function)
         self._input_mapping = input_mapping or {}
         dynamic_list_func_inputs, _, _, _ = function_to_interface(
-            self._func_obj, gen_custom_type_conn=True, skip_prompt_template=True
+            self._func_obj, gen_custom_type_conn=True, skip_prompt_template=True, add_ui_hints=False
         )
 
         # Get function input info
@@ -242,7 +242,7 @@ class GeneratedBy:
         self._input_settings = {}
 
         generated_func_inputs, _, _, _ = function_to_interface(
-            self._func_obj, gen_custom_type_conn=True, skip_prompt_template=True
+            self._func_obj, gen_custom_type_conn=True, skip_prompt_template=True, add_ui_hints=False
         )
 
         # Get function input info

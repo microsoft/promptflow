@@ -1429,15 +1429,18 @@ class TestCli:
         tools_dict = json.loads(outerr.out)
         expect_flow_tools = {
             "chat.jinja2": {
+                "inputs": {
+                    "chat_history": {"type": ["string"], "ui_hints": {"index": 0}},
+                    "question": {"type": ["string"], "ui_hints": {"index": 1}}
+                }, 
+                "source": "chat.jinja2", 
                 "type": "llm",
-                "inputs": {"chat_history": {"type": ["string"]}, "question": {"type": ["string"]}},
-                "source": "chat.jinja2",
             },
             "show_answer.py": {
-                "type": "python",
-                "inputs": {"chat_answer": {"type": ["string"]}},
-                "source": "show_answer.py",
                 "function": "show_answer",
+                "inputs": {"chat_answer": {"type": ["string"], "ui_hints": {"index": 0}}},
+                "source": "show_answer.py",
+                "type": "python",
             },
         }
         assert tools_dict["code"] == expect_flow_tools
