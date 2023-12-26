@@ -124,6 +124,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         except ExecutorServiceUnhealthy as ex:
             # raise the init error if there is any
             init_ex = self._check_startup_error_from_file(error_file)
+            # TODO: will remove the destroy call after executor proxy creation is put into the run function
+            self.destroy()
             raise init_ex or ex
 
     async def ensure_executor_health(self):
