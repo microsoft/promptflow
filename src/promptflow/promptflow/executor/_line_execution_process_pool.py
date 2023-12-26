@@ -131,6 +131,7 @@ def create_process_fork(
         working_dir,
         raise_ex,
 ):
+    bulk_logger.info(f"create_process_fork: {connections}")
     process_info = {}
     context = multiprocessing.get_context("fork")
     run_storage = QueueRunStorage(output_queues[0])
@@ -141,6 +142,9 @@ def create_process_fork(
         raise_ex=raise_ex,
         storage=run_storage
     )
+
+    bulk_logger.info(f"create_process_fork: {executor._connections}")
+
     executor_creation_func = partial(create_executor_fork, flow_executor=executor)
 
     def new_process(i):
@@ -199,6 +203,7 @@ def create_process_spawn(
         working_dir,
         raise_ex
 ):
+    bulk_logger.info(f"create_process_spawn: {connections}")
     context = multiprocessing.get_context("spawn")
     current_log_context = LogContext.get_current()
     log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
@@ -275,6 +280,7 @@ class LineExecutionProcessPool:
         self._line_timeout_sec = flow_executor._line_timeout_sec
         self._output_dir = output_dir
         self._flow_executor = flow_executor
+        bulk_logger.info(f"LineExecutionProcessPool:{flow_executor._connections}")
 
     def __enter__(self):
         manager = Manager()
@@ -287,6 +293,7 @@ class LineExecutionProcessPool:
             self._input_queues = [manager.Queue() for i in range(self._n_process)]
             self._output_queues = [manager.Queue() for i in range(self._n_process)]
             self._restart_queue = manager.Queue()
+            bulk_logger.info(f"__enter__:{self._flow_executor._connections}")
 
             create_process_spawn(
                 self._input_queues,
@@ -693,6 +700,7 @@ def _process_wrapper(
 
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
+    bulk_logger.info(f"create_executor_fork: {flow_executor._connections}")
     run_tracker = RunTracker(run_storage=storage, run_mode=flow_executor._run_tracker._run_mode)
     return FlowExecutor(
         flow=flow_executor._flow,
