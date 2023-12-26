@@ -134,6 +134,11 @@ def create_process_fork(
     process_info = {}
     context = multiprocessing.get_context("fork")
     run_storage = QueueRunStorage(output_queues[0])
+    bulk_logger.info("connections in spawned process")
+    bulk_logger.info("=" * 100)
+    for connection in connections:
+        bulk_logger.info(f"api_base of connection {connection.connectionName} is {connection.api_base}")
+    bulk_logger.info("=" * 100)
     executor = FlowExecutor.create(
         flow_file=flow_file,
         connections=connections,
@@ -199,6 +204,11 @@ def create_process_spawn(
         working_dir,
         raise_ex
 ):
+    bulk_logger.info("connections in main process")
+    bulk_logger.info("=" * 100)
+    for connection in connections:
+        bulk_logger.info(f"api_base of connection {connection.connectionName} is {connection.api_base}")
+    bulk_logger.info("=" * 100)
     context = multiprocessing.get_context("spawn")
     current_log_context = LogContext.get_current()
     log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
@@ -250,6 +260,11 @@ class LineExecutionProcessPool:
         use_fork = self.context.get_start_method() == "fork"
         # When using fork, we use this method to create the executor to avoid reloading the flow
         # which will introduce a lot more memory.
+        bulk_logger.info("connections in passed in executor")
+        bulk_logger.info("=" * 100)
+        for connection in flow_executor._connections:
+            bulk_logger.info(f"api_base of connection {connection.connectionName} is {connection.api_base}")
+        bulk_logger.info("=" * 100)
         if use_fork:
             pass
         elif flow_executor._flow_file:

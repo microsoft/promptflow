@@ -106,6 +106,15 @@ class TestCli:
         with open(local_storage._log_path, "r") as file:
             logs = file.read()
 
+        connection_file_path = os.environ.get('PROMPTFLOW_CONNECTIONS')
+        print(f"PROMPTFLOW_CONNECTIONS in main process = {connection_file_path}")
+        try:
+            with open(connection_file_path, "r") as file:
+                connections = json.load(file)
+                print(f"connections = {connections}")
+        except Exception as e:
+            print(f"Failed to load connections file, {e}")
+
         print(f"test_basic_flow_run_batch_and_eval logs:{logs}")
         outputs_run = client.runs.get_details(name=run_id)
         print(f"============test_basic_flow_run_batch_and_eval:outputs_run================: {outputs_run}")
