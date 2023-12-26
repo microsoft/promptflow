@@ -137,7 +137,7 @@ def create_process_fork(
     bulk_logger.info("connections in spawned process")
     bulk_logger.info("=" * 100)
     for connection in connections:
-        bulk_logger.info(f"api_base of connection {connection.connectionName} is {connection.api_base}")
+        bulk_logger.info(f"api_base of connection {connection} is {connection.api_base}")
     bulk_logger.info("=" * 100)
     executor = FlowExecutor.create(
         flow_file=flow_file,
@@ -207,7 +207,7 @@ def create_process_spawn(
     bulk_logger.info("connections in main process")
     bulk_logger.info("=" * 100)
     for connection in connections:
-        bulk_logger.info(f"api_base of connection {connection.connectionName} is {connection.api_base}")
+        bulk_logger.info(f"api_base of connection {connection} is {connection.api_base}")
     bulk_logger.info("=" * 100)
     context = multiprocessing.get_context("spawn")
     current_log_context = LogContext.get_current()
@@ -263,7 +263,7 @@ class LineExecutionProcessPool:
         bulk_logger.info("connections in passed in executor")
         bulk_logger.info("=" * 100)
         for connection in flow_executor._connections:
-            bulk_logger.info(f"api_base of connection {connection.connectionName} is {connection.api_base}")
+            bulk_logger.info(f"api_base of connection {connection} is {connection.api_base}")
         bulk_logger.info("=" * 100)
         if use_fork:
             pass
