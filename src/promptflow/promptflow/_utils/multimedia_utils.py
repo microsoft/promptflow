@@ -157,8 +157,7 @@ def _create_image_from_dict_v2(image_dict: dict):
     image_type = image_dict["type"]
     if image_type == "image_url":
         if _is_base64(image_dict["image_url"]["url"]):
-            base64_str = image_dict["image_url"]["url"].split(",")[1]
-            return _create_image_from_base64(base64_str)
+            return _create_image_from_base64(image_dict["image_url"]["url"])
         elif _is_url(image_dict["image_url"]["url"]):
             return _create_image_from_url(image_dict["image_url"]["url"])
         else:
@@ -307,7 +306,7 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
                 else:
                     updated_inputs[key] = create_image(updated_inputs[key])
             elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
-                updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+                updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key], version=version)
         except Exception as ex:
             error_type_and_message = f"({ex.__class__.__name__}) {ex}"
             raise LoadMultimediaDataError(
