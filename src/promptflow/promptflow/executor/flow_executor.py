@@ -215,12 +215,17 @@ class FlowExecutor:
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
         tool_resolver = ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
-
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
 
         flow = Flow(
-            flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
+            flow.id,
+            flow.name,
+            [r.node for r in resolved_tools],
+            inputs=flow.inputs,
+            outputs=flow.outputs,
+            tools=[],
+            version=flow.version,
         )
         # ensure_flow_valid including validation + resolve
         # Todo: 1) split pure validation + resolve from below method 2) provide completed validation()
@@ -229,6 +234,9 @@ class FlowExecutor:
 
         if storage is None:
             storage = DefaultRunStorage()
+        else:
+            if isinstance(storage, DefaultRunStorage):
+                storage.version = flow.version
         run_tracker = RunTracker(storage)
 
         cache_manager = AbstractCacheManager.init_from_env()
@@ -320,8 +328,8 @@ class FlowExecutor:
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
             flow, node, inputs_with_default_value
         )
-        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
-        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
+        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node, version=flow.version)
+        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs, version=flow.version)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -599,7 +607,7 @@ class FlowExecutor:
                 k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
             }
         # Load multimedia data for the flow inputs of aggregation nodes.
-        inputs = load_multimedia_data(self._flow.inputs, inputs)
+        inputs = load_multimedia_data(self._flow.inputs, inputs, version=self._flow.version)
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
         run_tracker = self._run_tracker
@@ -796,7 +804,7 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-            inputs = load_multimedia_data(self._flow.inputs, inputs)
+            inputs = load_multimedia_data(self._flow.inputs, inputs, version=self._flow.version)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
@@ -882,9 +890,10 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
-        return all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        return (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]

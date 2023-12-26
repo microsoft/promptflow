@@ -535,6 +535,7 @@ class Flow:
     node_variants: Dict[str, NodeVariants] = None
     program_language: str = FlowLanguage.Python
     environment_variables: Dict[str, object] = None
+    version: int = 1
 
     def serialize(self):
         """Serialize the flow to a dict.
@@ -596,6 +597,7 @@ class Flow:
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
             program_language=data.get(LANGUAGE_KEY, FlowLanguage.Python),
             environment_variables=data.get("environment_variables") or {},
+            version=data.get("version", 1),
         )
 
     def _apply_default_node_variants(self: "Flow"):

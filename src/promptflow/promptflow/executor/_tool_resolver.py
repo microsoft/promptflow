@@ -2,22 +2,24 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import docutils.nodes
 import copy
 import inspect
 import types
-import yaml
 from contextvars import ContextVar
 from dataclasses import dataclass
-from docutils.core import publish_doctree
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
+
+import docutils.nodes
+import yaml
+from docutils.core import publish_doctree
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
+from promptflow._utils._errors import InvalidImageInput
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
@@ -49,7 +51,11 @@ class ToolResolver(ThreadLocalSingleton):
     context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
+        self,
+        working_dir: Path,
+        connections: Optional[dict] = None,
+        package_tool_keys: Optional[List[str]] = None,
+        version=None,
     ):
         try:
             # Import openai and aoai for llm tool
@@ -59,13 +65,11 @@ class ToolResolver(ThreadLocalSingleton):
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
+        self._version = version if version else 1
 
     @classmethod
     def start_resolver(
-        cls,
-        working_dir: Path,
-        connections: Optional[dict] = None,
-        package_tool_keys: Optional[List[str]] = None
+        cls, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
     ):
         resolver = cls(working_dir, connections, package_tool_keys)
         resolver._activate_in_context(force=True)
@@ -132,8 +136,9 @@ class ToolResolver(ThreadLocalSingleton):
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             elif value_type == ValueType.ASSISTANT_DEFINITION:
                 definition = self._load_json_from_file(v.value, k, node.name)
@@ -141,12 +146,24 @@ class ToolResolver(ThreadLocalSingleton):
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
+                    updated_inputs[k].value = load_multimedia_data_recursively(
+                        updated_inputs[k].value, version=self._version
+                    )
+                except InvalidImageInput as e:
+                    msg = (
+                        f"Input '{k} for node '{node.name}' of value {v.value} is not a valid image, "
+                        f"due to exception: {e}."
+                    )
+                    raise NodeInputValidationError(message=msg) from e
                 except Exception as e:
                     raise NodeInputValidationError(
                         message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
                         "type {value_type}.",
-                        key=k, node_name=node.name, value=v.value, value_type=value_type.value,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        node_name=node.name,
+                        value=v.value,
+                        value_type=value_type.value,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
                 try:
                     updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
@@ -154,8 +171,9 @@ class ToolResolver(ThreadLocalSingleton):
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.
@@ -248,12 +266,12 @@ class ToolResolver(ThreadLocalSingleton):
             field_body = field[1].astext()
 
             if field_name.startswith("param"):
-                param_name = field_name.split(' ')[1]
+                param_name = field_name.split(" ")[1]
                 if param_name not in params:
                     params[param_name] = {}
                 params[param_name]["description"] = field_body
             if field_name.startswith("type"):
-                param_name = field_name.split(' ')[1]
+                param_name = field_name.split(" ")[1]
                 if param_name not in params:
                     params[param_name] = {}
                 params[param_name]["type"] = to_openai_type[field_body] if field_body in to_openai_type else field_body
@@ -263,12 +281,8 @@ class ToolResolver(ThreadLocalSingleton):
             "function": {
                 "name": func_name,
                 "description": doctree[0].astext(),
-                "parameters": {
-                    "type": "object",
-                    "properties": params,
-                    "required": list(params.keys())
-                }
-            }
+                "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
+            },
         }
 
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:
