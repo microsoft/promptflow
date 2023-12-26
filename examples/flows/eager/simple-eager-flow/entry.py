@@ -8,7 +8,6 @@ from promptflow.contracts.types import PromptTemplate
 def flow_entry(prompt: str):
     client = PFClient()
     connection = client.connections.get(name="open_ai_connection", with_secrets=True)
-    print(connection)
     with open("hello.jinja2") as f:
         template = Template(f.read())
         prompt = template.render(text=prompt)
