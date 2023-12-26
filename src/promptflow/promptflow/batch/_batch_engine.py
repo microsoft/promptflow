@@ -90,6 +90,7 @@ class BatchEngine:
         FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
         executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
+        # TODO: register signal handler for python flow as a workaround?
         if isinstance(executor_proxy_cls, PythonExecutorProxy):
             signal.signal(signal.SIGINT, signal_handler)
         with _change_working_dir(self._working_dir):
