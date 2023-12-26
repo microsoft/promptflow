@@ -1095,6 +1095,11 @@ class TestFlowRun:
         details1 = pf.get_details(run1)
         assert len(details1) == 20
         assert len(details1.loc[details1["outputs.output"] != "(Failed)"]) == 10
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details1.iterrows():
+            if str(row["outputs.output"]) != "(Failed)":
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
+
         # batch run against previous run
         run2 = pf.run(
             flow=flow_mod3,
@@ -1105,3 +1110,7 @@ class TestFlowRun:
         details2 = pf.get_details(run2)
         assert len(details2) == 10
         assert len(details2.loc[details2["outputs.output"] != "(Failed)"]) == 4
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details2.iterrows():
+            if str(row["outputs.output"]) != "(Failed)":
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
