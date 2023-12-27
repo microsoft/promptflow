@@ -100,6 +100,9 @@ class BatchEngine:
                 **kwargs,
             )
             # register signal handler for python flow in the main thread
+            # TODO: For all executor proxies that are executed locally, it might be necessary to
+            # register a signal for Ctrl+C in order to customize some actions beyond just killing
+            # the process, such as terminating the executor service.
             if isinstance(self._executor_proxy, PythonExecutorProxy):
                 signal.signal(signal.SIGINT, signal_handler)
         self._storage = storage
