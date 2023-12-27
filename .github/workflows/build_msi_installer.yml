@@ -21,12 +21,6 @@ on:
         required: false
         description: 'Set the version of the private msi installer'
 
-env:
-  INPUT_VERSION: ${{ github.event.inputs.version }}
-  MSI_PRIVATE_VERSION: ${{ github.event.inputs.set_msi_private_version }}
-  INPUT_UPLOADASLATEST: ${{ github.event.inputs.uploadAsLatest }}
-
-
 jobs:
   build_msi_installer:
     runs-on: windows-latest
@@ -50,7 +44,9 @@ jobs:
       - name: Setup and Install promptflow
         shell: cmd
         run: |
-          build.cmd $env:INPUT_VERSION
+          build.cmd %INPUT_VERSION%
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         working-directory: ${{ github.workspace }}/scripts/installer/windows/
 
       - name: Get promptflow version
@@ -70,6 +66,9 @@ jobs:
             $version="$prefix.$year.$monthday.$hourminutesecond"
           }
           echo "::set-output name=version::$version"
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          MSI_PRIVATE_VERSION: ${{ github.event.inputs.set_msi_private_version }}
         shell: pwsh
 
 
@@ -126,4 +125,6 @@ jobs:
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
           }
           }
+        env:
+          INPUT_UPLOADASLATEST: ${{ github.event.inputs.uploadAsLatest }}
         shell: pwsh
