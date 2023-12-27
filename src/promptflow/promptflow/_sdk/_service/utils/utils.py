@@ -78,6 +78,7 @@ def get_started_service_info(port):
     if proc:
         create_time = proc.info["create_time"]
         process_uptime = datetime.now() - datetime.fromtimestamp(create_time)
+        service_info["create_time"] = str(datetime.fromtimestamp(create_time))
         service_info["uptime"] = str(process_uptime)
         service_info["port"] = port
     return service_info
