@@ -194,6 +194,7 @@ def write_init(output_file_path, model_file_name, model_file_name_py2, paging_fi
                 "from .{} import *".format(enum_file_name).encode('utf8')
             )
 
+
 def write_complete_init(output_file_path, models, exceptions_classes, paging_models, enum_models,
                         enum_file_module_name):
     with open(output_file_path, "bw") as write_fd:
