@@ -24,6 +24,7 @@ nodes:
       module: gpt-4-1106-preview
       instructions: You are a helpful assistant.
       tools:
+      - type: code_interpreter
       - type: promptflow_tool
         tool_type: python
         source:
@@ -51,3 +52,4 @@ nodes:
         source:
           type: code
           path: multiply.py
+version: 2
