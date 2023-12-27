@@ -1,5 +1,11 @@
 # Release History
 
+## 1.4.0 (Upcoming)
+
+### Bugs Fixed
+
+- Fix unaligned inputs & outputs or pandas exception during get details against run in Azure.
+
 ## 1.3.0 (2023.12.27)
 
 ### Features Added
