@@ -17,26 +17,22 @@ on:
         type: string
 
 jobs:
-  setup_env:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up for Release
-        if: github.event_name == 'push'
-        run: |
-          echo "ReleaseType=Release" >> $GITHUB_ENV
-          echo "UploadAsLatest=True" >> $GITHUB_ENV
-
-      - name: Set up for Test
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "ReleaseType=Test" >> $GITHUB_ENV
-          echo "UploadAsLatest=False" >> $GITHUB_ENV
-
-  wheel_distributing:
+  main_branch_release:
+    if: github.event_name == 'push'
     uses: ./.github/workflows/wheel_distributing.yml
     with:
-      ReleaseType: ${{ env.ReleaseType }}
-      UploadAsLatest: ${{ env.UploadAsLatest }}
+      ReleaseType: "Release"
+      UploadAsLatest: "True"
+      SourceFolderName: "promptflow-tools"
+      ConfigsFolderPath: "scripts/distributing/configs"
+    secrets: inherit
+  
+  non_main_branch_release:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/wheel_distributing.yml
+    with:
+      ReleaseType: "Test"
+      UploadAsLatest: "False"
       SourceFolderName: "promptflow-tools"
       ConfigsFolderPath: "scripts/distributing/configs"
     secrets: inherit
