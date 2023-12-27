@@ -5,6 +5,7 @@ import json
 
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tools.aoai import chat, completion
+from promptflow.tools.exception import WrappedOpenAIError
 from tests.utils import AttrDict
 
 
@@ -146,3 +147,82 @@ class TestAOAI:
             prompt = "dummy_prompt"
             result = completion(connection=conn, prompt=prompt, deployment_name=deployment_name, **params)
             assert result == prompt
+
+
+    @pytest.mark.parametrize(
+        "response_format, user_input, error_message, error_codes, exception",
+        [
+            ({"type": "json"}, "Write a slogan for product X, please reponse with json.",
+             "\'json\' is not one of [\'json_object\', \'text\']", "UserError/OpenAIError/BadRequestError",
+             WrappedOpenAIError),
+            ({"type": "json_object"}, "Write a slogan for product X",
+             "\'messages\' must contain the word \'json\' in some form", "UserError/OpenAIError/BadRequestError",
+             WrappedOpenAIError),
+            ({"types": "json_object"}, "Write a slogan for product X",
+             "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}",
+             "UserError/OpenAIError/BadRequestError",
+             WrappedOpenAIError)
+        ]
+    )
+    @pytest.mark.skip("Skipping until we have a Azure OpenAI deployment which supports response_format")
+    def test_aoai_chat_with_invalid_response_format(
+            self,
+            azure_open_ai_connection,
+            example_prompt_template,
+            chat_history,
+            response_format,
+            user_input,
+            error_message,
+            error_codes,
+            exception
+    ):
+        with pytest.raises(exception) as exc_info:
+            chat(
+                connection=azure_open_ai_connection,
+                prompt=example_prompt_template,
+                deployment_name="gpt-4",
+                temperature=0,
+                user_input=user_input,
+                chat_history=chat_history,
+                response_format=response_format
+            )
+        assert error_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")
+
+    def test_aoai_chat_with_not_support_response_format_json_mode_model(
+            self,
+            azure_open_ai_connection,
+            example_prompt_template,
+            chat_history
+    ):
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            chat(
+                connection=azure_open_ai_connection,
+                prompt=example_prompt_template,
+                deployment_name="gpt-35-turbo-16k",
+                temperature=0,
+                user_input="Write a slogan for product X, please reponse with json.",
+                chat_history=chat_history,
+                response_format={"type": "json_object"}
+            )
+        error_message = "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}."
+        assert error_message in exc_info.value.message
+        assert exc_info.value.error_codes == "UserError/OpenAIError/BadRequestError".split("/")
+
+    def test_aoai_chat_with_response_format_text_mode(
+            self,
+            azure_open_ai_connection,
+            example_prompt_template,
+            chat_history
+    ):
+        result = chat(
+            connection=azure_open_ai_connection,
+            prompt=example_prompt_template,
+            deployment_name="gpt-35-turbo-16k",
+            temperature=0,
+            user_input="Write a slogan for product X.",
+            chat_history=chat_history,
+            response_format={"type": "text"}
+        )
+        assert "Product X".lower() in result.lower()
+
