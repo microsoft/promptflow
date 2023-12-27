@@ -131,6 +131,8 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             )
             self.destroy()
             raise startup_ex
+        finally:
+            Path(error_file).unlink()
 
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
