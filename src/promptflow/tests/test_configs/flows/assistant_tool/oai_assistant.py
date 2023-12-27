@@ -39,11 +39,11 @@ async def oai_assistant(
                     "tool_call_id": tool_call.id,
                     "output": str(output),
                 })
-                await cli.beta.threads.runs.submit_tool_outputs(
-                    thread_id=thread_id,
-                    run_id=run.id,
-                    tool_outputs=tool_outputs,
-                )
+            await cli.beta.threads.runs.submit_tool_outputs(
+                thread_id=thread_id,
+                run_id=run.id,
+                tool_outputs=tool_outputs,
+            )
 
     messages = await cli.beta.threads.messages.list(thread_id=thread_id)
     return messages.data[0].content[0].text.value
