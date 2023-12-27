@@ -79,7 +79,8 @@
     "pfbytes",
     "Apim",
     "junit",
-    "nunit"
+    "nunit",
+    "astext"
   ],
   "ignoreWords": [
     "openmpi",
