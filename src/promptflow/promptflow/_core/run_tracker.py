@@ -177,6 +177,8 @@ class RunTracker(ThreadLocalSingleton):
         # TODO: Refactor Tracer to support flow level tracing,
         # then we can remove the hard-coded root level api_calls here.
         # It has to be a list for UI backward compatibility.
+        # TODO: Add input, output, error to top level. Adding them would cause early
+        # serialization of Image objects and making flow output uncorrect.
         start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() \
             if run_info.start_time else None
         end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() \
@@ -189,9 +191,6 @@ class RunTracker(ThreadLocalSingleton):
             "end_time": end_timestamp,
             "children": self._collect_traces_from_nodes(run_id),
             "system_metrics": run_info.system_metrics,
-            "inputs": run_info.inputs,
-            "output": run_info.output,
-            "error": run_info.error
             }]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
