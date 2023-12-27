@@ -10,6 +10,13 @@ outputs:
     type: string
     reference: ${assistant_play.output}
 nodes:
+- name: create_thread
+  type: python
+  source:
+    type: code
+    path: create_thread.py
+  inputs:
+    conn: openai_connection
 - name: assistant_play
   type: python
   source:
@@ -19,7 +26,7 @@ nodes:
     conn: openai_connection
     content: ${inputs.content}
     assistant_id: ${inputs.assistant_id}
-    thread_id: dummy_thread_id
+    thread_id: ${create_thread.output}
     assistant_definition:
       module: gpt-4-1106-preview
       instructions: You are a helpful assistant.
