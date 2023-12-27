@@ -20,6 +20,9 @@ jobs:
   continuous_delivery_release:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
       - name: Set up for Release
         if: github.event_name == 'push'
         run: |
