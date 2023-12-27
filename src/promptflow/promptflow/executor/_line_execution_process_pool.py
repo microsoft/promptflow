@@ -363,6 +363,7 @@ class LineExecutionProcessPool:
 
             self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
 
+            # Handling the timeout of a line execution process.
             if not completed:
                 self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
                 self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
