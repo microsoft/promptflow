@@ -39,4 +39,3 @@ jobs:
           UploadAsLatest: ${{ env.UploadAsLatest }}
           SourceFolderName: "promptflow-tools"
           ConfigsFolderPath: "scripts/distributing/configs"
-        secrets: inherit
