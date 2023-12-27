@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <?define ProductVersion="0.0.1" ?>
+    <?define ProductVersion="$(env.CLI_VERSION)" ?>
 
     <?define ProductName = "promptflow" ?>
     <?define ProductDescription = "Command-line tools for prompt flow." ?>
@@ -136,7 +136,7 @@
                           <Icon Id="PromptflowServiceIcon" SourceFile="$(var.ProductResources)logo32.ico" />
                 </Shortcut>
                 <RemoveFile Id="CleanUpShortCut" Directory="StartupFolder" Name="Prompt flow service" On="uninstall"/>
-                <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)" Action="createAndRemoveOnUninstall">
+                <RegistryKey Root="HKCU" Key="Software\Microsoft\$(var.ProductName)">
                     <RegistryValue Name="installed" Type="integer" Value="1" />
                     <RegistryValue Name="version" Type="string" Value="$(var.ProductVersion)" KeyPath="yes"/>
                 </RegistryKey>

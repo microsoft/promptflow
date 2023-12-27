@@ -7,7 +7,7 @@
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>04ff6707-750d-4474-89b3-7922c84721be</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>promptflow-0.0.1</OutputName>
+    <OutputName>promptflow-$(env.CLI_VERSION)</OutputName>
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
