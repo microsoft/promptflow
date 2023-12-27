@@ -4,6 +4,7 @@
 import json
 import socket
 import subprocess
+import uuid
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -14,7 +15,6 @@ from promptflow.storage._run_storage import AbstractRunStorage
 
 EXECUTOR_SERVICE_DOMAIN = "http://localhost:"
 EXECUTOR_SERVICE_DLL = "Promptflow.dll"
-EXECUTOR_INIT_ERROR_FILE = "init_error.json"
 
 
 class CSharpExecutorProxy(APIBasedExecutorProxy):
@@ -39,7 +39,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
-        init_error_file = Path(working_dir) / EXECUTOR_INIT_ERROR_FILE
+        init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"
         init_error_file.touch()
         command = [
             "dotnet",
@@ -56,7 +56,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             "--log_level",
             "Warning",
             "--error_file_path",
-            EXECUTOR_INIT_ERROR_FILE,
+            init_error_file,
         ]
         process = subprocess.Popen(command)
         executor_proxy = cls(process, port)
