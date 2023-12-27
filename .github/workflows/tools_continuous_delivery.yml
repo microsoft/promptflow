@@ -17,12 +17,9 @@ on:
         type: string
 
 jobs:
-  continuous_delivery_release:
+  setup_env:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
       - name: Set up for Release
         if: github.event_name == 'push'
         run: |
@@ -35,10 +32,11 @@ jobs:
           echo "ReleaseType=Test" >> $GITHUB_ENV
           echo "UploadAsLatest=False" >> $GITHUB_ENV
 
-      - name: Build and publish wheel distribution
-        uses: ./.github/workflows/wheel_distributing.yml
-        with:
-          ReleaseType: ${{ env.ReleaseType }}
-          UploadAsLatest: ${{ env.UploadAsLatest }}
-          SourceFolderName: "promptflow-tools"
-          ConfigsFolderPath: "scripts/distributing/configs"
+  wheel_distributing:
+    uses: ./.github/workflows/wheel_distributing.yml
+    with:
+      ReleaseType: ${{ env.ReleaseType }}
+      UploadAsLatest: ${{ env.UploadAsLatest }}
+      SourceFolderName: "promptflow-tools"
+      ConfigsFolderPath: "scripts/distributing/configs"
+    secrets: inherit
