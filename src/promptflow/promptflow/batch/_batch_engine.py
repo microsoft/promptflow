@@ -99,7 +99,7 @@ class BatchEngine:
                 storage=storage,
                 **kwargs,
             )
-            # TODO: register signal handler for python flow as a workaround?
+            # register signal handler for python flow in the main thread
             if isinstance(self._executor_proxy, PythonExecutorProxy):
                 signal.signal(signal.SIGINT, signal_handler)
         self._storage = storage
