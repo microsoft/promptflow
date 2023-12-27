@@ -187,7 +187,9 @@ class RunTracker(ThreadLocalSingleton):
             "start_time": start_timestamp,
             "end_time": end_timestamp,
             "children": self._collect_traces_from_nodes(run_id),
-            "system_metrics": run_info.system_metrics
+            "system_metrics": run_info.system_metrics,
+            "inputs": run_info.inputs,
+            "output": run_info.output,
             }]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
