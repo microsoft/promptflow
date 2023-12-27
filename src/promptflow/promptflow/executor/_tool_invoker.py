@@ -2,8 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import docutils.nodes
+from dataclasses import dataclass
+from docutils.core import publish_doctree
 from functools import partial
-from typing import Optional
+from typing import Callable
 
 from promptflow._core.tool import ToolInvoker
 from promptflow.contracts.flow import InputAssignment, Node, ToolSource
@@ -15,16 +18,22 @@ class DefaultToolInvoker(ToolInvoker):
         return f(*args, **kwargs)  # Do nothing
 
 
+@dataclass
+class AssistantTool():
+    name: str
+    description: dict
+    func: Callable
+
+
 class AssistantToolInvoker():
     def __init__(self):
-        self._openai_tools = []
-        self._functions = {}
+        self._assistant_tools = {}
 
     def load_tools(self, tools: list):
         tool_resolver = ToolResolver.active_instance()
         for tool in tools:
             if tool["type"] != "function":
-                self._openai_tools.append(tool["type"])
+                self._assistant_tools[tool["type"]] = AssistantTool(name=tool["type"], description=tool, func=None)
                 continue
             inputs = tool.get("predefined_inputs", {})
             updated_inputs = {}
@@ -37,31 +46,55 @@ class AssistantToolInvoker():
                 source=ToolSource.deserialize(tool["source"])
             )
             resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
+            func_name = resolved_tool.definition.function
+            description = self._get_function_description(func_name, resolved_tool.definition.description, inputs.keys())
             if resolved_tool.node.inputs:
                 inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
-                callable = partial(resolved_tool.callable, **inputs)
-                resolved_tool.callable = callable
-            self._functions[resolved_tool.definition.function] = resolved_tool
+                func = partial(resolved_tool.callable, **inputs)
+            else:
+                func = resolved_tool.callable
+            self._assistant_tools[func_name] = AssistantTool(name=func_name, description=description, func=func)
 
     def invoke_tool(self, func_name, kwargs):
-        return self._functions[func_name].callable(**kwargs)
+        return self._assistant_tools[func_name].func(**kwargs)
 
     def to_openai_tools(self):
-        openai_tools = []
-        for _, tool in self._functions.items():
-            description = tool.definition.structured_description
-            preset_inputs = [name for name, _ in tool.node.inputs.items()]
-            if preset_inputs:
-                description = self._remove_predefined_inputs(description, preset_inputs)
-            openai_tools.append(tool.definition.structured_description)
-        for tool in self._openai_tools:
-            openai_tools.append({"type": tool})
-        return openai_tools
+        return [tool.description for _, tool in self._assistant_tools.items()]
 
-    def _remove_predefined_inputs(self, description: dict, preset_inputs: Optional[list] = None):
-        param_names = description["function"]["parameters"]["required"]
-        params = description["function"]["parameters"]["properties"]
-        for input_name in preset_inputs:
-            param_names.remove(input_name)
-            params.pop(input_name)
-        return description
+    def _get_function_description(self, func_name: str, description: str, predefined_inputs: list) -> dict:
+        to_openai_type = {"str": "string", "int": "number"}
+
+        doctree = publish_doctree(description)
+        params = {}
+
+        for field in doctree.traverse(docutils.nodes.field):
+            field_name = field[0].astext()
+            field_body = field[1].astext()
+
+            if field_name.startswith("param"):
+                param_name = field_name.split(' ')[1]
+                if param_name in predefined_inputs:
+                    continue
+                if param_name not in params:
+                    params[param_name] = {}
+                params[param_name]["description"] = field_body
+            if field_name.startswith("type"):
+                param_name = field_name.split(' ')[1]
+                if param_name in predefined_inputs:
+                    continue
+                if param_name not in params:
+                    params[param_name] = {}
+                params[param_name]["type"] = to_openai_type[field_body] if field_body in to_openai_type else field_body
+
+        return {
+            "type": "function",
+            "function": {
+                "name": func_name,
+                "description": doctree[0].astext(),
+                "parameters": {
+                    "type": "object",
+                    "properties": params,
+                    "required": list(params.keys())
+                }
+            }
+        }

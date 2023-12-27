@@ -374,7 +374,6 @@ class Tool:
     inputs: Dict[str, InputDefinition]
     outputs: Optional[Dict[str, OutputDefinition]] = None
     description: Optional[str] = None
-    structured_description: Optional[dict] = None
     module: Optional[str] = None
     class_name: Optional[str] = None
     source: Optional[str] = None
