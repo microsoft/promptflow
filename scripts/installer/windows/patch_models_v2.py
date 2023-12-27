@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
+# The script below is copied from the Azure CLI repo, and is used to patch the models.
+# https://github.com/Azure/azure-cli/blob/dev/build_scripts/windows/scripts/patch_models_v2.py
 
 from enum import Enum
 import importlib
@@ -52,8 +54,10 @@ MODEL_PY2_NAME = "_models"
 MODEL_PY3_NAME = "_models_py3"
 PAGED_NAME = "_paged_models"
 
+
 def as_file_name(name):
     return name + ".py"
+
 
 def parse_input(input_parameter):
     """From a syntax like package_name#submodule, build a package name
@@ -65,6 +69,7 @@ def parse_input(input_parameter):
     if len(split_package_name) >= 2:
         module_name = ".".join([module_name, split_package_name[1]])
     return package_name, module_name
+
 
 def solve_mro(models):
     for models_module in models:
@@ -84,11 +89,13 @@ def solve_mro(models):
             shutil.rmtree(models_path)
             shutil.move(final_models_path, models_path)
 
+
 def solve_one_model(models_module, output_folder):
     """Will build the compacted models in the output_folder"""
 
     models_classes = [
-        (len(model_class.__mro__), model_name, inspect.getfile(model_class), model_class) for model_name, model_class in vars(models_module).items()
+        (len(model_class.__mro__), model_name, inspect.getfile(model_class), model_class) for model_name, model_class
+        in vars(models_module).items()
         if model_name[0].isupper() and Model in model_class.__mro__
     ]
     # Sort on MRO size first, and then alphabetically
@@ -106,13 +113,13 @@ def solve_one_model(models_module, output_folder):
     ]
 
     paged_models_classes = [
-        (model_name, inspect.getfile(model_class), model_class) for model_name, model_class in vars(models_module).items()
-        if model_name[0].isupper() and Paged in model_class.__mro__
+        (model_name, inspect.getfile(model_class), model_class) for model_name, model_class in
+        vars(models_module).items() if model_name[0].isupper() and Paged in model_class.__mro__
     ]
 
     enum_models_classes = [
-        (model_name, inspect.getfile(model_class), model_class) for model_name, model_class in vars(models_module).items()
-        if model_name[0].isupper() and Enum in model_class.__mro__
+        (model_name, inspect.getfile(model_class), model_class) for model_name, model_class in
+        vars(models_module).items() if model_name[0].isupper() and Enum in model_class.__mro__
     ]
     if enum_models_classes:
         # Can't be more than one enum file
@@ -133,6 +140,7 @@ def solve_one_model(models_module, output_folder):
         enum_models_classes,
         enum_file_module_name
     )
+
 
 def write_model_file(output_file_path, classes_to_write):
     with open(output_file_path, "bw") as write_fd:
@@ -155,6 +163,7 @@ def write_model_file(output_file_path, classes_to_write):
                 write_fd.write(b'\n')
                 write_fd.writelines(lines)
 
+
 def write_paging_file(output_file_path, classes_to_write):
     with open(output_file_path, "bw") as write_fd:
         write_fd.write(paging_header)
@@ -170,6 +179,7 @@ def write_paging_file(output_file_path, classes_to_write):
                 write_fd.write(b'\n')
                 write_fd.writelines(lines)
 
+
 def write_init(output_file_path, model_file_name, model_file_name_py2, paging_file_name, enum_file_name):
     with open(output_file_path, "bw") as write_fd:
         write_fd.write(copyright_header)
@@ -184,7 +194,8 @@ def write_init(output_file_path, model_file_name, model_file_name_py2, paging_fi
                 "from .{} import *".format(enum_file_name).encode('utf8')
             )
 
-def write_complete_init(output_file_path, models, exceptions_classes, paging_models, enum_models, enum_file_module_name):
+def write_complete_init(output_file_path, models, exceptions_classes, paging_models, enum_models,
+                        enum_file_module_name):
     with open(output_file_path, "bw") as write_fd:
         write_fd.write(copyright_header)
 
@@ -276,6 +287,7 @@ def main(prefix="azure.mgmt"):
     for autorest_package in packages:
         models_module = find_models_to_change(autorest_package)
         solve_mro(models_module)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
