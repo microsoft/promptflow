@@ -162,8 +162,7 @@ def fork_processes_manager(
     for i in range(len(input_queues)):
         process = new_process(i)
         input_queues[i].put((i, process.pid, process.name))
-        process_info[process.pid] = {'process': process, 'index': i,
-                                     'input_queue': input_queues[i], 'output_queue': output_queues[i]}
+        process_info[process.pid] = {'process': process}
 
     def kill_and_remove_process(pid):
         process = process_info[pid]['process']
@@ -249,33 +248,35 @@ class LineExecutionProcessPool:
             multiprocessing_start_method = None
         self.context = get_multiprocessing_context(multiprocessing_start_method)
         use_fork = self.context.get_start_method() == "fork"
+        self._flow_file = flow_executor._flow_file
+        self._connections = flow_executor._connections
+        self._working_dir = flow_executor._working_dir
+
         # When using fork, we use this method to create the executor to avoid reloading the flow
         # which will introduce a lot more memory.
-        if use_fork:
-            pass
-        elif flow_executor._flow_file:
-            self._executor_creation_func = partial(
-                FlowExecutor.create,
-                flow_file=flow_executor._flow_file,
-                connections=flow_executor._connections,
-                working_dir=flow_executor._working_dir,
-                raise_ex=False,
-            )
-        else:  # Legacy flow executor, will be deprecated with the legacy pf portal.
-            self._executor_creation_func = partial(
-                create_executor_legacy,
-                flow=flow_executor._flow,
-                connections=flow_executor._connections,
-                loaded_tools=flow_executor._loaded_tools,
-                cache_manager=flow_executor._cache_manager,
-            )
+        if not use_fork:
+            if flow_executor._flow_file:
+                self._executor_creation_func = partial(
+                    FlowExecutor.create,
+                    flow_file=self._flow_file,
+                    connections=self._connections,
+                    working_dir=self._working_dir,
+                    raise_ex=False,
+                )
+            else:  # Legacy flow executor, will be deprecated with the legacy pf portal.
+                self._executor_creation_func = partial(
+                    create_executor_legacy,
+                    flow=flow_executor._flow,
+                    connections=self._connections,
+                    loaded_tools=flow_executor._loaded_tools,
+                    cache_manager=flow_executor._cache_manager,
+                )
         self._use_fork = use_fork
         self._storage = flow_executor._run_tracker._storage
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
         self._line_timeout_sec = flow_executor._line_timeout_sec
         self._output_dir = output_dir
-        self._flow_executor = flow_executor
 
     def __enter__(self):
         manager = Manager()
@@ -284,18 +285,21 @@ class LineExecutionProcessPool:
 
         self._inputs_queue = Queue()
         self._n_process = self._determine_worker_count()
+
         if self._use_fork:
             self._input_queues = [manager.Queue() for i in range(self._n_process)]
             self._output_queues = [manager.Queue() for i in range(self._n_process)]
             self._control_signal_queue = manager.Queue()
 
+            # when using fork, we first create a process with spawn method to establish a clean environment
+            # Then fork the subprocess in this environment to avoid some deadlock problems
             create_process_spawn(
                 self._input_queues,
                 self._output_queues,
                 self._control_signal_queue,
-                self._flow_executor._flow_file,
-                self._flow_executor._connections,
-                self._flow_executor._working_dir,
+                flow_file=self._flow_file,
+                connections=self._connections,
+                working_dir=self._working_dir,
                 raise_ex=False,
             )
 
@@ -308,6 +312,75 @@ class LineExecutionProcessPool:
         if self._pool is not None:
             self._pool.close()
             self._pool.join()
+
+    def _process_task(
+        self,
+        process_info,
+        run_start_time,
+        task_queue,
+        timeout_time,
+        result_list
+    ):
+        index, pid, process_name, input_queue, output_queue = process_info
+
+        # if not using fork, process_info's first element is healthy_ensured_process.
+        if not self._use_fork:
+            healthy_ensured_process = index
+
+        while True:
+            try:
+                args = task_queue.get(timeout=1)
+            except queue.Empty:
+                if self._use_fork:
+                    self._control_signal_queue.put((pid, index, "del"))
+                    #  To prevent BrokenPipeError when process attempts to get data from the closed
+                    #  process, make sure the process have terminated before return
+                    while True:
+                        if not psutil.pid_exists(pid):
+                            return
+                        time.sleep(1)
+                else:
+                    healthy_ensured_process.end()
+                    return
+
+            input_queue.put(args)
+            inputs, line_number, run_id = args[:3]
+
+            self._processing_idx[line_number] = format_current_process(process_name, pid, line_number)
+            start_time = datetime.utcnow()
+            completed = False
+
+            while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time:
+                try:
+                    # Responsible for checking the output queue messages and
+                    # processing them within a specified timeout period.
+                    message = output_queue.get(timeout=1)
+                    completed = self._process_message(message, result_list)
+                    if completed:
+                        break
+                except queue.Empty:
+                    continue
+
+            self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
+
+            if not completed:
+                self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
+                self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
+                if not task_queue.empty():
+                    if self._use_fork:
+                        self._control_signal_queue.put((pid, index, "restart"))
+                    else:
+                        healthy_ensured_process.end()
+                        healthy_ensured_process.start_new(task_queue)
+
+            self._processing_idx.pop(line_number)
+
+            log_progress(
+                run_start_time=run_start_time,
+                logger=bulk_logger,
+                count=len(result_list),
+                total_count=self._nlines,
+            )
 
     def _process_message(self, message, result_list):
         if isinstance(message, LineResult):
@@ -332,108 +405,35 @@ class LineExecutionProcessPool:
     def _timeout_process_wrapper(
             self,
             run_start_time: datetime,
-            task_queue: Queue, timeout_time,
+            task_queue: Queue,
+            timeout_time,
             result_list,
-            i=None,
             input_queue=None,
             output_queue=None
     ):
         if self._use_fork:
             index, pid, process_name = input_queue.get()
-            while True:
-                try:
-                    args = task_queue.get(timeout=1)
-                except queue.Empty:
-                    self._control_signal_queue.put((pid, index, "del"))
-                    while True:
-                        if not psutil.pid_exists(pid):
-                            return
-                        time.sleep(1)
-
-                input_queue.put(args)
-                inputs, line_number, run_id = args[:3]
-
-                self._processing_idx[line_number] = format_current_process(process_name, pid, line_number)
-                start_time = datetime.utcnow()
-                completed = False
-
-                while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time:
-                    try:
-                        # Responsible for checking the output queue messages and
-                        # processing them within a specified timeout period.
-                        message = output_queue.get(timeout=1)
-                        completed = self._process_message(message, result_list)
-                        if completed:
-                            break
-                    except queue.Empty:
-                        continue
-
-                self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
-
-                if not completed:
-                    self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
-                    self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
-                    if not task_queue.empty():
-                        self._control_signal_queue.put((pid, index, "restart"))
-
-                self._processing_idx.pop(line_number)
-
-                log_progress(
-                    run_start_time=run_start_time,
-                    logger=bulk_logger,
-                    count=len(result_list),
-                    total_count=self._nlines,
-                )
+            process_info = (index, pid, process_name, input_queue, output_queue)
         else:
             healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func, self.context)
             healthy_ensured_process.start_new(task_queue)
-            process = healthy_ensured_process.process
 
             if not healthy_ensured_process.process.is_alive():
                 return
-
-            while True:
-                try:
-                    args = task_queue.get(timeout=1)
-                except queue.Empty:
-                    healthy_ensured_process.end()
-                    return
-
-                healthy_ensured_process.put(args)
-                inputs, line_number, run_id = args[:3]
-                self._processing_idx[line_number] = format_current_process(process.name, process.pid, line_number)
-
-                start_time = datetime.utcnow()
-                completed = False
-
-                while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time:
-                    try:
-                        # Responsible for checking the output queue messages and
-                        # processing them within a specified timeout period.
-                        message = healthy_ensured_process.get()
-                        completed = self._process_message(message, result_list)
-                        if completed:
-                            break
-                    except queue.Empty:
-                        continue
-
-                self._completed_idx[line_number] = format_current_process(process.name, process.pid, line_number, True)
-                # Handling the timeout of a line execution process.
-                if not completed:
-                    self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
-                    self._completed_idx[line_number] = format_current_process(
-                        process.name, process.pid, line_number, True)
-                    if not task_queue.empty():
-                        healthy_ensured_process.end()
-                        healthy_ensured_process.start_new(task_queue)
-
-                self._processing_idx.pop(line_number)
-                log_progress(
-                    run_start_time=run_start_time,
-                    logger=bulk_logger,
-                    count=len(result_list),
-                    total_count=self._nlines,
-                )
+            process_info = (
+                healthy_ensured_process,
+                healthy_ensured_process.process.pid,
+                healthy_ensured_process.process.name,
+                healthy_ensured_process.input_queue,
+                healthy_ensured_process.output_queue
+            )
+        self._process_task(
+            process_info,
+            run_start_time,
+            task_queue,
+            timeout_time,
+            result_list
+        )
 
     def _process_multimedia(self, result: LineResult) -> LineResult:
         """Replace multimedia data in line result with string place holder to prevent OOM
@@ -533,27 +533,23 @@ class LineExecutionProcessPool:
             ),
         ):
             try:
+
+                base_args = (run_start_time, self._inputs_queue, self._line_timeout_sec, result_list)
+
+                # Adjust the parameter list according to whether use fork or not
+                if self._use_fork:
+                    args_list = [
+                        base_args + (self._input_queues[i], self._output_queues[i])
+                        for i in range(self._n_process)
+                    ]
+                else:
+                    args_list = [base_args for _ in range(self._n_process)]
+
                 # The variable 'async_result' here is not the actual result of the batch run
                 # but an AsyncResult object that can be used to check if the execution are finished
                 # The actual results of the batch run are stored in 'result_list'
-                if self._use_fork:
-                    async_result = self._pool.starmap_async(
-                        self._timeout_process_wrapper,
-                        [
-                            (run_start_time, self._inputs_queue, self._line_timeout_sec,
-                             result_list, i, self._input_queues[i], self._output_queues[i])
-                            for i in range(self._n_process)
-                        ],
-                    )
-                else:
-                    async_result = self._pool.starmap_async(
-                        self._timeout_process_wrapper,
-                        [
-                            (run_start_time, self._inputs_queue, self._line_timeout_sec,
-                             result_list)
-                            for _ in range(self._n_process)
-                        ],
-                    )
+                async_result = self._pool.starmap_async(self._timeout_process_wrapper, args_list)
+
                 try:
                     # Wait for batch run to complete or KeyboardInterrupt
                     while not async_result.ready():
@@ -687,7 +683,6 @@ def _process_wrapper(
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
     if log_context_initialization_func:
         with log_context_initialization_func():
-            bulk_logger.info(f"Process {os.getpid()} started.")
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
     else:
         exec_line_for_queue(executor_creation_func, input_queue, output_queue)
