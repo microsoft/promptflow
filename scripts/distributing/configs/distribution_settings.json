@@ -14,7 +14,7 @@
       "storage_account": "azuremlsdktestpypi",
       "packages_container": "repo",
       "index_container": "wheels",
-      "blob_prefix": "promptflow",
+      "blob_prefix": "promptflow-1227",
       "endpoint": "azuremlsdktestpypi.azureedge.net"
     },
     "internal-index-test": {
