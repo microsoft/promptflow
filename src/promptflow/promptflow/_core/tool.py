@@ -8,6 +8,7 @@ from abc import ABC
 from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
+
 from promptflow._core.tracer import _traced
 from promptflow.contracts.trace import TraceType
 
@@ -67,24 +68,31 @@ def tool(
     :return: The decorated function.
     :rtype: Callable
     """
-    from promptflow.exceptions import UserErrorException
 
-    if type is not None and type not in [k.value for k in ToolType]:
-        raise UserErrorException(f"Tool type {type} is not supported yet.")
+    def tool_decorator(func: Callable) -> Callable:
+        from promptflow.exceptions import UserErrorException
 
-    # All the tools should be traced.
-    new_f = _traced(func, trace_type=TraceType.TOOL)
+        if type is not None and type not in [k.value for k in ToolType]:
+            raise UserErrorException(f"Tool type {type} is not supported yet.")
 
-    new_f.__tool = None  # This will be set when generating the tool definition.
-    new_f.__name = name
-    new_f.__description = description
-    new_f.__type = type
-    new_f.__input_settings = input_settings
-    new_f.__extra_info = kwargs
-    if streaming_option_parameter and isinstance(streaming_option_parameter, str):
-        setattr(new_f, STREAMING_OPTION_PARAMETER_ATTR, streaming_option_parameter)
+        # All the tools should be traced.
+        new_f = _traced(func, trace_type=TraceType.TOOL)
 
-    return new_f
+        new_f.__tool = None  # This will be set when generating the tool definition.
+        new_f.__name = name
+        new_f.__description = description
+        new_f.__type = type
+        new_f.__input_settings = input_settings
+        new_f.__extra_info = kwargs
+        if streaming_option_parameter and isinstance(streaming_option_parameter, str):
+            setattr(new_f, STREAMING_OPTION_PARAMETER_ATTR, streaming_option_parameter)
+
+        return new_f
+
+    # enable use decorator without "()" if all arguments are default values
+    if func is not None:
+        return tool_decorator(func)
+    return tool_decorator
 
 
 def parse_all_args(argnames, args, kwargs) -> dict:
