@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
+from promptflow._core.tracer import Tracer
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
@@ -192,6 +193,9 @@ class RunTracker(ThreadLocalSingleton):
             "end_time": end_timestamp,
             "children": self._collect_traces_from_nodes(run_id),
             "system_metrics": run_info.system_metrics,
+            "inputs": Tracer.to_serializable(run_info.inputs) if run_info.inputs else None,
+            "output": Tracer.to_serializable(run_info.output) if run_info.output else None,
+            "error": Tracer._format_error(run_info.error) if run_info.error else None,
             }]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
