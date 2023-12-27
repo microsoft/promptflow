@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-    <?define ProductVersion="$(env.CLI_VERSION)" ?>
+    <?define ProductVersion="0.0.1" ?>
 
     <?define ProductName = "promptflow" ?>
     <?define ProductDescription = "Command-line tools for prompt flow." ?>
@@ -123,7 +123,7 @@
             </Component>
 
             <Component Id="promptflow_service.vbs" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
-                <File Id="promptflow_service.vbs" Source="scripts\promptflow_service.vbs" KeyPath="yes" Checksum="yes"/>
+                <File Id="promptflow_service.vbs" Source="promptflow_service.vbs" KeyPath="yes" Checksum="yes"/>
             </Component>
 
             <Component Id="ApplicationShortcut" Directory="StartupFolder" Guid="$(var.PromptflowCliRegistryGuid)">
