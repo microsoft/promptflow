@@ -36,11 +36,11 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: Set Flow Run Id to an Environment Variable
-        run: echo "FLOW_RUN_ID=${{ github.run_id }}" >> $GITHUB_ENV
+      - name: Set Github Run Id to an Environment Variable
+        run: echo "GITHUB_RUN_ID=${{ github.run_id }}" >> $GITHUB_ENV
 
-      - name: Print Flow Run Id
-        run: echo "Flow Run Id is $FLOW_RUN_ID"
+      - name: Print Github Run Id
+        run: echo "Github Run Id is GITHUB_RUN_ID"
 
       - name: Display and Set Environment Variables
         run: |

@@ -16,8 +16,8 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 
 def mock_log_activity(*args, **kwargs):
-    custom_message = "flow run: https://github.com/microsoft/promptflow/actions/runs/{0}".format(
-        os.environ.get("FLOW_RUN_ID")
+    custom_message = "github run: https://github.com/microsoft/promptflow/actions/runs/{0}".format(
+        os.environ.get("GITHUB_RUN_ID")
     )
     if len(args) == 4:
         if args[3] is not None:
