@@ -146,7 +146,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             if await self._check_health():
                 return
             # wait for 1s to prevent calling the API too frequently
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
             retry_count += 1
         raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
