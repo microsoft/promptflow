@@ -5,6 +5,7 @@ REM Double colon :: should not be used in parentheses blocks, so we use REM.
 REM See https://stackoverflow.com/a/12407934/2199657
 echo The promptflow version argument is: %1
 set promptflow_version=%1
+echo %promptflow_version%
 echo build a msi installer using local/remote cli sources and python executables. You need to have curl.exe, unzip.exe and msbuild.exe available under PATH
 echo.
 

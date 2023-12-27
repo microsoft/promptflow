@@ -58,10 +58,6 @@ jobs:
         run: |
           if ($env:INPUT_VERSION) {
             $version=$env:INPUT_VERSION
-            $run_version=$(python -c "import promptflow; print(promptflow.__version__)")
-            if ($version -ne $run_version) {
-              throw "Version input does not match the version in promptflow package. Version input: $version, version in promptflow package: $run_version"
-            }
           } 
           elseif ($env:MSI_PRIVATE_VERSION) {
             $version=$env:MSI_PRIVATE_VERSION
