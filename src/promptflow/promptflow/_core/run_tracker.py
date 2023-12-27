@@ -171,10 +171,19 @@ class RunTracker(ThreadLocalSingleton):
 
     def _update_flow_run_info_with_node_runs(self, run_info):
         run_id = run_info.run_id
-        run_info.api_calls = self._collect_traces_from_nodes(run_id)
         child_run_infos = self.collect_child_node_runs(run_id)
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
+        # TODO: Refactor Tracer to support flow level tracing,
+        # then we can remove the hard-coded root level api_calls here.
+        # It has to be a list for UI backward compatibility.
+        run_info.api_calls = [{
+            "name": "root",
+            "start_time": run_info.start_time,
+            "end_time": run_info.end_time,
+            "children": self._collect_traces_from_nodes(run_id),
+            "system_metrics": run_info.system_metrics
+            }]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
         run_id = run_info.run_id
