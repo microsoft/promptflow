@@ -5,13 +5,24 @@ inputs:
   chat_history:
     type: list
     is_chat_history: true
+    default:
+      - inputs:
+          question:
+            - what is the product from this picture?
+            - type: image_url
+              image_url:
+                url: https://images.idgesg.net/images/article/2019/11/edge-browser-logo_microsoft-100816808-large.jpg
+        outputs:
+          answer:
+            The logo in the image stands for Microsoft Edge, which is a web browser
+            developed by Microsoft.
   question:
     type: list
     default:
+      - type: image_url
+        image_url:
+          url: data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQBAMAAABykSv/AAAAD1BMVEX///8ApO//uQB/ugDyUCIvGCCuAAABF0lEQVR42u3PQQkAIBAAQSNoBStYwIf9MwnXwAMRYfa/jylFkiRJkiRJkiRJkiRJkiRJkiRJkiRJkqSHrWwz9pENBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBESSJOnHWrYae88GAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICcg8iSZIkSZIkSZIkSZIkSZIkSZIkSZIkSdJBGzmsGnOjtbz/AAAAAElFTkSuQmCC
       - How many colors can you see?
-      - type: image_file
-        image_file:
-          path: logo.png
     is_chat_input: true
 outputs:
   answer:
@@ -27,7 +38,7 @@ nodes:
       path: chat.jinja2
     inputs:
       connection: chw-aoai-gpt4v
-      deployment_name: gpt-4
+      deployment_name: gpt4-vision
       max_tokens: 512
       chat_history: ${inputs.chat_history}
       question: ${inputs.question}
