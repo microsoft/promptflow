@@ -21,10 +21,6 @@ on:
         required: false
         description: 'Set the version of the private msi installer'
 
-env:
-  packageSetupType: promptflow_with_extra
-  testWorkingDirectory: src/promptflow
-
 jobs:
   build_msi_installer:
     runs-on: windows-latest
