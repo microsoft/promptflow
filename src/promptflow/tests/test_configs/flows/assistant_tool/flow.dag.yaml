@@ -25,29 +25,29 @@ nodes:
       instructions: You are a helpful assistant.
       tools:
       - type: code_interpreter
-      - type: promptflow_tool
+      - type: function
         tool_type: python
         source:
           type: code
           path: get_all_clothes.py
-      - type: promptflow_tool
+      - type: function
         tool_type: python
         source:
           type: code
           path: get_calorie.py
-      - type: promptflow_tool
+      - type: function
         tool_type: python
         source:
           type: code
           path: get_current_location.py
         predefined_inputs:
           predefined_input: 1
-      - type: promptflow_tool
+      - type: function
         tool_type: python
         source:
           type: code
           path: get_current_weather.py
-      - type: promptflow_tool
+      - type: function
         tool_type: python
         source:
           type: code

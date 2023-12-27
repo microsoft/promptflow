@@ -17,12 +17,14 @@ class DefaultToolInvoker(ToolInvoker):
 
 class AssistantToolInvoker():
     def __init__(self):
-        self._assistant_tools = {}
+        self._openai_tools = []
+        self._functions = {}
 
     def load_tools(self, tools: list):
         tool_resolver = ToolResolver.active_instance()
         for tool in tools:
-            if tool["type"] != "promptflow_tool":
+            if tool["type"] != "function":
+                self._openai_tools.append(tool["type"])
                 continue
             inputs = tool.get("predefined_inputs", {})
             updated_inputs = {}
@@ -39,19 +41,21 @@ class AssistantToolInvoker():
                 inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
                 callable = partial(resolved_tool.callable, **inputs)
                 resolved_tool.callable = callable
-            self._assistant_tools[resolved_tool.definition.function] = resolved_tool
+            self._functions[resolved_tool.definition.function] = resolved_tool
 
     def invoke_tool(self, func_name, kwargs):
-        return self._assistant_tools[func_name].callable(**kwargs)
+        return self._functions[func_name].callable(**kwargs)
 
     def to_openai_tools(self):
         openai_tools = []
-        for _, tool in self._assistant_tools.items():
+        for _, tool in self._functions.items():
             description = tool.definition.structured_description
             preset_inputs = [name for name, _ in tool.node.inputs.items()]
             if preset_inputs:
                 description = self._remove_predefined_inputs(description, preset_inputs)
             openai_tools.append(tool.definition.structured_description)
+        for tool in self._openai_tools:
+            openai_tools.append({"type": tool})
         return openai_tools
 
     def _remove_predefined_inputs(self, description: dict, preset_inputs: Optional[list] = None):
