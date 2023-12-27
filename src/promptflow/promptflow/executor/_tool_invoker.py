@@ -2,10 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import docutils.nodes
-from docutils.core import publish_doctree
 from functools import partial
 from typing import Optional
+
+import docutils.nodes
+from docutils.core import publish_doctree
 
 from promptflow._core.tool import ToolInvoker
 from promptflow.contracts.flow import InputAssignment, Node, ToolSource
@@ -17,7 +18,7 @@ class DefaultToolInvoker(ToolInvoker):
         return f(*args, **kwargs)  # Do nothing
 
 
-class AssistantToolInvoker():
+class AssistantToolInvoker:
     def __init__(self):
         self._assistant_tools = {}
 
@@ -36,7 +37,7 @@ class AssistantToolInvoker():
                 name="assistant_node",
                 tool="assistant_tool",
                 inputs=updated_inputs,
-                source=ToolSource.deserialize(tool["source"])
+                source=ToolSource.deserialize(tool["source"]),
             )
             resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
             if resolved_tool.node.inputs:
@@ -69,7 +70,7 @@ class AssistantToolInvoker():
         return description
 
     def _get_openai_tool_description(self, func_name: str, docstring: str, preset_inputs: Optional[list] = None):
-        to_openai_type = {"str": "string", "int": "number"}
+        to_openai_type = {"str": "string", "int": "number", "float": "number", "bool": "boolean"}
 
         doctree = publish_doctree(docstring)
         params = {}
@@ -79,14 +80,14 @@ class AssistantToolInvoker():
             field_body = field[1].astext()
 
             if field_name.startswith("param"):
-                param_name = field_name.split(' ')[1]
+                param_name = field_name.split(" ")[1]
                 if param_name in preset_inputs:
                     continue
                 if param_name not in params:
                     params[param_name] = {}
                 params[param_name]["description"] = field_body
             if field_name.startswith("type"):
-                param_name = field_name.split(' ')[1]
+                param_name = field_name.split(" ")[1]
                 if param_name in preset_inputs:
                     continue
                 if param_name not in params:
@@ -98,10 +99,6 @@ class AssistantToolInvoker():
             "function": {
                 "name": func_name,
                 "description": doctree[0].astext(),
-                "parameters": {
-                    "type": "object",
-                    "properties": params,
-                    "required": list(params.keys())
-                }
-            }
+                "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
+            },
         }

@@ -258,7 +258,7 @@ class ToolResolver(ThreadLocalSingleton):
         return node_inputs
 
     def _load_structured_description(self, func_name: str, docstring: str) -> dict:
-        to_openai_type = {"str": "string", "int": "number"}
+        to_openai_type = {"str": "string", "int": "number", "float": "number", "bool": "boolean"}
 
         doctree = publish_doctree(docstring)
         params = {}
