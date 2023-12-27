@@ -1,0 +1,44 @@
+environment:
+  python_requirements_txt: requirements.txt
+version: 2
+inputs:
+  chat_history:
+    type: list
+    is_chat_history: true
+    default:
+      - inputs:
+          question:
+            - what is the product from this picture?
+            - type: image_url
+              image_url:
+                url: https://images.idgesg.net/images/article/2019/11/edge-browser-logo_microsoft-100816808-large.jpg
+        outputs:
+          answer:
+            The logo in the image stands for Microsoft Edge, which is a web browser
+            developed by Microsoft.
+  question:
+    type: list
+    default:
+      - type: image_url
+        image_url:
+          url: data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQBAMAAABykSv/AAAAD1BMVEX///8ApO//uQB/ugDyUCIvGCCuAAABF0lEQVR42u3PQQkAIBAAQSNoBStYwIf9MwnXwAMRYfa/jylFkiRJkiRJkiRJkiRJkiRJkiRJkiRJkqSHrWwz9pENBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBESSJOnHWrYae88GAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICcg8iSZIkSZIkSZIkSZIkSZIkSZIkSZIkSdJBGzmsGnOjtbz/AAAAAElFTkSuQmCC
+      - How many colors can you see?
+    is_chat_input: true
+outputs:
+  answer:
+    type: string
+    reference: ${chat.output}
+    is_chat_output: true
+nodes:
+  - name: chat
+    type: custom_llm
+    source:
+      type: package_with_prompt
+      tool: promptflow.tools.aoai_gpt4v.AzureOpenAI.chat
+      path: chat.jinja2
+    inputs:
+      connection: chw-aoai-gpt4v
+      deployment_name: gpt-4
+      max_tokens: 512
+      chat_history: ${inputs.chat_history}
+      question: ${inputs.question}

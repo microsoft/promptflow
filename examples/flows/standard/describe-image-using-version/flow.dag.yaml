@@ -1,0 +1,38 @@
+version: 2
+inputs:
+  question:
+    type: string
+    default: Please describe this image.
+  input_image:
+    type: image
+    default:
+      type: image_url
+      image_url:
+        url: data:image/png'base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQBAMAAABykSv/AAAAD1BMVEX///8ApO//uQB/ugDyUCIvGCCuAAABF0lEQVR42u3PQQkAIBAAQSNoBStYwIf9MwnXwAMRYfa/jylFkiRJkiRJkiRJkiRJkiRJkiRJkiRJkqSHrWwz9pENBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBESSJOnHWrYae88GAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICcg8iSZIkSZIkSZIkSZIkSZIkSZIkSZIkSdJBGzmsGnOjtbz/AAAAAElFTkSuQmCC
+outputs:
+  answer:
+    type: string
+    reference: ${question_on_image.output}
+  output_image:
+    type: string
+    reference: ${flip_image.output}
+nodes:
+  - name: flip_image
+    type: python
+    source:
+      type: code
+      path: flip_image.py
+    inputs:
+      input_image: ${inputs.input_image}
+  - name: question_on_image
+    type: custom_llm
+    source:
+      type: package_with_prompt
+      tool: promptflow.tools.aoai_gpt4v.AzureOpenAI.chat
+      path: question_on_image.jinja2
+    inputs:
+      connection: chw-aoai-gpt4v
+      deployment_name: gpt-4
+      max_tokens: 512
+      question: ${inputs.question}
+      test_image: ${flip_image.output}
