@@ -227,6 +227,7 @@ class TestFlowRun:
                 column_mapping=column_mapping,
             )
 
+    @pytest.mark.skip("Recording injection fails in the spawn process, skipped temporarily.")
     def test_submit_run_from_yaml(self, local_client, pf):
         run_id = str(uuid.uuid4())
         run = create_yaml_run(source=f"{RUNS_DIR}/sample_bulk_run.yaml", params_override=[{"name": run_id}])
@@ -595,6 +596,7 @@ class TestFlowRun:
             )
         assert "at least one of data or run must be provided" in str(e)
 
+    @pytest.mark.skip("Recording injection fails in the spawn process, skipped temporarily.")
     def test_get_details(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         run = pf.run(
@@ -715,6 +717,7 @@ class TestFlowRun:
         assert run.status == RunStatus.COMPLETED
         assert not os.path.exists(run._output_path / LocalStorageFilenames.EXCEPTION)
 
+    @pytest.mark.skip("Recording injection fails in the spawn process, skipped temporarily.")
     def test_run_local_storage_structure(self, local_client, pf) -> None:
         run = create_run_against_multi_line_data(pf)
         local_storage = LocalStorageOperations(local_client.runs.get(run.name))
@@ -734,6 +737,7 @@ class TestFlowRun:
         assert (local_storage._snapshot_folder_path / ".promptflow").is_dir()
         assert (local_storage._snapshot_folder_path / ".promptflow" / "flow.tools.json").is_file()
 
+    @pytest.mark.skip("Recording injection fails in the spawn process, skipped temporarily.")
     def test_get_metrics_format(self, local_client, pf) -> None:
         run1 = create_run_against_multi_line_data(pf)
         run2 = create_run_against_run(pf, run1)
