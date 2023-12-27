@@ -169,8 +169,11 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
     def _check_startup_error_from_file(self, error_file) -> Exception:
         error_dict = load_json(error_file)
         if error_dict:
-            bulk_logger.error(f"Error when starting the executor service: {error_dict}")
             error_response = ErrorResponse.from_error_dict(error_dict)
+            bulk_logger.error(
+                "Error when starting the executor service: "
+                f"[{error_response.innermost_error_code}] {error_response.message}"
+            )
             return ValidationException(error_response.message, target=ErrorTarget.BATCH)
         return None
 
