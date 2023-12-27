@@ -5,6 +5,7 @@
 import json
 import mimetypes
 import os
+import logging
 from pathlib import Path
 
 from flask import Flask, jsonify, request, g
@@ -129,7 +130,9 @@ def add_default_routes(app: PromptflowServingApp):
         g.data = data
         g.flow_id = app.flow.id or app.flow.name
         run_id = g.get("req_id", None)
-        flow_result = app.flow_invoker.invoke(data, run_id=run_id)
+        # TODO: refine this once we can directly set the input/output log level to DEBUG in flow_invoker.
+        disable_data_logging = logger.level >= logging.INFO
+        flow_result = app.flow_invoker.invoke(data, run_id=run_id, disable_input_output_logging=disable_data_logging)
         g.flow_result = flow_result
 
         # check flow result, if failed, return error response
