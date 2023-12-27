@@ -125,10 +125,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             # raise the init error if there is any
             startup_ex = self._check_startup_error_from_file(error_file) or ex
             # TODO: will remove the destroy call after executor proxy creation is put into the run function
-            bulk_logger.error(
-                f"Failed to start up the executor due to an error: {str(startup_ex)}. "
-                "The executor will now be terminated."
-            )
+            bulk_logger.error(f"Failed to start up the executor due to an error: {str(startup_ex)}")
             self.destroy()
             raise startup_ex
         finally:
