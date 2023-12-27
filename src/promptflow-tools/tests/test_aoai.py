@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 import json
-
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tools.aoai import chat, completion
 from promptflow.tools.exception import WrappedOpenAIError
@@ -148,7 +147,6 @@ class TestAOAI:
             result = completion(connection=conn, prompt=prompt, deployment_name=deployment_name, **params)
             assert result == prompt
 
-
     @pytest.mark.parametrize(
         "response_format, user_input, error_message, error_codes, exception",
         [
@@ -225,4 +223,3 @@ class TestAOAI:
             response_format={"type": "text"}
         )
         assert "Product X".lower() in result.lower()
-
