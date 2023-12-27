@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Union
 
 from promptflow._utils.multimedia_utils import _process_recursively, get_file_reference_encoder
-from promptflow.contracts.multimedia import Image
+from promptflow.contracts.multimedia import Image, Text
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 
@@ -49,7 +49,7 @@ class DummyRunStorage(AbstractRunStorage):
 
 
 class DefaultRunStorage(AbstractRunStorage):
-    def __init__(self, base_dir: Path = None, sub_dir: Path = None):
+    def __init__(self, base_dir: Path = None, sub_dir: Path = None, version: int = None):
         """Initialize the default run storage.
 
         :param base_dir: The base directory to store the multimedia data.
@@ -59,6 +59,15 @@ class DefaultRunStorage(AbstractRunStorage):
         """
         self._base_dir = base_dir
         self._sub_dir = sub_dir
+        self._version = version if version is not None else 1
+
+    @property
+    def version(self):
+        return self._version
+
+    @version.setter
+    def version(self, value):
+        self._version = value
 
     def persist_run_info(self, run_info: Union[FlowRunInfo, NodeRunInfo]):
         """Persist the multimedia data in run info after execution.
@@ -130,8 +139,11 @@ class DefaultRunStorage(AbstractRunStorage):
             pfbytes_file_reference_encoder = get_file_reference_encoder(
                 folder_path=self._base_dir,
                 relative_path=self._sub_dir,
+                version=self._version,
             )
         else:
             pfbytes_file_reference_encoder = None
-        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
+        serialization_funcs = {
+            Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder}), Text: Text.serialize
+        }
         return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
