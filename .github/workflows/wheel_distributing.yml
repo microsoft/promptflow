@@ -45,11 +45,12 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
+          ref: ${{ github.event_name == 'push' && 'main' || github.event.inputs.branch }}
           submodules: true
 
       - name: Override version with workflow run number
         id: override_version
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.ReleaseType == 'Test')
         run: |
           echo "VERSION = \"0.0.${{ github.run_number }}\"" > src/${{ inputs.SourceFolderName }}/promptflow/version.txt
           echo "VERSION: 0.0.${{ github.run_number }}"
