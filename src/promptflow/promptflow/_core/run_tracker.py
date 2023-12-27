@@ -5,7 +5,7 @@
 import asyncio
 import json
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
@@ -177,10 +177,15 @@ class RunTracker(ThreadLocalSingleton):
         # TODO: Refactor Tracer to support flow level tracing,
         # then we can remove the hard-coded root level api_calls here.
         # It has to be a list for UI backward compatibility.
+        start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() \
+            if run_info.start_time else None
+        end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() \
+            if run_info.end_time else None
         run_info.api_calls = [{
-            "name": "root",
-            "start_time": run_info.start_time,
-            "end_time": run_info.end_time,
+            "name": "flow_root",
+            "node_name": "flow_root",
+            "start_time": start_timestamp,
+            "end_time": end_timestamp,
             "children": self._collect_traces_from_nodes(run_id),
             "system_metrics": run_info.system_metrics
             }]
