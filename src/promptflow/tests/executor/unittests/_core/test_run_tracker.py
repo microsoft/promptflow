@@ -88,8 +88,9 @@ class TestRunTracker:
 
         assert len(run_info_flow.api_calls) == 1, "There should be only one top level api call for flow run."
         assert run_info_flow.system_metrics["total_tokens"] == 60
-        assert run_info_flow.api_calls[0]["name"] == "flow_root"
-        assert run_info_flow.api_calls[0]["node_name"] == "flow_root"
+        assert run_info_flow.api_calls[0]["name"] == "flow"
+        assert run_info_flow.api_calls[0]["node_name"] == "flow"
+        assert run_info_flow.api_calls[0]["type"] == "Flow"
         assert run_info_flow.api_calls[0]["system_metrics"]["total_tokens"] == 60
         assert isinstance(run_info_flow.api_calls[0]["start_time"], float)
         assert isinstance(run_info_flow.api_calls[0]["end_time"], float)
