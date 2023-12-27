@@ -120,17 +120,18 @@ def format_current_process(process_name, pid, line_number: int, is_completed=Fal
     return f"Process name({process_name})-Process id({pid})-Line number({line_number})"
 
 
-def create_process_fork(
+def fork_processes_manager(
         log_context_initialization_func,
         current_operation_context,
         input_queues,
         output_queues,
-        restart_queue,
+        control_signal_queue,
         flow_file,
         connections,
         working_dir,
         raise_ex,
 ):
+    signal.signal(signal.SIGINT, signal_handler)
     process_info = {}
     context = multiprocessing.get_context("fork")
     run_storage = QueueRunStorage(output_queues[0])
@@ -171,10 +172,10 @@ def create_process_fork(
             time.sleep(0.1)
         process_info.pop(pid)
 
-    def handle_signals(pid, signal, index):
-        if signal == "del":
+    def handle_signals(pid, control_signal, index):
+        if control_signal == "del":
             kill_and_remove_process(pid)
-        elif signal == "start":
+        elif control_signal == "start":
             kill_and_remove_process(pid)
             new_process(index)
 
@@ -183,8 +184,8 @@ def create_process_fork(
         if not any(p_info['process'].is_alive() for p_info in process_info.values()):
             break
         try:
-            pid, index, signal = restart_queue.get(timeout=1)
-            handle_signals(pid, signal, index)
+            pid, index, control_signal = control_signal_queue.get(timeout=1)
+            handle_signals(pid, control_signal, index)
         except queue.Empty:
             # Do nothing until the process_queue have not content or process is killed
             pass
@@ -193,7 +194,7 @@ def create_process_fork(
 def create_process_spawn(
         input_queues,
         output_queues,
-        restart_queue,
+        control_signal_queue,
         flow_file,
         connections,
         working_dir,
@@ -205,13 +206,13 @@ def create_process_spawn(
     current_operation_context = OperationContext.get_instance().get_context_dict()
 
     process = context.Process(
-        target=create_process_fork,
+        target=fork_processes_manager,
         args=(
             log_context_initialization_func,
             current_operation_context,
             input_queues,
             output_queues,
-            restart_queue,
+            control_signal_queue,
             flow_file,
             connections,
             working_dir,
@@ -286,12 +287,12 @@ class LineExecutionProcessPool:
         if self._use_fork:
             self._input_queues = [manager.Queue() for i in range(self._n_process)]
             self._output_queues = [manager.Queue() for i in range(self._n_process)]
-            self._restart_queue = manager.Queue()
+            self._control_signal_queue = manager.Queue()
 
             create_process_spawn(
                 self._input_queues,
                 self._output_queues,
-                self._restart_queue,
+                self._control_signal_queue,
                 self._flow_executor._flow_file,
                 self._flow_executor._connections,
                 self._flow_executor._working_dir,
@@ -343,7 +344,7 @@ class LineExecutionProcessPool:
                 try:
                     args = task_queue.get(timeout=1)
                 except queue.Empty:
-                    self._restart_queue.put((pid, index, "del"))
+                    self._control_signal_queue.put((pid, index, "del"))
                     while True:
                         if not psutil.pid_exists(pid):
                             return
@@ -373,7 +374,7 @@ class LineExecutionProcessPool:
                     self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
                     self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
                     if not task_queue.empty():
-                        self._restart_queue.put((pid, index, "restart"))
+                        self._control_signal_queue.put((pid, index, "restart"))
 
                 self._processing_idx.pop(line_number)
 
