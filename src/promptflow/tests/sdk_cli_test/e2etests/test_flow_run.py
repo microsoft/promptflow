@@ -609,11 +609,6 @@ class TestFlowRun:
         # there should be line_number in original DataFrame, but not in details DataFrame
         # as we will set index on line_number to ensure the order
         outputs = pd.read_json(local_storage._outputs_path, orient="records", lines=True)
-
-        with open(local_storage._log_path, "r") as file:
-            logs = file.read()
-        print(f"test_get_details logs:{logs}")
-
         details = pf.get_details(run)
         assert "line_number" in outputs and "line_number" not in details
 

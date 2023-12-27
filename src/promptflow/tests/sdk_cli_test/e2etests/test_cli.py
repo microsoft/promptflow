@@ -97,19 +97,15 @@ class TestCli:
         out, _ = capfd.readouterr()
 
         from promptflow import PFClient
-        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
         client = PFClient()
         run = client.runs.get(name=run_id)
-        local_storage = LocalStorageOperations(run=run)
-
-        with open(local_storage._log_path, "r") as file:
-            logs = file.read()
-
-        print(f"test_basic_flow_run_batch_and_eval logs:{logs}")
         outputs_run = client.runs.get_details(name=run_id)
-        print(f"============test_basic_flow_run_batch_and_eval:outputs_run================: {outputs_run}")
+        print(f"============test_basic_flow_run_batch_and_eval:outputs================: {outputs_run}")
 
+        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+
+        local_storage = LocalStorageOperations(run=run)
         _, outputs = local_storage.load_inputs_and_outputs()
         print(f"=============test_basic_flow_run_batch_and_eval:outputs=============, {outputs}")
 
@@ -149,21 +145,15 @@ class TestCli:
         assert "Completed" in out
 
         from promptflow import PFClient
-        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
         client = PFClient()
         run = client.runs.get(name=run_id)
+        outputs_run = client.runs.get_details(name=run_id)
+        print(f"============test_submit_run_with_yaml:outputs================: {outputs_run}")
+
+        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
         local_storage = LocalStorageOperations(run=run)
-
-        with open(local_storage._log_path, "r") as file:
-            logs = file.read()
-
-        print(f"test_basic_flow_run_batch_and_eval logs:{logs}")
-
-        outputs_run = client.runs.get_details(name=run_id)
-        print(f"============test_submit_run_with_yaml:outputs_run================: {outputs_run}")
-
         _, outputs = local_storage.load_inputs_and_outputs()
         print(f"=============test_submit_run_with_yaml:outputs=============, {outputs}")
 
