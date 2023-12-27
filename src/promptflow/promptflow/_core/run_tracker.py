@@ -169,7 +169,7 @@ class RunTracker(ThreadLocalSingleton):
                 output, ex = None, e
         self._common_postprocess(run_info, output, ex)
 
-    def _update_flow_run_info_with_node_runs(self, run_info):
+    def _update_flow_run_info_with_node_runs(self, run_info: FlowRunInfo):
         run_id = run_info.run_id
         child_run_infos = self.collect_child_node_runs(run_id)
         run_info.system_metrics = run_info.system_metrics or {}
@@ -182,14 +182,16 @@ class RunTracker(ThreadLocalSingleton):
         end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() \
             if run_info.end_time else None
         run_info.api_calls = [{
-            "name": "flow_root",
-            "node_name": "flow_root",
+            "name": "flow",
+            "node_name": "flow",
+            "type": "Flow",
             "start_time": start_timestamp,
             "end_time": end_timestamp,
             "children": self._collect_traces_from_nodes(run_id),
             "system_metrics": run_info.system_metrics,
             "inputs": run_info.inputs,
             "output": run_info.output,
+            "error": run_info.error
             }]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
