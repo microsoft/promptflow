@@ -122,7 +122,7 @@ jobs:
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "promptflow.msi" --overwrite
             az storage blob copy start --account-name promptflowartifact --destination-container msi-installer --destination-blob "$($msi_file.Name)" --source-container msi-installer --source-blob "promptflow.msi"
           } else {
-            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)_test" --overwrite
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "test_$($msi_file.Name)" --overwrite
           }
           }
         env:
