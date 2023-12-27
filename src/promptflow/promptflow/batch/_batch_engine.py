@@ -99,6 +99,9 @@ class BatchEngine:
                 storage=storage,
                 **kwargs,
             )
+            # TODO: register signal handler for python flow as a workaround?
+            if isinstance(self._executor_proxy, PythonExecutorProxy):
+                signal.signal(signal.SIGINT, signal_handler)
         self._storage = storage
         # set it to True when the batch run is canceled
         self._is_canceled = False
@@ -131,9 +134,6 @@ class BatchEngine:
         """
 
         try:
-            # TODO: register signal handler for python flow as a workaround?
-            if isinstance(self._executor_proxy, PythonExecutorProxy):
-                signal.signal(signal.SIGINT, signal_handler)
             self._start_time = datetime.utcnow()
             # set batch input source from input mapping
             OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
