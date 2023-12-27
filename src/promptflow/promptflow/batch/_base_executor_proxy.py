@@ -123,10 +123,14 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             await self.ensure_executor_health()
         except ExecutorServiceUnhealthy as ex:
             # raise the init error if there is any
-            init_ex = self._check_startup_error_from_file(error_file)
+            startup_ex = self._check_startup_error_from_file(error_file) or ex
             # TODO: will remove the destroy call after executor proxy creation is put into the run function
+            bulk_logger.error(
+                f"Failed to start up the executor due to an error: {str(startup_ex)}. "
+                "The executor will now be terminated."
+            )
             self.destroy()
-            raise init_ex or ex
+            raise startup_ex
 
     async def ensure_executor_health(self):
         """Ensure the executor service is healthy before calling the API to get the results
