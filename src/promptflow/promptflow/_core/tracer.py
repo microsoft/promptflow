@@ -157,40 +157,21 @@ class Tracer(ThreadLocalSingleton):
 
 
 def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
-    """A decorator to add tracing to a function.
+    """A wrapper to add trace to a function.
+
+    When a function is wrapped by this wrapper, the function name,
+    inputs, outputs, start time, end time, and error (if any) will be recorded.
 
     It can be used for both sync and async functions.
     For sync functions, it will return a sync function.
     For async functions, it will return an async function.
 
-    When using this decorator, the function name, inputs, outputs, start time, end time,
-    and error (if any) will be recorded.
-
     :param func: The function to be traced.
     :type func: Callable
     :param trace_type: The type of the trace. Defaults to TraceType.FUNCTION.
     :type trace_type: TraceType, optional
-    :return: The traced function.
+    :return: The wrapped function with trace enabled.
     :rtype: Callable
-
-    :Examples:
-
-    Synchronous function usage:
-
-    .. code-block:: python
-
-        @trace
-        def greetings(name):
-            return f"Hello, {name}"
-
-    Asynchronous function usage:
-
-    .. code-block:: python
-
-        @trace
-        async def greetings_async(name):
-            await asyncio.sleep(1)
-            return f"Hello, {name}"
     """
     if inspect.iscoroutinefunction(func):
 
@@ -233,6 +214,41 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
 
 
 def trace(func: Callable = None) -> Callable:
+    """A decorator to add trace to a function.
+
+    When a function is wrapped by this decorator, the function name,
+    inputs, outputs, start time, end time, and error (if any) will be recorded.
+
+    It can be used for both sync and async functions.
+    For sync functions, it will return a sync function.
+    For async functions, it will return an async function.
+
+    :param func: The function to be traced.
+    :type func: Callable
+    :return: The wrapped function with trace enabled.
+    :rtype: Callable
+
+    :Examples:
+
+    Synchronous function usage:
+
+    .. code-block:: python
+
+        @trace
+        def greetings(user_id):
+            name = get_name(user_id)
+            return f"Hello, {name}"
+
+    Asynchronous function usage:
+
+    .. code-block:: python
+
+        @trace
+        async def greetings_async(user_id):
+            name = await get_name_async(user_id)
+            return f"Hello, {name}"
+    """
+
     def wrapper(func):
         return _traced(func, trace_type=TraceType.FUNCTION)
 
