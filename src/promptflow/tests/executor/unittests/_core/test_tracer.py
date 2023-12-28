@@ -145,7 +145,7 @@ def func_with_args_and_kwargs(arg1, arg2=None, *, kwarg1=None, kwarg2=None):
 
 
 def func_with_connection_parameter(a: int, conn: AzureOpenAIConnection):
-    _, _ = a, conn
+    _ = (a, conn)
 
 
 class MyClass:
