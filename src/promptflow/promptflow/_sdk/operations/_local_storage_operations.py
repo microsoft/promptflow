@@ -218,7 +218,11 @@ class LocalStorageOperations(AbstractRunStorage):
             json.dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, f, ensure_ascii=False)
 
     def _is_eager_flow(self) -> bool:
-        return self._run.flow.suffix == ".py"
+        try:
+            return Path(self._run.flow).suffix == ".py"
+        except (AttributeError, TypeError):
+            # Some of the cloud run may not have flow
+            return False
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
