@@ -64,7 +64,7 @@ class Tracer(ThreadLocalSingleton):
         return tracer.to_json()
 
     @classmethod
-    def push_function(cls, f, args=[], kwargs={}, trace_type=TraceType.FUNCTION):
+    def push_function(cls, f, args=[], kwargs={}, *, trace_type=TraceType.FUNCTION):
         obj = cls.active_instance()
         sig = inspect.signature(f).parameters
         all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
@@ -192,51 +192,51 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             await asyncio.sleep(1)
             return f"Hello, {name}"
     """
+    if inspect.iscoroutinefunction(func):
+
+        @functools.wraps(func)
+        async def wrapped(*args, **kwargs):
+            if Tracer.active_instance() is None:
+                return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+            # Should not extract these codes to a separate function here.
+            # We directly call func instead of calling Tracer.invoke,
+            # because we want to avoid long stack trace when hitting an exception.
+            try:
+                Tracer.push_function(func, args, kwargs, trace_type=trace_type)
+                output = await func(*args, **kwargs)
+                return Tracer.pop(output)
+            except Exception as e:
+                Tracer.pop(None, e)
+                raise
+
+    else:
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            if Tracer.active_instance() is None:
+                return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+            # Should not extract these codes to a separate function here.
+            # We directly call func instead of calling Tracer.invoke,
+            # because we want to avoid long stack trace when hitting an exception.
+            try:
+                Tracer.push_function(func, args, kwargs, trace_type=trace_type)
+                output = func(*args, **kwargs)
+                return Tracer.pop(output)
+            except Exception as e:
+                Tracer.pop(None, e)
+                raise
+
+    wrapped.__original_function = func
+    func.__wrapped_function = wrapped
+
+    return wrapped
+
+
+def trace(func: Callable = None) -> Callable:
     def wrapper(func):
-        if inspect.iscoroutinefunction(func):
-
-            @functools.wraps(func)
-            async def wrapped(*args, **kwargs):
-                if Tracer.active_instance() is None:
-                    return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push_function(func, args, kwargs, trace_type)
-                    output = await func(*args, **kwargs)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-        else:
-
-            @functools.wraps(func)
-            def wrapped(*args, **kwargs):
-                if Tracer.active_instance() is None:
-                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push_function(func, args, kwargs, trace_type)
-                    output = func(*args, **kwargs)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-        wrapped.__original_function = func
-        func.__wrapped_function = wrapped
-
-        return wrapped
+        return _traced(func, trace_type=TraceType.FUNCTION)
 
     # enable use decorator without "()" if all arguments are default values
     if func is not None:
         return wrapper(func)
     return wrapper
-
-
-def trace(func: Callable = None) -> Callable:
-    return _traced(func, trace_type=TraceType.FUNCTION)
