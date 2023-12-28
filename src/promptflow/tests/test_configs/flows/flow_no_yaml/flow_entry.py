@@ -8,7 +8,7 @@ import random
 @trace
 def sleep(seconds):
     time.sleep(seconds)
-    if random.random() < 0.5:
+    if random.random() < 0.1:
         raise ValueError("Random error")
 
 @trace()
