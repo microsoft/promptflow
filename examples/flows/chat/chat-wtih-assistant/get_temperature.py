@@ -1,8 +1,4 @@
-
-
-
 import random
-
 from promptflow import tool
 
 
