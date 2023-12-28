@@ -15,6 +15,7 @@ class UnserializableClass:
 @pytest.mark.unittest
 class TestRunTracker:
     def test_run_tracker(self):
+        # TODO: Refactor this test case, it's very confusing now.
         # Initialize run tracker with dummy run storage
         run_tracker = RunTracker.init_dummy()
 
@@ -22,6 +23,8 @@ class TestRunTracker:
         run_tracker.start_flow_run("test_flow_id", "test_root_run_id", "test_flow_run_id")
         assert len(run_tracker._flow_runs) == 1
         assert run_tracker._current_run_id == "test_flow_run_id"
+        flow_input = {"flow_input": "input_0"}
+        run_tracker.set_inputs("test_flow_run_id", flow_input)
 
         # Start node runs
         run_info = run_tracker.start_node_run("node_0", "test_root_run_id", "test_flow_run_id", "run_id_0", index=0)
@@ -82,14 +85,48 @@ class TestRunTracker:
         run_info_aggr.api_calls, run_info_aggr.system_metrics = [
             {"name": "caht"}, {"name": "completion"}], {"total_tokens": 30}
         run_tracker._update_flow_run_info_with_node_runs(run_info_flow)
-        assert len(run_info_flow.api_calls) == 4
+
+        assert len(run_info_flow.api_calls) == 1, "There should be only one top level api call for flow run."
         assert run_info_flow.system_metrics["total_tokens"] == 60
+        assert run_info_flow.api_calls[0]["name"] == "flow"
+        assert run_info_flow.api_calls[0]["node_name"] == "flow"
+        assert run_info_flow.api_calls[0]["type"] == "Flow"
+        assert run_info_flow.api_calls[0]["system_metrics"]["total_tokens"] == 60
+        assert isinstance(run_info_flow.api_calls[0]["start_time"], float)
+        assert isinstance(run_info_flow.api_calls[0]["end_time"], float)
+        assert len(run_info_flow.api_calls[0]["children"]) == 4, "There should be 4 children under root."
+        assert run_info_flow.api_calls[0]["inputs"] == flow_input
+        assert run_info_flow.api_calls[0]["output"] is None
 
         # Test get_status_summary
         status_summary = run_tracker.get_status_summary("test_root_run_id")
         assert status_summary == {
-            "__pf__.lines.completed": 2,
-            "__pf__.lines.failed": 0,
+            "__pf__.lines.completed": 0,
+            "__pf__.lines.failed": 1,
             "__pf__.nodes.node_0.completed": 2,
             "__pf__.nodes.node_aggr.completed": 0,
+        }
+
+    def test_run_tracker_flow_run_without_node_run(self):
+        """When line timeout, there will be flow run info without node run info."""
+        # Initialize run tracker with dummy run storage
+        run_tracker = RunTracker.init_dummy()
+
+        # Start flow run
+        run_tracker.start_flow_run("test_flow_id", "test_root_run_id", "test_flow_run_id_0", index=0)
+        run_tracker.end_run("test_flow_run_id_0", ex=Exception("Timeout"))
+        run_tracker.start_flow_run("test_flow_id", "test_root_run_id", "test_flow_run_id_1", index=1)
+        run_tracker.end_run("test_flow_run_id_1", result={"result": "result"})
+        assert len(run_tracker._flow_runs) == 2
+
+        # Start node runs
+        run_tracker.start_node_run("node_0", "test_root_run_id", "test_flow_run_id_2", "test_node_run_id_1", index=0)
+        run_tracker.end_run("test_node_run_id_1", result={"result": "result"})
+        assert len(run_tracker._node_runs) == 1
+
+        status_summary = run_tracker.get_status_summary("test_root_run_id")
+        assert status_summary == {
+            "__pf__.lines.completed": 1,
+            "__pf__.lines.failed": 1,
+            "__pf__.nodes.node_0.completed": 1,
         }

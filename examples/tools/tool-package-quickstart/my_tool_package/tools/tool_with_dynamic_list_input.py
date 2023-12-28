@@ -1,4 +1,5 @@
 from promptflow import tool
+from promptflow.entities import InputSetting, DynamicList
 from typing import List, Union, Dict
 
 
@@ -68,6 +69,26 @@ def list_endpoint_names(subscription_id, resource_group_name, workspace_name, pr
     return result
 
 
-@tool
+input_text_dynamic_list_setting = DynamicList(function=my_list_func, input_mapping={"prefix": "input_prefix"})
+endpoint_name_dynamic_list_setting = DynamicList(function=list_endpoint_names, input_mapping={"prefix": "input_prefix"})
+input_settings = {
+    "input_text": InputSetting(
+        dynamic_list=input_text_dynamic_list_setting,
+        allow_manual_entry=True,
+        is_multi_select=True
+    ),
+    "endpoint_name": InputSetting(
+        dynamic_list=endpoint_name_dynamic_list_setting,
+        allow_manual_entry=False,
+        is_multi_select=False
+    )
+}
+
+
+@tool(
+    name="My Tool with Dynamic List Input",
+    description="This is my tool with dynamic list input",
+    input_settings=input_settings
+)
 def my_tool(input_prefix: str, input_text: list, endpoint_name: str) -> str:
     return f"Hello {input_prefix} {','.join(input_text)} {endpoint_name}"

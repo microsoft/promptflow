@@ -36,13 +36,6 @@ class TestFlowTest:
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         inputs = {"text": "Hello World!"}
         flow_path = Path(f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection").absolute()
 
@@ -55,13 +48,6 @@ class TestFlowTest:
         assert result == "Hello World!This is my first custom connection."
 
     def test_pf_test_flow_with_package_tool_with_custom_connection_as_input_value(self, install_custom_tool_pkg):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         # Prepare custom connection
         from promptflow.connections import CustomConnection
 
@@ -171,8 +157,9 @@ class TestFlowTest:
         flow_path = Path(f"{FLOWS_DIR}/basic-with-connection").absolute()
         inputs = {
             "connection": "azure_open_ai_connection",
-            "hello_prompt.output": "Write a simple Hello World! "
-            "program that displays the greeting message when executed.",
+            "hello_prompt.output": "system:\n Your task is to write python program for me\nuser:\n"
+            "Write a simple Hello World! program that displays "
+            "the greeting message when executed.",
         }
         result = _client.test(
             flow=flow_path,
@@ -201,6 +188,13 @@ class TestFlowTest:
 
     def test_pf_node_test_with_dict_input(self):
         flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input").absolute()
-        inputs = {"get_dict_val.output.value": {"key": "value"}}
+        flow_inputs = {"key": {"input_key": "input_value"}}
+        result = _client._flows._test(flow=flow_path, inputs=flow_inputs)
+        assert result.run_info.status.value == "Completed"
+
+        inputs = {
+            "get_dict_val.output.value": result.node_run_infos["get_dict_val"].output,
+            "get_dict_val.output.origin_value": result.node_run_infos["get_dict_val"].output,
+        }
         result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
         assert result.status.value == "Completed"

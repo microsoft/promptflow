@@ -19,16 +19,16 @@ import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from promptflow._sdk._constants import LOGGER_NAME, CLIListOutputFormat
+from promptflow._sdk._constants import CLIListOutputFormat
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
-logger = LoggerFactory.get_logger(__name__)
+logger = get_cli_sdk_logger()
 
 
 def _set_workspace_argument_for_subparsers(subparser, required=False):
@@ -106,7 +106,7 @@ def get_credentials_for_cli():
     # check OBO via environment variable, the referenced code can be found from below search:
     # https://msdata.visualstudio.com/Vienna/_search?text=AZUREML_OBO_ENABLED&type=code&pageSize=25&filters=ProjectFilters%7BVienna%7D&action=contents
     if os.getenv(IdentityEnvironmentVariable.OBO_ENABLED_FLAG):
-        logger.info("User identity is configured, use OBO credential.")
+        logger.debug("User identity is configured, use OBO credential.")
         credential = AzureMLOnBehalfOfCredential()
     else:
         client_id_from_env = os.getenv(IdentityEnvironmentVariable.DEFAULT_IDENTITY_CLIENT_ID)
@@ -114,15 +114,15 @@ def get_credentials_for_cli():
             # use managed identity when client id is available from environment variable.
             # reference code:
             # https://learn.microsoft.com/en-us/azure/machine-learning/how-to-identity-based-service-authentication?tabs=cli#compute-cluster
-            logger.info("Use managed identity credential.")
+            logger.debug("Use managed identity credential.")
             credential = ManagedIdentityCredential(client_id=client_id_from_env)
         elif is_in_ci_pipeline():
             # use managed identity when executing in CI pipeline.
-            logger.info("Use azure cli credential.")
+            logger.debug("Use azure cli credential.")
             credential = AzureCliCredential()
         else:
             # use default Azure credential to handle other cases.
-            logger.info("Use default credential.")
+            logger.debug("Use default credential.")
             credential = DefaultAzureCredential()
 
     return credential
@@ -456,7 +456,6 @@ def _output_result_list_with_format(result_list: List[Dict], output_format: CLIL
     elif output_format == CLIListOutputFormat.JSON:
         print(json.dumps(result_list, indent=4))
     else:
-        logger = LoggerFactory.get_logger(LOGGER_NAME)
         warning_message = (
             f"Unknown output format {output_format!r}, accepted values are 'json' and 'table';"
             "will print using 'json'."
