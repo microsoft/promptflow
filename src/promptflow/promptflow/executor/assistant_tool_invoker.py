@@ -42,8 +42,7 @@ class AssistantToolInvoker:
 
     def _load_function_tool(self, tool: dict):
         working_dir = Path(os.getcwd())
-        # tool_resolver = ToolResolver.active_instance()
-        tool_resolver = ToolResolver(working_dir, need_connection=False)
+        tool_resolver = ToolResolver(working_dir, need_connections=False)
         predefined_inputs = {}
         for input_name, value in tool.get("predefined_inputs", {}).items():
             predefined_inputs[input_name] = InputAssignment.deserialize(value)
@@ -51,7 +50,7 @@ class AssistantToolInvoker:
             name="assistant_node",
             tool="assistant_tool",
             inputs=predefined_inputs,
-            source=ToolSource.deserialize(tool["source"])
+            source=ToolSource.deserialize(tool["source"]),
         )
         resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
         func_name = resolved_tool.definition.function
@@ -73,7 +72,12 @@ class AssistantToolInvoker:
 
     def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
         to_openai_type = {
-            "str": "string", "int": "number", "float": "number", "bool": "boolean", "list": "array", "dict": "object"
+            "str": "string",
+            "int": "number",
+            "float": "number",
+            "bool": "boolean",
+            "list": "array",
+            "dict": "object",
         }
         description, params = DocstringParser.parse(description)
         for input in predefined_inputs:
@@ -87,10 +91,6 @@ class AssistantToolInvoker:
             "function": {
                 "name": func_name,
                 "description": description,
-                "parameters": {
-                    "type": "object",
-                    "properties": params,
-                    "required": list(params.keys())
-                }
-            }
+                "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
+            },
         }

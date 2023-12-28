@@ -215,7 +215,6 @@ class FlowExecutor:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        # tool_resolver = ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
 
         with _change_working_dir(working_dir):
@@ -324,7 +323,6 @@ class FlowExecutor:
         inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
-        # tool_resolver = ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
@@ -884,9 +882,10 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
-        return all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        return (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]

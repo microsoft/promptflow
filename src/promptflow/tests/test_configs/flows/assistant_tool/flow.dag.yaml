@@ -1,34 +1,43 @@
 inputs:
-  content:
-    type: string
-    default: I'm going to run for 2 hours today, how much calories will I burn?
+  chat_input:
+    type: list
+    default:
+    - type: text
+      text: I'm going to run for 2 hours today, how much calories will I burn?
   assistant_id:
     type: string
     default: asst_yWhdFYoCS1UatnRRQZGY85aL
-outputs:
-  assistant_output:
+  thread_id:
     type: string
-    reference: ${assistant_play.output}
+    default: ""
+outputs:
+  chat_output:
+    type: string
+    reference: ${add_message_and_run.output}
+  thread_id:
+    type: string
+    reference: ${get_or_create_thread.output}
 nodes:
-- name: create_thread
+- name: get_or_create_thread
   type: python
   source:
     type: code
-    path: create_thread.py
+    path: get_or_create_thread.py
   inputs:
     conn: openai_connection
-- name: assistant_play
+    thread_id: ${inputs.thread_id}
+- name: add_message_and_run
   type: python
   source:
     type: code
-    path: oai_assistant.py
+    path: add_message_and_run.py
   inputs:
     conn: openai_connection
-    content: ${inputs.content}
+    message: ${inputs.chat_input}
     assistant_id: ${inputs.assistant_id}
-    thread_id: ${create_thread.output}
+    thread_id: ${get_or_create_thread.output}
     assistant_definition:
-      module: gpt-4-1106-preview
+      model: gpt-4-1106-preview
       instructions: You are a helpful assistant.
       tools:
       - type: code_interpreter
@@ -59,4 +68,5 @@ nodes:
         source:
           type: code
           path: multiply.py
+    download_images: true
 version: 2

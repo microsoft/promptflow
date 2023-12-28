@@ -5,14 +5,12 @@
 import copy
 import inspect
 import types
-from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
@@ -41,13 +39,13 @@ class ResolvedTool:
     init_args: dict
 
 
-class ToolResolver(ThreadLocalSingleton):
-    CONTEXT_VAR_NAME = "Resolver"
-    context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
-
+class ToolResolver:
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None,
-        need_connection: bool = True
+        self,
+        working_dir: Path,
+        connections: Optional[dict] = None,
+        package_tool_keys: Optional[List[str]] = None,
+        need_connections: bool = True,
     ):
         try:
             # Import openai and aoai for llm tool
@@ -56,15 +54,12 @@ class ToolResolver(ThreadLocalSingleton):
             pass
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
-        if need_connection:
+        if need_connections:
             self._connection_manager = ConnectionManager(connections)
 
     @classmethod
     def start_resolver(
-        cls,
-        working_dir: Path,
-        connections: Optional[dict] = None,
-        package_tool_keys: Optional[List[str]] = None
+        cls, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
     ):
         resolver = cls(working_dir, connections, package_tool_keys)
         resolver._activate_in_context(force=True)
@@ -128,8 +123,9 @@ class ToolResolver(ThreadLocalSingleton):
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             elif isinstance(value_type, ValueType):
                 try:
@@ -138,8 +134,11 @@ class ToolResolver(ThreadLocalSingleton):
                     raise NodeInputValidationError(
                         message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
                         "type {value_type}.",
-                        key=k, node_name=node.name, value=v.value, value_type=value_type.value,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        node_name=node.name,
+                        value=v.value,
+                        value_type=value_type.value,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
                 try:
                     updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
@@ -147,8 +146,9 @@ class ToolResolver(ThreadLocalSingleton):
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.

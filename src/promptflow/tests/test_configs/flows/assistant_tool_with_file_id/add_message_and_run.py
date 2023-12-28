@@ -15,25 +15,29 @@ URL_PREFIX = "https://platform.openai.com/files/"
 
 
 @tool
-async def oai_assistant(
-    conn: OpenAIConnection, content: Union[str, list], assistant_id: str, thread_id: str, assistant_definition: dict
+async def add_message_and_run(
+    conn: OpenAIConnection,
+    assistant_id: str,
+    thread_id: str,
+    message: list,
+    assistant_definition: dict,
+    download_images: bool
 ):
+    content = extract_text_from_message(message)
+    file_ids = await extract_file_ids_from_message(message, conn)
     cli = AsyncOpenAI(api_key=conn.api_key, organization=conn.organization)
-    if isinstance(content, str):
-        prompt = content
-        file_ids = []
-    elif isinstance(content, list):
-        prompt, file_ids = await convert_to_file_ids(content, cli)
     await cli.beta.threads.messages.create(
         thread_id=thread_id,
         role="user",
-        content=prompt,
+        content=content,
         file_ids=file_ids
     )
     invoker = AssistantToolInvoker()
     invoker.load_tools(assistant_definition["tools"])
     run = await cli.beta.threads.runs.create(
-        thread_id=thread_id, assistant_id=assistant_id,
+        assistant_id=assistant_id,
+        thread_id=thread_id,
+        model = assistant_definition["model"],
         instructions=assistant_definition["instructions"],
         tools=invoker.to_openai_tools()
     )
@@ -48,7 +52,9 @@ async def oai_assistant(
             tool_outputs = []
             for tool_call in tool_calls:
                 print(f"Invoking tool: {tool_call.function.name}")
-                output = invoker.invoke_tool(tool_call.function.name, json.loads(tool_call.function.arguments))
+                tool_name = tool_call.function.name
+                tool_args = json.loads(tool_call.function.arguments)
+                output = invoker.invoke_tool(tool_name, tool_args)
                 tool_outputs.append({
                     "tool_call_id": tool_call.id,
                     "output": str(output),
@@ -58,36 +64,65 @@ async def oai_assistant(
                 run_id=run.id,
                 tool_outputs=tool_outputs,
             )
-        elif run.status == "in_progress":
+        elif run.status == "in_progress" or "completed":
             continue
         else:
             raise Exception(f"The assistant tool runs in '{run.status}' status.")
 
     messages = await cli.beta.threads.messages.list(thread_id=thread_id)
-    return await convert_content(messages.data[0].content, cli)
+    file_id_references = await get_openai_file_references(messages.data[0].content, download_images, conn)
+    return {"content": to_pf_content(messages.data[0].content), "file_id_references": file_id_references}
 
 
-async def convert_to_file_ids(content: list, cli: AsyncOpenAI):
-    prompt = ""
+def extract_text_from_message(message: list):
+    content = []
+    for m in message:
+        if m["type"] == "text":
+            content.append(m["text"])
+    return "\n".join(content)
+
+
+async def extract_file_ids_from_message(message: list, conn: OpenAIConnection):
+    cli = AsyncOpenAI(api_key=conn.api_key, organization=conn.organization)
     file_ids = []
-    for item in content:
-        if item["type"] == "text":
-            prompt += "\n" + item["text"]
-        elif item["type"] == "file_path":
-            path = item["file_path"]["path"]
+    for m in message:
+        if m["type"] == "file_path":
+            path = m["file_path"]["path"]
             file = await cli.files.create(file=open(path, "rb"), purpose='assistants')
             file_ids.append(file.id)
-    return prompt, file_ids
+    return file_ids
 
 
-async def convert_content(content: list, cli: AsyncOpenAI):
-    converted_content = []
+async def get_openai_file_references(content: list, download_image: bool, conn: OpenAIConnection):
     file_id_references = {}
     for item in content:
         if isinstance(item, MessageContentImageFile):
             file_id = item.image_file.file_id
-            converted_content.append({"type": "image_file", "image_file": {"file_id": file_id}})
-            file_id_references[file_id] = {"content": await download_image(file_id, cli), "url": URL_PREFIX + file_id}
+            if download_image:
+                file_id_references[file_id] = {
+                    "content": await download_openai_image(file_id, conn), "url": URL_PREFIX + file_id
+                }
+            else:
+                file_id_references[file_id] = {"url": URL_PREFIX + file_id}
+        elif isinstance(item, MessageContentText):
+            for annotation in item.text.annotations:
+                if annotation.type == "file_path":
+                    file_id = annotation.file_path.file_id
+                    file_id_references[file_id] = {"url": URL_PREFIX + file_id}
+                elif annotation.type == "file_citation":
+                    file_id = annotation.file_citation.file_id
+                    file_id_references[file_id] = {"url": URL_PREFIX + file_id}
+        else:
+            raise Exception(f"Unsupported content type: '{type(item)}'.")
+    return file_id_references
+
+
+def to_pf_content(content: list):
+    pf_content = []
+    for item in content:
+        if isinstance(item, MessageContentImageFile):
+            file_id = item.image_file.file_id
+            pf_content.append({"type": "image_file", "image_file": {"file_id": file_id}})
         elif isinstance(item, MessageContentText):
             text_dict = {"type": "text", "text": {"value": item.text.value, "annotations": []}}
             for annotation in item.text.annotations:
@@ -99,23 +134,16 @@ async def convert_content(content: list, cli: AsyncOpenAI):
                 }
                 if annotation.type == "file_path":
                     annotation_dict["file_path"] = {"file_id": annotation.file_path.file_id}
-                    file_id_references[annotation.file_path.file_id] = {
-                        "url": URL_PREFIX + annotation.file_path.file_id
-                    }
                 elif annotation.type == "file_citation":
                     annotation_dict["file_citation"] = {"file_id": annotation.file_citation.file_id}
-                    file_id_references[annotation.file_citation.file_id] = {
-                        "url": URL_PREFIX + annotation.file_citation.file_id
-                    }
                 text_dict["text"]["annotations"].append(annotation_dict)
-            converted_content.append(text_dict)
+            pf_content.append(text_dict)
         else:
             raise SystemErrorException(f"Unsupported content type: {type(item)}")
-    return {"content": converted_content, "file_id_references": file_id_references}
+    return pf_content
 
 
-async def download_image(file_id: str, cli: AsyncOpenAI):
+async def download_openai_image(file_id: str, conn: OpenAIConnection):
+    cli = AsyncOpenAI(api_key=conn.api_key, organization=conn.organization)
     image_data = await cli.files.content(file_id)
-    image_data_bytes = image_data.read()
-    image = Image(image_data_bytes)
-    return image
+    return Image(image_data.read())
