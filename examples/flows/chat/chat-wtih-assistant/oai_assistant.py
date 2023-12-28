@@ -5,7 +5,7 @@ from openai import AsyncOpenAI
 
 from promptflow import tool
 from promptflow.connections import OpenAIConnection
-from promptflow.executor._tool_invoker import AssistantToolInvoker
+from promptflow.executor.assistant_tool_invoker import AssistantToolInvoker
 
 
 @tool
