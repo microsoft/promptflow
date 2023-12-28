@@ -5,7 +5,7 @@ REM Double colon :: should not be used in parentheses blocks, so we use REM.
 REM See https://stackoverflow.com/a/12407934/2199657
 echo The promptflow version argument is: %1
 set promptflow_version=%1
-echo %promptflow_version%
+echo "%promptflow_version%"
 echo build a msi installer using local/remote cli sources and python executables. You need to have curl.exe, unzip.exe and msbuild.exe available under PATH
 echo.
 
@@ -37,6 +37,7 @@ set PYTHON_DIR=%ARTIFACTS_DIR%\Python
 REM Get the absolute directory since we pushd into different levels of subdirectories.
 PUSHD %~dp0..\..\..\
 SET REPO_ROOT=%CD%
+echo REPO_ROOT=%REPO_ROOT%
 POPD
 
 REM reset working folders
@@ -100,7 +101,7 @@ robocopy %PYTHON_DIR% %BUILDING_DIR% /s /NFL /NDL
 
 %BUILDING_DIR%\python.exe -m pip uninstall -y promptflow promptflow-sdk promptflow-tools
 
-if %promptflow_version% eq "" (
+if "%promptflow_version%" == "" (
     echo Building promptflow from local sources...
     set PROMPTFLOW_CLI_SRC=%REPO_ROOT%\src\promptflow
     pushd %PROMPTFLOW_CLI_SRC%
