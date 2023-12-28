@@ -18,12 +18,11 @@ from promptflow._cli._pf._init_entry_generators import (
     ToolReadmeGenerator,
 )
 from promptflow._cli._utils import activate_action, exception_handler, list_of_dict_to_dict
-from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 def add_tool_parser(subparsers):
@@ -36,6 +35,7 @@ def add_tool_parser(subparsers):
     subparsers = tool_parser.add_subparsers()
     add_parser_init_tool(subparsers)
     add_parser_list_tool(subparsers)
+    add_parser_validate_tool(subparsers)
     tool_parser.set_defaults(action="tool")
 
 
@@ -98,11 +98,42 @@ pf tool list --flow flow-path
     )
 
 
+def add_parser_validate_tool(subparsers):
+    """Add tool list parser to the pf tool subparsers."""
+    epilog = """
+Examples:
+
+# Validate single function tool:
+pf tool validate -–source <package_name>.<module_name>.<tool_function>
+# Validate all tool in a package tool:
+pf tool validate -–source <package_name>
+# Validate tools in a python script:
+pf tool validate --source <path_to_tool_script>
+"""  # noqa: E501
+
+    def add_param_source(parser):
+        parser.add_argument("--source", type=str, help="The tool source to be used.", required=True)
+
+    return activate_action(
+        name="validate",
+        description="Validate tool.",
+        epilog=epilog,
+        add_params=[
+            add_param_source,
+        ],
+        subparsers=subparsers,
+        help_message="Validate tool. Will raise error if it is not valid.",
+        action_param_name="sub_action",
+    )
+
+
 def dispatch_tool_commands(args: argparse.Namespace):
     if args.sub_action == "init":
         init_tool(args)
     elif args.sub_action == "list":
         list_tool(args)
+    elif args.sub_action == "validate":
+        validate_tool(args)
 
 
 @exception_handler("Tool init")
@@ -125,10 +156,10 @@ def init_tool(args):
         script_code_path = package_path / package_name
         script_code_path.mkdir(parents=True, exist_ok=True)
         if icon_path:
-            package_icon_path = package_path / "icon"
+            package_icon_path = package_path / "icons"
             package_icon_path.mkdir(exist_ok=True)
             dst = shutil.copy2(icon_path, package_icon_path)
-            icon_path = f'Path(__file__).parent.parent / "icon" / "{Path(dst).name}"'
+            icon_path = f'Path(__file__).parent.parent / "icons" / "{Path(dst).name}"'
         # Generate package setup.py
         SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
         # Generate manifest file
@@ -151,3 +182,29 @@ def list_tool(args):
     pf_client = PFClient()
     package_tools = pf_client._tools.list(args.flow)
     print(json.dumps(package_tools, indent=4))
+
+
+@exception_handler("Tool validate")
+def validate_tool(args):
+    import importlib
+
+    pf_client = PFClient()
+    try:
+        __import__(args.source)
+        source = importlib.import_module(args.source)
+        logger.debug(f"The source {args.source} is used as a package to validate.")
+    except ImportError:
+        try:
+            module_name, func_name = args.source.rsplit(".", 1)
+            module = importlib.import_module(module_name)
+            source = getattr(module, func_name)
+            logger.debug(f"The source {args.source} is used as a function to validate.")
+        except Exception:
+            if not Path(args.source).exists():
+                raise UserErrorException("Invalid source to validate tools.")
+            logger.debug(f"The source {args.source} is used as a script to validate.")
+            source = args.source
+    validation_result = pf_client._tools.validate(source)
+    print(repr(validation_result))
+    if not validation_result.passed:
+        exit(1)

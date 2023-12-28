@@ -124,13 +124,14 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         So we set a specific waiting period. If the executor service fails to return to normal
         within the allocated timeout, an exception is thrown to indicate a potential problem.
         """
-        waiting_health_timeout = 5
-        start_time = datetime.utcnow()
-        while (datetime.utcnow() - start_time).seconds < waiting_health_timeout:
+        retry_count = 0
+        max_retry_count = 10
+        while retry_count < max_retry_count:
             if await self._check_health():
                 return
             # wait for 1s to prevent calling the API too frequently
             await asyncio.sleep(1)
+            retry_count += 1
         raise ExecutorServiceUnhealthy(f"{EXECUTOR_UNHEALTHY_MESSAGE}. Please resubmit your flow and try again.")
 
     def _process_http_response(self, response: httpx.Response):
