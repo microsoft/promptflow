@@ -155,12 +155,6 @@ copy %REPO_ROOT%\scripts\installer\windows\resources\CLI_LICENSE.rtf %BUILDING_D
 copy %REPO_ROOT%\src\promptflow\NOTICE.txt %BUILDING_DIR%
 if %errorlevel% neq 0 goto ERROR
 
-REM Check pf can be executed. This also prints the Python version.
-pushd %BUILDING_DIR%
-pf --version
-if %errorlevel% neq 0 goto ERROR
-popd
-
 REM Remove .py and only deploy .pyc files
 pushd %BUILDING_DIR%\Lib\site-packages
 for /f %%f in ('dir /b /s *.pyc') do (
@@ -207,9 +201,16 @@ if %errorlevel% neq 0 goto ERROR
 popd
 
 REM Remove Scripts folder
+echo remove Scripts
 if exist %BUILDING_DIR%\Scripts rmdir /s /q %BUILDING_DIR%\Scripts
 
 echo %OUTPUT_DIR%
+
+REM Check pf can be executed. This also prints the Python version.
+pushd %BUILDING_DIR%
+pf --version
+if %errorlevel% neq 0 goto ERROR
+popd
 
 goto END
 
