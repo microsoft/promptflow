@@ -100,7 +100,7 @@ robocopy %PYTHON_DIR% %BUILDING_DIR% /s /NFL /NDL
 
 %BUILDING_DIR%\python.exe -m pip uninstall -y promptflow promptflow-sdk promptflow-tools
 
-if %promptflow_version% == "" (
+if %promptflow_version% eq "" (
     echo Building promptflow from local sources...
     set PROMPTFLOW_CLI_SRC=%REPO_ROOT%\src\promptflow
     pushd %PROMPTFLOW_CLI_SRC%
