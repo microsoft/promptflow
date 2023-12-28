@@ -25,12 +25,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-    - name: Generate config.json for canary workspace (scheduled runs only)
-      if: github.event_name == 'schedule'
-      run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
-    - name: Generate config.json for production workspace
-      if: github.event_name != 'schedule'
-      run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
+      - name: Generate config.json for canary workspace (scheduled runs only)
+        if: github.event_name == 'schedule'
+        run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
+      - name: Generate config.json for production workspace
+        if: github.event_name != 'schedule'
+        run: echo '${{ secrets.EXAMPLE_WORKSPACE_CONFIG_JSON_PROD }}' > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
         working-directory: examples
         run: |
@@ -59,9 +59,11 @@ jobs:
         run: |
           if [[ -e .env ]]; then
             pf connection create --file .env --name chat_with_pdf_custom_connection
-            pf connection list
           fi
-          
+          if [[ -e azure_openai.yml ]]; then
+            pf connection create --file azure_openai.yml --name chat_with_pdf_custom_connection
+          fi
+          pf connection list
       - name: Create run.yml
         working-directory: examples/tutorials/e2e-development
         run: |

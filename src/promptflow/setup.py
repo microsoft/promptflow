@@ -50,6 +50,7 @@ REQUIRES = [
     "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
     "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
+    "docutils",  # used to generate description for tools
 ]
 
 setup(

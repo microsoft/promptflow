@@ -1,6 +1,7 @@
 import contextlib
 import io
 import multiprocessing
+import os
 import sys
 import tempfile
 import timeit
@@ -11,11 +12,30 @@ from unittest import mock
 import pytest
 
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
+from promptflow._sdk._telemetry import log_activity
 from promptflow._sdk._utils import ClientUserAgentUtil
 
 FLOWS_DIR = "./tests/test_configs/flows"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+def mock_log_activity(*args, **kwargs):
+    custom_message = "github run: https://github.com/microsoft/promptflow/actions/runs/{0}".format(
+        os.environ.get("GITHUB_RUN_ID")
+    )
+    if len(args) == 4:
+        if args[3] is not None:
+            args[3]["custom_message"] = custom_message
+        else:
+            args = list(args)
+            args[3] = {"custom_message": custom_message}
+    elif "custom_dimensions" in kwargs and kwargs["custom_dimensions"] is not None:
+        kwargs["custom_dimensions"]["custom_message"] = custom_message
+    else:
+        kwargs["custom_dimensions"] = {"custom_message": custom_message}
+
+    return log_activity(*args, **kwargs)
 
 
 def run_cli_command(cmd, time_limit=3600, result_queue=None):
@@ -27,7 +47,11 @@ def run_cli_command(cmd, time_limit=3600, result_queue=None):
     st = timeit.default_timer()
     with contextlib.redirect_stdout(output), mock.patch.object(
         ClientUserAgentUtil, "get_user_agent"
-    ) as get_user_agent_fun:
+    ) as get_user_agent_fun, mock.patch(
+        "promptflow._sdk._telemetry.activity.log_activity", side_effect=mock_log_activity
+    ), mock.patch(
+        "promptflow._cli._pf.entry.log_activity", side_effect=mock_log_activity
+    ):
         # Client side will modify user agent only through ClientUserAgentUtil to avoid impact executor/runtime.
         get_user_agent_fun.return_value = f"{CLI_USER_AGENT} perf_monitor/1.0"
         user_agent = ClientUserAgentUtil.get_user_agent()
@@ -57,7 +81,7 @@ def subprocess_run_cli_command(cmd, time_limit=3600):
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
 @pytest.mark.perf_monitor_test
 class TestCliPerf:
-    def test_pf_run_create(self, time_limit=35) -> None:
+    def test_pf_run_create(self, time_limit=20) -> None:
         res = subprocess_run_cli_command(
             cmd=(
                 "pf",
@@ -112,7 +136,7 @@ class TestCliPerf:
         output_path = Path(FLOWS_DIR) / "print_input_flow" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
 
-    def test_pf_flow_build(self, time_limit=35):
+    def test_pf_flow_build(self, time_limit=20):
         with tempfile.TemporaryDirectory() as temp_dir:
             subprocess_run_cli_command(
                 cmd=(

@@ -1,0 +1,62 @@
+inputs:
+  content:
+    type: string
+    default: I'm going to run for 2 hours today, how much calories will I burn?
+  assistant_id:
+    type: string
+    default: asst_yWhdFYoCS1UatnRRQZGY85aL
+outputs:
+  assistant_output:
+    type: string
+    reference: ${assistant_play.output}
+nodes:
+- name: create_thread
+  type: python
+  source:
+    type: code
+    path: create_thread.py
+  inputs:
+    conn: openai_connection
+- name: assistant_play
+  type: python
+  source:
+    type: code
+    path: oai_assistant.py
+  inputs:
+    conn: openai_connection
+    content: ${inputs.content}
+    assistant_id: ${inputs.assistant_id}
+    thread_id: ${create_thread.output}
+    assistant_definition:
+      module: gpt-4-1106-preview
+      instructions: You are a helpful assistant.
+      tools:
+      - type: code_interpreter
+      - type: function
+        tool_type: python
+        source:
+          type: code
+          path: get_all_clothes.py
+      - type: function
+        tool_type: python
+        source:
+          type: code
+          path: get_calorie.py
+      - type: function
+        tool_type: python
+        source:
+          type: code
+          path: get_current_location.py
+        predefined_inputs:
+          predefined_input: 1
+      - type: function
+        tool_type: python
+        source:
+          type: code
+          path: get_current_weather.py
+      - type: function
+        tool_type: python
+        source:
+          type: code
+          path: multiply.py
+version: 2
