@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import re
 import sys
 import subprocess
 import tempfile
@@ -72,8 +73,9 @@ class RunSubmit(Resource):
             with open(run_file, "w", encoding="utf-8") as f:
                 yaml.safe_dump(run_dict, f)
             cmd = f"pf run create --file {run_file}"
-            if sys.executable.endswith("pfcli.exe"):
-                cmd = f"pfcli {cmd}"
+            pattern = r'.*[/\\]Users[/\\].*[/\\]AppData[/\\]Local[/\\]Apps[/\\]promptflow[/\\]python\.exe'
+            if re.match(pattern, sys.executable):
+                cmd = f"{sys.executable} -m promptflow._sdk._service.entry run create --file {run_file}"
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             stdout, _ = process.communicate()
             if process.returncode == 0:
