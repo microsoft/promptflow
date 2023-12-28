@@ -178,3 +178,16 @@ class TestCreateTraceFromFunctionCall:
             func_with_args_and_kwargs, args=[1, 2], kwargs={"kwarg2": 4, "kwarg1": 3}
         )
         assert list(trace.inputs.keys()) == ["arg1", "arg2", "kwarg2", "kwarg1"]
+
+    def test_connections_should_be_serialized(self):
+        conn = AzureOpenAIConnection("test_name", "test_secret")
+        trace = _create_trace_from_function_call(func_with_connection_parameter, args=[1, conn])
+        assert trace.inputs == {"a": 1, "conn": "AzureOpenAIConnection"}
+
+    def test_self_arg_should_be_excluded_from_inputs(self):
+        class TestClass:
+            def test_method(self, a: int):
+                pass
+
+        trace = _create_trace_from_function_call(TestClass.test_method, args=[TestClass(), 1])
+        assert trace.inputs == {"a": 1}

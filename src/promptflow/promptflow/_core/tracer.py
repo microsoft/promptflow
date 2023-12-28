@@ -132,7 +132,7 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
-def _create_trace_from_function_call(f, args=[], kwargs={}, *, trace_type=TraceType.FUNCTION):
+def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceType.FUNCTION):
     """Initialize a trace object from a function call."""
     sig = inspect.signature(f).parameters
 
