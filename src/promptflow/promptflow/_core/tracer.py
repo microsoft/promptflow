@@ -64,30 +64,6 @@ class Tracer(ThreadLocalSingleton):
         return tracer.to_json()
 
     @classmethod
-    def push_function(cls, f, args=[], kwargs={}, *, trace_type=TraceType.FUNCTION):
-        obj = cls.active_instance()
-        sig = inspect.signature(f).parameters
-        all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-        all_kwargs = {
-            k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
-            for k, v in all_kwargs.items()
-        }
-        # TODO: put parameters in self to inputs for builtin tools
-        all_kwargs.pop("self", None)
-        trace = Trace(
-            name=f.__qualname__,
-            type=trace_type,
-            start_time=datetime.utcnow().timestamp(),
-            inputs=all_kwargs,
-        )
-        obj._push(trace)
-        return trace
-
-    @classmethod
-    def push_tool(cls, f, args=[], kwargs={}):
-        return cls.push_function(f, args, kwargs, trace_type=TraceType.TOOL)
-
-    @classmethod
     def push(cls, trace: Trace):
         obj = cls.active_instance()
         if not obj:
@@ -156,6 +132,26 @@ class Tracer(ThreadLocalSingleton):
         }
 
 
+def _create_trace_from_function_call(f, args=[], kwargs={}, *, trace_type=TraceType.FUNCTION):
+    """Initialize a trace object from a function call."""
+    sig = inspect.signature(f).parameters
+
+    all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+    all_kwargs = {
+        k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
+        for k, v in all_kwargs.items()
+    }
+    # TODO: put parameters in self to inputs for builtin tools
+    all_kwargs.pop("self", None)
+
+    return Trace(
+        name=f.__qualname__,
+        type=trace_type,
+        start_time=datetime.utcnow().timestamp(),
+        inputs=all_kwargs,
+    )
+
+
 def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
     """A wrapper to add trace to a function.
 
@@ -173,6 +169,10 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
     :return: The wrapped function with trace enabled.
     :rtype: Callable
     """
+
+    def create_trace(func, args, kwargs):
+        return _create_trace_from_function_call(func, args, kwargs, trace_type=trace_type)
+
     if inspect.iscoroutinefunction(func):
 
         @functools.wraps(func)
@@ -183,7 +183,7 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             # We directly call func instead of calling Tracer.invoke,
             # because we want to avoid long stack trace when hitting an exception.
             try:
-                Tracer.push_function(func, args, kwargs, trace_type=trace_type)
+                Tracer.push(create_trace(func, args, kwargs))
                 output = await func(*args, **kwargs)
                 return Tracer.pop(output)
             except Exception as e:
@@ -200,7 +200,7 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             # We directly call func instead of calling Tracer.invoke,
             # because we want to avoid long stack trace when hitting an exception.
             try:
-                Tracer.push_function(func, args, kwargs, trace_type=trace_type)
+                Tracer.push(create_trace(func, args, kwargs))
                 output = func(*args, **kwargs)
                 return Tracer.pop(output)
             except Exception as e:
