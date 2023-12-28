@@ -4,7 +4,7 @@ from functools import partial
 from aiohttp import web
 
 
-def run_executor_server(port, has_error=False):
+def run_executor_server(port, has_error=False, init_error_file=None):
     app = web.Application()
     app.router.add_get("/health", _handle_health)
 
@@ -12,7 +12,8 @@ def run_executor_server(port, has_error=False):
     app.router.add_post("/execution", handle_execution_with_customization)
 
     print(f"Starting server on port {port}")
-    web.run_app(app, host="localhost", port=port)
+    if init_error_file is None:
+        web.run_app(app, host="localhost", port=port)
 
 
 async def _handle_health(request: web.Request):

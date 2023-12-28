@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import signal
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -126,13 +128,21 @@ class BatchEngine:
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
                 executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
-                self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
+                self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
+                    executor_proxy_cls.create,
                     self._flow_file,
                     self._working_dir,
                     connections=self._connections,
                     storage=self._storage,
                     **self._kwargs,
                 )
+                # register signal handler for python flow in the main thread
+                # TODO: For all executor proxies that are executed locally, it might be necessary to
+                # register a signal for Ctrl+C in order to customize some actions beyond just killing
+                # the process, such as terminating the executor service.
+                if isinstance(self._executor_proxy, PythonExecutorProxy):
+                    signal.signal(signal.SIGINT, signal_handler)
+
                 # set batch input source from input mapping
                 OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
                 # resolve input data from input dirs and apply inputs mapping
@@ -160,7 +170,7 @@ class BatchEngine:
                 raise unexpected_error from e
         finally:
             # destroy the executor proxy and end the life cycle of the executor proxy
-            self._executor_proxy.destroy()
+            async_run_allowing_running_loop(self._executor_proxy.destroy)
 
     def cancel(self):
         """Cancel the batch run"""
