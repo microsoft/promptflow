@@ -104,7 +104,6 @@ if "%promptflow_version%" == "" (
     echo Building promptflow from local sources...
     pushd %REPO_ROOT%\src\promptflow
     set PIP_DEBUG=true
-    %BUILDING_DIR%\python.exe -m pip install --no-warn-script-location --requirement .\dev_requirements.txt
     echo pip list Before
     %BUILDING_DIR%\python.exe -m pip list
     %BUILDING_DIR%\python.exe .\setup.py bdist_wheel
