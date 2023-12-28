@@ -37,7 +37,6 @@ set PYTHON_DIR=%ARTIFACTS_DIR%\Python
 REM Get the absolute directory since we pushd into different levels of subdirectories.
 PUSHD %~dp0..\..\..\
 SET REPO_ROOT=%CD%
-echo REPO_ROOT=%REPO_ROOT%
 POPD
 
 REM reset working folders
@@ -103,8 +102,7 @@ robocopy %PYTHON_DIR% %BUILDING_DIR% /s /NFL /NDL
 
 if "%promptflow_version%" == "" (
     echo Building promptflow from local sources...
-    set PROMPTFLOW_CLI_SRC=%REPO_ROOT%\src\promptflow
-    pushd %PROMPTFLOW_CLI_SRC%
+    pushd %REPO_ROOT%\src\promptflow
     set PIP_DEBUG=true
     %BUILDING_DIR%\python.exe -m pip install --no-warn-script-location --requirement .\dev_requirements.txt
     echo pip list Before
@@ -117,13 +115,12 @@ if "%promptflow_version%" == "" (
         echo %PACKAGE%
     )
 
-    %BUILDING_DIR%\python.exe -m pip install !PACKAGE!
+    %BUILDING_DIR%\python.exe -m pip install !PACKAGE! --no-warn-script-location --no-cache-dir
     echo pip freeze After
     %BUILDING_DIR%\python.exe -m  pip freeze
     popd
 
-    set PROMPTFLOW_TOOL_CLI_SRC=%REPO_ROOT%\src\promptflow-tools
-    pushd %PROMPTFLOW_TOOL_CLI_SRC%
+    pushd %REPO_ROOT%\src\promptflow-tools
     set PIP_DEBUG=true
     %BUILDING_DIR%\python.exe .\setup.py bdist_wheel
     for /f %%i in ('dir /b .\dist\*.whl') do (
@@ -131,7 +128,7 @@ if "%promptflow_version%" == "" (
         set PACKAGE=./dist/%%i
         echo %PACKAGE%
     )
-    %BUILDING_DIR%\python.exe -m pip install !PACKAGE!
+    %BUILDING_DIR%\python.exe -m pip install !PACKAGE! --no-warn-script-location --no-cache-dir
     echo pip freeze After
     pip freeze
     popd
