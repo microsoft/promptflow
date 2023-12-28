@@ -48,7 +48,7 @@
     <Compile Include="product.wxs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".\resources\logo_pf.png" />
+    <None Include=".\resources\logo32.ico" />
   </ItemGroup>
   <!-- UI -->
   <ItemGroup>

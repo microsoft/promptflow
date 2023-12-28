@@ -208,6 +208,11 @@ for /d %%d in ("azure*.dist-info") do (
 if %errorlevel% neq 0 goto ERROR
 popd
 
+echo Building MSI...
+msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 %REPO_ROOT%\scripts\installer\windows\promptflow.wixproj
+
+if %errorlevel% neq 0 goto ERROR
+
 echo %OUTPUT_DIR%
 
 goto END

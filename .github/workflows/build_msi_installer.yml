@@ -41,14 +41,6 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
 
-      - name: Setup and Install promptflow
-        shell: cmd
-        run: |
-          build.cmd %INPUT_VERSION%
-        env:
-          INPUT_VERSION: ${{ github.event.inputs.version }}
-        working-directory: ${{ github.workspace }}/scripts/installer/windows/
-
       - name: Get promptflow version
         id: get-version
         run: |
@@ -82,9 +74,15 @@ jobs:
           $text = Get-Content "product.wxs" -Raw
           $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
           $text | Out-File -FilePath "product.wxs" -Encoding utf8
-
-          msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 promptflow.wixproj
         shell: pwsh
+
+      - name: Install promptflow and Build WIX project
+        shell: cmd
+        run: |
+          build.cmd %INPUT_VERSION%
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        working-directory: ${{ github.workspace }}/scripts/installer/windows/
 
       - name: Azure Login
         uses: azure/login@v1
