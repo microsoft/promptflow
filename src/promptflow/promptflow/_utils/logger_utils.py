@@ -172,7 +172,7 @@ valid_logging_level = {"CRITICAL", "FATAL", "ERROR", "WARN", "WARNING", "INFO", 
 
 
 def get_pf_logging_level(default=logging.INFO):
-    logging_level = os.environ.get(PF_LOGGING_LEVEL, logging.INFO)
+    logging_level = os.environ.get(PF_LOGGING_LEVEL, None)
     if logging_level not in valid_logging_level:
         # Fall back to info if user input is invalid.
         logging_level = default
@@ -364,3 +364,12 @@ class LoggerFactory:
         handler.setFormatter(formatter)
         handler.setLevel(verbosity)
         logger.addHandler(handler)
+
+
+def get_cli_sdk_logger():
+    """Get logger used by CLI SDK."""
+    # cli sdk logger default logging level is WARNING
+    # here the logger name "promptflow" is from promptflow._sdk._constants.LOGGER_NAME,
+    # to avoid circular import error, use plain string here instead of importing from _constants
+    # because this function is also called in _prepare_home_dir which is in _constants
+    return LoggerFactory.get_logger("promptflow", verbosity=logging.WARNING)

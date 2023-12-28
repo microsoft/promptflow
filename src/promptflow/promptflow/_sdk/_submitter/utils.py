@@ -10,10 +10,12 @@ import tempfile
 from collections import defaultdict
 from os import PathLike
 from pathlib import Path
+import time
 
 import pydash
 from dotenv import load_dotenv
 from pydash import objects
+from types import GeneratorType
 
 from promptflow._sdk._constants import (
     ALL_CONNECTION_TYPES,
@@ -261,3 +263,73 @@ class SubmitterHelper:
                 if raise_error:
                     raise e
         return result
+
+
+def show_node_log_and_output(node_run_infos, show_node_output, generator_record):
+    """Show stdout and output of nodes."""
+    from colorama import Fore
+
+    for node_name, node_result in node_run_infos.items():
+        # Prefix of node stdout is "%Y-%m-%dT%H:%M:%S%z"
+        pattern = r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
+        if node_result.logs:
+            node_logs = re.sub(pattern, "", node_result.logs["stdout"])
+            if node_logs:
+                for log in node_logs.rstrip("\n").split("\n"):
+                    print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
+                    print(log)
+        if show_node_output:
+            print(f"{Fore.CYAN}{node_name}: ", end="")
+            # TODO executor return a type string of generator
+            node_output = node_result.output
+            if isinstance(node_result.output, GeneratorType):
+                node_output = "".join(get_result_output(node_output, generator_record))
+            print(f"{Fore.LIGHTWHITE_EX}{node_output}")
+
+
+def print_chat_output(output, generator_record):
+    if isinstance(output, GeneratorType):
+        for event in get_result_output(output, generator_record):
+            print(event, end="")
+            # For better animation effects
+            time.sleep(0.01)
+        # Print a new line at the end of the response
+        print()
+    else:
+        print(output)
+
+
+def get_result_output(output, generator_record):
+    if isinstance(output, GeneratorType):
+        if output in generator_record:
+            if hasattr(generator_record[output], "items"):
+                output = iter(generator_record[output].items)
+            else:
+                output = iter(generator_record[output])
+        else:
+            if hasattr(output.gi_frame.f_locals, "proxy"):
+                proxy = output.gi_frame.f_locals["proxy"]
+                generator_record[output] = proxy
+            else:
+                generator_record[output] = list(output)
+                output = generator_record[output]
+    return output
+
+
+def resolve_generator(flow_result, generator_record):
+    # resolve generator in flow result
+    for k, v in flow_result.run_info.output.items():
+        if isinstance(v, GeneratorType):
+            flow_output = "".join(get_result_output(v, generator_record))
+            flow_result.run_info.output[k] = flow_output
+            flow_result.run_info.result[k] = flow_output
+            flow_result.output[k] = flow_output
+
+    # resolve generator in node outputs
+    for node_name, node in flow_result.node_run_infos.items():
+        if isinstance(node.output, GeneratorType):
+            node_output = "".join(get_result_output(node.output, generator_record))
+            node.output = node_output
+            node.result = node_output
+
+    return flow_result

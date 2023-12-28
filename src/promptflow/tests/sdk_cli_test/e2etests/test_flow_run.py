@@ -286,13 +286,6 @@ class TestFlowRun:
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
     ):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         result = pf.run(
             flow=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection",
             data=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection/data.jsonl",
@@ -1065,3 +1058,25 @@ class TestFlowRun:
         assert metrics == {}
         pf.stream(run_name)
         pf.visualize([run_name])
+
+    def test_aggregation_node_failed(self, pf):
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/aggregation_node_failed",
+            data=f"{FLOWS_DIR}/aggregation_node_failed/data.jsonl",
+        )
+        # even if all lines failed, the bulk run's status is completed.
+        assert failed_run.status == "Completed"
+        # error messages will store in local
+        local_storage = LocalStorageOperations(failed_run)
+
+        assert os.path.exists(local_storage._exception_path)
+        exception = local_storage.load_exception()
+        assert "First error message is" in exception["message"]
+        # line run failures will be stored in additionalInfo
+        assert len(exception["additionalInfo"][0]["info"]["errors"]) == 1
+
+        # show run will get error message
+        run = pf.runs.get(name=failed_run.name)
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert run_dict["error"] == exception

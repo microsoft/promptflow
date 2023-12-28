@@ -172,10 +172,7 @@ class Run(YAMLTranslatableMixin):
             self._experiment_name = kwargs.get("experiment_name", None)
         elif self._run_source == RunInfoSources.RUN_HISTORY:
             self._error = kwargs.get("error", None)
-            self._data_portal_url = kwargs.get("data_portal_url", None)
-            self._input_run_portal_url = kwargs.get("input_run_portal_url", None)
             self._output = kwargs.get("output", None)
-            self._output_portal_url = kwargs.get("output_portal_url", None)
         elif self._run_source == RunInfoSources.EXISTING_RUN:
             # when the run is created from an existing run folder, the output path is also the source path
             self._output_path = Path(source)
@@ -269,7 +266,6 @@ class Run(YAMLTranslatableMixin):
             start_time=date_parser.parse(start_time) if start_time else None,
             end_time=date_parser.parse(end_time) if end_time else None,
             duration=duration,
-            portal_url=run_entity[RunDataKeys.PORTAL_URL],
             creation_context=run_entity["properties"]["creationContext"],
             experiment_name=run_entity["properties"]["experimentName"],
         )
@@ -300,11 +296,8 @@ class Run(YAMLTranslatableMixin):
             portal_url=run_entity[RunDataKeys.PORTAL_URL],
             creation_context=run_entity["createdBy"],
             data=run_entity[RunDataKeys.DATA],
-            data_portal_url=run_entity[RunDataKeys.DATA_PORTAL_URL],
             run=run_entity[RunDataKeys.RUN],
-            input_run_portal_url=run_entity[RunDataKeys.INPUT_RUN_PORTAL_URL],
             output=run_entity[RunDataKeys.OUTPUT],
-            output_portal_url=run_entity[RunDataKeys.OUTPUT_PORTAL_URL],
         )
 
     @classmethod
@@ -343,7 +336,13 @@ class Run(YAMLTranslatableMixin):
         """Dump current run entity to local DB."""
         self._to_orm_object().dump()
 
-    def _to_dict(self, *, exclude_additional_info: bool = False, exclude_debug_info: bool = False):
+    def _to_dict(
+        self,
+        *,
+        exclude_additional_info: bool = False,
+        exclude_debug_info: bool = False,
+        exclude_properties: bool = False,
+    ):
         from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
         properties = self.properties
@@ -391,18 +390,20 @@ class Run(YAMLTranslatableMixin):
             result["duration"] = self._duration
             result[RunDataKeys.PORTAL_URL] = self._portal_url
             result[RunDataKeys.DATA] = self.data
-            result[RunDataKeys.DATA_PORTAL_URL] = self._data_portal_url
             result[RunDataKeys.OUTPUT] = self._output
-            result[RunDataKeys.OUTPUT_PORTAL_URL] = self._output_portal_url
             if self.run:
                 result[RunDataKeys.RUN] = self.run
-                result[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._input_run_portal_url
             if self._error:
                 result["error"] = self._error
                 if exclude_additional_info:
                     result["error"]["error"].pop("additionalInfo", None)
                 if exclude_debug_info:
                     result["error"]["error"].pop("debugInfo", None)
+
+        # hide properties when needed (e.g. list remote runs)
+        if exclude_properties is True:
+            result.pop("properties", None)
+
         return result
 
     @classmethod

@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import sys
 import subprocess
 import tempfile
 from dataclasses import asdict
@@ -71,6 +72,8 @@ class RunSubmit(Resource):
             with open(run_file, "w", encoding="utf-8") as f:
                 yaml.safe_dump(run_dict, f)
             cmd = f"pf run create --file {run_file}"
+            if sys.executable.endswith("pfcli.exe"):
+                cmd = f"pfcli {cmd}"
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             stdout, _ = process.communicate()
             if process.returncode == 0:

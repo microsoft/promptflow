@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
+from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
 from promptflow._utils.multimedia_utils import (
     _create_image_from_base64,
     _create_image_from_file,
@@ -16,7 +17,6 @@ from promptflow._utils.multimedia_utils import (
     persist_multimedia_data,
     resolve_multimedia_data_recursively,
 )
-from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import ValueType
@@ -102,7 +102,7 @@ class TestMultimediaUtils:
         mocker.patch("promptflow._utils.multimedia_utils._is_url", return_value=True)
         mocker.patch("promptflow._utils.multimedia_utils._is_base64", return_value=False)
         mocker.patch("requests.get", return_value=mocker.Mock(content=image_from_path, status_code=200))
-        image_from_url = create_image("")
+        image_from_url = create_image("Test")
         assert str(image_from_path) == str(image_from_url)
         assert image_from_url._mime_type in ["image/jpg", "image/jpeg"]
 
@@ -121,6 +121,15 @@ class TestMultimediaUtils:
             invalid_image_dict = {"invalid_image": "invalid_image"}
             create_image(invalid_image_dict)
         assert "Invalid image input format" in ex.value.message_format
+
+        # Test none or empty input value
+        with pytest.raises(InvalidImageInput) as ex:
+            create_image(None)
+        assert "Unsupported image input type" in ex.value.message_format
+
+        with pytest.raises(InvalidImageInput) as ex:
+            create_image("")
+        assert "The image input should not be empty." in ex.value.message_format
 
     def test_persist_multimedia_date(self, mocker):
         image = _create_image_from_file(TEST_IMAGE_PATH)
@@ -183,6 +192,14 @@ class TestMultimediaUtils:
             "images": [[image, image], [image]],
             "object": [{"image": image, "other_data": "other_data"}, {"other_data": "other_data"}],
         }
+
+        # Case 3: Test invalid input type
+        with pytest.raises(LoadMultimediaDataError) as ex:
+            line_inputs = {"image": 0}
+            load_multimedia_data(inputs, line_inputs)
+        assert (
+            "Failed to load image for input 'image': "
+            "(InvalidImageInput) Unsupported image input type") in ex.value.message
 
     def test_resolve_multimedia_data_recursively(self):
         image_dict = {"data:image/jpg;path": "logo.jpg"}
