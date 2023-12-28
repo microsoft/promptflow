@@ -5,14 +5,12 @@
 import copy
 import inspect
 import types
-from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
@@ -41,12 +39,11 @@ class ResolvedTool:
     init_args: dict
 
 
-class ToolResolver(ThreadLocalSingleton):
-    CONTEXT_VAR_NAME = "Resolver"
-    context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
+class ToolResolver():
 
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
+        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None,
+        need_connections: bool = True
     ):
         try:
             # Import openai and aoai for llm tool
@@ -55,7 +52,8 @@ class ToolResolver(ThreadLocalSingleton):
             pass
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
-        self._connection_manager = ConnectionManager(connections)
+        if need_connections:
+            self._connection_manager = ConnectionManager(connections)
 
     @classmethod
     def start_resolver(
