@@ -58,7 +58,7 @@ async def oai_assistant(
                 run_id=run.id,
                 tool_outputs=tool_outputs,
             )
-        elif run.status == "in_progress":
+        elif run.status == "in_progress" or "completed":
             continue
         else:
             raise Exception(f"The assistant tool runs in '{run.status}' status.")

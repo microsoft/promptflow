@@ -2,8 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import os
 from dataclasses import dataclass
 from functools import partial
+from pathlib import Path
 from typing import Callable, Dict
 
 from promptflow.contracts.flow import InputAssignment, Node, ToolSource
@@ -39,7 +41,9 @@ class AssistantToolInvoker:
                 )
 
     def _load_function_tool(self, tool: dict):
-        tool_resolver = ToolResolver.active_instance()
+        working_dir = Path(os.getcwd())
+        # tool_resolver = ToolResolver.active_instance()
+        tool_resolver = ToolResolver(working_dir, need_connection=False)
         predefined_inputs = {}
         for input_name, value in tool.get("predefined_inputs", {}).items():
             predefined_inputs[input_name] = InputAssignment.deserialize(value)
