@@ -75,7 +75,7 @@ class RunSubmit(Resource):
             cmd = f"pf run create --file {run_file}"
             pattern = r'.*[/\\]Users[/\\].*[/\\]AppData[/\\]Local[/\\]Apps[/\\]promptflow[/\\]python\.exe'
             if re.match(pattern, sys.executable):
-                cmd = f"{sys.executable} -m promptflow._sdk._service.entry run create --file {run_file}"
+                cmd = f"{sys.executable} -m promptflow._cli._pf.entry run create --file {run_file}"
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             stdout, _ = process.communicate()
             if process.returncode == 0:
