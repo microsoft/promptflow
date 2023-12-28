@@ -138,13 +138,6 @@ if "%promptflow_version%" == "" (
     %BUILDING_DIR%\python.exe -m pip install --no-warn-script-location --no-cache-dir promptflow-tools
 )
 
-
-REM Check pf can be executed. This also prints the Python version.
-pushd %BUILDING_DIR%\Scripts
-pf --version
-if %errorlevel% neq 0 goto ERROR
-popd
-
 pushd %BUILDING_DIR%
 @REM %BUILDING_DIR%\python.exe %~dp0\compact_aaz.py
 %BUILDING_DIR%\python.exe %~dp0\patch_models_v2.py
@@ -156,12 +149,18 @@ del %BUILDING_DIR%\Lib\site-packages\PyWin32.chm
 
 @REM echo Creating the wbin (Windows binaries) folder that will be added to the path...
 @REM mkdir %BUILDING_DIR%\wbin
-copy %BUILDING_DIR%\Scripts\pf.exe %BUILDING_DIR%\
-copy %BUILDING_DIR%\Scripts\pfazure.exe %BUILDING_DIR%
-copy %BUILDING_DIR%\Scripts\pfs.exe %BUILDING_DIR%
-if %errorlevel% neq 0 goto ERROR
+copy %REPO_ROOT%\scripts\installer\windows\scripts\pf.bat %BUILDING_DIR%
+copy %REPO_ROOT%\scripts\installer\windows\scripts\pfs.bat %BUILDING_DIR%
+copy %REPO_ROOT%\scripts\installer\windows\scripts\pfazure.bat %BUILDING_DIR%
 copy %REPO_ROOT%\scripts\installer\windows\resources\CLI_LICENSE.rtf %BUILDING_DIR%
 copy %REPO_ROOT%\src\promptflow\NOTICE.txt %BUILDING_DIR%
+if %errorlevel% neq 0 goto ERROR
+
+REM Check pf can be executed. This also prints the Python version.
+pushd %BUILDING_DIR%
+pf --version
+if %errorlevel% neq 0 goto ERROR
+popd
 
 REM Remove .py and only deploy .pyc files
 pushd %BUILDING_DIR%\Lib\site-packages
@@ -208,10 +207,8 @@ for /d %%d in ("azure*.dist-info") do (
 if %errorlevel% neq 0 goto ERROR
 popd
 
-echo Building MSI...
-msbuild /t:rebuild /p:Configuration=Release /p:Platform=x64 %REPO_ROOT%\scripts\installer\windows\promptflow.wixproj
-
-if %errorlevel% neq 0 goto ERROR
+REM Remove Scripts folder
+if exist %BUILDING_DIR%\Scripts rmdir /s /q %BUILDING_DIR%\Scripts
 
 echo %OUTPUT_DIR%
 
