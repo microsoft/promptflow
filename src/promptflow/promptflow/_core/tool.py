@@ -75,7 +75,7 @@ def tool(
         if type is not None and type not in [k.value for k in ToolType]:
             raise UserErrorException(f"Tool type {type} is not supported yet.")
 
-        # All the tools should be traced.
+        # Calls to tool functions should be traced automatically.
         new_f = _traced(func, trace_type=TraceType.TOOL)
 
         new_f.__tool = None  # This will be set when generating the tool definition.
