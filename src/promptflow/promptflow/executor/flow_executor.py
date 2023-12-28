@@ -22,7 +22,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolInvoker
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -46,7 +46,6 @@ from promptflow.executor._flow_nodes_scheduler import (
     FlowNodesScheduler,
 )
 from promptflow.executor._result import AggregationResult, LineResult
-from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
@@ -289,7 +288,8 @@ class FlowExecutor:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
+
         with _change_working_dir(working_dir):
             resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
         flow = Flow(
@@ -305,8 +305,6 @@ class FlowExecutor:
         run_tracker = RunTracker(storage)
 
         cache_manager = AbstractCacheManager.init_from_env()
-
-        ToolInvoker.activate(DefaultToolInvoker())
 
         executor = FlowExecutor(
             flow=flow,
@@ -398,7 +396,7 @@ class FlowExecutor:
         inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
         dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
-        tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
+        tool_resolver = ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
         # Prepare callable and real inputs here
