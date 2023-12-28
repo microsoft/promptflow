@@ -1,4 +1,5 @@
 import base64
+import filetype
 import hashlib
 from typing import Callable, Optional
 
@@ -43,7 +44,9 @@ class Image(PFBytes):
     ~promptflow.contracts.multimedia.PFBytes.
     """
 
-    def __init__(self, value: bytes, mime_type: str = "image/*", source_url: Optional[str] = None):
+    def __init__(self, value: bytes, mime_type: str = None, source_url: Optional[str] = None):
+        if mime_type is None:
+            mime_type = filetype.guess_mime(value)
         return super().__init__(value, mime_type, source_url)
 
     def __str__(self):

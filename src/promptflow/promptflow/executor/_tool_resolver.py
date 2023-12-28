@@ -46,7 +46,8 @@ class ToolResolver(ThreadLocalSingleton):
     context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
+        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None,
+        need_connection: bool = True
     ):
         try:
             # Import openai and aoai for llm tool
@@ -55,7 +56,8 @@ class ToolResolver(ThreadLocalSingleton):
             pass
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
-        self._connection_manager = ConnectionManager(connections)
+        if need_connection:
+            self._connection_manager = ConnectionManager(connections)
 
     @classmethod
     def start_resolver(
