@@ -277,9 +277,9 @@ def get_int_env_var(env_var_name, default_value=None):
         return default_value
 
 
-def get_classes(module) -> list:
+def get_exception_classes(module) -> tuple:
     classes = []
-    for name, obj in inspect.getmembers(module):
-        if inspect.isclass(obj):
-            classes.append(obj)
-    return classes
+    for name, cls in inspect.getmembers(module):
+        if inspect.isclass(cls) and issubclass(cls, Exception):
+            classes.append(cls)
+    return tuple(classes)

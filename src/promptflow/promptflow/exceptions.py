@@ -7,7 +7,7 @@ import traceback
 from enum import Enum
 from functools import cached_property
 from azure.core.exceptions import HttpResponseError
-from promptflow._utils.utils import get_classes
+from promptflow._utils.utils import get_exception_classes
 
 
 class ErrorCategory(str, Enum):
@@ -23,6 +23,8 @@ class ErrorType(str, Enum):
     ContractsError = "ContractsError"
     UtilsError = "UtilsError"
     StorageError = "StorageError"
+    SDKError = "SDKError"
+    CLIError = "CLIError"
     ExternalSyetemError = "ExternalSyetemError"
     ExternalUserError = "ExternalUserError"
 
@@ -323,6 +325,16 @@ class ErrorInfo:
         if cls._is_exception_from_module(e, module_name="promptflow._core"):
             return ErrorType.CoreError
 
+        # sdk error
+        if isinstance(e, cls.sdk_error_classes()):
+            return ErrorType.SDKError
+        if cls._is_exception_from_module(e, module_name="promptflow._sdk"):
+            return ErrorType.SDKError
+
+        # cli error
+        if cls._is_exception_from_module(e, module_name="promptflow._cli"):
+            return ErrorType.CLIError
+
         # other error
         if cls._is_system_error(e):
             return ErrorType.ExternalSyetemError
@@ -336,7 +348,7 @@ class ErrorInfo:
     @classmethod
     def _error_message(cls, e: Exception):
         exception_codes = cls._get_exception_codes(e)
-        msg = getattr(e, "message_format")
+        msg = getattr(e, "message_format", "")
         name = type(e).__name__
         exception_code = exception_codes[-1]
         for item in exception_codes[::-1]:  # Prioritize recording the location of promptflow package errors
@@ -398,7 +410,7 @@ class ErrorInfo:
         if cls._executor_error_classes is None:
             import promptflow.executor._errors as _errors_module
 
-            cls._executor_error_classes = get_classes(_errors_module)
+            cls._executor_error_classes = get_exception_classes(_errors_module)
 
         return cls._executor_error_classes
 
@@ -407,7 +419,7 @@ class ErrorInfo:
         if cls._storage_error_classes is None:
             import promptflow.storage._errors as _errors_module
 
-            cls._storage_error_classes = get_classes(_errors_module)
+            cls._storage_error_classes = get_exception_classes(_errors_module)
 
         return cls._storage_error_classes
 
@@ -416,7 +428,7 @@ class ErrorInfo:
         if cls._contracts_error_classes is None:
             import promptflow.contracts._errors as _errors_module
 
-            cls._contracts_error_classes = get_classes(_errors_module)
+            cls._contracts_error_classes = get_exception_classes(_errors_module)
 
         return cls._contracts_error_classes
 
@@ -425,7 +437,7 @@ class ErrorInfo:
         if cls._batch_error_classes is None:
             import promptflow.batch._errors as _errors_module
 
-            cls._batch_error_classes = get_classes(_errors_module)
+            cls._batch_error_classes = get_exception_classes(_errors_module)
 
         return cls._batch_error_classes
 
@@ -434,7 +446,7 @@ class ErrorInfo:
         if cls._utils_error_classes is None:
             import promptflow._utils._errors as _errors_module
 
-            cls._utils_error_classes = get_classes(_errors_module)
+            cls._utils_error_classes = get_exception_classes(_errors_module)
 
         return cls._utils_error_classes
 
@@ -443,7 +455,7 @@ class ErrorInfo:
         if cls._core_error_classes is None:
             import promptflow._core._errors as _errors_module
 
-            cls._core_error_classes = get_classes(_errors_module)
+            cls._core_error_classes = get_exception_classes(_errors_module)
 
         return cls._core_error_classes
 
@@ -452,6 +464,15 @@ class ErrorInfo:
         if cls._serving_error_classes is None:
             import promptflow._sdk._serving._errors as _errors_module
 
-            cls._serving_error_classes = get_classes(_errors_module)
+            cls._serving_error_classes = get_exception_classes(_errors_module)
 
         return cls._serving_error_classes
+
+    @classmethod
+    def sdk_error_classes(cls):
+        if cls._sdk_error_classes is None:
+            import promptflow._sdk._errors as _errors_module
+
+            cls._sdk_error_classes = get_exception_classes(_errors_module)
+
+        return cls._sdk_error_classes
