@@ -1,15 +1,30 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import re
+import inspect
 import string
-import sys
 import traceback
 from enum import Enum
 from functools import cached_property
-from typing import Union
-
 from azure.core.exceptions import HttpResponseError
+from promptflow._utils.utils import get_classes
+
+
+class ErrorCategory(str, Enum):
+    SDKUserError = "SDKUserError"
+    SystemError = "SystemError"
+
+
+class ErrorType(str, Enum):
+    ExecutorError = "ExecutorError"
+    PFSError = "PFSError"
+    CoreError = "CoreError"
+    BatchError = "BatchError"
+    ContractsError = "ContractsError"
+    UtilsError = "UtilsError"
+    StorageError = "StorageError"
+    ExternalSyetemError = "ExternalSyetemError"
+    ExternalUserError = "ExternalUserError"
 
 
 class ErrorTarget(str, Enum):
@@ -216,95 +231,227 @@ class ValidationException(UserErrorException):
     pass
 
 
-class ErrorCategory:
-    HttpResponseError = 'HttpResponseError'
-    SDKUserError = 'SDKUserError'  # This error indicates that the user provided parameter doesn't pass validation
-    UserError = 'UserErrorException'  # This error indicates that the user's code has errors
-    ExecutorError = 'ExecutorError'
-    InternalSDKError = 'InternalSDKError'  # This error indicates that our package has some problems
+class ErrorInfo:
+    _serving_error_classes = None
+    _sdk_error_classes = None
+    _core_error_classes = None
+    _utils_error_classes = None
+    _batch_error_classes = None
+    _contracts_error_classes = None
+    _storage_error_classes = None
+    _executor_error_classes = None
+    _modules = dict()
 
     @classmethod
     def get_error_info(cls, e: Exception):
-        if cls._is_user_error_from_exception_type(e) or cls._is_user_error_from_exception_type(e.__cause__):
-            return cls.SDKUserError
-        if isinstance(e, HttpResponseError):
-            return cls.HttpResponseError
+        if not isinstance(e, Exception):
+            return None, None, None, None
 
-        return cls.classify_exception_to_internal_or_external(e)
+        e = cls.select_exception(e)
+        if cls._is_system_error(e):
+            return ErrorCategory.SystemError, cls._error_type(e), cls._error_target(e), cls._error_message(e)
 
-    @classmethod
-    def _is_user_error_from_exception_type(cls, e: Union[Exception, None]):
-        """Determine whether if an exception is user error from it's exception type."""
-        # Connection error happens on user's network failure, should be user error
-        if isinstance(e, ConnectionError):
-            return True
-
-        # UserErrorException and KeyboardInterrupt should be sdk user error
-        if isinstance(e, (UserErrorException, KeyboardInterrupt)):
-            return True
-
-        # For OSError/IOError with error no 28: "No space left on device" should be sdk user error
-        if isinstance(e, (IOError, OSError)) and e.errno == 28:
-            return True
+        return ErrorCategory.SDKUserError, cls._error_type(e), cls._error_target(e), cls._error_message(e)
 
     @classmethod
-    def _is_dsl_pipeline_customer_code_error(cls):
-        """Check whether the error is raised by customer code in dsl.pipeline"""
-        _, _, exc_traceback = sys.exc_info()
-        if exc_traceback is None:
-            return False
-        # This is the frame where the exception is actually raises
-        traceback_frame_list = [frame for frame, _ in traceback.walk_tb(exc_traceback)]
-        last_frame = traceback_frame_list[-1]
+    def select_exception(cls, e: Exception):
+        """Select the exception  in e and e.__cause__, and prioritize the Exception defined in the SDK."""
 
-        # When using exec to execute and globals are not specified, it's not able to identify error category.
-        # If using exec to execute and __package__ not exist, it is classified as CustomerUserError.
-        is_all_package_exists = next((frame for frame in traceback_frame_list if "__package__" not in frame.f_globals),
-                                     None) is None
-        if not is_all_package_exists:
-            return True
+        if e.__cause__ and isinstance(e.__cause__, PromptflowException):
+            return e.__cause__
 
-        # We find the last frame which is in SDK code instead of customer code or dependencies code
-        # by checking whether the package name of the frame belongs to azure.ml.component.
-        pattern = r'(^azure\.ml\.component(?=\..*|$).*)'
+        if isinstance(e, PromptflowException):
+            return e
 
-        last_frame_in_sdk = next(
-            (frame for frame in traceback_frame_list[::-1] if cls._assert_frame_package_name(pattern, frame)), None)
-        if not last_frame_in_sdk:
-            return False
+        if e.__cause__ and isinstance(e.__cause__, HttpResponseError):
+            return e.__cause__
 
-        # If the last frame which raises exception is in SDK code, it is not customer error.
-        if last_frame == last_frame_in_sdk:
-            return False
-        # If the last frame in SDK is the pipeline decorator, the exception is caused by customer code, return True
-        # Otherwise the exception might be some dependency error, return False
-        target_mod, target_funcs = 'azure.ml.component._pipeline_component_definition_builder', \
-            ['__call__', '_get_func_outputs']
-        return last_frame_in_sdk.f_globals[
-            '__name__'] == target_mod and last_frame_in_sdk.f_code.co_name in target_funcs
+        return e
 
     @classmethod
-    def classify_exception_to_internal_or_external(cls, e: Exception):
+    def _is_system_error(cls, e: Exception):
+        if isinstance(e, (SystemErrorException, HttpResponseError)):
+            return True
+        if hasattr(e, "status_code") or (hasattr(e, "response") and hasattr(e.response, "status_code")):
+            status_code = str(e.status_code) if hasattr(e, "status_code") else str(e.response.status_code)
+            if not status_code.startswith("40"):
+                return True
+
+        return False
+
+    @classmethod
+    def _error_type(cls, e: Exception):
+        # executor error
+        if isinstance(e, cls.executor_error_classes()):
+            return ErrorType.ExecutorError
+        if cls._is_exception_from_module(e, module_name="promptflow.executor"):
+            return ErrorType.ExecutorError
+
+        # pfs error
+        if isinstance(e, cls.serving_error_classes()):
+            return ErrorType.PFSError
+        if cls._is_exception_from_module(e, module_name="promptflow._sdk._serving"):
+            return ErrorType.PFSError
+
+        # storage error
+        if isinstance(e, cls.storage_error_classes()):
+            return ErrorType.StorageError
+        if cls._is_exception_from_module(e, module_name="promptflow.storage"):
+            return ErrorType.StorageError
+
+        # batch error
+        if isinstance(e, cls.batch_error_classes()):
+            return ErrorType.BatchError
+        if cls._is_exception_from_module(e, module_name="promptflow.batch"):
+            return ErrorType.BatchError
+
+        # utils error
+        if isinstance(e, cls.utils_error_classes()):
+            return ErrorType.UtilsError
+        if cls._is_exception_from_module(e, module_name="promptflow._utils"):
+            return ErrorType.UtilsError
+
+        # contrasts error
+        if isinstance(e, cls.contracts_error_classes()):
+            return ErrorType.ContractsError
+        if cls._is_exception_from_module(e, module_name="promptflow.contracts"):
+            return ErrorType.ContractsError
+
+        # core error
+        if isinstance(e, cls.core_error_classes()):
+            return ErrorType.CoreError
+        if cls._is_exception_from_module(e, module_name="promptflow._core"):
+            return ErrorType.CoreError
+
+        # other error
+        if cls._is_system_error(e):
+            return ErrorType.ExternalSyetemError
+
+        return ErrorType.ExternalUserError
+
+    @classmethod
+    def _error_target(cls, e: Exception):
+        return getattr(e, "target", ErrorTarget.UNKNOWN)
+
+    @classmethod
+    def _error_message(cls, e: Exception):
+        exception_codes = cls._get_exception_codes(e)
+        msg = getattr(e, "message_format")
+        name = type(e).__name__
+        exception_code = exception_codes[-1]
+        for item in exception_codes[::-1]:  # Prioritize recording the location of promptflow package errors
+            if "promptflow" in item["module"]:
+                exception_code = item
+                break
+        return (
+            f"exception name={name}, "
+            f"exception msg={msg}, "
+            f"exception module={exception_code['module']}, "
+            f"exception code={exception_code['exception_code']}, "
+            f"exception lineno={exception_code['lineno']}"
+        )
+
+    @classmethod
+    def _get_exception_codes(cls, e: Exception) -> list:
         """
-        If some dependent packages (like azure and azureml) raise exception, it is classified as ExternalSDKError.
-        If other packages raise exception, it is classified as InternalSDKError.
-        This function will get the exception traceback and check whether the frame belongs to azure or azureml.
-        If there is a frame in the traceback belongs to azure or azureml, it will be regarded as ExternalSDKError,
-        otherwise it is regarded as InternalSDKError.
+        Obtain information on each line of the traceback, including the module name,
+        exception code and lineno where the error occurred.
+
+        :param e: Exception object
+        :return: A list, each item contains information for each row of the traceback, which format is like this:
+                {
+                'module': 'promptflow.executor.errors',
+                'exception_code': 'return self.inner_exception.additional_info',
+                'lineno': 223
+                }
         """
-        pattern = r'(^azure\.(?!ml\.component(\..*|$)).*|^azureml\..*)'
-        _, _, exc_traceback = sys.exc_info()
-        for frame, _ in traceback.walk_tb(exc_traceback):
-            if cls._assert_frame_package_name(pattern, frame):
-                return ErrorCategory.ExternalSDKError
-        return ErrorCategory.InternalSDKError
+        key = str(id(e))
+        if cls._modules.get(key):
+            return cls._modules[key]
+
+        cls._modules[key] = []  # Considering multithreading, use dict to save.
+        traceback_info = traceback.extract_tb(e.__traceback__)
+        for item in traceback_info:
+            lineno = item.lineno
+            filename = item.filename
+            exception_code = item.line
+            module = inspect.getmodule(None, _filename=filename)
+            exception_code = {"module": "", "exception_code": exception_code, "lineno": lineno}
+            if module is not None:
+                exception_code["module"] = module.__name__
+            cls._modules[key].append(exception_code)
+
+        return cls._modules.get(key, [])
 
     @classmethod
-    def _assert_frame_package_name(cls, pattern, frame):
-        """Check the package name of frame is match pattern."""
-        # f_globals records the function's module globals of the frame. And __package__ of module must be set.
-        # https://docs.python.org/3/reference/import.html#__package__
-        # Although __package__ is set when importing, it may happen __package__ does not exist in globals
-        # when using exec to execute.
-        package_name = frame.f_globals.get('__package__', "")
-        return True if package_name and re.match(pattern, package_name) else False
+    def _is_exception_from_module(cls, e: Exception, module_name: str = ""):
+        exception_codes = cls._get_exception_codes(e)
+        for exception_code in exception_codes[::-1]:
+            # For example: 'promptflow.executor._errors' in 'promptflow.executor'
+            if module_name in exception_code["module"]:
+                return True
+
+        return False
+
+    @classmethod
+    def executor_error_classes(cls):
+        if cls._executor_error_classes is None:
+            import promptflow.executor._errors as _errors_module
+
+            cls._executor_error_classes = get_classes(_errors_module)
+
+        return cls._executor_error_classes
+
+    @classmethod
+    def storage_error_classes(cls):
+        if cls._storage_error_classes is None:
+            import promptflow.storage._errors as _errors_module
+
+            cls._storage_error_classes = get_classes(_errors_module)
+
+        return cls._storage_error_classes
+
+    @classmethod
+    def contracts_error_classes(cls):
+        if cls._contracts_error_classes is None:
+            import promptflow.contracts._errors as _errors_module
+
+            cls._contracts_error_classes = get_classes(_errors_module)
+
+        return cls._contracts_error_classes
+
+    @classmethod
+    def batch_error_classes(cls):
+        if cls._batch_error_classes is None:
+            import promptflow.batch._errors as _errors_module
+
+            cls._batch_error_classes = get_classes(_errors_module)
+
+        return cls._batch_error_classes
+
+    @classmethod
+    def utils_error_classes(cls):
+        if cls._utils_error_classes is None:
+            import promptflow._utils._errors as _errors_module
+
+            cls._utils_error_classes = get_classes(_errors_module)
+
+        return cls._utils_error_classes
+
+    @classmethod
+    def core_error_classes(cls):
+        if cls._core_error_classes is None:
+            import promptflow._core._errors as _errors_module
+
+            cls._core_error_classes = get_classes(_errors_module)
+
+        return cls._core_error_classes
+
+    @classmethod
+    def serving_error_classes(cls):
+        if cls._serving_error_classes is None:
+            import promptflow._sdk._serving._errors as _errors_module
+
+            cls._serving_error_classes = get_classes(_errors_module)
+
+        return cls._serving_error_classes

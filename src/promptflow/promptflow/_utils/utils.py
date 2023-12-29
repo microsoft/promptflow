@@ -9,6 +9,7 @@ import contextlib
 import contextvars
 import functools
 import importlib
+import inspect
 import json
 import logging
 import os
@@ -274,3 +275,11 @@ def get_int_env_var(env_var_name, default_value=None):
         return int(os.environ.get(env_var_name, default_value))
     except Exception:
         return default_value
+
+
+def get_classes(module) -> list:
+    classes = []
+    for name, obj in inspect.getmembers(module):
+        if inspect.isclass(obj):
+            classes.append(obj)
+    return classes

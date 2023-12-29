@@ -9,7 +9,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
-from promptflow.exceptions import ErrorCategory
+from promptflow.exceptions import ErrorInfo
 from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
 
@@ -93,11 +93,11 @@ def log_activity(
     except BaseException as e:  # pylint: disable=broad-except
         exception = e
         completion_status = ActivityCompletionStatus.FAILURE
-        error_category, exception_type, error_target, exception_detail = ErrorCategory.get_error_info(exception)
-        activity_info['error_category'] = error_category
-        activity_info['exception_type'] = exception_type
-        activity_info['error_target'] = error_target
-        activity_info['exception_detail'] = exception_detail
+        error_category, exception_type, error_target, exception_detail = ErrorInfo.get_error_info(exception)
+        activity_info["error_category"] = error_category
+        activity_info["exception_type"] = exception_type
+        activity_info["error_target"] = error_target
+        activity_info["exception_detail"] = exception_detail
     finally:
         try:
             if first_call:
@@ -183,6 +183,7 @@ def monitor_operation(
                     with ThreadPoolExecutor() as pool:
                         pool.submit(check_latest_version)
                 return f(self, *args, **kwargs)
+
         return wrapper
 
     return monitor
