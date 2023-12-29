@@ -8,6 +8,7 @@
   - Please set before importing `promptflow`, otherwise it won't take effect.
 - [Executor] Handle KeyboardInterrupt in flow test so that the final state is Canceled.
 - [Executor] Calculate system_metrics recursively in api_calls.
+- [Executor] Add root level api_class.
 
 ### Bugs Fixed
 - [SDK/CLI] Fix single node run doesn't work when consuming sub item of upstream node
