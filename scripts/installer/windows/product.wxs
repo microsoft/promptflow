@@ -99,8 +99,8 @@
             Return="check"/>
         <InstallExecuteSequence>
           <Custom Action="SetUninstalling" After="FindRelatedProducts">Installed AND (REMOVE=&quot;ALL&quot;) AND NOT UPGRADINGPRODUCTCODE</Custom>
-          <Custom Action="SetRemovingForUpgrade" After="RemoveExistingProducts">(REMOVE=&quot;ALL&quot;) AND UPGRADINGPRODUCTCODE</Custom>
-          <Custom Action="Clean_Custom_Files_After_Uninstall" Before="RemoveFiles">Uninstalling OR RemovingForUpgrade</Custom>
+          <Custom Action="SetRemovingForUpgrade" Before="RemoveExistingProducts">(REMOVE=&quot;ALL&quot;) AND UPGRADINGPRODUCTCODE</Custom>
+          <Custom Action="Clean_Custom_Files_After_Uninstall" After="RemoveExistingProducts">Uninstalling OR RemovingForUpgrade</Custom>
 <!--           <Custom Action="Clean_Custom_Files_After_Uninstall" Before="RemoveFiles">REMOVE="ALL"</Custom> -->
 
         </InstallExecuteSequence>
