@@ -45,18 +45,9 @@ DATAS_DIR = "./tests/test_configs/datas"
     "vcr_recording",
 )
 class TestFlowRun:
-    def test_run_bulk(self, pf, runtime: str, randstr: Callable[[str], str]):
-        name = randstr("name")
-        run = pf.run(
-            flow=f"{FLOWS_DIR}/web_classification",
-            data=f"{DATAS_DIR}/webClassification1.jsonl",
-            column_mapping={"url": "${data.url}"},
-            variant="${summarize_text_content.variant_0}",
-            runtime=runtime,
-            name=name,
-        )
-        assert isinstance(run, Run)
-        assert run.name == name
+    def test_run_bulk(self, created_batch_run_without_llm: Run):
+        # assertions are all done in the fixture
+        assert isinstance(created_batch_run_without_llm, Run)
 
     def test_run_bulk_from_yaml(self, pf, runtime: str, randstr: Callable[[str], str]):
         run_id = randstr("run_id")
