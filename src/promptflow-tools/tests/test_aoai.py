@@ -15,7 +15,7 @@ class TestAOAI:
         # test whether tool can handle param "stop" with value empty list
         # as openai raises "[] is not valid under any of the given schemas - 'stop'"
         aoai_provider.completion(
-            prompt=prompt_template, deployment_name="text-ada-001", stop=[], logit_bias={}
+            prompt=prompt_template, deployment_name="gpt-35-turbo-16k", stop=[], logit_bias={}
         )
 
     def test_aoai_stream_completion(self, aoai_provider):
@@ -23,13 +23,13 @@ class TestAOAI:
         # test whether tool can handle param "stop" with value empty list in stream mode
         # as openai raises "[] is not valid under any of the given schemas - 'stop'"
         aoai_provider.completion(
-            prompt=prompt_template, deployment_name="text-ada-001", stop=[], logit_bias={}, stream=True
+            prompt=prompt_template, deployment_name="gpt-35-turbo-16k", stop=[], logit_bias={}, stream=True
         )
 
     def test_aoai_chat(self, aoai_provider, example_prompt_template, chat_history):
         result = aoai_provider.chat(
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
+            deployment_name="gpt-35-turbo-16k",
             max_tokens="32",
             temperature=0,
             user_input="Fill in more details about trend 2.",
@@ -50,7 +50,7 @@ class TestAOAI:
         assert "Product X".lower() in result.lower()
 
     @pytest.mark.parametrize(
-        "function_call",
+        "function_call"
         [
             "auto",
             {"name": "get_current_weather"},
@@ -193,7 +193,7 @@ class TestAOAI:
             chat(
                 connection=azure_open_ai_connection,
                 prompt=example_prompt_template,
-                deployment_name="gpt-35-turbo-1106",
+                deployment_name="gpt4",
                 temperature=0,
                 user_input=user_input,
                 chat_history=chat_history,
