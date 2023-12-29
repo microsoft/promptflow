@@ -50,7 +50,7 @@ class TestAOAI:
         assert "Product X".lower() in result.lower()
 
     @pytest.mark.parametrize(
-        "function_call"
+        "function_call",
         [
             "auto",
             {"name": "get_current_weather"},
