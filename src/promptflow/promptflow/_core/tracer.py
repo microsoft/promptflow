@@ -171,7 +171,7 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
     """
 
     def create_trace(func, args, kwargs):
-        return _create_trace_from_function_call(func, args, kwargs, trace_type=trace_type)
+        return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
 
     if inspect.iscoroutinefunction(func):
 
