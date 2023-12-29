@@ -157,12 +157,12 @@ def fork_processes_manager(
             daemon=True
         )
         process.start()
+        input_queues[i].put((i, process.pid, process.name))
+        process_info[process.pid] = {'process': process}
         return process
 
     for i in range(len(input_queues)):
-        process = new_process(i)
-        input_queues[i].put((i, process.pid, process.name))
-        process_info[process.pid] = {'process': process}
+        new_process(i)
 
     def kill_and_remove_process(pid):
         process = process_info[pid]['process']
@@ -174,7 +174,7 @@ def fork_processes_manager(
     def handle_signals(pid, control_signal, index):
         if control_signal == "del":
             kill_and_remove_process(pid)
-        elif control_signal == "start":
+        elif control_signal == "restart":
             kill_and_remove_process(pid)
             new_process(index)
 
@@ -321,13 +321,13 @@ class LineExecutionProcessPool:
         timeout_time,
         result_list
     ):
-        index, pid, process_name, input_queue, output_queue = process_info
-
-        # if not using fork, process_info's first element is healthy_ensured_process.
-        if not self._use_fork:
-            healthy_ensured_process = index
 
         while True:
+            index, pid, process_name, input_queue, output_queue = process_info
+            # if not using fork, process_info's first element is healthy_ensured_process.
+            if not self._use_fork:
+                healthy_ensured_process = index
+
             try:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
@@ -370,9 +370,18 @@ class LineExecutionProcessPool:
                 if not task_queue.empty():
                     if self._use_fork:
                         self._control_signal_queue.put((pid, index, "restart"))
+                        index, pid, process_name = input_queue.get()
+                        process_info = (index, pid, process_name, input_queue, output_queue)
                     else:
                         healthy_ensured_process.end()
                         healthy_ensured_process.start_new(task_queue)
+                        process_info = (
+                            healthy_ensured_process,
+                            healthy_ensured_process.process.pid,
+                            healthy_ensured_process.process.name,
+                            healthy_ensured_process.input_queue,
+                            healthy_ensured_process.output_queue
+                        )
 
             self._processing_idx.pop(line_number)
 
