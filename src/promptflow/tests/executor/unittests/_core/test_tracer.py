@@ -123,7 +123,12 @@ def func_with_args_and_kwargs(arg1, arg2=None, *, kwarg1=None, kwarg2=None):
 
 
 def func_with_connection_parameter(a: int, conn: AzureOpenAIConnection):
-    _, _ = a, conn
+    _ = (a, conn)
+
+
+class MyClass:
+    def my_method(self, a: int):
+        _ = a
 
 
 @pytest.mark.unittest
@@ -144,6 +149,11 @@ class TestCreateTraceFromFunctionCall:
         assert trace.end_time is None
         assert trace.children is None
         assert trace.error is None
+
+    def test_trace_name_should_contain_class_name_for_class_methods(self):
+        obj = MyClass()
+        trace = _create_trace_from_function_call(obj.my_method, args=[obj, 1])
+        assert trace.name == "MyClass.my_method"
 
     def test_trace_type_can_be_set_correctly(self):
         trace = _create_trace_from_function_call(func_with_no_parameters, trace_type=TraceType.TOOL)
@@ -185,9 +195,6 @@ class TestCreateTraceFromFunctionCall:
         assert trace.inputs == {"a": 1, "conn": "AzureOpenAIConnection"}
 
     def test_self_arg_should_be_excluded_from_inputs(self):
-        class TestClass:
-            def test_method(self, a: int):
-                pass
-
-        trace = _create_trace_from_function_call(TestClass.test_method, args=[TestClass(), 1])
+        obj = MyClass()
+        trace = _create_trace_from_function_call(obj.my_method, args=[1])
         assert trace.inputs == {"a": 1}
