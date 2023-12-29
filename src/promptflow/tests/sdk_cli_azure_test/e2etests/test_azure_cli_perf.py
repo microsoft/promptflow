@@ -1,3 +1,4 @@
+import os
 import sys
 import timeit
 from typing import Callable
@@ -6,6 +7,7 @@ from unittest import mock
 import pytest
 
 from promptflow._cli._user_agent import USER_AGENT as CLI_USER_AGENT  # noqa: E402
+from promptflow._sdk._telemetry import log_activity
 from promptflow._sdk._utils import ClientUserAgentUtil
 from sdk_cli_azure_test.recording_utilities import is_replay
 
@@ -13,12 +15,32 @@ FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
+def mock_log_activity(*args, **kwargs):
+    custom_message = "github run: https://github.com/microsoft/promptflow/actions/runs/{0}".format(
+        os.environ.get("GITHUB_RUN_ID")
+    )
+    if len(args) == 4:
+        if args[3] is not None:
+            args[3]["custom_message"] = custom_message
+        else:
+            args = list(args)
+            args[3] = {"custom_message": custom_message}
+    elif "custom_dimensions" in kwargs and kwargs["custom_dimensions"] is not None:
+        kwargs["custom_dimensions"]["custom_message"] = custom_message
+    else:
+        kwargs["custom_dimensions"] = {"custom_message": custom_message}
+
+    return log_activity(*args, **kwargs)
+
+
 def run_cli_command(cmd, time_limit=3600):
     from promptflow._cli._pf_azure.entry import main
 
     sys.argv = list(cmd)
     st = timeit.default_timer()
-    with mock.patch.object(ClientUserAgentUtil, "get_user_agent") as get_user_agent_fun:
+    with mock.patch.object(ClientUserAgentUtil, "get_user_agent") as get_user_agent_fun, mock.patch(
+        "promptflow._sdk._telemetry.activity.log_activity", side_effect=mock_log_activity
+    ), mock.patch("promptflow._cli._pf_azure.entry.log_activity", side_effect=mock_log_activity):
         # Client side will modify user agent only through ClientUserAgentUtil to avoid impact executor/runtime.
         get_user_agent_fun.return_value = f"{CLI_USER_AGENT} perf_monitor/1.0"
         user_agent = ClientUserAgentUtil.get_user_agent()
@@ -51,7 +73,11 @@ def operation_scope_args(subscription_id: str, resource_group_name: str, workspa
     "vcr_recording",
 )
 class TestAzureCliPerf:
+<<<<<<< HEAD
     def test_pfazure_run_create(self, operation_scope_args, runtime: str, randstr: Callable[[str], str], time_limit=20):
+=======
+    def test_pfazure_run_create(self, operation_scope_args, runtime: str, randstr: Callable[[str], str], time_limit=15):
+>>>>>>> main
         name = randstr("name")
         run_cli_command(
             cmd=(
@@ -71,7 +97,11 @@ class TestAzureCliPerf:
             time_limit=time_limit,
         )
 
+<<<<<<< HEAD
     def test_pfazure_run_update(self, operation_scope_args, time_limit=20):
+=======
+    def test_pfazure_run_update(self, operation_scope_args, time_limit=15):
+>>>>>>> main
         run_cli_command(
             cmd=(
                 "pfazure",
@@ -88,7 +118,11 @@ class TestAzureCliPerf:
             time_limit=time_limit,
         )
 
+<<<<<<< HEAD
     def test_run_restore(self, operation_scope_args, time_limit=20):
+=======
+    def test_run_restore(self, operation_scope_args, time_limit=15):
+>>>>>>> main
         run_cli_command(
             cmd=(
                 "pfazure",

@@ -74,13 +74,6 @@ class RunSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
-        batch_engine = BatchEngine(
-            flow.path,
-            flow.code,
-            connections=connections,
-            storage=local_storage,
-            log_path=local_storage.logger.file_path,
-        )
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
@@ -90,6 +83,13 @@ class RunSubmitter:
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
+            batch_engine = BatchEngine(
+                flow.path,
+                flow.code,
+                connections=connections,
+                storage=local_storage,
+                log_path=local_storage.logger.file_path,
+            )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
@@ -111,7 +111,8 @@ class RunSubmitter:
                 error_logs.append(
                     f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
                 )
-            logger.warning("\n".join(error_logs))
+            if error_logs:
+                logger.warning("\n".join(error_logs))
             # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:
