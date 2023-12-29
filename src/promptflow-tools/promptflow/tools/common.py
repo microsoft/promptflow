@@ -17,7 +17,7 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 class ChatInputList(list):
     """
     ChatInputList is a list of ChatInput objects. It is used to override the __str__ method of list to return a string
-    that can be easily parsed as message list.
+    that can be easily parsed as message list. tests....
     """
 
     def __init__(self, iterable=None):
