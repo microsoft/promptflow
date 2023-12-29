@@ -3,7 +3,7 @@ import inspect
 import pytest
 
 from promptflow._core.generator_proxy import GeneratorProxy
-from promptflow._core.tracer import Tracer, _create_trace_from_function_call, _traced
+from promptflow._core.tracer import Tracer, _create_trace_from_function_call, _traced, trace
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.trace import Trace, TraceType
 
@@ -337,3 +337,56 @@ class TestTraced:
         trace = traces[0]
         assert trace["name"] == func.__qualname__
         assert trace["type"] == TraceType.TOOL
+
+
+@trace
+def decorated_without_brackets(a: int):
+    return a
+
+
+@trace()
+def decorated_with_brackets(a: int):
+    return a
+
+
+@trace
+async def decorated_without_brackets_async(a: int):
+    return a
+
+
+@trace()
+async def decorated_with_brackets_async(a: int):
+    return a
+
+
+class TestTrace:
+    """This class tests `trace` function."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "func",
+        [
+            decorated_with_brackets,
+            decorated_without_brackets,
+            decorated_with_brackets_async,
+            decorated_without_brackets_async,
+        ],
+    )
+    async def test_traces_are_created_correctly(self, func):
+        Tracer.start_tracing("test_run_id")
+        if inspect.iscoroutinefunction(func):
+            result = await func(1)
+        else:
+            result = func(1)
+        assert result == 1
+        traces = Tracer.end_tracing()
+        assert len(traces) == 1
+        trace = traces[0]
+        assert trace["name"] == func.__qualname__
+        assert trace["type"] == TraceType.FUNCTION
+        assert trace["inputs"] == {"a": 1}
+        assert trace["output"] == 1
+        assert trace["error"] is None
+        assert trace["children"] is None
+        assert isinstance(trace["start_time"], float)
+        assert isinstance(trace["end_time"], float)
