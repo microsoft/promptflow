@@ -41,7 +41,7 @@ class TestAOAI:
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
+            deployment_name="gpt-35-turbo-16k",
             max_tokens="inF",
             temperature=0,
             user_input="Write a slogan for product X",
@@ -61,7 +61,7 @@ class TestAOAI:
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
+            deployment_name="gpt-35-turbo-16k",
             max_tokens="inF",
             temperature=0,
             user_input="What is the weather in Boston?",
@@ -77,7 +77,7 @@ class TestAOAI:
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template_with_name_in_roles,
-            deployment_name="gpt-35-turbo",
+            deployment_name="gpt-35-turbo-16k",
             max_tokens="inF",
             temperature=0,
             functions=functions,
@@ -105,7 +105,7 @@ class TestAOAI:
     def test_aoai_stream_chat(self, aoai_provider, example_prompt_template, chat_history):
         result = aoai_provider.chat(
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
+            deployment_name="gpt-35-turbo-16k",
             max_tokens="32",
             temperature=0,
             user_input="Fill in more details about trend 2.",
@@ -147,7 +147,6 @@ class TestAOAI:
             result = completion(connection=conn, prompt=prompt, deployment_name=deployment_name, **params)
             assert result == prompt
 
-    @pytest.mark.skip("Skipping until we have a Azure OpenAI deployment which supports response_format")
     def test_aoai_chat_with_response_format(
             self,
             azure_open_ai_connection,
@@ -179,7 +178,6 @@ class TestAOAI:
              WrappedOpenAIError)
         ]
     )
-    @pytest.mark.skip("Skipping until we have a Azure OpenAI deployment which supports response_format")
     def test_aoai_chat_with_invalid_response_format(
             self,
             azure_open_ai_connection,
@@ -214,7 +212,7 @@ class TestAOAI:
             chat(
                 connection=azure_open_ai_connection,
                 prompt=example_prompt_template,
-                deployment_name="gpt-35-turbo",
+                deployment_name="gpt-35-turbo-16k",
                 temperature=0,
                 user_input="Write a slogan for product X, please reponse with json.",
                 chat_history=chat_history,
@@ -233,7 +231,7 @@ class TestAOAI:
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo",
+            deployment_name="gpt-35-turbo-16k",
             temperature=0,
             user_input="Write a slogan for product X.",
             chat_history=chat_history,
