@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional
 class TraceType(str, Enum):
     """An enumeration class to represent different types of traces."""
 
-    FLOW = "Flow"
     LLM = "LLM"
     TOOL = "Tool"
     FUNCTION = "Function"
