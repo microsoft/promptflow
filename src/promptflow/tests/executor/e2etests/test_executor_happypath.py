@@ -8,7 +8,7 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 
-from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file, MemoryRunStorage
+from ..utils import FLOW_ROOT, MemoryRunStorage, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -113,7 +113,7 @@ class TestExecutor:
         queue = context.Queue()
         process = context.Process(
             target=exec_node_within_process,
-            args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True)
+            args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True),
         )
         process.start()
         process.join()
@@ -257,6 +257,7 @@ class TestExecutor:
 
         import json
         from pathlib import Path
+
         assert len(flow_result.api_calls) == 1
         main_trace = flow_result.api_calls[0]
         Path("main_trace.json").write_text(json.dumps(main_trace, indent=2))
@@ -279,18 +280,17 @@ def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependenc
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=connections,
-            raise_ex=raise_ex
+            raise_ex=raise_ex,
         )
         # Assert llm single node run contains openai traces
         # And the traces contains system metrics
         OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
         assert len(result.api_calls) == 1
         assert len(result.api_calls[0]["children"]) == 1
-        assert isinstance(result.api_calls[0]["children"][0]["system_metrics"], dict)
+        assert isinstance(result.get_user_name_trace["system_metrics"], dict)
         for key in OPENAI_AGGREGATE_METRICS:
-            assert key in result.api_calls[0]["children"][0]["system_metrics"]
+            assert key in result.get_user_name_trace["system_metrics"]
         for key in OPENAI_AGGREGATE_METRICS:
-            assert result.api_calls[0]["system_metrics"][key] == \
-                result.api_calls[0]["children"][0]["system_metrics"][key]
+            assert result.api_calls[0]["system_metrics"][key] == result.get_user_name_trace["system_metrics"][key]
     except Exception as ex:
         queue.put(ex)
