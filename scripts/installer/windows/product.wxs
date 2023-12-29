@@ -97,7 +97,7 @@
 
         <InstallExecuteSequence>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
-            <Custom Action="Clean_Custom_Files_After_Uninstall" Before="RemoveFolder">REMOVE="ALL"</Custom>
+            <Custom Action="Clean_Custom_Files_After_Uninstall" Before="RemoveFiles">REMOVE="ALL"</Custom>
         </InstallExecuteSequence>
     </Product>
 
