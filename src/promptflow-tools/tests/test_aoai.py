@@ -15,7 +15,7 @@ class TestAOAI:
         # test whether tool can handle param "stop" with value empty list
         # as openai raises "[] is not valid under any of the given schemas - 'stop'"
         aoai_provider.completion(
-            prompt=prompt_template, deployment_name="gpt-35-turbo-16k", stop=[], logit_bias={}
+            prompt=prompt_template, deployment_name="gpt-4", stop=[], logit_bias={}
         )
 
     def test_aoai_stream_completion(self, aoai_provider):
@@ -23,7 +23,7 @@ class TestAOAI:
         # test whether tool can handle param "stop" with value empty list in stream mode
         # as openai raises "[] is not valid under any of the given schemas - 'stop'"
         aoai_provider.completion(
-            prompt=prompt_template, deployment_name="gpt-35-turbo-16k", stop=[], logit_bias={}, stream=True
+            prompt=prompt_template, deployment_name="gpt-4", stop=[], logit_bias={}, stream=True
         )
 
     def test_aoai_chat(self, aoai_provider, example_prompt_template, chat_history):
@@ -97,10 +97,10 @@ class TestAOAI:
             "How can I assist you today?"
         )
         # assert chat tool can handle.
-        aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
+        aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo-16k")
         # empty content after role name:\n
         prompt = "user:\n"
-        aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
+        aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo-16k")
 
     def test_aoai_stream_chat(self, aoai_provider, example_prompt_template, chat_history):
         result = aoai_provider.chat(
@@ -193,7 +193,7 @@ class TestAOAI:
             chat(
                 connection=azure_open_ai_connection,
                 prompt=example_prompt_template,
-                deployment_name="gpt4",
+                deployment_name="gpt-4",
                 temperature=0,
                 user_input=user_input,
                 chat_history=chat_history,
