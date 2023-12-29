@@ -68,7 +68,7 @@ class HealthyEnsuredProcess:
         self._executor_creation_func = executor_creation_func
         self.context = context
 
-    def start_new(self, task_queue: Queue):
+    def start_new(self):
         input_queue = self.context.Queue()
         output_queue = self.context.Queue()
         self.input_queue = input_queue
@@ -179,8 +179,19 @@ def fork_processes_manager(
             new_process(index)
 
     while True:
-        # Check if at least one process is alive.
-        if not any(p_info['process'].is_alive() for p_info in process_info.values()):
+        all_processes_stopped = True
+        for pid, info in list(process_info.items()):
+            process = info['process']
+
+            # Check if at least one process is alive.
+            if process.is_alive():
+                all_processes_stopped = False
+
+            # Check if the process exits normally
+            elif process.exitcode != 0:
+                all_processes_stopped = False
+
+        if all_processes_stopped:
             break
         try:
             pid, index, control_signal = control_signal_queue.get(timeout=1)
@@ -323,6 +334,7 @@ class LineExecutionProcessPool:
     ):
 
         while True:
+            restart_outer_loop = False
             index, pid, process_name, input_queue, output_queue = process_info
             # if not using fork, process_info's first element is healthy_ensured_process.
             if not self._use_fork:
@@ -352,6 +364,25 @@ class LineExecutionProcessPool:
 
             while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time:
                 try:
+                    if self._use_fork:
+                        if not psutil.pid_exists(pid):
+                            restart_outer_loop = True
+                            input_queue.get()
+                            task_queue.put(args)
+                            self._control_signal_queue.put((pid, index, "restart"))
+                            process_info = self._get_process_info(
+                                input_queue=input_queue,
+                                output_queue=output_queue
+                            )
+                            break
+                    else:
+                        if not healthy_ensured_process.process.is_alive():
+                            restart_outer_loop = True
+                            task_queue.put(args)
+                            healthy_ensured_process.start_new()
+                            process_info = self._get_process_info(healthy_ensured_process=healthy_ensured_process)
+                            break
+
                     # Responsible for checking the output queue messages and
                     # processing them within a specified timeout period.
                     message = output_queue.get(timeout=1)
@@ -360,6 +391,9 @@ class LineExecutionProcessPool:
                         break
                 except queue.Empty:
                     continue
+
+            if restart_outer_loop:
+                continue
 
             self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
 
@@ -370,18 +404,14 @@ class LineExecutionProcessPool:
                 if not task_queue.empty():
                     if self._use_fork:
                         self._control_signal_queue.put((pid, index, "restart"))
-                        index, pid, process_name = input_queue.get()
-                        process_info = (index, pid, process_name, input_queue, output_queue)
+                        process_info = self._get_process_info(
+                            input_queue=input_queue,
+                            output_queue=output_queue
+                        )
                     else:
                         healthy_ensured_process.end()
-                        healthy_ensured_process.start_new(task_queue)
-                        process_info = (
-                            healthy_ensured_process,
-                            healthy_ensured_process.process.pid,
-                            healthy_ensured_process.process.name,
-                            healthy_ensured_process.input_queue,
-                            healthy_ensured_process.output_queue
-                        )
+                        healthy_ensured_process.start_new()
+                        process_info = self._get_process_info(healthy_ensured_process=healthy_ensured_process)
 
             self._processing_idx.pop(line_number)
 
@@ -391,6 +421,21 @@ class LineExecutionProcessPool:
                 count=len(result_list),
                 total_count=self._nlines,
             )
+
+    def _get_process_info(self, input_queue=None, output_queue=None, healthy_ensured_process=None):
+        # Using fork
+        if input_queue and output_queue:
+            index, pid, process_name = input_queue.get()
+            process_info = (index, pid, process_name, input_queue, output_queue)
+        elif healthy_ensured_process is not None:
+            process_info = (
+                healthy_ensured_process,
+                healthy_ensured_process.process.pid,
+                healthy_ensured_process.process.name,
+                healthy_ensured_process.input_queue,
+                healthy_ensured_process.output_queue
+            )
+        return process_info
 
     def _process_message(self, message, result_list):
         if isinstance(message, LineResult):
@@ -422,21 +467,15 @@ class LineExecutionProcessPool:
             output_queue=None
     ):
         if self._use_fork:
-            index, pid, process_name = input_queue.get()
-            process_info = (index, pid, process_name, input_queue, output_queue)
+            process_info = self._get_process_info(
+                input_queue=input_queue,
+                output_queue=output_queue
+            )
         else:
             healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func, self.context)
-            healthy_ensured_process.start_new(task_queue)
+            healthy_ensured_process.start_new()
+            process_info = self._get_process_info(healthy_ensured_process=healthy_ensured_process)
 
-            if not healthy_ensured_process.process.is_alive():
-                return
-            process_info = (
-                healthy_ensured_process,
-                healthy_ensured_process.process.pid,
-                healthy_ensured_process.process.name,
-                healthy_ensured_process.input_queue,
-                healthy_ensured_process.output_queue
-            )
         self._process_task(
             process_info,
             run_start_time,
