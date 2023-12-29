@@ -365,10 +365,15 @@ class LineExecutionProcessPool:
 
             while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time:
                 try:
+                    # Monitor process aliveness and start new one if it crashes
                     if self._use_fork:
                         if not psutil.pid_exists(pid):
+                            # If the process crashes, set the 'restart_outer_loop' to TRUE.
+                            # And re-execute the task from the beginning.
                             restart_outer_loop = True
+                            # Clear the contents of input_queue to allow its reuse in fork mode.
                             input_queue.get()
+                            # Put unfinished tasks into task_queue again.
                             task_queue.put(args)
                             self._control_signal_queue.put((pid, index, "restart"))
                             process_info = self._get_process_info(
