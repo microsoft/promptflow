@@ -30,7 +30,8 @@ class TestExceptions:
         assert error_type == ErrorType.SDKError
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == (
-            "exception name=FileNotFoundError, exception msg=, "
+            "exception name=FileNotFoundError, "
+            "exception msg=, "
             "exception module=promptflow._sdk._pf_client, "
             'exception code=raise FileNotFoundError(f"flow path {flow} does not exist"), '
             "exception lineno=107"
