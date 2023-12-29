@@ -1,6 +1,7 @@
+import functools
+import inspect
+
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
-from promptflow._core.tracer import _traced
-from promptflow.contracts.trace import TraceType
 
 from .record_storage import RecordFileMissingException, RecordItemMissingException, RecordStorage
 
@@ -118,11 +119,43 @@ def mock_tool(original_tool):
         def tool_decorator(func):
             from promptflow.exceptions import UserErrorException
 
+            if inspect.iscoroutinefunction(func):
+
+                @functools.wraps(func)
+                async def decorated_tool(*args, **kwargs):
+                    from promptflow._core.tracer import Tracer
+
+                    if Tracer.active_instance() is None:
+                        return await call_func_async(func, args, kwargs)
+                    try:
+                        Tracer.push_tool(func, args, kwargs)
+                        output = await call_func_async(func, args, kwargs)
+                        return Tracer.pop(output)
+                    except Exception as e:
+                        Tracer.pop(None, e)
+                        raise
+
+                new_f = decorated_tool
+            else:
+
+                @functools.wraps(func)
+                def decorated_tool(*args, **kwargs):
+                    from promptflow._core.tracer import Tracer
+
+                    if Tracer.active_instance() is None:
+                        return call_func(func, args, kwargs)
+                    try:
+                        Tracer.push_tool(func, args, kwargs)
+                        output = call_func(func, args, kwargs)
+                        return Tracer.pop(output)
+                    except Exception as e:
+                        Tracer.pop(None, e)
+                        raise
+
+                new_f = decorated_tool
+
             if type is not None and type not in [k.value for k in ToolType]:
                 raise UserErrorException(f"Tool type {type} is not supported yet.")
-
-            # Calls to tool functions should be traced automatically.
-            new_f = _traced(func, trace_type=TraceType.TOOL)
 
             new_f.__original_function = func
             func.__wrapped_function = new_f
