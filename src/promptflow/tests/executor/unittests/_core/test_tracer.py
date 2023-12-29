@@ -1,7 +1,9 @@
+import inspect
+
 import pytest
 
 from promptflow._core.generator_proxy import GeneratorProxy
-from promptflow._core.tracer import Tracer, _create_trace_from_function_call
+from promptflow._core.tracer import Tracer, _create_trace_from_function_call, _traced
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.trace import Trace, TraceType
 
@@ -212,3 +214,126 @@ class TestCreateTraceFromFunctionCall:
         obj = MyClass()
         trace = _create_trace_from_function_call(obj.my_method, args=[1])
         assert trace.inputs == {"a": 1}
+
+
+def sync_func(a: int):
+    return a
+
+
+async def async_func(a: int):
+    return a
+
+
+def sync_error_func(a: int):
+    a / 0
+
+
+async def async_error_func(a: int):
+    a / 0
+
+
+class TestTraced:
+    """This class tests the `_traced` function."""
+
+    def test_traced_sync_func_should_be_a_sync_func(self):
+        assert inspect.iscoroutinefunction(_traced(sync_func)) is False
+
+    def test_traced_async_func_should_be_an_async_func(self):
+        assert inspect.iscoroutinefunction(_traced(async_func)) is True
+
+    @pytest.mark.parametrize("func", [sync_func, async_func])
+    def test_original_function_and_wrapped_function_should_have_same_name(self, func):
+        traced_func = _traced(func)
+        assert traced_func.__name__ == func.__name__
+
+    @pytest.mark.parametrize("func", [sync_func, async_func])
+    def test_original_function_and_wrapped_function_attributes_are_set(self, func):
+        traced_func = _traced(func)
+        assert getattr(traced_func, "__original_function") == func
+        assert getattr(func, "__wrapped_function") == traced_func
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("func", [sync_func, async_func])
+    async def test_trace_is_not_generated_when_tracer_is_not_active(self, func):
+        # Do not call Tracer.start_tracing() here
+        traced_func = _traced(func)
+        if inspect.iscoroutinefunction(traced_func):
+            result = await traced_func(1)
+        else:
+            result = traced_func(1)
+
+        # Check the result is expected
+        assert result == 1
+
+        # Check the generated trace is not generated
+        traces = Tracer.end_tracing()
+        assert len(traces) == 0
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("func", [sync_func, async_func])
+    async def test_trace_is_generated_when_tracer_is_active(self, func):
+        Tracer.start_tracing("test_run_id")
+        traced_func = _traced(func)
+        if inspect.iscoroutinefunction(traced_func):
+            result = await traced_func(1)
+        else:
+            result = traced_func(1)
+        # Check the result is expected
+        assert result == 1
+
+        traces = Tracer.end_tracing()
+        # Check the generated trace is expected
+        assert len(traces) == 1
+        trace = traces[0]
+        assert trace["name"] == func.__qualname__
+        assert trace["type"] == TraceType.FUNCTION
+        assert trace["inputs"] == {"a": 1}
+        assert trace["output"] == 1
+        assert trace["error"] is None
+        assert trace["children"] is None
+        assert isinstance(trace["start_time"], float)
+        assert isinstance(trace["end_time"], float)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("func", [sync_error_func, async_error_func])
+    async def test_trace_is_generated_when_errors_occurred(self, func):
+        Tracer.start_tracing("test_run_id")
+        traced_func = _traced(func)
+
+        with pytest.raises(ZeroDivisionError):
+            if inspect.iscoroutinefunction(traced_func):
+                await traced_func(1)
+            else:
+                traced_func(1)
+
+        traces = Tracer.end_tracing()
+        # Check the generated trace is expected
+        assert len(traces) == 1
+        trace = traces[0]
+        assert trace["name"] == func.__qualname__
+        assert trace["type"] == TraceType.FUNCTION
+        assert trace["inputs"] == {"a": 1}
+        assert trace["output"] is None
+        assert trace["error"] == {"message": "division by zero", "type": "ZeroDivisionError"}
+        assert trace["children"] is None
+        assert isinstance(trace["start_time"], float)
+        assert isinstance(trace["end_time"], float)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("func", [sync_func, async_func])
+    async def test_trace_type_can_be_set_correctly(self, func):
+        Tracer.start_tracing("test_run_id")
+        traced_func = _traced(func, trace_type=TraceType.TOOL)
+
+        if inspect.iscoroutinefunction(traced_func):
+            result = await traced_func(1)
+        else:
+            result = traced_func(1)
+        assert result == 1
+
+        traces = Tracer.end_tracing()
+        # Check the generated trace is expected
+        assert len(traces) == 1
+        trace = traces[0]
+        assert trace["name"] == func.__qualname__
+        assert trace["type"] == TraceType.TOOL
