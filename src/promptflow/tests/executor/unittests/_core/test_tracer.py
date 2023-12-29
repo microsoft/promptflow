@@ -232,6 +232,7 @@ async def async_error_func(a: int):
     a / 0
 
 
+@pytest.mark.unittest
 class TestTraced:
     """This class tests the `_traced` function."""
 
@@ -359,6 +360,7 @@ async def decorated_with_parentheses_async(a: int):
     return a
 
 
+@pytest.mark.unittest
 class TestTrace:
     """This class tests `trace` function."""
 

@@ -41,6 +41,7 @@ def tool_with_attributes(stream: bool, a: int, b: int):
     return stream, a, b
 
 
+@pytest.mark.unittest
 class TestTool:
     """This class tests the `tool` decorator."""
 
