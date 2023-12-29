@@ -27,7 +27,7 @@ class TestHandleOpenAIError:
         error_codes = "UserError/ToolValidationError/ChatAPIInvalidRole"
         with pytest.raises(ChatAPIInvalidRole,
                            match="The Chat API requires a specific format for prompt") as exc_info:
-            aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
+            aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo-16k")
         assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_aoai_authentication_error_with_bad_api_key(self, azure_open_ai_connection):
@@ -38,7 +38,7 @@ class TestHandleOpenAIError:
         )
         error_codes = "UserError/OpenAIError/AuthenticationError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
-            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
+            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo-16k")
         assert raw_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
@@ -47,7 +47,7 @@ class TestHandleOpenAIError:
         prompt_template = "please complete this sentence: world war II "
         error_codes = "UserError/OpenAIError/APIConnectionError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
-            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
+            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo-16k")
         assert "Connection error." in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
@@ -59,7 +59,7 @@ class TestHandleOpenAIError:
         error_codes = "UserError/OpenAIError/NotFoundError"
         # Chat will throw: Exception occurs: NotFoundError: Resource not found
         with pytest.raises(WrappedOpenAIError) as exc_info:
-            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
+            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo-16k")
         assert raw_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
