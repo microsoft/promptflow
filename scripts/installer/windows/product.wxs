@@ -92,7 +92,7 @@
         <CustomAction Id="Clean_Custom_Files_After_Uninstall"
             Directory="APPLICATIONFOLDER"
             Execute="deferred"
-            ExeCommand="cmd.exe /c rmdir /s /q &quot;[APPLICATIONFOLDER]\*.*&quot;"
+            ExeCommand="cmd.exe /c rmdir /s /q &quot;[APPLICATIONFOLDER]&quot;"
             Return="ignore" />
 
         <InstallExecuteSequence>
