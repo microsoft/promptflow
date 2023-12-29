@@ -164,12 +164,14 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
 
 
 @pytest.fixture
-def flow_serving_client_with_prt_config_env(mocker: MockerFixture, subscription_id, resource_group_name, workspace_name):  # noqa: E501
+def flow_serving_client_with_prt_config_env(
+    mocker: MockerFixture, subscription_id, resource_group_name, workspace_name
+):  # noqa: E501
     connections = {
-            "PRT_CONFIG_OVERRIDE": f"deployment.subscription_id={subscription_id},"
-            f"deployment.resource_group={resource_group_name},"
-            f"deployment.workspace_name={workspace_name},"
-            "app.port=8088",
+        "PRT_CONFIG_OVERRIDE": f"deployment.subscription_id={subscription_id},"
+        f"deployment.resource_group={resource_group_name},"
+        f"deployment.workspace_name={workspace_name},"
+        "app.port=8088",
     }
     return create_serving_client_with_connections("basic-with-connection", mocker, connections)
 
@@ -191,7 +193,7 @@ def flow_serving_client_with_aml_resource_id_env(mocker: MockerFixture, remote_w
 def serving_client_with_connection_name_override(mocker: MockerFixture, remote_workspace_resource_id):
     connections = {
         "aoai_connection": "azure_open_ai_connection",
-        "PROMPTFLOW_CONNECTION_PROVIDER": remote_workspace_resource_id
+        "PROMPTFLOW_CONNECTION_PROVIDER": remote_workspace_resource_id,
     }
     return create_serving_client_with_connections("llm_connection_override", mocker, connections)
 
@@ -209,9 +211,7 @@ def serving_client_with_connection_data_override(mocker: MockerFixture, remote_w
     return create_serving_client_with_connections(model_name, mocker, connections)
 
 
-def create_serving_client_with_connections(
-    model_name, mocker: MockerFixture, connections: dict = {}
-):
+def create_serving_client_with_connections(model_name, mocker: MockerFixture, connections: dict = {}):
     from promptflow._sdk._serving.app import create_app as create_serving_app
 
     model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
@@ -374,7 +374,7 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
+def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str]) -> Run:
     """Create a batch run that does not require LLM."""
     name = randstr("batch_run_name")
     run = pf.run(
@@ -384,7 +384,6 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
         flow=f"{FLOWS_DIR}/hello-world",
         data=f"{DATAS_DIR}/webClassification3.jsonl",
         column_mapping={"name": "${data.url}"},
-        runtime=runtime,
         name=name,
         display_name="sdk-cli-test-fixture-batch-run-without-llm",
     )
