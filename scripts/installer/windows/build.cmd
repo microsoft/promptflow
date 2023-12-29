@@ -200,10 +200,6 @@ for /d %%d in ("azure*.dist-info") do (
 if %errorlevel% neq 0 goto ERROR
 popd
 
-REM Remove Scripts folder
-echo remove Scripts
-if exist %BUILDING_DIR%\Scripts rmdir /s /q %BUILDING_DIR%\Scripts
-
 echo %OUTPUT_DIR%
 
 REM Check pf can be executed. This also prints the Python version.
