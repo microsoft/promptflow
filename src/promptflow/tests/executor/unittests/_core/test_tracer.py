@@ -122,6 +122,10 @@ def func_with_args_and_kwargs(arg1, arg2=None, *, kwarg1=None, kwarg2=None):
     _ = (arg1, arg2, kwarg1, kwarg2)
 
 
+async def func_with_args_and_kwargs_async(arg1, arg2=None, *, kwarg1=None, kwarg2=None):
+    _ = (arg1, arg2, kwarg1, kwarg2)
+
+
 def func_with_connection_parameter(a: int, conn: AzureOpenAIConnection):
     _ = (a, conn)
 
@@ -133,6 +137,8 @@ class MyClass:
 
 @pytest.mark.unittest
 class TestCreateTraceFromFunctionCall:
+    """This class tests the `_create_trace_from_function_call` function."""
+
     def test_basic_fields_are_filled_and_others_are_not(self):
         trace = _create_trace_from_function_call(func_with_no_parameters)
 
@@ -149,6 +155,14 @@ class TestCreateTraceFromFunctionCall:
         assert trace.end_time is None
         assert trace.children is None
         assert trace.error is None
+
+    def test_basic_fields_are_filled_for_async_functions(self):
+        trace = _create_trace_from_function_call(
+            func_with_args_and_kwargs_async, args=[1, 2], kwargs={"kwarg1": 3, "kwarg2": 4}
+        )
+        assert trace.name == "func_with_args_and_kwargs_async"
+        assert trace.type == TraceType.FUNCTION
+        assert trace.inputs == {"arg1": 1, "arg2": 2, "kwarg1": 3, "kwarg2": 4}
 
     def test_trace_name_should_contain_class_name_for_class_methods(self):
         obj = MyClass()
