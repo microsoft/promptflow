@@ -26,7 +26,7 @@ IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
 @pytest.mark.unittest
-def test_inject_operation_headers():
+def test_inject_operation_headers_sync():
     @inject_operation_headers
     def f(**kwargs):
         return kwargs
@@ -52,7 +52,34 @@ def test_inject_operation_headers():
 
 
 @pytest.mark.unittest
-def test_aoai_generator_proxy():
+@pytest.mark.asyncio
+async def test_inject_operation_headers_async():
+    @inject_operation_headers
+    async def f(**kwargs):
+        return kwargs
+
+    if IS_LEGACY_OPENAI:
+        headers = "headers"
+        kwargs_1 = {"headers": {"a": 1, "b": 2}}
+        kwargs_2 = {"headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
+    else:
+        headers = "extra_headers"
+        kwargs_1 = {"extra_headers": {"a": 1, "b": 2}}
+        kwargs_2 = {"extra_headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}}
+
+    injected_headers = get_aoai_telemetry_headers()
+    assert await f(a=1, b=2) == {"a": 1, "b": 2, headers: injected_headers}
+
+    merged_headers = {**injected_headers, "a": 1, "b": 2}
+    assert await f(**kwargs_1) == {headers: merged_headers}
+
+    aoai_tools_headers = injected_headers.copy()
+    aoai_tools_headers.update({"ms-azure-ai-promptflow-called-from": "aoai-tool"})
+    assert await f(**kwargs_2) == {headers: aoai_tools_headers}
+
+
+@pytest.mark.unittest
+def test_aoai_generator_proxy_sync():
     def mock_aoai(**kwargs):
         # check if args has a stream parameter
         if "stream" in kwargs and kwargs["stream"]:
@@ -71,7 +98,7 @@ def test_aoai_generator_proxy():
         apis = [
             "openai.resources.Completions.create",
             "openai.resources.chat.Completions.create",
-            "openai.resources.Embeddings.create"
+            "openai.resources.Embeddings.create",
         ]
 
     with patch(apis[0], new=mock_aoai), patch(apis[1], new=mock_aoai), patch(apis[2], new=mock_aoai):
@@ -102,6 +129,57 @@ def test_aoai_generator_proxy():
 
 
 @pytest.mark.unittest
+@pytest.mark.asyncio
+async def test_aoai_generator_proxy_async():
+    async def mock_aoai(**kwargs):
+        # check if args has a stream parameter
+        if "stream" in kwargs and kwargs["stream"]:
+            # stream parameter is true, yield a string
+            def generator():
+                yield "This is a yielded string"
+
+            return generator()
+        else:
+            # stream parameter is false or not given, return a string
+            return "This is a returned string"
+
+    if IS_LEGACY_OPENAI:
+        apis = ["openai.Completion.acreate", "openai.ChatCompletion.acreate", "openai.Embedding.acreate"]
+    else:
+        apis = [
+            "openai.resources.AsyncCompletions.create",
+            "openai.resources.chat.AsyncCompletions.create",
+            "openai.resources.AsyncEmbeddings.create",
+        ]
+
+    with patch(apis[0], new=mock_aoai), patch(apis[1], new=mock_aoai), patch(apis[2], new=mock_aoai):
+        Tracer.start_tracing("mock_run_id")
+        inject_openai_api()
+
+        if IS_LEGACY_OPENAI:
+            return_string = await openai.Completion.acreate(stream=False)
+            return_generator = await openai.Completion.acreate(stream=True)
+        else:
+            return_string = await openai.resources.AsyncCompletions.create(stream=False)
+            return_generator = await openai.resources.AsyncCompletions.create(stream=True)
+
+        assert return_string == "This is a returned string"
+        assert isinstance(return_generator, GeneratorType)
+
+        for _ in return_generator:
+            pass
+
+        traces = Tracer.end_tracing()
+        assert len(traces) == 2
+        for trace in traces:
+            assert trace["type"] == "LLM"
+            if trace["inputs"]["stream"]:
+                assert trace["output"] == ["This is a yielded string"]
+            else:
+                assert trace["output"] == "This is a returned string"
+
+
+@pytest.mark.unittest
 def test_aoai_call_inject():
     if IS_LEGACY_OPENAI:
         headers = "headers"
@@ -111,7 +189,7 @@ def test_aoai_call_inject():
         apis = [
             "openai.resources.Completions.create",
             "openai.resources.chat.Completions.create",
-            "openai.resources.Embeddings.create"
+            "openai.resources.Embeddings.create",
         ]
 
     def mock_aoai(**kwargs):

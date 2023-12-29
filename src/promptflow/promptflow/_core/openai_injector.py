@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import functools
 import inspect
 import os
@@ -27,30 +28,59 @@ def inject_function(args_to_ignore=None, trace_type=TraceType.LLM):
     def wrapper(f):
         sig = inspect.signature(f).parameters
 
-        @functools.wraps(f)
-        def wrapped_method(*args, **kwargs):
-            if not Tracer.active():
-                return f(*args, **kwargs)
+        if asyncio.iscoroutinefunction(f):
 
-            all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-            for key in args_to_ignore:
-                all_kwargs.pop(key, None)
-            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
-            trace = Trace(
-                name=name,
-                type=trace_type,
-                inputs=all_kwargs,
-                start_time=datetime.utcnow().timestamp(),
-            )
-            Tracer.push(trace)
-            try:
-                result = f(*args, **kwargs)
-            except Exception as ex:
-                Tracer.pop(error=ex)
-                raise
-            else:
-                result = Tracer.pop(result)
-            return result
+            @functools.wraps(f)
+            async def wrapped_method(*args, **kwargs):
+                if not Tracer.active():
+                    return await f(*args, **kwargs)
+
+                all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+                for key in args_to_ignore:
+                    all_kwargs.pop(key, None)
+                name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
+                trace = Trace(
+                    name=name,
+                    type=trace_type,
+                    inputs=all_kwargs,
+                    start_time=datetime.utcnow().timestamp(),
+                )
+                Tracer.push(trace)
+                try:
+                    result = await f(*args, **kwargs)
+                except Exception as ex:
+                    Tracer.pop(error=ex)
+                    raise
+                else:
+                    result = Tracer.pop(result)
+                return result
+
+        else:
+
+            @functools.wraps(f)
+            def wrapped_method(*args, **kwargs):
+                if not Tracer.active():
+                    return f(*args, **kwargs)
+
+                all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+                for key in args_to_ignore:
+                    all_kwargs.pop(key, None)
+                name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
+                trace = Trace(
+                    name=name,
+                    type=trace_type,
+                    inputs=all_kwargs,
+                    start_time=datetime.utcnow().timestamp(),
+                )
+                Tracer.push(trace)
+                try:
+                    result = f(*args, **kwargs)
+                except Exception as ex:
+                    Tracer.pop(error=ex)
+                    raise
+                else:
+                    result = Tracer.pop(result)
+                return result
 
         return wrapped_method
 
@@ -81,22 +111,41 @@ def get_aoai_telemetry_headers() -> dict:
 
 
 def inject_operation_headers(f):
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        # Inject headers from operation context, overwrite injected header with headers from kwargs.
-        injected_headers = get_aoai_telemetry_headers()
-        original_headers = kwargs.get("headers") if IS_LEGACY_OPENAI else kwargs.get("extra_headers")
-        if original_headers and isinstance(original_headers, dict):
-            injected_headers.update(original_headers)
-        kwargs.update(headers=injected_headers) if IS_LEGACY_OPENAI else kwargs.update(extra_headers=injected_headers)
+    if asyncio.iscoroutinefunction(f):
 
-        return f(*args, **kwargs)
+        @functools.wraps(f)
+        async def wrapper(*args, **kwargs):
+            # Inject headers from operation context, overwrite injected header with headers from kwargs.
+            injected_headers = get_aoai_telemetry_headers()
+            original_headers = kwargs.get("headers") if IS_LEGACY_OPENAI else kwargs.get("extra_headers")
+            if original_headers and isinstance(original_headers, dict):
+                injected_headers.update(original_headers)
+            kwargs.update(headers=injected_headers) if IS_LEGACY_OPENAI else kwargs.update(
+                extra_headers=injected_headers
+            )
+
+            return await f(*args, **kwargs)
+
+    else:
+
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            # Inject headers from operation context, overwrite injected header with headers from kwargs.
+            injected_headers = get_aoai_telemetry_headers()
+            original_headers = kwargs.get("headers") if IS_LEGACY_OPENAI else kwargs.get("extra_headers")
+            if original_headers and isinstance(original_headers, dict):
+                injected_headers.update(original_headers)
+            kwargs.update(headers=injected_headers) if IS_LEGACY_OPENAI else kwargs.update(
+                extra_headers=injected_headers
+            )
+
+            return f(*args, **kwargs)
 
     return wrapper
 
 
 def inject(f):
-    wrapper_fun = inject_operation_headers((inject_function(["api_key", "headers"])(f)))
+    wrapper_fun = inject_operation_headers((inject_function(["api_key", "headers", "extra_headers"])(f)))
     wrapper_fun._original = f
     return wrapper_fun
 
@@ -106,7 +155,7 @@ def available_openai_apis():
         for api in ("Completion", "ChatCompletion", "Embedding"):
             try:
                 openai_api = getattr(openai, api)
-                if hasattr(openai_api, "create"):
+                if hasattr(openai_api, "create") or hasattr(openai_api, "acreate"):
                     yield openai_api
             except AttributeError:
                 # This is expected for older versions of openai or unsupported APIs.
@@ -126,6 +175,18 @@ def available_openai_apis():
                 # To avoid breaking changes included in future upgrades, we ignore all exceptions here.
                 pass
 
+        for api in ("AsyncCompletions", "AsyncChat", "AsyncEmbeddings"):
+            try:
+                if api == "AsyncChat":
+                    openai_api = getattr(openai.resources.chat, "AsyncCompletions")
+                else:
+                    openai_api = getattr(openai.resources, api)
+                if hasattr(openai_api, "create"):
+                    yield openai_api
+            except Exception:
+                # To avoid breaking changes included in future upgrades, we ignore all exceptions here.
+                pass
+
 
 def inject_openai_api():
     """This function:
@@ -135,9 +196,14 @@ def inject_openai_api():
     """
     for openai_api in available_openai_apis():
         # Check if the create method of the openai_api class has already been modified
-        if not hasattr(openai_api.create, "_original"):
+        if hasattr(openai_api, "create") and not hasattr(openai_api.create, "_original"):
             # If not, modify it by calling the inject function with it as an argument
             openai_api.create = inject(openai_api.create)
+
+        # Check if the acreate method of the openai_api class has already been modified
+        if hasattr(openai_api, "acreate") and not hasattr(openai_api.acreate, "_original"):
+            # If not, modify it by calling the inject function with it as an argument
+            openai_api.acreate = inject(openai_api.acreate)
 
     if IS_LEGACY_OPENAI:
         # For the openai versions lower than 1.0.0, it reads api configs from environment variables only at
