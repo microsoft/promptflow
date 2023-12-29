@@ -92,7 +92,7 @@
 <!--             ExeCommand="cmd.exe /c rmdir /s /q &quot;[APPLICATIONFOLDER]&quot;" -->
 <!--             Return="ignore" /> -->
         <CustomAction Id="Clean_Custom_Files_After_Uninstall"
-            Directory="MyProduct"
+            Directory="APPLICATIONFOLDER"
             Execute="commit"
             Impersonate="no"
             ExeCommand="cmd.exe /c del /q *"
