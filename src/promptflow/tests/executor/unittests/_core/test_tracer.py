@@ -1,7 +1,7 @@
 import pytest
 
 from promptflow._core.generator_proxy import GeneratorProxy
-from promptflow._core.tracer import Tracer
+from promptflow._core.tracer import Tracer, _create_trace_from_function_call
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.trace import Trace, TraceType
 
@@ -134,3 +134,89 @@ class TestTracer:
     @pytest.mark.parametrize("obj", [({"name": "Alice", "age": 25}), ([1, 2, 3]), (GeneratorProxy(generator())), (42)])
     def test_to_serializable(self, obj):
         assert Tracer.to_serializable(obj) == obj
+
+
+def func_with_no_parameters():
+    pass
+
+
+def func_with_args_and_kwargs(arg1, arg2=None, *, kwarg1=None, kwarg2=None):
+    _ = (arg1, arg2, kwarg1, kwarg2)
+
+
+def func_with_connection_parameter(a: int, conn: AzureOpenAIConnection):
+    _ = (a, conn)
+
+
+class MyClass:
+    def my_method(self, a: int):
+        _ = a
+
+
+@pytest.mark.unittest
+class TestCreateTraceFromFunctionCall:
+    def test_basic_fields_are_filled_and_others_are_not(self):
+        trace = _create_trace_from_function_call(func_with_no_parameters)
+
+        # These fields should be filled in this method call.
+        assert trace.name == "func_with_no_parameters"
+        assert trace.type == TraceType.FUNCTION
+        assert trace.inputs == {}
+        # start_time should be a timestamp, which is a float value currently.
+        assert isinstance(trace.start_time, float)
+
+        # These should be left empty in this method call.
+        # They will be filled by the tracer later.
+        assert trace.output is None
+        assert trace.end_time is None
+        assert trace.children is None
+        assert trace.error is None
+
+    def test_trace_name_should_contain_class_name_for_class_methods(self):
+        obj = MyClass()
+        trace = _create_trace_from_function_call(obj.my_method, args=[obj, 1])
+        assert trace.name == "MyClass.my_method"
+
+    def test_trace_type_can_be_set_correctly(self):
+        trace = _create_trace_from_function_call(func_with_no_parameters, trace_type=TraceType.TOOL)
+        assert trace.type == TraceType.TOOL
+
+    def test_args_and_kwargs_are_filled_correctly(self):
+        trace = _create_trace_from_function_call(
+            func_with_args_and_kwargs, args=[1, 2], kwargs={"kwarg1": 3, "kwarg2": 4}
+        )
+        assert trace.inputs == {"arg1": 1, "arg2": 2, "kwarg1": 3, "kwarg2": 4}
+
+    def test_args_called_with_name_should_be_filled_correctly(self):
+        trace = _create_trace_from_function_call(func_with_args_and_kwargs, args=[1], kwargs={"arg2": 2, "kwarg2": 4})
+        assert trace.inputs == {"arg1": 1, "arg2": 2, "kwarg2": 4}
+
+    def test_kwargs_called_without_name_should_be_filled_correctly(self):
+        trace = _create_trace_from_function_call(func_with_args_and_kwargs, args=[1, 2, 3], kwargs={"kwarg2": 4})
+        assert trace.inputs == {"arg1": 1, "arg2": 2, "kwarg1": 3, "kwarg2": 4}
+
+    def test_empty_args_should_be_excluded_from_inputs(self):
+        trace = _create_trace_from_function_call(func_with_args_and_kwargs, args=[1])
+        assert trace.inputs == {"arg1": 1}
+
+    def test_empty_kwargs_should_be_excluded_from_inputs(self):
+        trace = _create_trace_from_function_call(func_with_args_and_kwargs, kwargs={"kwarg1": 1})
+        assert trace.inputs == {"kwarg1": 1}
+        trace = _create_trace_from_function_call(func_with_args_and_kwargs, kwargs={"kwarg2": 2})
+        assert trace.inputs == {"kwarg2": 2}
+
+    def test_args_and_kwargs_should_be_filled_in_called_order(self):
+        trace = _create_trace_from_function_call(
+            func_with_args_and_kwargs, args=[1, 2], kwargs={"kwarg2": 4, "kwarg1": 3}
+        )
+        assert list(trace.inputs.keys()) == ["arg1", "arg2", "kwarg2", "kwarg1"]
+
+    def test_connections_should_be_serialized(self):
+        conn = AzureOpenAIConnection("test_name", "test_secret")
+        trace = _create_trace_from_function_call(func_with_connection_parameter, args=[1, conn])
+        assert trace.inputs == {"a": 1, "conn": "AzureOpenAIConnection"}
+
+    def test_self_arg_should_be_excluded_from_inputs(self):
+        obj = MyClass()
+        trace = _create_trace_from_function_call(obj.my_method, args=[1])
+        assert trace.inputs == {"a": 1}
