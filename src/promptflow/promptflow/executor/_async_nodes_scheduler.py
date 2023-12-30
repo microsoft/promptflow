@@ -5,6 +5,10 @@
 import asyncio
 import inspect
 import contextvars
+import os
+import signal
+import threading
+import time
 from asyncio import Task
 from typing import Any, Dict, List, Tuple
 
@@ -16,6 +20,8 @@ from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
 from concurrent.futures import ThreadPoolExecutor
+
+SIGINT_RECEIVED = False
 
 
 class AsyncNodesScheduler:
@@ -34,6 +40,11 @@ class AsyncNodesScheduler:
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
+        signal.signal(signal.SIGINT, signal_handler)
+        loop = asyncio.get_running_loop()
+        monitor = threading.Thread(target=monitor_coroutine_thread, args=(loop,))
+        monitor.start()
+
         parent_context = contextvars.copy_context()
         executor = ThreadPoolExecutor(
             max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
@@ -117,3 +128,60 @@ class AsyncNodesScheduler:
         return await asyncio.get_running_loop().run_in_executor(
             executor, context.invoke_tool, node, f, kwargs
         )
+
+
+def signal_handler(sig, frame):
+    """
+    Set SIGINT_RECEIVED to True when SIGINT is received.
+    It's used to pass the signal to child thread for graceful exit.
+    """
+    global SIGINT_RECEIVED
+    flow_logger.info("Received SIGINT, set SIGINT_RECEIVED to True.")
+    SIGINT_RECEIVED = True
+    raise KeyboardInterrupt
+
+
+def monitor_coroutine_thread(loop: asyncio.AbstractEventLoop):
+    """Exit the process when all coroutines are done.
+    We add this function because if a sync tool is running in async mode,
+    the task will be cancelled after receiving SIGINT,
+    but the thread will not be terminated and blocks the process from exiting.
+    :param loop: event loop of main thread
+    :type loop: asyncio.AbstractEventLoop
+    """
+    global SIGINT_RECEIVED
+    max_wait_seconds = os.environ.get("PF_WAIT_SECONDS_AFTER_CANCELLATION", 30)
+
+    all_tasks_are_done = False
+    receive_signal_time = None
+    exceeded_wait_seconds = False
+
+    while not all_tasks_are_done and not exceeded_wait_seconds:
+        if SIGINT_RECEIVED:
+            if not receive_signal_time:
+                receive_signal_time = time.time()
+
+            flow_logger.info("SIGINT received, checking tasks...")
+            # For sync tool running in async mode, the task will be cancelled,
+            # but the thread will not be terminated, we exit the process despite of it.
+            # TODO: Detect whether there is any sync tool running in async mode,
+            # if there is none, avoida sys._exit and let the program exit gracefully.
+            all_tasks_are_done = all(task.done() for task in asyncio.all_tasks(loop))
+            if all_tasks_are_done:
+                flow_logger.info("All coroutines are done. Exiting.")
+                os._exit(0)
+
+            exceeded_wait_seconds = time.time() - receive_signal_time > max_wait_seconds
+        time.sleep(1)
+
+    if exceeded_wait_seconds and not all_tasks_are_done:
+        flow_logger.info(f"Not all coroutines are done within {max_wait_seconds}s"
+                         " after cancellation. Exiting the process despite of them."
+                         " Please config the environment variable if your tool needs"
+                         " more time to clean up after cancellation."
+                         "\nRemaining tasks:")
+        remaining_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
+        for task in remaining_tasks:
+            # TODO: Store tool information in task so that we can show the information here
+            flow_logger.info(f"{task.get_name()}")
+        os._exit(0)

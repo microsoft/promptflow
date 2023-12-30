@@ -51,6 +51,8 @@ from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 
+SIGINT_RECEIVED = False
+
 
 class FlowExecutor:
     """This class is used to execute a single flow for different inputs.
@@ -183,6 +185,7 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
+
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
         return cls._create_from_flow(
             flow_file=flow_file,
@@ -881,6 +884,7 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
+        return True
         return all(
             inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
         ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
