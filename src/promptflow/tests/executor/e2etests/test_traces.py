@@ -125,7 +125,7 @@ class TestExecutorTraces:
         assert flow_result.run_info.api_calls is not None
 
         # Extract the trace for the generator node
-        tool_trace = flow_result.run_info.api_calls[0]
+        tool_trace = flow_result.run_info.api_calls[0]["children"][0]
         generator_output_trace = tool_trace.get("output")
 
         # Verify that the trace output is a list
