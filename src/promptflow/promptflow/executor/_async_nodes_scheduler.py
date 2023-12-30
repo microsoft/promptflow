@@ -133,7 +133,7 @@ class AsyncNodesScheduler:
 def signal_handler(sig, frame):
     """
     Set SIGINT_RECEIVED to True when SIGINT is received.
-    It's used to pass the signal to child thread for graceful exit.
+    It's used to pass the signal to child thread for program exit.
     """
     global SIGINT_RECEIVED
     flow_logger.info("Received SIGINT, set SIGINT_RECEIVED to True.")
@@ -162,12 +162,12 @@ def mointor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
         if SIGINT_RECEIVED:
             if not receive_signal_time:
                 receive_signal_time = time.time()
+                flow_logger.info("SIGINT received, monitoring tasks...")
 
-            flow_logger.info("SIGINT received, checking tasks...")
             # For sync tool running in async mode, the task will be cancelled,
             # but the thread will not be terminated, we exit the process despite of it.
             # TODO: Detect whether there is any sync tool running in async mode,
-            # if there is none, avoida sys._exit and let the program exit gracefully.
+            # if there is none, avoid sys._exit and let the program exit gracefully.
             all_tasks_are_done = all(task.done() for task in asyncio.all_tasks(loop))
             if all_tasks_are_done:
                 flow_logger.info("All coroutines are done. Exiting.")
