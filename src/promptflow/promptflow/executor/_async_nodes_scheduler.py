@@ -42,7 +42,7 @@ class AsyncNodesScheduler:
     ) -> Tuple[dict, dict]:
         signal.signal(signal.SIGINT, signal_handler)
         loop = asyncio.get_running_loop()
-        monitor = threading.Thread(target=monitor_coroutine_thread, args=(loop,))
+        monitor = threading.Thread(target=mointor_coroutine_after_cancellation, args=(loop,))
         monitor.start()
 
         parent_context = contextvars.copy_context()
@@ -141,7 +141,7 @@ def signal_handler(sig, frame):
     raise KeyboardInterrupt
 
 
-def monitor_coroutine_thread(loop: asyncio.AbstractEventLoop):
+def mointor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
     """Exit the process when all coroutines are done.
     We add this function because if a sync tool is running in async mode,
     the task will be cancelled after receiving SIGINT,
