@@ -71,7 +71,7 @@ class TestExecutor:
         node_count = len(executor._flow.nodes)
         assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == 1
         assert isinstance(flow_result.run_info.api_calls[0]["children"], list) and \
-            len(flow_result.run_info.api_calls) == node_count
+            len(flow_result.run_info.api_calls[0]["children"]) == node_count
         assert len(flow_result.node_run_infos) == node_count
         for node, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
