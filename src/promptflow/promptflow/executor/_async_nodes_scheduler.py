@@ -149,6 +149,8 @@ def mointor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
     :param loop: event loop of main thread
     :type loop: asyncio.AbstractEventLoop
     """
+    # TODO: Use environment variable to ensure it is flow test / node test scenario
+    # to avoid unexpected exit.
     global SIGINT_RECEIVED
     max_wait_seconds = os.environ.get("PF_WAIT_SECONDS_AFTER_CANCELLATION", 30)
 
