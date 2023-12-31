@@ -21,8 +21,6 @@ from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
 from concurrent.futures import ThreadPoolExecutor
 
-SIGINT_RECEIVED = False
-
 
 class AsyncNodesScheduler:
     def __init__(
@@ -41,9 +39,7 @@ class AsyncNodesScheduler:
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
         signal.signal(signal.SIGINT, signal_handler)
-        loop = asyncio.get_running_loop()
-        monitor = threading.Thread(target=mointor_coroutine_after_cancellation, args=(loop,))
-        monitor.start()
+        signal.signal(signal.SIGTERM, signal_handler)
 
         parent_context = contextvars.copy_context()
         executor = ThreadPoolExecutor(
@@ -134,12 +130,13 @@ class AsyncNodesScheduler:
 
 def signal_handler(sig, frame):
     """
-    Set SIGINT_RECEIVED to True when SIGINT is received.
-    It's used to pass the signal to child thread for program exit.
+    Start a thread to monitor coroutines after receiving signal.
     """
-    global SIGINT_RECEIVED
-    flow_logger.info("Received SIGINT, set SIGINT_RECEIVED to True.")
-    SIGINT_RECEIVED = True
+    flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}),"
+                     " start coroutint monitor thread.")
+    loop = asyncio.get_running_loop()
+    monitor = threading.Thread(target=mointor_coroutine_after_cancellation, args=(loop,))
+    monitor.start()
     raise KeyboardInterrupt
 
 
@@ -147,35 +144,31 @@ def mointor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
     """Exit the process when all coroutines are done.
     We add this function because if a sync tool is running in async mode,
     the task will be cancelled after receiving SIGINT,
-    but the thread will not be terminated and blocks the process from exiting.
+    but the thread will not be terminated and blocks the program from exiting.
     :param loop: event loop of main thread
     :type loop: asyncio.AbstractEventLoop
     """
     # TODO: Use environment variable to ensure it is flow test / node test scenario
     # to avoid unexpected exit.
-    global SIGINT_RECEIVED
     max_wait_seconds = os.environ.get("PF_WAIT_SECONDS_AFTER_CANCELLATION", 30)
 
     all_tasks_are_done = False
-    receive_signal_time = None
     exceeded_wait_seconds = False
 
+    thread_start_time = time.time()
+    flow_logger.info(f"Start to monitor coroutines after cancellation, max wait seconds: {max_wait_seconds}s")
+
     while not all_tasks_are_done and not exceeded_wait_seconds:
-        if SIGINT_RECEIVED:
-            if not receive_signal_time:
-                receive_signal_time = time.time()
-                flow_logger.info("SIGINT received, monitoring tasks...")
+        # For sync tool running in async mode, the task will be cancelled,
+        # but the thread will not be terminated, we exit the program despite of it.
+        # TODO: Detect whether there is any sync tool running in async mode,
+        # if there is none, avoid sys._exit and let the program exit gracefully.
+        all_tasks_are_done = all(task.done() for task in asyncio.all_tasks(loop))
+        if all_tasks_are_done:
+            flow_logger.info("All coroutines are done. Exiting.")
+            os._exit(0)
 
-            # For sync tool running in async mode, the task will be cancelled,
-            # but the thread will not be terminated, we exit the process despite of it.
-            # TODO: Detect whether there is any sync tool running in async mode,
-            # if there is none, avoid sys._exit and let the program exit gracefully.
-            all_tasks_are_done = all(task.done() for task in asyncio.all_tasks(loop))
-            if all_tasks_are_done:
-                flow_logger.info("All coroutines are done. Exiting.")
-                os._exit(0)
-
-            exceeded_wait_seconds = time.time() - receive_signal_time > max_wait_seconds
+        exceeded_wait_seconds = time.time() - thread_start_time > max_wait_seconds
         time.sleep(1)
 
     if exceeded_wait_seconds and not all_tasks_are_done:
