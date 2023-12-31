@@ -116,7 +116,9 @@ class AsyncNodesScheduler:
             task = context.invoke_tool_async(node, f, kwargs)
         else:
             task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
-        return asyncio.create_task(task)
+        # Set the name of the task to the node name for debugging purpose
+        # It does not need to be unique by design.
+        return asyncio.create_task(task, name=node.name)
 
     @staticmethod
     async def _sync_function_to_async_task(
@@ -179,11 +181,9 @@ def mointor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
     if exceeded_wait_seconds and not all_tasks_are_done:
         flow_logger.info(f"Not all coroutines are done within {max_wait_seconds}s"
                          " after cancellation. Exiting the process despite of them."
-                         " Please config the environment variable if your tool needs"
-                         " more time to clean up after cancellation."
-                         "\nRemaining tasks:")
+                         " Please config the environment variable"
+                         " PF_WAIT_SECONDS_AFTER_CANCELLATION if your tool needs"
+                         " more time to clean up after cancellation.")
         remaining_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
-        for task in remaining_tasks:
-            # TODO: Store tool information in task so that we can show the information here
-            flow_logger.info(f"{task.get_name()}")
+        flow_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
         os._exit(0)
