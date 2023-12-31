@@ -1,6 +1,5 @@
 import asyncio
 import json
-from typing import Union
 
 from openai import AsyncOpenAI
 from openai.types.beta.threads import MessageContentImageFile, MessageContentText
@@ -77,7 +76,8 @@ async def add_message_and_run(
 def extract_text_from_message(message: list):
     content = []
     for m in message:
-        if m["type"] == "text":
+        message_type = m.get("type", "")
+        if message_type == "text" and "text" in m:
             content.append(m["text"])
     return "\n".join(content)
 
@@ -86,10 +86,12 @@ async def extract_file_ids_from_message(message: list, conn: OpenAIConnection):
     cli = AsyncOpenAI(api_key=conn.api_key, organization=conn.organization)
     file_ids = []
     for m in message:
-        if m["type"] == "file_path":
-            path = m["file_path"]["path"]
-            file = await cli.files.create(file=open(path, "rb"), purpose='assistants')
-            file_ids.append(file.id)
+        message_type = m.get("type", "")
+        if  message_type == "file_path" and "file_path" in m:
+            path = m["file_path"].get("path", "")
+            if path:
+                file = await cli.files.create(file=open(path, "rb"), purpose='assistants')
+                file_ids.append(file.id)
     return file_ids
 
 
