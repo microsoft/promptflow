@@ -135,12 +135,12 @@ def signal_handler(sig, frame):
     flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}),"
                      " start coroutint monitor thread.")
     loop = asyncio.get_running_loop()
-    monitor = threading.Thread(target=mointor_coroutine_after_cancellation, args=(loop,))
+    monitor = threading.Thread(target=monitor_coroutine_after_cancellation, args=(loop,))
     monitor.start()
     raise KeyboardInterrupt
 
 
-def mointor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
+def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
     """Exit the process when all coroutines are done.
     We add this function because if a sync tool is running in async mode,
     the task will be cancelled after receiving SIGINT,
