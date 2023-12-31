@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Callable, Dict
 
 from promptflow.contracts.flow import InputAssignment, Node, ToolSource
+from promptflow.contracts.tool import ToolType
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import UnsupportedAssistantToolType
@@ -50,9 +51,10 @@ class AssistantToolInvoker:
             name="assistant_node",
             tool="assistant_tool",
             inputs=predefined_inputs,
-            source=ToolSource.deserialize(tool["source"])
+            source=ToolSource.deserialize(tool["source"]) if "source" in tool else None,
+            type=ToolType.PYTHON if "tool_type" in tool and tool["tool_type"] == "python" else None,
         )
-        resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
+        resolved_tool = tool_resolver.resolve_tool_by_node(node, convert_input_types=False)
         func_name = resolved_tool.definition.function
         definition = self._generate_tool_definition(
             func_name, resolved_tool.definition.description, predefined_inputs.keys()
