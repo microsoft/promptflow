@@ -178,9 +178,6 @@ class RunTracker(ThreadLocalSingleton):
         # TODO: Refactor Tracer to support flow level tracing,
         # then we can remove the hard-coded root level api_calls here.
         # It has to be a list for UI backward compatibility.
-        # TODO: Add input, output, error to top level. Adding them would require
-        # the same technique of handingling image and generator in Tracer,
-        # which introduces duplicated logic. We should do it in the refactoring.
         start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() \
             if run_info.start_time else None
         end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() \

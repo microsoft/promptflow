@@ -72,6 +72,9 @@ class TestExecutor:
         assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == 1
         assert isinstance(flow_result.run_info.api_calls[0]["children"], list) and \
             len(flow_result.run_info.api_calls[0]["children"]) == node_count
+        assert isinstance(flow_result.run_info.api_calls[0]["inputs"], dict)
+        assert isinstance(flow_result.run_info.api_calls[0]["output"], dict)
+        assert flow_result.run_info.api_calls[0]["error"] is None
         assert len(flow_result.node_run_infos) == node_count
         for node, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
