@@ -19,9 +19,9 @@ inputs:
   question:
     type: list
     default:
-      - type: image_url
-        image_url:
-          url: data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAAGQBAMAAABykSv/AAAAD1BMVEX///8ApO//uQB/ugDyUCIvGCCuAAABF0lEQVR42u3PQQkAIBAAQSNoBStYwIf9MwnXwAMRYfa/jylFkiRJkiRJkiRJkiRJkiRJkiRJkiRJkqSHrWwz9pENBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBESSJOnHWrYae88GAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICcg8iSZIkSZIkSZIkSZIkSZIkSZIkSZIkSdJBGzmsGnOjtbz/AAAAAElFTkSuQmCC
+      - type: image_file
+        image_file:
+          path: logo.png
       - How many colors can you see?
     is_chat_input: true
 outputs:
