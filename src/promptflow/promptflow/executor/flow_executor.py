@@ -51,8 +51,6 @@ from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 
-SIGINT_RECEIVED = False
-
 
 class FlowExecutor:
     """This class is used to execute a single flow for different inputs.
