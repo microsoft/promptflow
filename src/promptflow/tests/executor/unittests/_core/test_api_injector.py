@@ -308,18 +308,17 @@ def test_aoai_chat_tool_prompt():
             },
         ),
         (
-            "openai.resources.completions.AsyncCompletions",
+            "AsyncCompletions",
             {
                 "openai.resources.embeddings.Embeddings",
                 "openai.resources.embeddings.AsyncEmbeddings",
                 "openai.resources.chat.completions.Completions",
                 "openai.resources.completions.Completions",
                 "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.completions.AsyncCompletions",
             },
         ),
         (
-            "openai.resources.completions.Completions",
+            "Completions",
             {
                 "openai.resources.completions.AsyncCompletions",
                 "openai.resources.chat.completions.Completions",
@@ -329,7 +328,7 @@ def test_aoai_chat_tool_prompt():
             },
         ),
         (
-            "openai.resources.chat.completions.Completions",
+            "chat.Completions",
             {
                 "openai.resources.completions.AsyncCompletions",
                 "openai.resources.completions.Completions",
@@ -339,7 +338,7 @@ def test_aoai_chat_tool_prompt():
             },
         ),
         (
-            "openai.resources.chat.completions.AsyncCompletions",
+            "chat.AsyncCompletions",
             {
                 "openai.resources.completions.AsyncCompletions",
                 "openai.resources.completions.Completions",
@@ -349,7 +348,7 @@ def test_aoai_chat_tool_prompt():
             },
         ),
         (
-            "openai.resources.embeddings.Embeddings",
+            "Embeddings",
             {
                 "openai.resources.completions.AsyncCompletions",
                 "openai.resources.completions.Completions",
@@ -359,7 +358,7 @@ def test_aoai_chat_tool_prompt():
             },
         ),
         (
-            "openai.resources.embeddings.AsyncEmbeddings",
+            "AsyncEmbeddings",
             {
                 "openai.resources.completions.AsyncCompletions",
                 "openai.resources.completions.Completions",
@@ -381,7 +380,8 @@ def test_availabe_openai_apis(removed_api, expected_apis):
         assert generated_apis == expected_apis
 
     if removed_api:
-        with patch(f"{removed_api}", new=None):
+        # with patch(f"{removed_api}", new=None):
+        with patch(f"openai.resources.{removed_api}", new=None):
             validate_api_set(expected_apis)
     else:
         validate_api_set(expected_apis)
