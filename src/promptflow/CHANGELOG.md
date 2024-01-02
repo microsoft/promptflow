@@ -8,6 +8,7 @@
   - Please set before importing `promptflow`, otherwise it won't take effect.
 - [Executor] Handle KeyboardInterrupt in flow test so that the final state is Canceled.
 - [Executor] Calculate system_metrics recursively in api_calls.
+- [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
 - [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
 
 ### Bugs Fixed
