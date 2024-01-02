@@ -31,6 +31,7 @@ class ErrorTarget(str, Enum):
     SERVING_APP = "ServingApp"
     FLOW_INVOKER = "FlowInvoker"
     FUNCTION_PATH = "FunctionPath"
+    SDK = "SDK"
 
 
 class PromptflowException(Exception):
@@ -270,7 +271,6 @@ class ErrorInfo:
     def _error_message(cls, e: Exception):
         exception_codes = cls._get_exception_codes(e)
         msg = getattr(e, "message_format", "")
-        name = type(e).__name__
         exception_code = exception_codes[-1]
         for item in exception_codes[::-1]:  # Prioritize recording the location of promptflow package errors
             if "promptflow" in item["module"]:

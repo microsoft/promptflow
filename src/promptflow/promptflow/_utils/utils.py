@@ -9,7 +9,6 @@ import contextlib
 import contextvars
 import functools
 import importlib
-import inspect
 import json
 import logging
 import os
