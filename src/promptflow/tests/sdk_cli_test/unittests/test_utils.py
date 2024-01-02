@@ -203,14 +203,19 @@ class TestUtils:
             thread.join()
 
     def test_concurrent_hint_for_update(self):
+        import time
         with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
             mock_datetime.datetime.now.return_value = datetime.datetime.now()
             mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
             mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
             hint_for_update()
+            prev_time = time.perf_counter()
             thread = threading.Thread(target=check_latest_version, daemon=True)
+            time1 = time.perf_counter() - prev_time
             thread.start()
+            time2 = time.perf_counter() - prev_time
             assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
+            assert time2 - time1 < 0.1
 
     @pytest.mark.parametrize(
         "data_path",
