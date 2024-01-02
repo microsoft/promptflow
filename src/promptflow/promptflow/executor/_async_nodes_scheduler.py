@@ -172,12 +172,13 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
         exceeded_wait_seconds = time.time() - thread_start_time > max_wait_seconds
         time.sleep(1)
 
-    if exceeded_wait_seconds and not all_tasks_are_done:
-        flow_logger.info(f"Not all coroutines are done within {max_wait_seconds}s"
-                         " after cancellation. Exiting the process despite of them."
-                         " Please config the environment variable"
-                         " PF_WAIT_SECONDS_AFTER_CANCELLATION if your tool needs"
-                         " more time to clean up after cancellation.")
-        remaining_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
-        flow_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
+    if exceeded_wait_seconds:
+        if not all_tasks_are_done:
+            flow_logger.info(f"Not all coroutines are done within {max_wait_seconds}s"
+                             " after cancellation. Exiting the process despite of them."
+                             " Please config the environment variable"
+                             " PF_WAIT_SECONDS_AFTER_CANCELLATION if your tool needs"
+                             " more time to clean up after cancellation.")
+            remaining_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
+            flow_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
         sys.exit(0)
