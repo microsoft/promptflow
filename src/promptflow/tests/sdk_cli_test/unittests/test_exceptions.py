@@ -1,8 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from pathlib import Path
-import importlib.util
 import pytest
 from promptflow._sdk._pf_client import PFClient
 from promptflow.exceptions import ErrorInfo, ErrorCategory, ErrorType, ErrorTarget
