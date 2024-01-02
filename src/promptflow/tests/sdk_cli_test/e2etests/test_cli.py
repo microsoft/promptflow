@@ -95,7 +95,7 @@ class TestCli:
             run_id,
         )
         out, _ = capfd.readouterr()
-        assert "Completed" in out
+        assert "Completedtest" in out
 
         # Check the CLI works correctly when the parameter is surrounded by quotation, as below shown:
         # --param "key=value" key="value"

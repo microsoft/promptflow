@@ -19,7 +19,6 @@ nodes:
   inputs:
     fetch_url: ${inputs.url}
 - name: summarize_text_content
-  type: llm
   use_variants: true
 - name: prepare_examples
   type: python
@@ -34,17 +33,12 @@ nodes:
     path: classify_with_llm.jinja2
   inputs:
     deployment_name: gpt-35-turbo
-    suffix: ''
-    max_tokens: '128'
-    temperature: '0.1'
-    top_p: '1.0'
-    logprobs: ''
-    echo: 'False'
-    stop: ''
-    presence_penalty: '0'
-    frequency_penalty: '0'
-    best_of: '1'
-    logit_bias: ''
+    max_tokens: 128
+    temperature: 0.1
+    top_p: 1
+    echo: "False"
+    presence_penalty: 0
+    frequency_penalty: 0
     url: ${inputs.url}
     examples: ${prepare_examples.output}
     text_content: ${summarize_text_content.output}
@@ -71,17 +65,12 @@ node_variants:
             path: summarize_text_content.jinja2
           inputs:
             deployment_name: gpt-35-turbo
-            suffix: ''
-            max_tokens: '128'
+            max_tokens: 128
             temperature: 0.2
-            top_p: '1.0'
-            logprobs: ''
-            echo: 'False'
-            stop: ''
-            presence_penalty: '0'
-            frequency_penalty: '0'
-            best_of: '1'
-            logit_bias: ''
+            top_p: 1
+            echo: "False"
+            presence_penalty: 0
+            frequency_penalty: 0
             text: ${fetch_text_content_from_url.output}
           provider: AzureOpenAI
           connection: azure_open_ai_connection
@@ -95,17 +84,12 @@ node_variants:
             path: summarize_text_content__variant_1.jinja2
           inputs:
             deployment_name: gpt-35-turbo
-            suffix: ''
-            max_tokens: '256'
+            max_tokens: 256
             temperature: 0.3
-            top_p: '1.0'
-            logprobs: ''
-            echo: 'False'
-            stop: ''
-            presence_penalty: '0'
-            frequency_penalty: '0'
-            best_of: '1'
-            logit_bias: ''
+            top_p: 1
+            echo: "False"
+            presence_penalty: 0
+            frequency_penalty: 0
             text: ${fetch_text_content_from_url.output}
           connection: azure_open_ai_connection
           api: chat
