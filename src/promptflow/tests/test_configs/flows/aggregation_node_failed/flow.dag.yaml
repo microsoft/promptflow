@@ -1,0 +1,35 @@
+id: template_eval_flow
+name: Template Evaluation Flow
+inputs:
+  groundtruth:
+    type: string
+    is_chat_input: false
+  prediction:
+    type: string
+    is_chat_input: false
+outputs:
+  results:
+    type: string
+    reference: ${line_process.output}
+nodes:
+- name: line_process
+  type: python
+  source:
+    type: code
+    path: line_process.py
+  inputs:
+    groundtruth: ${inputs.groundtruth}
+    prediction: ${inputs.prediction}
+  use_variants: false
+- name: aggregate
+  type: python
+  source:
+    type: code
+    path: aggregate.py
+  inputs:
+    processed_results: ${line_process.output}
+  aggregation: true
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt

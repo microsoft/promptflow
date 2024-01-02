@@ -10,7 +10,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import List, Dict
+from typing import Dict, List
 from unittest.mock import patch
 
 import mock
@@ -22,15 +22,18 @@ from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
+from promptflow.exceptions import UserErrorException
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
+TOOL_ROOT = "./tests/test_configs/tools"
 
 TARGET_URL = "https://www.youtube.com/watch?v=o5ZQyXaAv1g"
 
@@ -1026,7 +1029,7 @@ class TestCli:
                 "Required input(s) ['key'] are missing for \"print_env\".",
                 id="missing_required_node_inputs",
             ),
-        ]
+        ],
     )
     def test_flow_test_inputs_missing(self, capsys, caplog, extra_args: List[str], expected_err: str):
         with pytest.raises(SystemExit):
@@ -1072,10 +1075,7 @@ class TestCli:
                 ],
                 [
                     {"unknown_input": "unknown_val"},
-                    {
-                        "fetch_url": TARGET_URL,
-                        "unknown_input": "unknown_val"
-                    },
+                    {"fetch_url": TARGET_URL, "unknown_input": "unknown_val"},
                 ],
                 [
                     "Unknown input(s) of fetch_text_content_from_url: ",
@@ -1083,7 +1083,7 @@ class TestCli:
                 ],
                 id="unknown_inputs_node",
             ),
-        ]
+        ],
     )
     def test_flow_test_inputs_unknown(
         self, caplog, extra_args: List[str], expected_inputs: List[Dict[str, str]], expected_log_prefixes: List[str]
@@ -1097,13 +1097,7 @@ class TestCli:
             assert expect_dict == log_inputs
 
         with caplog.at_level(level=logging.INFO, logger=LOGGER_NAME):
-            run_pf_command(
-                "flow",
-                "test",
-                "--flow",
-                f"{FLOWS_DIR}/web_classification",
-                *extra_args
-            )
+            run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/web_classification", *extra_args)
             for (log, expected_input, expected_log_prefix) in zip(
                 caplog.records, expected_inputs, expected_log_prefixes
             ):
@@ -1149,6 +1143,22 @@ class TestCli:
             assert connection_path.exists()
         finally:
             shutil.rmtree(output_path, ignore_errors=True)
+
+    def test_flow_build_with_ua(self):
+        with pytest.raises(UserErrorException) as e:
+            run_pf_command(
+                "flow",
+                "build",
+                "--source",
+                "not_exist",
+                "--output",
+                "dist",
+                "--format",
+                "docker",
+                "--user-agent",
+                "test/1.0.0",
+            )
+        assert "not exist" in str(e.value)
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
@@ -1337,6 +1347,7 @@ class TestCli:
             func_name = "func_name"
             run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
             package_folder = Path(temp_dir) / package_name
+            sys.path.append(str(package_folder.absolute()))
             assert (package_folder / package_name / f"{func_name}.py").exists()
             assert (package_folder / package_name / "utils.py").exists()
             assert (package_folder / package_name / "__init__.py").exists()
@@ -1394,6 +1405,7 @@ class TestCli:
                 f"tags={tags}",
                 cwd=temp_dir,
             )
+            sys.path.append(str(package_folder.absolute()))
             spec = importlib.util.spec_from_file_location(
                 f"{package_name}.utils", package_folder / package_name / "utils.py"
             )
@@ -1456,6 +1468,27 @@ class TestCli:
             run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
         outerr = capsys.readouterr()
         assert "invalid_flow_folder does not exist" in outerr.out
+
+    def test_tool_validate(self):
+        # Test validate tool script
+        tool_script_path = Path(TOOL_ROOT) / "custom_llm_tool.py"
+        run_pf_command("tool", "validate", "--source", str(tool_script_path))
+
+        invalid_tool_script_path = Path(TOOL_ROOT) / "invalid_tool.py"
+        with pytest.raises(SystemExit):
+            run_pf_command("tool", "validate", "--source", str(invalid_tool_script_path))
+
+        # Test validate package tool
+        tool_script_path = Path(TOOL_ROOT) / "tool_package"
+        sys.path.append(str(tool_script_path.resolve()))
+
+        with patch("promptflow._sdk.operations._tool_operations.ToolOperations._is_package_tool", return_value=True):
+            with pytest.raises(SystemExit):
+                run_pf_command("tool", "validate", "--source", "tool_package")
+
+        # Test validate tool in package
+        with pytest.raises(SystemExit):
+            run_pf_command("tool", "validate", "--source", "tool_package.invalid_tool.invalid_input_settings")
 
     def test_flow_test_with_image_input_and_output(self):
         run_pf_command(
@@ -1566,9 +1599,9 @@ class TestCli:
                     "--name",
                     "not_exist",
                 )
-        user_agent = context.get_user_agent()
+        user_agent = ClientUserAgentUtil.get_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
-        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow"}
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli"}
 
     def test_config_set_pure_flow_directory_macro(self, capfd: pytest.CaptureFixture) -> None:
         run_pf_command(
@@ -1602,7 +1635,130 @@ class TestCli:
                 "--user-agent",
                 "a/1.0.0 b/2.0",
             )
-        user_agent = context.get_user_agent()
+        user_agent = ClientUserAgentUtil.get_user_agent()
         ua_dict = parse_ua_to_dict(user_agent)
-        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "promptflow", "a", "b"}
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "a", "b"}
+        context.user_agent = ""
+
+    def test_node_run_telemetry(self, local_client):
+        from promptflow._sdk._telemetry.logging_handler import PromptFlowSDKLogHandler
+
+        def assert_node_run(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flow.node_test") or record.msg.startswith("pf.flows.node_test")
+            assert record.custom_dimensions["activity_name"] in ["pf.flow.node_test", "pf.flows.node_test"]
+
+        def assert_flow_test(*args, **kwargs):
+            record = args[0]
+            assert record.msg.startswith("pf.flow.test") or record.msg.startswith("pf.flows.test")
+            assert record.custom_dimensions["activity_name"] in ["pf.flow.test", "pf.flows.test"]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shutil.copytree((Path(FLOWS_DIR) / "print_env_var").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
+
+            with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+                mock_logger.side_effect = assert_node_run
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    temp_dir,
+                    "--inputs",
+                    "key=API_BASE",
+                    "--node",
+                    "print_env",
+                )
+
+            with patch.object(PromptFlowSDKLogHandler, "emit") as mock_logger:
+                mock_logger.side_effect = assert_flow_test
+                run_pf_command(
+                    "flow",
+                    "test",
+                    "--flow",
+                    temp_dir,
+                    "--inputs",
+                    "key=API_BASE",
+                )
+
+    def test_run_create_with_existing_run_folder(self):
+        run_name = "web_classification_variant_0_20231205_120253_104100"
+        # clean the run if exists
+        from promptflow import PFClient
+        from promptflow._cli._utils import _try_delete_existing_run_record
+
+        pf = PFClient()
+        _try_delete_existing_run_record(run_name)
+
+        # assert the run doesn't exist
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(run_name)
+
+        uuid_str = str(uuid.uuid4())
+        run_folder = Path(RUNS_DIR) / run_name
+        run_pf_command(
+            "run",
+            "create",
+            "--source",
+            Path(run_folder).resolve().as_posix(),
+            "--set",
+            f"display_name={uuid_str}",
+            f"description={uuid_str}",
+            f"tags.tag1={uuid_str}",
+        )
+
+        # check run results
+        run = pf.runs.get(run_name)
+        assert run.display_name == uuid_str
+        assert run.description == uuid_str
+        assert run.tags["tag1"] == uuid_str
+
+    def test_cli_command_no_sub_command(self, capfd):
+        try:
+            run_pf_command(
+                "run",
+            )
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        # will run pf run -h
+        out, _ = capfd.readouterr()
+        assert "A CLI tool to manage runs for prompt flow." in out
+
+        try:
+            run_pf_command("run", "-h")
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        # will run pf run -h
+        out, _ = capfd.readouterr()
+        assert "A CLI tool to manage runs for prompt flow." in out
+
+    def test_unknown_command(self, capfd):
+        try:
+            run_pf_command(
+                "unknown",
+            )
+            # argparse will return SystemExit after running --help
+        except SystemExit:
+            pass
+        _, err = capfd.readouterr()
+        assert "invalid choice" in err
+
+    def test_config_set_user_agent(self) -> None:
+        run_pf_command(
+            "config",
+            "set",
+            "user_agent=test/1.0.0",
+        )
+        user_agent = setup_user_agent_to_operation_context(None)
+        ua_dict = parse_ua_to_dict(user_agent)
+        assert ua_dict.keys() == {"promptflow-sdk", "promptflow-cli", "PFCustomer_test"}
+
+        # clear user agent
+        run_pf_command(
+            "config",
+            "set",
+            "user_agent=",
+        )
+        context = OperationContext().get_instance()
         context.user_agent = ""

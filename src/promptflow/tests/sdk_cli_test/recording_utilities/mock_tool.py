@@ -2,6 +2,7 @@ import functools
 import inspect
 
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
+from promptflow._core.tracer import TraceType, _create_trace_from_function_call
 
 from .record_storage import RecordFileMissingException, RecordItemMissingException, RecordStorage
 
@@ -119,6 +120,9 @@ def mock_tool(original_tool):
         def tool_decorator(func):
             from promptflow.exceptions import UserErrorException
 
+            def create_trace(func, args, kwargs):
+                return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=TraceType.TOOL)
+
             if inspect.iscoroutinefunction(func):
 
                 @functools.wraps(func)
@@ -128,7 +132,7 @@ def mock_tool(original_tool):
                     if Tracer.active_instance() is None:
                         return await call_func_async(func, args, kwargs)
                     try:
-                        Tracer.push_tool(func, args, kwargs)
+                        Tracer.push(create_trace(func, args, kwargs))
                         output = await call_func_async(func, args, kwargs)
                         return Tracer.pop(output)
                     except Exception as e:
@@ -145,7 +149,7 @@ def mock_tool(original_tool):
                     if Tracer.active_instance() is None:
                         return call_func(func, args, kwargs)
                     try:
-                        Tracer.push_tool(func, args, kwargs)
+                        Tracer.push(create_trace(func, args, kwargs))
                         output = call_func(func, args, kwargs)
                         return Tracer.pop(output)
                     except Exception as e:

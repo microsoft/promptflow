@@ -2,12 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
+import signal
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
-
-from httpx import ConnectError
 
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
@@ -25,17 +25,19 @@ from promptflow._utils.utils import dump_list_to_jsonl, log_progress, resolve_di
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
-from promptflow.batch._errors import ExecutorServiceUnhealthy
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
 
 OUTPUT_FILE_NAME = "output.jsonl"
+# TODO: will remain consistent with PF_WORKER_COUNT in the future
+DEFAULT_CONCURRENCY = 10
 
 
 class BatchEngine:
@@ -89,9 +91,20 @@ class BatchEngine:
 
         executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
         with _change_working_dir(self._working_dir):
-            self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
-                flow_file, self._working_dir, connections=connections, storage=storage, **kwargs
+            self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
+                executor_proxy_cls.create,
+                flow_file,
+                self._working_dir,
+                connections=connections,
+                storage=storage,
+                **kwargs,
             )
+            # register signal handler for python flow in the main thread
+            # TODO: For all executor proxies that are executed locally, it might be necessary to
+            # register a signal for Ctrl+C in order to customize some actions beyond just killing
+            # the process, such as terminating the executor service.
+            if isinstance(self._executor_proxy, PythonExecutorProxy):
+                signal.signal(signal.SIGINT, signal_handler)
         self._storage = storage
         # set it to True when the batch run is canceled
         self._is_canceled = False
@@ -135,20 +148,14 @@ class BatchEngine:
             # run flow in batch mode
             with _change_working_dir(self._working_dir):
                 return async_run_allowing_running_loop(
-                    self._exec_batch, batch_inputs, run_id, output_dir, raise_on_line_failure
+                    self._exec_in_task, batch_inputs, run_id, output_dir, raise_on_line_failure
                 )
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
-            if isinstance(e, ConnectError) or isinstance(e, ExecutorServiceUnhealthy):
-                bulk_logger.warning("The batch run may have been canceled or encountered other issues.")
-                return BatchResult.create(
-                    self._start_time, datetime.utcnow(), [], AggregationResult({}, {}, {}), status=Status.Canceled
-                )
-            elif isinstance(e, PromptflowException):
+            if isinstance(e, PromptflowException):
                 raise e
             else:
-                # For unexpected error, we need to wrap it to SystemErrorException.
-                # This allows us to see the stack trace inside.
+                # for unexpected error, we need to wrap it to SystemErrorException to allow us to see the stack trace.
                 unexpected_error = UnexpectedError(
                     target=ErrorTarget.BATCH,
                     message_format=(
@@ -158,34 +165,60 @@ class BatchEngine:
                 )
                 raise unexpected_error from e
         finally:
-            # destroy executor proxy if the batch run is not cancelled
-            # TODO: add a lock to avoid destroy proxy twice
-            if not self._is_canceled:
-                self._executor_proxy.destroy()
+            async_run_allowing_running_loop(self._executor_proxy.destroy)
 
     def cancel(self):
         """Cancel the batch run"""
         self._is_canceled = True
-        self._executor_proxy.destroy()
 
-    async def _exec_batch(
+    async def _exec_in_task(
         self,
         batch_inputs: List[Dict[str, Any]],
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
-        # apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
+        # if the batch run is canceled, asyncio.CancelledError will be raised and no results will be returned,
+        # so we pass empty line results list and aggr results and update them in _exec so that when the batch
+        # run is canceled we can get the current completed line results and aggr results.
+        line_results: List[LineResult] = []
+        aggr_result = AggregationResult({}, {}, {})
+        task = asyncio.create_task(
+            self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
+        )
+        while not task.done():
+            # check whether the task is completed or canceled every 1s
+            await asyncio.sleep(1)
+            if self._is_canceled:
+                task.cancel()
+                # use current completed line results and aggregation results to create a BatchResult
+                return BatchResult.create(
+                    self._start_time, datetime.utcnow(), line_results, aggr_result, status=Status.Canceled
+                )
+        return task.result()
+
+    async def _exec(
+        self,
+        line_results: List[LineResult],
+        aggr_result: AggregationResult,
+        batch_inputs: List[Dict[str, Any]],
+        run_id: str = None,
+        output_dir: Path = None,
+        raise_on_line_failure: bool = False,
+    ) -> BatchResult:
+        await self._executor_proxy.ensure_executor_health()
+        # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         batch_inputs = [
             apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
         ]
         run_id = run_id or str(uuid.uuid4())
+
+        # execute lines
         if isinstance(self._executor_proxy, PythonExecutorProxy):
-            line_results = self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id)
+            line_results.extend(self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id))
         else:
-            line_results = await self._exec_batch_internal(batch_inputs, run_id)
+            await self._exec_batch(line_results, batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
-        aggr_results = await self._exec_aggregation_internal(batch_inputs, line_results, run_id)
 
         # persist outputs to output dir
         outputs = [
@@ -195,30 +228,52 @@ class BatchEngine:
         ]
         self._persist_outputs(outputs, output_dir)
 
+        # execute aggregation nodes
+        aggr_exec_result = await self._exec_aggregation(batch_inputs, line_results, run_id)
+        # use the execution result to update aggr_result to make sure we can get the aggr_result in _exec_in_task
+        self._update_aggr_result(aggr_result, aggr_exec_result)
         # summary some infos from line results and aggr results to batch result
-        self._end_time = datetime.utcnow()
-        return BatchResult.create(self._start_time, self._end_time, line_results, aggr_results)
+        return BatchResult.create(self._start_time, datetime.utcnow(), line_results, aggr_result)
 
-    async def _exec_batch_internal(
+    async def _exec_batch(
         self,
+        line_results: List[LineResult],
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
-        line_results = []
-        total_lines = len(batch_inputs)
-        # TODO: concurrent calls to exec_line instead of for loop
-        for i, each_line_input in enumerate(batch_inputs):
-            # TODO: catch line run failed to avoid one line break others
-            line_result = await self._executor_proxy.exec_line_async(each_line_input, i, run_id=run_id)
-            for node_run in line_result.node_run_infos.values():
-                self._storage.persist_node_run(node_run)
-            self._storage.persist_flow_run(line_result.run_info)
-            line_results.append(line_result)
-            # log the progress of the batch run
-            log_progress(self._start_time, bulk_logger, len(line_results), total_lines)
-        return line_results
+        semaphore = asyncio.Semaphore(DEFAULT_CONCURRENCY)
+        pending = [
+            asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
+            for i, line_inputs in enumerate(batch_inputs)
+        ]
 
-    async def _exec_aggregation_internal(
+        total_lines = len(batch_inputs)
+        completed_line = 0
+        while completed_line < total_lines:
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            completed_line_results = [task.result() for task in done]
+            self._persist_run_info(completed_line_results)
+            line_results.extend(completed_line_results)
+            log_progress(
+                self._start_time,
+                bulk_logger,
+                len(line_results),
+                total_lines,
+                last_log_count=completed_line,
+            )
+            completed_line = len(line_results)
+
+    async def _exec_line_under_semaphore(
+        self,
+        semaphore,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+    ):
+        async with semaphore:
+            return await self._executor_proxy.exec_line_async(inputs, index, run_id)
+
+    async def _exec_aggregation(
         self,
         batch_inputs: List[dict],
         line_results: List[LineResult],
@@ -246,13 +301,18 @@ class BatchEngine:
         )
         succeeded_aggregation_inputs = collect_lines(succeeded, aggregation_inputs)
         try:
-            aggr_results = await self._executor_proxy.exec_aggregation_async(
+            aggr_result = await self._executor_proxy.exec_aggregation_async(
                 succeeded_inputs, succeeded_aggregation_inputs, run_id
             )
+            # if the flow language is python, we have already persisted node run infos during execution.
+            # so we should persist node run infos in aggr_result for other languages.
+            if not isinstance(self._executor_proxy, PythonExecutorProxy):
+                for node_run in aggr_result.node_run_infos.values():
+                    self._storage.persist_node_run(node_run)
             bulk_logger.info("Finish executing aggregation nodes.")
-            return aggr_results
+            return aggr_result
         except PromptflowException as e:
-            # For PromptflowException, we already do classification, so throw directly.
+            # for PromptflowException, we already do classification, so throw directly.
             raise e
         except Exception as e:
             error_type_and_message = f"({e.__class__.__name__}) {e}"
@@ -264,7 +324,20 @@ class BatchEngine:
                 error_type_and_message=error_type_and_message,
             ) from e
 
+    def _persist_run_info(self, line_results: List[LineResult]):
+        """Persist node run infos and flow run info in line result to storage"""
+        for line_result in line_results:
+            for node_run in line_result.node_run_infos.values():
+                self._storage.persist_node_run(node_run)
+            self._storage.persist_flow_run(line_result.run_info)
+
     def _persist_outputs(self, outputs: List[Mapping[str, Any]], output_dir: Path):
         """Persist outputs to json line file in output directory"""
         output_file = output_dir / OUTPUT_FILE_NAME
         dump_list_to_jsonl(output_file, outputs)
+
+    def _update_aggr_result(self, aggr_result: AggregationResult, aggr_exec_result: AggregationResult):
+        """Update aggregation result with the aggregation execution result"""
+        aggr_result.metrics = aggr_exec_result.metrics
+        aggr_result.node_run_infos = aggr_exec_result.node_run_infos
+        aggr_result.output = aggr_exec_result.output

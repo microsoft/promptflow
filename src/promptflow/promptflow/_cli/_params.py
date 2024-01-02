@@ -4,7 +4,7 @@
 
 import argparse
 
-from promptflow._sdk._constants import CLIListOutputFormat, FlowType
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_RUNS_DIR_NAME, CLIListOutputFormat, FlowType
 
 # TODO: avoid azure dependency here
 MAX_LIST_CLI_RESULTS = 50
@@ -160,7 +160,10 @@ def add_param_output(parser):
         "-o",
         "--output",
         type=str,
-        help="The output directory to store the results. Default to be current working directory if not specified.",
+        help=(
+            f"The output directory to store the results. "
+            f"Default to be ~/{PROMPT_FLOW_DIR_NAME}/{PROMPT_FLOW_RUNS_DIR_NAME} if not specified."
+        ),
     )
 
 
@@ -210,27 +213,39 @@ def add_param_variant(parser):
     )
 
 
-def add_parser_build(parent_parser, entity_name: str):
-    description = f"Build a {entity_name} for further sharing or deployment."
-    parser = parent_parser.add_parser(
-        "build",
-        description=description,
-        epilog=f"pf {entity_name} build --source <source> --output <output> --format " f"docker|package",
-        help=description,
+def add_parser_build(subparsers, entity_name: str):
+    add_param_build_output = lambda parser: parser.add_argument(  # noqa: E731
+        "--output", "-o", required=True, type=str, help="The destination folder path."
     )
-    add_param_source(parser)
-    parser.add_argument("--output", "-o", required=True, type=str, help="The destination folder path.")
-    parser.add_argument("--format", "-f", type=str, help="The format to build with.", choices=["docker", "executable"])
+    add_param_format = lambda parser: parser.add_argument(  # noqa: E731
+        "--format", "-f", type=str, help="The format to build with.", choices=["docker", "executable"]
+    )
     # this is a hidden parameter for `mldesigner compile` command
-    parser.add_argument(
+    add_param_flow_only = lambda parser: parser.add_argument(  # noqa: E731
         "--flow-only",
         action="store_true",
         help=argparse.SUPPRESS,
     )
-    add_param_variant(parser)
-    add_param_verbose(parser)
-    add_param_debug(parser)
-    parser.set_defaults(sub_action="build")
+    add_params = [
+        add_param_source,
+        add_param_build_output,
+        add_param_format,
+        add_param_flow_only,
+        add_param_variant,
+    ] + base_params
+    from promptflow._cli._utils import activate_action
+
+    description = f"Build a {entity_name} for further sharing or deployment."
+
+    activate_action(
+        name="build",
+        description=description,
+        epilog=f"pf {entity_name} build --source <source> --output <output> --format " f"docker|package",
+        add_params=add_params,
+        subparsers=subparsers,
+        action_param_name="sub_action",
+        help_message=description,
+    )
 
 
 def add_param_debug(parser):

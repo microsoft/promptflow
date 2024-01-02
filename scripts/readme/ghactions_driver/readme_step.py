@@ -141,6 +141,18 @@ class CreateEnv(Step):
         return content
 
 
+class CreateEnvGPTFour(Step):
+    def __init__(self) -> None:
+        Step.__init__(self, "Refine .env file")
+
+    def get_workflow_step(self) -> str:
+        template = Step.get_workflow_template("step_create_env_gpt4.yml.jinja2")
+        content = template.render(
+            {"step_name": self.workflow_name, "working_dir": ReadmeSteps.working_dir}
+        )
+        return content
+
+
 class CreateAoaiFromEnv(Step):
     def __init__(self, connection_name: str) -> None:
         Step.__init__(self, "Create AOAI Connection from ENV file")
@@ -194,6 +206,10 @@ class ReadmeSteps:
     @staticmethod
     def create_env() -> Step:
         return ReadmeSteps.remember_step(CreateEnv())
+
+    @staticmethod
+    def create_env_gpt4() -> Step:
+        return ReadmeSteps.remember_step(CreateEnvGPTFour())
 
     @staticmethod
     def yml_create_aoai(yaml_name: str) -> Step:
@@ -288,14 +304,37 @@ class ReadmeStepsManage:
         schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
         if "tutorials" in workflow_name:
-            path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml, '!examples/flows/integrations/**' ]"
+            # markdown filename has some exceptions, special handle here
+            if "chat_with_pdf" in workflow_name:
+                readme_name = "chat-with-pdf.md"
+            elif (
+                "fine_tuning_evaluation_promptflow_quality_improvement" in workflow_name
+            ):
+                readme_name = "promptflow-quality-improvement.md"
+            else:
+                readme_name = "README.md"
+            readme_path = (
+                Path(ReadmeStepsManage.git_base_dir())
+                / ReadmeSteps.working_dir
+                / readme_name
+            )
+            # local import to avoid circular import
+            from .resource_resolver import resolve_tutorial_resource
+
+            path_filter = resolve_tutorial_resource(
+                workflow_name, readme_path.resolve()
+            )
         else:
-            if "web_classification" in workflow_name:
+            if (
+                "flow_with_additional_includes" in workflow_name
+                or "flow_with_symlinks" in workflow_name
+            ):
+                # these two flows have dependencies on flow web-classification
+                # so corresponding workflows should also listen to changes in web-classification
                 path_filter = (
                     f"[ {ReadmeSteps.working_dir}/**, "
                     + "examples/*requirements.txt, "
-                    + "examples/flows/standard/flow-with-additional-includes/**, "
-                    + "examples/flows/standard/flow-with-symlinks/** ,"
+                    + "examples/flows/standard/web-classification/**, "
                     + f".github/workflows/{workflow_name}.yml ]"
                 )
             else:

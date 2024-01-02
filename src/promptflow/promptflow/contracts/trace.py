@@ -12,6 +12,7 @@ class TraceType(str, Enum):
 
     LLM = "LLM"
     TOOL = "Tool"
+    FUNCTION = "Function"
     LANGCHAIN = "LangChain"
 
 

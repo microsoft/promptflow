@@ -13,11 +13,11 @@ import yaml
 
 from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
-    LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
     FlowRunProperties,
     ListViewType,
+    RunInfoSources,
     RunStatus,
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
@@ -27,13 +27,13 @@ from promptflow._sdk._utils import incremental_print, print_red_error, safe_pars
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization, VisualizationConfig
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 class RunOperations(TelemetryMixin):
@@ -89,6 +89,9 @@ class RunOperations(TelemetryMixin):
         :return: Run object created or updated.
         :rtype: ~promptflow.entities.Run
         """
+        # create run from an existing run folder
+        if run._run_source == RunInfoSources.EXISTING_RUN:
+            return self._create_run_from_existing_run_folder(run=run, **kwargs)
         # TODO: change to async
         stream = kwargs.pop("stream", False)
         try:
@@ -100,6 +103,23 @@ class RunOperations(TelemetryMixin):
             return created_run
         except RunExistsError:
             raise RunExistsError(f"Run {run.name!r} already exists.")
+
+    def _create_run_from_existing_run_folder(self, run: Run, **kwargs) -> Run:
+        """Create run from existing run folder."""
+        try:
+            self.get(run.name)
+        except RunNotFoundError:
+            pass
+        else:
+            raise RunExistsError(f"Run {run.name!r} already exists.")
+
+        try:
+            run._dump()
+            return run
+        except Exception as e:
+            raise UserErrorException(
+                f"Failed to create run {run.name!r} from existing run folder {run.source!r}: {str(e)}"
+            ) from e
 
     def _print_run_summary(self, run: Run) -> None:
         print("======= Run Summary =======\n")
@@ -294,7 +314,7 @@ class RunOperations(TelemetryMixin):
                 name=run.name,
                 display_name=run.display_name,
                 create_time=run.created_on,
-                flow_path=run.properties[FlowRunProperties.FLOW_PATH],
+                flow_path=run.properties.get(FlowRunProperties.FLOW_PATH, None),
                 output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,

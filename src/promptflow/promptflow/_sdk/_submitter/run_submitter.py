@@ -181,13 +181,6 @@ class RunSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
-        batch_engine = BatchEngine(
-            flow.path,
-            flow.code,
-            connections=connections,
-            storage=local_storage,
-            log_path=local_storage.logger.file_path,
-        )
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
@@ -197,22 +190,36 @@ class RunSubmitter:
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
+            batch_engine = BatchEngine(
+                flow.path,
+                flow.code,
+                connections=connections,
+                storage=local_storage,
+                log_path=local_storage.logger.file_path,
+            )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
                 output_dir=local_storage.outputs_folder,
                 run_id=run_id,
             )
-
+            error_logs = []
             if batch_result.failed_lines > 0:
                 # Log warning message when there are failed line run in bulk run.
-                error_log = f"{batch_result.failed_lines} out of {batch_result.total_lines} runs failed in batch run."
-                if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
-                    error_log = (
-                        error_log
-                        + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
-                    )
-                logger.warning(error_log)
+                error_logs.append(
+                    f"{batch_result.failed_lines} out of {batch_result.total_lines} runs failed in batch run."
+                )
+            if batch_result.error_summary.aggr_error_dict:
+                # log warning message when there are failed aggregation nodes in bulk run.
+                aggregation_nodes = list(batch_result.error_summary.aggr_error_dict.keys())
+                error_logs.append(f"aggregation nodes {aggregation_nodes} failed in batch run.")
+            # update error log
+            if error_logs and run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
+                error_logs.append(
+                    f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                )
+            if error_logs:
+                logger.warning("\n".join(error_logs))
             # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:
