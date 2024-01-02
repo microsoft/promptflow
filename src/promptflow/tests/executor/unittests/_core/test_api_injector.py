@@ -296,9 +296,78 @@ def test_aoai_chat_tool_prompt():
 @pytest.mark.parametrize(
     "removed_api, expected_apis",
     [
-        (None, {"completions", "chat.completions", "embeddings"}),
-        ("chat.Completions", {"completions", "embeddings"}),
-        ("Embeddings", {"completions", "chat.completions"}),
+        (
+            None,
+            {
+                "openai.resources.completions.AsyncCompletions",
+                "openai.resources.completions.Completions",
+                "openai.resources.chat.completions.Completions",
+                "openai.resources.chat.completions.AsyncCompletions",
+                "openai.resources.embeddings.Embeddings",
+                "openai.resources.embeddings.AsyncEmbeddings",
+            },
+        ),
+        (
+            "openai.resources.completions.AsyncCompletions",
+            {
+                "openai.resources.embeddings.Embeddings",
+                "openai.resources.embeddings.AsyncEmbeddings",
+                "openai.resources.chat.completions.Completions",
+                "openai.resources.completions.Completions",
+                "openai.resources.chat.completions.AsyncCompletions",
+                "openai.resources.completions.AsyncCompletions",
+            },
+        ),
+        (
+            "openai.resources.completions.Completions",
+            {
+                "openai.resources.completions.AsyncCompletions",
+                "openai.resources.chat.completions.Completions",
+                "openai.resources.chat.completions.AsyncCompletions",
+                "openai.resources.embeddings.Embeddings",
+                "openai.resources.embeddings.AsyncEmbeddings",
+            },
+        ),
+        (
+            "openai.resources.chat.completions.Completions",
+            {
+                "openai.resources.completions.AsyncCompletions",
+                "openai.resources.completions.Completions",
+                "openai.resources.chat.completions.AsyncCompletions",
+                "openai.resources.embeddings.Embeddings",
+                "openai.resources.embeddings.AsyncEmbeddings",
+            },
+        ),
+        (
+            "openai.resources.chat.completions.AsyncCompletions",
+            {
+                "openai.resources.completions.AsyncCompletions",
+                "openai.resources.completions.Completions",
+                "openai.resources.chat.completions.Completions",
+                "openai.resources.embeddings.Embeddings",
+                "openai.resources.embeddings.AsyncEmbeddings",
+            },
+        ),
+        (
+            "openai.resources.embeddings.Embeddings",
+            {
+                "openai.resources.completions.AsyncCompletions",
+                "openai.resources.completions.Completions",
+                "openai.resources.chat.completions.Completions",
+                "openai.resources.chat.completions.AsyncCompletions",
+                "openai.resources.embeddings.AsyncEmbeddings",
+            },
+        ),
+        (
+            "openai.resources.embeddings.AsyncEmbeddings",
+            {
+                "openai.resources.completions.AsyncCompletions",
+                "openai.resources.completions.Completions",
+                "openai.resources.chat.completions.Completions",
+                "openai.resources.chat.completions.AsyncCompletions",
+                "openai.resources.embeddings.Embeddings",
+            },
+        ),
     ],
 )
 def test_availabe_openai_apis(removed_api, expected_apis):
@@ -307,12 +376,12 @@ def test_availabe_openai_apis(removed_api, expected_apis):
         generated_apis = set()
         for api in available_apis:
             assert hasattr(api, "create")
-            generated_apis.add(f"{api.__module__[17:]}")
+            generated_apis.add(f"{api.__module__}.{api.__qualname__}")
         print(generated_apis)
         assert generated_apis == expected_apis
 
     if removed_api:
-        with patch(f"openai.resources.{removed_api}", new=None):
+        with patch(f"{removed_api}", new=None):
             validate_api_set(expected_apis)
     else:
         validate_api_set(expected_apis)
