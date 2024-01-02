@@ -27,7 +27,7 @@ class TestHandleOpenAIError:
         error_codes = "UserError/ToolValidationError/ChatAPIInvalidRole"
         with pytest.raises(ChatAPIInvalidRole,
                            match="The Chat API requires a specific format for prompt") as exc_info:
-            aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo-16k")
+            aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
         assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_aoai_authentication_error_with_bad_api_key(self, azure_open_ai_connection):
@@ -38,7 +38,7 @@ class TestHandleOpenAIError:
         )
         error_codes = "UserError/OpenAIError/AuthenticationError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
-            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo-16k")
+            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
         assert raw_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
@@ -47,7 +47,7 @@ class TestHandleOpenAIError:
         prompt_template = "please complete this sentence: world war II "
         error_codes = "UserError/OpenAIError/APIConnectionError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
-            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo-16k")
+            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
         assert "Connection error." in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
@@ -59,7 +59,7 @@ class TestHandleOpenAIError:
         error_codes = "UserError/OpenAIError/NotFoundError"
         # Chat will throw: Exception occurs: NotFoundError: Resource not found
         with pytest.raises(WrappedOpenAIError) as exc_info:
-            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo-16k")
+            chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
         assert raw_message in exc_info.value.message
         assert exc_info.value.error_codes == error_codes.split("/")
 
@@ -209,12 +209,12 @@ class TestHandleOpenAIError:
 
     def test_unexpected_error_handle(self, azure_open_ai_connection, mocker: MockerFixture):
         dummyEx = Exception("Something went wrong")
-        chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo-16k")
+        chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
         mock_method = mocker.patch("openai.resources.chat.Completions.create", side_effect=dummyEx)
         error_codes = "UserError/LLMError"
 
         with pytest.raises(LLMError) as exc_info:
-            chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo-16k")
+            chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
         assert to_openai_error_message(dummyEx) != exc_info.value.args[0]
         assert "OpenAI API hits exception: Exception: Something went wrong" == exc_info.value.message
         assert mock_method.call_count == 1
@@ -255,7 +255,7 @@ class TestHandleOpenAIError:
 
     def test_completion_with_chat_model(self, azure_open_ai_connection):
         with pytest.raises(UserErrorException) as exc_info:
-            completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="gpt-35-turbo-16k")
+            completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="gpt-35-turbo")
         msg = "Completion API is a legacy api and is going to be deprecated soon. " \
               "Please change to use Chat API for current model."
         assert msg in exc_info.value.message
@@ -266,7 +266,7 @@ class TestHandleOpenAIError:
         with pytest.raises(WrappedOpenAIError) as exc_info:
             aoai.chat(
                 prompt=example_prompt_template_with_image,
-                deployment_name="gpt-35-turbo-16k",
+                deployment_name="gpt-35-turbo",
                 max_tokens=480,
                 temperature=0,
                 question="which number did you see in this picture?",
@@ -295,7 +295,7 @@ class TestHandleOpenAIError:
             chat(
                 connection=azure_open_ai_connection,
                 prompt=example_prompt_template,
-                deployment_name="gpt-35-turbo-16k",
+                deployment_name="gpt-35-turbo",
                 max_tokens=max_tokens,
                 temperature=0,
                 user_input="Write a slogan for product X",
