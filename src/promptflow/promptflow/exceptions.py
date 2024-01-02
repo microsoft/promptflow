@@ -10,7 +10,7 @@ from azure.core.exceptions import HttpResponseError
 
 
 class ErrorCategory(str, Enum):
-    SDKUserError = "SDKUserError"
+    UserError = "UserError"
     SystemError = "SystemError"
 
 
@@ -230,7 +230,7 @@ class ErrorInfo:
         if cls._is_system_error(e):
             return ErrorCategory.SystemError, cls._error_type(e), cls._error_target(e), cls._error_message(e)
 
-        return ErrorCategory.SDKUserError, cls._error_type(e), cls._error_target(e), cls._error_message(e)
+        return ErrorCategory.UserError, cls._error_type(e), cls._error_target(e), cls._error_message(e)
 
     @classmethod
     def select_exception(cls, e: Exception):

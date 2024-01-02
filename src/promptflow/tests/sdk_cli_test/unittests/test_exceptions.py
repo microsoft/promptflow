@@ -1,13 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from pathlib import Path
-
 import pytest
-import yaml
-
 from promptflow._sdk._pf_client import PFClient
-from promptflow.contracts.flow import Flow
 from promptflow.exceptions import ErrorInfo, ErrorCategory, ErrorTarget
 from promptflow.executor import FlowValidator
 from promptflow.executor._errors import InvalidNodeReference
@@ -28,7 +23,7 @@ class TestExceptions:
         except Exception as e:
             ex = e
         error_category, error_type, error_target, error_message = ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.SDKUserError
+        assert error_category == ErrorCategory.UserError
         assert error_type == "FileNotFoundError"
         assert error_target == ErrorTarget.UNKNOWN
         assert (
@@ -97,7 +92,7 @@ class TestExceptions:
         except Exception as e:
             ex = e
         error_category, error_type, error_target, error_message = ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.SDKUserError
+        assert error_category == ErrorCategory.UserError
         assert error_type == "InvalidNodeReference"
         assert error_target == ErrorTarget.EXECUTOR
         assert ("exception msg=Invalid node definitions found in the flow graph. "
