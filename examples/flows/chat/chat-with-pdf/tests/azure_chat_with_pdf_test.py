@@ -22,14 +22,12 @@ class TestChatWithPDFAzure(BaseTest):
             credential = InteractiveBrowserCredential()
 
         self.pf = azure.PFClient.from_config(credential=credential)
-        self.runtime = "example-runtime-ci"
-        # self.runtime = None  # automatic runtime
 
     def tearDown(self) -> None:
         return super().tearDown()
 
     def test_bulk_run_chat_with_pdf(self):
-        run = self.create_chat_run(runtime=self.runtime, display_name="chat_with_pdf_batch_run")
+        run = self.create_chat_run(display_name="chat_with_pdf_batch_run")
         self.pf.stream(run)  # wait for completion
 
         self.assertEqual(run.status, "Completed")
@@ -39,12 +37,10 @@ class TestChatWithPDFAzure(BaseTest):
     def test_eval(self):
         run_2k, eval_groundedness_2k, eval_pi_2k = self.run_eval_with_config(
             self.config_2k_context,
-            runtime=self.runtime,
             display_name="chat_with_pdf_2k_context",
         )
         run_3k, eval_groundedness_3k, eval_pi_3k = self.run_eval_with_config(
             self.config_3k_context,
-            runtime=self.runtime,
             display_name="chat_with_pdf_3k_context",
         )
 
@@ -65,7 +61,6 @@ class TestChatWithPDFAzure(BaseTest):
                 "chat_history": "${data.chat_history}",
                 "config": self.config_2k_context,
             },
-            runtime=self.runtime,
         )
         self.pf.stream(run)  # wait for completion
 
@@ -79,7 +74,6 @@ class TestChatWithPDFAzure(BaseTest):
                 "question": "${data.question}",
                 "pdf_url": "${data.pdf_url}",
             },
-            runtime=self.runtime,
         )
         self.pf.stream(run)  # wait for completion
 
@@ -94,7 +88,6 @@ class TestChatWithPDFAzure(BaseTest):
                 "pdf_url": "${data.pdf_url}",
                 "chat_history": "${data.chat_history}",
             },
-            runtime=self.runtime,
             stream=False,
         )
 
