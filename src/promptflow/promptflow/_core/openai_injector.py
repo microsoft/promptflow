@@ -227,16 +227,17 @@ def inject_openai_api():
         # behave correctly for asynchronous methods.
 
         # Check if the create method of the openai_api class has already been modified
-        if hasattr(openai_api_async, "acreate") and not hasattr(openai_api_async.acreate, "_original"):
-            # If not, modify it by calling the inject function with it as an argument
-            openai_api_async.acreate = inject_async(openai_api_async.acreate)
-
-        # Check if the create method of the openai_api class has already been modified
         if hasattr(openai_api_async, "create") and not hasattr(openai_api_async.create, "_original"):
             # If not, modify it by calling the inject function with it as an argument
             openai_api_async.create = inject_async(openai_api_async.create)
 
     if IS_LEGACY_OPENAI:
+        for openai_api_async in available_openai_apis_async():
+            # Check if the acreate method of the openai_api class has already been modified
+            if hasattr(openai_api_async, "acreate") and not hasattr(openai_api_async.acreate, "_original"):
+                # If not, modify it by calling the inject function with it as an argument
+                openai_api_async.acreate = inject_async(openai_api_async.acreate)
+
         # For the openai versions lower than 1.0.0, it reads api configs from environment variables only at
         # import time. So we need to update the openai api configs from environment variables here.
         # Please refer to this issue: https://github.com/openai/openai-python/issues/557.
