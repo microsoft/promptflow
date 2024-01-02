@@ -275,11 +275,3 @@ def get_int_env_var(env_var_name, default_value=None):
         return int(os.environ.get(env_var_name, default_value))
     except Exception:
         return default_value
-
-
-def get_exception_classes(module) -> tuple:
-    classes = []
-    for name, cls in inspect.getmembers(module, inspect.isclass):
-        if issubclass(cls, Exception):
-            classes.append(cls)
-    return tuple(classes)

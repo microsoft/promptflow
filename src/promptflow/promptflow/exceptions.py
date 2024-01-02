@@ -1,33 +1,17 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import importlib
 import inspect
 import string
 import traceback
 from enum import Enum
 from functools import cached_property
 from azure.core.exceptions import HttpResponseError
-from promptflow._utils.utils import get_exception_classes
 
 
 class ErrorCategory(str, Enum):
     SDKUserError = "SDKUserError"
     SystemError = "SystemError"
-
-
-class ErrorType(str, Enum):
-    ExecutorError = "ExecutorError"
-    PFSError = "PFSError"
-    CoreError = "CoreError"
-    BatchError = "BatchError"
-    ContractsError = "ContractsError"
-    UtilsError = "UtilsError"
-    StorageError = "StorageError"
-    SDKError = "SDKError"
-    CLIError = "CLIError"
-    ExternalSyetemError = "ExternalSyetemError"
-    ExternalUserError = "ExternalUserError"
 
 
 class ErrorTarget(str, Enum):
@@ -235,7 +219,6 @@ class ValidationException(UserErrorException):
 
 
 class ErrorInfo:
-    _error_classes = dict()
     _exception_codes = dict()
 
     @classmethod
@@ -277,63 +260,7 @@ class ErrorInfo:
 
     @classmethod
     def _error_type(cls, e: Exception):
-        # executor error
-        if isinstance(e, cls.get_error_classes("promptflow.executor._errors")):
-            return ErrorType.ExecutorError
-        if cls._is_exception_from_module(e, module_name="promptflow.executor"):
-            return ErrorType.ExecutorError
-
-        # pfs error
-        if isinstance(e, cls.get_error_classes("promptflow._sdk._serving._errors")):
-            return ErrorType.PFSError
-        if cls._is_exception_from_module(e, module_name="promptflow._sdk._serving"):
-            return ErrorType.PFSError
-
-        # storage error
-        if isinstance(e, cls.get_error_classes("promptflow.storage._errors")):
-            return ErrorType.StorageError
-        if cls._is_exception_from_module(e, module_name="promptflow.storage"):
-            return ErrorType.StorageError
-
-        # batch error
-        if isinstance(e, cls.get_error_classes("promptflow.batch._errors")):
-            return ErrorType.BatchError
-        if cls._is_exception_from_module(e, module_name="promptflow.batch"):
-            return ErrorType.BatchError
-
-        # utils error
-        if isinstance(e, cls.get_error_classes("promptflow._utils._errors")):
-            return ErrorType.UtilsError
-        if cls._is_exception_from_module(e, module_name="promptflow._utils"):
-            return ErrorType.UtilsError
-
-        # contrasts error
-        if isinstance(e, cls.get_error_classes("promptflow.contracts._errors")):
-            return ErrorType.ContractsError
-        if cls._is_exception_from_module(e, module_name="promptflow.contracts"):
-            return ErrorType.ContractsError
-
-        # core error
-        if isinstance(e, cls.get_error_classes("promptflow._core._errors")):
-            return ErrorType.CoreError
-        if cls._is_exception_from_module(e, module_name="promptflow._core"):
-            return ErrorType.CoreError
-
-        # sdk error
-        if isinstance(e, cls.get_error_classes("promptflow._sdk._errors")):
-            return ErrorType.SDKError
-        if cls._is_exception_from_module(e, module_name="promptflow._sdk"):
-            return ErrorType.SDKError
-
-        # cli error
-        if cls._is_exception_from_module(e, module_name="promptflow._cli"):
-            return ErrorType.CLIError
-
-        # other error
-        if cls._is_system_error(e):
-            return ErrorType.ExternalSyetemError
-
-        return ErrorType.ExternalUserError
+        return type(e).__name__
 
     @classmethod
     def _error_target(cls, e: Exception):
@@ -388,25 +315,3 @@ class ErrorInfo:
             cls._exception_codes[key].append(exception_code)
 
         return cls._exception_codes.get(key, [])
-
-    @classmethod
-    def _is_exception_from_module(cls, e: Exception, module_name: str = ""):
-        exception_codes = cls._get_exception_codes(e)
-        for exception_code in exception_codes[::-1]:
-            # For example: 'promptflow.executor._errors' in 'promptflow.executor'
-            if module_name in exception_code["module"]:
-                return True
-
-        return False
-
-    @classmethod
-    def get_error_classes(cls, module_name) -> tuple:
-        if not cls._error_classes.get(module_name):
-            try:
-                _errors_module = importlib.import_module(module_name)
-                cls._error_classes[module_name] = get_exception_classes(_errors_module)
-            except Exception as e:
-                print(f"Error importing module {module_name}: {e}")
-                return tuple()
-
-        return cls._error_classes[module_name]
