@@ -9,7 +9,8 @@ import pytest
 from promptflow._core.openai_injector import (
     PROMPTFLOW_PREFIX,
     USER_AGENT_HEADER,
-    available_openai_apis,
+    available_openai_apis_async,
+    available_openai_apis_sync,
     get_aoai_telemetry_headers,
     inject_openai_api,
     inject_operation_headers,
@@ -299,79 +300,61 @@ def test_aoai_chat_tool_prompt():
         (
             None,
             {
-                "openai.resources.completions.AsyncCompletions",
                 "openai.resources.completions.Completions",
                 "openai.resources.chat.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
                 "openai.resources.embeddings.Embeddings",
+            },
+        ),
+        ("Completions", {"openai.resources.chat.completions.Completions", "openai.resources.embeddings.Embeddings"}),
+        ("chat.Completions", {"openai.resources.completions.Completions", "openai.resources.embeddings.Embeddings"}),
+        ("Embeddings", {"openai.resources.completions.Completions", "openai.resources.chat.completions.Completions"}),
+    ],
+)
+def test_availabe_openai_apis_sync(removed_api, expected_apis):
+    def validate_api_set(expected_apis):
+        available_apis = available_openai_apis_sync()
+        generated_apis = set()
+        for api in available_apis:
+            assert hasattr(api, "create")
+            generated_apis.add(f"{api.__module__}.{api.__qualname__}")
+        print(generated_apis)
+        assert generated_apis == expected_apis
+
+    if removed_api:
+        with patch(f"openai.resources.{removed_api}", new=None):
+            validate_api_set(expected_apis)
+    else:
+        validate_api_set(expected_apis)
+
+
+@pytest.mark.parametrize(
+    "removed_api, expected_apis",
+    [
+        (
+            None,
+            {
+                "openai.resources.completions.AsyncCompletions",
+                "openai.resources.chat.completions.AsyncCompletions",
                 "openai.resources.embeddings.AsyncEmbeddings",
             },
         ),
         (
             "AsyncCompletions",
-            {
-                "openai.resources.embeddings.Embeddings",
-                "openai.resources.embeddings.AsyncEmbeddings",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-            },
-        ),
-        (
-            "Completions",
-            {
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.Embeddings",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
-        ),
-        (
-            "chat.Completions",
-            {
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.Embeddings",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
+            {"openai.resources.chat.completions.AsyncCompletions", "openai.resources.embeddings.AsyncEmbeddings"},
         ),
         (
             "chat.AsyncCompletions",
-            {
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.completions.Completions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.embeddings.Embeddings",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
-        ),
-        (
-            "Embeddings",
-            {
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.completions.Completions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
+            {"openai.resources.completions.AsyncCompletions", "openai.resources.embeddings.AsyncEmbeddings"},
         ),
         (
             "AsyncEmbeddings",
-            {
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.completions.Completions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.Embeddings",
-            },
+            {"openai.resources.completions.AsyncCompletions", "openai.resources.chat.completions.AsyncCompletions"},
         ),
     ],
 )
-def test_availabe_openai_apis(removed_api, expected_apis):
+def test_availabe_openai_apis_async(removed_api, expected_apis):
     def validate_api_set(expected_apis):
-        available_apis = available_openai_apis()
+        available_apis = available_openai_apis_async()
         generated_apis = set()
         for api in available_apis:
             assert hasattr(api, "create")
@@ -397,7 +380,7 @@ def test_availabe_openai_apis(removed_api, expected_apis):
 )
 def test_availabe_openai_apis_for_legacy_openai(removed_api, expected_apis):
     def validate_api_set(expected_apis):
-        available_apis = available_openai_apis()
+        available_apis = available_openai_apis_sync()
         generated_apis = set()
         for api in available_apis:
             assert hasattr(api, "create")

@@ -21,66 +21,74 @@ PROMPTFLOW_PREFIX = "ms-azure-ai-promptflow-"
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
 
 
-def inject_function(args_to_ignore=None, trace_type=TraceType.LLM):
+def inject_function_async(args_to_ignore=None, trace_type=TraceType.LLM):
     args_to_ignore = args_to_ignore or []
     args_to_ignore = set(args_to_ignore)
 
     def wrapper(f):
         sig = inspect.signature(f).parameters
 
-        if asyncio.iscoroutinefunction(f):
+        @functools.wraps(f)
+        async def wrapped_method(*args, **kwargs):
+            if not Tracer.active():
+                return await f(*args, **kwargs)
 
-            @functools.wraps(f)
-            async def wrapped_method(*args, **kwargs):
-                if not Tracer.active():
-                    return await f(*args, **kwargs)
+            all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+            for key in args_to_ignore:
+                all_kwargs.pop(key, None)
+            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
+            trace = Trace(
+                name=name,
+                type=trace_type,
+                inputs=all_kwargs,
+                start_time=datetime.utcnow().timestamp(),
+            )
+            Tracer.push(trace)
+            try:
+                result = await f(*args, **kwargs)
+            except Exception as ex:
+                Tracer.pop(error=ex)
+                raise
+            else:
+                result = Tracer.pop(result)
+            return result
 
-                all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-                for key in args_to_ignore:
-                    all_kwargs.pop(key, None)
-                name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
-                trace = Trace(
-                    name=name,
-                    type=trace_type,
-                    inputs=all_kwargs,
-                    start_time=datetime.utcnow().timestamp(),
-                )
-                Tracer.push(trace)
-                try:
-                    result = await f(*args, **kwargs)
-                except Exception as ex:
-                    Tracer.pop(error=ex)
-                    raise
-                else:
-                    result = Tracer.pop(result)
-                return result
+        return wrapped_method
 
-        else:
+    return wrapper
 
-            @functools.wraps(f)
-            def wrapped_method(*args, **kwargs):
-                if not Tracer.active():
-                    return f(*args, **kwargs)
 
-                all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-                for key in args_to_ignore:
-                    all_kwargs.pop(key, None)
-                name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
-                trace = Trace(
-                    name=name,
-                    type=trace_type,
-                    inputs=all_kwargs,
-                    start_time=datetime.utcnow().timestamp(),
-                )
-                Tracer.push(trace)
-                try:
-                    result = f(*args, **kwargs)
-                except Exception as ex:
-                    Tracer.pop(error=ex)
-                    raise
-                else:
-                    result = Tracer.pop(result)
-                return result
+def inject_function_sync(args_to_ignore=None, trace_type=TraceType.LLM):
+    args_to_ignore = args_to_ignore or []
+    args_to_ignore = set(args_to_ignore)
+
+    def wrapper(f):
+        sig = inspect.signature(f).parameters
+
+        @functools.wraps(f)
+        def wrapped_method(*args, **kwargs):
+            if not Tracer.active():
+                return f(*args, **kwargs)
+
+            all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+            for key in args_to_ignore:
+                all_kwargs.pop(key, None)
+            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
+            trace = Trace(
+                name=name,
+                type=trace_type,
+                inputs=all_kwargs,
+                start_time=datetime.utcnow().timestamp(),
+            )
+            Tracer.push(trace)
+            try:
+                result = f(*args, **kwargs)
+            except Exception as ex:
+                Tracer.pop(error=ex)
+                raise
+            else:
+                result = Tracer.pop(result)
+            return result
 
         return wrapped_method
 
@@ -136,18 +144,50 @@ def inject_operation_headers(f):
     return wrapper
 
 
-def inject(f):
-    wrapper_fun = inject_operation_headers((inject_function(["api_key", "headers", "extra_headers"])(f)))
+def inject_async(f):
+    wrapper_fun = inject_operation_headers((inject_function_async(["api_key", "headers", "extra_headers"])(f)))
     wrapper_fun._original = f
     return wrapper_fun
 
 
-def available_openai_apis():
+def inject_sync(f):
+    wrapper_fun = inject_operation_headers((inject_function_sync(["api_key", "headers", "extra_headers"])(f)))
+    wrapper_fun._original = f
+    return wrapper_fun
+
+
+def available_openai_apis_async():
     if IS_LEGACY_OPENAI:
         for api in ("Completion", "ChatCompletion", "Embedding"):
             try:
                 openai_api = getattr(openai, api)
-                if hasattr(openai_api, "create") or hasattr(openai_api, "acreate"):
+                if hasattr(openai_api, "acreate"):
+                    yield openai_api
+            except AttributeError:
+                # This is expected for older versions of openai or unsupported APIs.
+                # E.g. ChatCompletion API was introduced in 2023 and requires openai>=0.27.0 to work.
+                # Older versions of openai do not have this API and will raise an AttributeError if we try to use it.
+                pass
+    else:
+        for api in ("AsyncCompletions", "AsyncChat", "AsyncEmbeddings"):
+            try:
+                if api == "AsyncChat":
+                    openai_api = getattr(openai.resources.chat, "AsyncCompletions")
+                else:
+                    openai_api = getattr(openai.resources, api)
+                if hasattr(openai_api, "create"):
+                    yield openai_api
+            except Exception:
+                # To avoid breaking changes included in future upgrades, we ignore all exceptions here.
+                pass
+
+
+def available_openai_apis_sync():
+    if IS_LEGACY_OPENAI:
+        for api in ("Completion", "ChatCompletion", "Embedding"):
+            try:
+                openai_api = getattr(openai, api)
+                if hasattr(openai_api, "create"):
                     yield openai_api
             except AttributeError:
                 # This is expected for older versions of openai or unsupported APIs.
@@ -167,18 +207,6 @@ def available_openai_apis():
                 # To avoid breaking changes included in future upgrades, we ignore all exceptions here.
                 pass
 
-        for api in ("AsyncCompletions", "AsyncChat", "AsyncEmbeddings"):
-            try:
-                if api == "AsyncChat":
-                    openai_api = getattr(openai.resources.chat, "AsyncCompletions")
-                else:
-                    openai_api = getattr(openai.resources, api)
-                if hasattr(openai_api, "create"):
-                    yield openai_api
-            except Exception:
-                # To avoid breaking changes included in future upgrades, we ignore all exceptions here.
-                pass
-
 
 def inject_openai_api():
     """This function:
@@ -186,16 +214,22 @@ def inject_openai_api():
     It stores the original methods as _original attributes of the create methods.
     2. Updates the openai api configs from environment variables.
     """
-    for openai_api in available_openai_apis():
+    for openai_api_sync in available_openai_apis_sync():
         # Check if the create method of the openai_api class has already been modified
-        if hasattr(openai_api, "create") and not hasattr(openai_api.create, "_original"):
+        if hasattr(openai_api_sync, "create") and not hasattr(openai_api_sync.create, "_original"):
             # If not, modify it by calling the inject function with it as an argument
-            openai_api.create = inject(openai_api.create)
+            openai_api_sync.create = inject_sync(openai_api_sync.create)
 
-        # Check if the acreate method of the openai_api class has already been modified
-        if hasattr(openai_api, "acreate") and not hasattr(openai_api.acreate, "_original"):
+    for openai_api_async in available_openai_apis_async():
+        # Check if the create method of the openai_api class has already been modified
+        if hasattr(openai_api_async, "acreate") and not hasattr(openai_api_async.acreate, "_original"):
             # If not, modify it by calling the inject function with it as an argument
-            openai_api.acreate = inject(openai_api.acreate)
+            openai_api_async.acreate = inject_async(openai_api_async.acreate)
+
+        # Check if the create method of the openai_api class has already been modified
+        if hasattr(openai_api_async, "create") and not hasattr(openai_api_async.create, "_original"):
+            # If not, modify it by calling the inject function with it as an argument
+            openai_api_async.create = inject_async(openai_api_async.create)
 
     if IS_LEGACY_OPENAI:
         # For the openai versions lower than 1.0.0, it reads api configs from environment variables only at
@@ -214,8 +248,31 @@ def recover_openai_api():
     """This function restores the original create methods of the OpenAI API classes
     by assigning them back from the _original attributes of the modified methods.
     """
-    for openai_api in available_openai_apis():
+    recover_openai_api_sync()
+    recover_openai_api_async()
+
+
+def recover_openai_api_sync():
+    """This function restores the original create methods of the OpenAI API classes
+    by assigning them back from the _original attributes of the modified methods.
+    """
+    for openai_api_sync in available_openai_apis_sync():
         # Check if the create method of the openai_api class has been modified
-        if hasattr(openai_api.create, "_original"):
+        if hasattr(openai_api_sync.create, "_original"):
             # If yes, restore it by assigning it back from the _original attribute of the modified method
-            openai_api.create = getattr(openai_api.create, "_original")
+            openai_api_sync.create = getattr(openai_api_sync.create, "_original")
+
+
+def recover_openai_api_async():
+    """This function restores the original create methods of the OpenAI API classes
+    by assigning them back from the _original attributes of the modified methods.
+    """
+    for openai_api_async in available_openai_apis_async():
+        # Check if the create method of the openai_api class has been modified
+        if hasattr(openai_api_async, "acreate") and hasattr(openai_api_async.acreate, "_original"):
+            # If yes, restore it by assigning it back from the _original attribute of the modified method
+            openai_api_async.acreate = getattr(openai_api_async.acreate, "_original")
+
+        if hasattr(openai_api_async, "create") and hasattr(openai_api_async.create, "_original"):
+            # If yes, restore it by assigning it back from the _original attribute of the modified method
+            openai_api_async.create = getattr(openai_api_async.create, "_original")
