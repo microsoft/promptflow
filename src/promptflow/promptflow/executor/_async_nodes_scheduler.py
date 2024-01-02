@@ -7,6 +7,7 @@ import inspect
 import contextvars
 import os
 import signal
+import sys
 import threading
 import time
 from asyncio import Task
@@ -133,7 +134,7 @@ def signal_handler(sig, frame):
     Start a thread to monitor coroutines after receiving signal.
     """
     flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}),"
-                     " start coroutint monitor thread.")
+                     " start coroutine monitor thread.")
     loop = asyncio.get_running_loop()
     monitor = threading.Thread(target=monitor_coroutine_after_cancellation, args=(loop,))
     monitor.start()
@@ -148,8 +149,8 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
     :param loop: event loop of main thread
     :type loop: asyncio.AbstractEventLoop
     """
-    # TODO: Use environment variable to ensure it is flow test / node test scenario
-    # to avoid unexpected exit.
+    # TODO: Use environment variable to ensure it is flow test scenario to avoid unexpected exit.
+    # E.g. Customer is integrating Promptflow in their own code, and they want to handle SIGINT by themselves.
     max_wait_seconds = os.environ.get("PF_WAIT_SECONDS_AFTER_CANCELLATION", 30)
 
     all_tasks_are_done = False
@@ -162,11 +163,11 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
         # For sync tool running in async mode, the task will be cancelled,
         # but the thread will not be terminated, we exit the program despite of it.
         # TODO: Detect whether there is any sync tool running in async mode,
-        # if there is none, avoid sys._exit and let the program exit gracefully.
+        # if there is none, avoid sys.exit and let the program exit gracefully.
         all_tasks_are_done = all(task.done() for task in asyncio.all_tasks(loop))
         if all_tasks_are_done:
             flow_logger.info("All coroutines are done. Exiting.")
-            os._exit(0)
+            sys.exit(0)
 
         exceeded_wait_seconds = time.time() - thread_start_time > max_wait_seconds
         time.sleep(1)
@@ -179,4 +180,4 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
                          " more time to clean up after cancellation.")
         remaining_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
         flow_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
-        os._exit(0)
+        sys.exit(0)
