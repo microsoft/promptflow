@@ -114,7 +114,7 @@ def inject_operation_headers(f):
     def inject_headers(kwargs):
         # Inject headers from operation context, overwrite injected header with headers from kwargs.
         injected_headers = get_aoai_telemetry_headers()
-        original_headers = kwargs.get("headers") if IS_LEGACY_OPENAI else kwargs.get("extra_headers")
+        original_headers = kwargs.get("headers" if IS_LEGACY_OPENAI else "extra_headers")
         if original_headers and isinstance(original_headers, dict):
             injected_headers.update(original_headers)
         kwargs["headers" if IS_LEGACY_OPENAI else "extra_headers"] = injected_headers
