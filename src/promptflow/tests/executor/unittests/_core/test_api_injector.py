@@ -380,7 +380,6 @@ def test_availabe_openai_apis(removed_api, expected_apis):
         assert generated_apis == expected_apis
 
     if removed_api:
-        # with patch(f"{removed_api}", new=None):
         with patch(f"openai.resources.{removed_api}", new=None):
             validate_api_set(expected_apis)
     else:
