@@ -40,3 +40,4 @@ if __name__ == "__main__":
 
     command_args = {"shell": system() == "Windows", "stream_stdout": args.verbose}
     setup_promptflow(extra_deps=args.promptflow_extra_deps, command_args=command_args)
+    run_command(commands=["pre-commit", "install"], **command_args)

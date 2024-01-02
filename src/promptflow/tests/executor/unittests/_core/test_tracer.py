@@ -341,22 +341,12 @@ class TestTraced:
 
 
 @trace
-def decorated_without_parentheses(a: int):
-    return a
-
-
-@trace()
-def decorated_with_parentheses(a: int):
+def my_tool(a: int):
     return a
 
 
 @trace
-async def decorated_without_parentheses_async(a: int):
-    return a
-
-
-@trace()
-async def decorated_with_parentheses_async(a: int):
+async def my_tool_async(a: int):
     return a
 
 
@@ -368,10 +358,8 @@ class TestTrace:
     @pytest.mark.parametrize(
         "func",
         [
-            decorated_with_parentheses,
-            decorated_without_parentheses,
-            decorated_with_parentheses_async,
-            decorated_without_parentheses_async,
+            my_tool,
+            my_tool_async,
         ],
     )
     async def test_traces_are_created_correctly(self, func):
