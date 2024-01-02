@@ -277,7 +277,6 @@ class ErrorInfo:
                 exception_code = item
                 break
         return (
-            f"exception name={name}, "
             f"exception msg={msg}, "
             f"exception module={exception_code['module']}, "
             f"exception code={exception_code['exception_code']}, "

@@ -32,7 +32,6 @@ class TestExceptions:
         assert error_type == "FileNotFoundError"
         assert error_target == ErrorTarget.UNKNOWN
         assert (
-            "exception name=FileNotFoundError, "
             "exception msg=, "
             "exception module=promptflow._sdk._pf_client, "
             'exception code=raise FileNotFoundError(f"flow path {flow} does not exist"), '
@@ -50,7 +49,6 @@ class TestExceptions:
         assert error_type == "InvalidAggregationInput"
         assert error_target == ErrorTarget.UNKNOWN
         assert (
-            "exception name=InvalidAggregationInput, "
             "exception msg=The input for aggregation is incorrect. "
             "The value for aggregated reference input '{input_key}' "
             "should be a list, but received {value_type}. "
@@ -83,7 +81,6 @@ class TestExceptions:
         assert error_type == "ResourceNotFoundError"
         assert error_target == ErrorTarget.UNKNOWN
         assert (
-            "exception name=ResourceNotFoundError, "
             "exception msg=, exception module=promptflow.azure._pf_client, "
             "exception code=workspace = self._ml_client.workspaces.get("
             "name=self._ml_client._operation_scope.workspace_name), exception lineno="
@@ -103,11 +100,11 @@ class TestExceptions:
         assert error_category == ErrorCategory.SDKUserError
         assert error_type == "InvalidNodeReference"
         assert error_target == ErrorTarget.EXECUTOR
-        assert (
-            "exception name=InvalidNodeReference, "
-            "exception msg=Invalid node definitions found in the flow graph. "
-            "Non-aggregation node '{invalid_reference}' cannot be referenced in the activate config "
-            "of the aggregation node '{node_name}'. Please review and rectify the node reference., "
-            "exception module=sdk_cli_test.unittests.test_exceptions, "
-            "exception code=raise InvalidNodeReference(, exception lineno="
-        ) in error_message
+        assert ("exception msg=Invalid node definitions found in the flow graph. "
+                "Non-aggregation node '{invalid_reference}' cannot be referenced in the activate "
+                "config of the aggregation node '{node_name}'. "
+                "Please review and rectify the node reference., "
+                "exception module=sdk_cli_test.unittests.test_exceptions, "
+                "exception code=raise InvalidNodeReference(message_format=msg_format, "
+                "invalid_reference=None, node_name=\"node_name\"), "
+                "exception lineno=96") in error_message
