@@ -15,7 +15,7 @@ class TestAOAI:
         # test whether tool can handle param "stop" with value empty list
         # as openai raises "[] is not valid under any of the given schemas - 'stop'"
         aoai_provider.completion(
-            prompt=prompt_template, deployment_name="gpt-4", stop=[], logit_bias={}
+            prompt=prompt_template, deployment_name="gpt-35-turbo", stop=[], logit_bias={}
         )
 
     def test_aoai_stream_completion(self, aoai_provider):
@@ -23,13 +23,13 @@ class TestAOAI:
         # test whether tool can handle param "stop" with value empty list in stream mode
         # as openai raises "[] is not valid under any of the given schemas - 'stop'"
         aoai_provider.completion(
-            prompt=prompt_template, deployment_name="gpt-4", stop=[], logit_bias={}, stream=True
+            prompt=prompt_template, deployment_name="gpt-35-turbo", stop=[], logit_bias={}, stream=True
         )
 
     def test_aoai_chat(self, aoai_provider, example_prompt_template, chat_history):
         result = aoai_provider.chat(
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo-16k",
+            deployment_name="gpt-35-turbo",
             max_tokens="32",
             temperature=0,
             user_input="Fill in more details about trend 2.",
@@ -41,7 +41,7 @@ class TestAOAI:
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo-16k",
+            deployment_name="gpt-35-turbo",
             max_tokens="inF",
             temperature=0,
             user_input="Write a slogan for product X",
@@ -61,7 +61,7 @@ class TestAOAI:
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo-16k",
+            deployment_name="gpt-35-turbo",
             max_tokens="inF",
             temperature=0,
             user_input="What is the weather in Boston?",
@@ -77,7 +77,7 @@ class TestAOAI:
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template_with_name_in_roles,
-            deployment_name="gpt-35-turbo-16k",
+            deployment_name="gpt-35-turbo",
             max_tokens="inF",
             temperature=0,
             functions=functions,
@@ -97,15 +97,15 @@ class TestAOAI:
             "How can I assist you today?"
         )
         # assert chat tool can handle.
-        aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo-16k")
+        aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
         # empty content after role name:\n
         prompt = "user:\n"
-        aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo-16k")
+        aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
 
     def test_aoai_stream_chat(self, aoai_provider, example_prompt_template, chat_history):
         result = aoai_provider.chat(
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo-16k",
+            deployment_name="gpt-35-turbo",
             max_tokens="32",
             temperature=0,
             user_input="Fill in more details about trend 2.",
@@ -212,7 +212,7 @@ class TestAOAI:
             chat(
                 connection=azure_open_ai_connection,
                 prompt=example_prompt_template,
-                deployment_name="gpt-35-turbo-16k",
+                deployment_name="gpt-35-turbo",
                 temperature=0,
                 user_input="Write a slogan for product X, please reponse with json.",
                 chat_history=chat_history,
@@ -231,7 +231,7 @@ class TestAOAI:
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template,
-            deployment_name="gpt-35-turbo-16k",
+            deployment_name="gpt-35-turbo",
             temperature=0,
             user_input="Write a slogan for product X.",
             chat_history=chat_history,
