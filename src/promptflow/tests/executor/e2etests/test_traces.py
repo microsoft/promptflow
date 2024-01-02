@@ -93,7 +93,7 @@ class TestExecutorTraces:
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.run_info.api_calls is not None
 
-        tool_trace = flow_result.run_info.api_calls[0]
+        tool_trace = flow_result.run_info.api_calls[0]["children"][0]
         generator_trace = tool_trace.get("children")[0]
         assert generator_trace is not None
 
@@ -125,7 +125,7 @@ class TestExecutorTraces:
         assert flow_result.run_info.api_calls is not None
 
         # Extract the trace for the generator node
-        tool_trace = flow_result.run_info.api_calls[0]
+        tool_trace = flow_result.run_info.api_calls[0]["children"][0]
         generator_output_trace = tool_trace.get("output")
 
         # Verify that the trace output is a list
@@ -148,3 +148,96 @@ class TestExecutorTraces:
             # If generator output is not allowed, the trace list should contain generated items
             assert generator_output_trace
             assert all(isinstance(item, str) for item in generator_output_trace)
+
+    @pytest.mark.parametrize("flow_file", ["flow_with_trace", "flow_with_trace_async"])
+    def test_flow_with_trace(self, flow_file, dev_connections):
+        """Tests to verify the flows that contains @trace marks.
+
+        They should generate traces with "Function" type and nested in the "Tool" traces.
+
+        This test case is to verify a flow like following structure, both sync and async mode:
+
+        .. code-block::
+            flow (Flow, 1.5s)
+                greetings (Tool, 1.5s)
+                    get_user_name (Function, 1.0s)
+                        is_valid_name (Function, 0.5s)
+                    format_greeting (Function, 0.5s)
+
+        """
+        executor = FlowExecutor.create(get_yaml_file(flow_file), dev_connections)
+        inputs = {"user_id": 1}
+        flow_result = executor.exec_line(inputs)
+
+        # Assert the run status is completed
+        assert flow_result.output == {"output": "Hello, User 1!"}
+        assert flow_result.run_info.status == Status.Completed
+        assert flow_result.run_info.api_calls is not None
+
+        # Verify the traces are as expected
+        api_calls = flow_result.run_info.api_calls
+        assert len(api_calls) == 1
+
+        # Assert the "flow" root level trace
+        flow_trace = api_calls[0]
+        assert flow_trace["name"] == "flow"
+        assert flow_trace["type"] == "Flow"
+        assert flow_trace["end_time"] - flow_trace["start_time"] == pytest.approx(1.5, abs=0.1)
+        assert len(flow_trace["children"]) == 1
+        assert flow_trace["system_metrics"]["duration"] == pytest.approx(1.5, abs=0.1)
+        assert flow_trace["system_metrics"]["prompt_tokens"] == 0
+        assert flow_trace["system_metrics"]["completion_tokens"] == 0
+        assert flow_trace["system_metrics"]["total_tokens"] == 0
+        # TODO: These assertions should be fixed after added these fields to the top level trace
+        assert "inputs" not in flow_trace
+        assert "output" not in flow_trace
+        assert "error" not in flow_trace
+
+        # Assert the "greetings" tool
+        greetings_trace = flow_trace["children"][0]
+        assert greetings_trace["name"] == "greetings"
+        assert greetings_trace["type"] == "Tool"
+        assert greetings_trace["inputs"] == inputs
+        assert greetings_trace["output"] == {"greeting": "Hello, User 1!"}
+        assert greetings_trace["error"] is None
+        assert greetings_trace["children"] is not None
+        assert greetings_trace["end_time"] - greetings_trace["start_time"] == pytest.approx(1.5, abs=0.1)
+        assert len(greetings_trace["children"]) == 2
+        # TODO: to verfiy the system metrics. This might need to be fixed.
+        assert greetings_trace["system_metrics"] == {}
+
+        # Assert the "get_user_name" function
+        get_user_name_trace = greetings_trace["children"][0]
+        assert get_user_name_trace["name"] == "get_user_name"
+        assert get_user_name_trace["type"] == "Function"
+        assert get_user_name_trace["inputs"] == {"user_id": 1}
+        assert get_user_name_trace["output"] == "User 1"
+        assert get_user_name_trace["error"] is None
+        assert get_user_name_trace["end_time"] - get_user_name_trace["start_time"] == pytest.approx(1.0, abs=0.1)
+        assert len(get_user_name_trace["children"]) == 1
+        # TODO: to verfiy the system metrics. This might need to be fixed.
+        assert get_user_name_trace["system_metrics"] == {}
+
+        # Assert the "get_user_name/is_valid_name" function
+        is_valid_name_trace = get_user_name_trace["children"][0]
+        assert is_valid_name_trace["name"] == "is_valid_name"
+        assert is_valid_name_trace["type"] == "Function"
+        assert is_valid_name_trace["inputs"] == {"name": "User 1"}
+        assert is_valid_name_trace["output"] is True
+        assert is_valid_name_trace["error"] is None
+        assert is_valid_name_trace["end_time"] - is_valid_name_trace["start_time"] == pytest.approx(0.5, abs=0.1)
+        assert is_valid_name_trace["children"] is None
+        # TODO: to verfiy the system metrics. This might need to be fixed.
+        assert is_valid_name_trace["system_metrics"] == {}
+
+        # Assert the "format_greeting" function
+        format_greeting_trace = greetings_trace["children"][1]
+        assert format_greeting_trace["name"] == "format_greeting"
+        assert format_greeting_trace["type"] == "Function"
+        assert format_greeting_trace["inputs"] == {"user_name": "User 1"}
+        assert format_greeting_trace["output"] == "Hello, User 1!"
+        assert format_greeting_trace["error"] is None
+        assert format_greeting_trace["end_time"] - format_greeting_trace["start_time"] == pytest.approx(0.5, abs=0.1)
+        assert format_greeting_trace["children"] is None
+        # TODO: to verfiy the system metrics. This might need to be fixed.
+        assert format_greeting_trace["system_metrics"] == {}
