@@ -249,10 +249,4 @@ def trace(func: Callable = None) -> Callable:
             return f"Hello, {name}"
     """
 
-    def wrapper(func):
-        return _traced(func, trace_type=TraceType.FUNCTION)
-
-    # enable use decorator without "()" if all arguments are default values
-    if func is not None:
-        return wrapper(func)
-    return wrapper
+    return _traced(func, trace_type=TraceType.FUNCTION)
