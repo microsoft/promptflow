@@ -1,7 +1,8 @@
 import base64
-import filetype
 import hashlib
 from typing import Callable, Optional
+
+import filetype
 
 
 class PFBytes(bytes):
@@ -63,3 +64,28 @@ class Image(PFBytes):
         if encoder is None:
             return self.__str__()
         return encoder(self)
+
+
+class Text(str):
+    def __new__(cls, value: str, annotations: list = None):
+        obj = str.__new__(cls, value)
+        obj._annotations = annotations
+        return obj
+
+    @classmethod
+    def deserialize(cls, data: dict):
+        """Deserialize the dictionary to the text object."""
+
+        text = data.get("text", "")
+        if isinstance(text, dict):
+            return cls(value=text.get("value", ""), annotations=text.get("annotations", []))
+        else:
+            return cls(value=text)
+
+    def serialize(self):
+        """Serialize the text to a dictionary."""
+
+        if self._annotations is None:
+            return {"type": "text", "text": self}
+        else:
+            return {"type": "text", "text": {"value": self, "annotations": self._annotations}}

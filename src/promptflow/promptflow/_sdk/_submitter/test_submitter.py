@@ -197,7 +197,8 @@ class TestSubmitter:
             flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
             line_result.output = persist_multimedia_data(
-                line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+                line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output"),
+                version=flow_executor._flow.version
             )
             if line_result.aggregation_inputs:
                 # Convert inputs of aggregation to list type

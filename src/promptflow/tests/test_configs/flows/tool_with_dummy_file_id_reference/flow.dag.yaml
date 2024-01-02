@@ -1,0 +1,27 @@
+inputs:
+  chat_input:
+    type: list
+    default:
+    - type: text
+      text: This is a text in list.
+    - type: image_file
+      image_file:
+        path: logo.jpg
+    - type: image_url
+      image_url:
+        url: https://raw.githubusercontent.com/microsoft/promptflow/main/src/promptflow/tests/test_configs/datas/logo.png
+    is_chat_input: true
+outputs:
+  chat_output:
+    type: object
+    reference: ${mock_file_id_reference.output}
+    is_chat_output: true
+nodes:
+- name: mock_file_id_reference
+  type: python
+  source:
+    type: code
+    path: mock_file_id_reference.py
+  inputs:
+    chat_input: ${inputs.chat_input}
+version: 2
