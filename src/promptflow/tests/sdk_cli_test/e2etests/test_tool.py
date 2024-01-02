@@ -135,32 +135,47 @@ class TestTool:
         tool_meta = self.get_tool_meta(tool_path)
         expect_tool_meta = {
             "test_tool.tool_with_dynamic_list_input.my_tool": {
-                "name": "My Tool with Dynamic List Input",
-                "type": "python",
+                "description": "This is my tool with dynamic list input",
+                "function": "my_tool",
                 "inputs": {
-                    "input_text": {
-                        "type": ["list"],
-                        "is_multi_select": True,
-                        "allow_manual_entry": True,
+                    "endpoint_name": {
                         "dynamic_list": {
-                            "func_path": "test_tool.tool_with_dynamic_list_input.my_list_func",
                             "func_kwargs": [
                                 {
-                                    "name": "prefix",
-                                    "type": ["string"],
-                                    "reference": "${inputs.input_prefix}",
-                                    "optional": True,
                                     "default": "",
-                                },
-                                {"name": "size", "type": ["int"], "optional": True, "default": 10},
+                                    "name": "prefix",
+                                    "optional": True,
+                                    "reference": "${inputs.input_prefix}",
+                                    "type": ["string"],
+                                }
                             ],
+                            "func_path": "test_tool.tool_with_dynamic_list_input.list_endpoint_names",
                         },
+                        "type": ["string"],
                     },
                     "input_prefix": {"type": ["string"]},
+                    "input_text": {
+                        "allow_manual_entry": True,
+                        "dynamic_list": {
+                            "func_kwargs": [
+                                {
+                                    "default": "",
+                                    "name": "prefix",
+                                    "optional": True,
+                                    "reference": "${inputs.input_prefix}",
+                                    "type": ["string"],
+                                },
+                                {"default": 10, "name": "size", "optional": True, "type": ["int"]},
+                            ],
+                            "func_path": "test_tool.tool_with_dynamic_list_input.my_list_func",
+                        },
+                        "is_multi_select": True,
+                        "type": ["list"],
+                    },
                 },
-                "description": "This is my tool with dynamic list input",
                 "module": "test_tool.tool_with_dynamic_list_input",
-                "function": "my_tool",
+                "name": "My Tool with Dynamic List Input",
+                "type": "python",
             }
         }
         assert tool_meta == expect_tool_meta
@@ -285,6 +300,10 @@ class TestTool:
 
     def test_validate_tool_script(self):
         tool_script_path = TOOL_ROOT / "custom_llm_tool.py"
+        result = _client.tools.validate(tool_script_path)
+        assert result.passed
+
+        tool_script_path = TOOL_ROOT / "tool_with_dynamic_list_input.py"
         result = _client.tools.validate(tool_script_path)
         assert result.passed
 

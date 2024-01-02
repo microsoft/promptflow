@@ -22,7 +22,7 @@ from promptflow._core.tool_meta_generator import (
     is_tool,
 )
 from promptflow._core.tools_manager import PACKAGE_TOOLS_ENTRY, collect_package_tools
-from promptflow._sdk._constants import ICON, ICON_DARK, ICON_LIGHT, LOGGER_NAME, TOOL_SCHEMA
+from promptflow._sdk._constants import ICON, ICON_DARK, ICON_LIGHT, LOGGER_NAME, SKIP_FUNC_PARAMS, TOOL_SCHEMA
 from promptflow._sdk._telemetry import ActivityType, monitor_operation
 from promptflow._sdk.entities._validation import ValidationResult, ValidationResultBuilder
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
@@ -60,7 +60,7 @@ class ToolOperations:
 
     def _list_tools_in_package(self, package_name: str, raise_error: bool = False):
         """
-        List the meta of all tools in the package.
+        List the meta of all tools in the package. Raise user error if raise_error=True and found incorrect tools.
 
         :param package_name: Package name
         :type package_name: str
@@ -69,17 +69,7 @@ class ToolOperations:
         :return: Dict of tools meta
         :rtype: Dict[str, Dict]
         """
-        package_tools = {}
-        validate_result = ValidationResultBuilder.success()
-        try:
-            package = __import__(package_name)
-            module_list = pkgutil.walk_packages(package.__path__, prefix=package.__name__ + ".")
-            for module in module_list:
-                module_tools, module_validate_result = self._generate_tool_meta(importlib.import_module(module.name))
-                package_tools.update(module_tools)
-                self._merge_validate_result(validate_result, module_validate_result)
-        except ImportError:
-            raise UserErrorException(f"Cannot find the package {package_name}.")
+        package_tools, validate_result = self._list_tool_meta_in_package(package_name=package_name)
         if not validate_result.passed:
             if raise_error:
 
@@ -91,6 +81,28 @@ class ToolOperations:
                 logger.warning(f"Found invalid tool(s):\n {repr(validate_result)}")
 
         return package_tools
+
+    def _list_tool_meta_in_package(self, package_name: str):
+        """
+        List the meta of all tools in the package.
+
+        :param package_name: Package name
+        :type package_name: str
+        :return: Dict of tools meta, validation result
+        :rtype: Dict[str, Dict], ValidationResult
+        """
+        package_tools = {}
+        validate_result = ValidationResultBuilder.success()
+        try:
+            package = __import__(package_name)
+            module_list = pkgutil.walk_packages(package.__path__, prefix=package.__name__ + ".")
+            for module in module_list:
+                module_tools, module_validate_result = self._generate_tool_meta(importlib.import_module(module.name))
+                package_tools.update(module_tools)
+                self._merge_validate_result(validate_result, module_validate_result)
+        except ImportError as e:
+            raise UserErrorException(f"Cannot find the package {package_name}, {e}.")
+        return package_tools, validate_result
 
     def _generate_tool_meta(self, tool_module):
         """
@@ -280,7 +292,7 @@ class ToolOperations:
                 required_inputs = [
                     k
                     for k, v in dynamic_func_inputs.items()
-                    if v.default is inspect.Parameter.empty and v.kind != v.VAR_KEYWORD
+                    if v.default is inspect.Parameter.empty and v.kind != v.VAR_KEYWORD and k not in SKIP_FUNC_PARAMS
                 ]
                 if settings.dynamic_list._input_mapping:
                     # Validate input mapping in dynamic_list
@@ -474,10 +486,7 @@ class ToolOperations:
             # Validate package tool
             if not self._is_package_tool(source):
                 raise UserErrorException("Invalid package tool.")
-            try:
-                self._list_tools_in_package(package_name=source.__name__, raise_error=True)
-            except ToolValidationError as exception:
-                validate_result = exception._kwargs.get("validate_result")
+            _, validate_result = self._list_tool_meta_in_package(package_name=source.__name__)
         else:
             raise UserErrorException(
                 "Provide invalid source, tool validation source supports script tool, "

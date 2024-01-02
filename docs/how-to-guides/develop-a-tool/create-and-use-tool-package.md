@@ -62,6 +62,50 @@ hello_world/
     ```
     > [!Note] There's no need to update this file if you maintain the existing folder structure.
 
+### Validate custom tool package
+You can use [pf tool validate](../../reference/pf-command-reference.md#pf-tool-validate) or `pf_client.tool.validate` to verify the correctness of the customer package tool:
+
+```bash
+pf tool validate --source <your-package-name>
+```
+
+```python
+from promptflow import PFClient
+import your-tool-package
+
+client = PFClient()
+validate_result = client.tools.validate(your-tool-package, raise_error=False)
+if not validate_result.passed:
+    for tool_name, error_message in validate_result.error_messages.items():
+        print(f"Tool {tool_name} is invalid.")
+```
+
+It will help customer to check whether all the tools under the package are legitimate, and return the validation result to customer. It all tools are validated, If all tools are validated, the following message will be displayed:
+```bash
+{
+  "result": "Succeeded",
+  "total_count": <The total num of tools in source>,
+  "invalid_count": 0
+}
+```
+
+If incorrect tools are found, it will display the validation result of tools and the corresponding error message.
+```bash
+{
+  "result": "Failed",
+  "total_count": <The total num of tools in source>,
+  "invalid_count": <The invalid num of tools in source>,
+  "errors": [
+    {
+      "message": <Error message about the tool>,
+      "function_name": <Invalid tool func name>,
+      "location": <Script path of invalid tool>
+    }
+  ]
+}
+```
+
+
 ## Build and share the tool package
   Execute the following command in the tool package root directory to build your tool package:
   ```

@@ -125,7 +125,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
         tool_type = getattr(f, "__type", None) or ToolType.PYTHON
     except Exception as e:
         raise e
-    tool_name = getattr(f, "__name", None) or f.__qualname__
+    tool_name = getattr(f, "__name", None)
     description = getattr(f, "__description", None)
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
@@ -150,7 +150,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
         class_name = f.__qualname__.replace(f".{f.__name__}", "")
     # Construct the Tool structure
     return Tool(
-        name=tool_name,
+        name=tool_name or f.__qualname__,
         description=description or inspect.getdoc(f),
         inputs=inputs,
         type=tool_type,
