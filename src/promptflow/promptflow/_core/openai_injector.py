@@ -221,6 +221,11 @@ def inject_openai_api():
             openai_api_sync.create = inject_sync(openai_api_sync.create)
 
     for openai_api_async in available_openai_apis_async():
+        # Due to the issue reported in https://github.com/openai/openai-python/issues/996,
+        # Async interface was not recognized as a coroutine by inspect.iscoroutinefunction.
+        # This means that async injection needs to be handled differently to ensure decorators
+        # behave correctly for asynchronous methods.
+
         # Check if the create method of the openai_api class has already been modified
         if hasattr(openai_api_async, "acreate") and not hasattr(openai_api_async.acreate, "_original"):
             # If not, modify it by calling the inject function with it as an argument
