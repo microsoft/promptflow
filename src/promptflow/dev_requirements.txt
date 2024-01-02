@@ -11,6 +11,7 @@ pre-commit
 pydash
 PyJWT==2.8.0  # parse token to get tenant id during sanitization
 pytest
+pytest-asyncio
 pytest-cov
 pytest-forked
 pytest-mock
