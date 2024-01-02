@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import importlib
 import inspect
 import string
 import traceback
@@ -234,15 +235,8 @@ class ValidationException(UserErrorException):
 
 
 class ErrorInfo:
-    _serving_error_classes = None
-    _sdk_error_classes = None
-    _core_error_classes = None
-    _utils_error_classes = None
-    _batch_error_classes = None
-    _contracts_error_classes = None
-    _storage_error_classes = None
-    _executor_error_classes = None
-    _modules = dict()
+    _error_classes = dict()
+    _exception_codes = dict()
 
     @classmethod
     def get_error_info(cls, e: Exception):
@@ -284,49 +278,49 @@ class ErrorInfo:
     @classmethod
     def _error_type(cls, e: Exception):
         # executor error
-        if isinstance(e, cls.executor_error_classes()):
+        if isinstance(e, cls.get_error_classes("promptflow.executor._errors")):
             return ErrorType.ExecutorError
         if cls._is_exception_from_module(e, module_name="promptflow.executor"):
             return ErrorType.ExecutorError
 
         # pfs error
-        if isinstance(e, cls.serving_error_classes()):
+        if isinstance(e, cls.get_error_classes("promptflow._sdk._serving._errors")):
             return ErrorType.PFSError
         if cls._is_exception_from_module(e, module_name="promptflow._sdk._serving"):
             return ErrorType.PFSError
 
         # storage error
-        if isinstance(e, cls.storage_error_classes()):
+        if isinstance(e, cls.get_error_classes("promptflow.storage._errors")):
             return ErrorType.StorageError
         if cls._is_exception_from_module(e, module_name="promptflow.storage"):
             return ErrorType.StorageError
 
         # batch error
-        if isinstance(e, cls.batch_error_classes()):
+        if isinstance(e, cls.get_error_classes("promptflow.batch._errors")):
             return ErrorType.BatchError
         if cls._is_exception_from_module(e, module_name="promptflow.batch"):
             return ErrorType.BatchError
 
         # utils error
-        if isinstance(e, cls.utils_error_classes()):
+        if isinstance(e, cls.get_error_classes("promptflow._utils._errors")):
             return ErrorType.UtilsError
         if cls._is_exception_from_module(e, module_name="promptflow._utils"):
             return ErrorType.UtilsError
 
         # contrasts error
-        if isinstance(e, cls.contracts_error_classes()):
+        if isinstance(e, cls.get_error_classes("promptflow.contracts._errors")):
             return ErrorType.ContractsError
         if cls._is_exception_from_module(e, module_name="promptflow.contracts"):
             return ErrorType.ContractsError
 
         # core error
-        if isinstance(e, cls.core_error_classes()):
+        if isinstance(e, cls.get_error_classes("promptflow._core._errors")):
             return ErrorType.CoreError
         if cls._is_exception_from_module(e, module_name="promptflow._core"):
             return ErrorType.CoreError
 
         # sdk error
-        if isinstance(e, cls.sdk_error_classes()):
+        if isinstance(e, cls.get_error_classes("promptflow._sdk._errors")):
             return ErrorType.SDKError
         if cls._is_exception_from_module(e, module_name="promptflow._sdk"):
             return ErrorType.SDKError
@@ -378,22 +372,22 @@ class ErrorInfo:
                 }
         """
         key = str(id(e))
-        if cls._modules.get(key):
-            return cls._modules[key]
+        if cls._exception_codes.get(key):
+            return cls._exception_codes[key]
 
-        cls._modules[key] = []  # Considering multithreading, use dict to save.
+        cls._exception_codes[key] = []  # Considering multithreading, use dict to save.
         traceback_info = traceback.extract_tb(e.__traceback__)
         for item in traceback_info:
             lineno = item.lineno
             filename = item.filename
-            exception_code = item.line
+            line_code = item.line
             module = inspect.getmodule(None, _filename=filename)
-            exception_code = {"module": "", "exception_code": exception_code, "lineno": lineno}
+            exception_code = {"module": "", "exception_code": line_code, "lineno": lineno}
             if module is not None:
                 exception_code["module"] = module.__name__
-            cls._modules[key].append(exception_code)
+            cls._exception_codes[key].append(exception_code)
 
-        return cls._modules.get(key, [])
+        return cls._exception_codes.get(key, [])
 
     @classmethod
     def _is_exception_from_module(cls, e: Exception, module_name: str = ""):
@@ -406,73 +400,13 @@ class ErrorInfo:
         return False
 
     @classmethod
-    def executor_error_classes(cls):
-        if cls._executor_error_classes is None:
-            import promptflow.executor._errors as _errors_module
+    def get_error_classes(cls, module_name) -> tuple:
+        if not cls._error_classes.get(module_name):
+            try:
+                _errors_module = importlib.import_module(module_name)
+                cls._error_classes[module_name] = get_exception_classes(_errors_module)
+            except Exception as e:
+                print(f"Error importing module {module_name}: {e}")
+                return tuple()
 
-            cls._executor_error_classes = get_exception_classes(_errors_module)
-
-        return cls._executor_error_classes
-
-    @classmethod
-    def storage_error_classes(cls):
-        if cls._storage_error_classes is None:
-            import promptflow.storage._errors as _errors_module
-
-            cls._storage_error_classes = get_exception_classes(_errors_module)
-
-        return cls._storage_error_classes
-
-    @classmethod
-    def contracts_error_classes(cls):
-        if cls._contracts_error_classes is None:
-            import promptflow.contracts._errors as _errors_module
-
-            cls._contracts_error_classes = get_exception_classes(_errors_module)
-
-        return cls._contracts_error_classes
-
-    @classmethod
-    def batch_error_classes(cls):
-        if cls._batch_error_classes is None:
-            import promptflow.batch._errors as _errors_module
-
-            cls._batch_error_classes = get_exception_classes(_errors_module)
-
-        return cls._batch_error_classes
-
-    @classmethod
-    def utils_error_classes(cls):
-        if cls._utils_error_classes is None:
-            import promptflow._utils._errors as _errors_module
-
-            cls._utils_error_classes = get_exception_classes(_errors_module)
-
-        return cls._utils_error_classes
-
-    @classmethod
-    def core_error_classes(cls):
-        if cls._core_error_classes is None:
-            import promptflow._core._errors as _errors_module
-
-            cls._core_error_classes = get_exception_classes(_errors_module)
-
-        return cls._core_error_classes
-
-    @classmethod
-    def serving_error_classes(cls):
-        if cls._serving_error_classes is None:
-            import promptflow._sdk._serving._errors as _errors_module
-
-            cls._serving_error_classes = get_exception_classes(_errors_module)
-
-        return cls._serving_error_classes
-
-    @classmethod
-    def sdk_error_classes(cls):
-        if cls._sdk_error_classes is None:
-            import promptflow._sdk._errors as _errors_module
-
-            cls._sdk_error_classes = get_exception_classes(_errors_module)
-
-        return cls._sdk_error_classes
+        return cls._error_classes[module_name]
