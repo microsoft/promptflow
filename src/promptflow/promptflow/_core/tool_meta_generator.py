@@ -122,11 +122,11 @@ def collect_tool_methods_with_init_inputs_in_module(m):
 
 def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False):
     try:
-        tool_type = getattr(f, "__type") or ToolType.PYTHON
+        tool_type = getattr(f, "__type", None) or ToolType.PYTHON
     except Exception as e:
         raise e
-    tool_name = getattr(f, "__name")
-    description = getattr(f, "__description")
+    tool_name = getattr(f, "__name", None) or f.__qualname__
+    description = getattr(f, "__description", None)
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
     if hasattr(f, "__original_function"):
@@ -150,7 +150,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
         class_name = f.__qualname__.replace(f".{f.__name__}", "")
     # Construct the Tool structure
     return Tool(
-        name=tool_name or f.__qualname__,
+        name=tool_name,
         description=description or inspect.getdoc(f),
         inputs=inputs,
         type=tool_type,

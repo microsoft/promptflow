@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from promptflow._core.tool import tool
+from promptflow import ToolProvider, tool
 from promptflow._core.tool_meta_generator import ToolValidationError
 from promptflow._sdk._pf_client import PFClient
 from promptflow.entities import DynamicList, InputSetting
@@ -357,3 +357,28 @@ class TestTool:
             'Cannot find the input "invalid_input" for the enabled_by of student_id.'
             in result.error_messages["invalid_input_settings"]
         )
+
+    def test_validate_tool_class(self):
+        from promptflow.tools.serpapi import SerpAPI
+
+        result = _client.tools.validate(SerpAPI)
+        assert result.passed
+
+        class InvalidToolClass(ToolProvider):
+            def __init__(self):
+                super().__init__()
+
+            @tool(name="My Custom Tool")
+            def tool_func(self, api: str):
+                pass
+
+            @tool(name=1)
+            def invalid_tool_func(self, api: str):
+                pass
+
+        result = _client.tools.validate(InvalidToolClass)
+        assert not result.passed
+        assert result._kwargs["total_count"] == 2
+        assert result._kwargs["invalid_count"] == 1
+        assert len(result._errors) == 1
+        assert "1 is not of type 'string'" in result._errors[0].message

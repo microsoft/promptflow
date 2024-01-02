@@ -47,6 +47,17 @@ class ToolOperations:
                 self._tool_schema_dict = json.load(f)
         return self._tool_schema_dict
 
+    def _merge_validate_result(self, target, source):
+        target.merge_with(source)
+        target._set_extra_info(
+            TOTAL_COUNT,
+            target._get_extra_info(TOTAL_COUNT, 0) + source._get_extra_info(TOTAL_COUNT, 0),
+        )
+        target._set_extra_info(
+            INVALID_COUNT,
+            target._get_extra_info(INVALID_COUNT, 0) + source._get_extra_info(INVALID_COUNT, 0),
+        )
+
     def _list_tools_in_package(self, package_name: str, raise_error: bool = False):
         """
         List the meta of all tools in the package.
@@ -58,18 +69,6 @@ class ToolOperations:
         :return: Dict of tools meta
         :rtype: Dict[str, Dict]
         """
-
-        def merge_validate_result(target, source):
-            target.merge_with(source)
-            target._set_extra_info(
-                TOTAL_COUNT,
-                target._get_extra_info(TOTAL_COUNT, 0) + source._get_extra_info(TOTAL_COUNT, 0),
-            )
-            target._set_extra_info(
-                INVALID_COUNT,
-                target._get_extra_info(INVALID_COUNT, 0) + source._get_extra_info(INVALID_COUNT, 0),
-            )
-
         package_tools = {}
         validate_result = ValidationResultBuilder.success()
         try:
@@ -78,7 +77,7 @@ class ToolOperations:
             for module in module_list:
                 module_tools, module_validate_result = self._generate_tool_meta(importlib.import_module(module.name))
                 package_tools.update(module_tools)
-                merge_validate_result(validate_result, module_validate_result)
+                self._merge_validate_result(validate_result, module_validate_result)
         except ImportError:
             raise UserErrorException(f"Cannot find the package {package_name}.")
         if not validate_result.passed:
@@ -392,9 +391,13 @@ class ToolOperations:
     def _is_package_tool(package) -> bool:
         import pkg_resources
 
-        distribution = pkg_resources.get_distribution(package.__name__)
-        entry_points = distribution.get_entry_map()
-        return PACKAGE_TOOLS_ENTRY in entry_points
+        try:
+            distribution = pkg_resources.get_distribution(package.__name__)
+            entry_points = distribution.get_entry_map()
+            return PACKAGE_TOOLS_ENTRY in entry_points
+        except Exception as e:
+            logger.debug(f"Failed to check {package.__name__} is a package tool, raise {e}")
+            return False
 
     @monitor_operation(activity_name="pf.tools.list", activity_type=ActivityType.PUBLICAPI)
     def list(
@@ -434,12 +437,27 @@ class ToolOperations:
         :return: a validation result object
         :rtype: ValidationResult
         """
-        if callable(source):
-            # Validate tool function
-            tool, input_settings, extra_info = self._parse_tool_from_func(source)
+        def validate_tool_function(tool_func, init_inputs=None):
+            tool, input_settings, extra_info = self._parse_tool_from_func(tool_func, init_inputs)
             _, validate_result = self._serialize_tool(tool, input_settings, extra_info, source)
             validate_result._set_extra_info(TOTAL_COUNT, 1)
             validate_result._set_extra_info(INVALID_COUNT, 0 if validate_result.passed else 1)
+            return validate_result
+
+        if callable(source):
+            from promptflow._core.tool import ToolProvider
+
+            if isinstance(source, type) and issubclass(source, ToolProvider):
+                # Validate tool class
+                validate_result = ValidationResultBuilder.success()
+                for _, method in inspect.getmembers(source):
+                    if is_tool(method):
+                        initialize_inputs = source.get_initialize_inputs()
+                        func_validate_result = validate_tool_function(method, initialize_inputs)
+                        self._merge_validate_result(validate_result, func_validate_result)
+            else:
+                # Validate tool function
+                validate_result = validate_tool_function(source)
         elif isinstance(source, (str, PathLike)):
             # Validate tool script
             if not Path(source).exists():
