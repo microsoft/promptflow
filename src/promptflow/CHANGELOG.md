@@ -1,12 +1,21 @@
 # Release History
 
-## 1.3.0 (Upcoming)
+## 1.3.0 (2023.12.27)
 
 ### Features Added
 - [SDK/CLI] Support `pfazure run cancel` to cancel a run on Azure AI.
+- Add support to configure prompt flow home directory via environment variable `PF_HOME_DIRECTORY`.
+  - Please set before importing `promptflow`, otherwise it won't take effect.
+- [Executor] Handle KeyboardInterrupt in flow test so that the final state is Canceled.
+- [Executor] Calculate system_metrics recursively in api_calls.
+- [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
+
+### Bugs Fixed
+- [SDK/CLI] Fix single node run doesn't work when consuming sub item of upstream node
 
 ### Improvements
 - Change `ruamel.yaml` lower bound to 0.17.10.
+- [SDK/CLI] Improve `pfazure run download` to handle large run data files.
 
 ## 1.2.0 (2023.12.14)
 

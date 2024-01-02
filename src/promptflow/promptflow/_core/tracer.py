@@ -65,20 +65,7 @@ class Tracer(ThreadLocalSingleton):
     @classmethod
     def push_tool(cls, f, args=[], kwargs={}):
         obj = cls.active_instance()
-        sig = inspect.signature(f).parameters
-        all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
-        all_kwargs = {
-            k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
-            for k, v in all_kwargs.items()
-        }
-        # TODO: put parameters in self to inputs for builtin tools
-        all_kwargs.pop("self", None)
-        trace = Trace(
-            name=f.__qualname__,
-            type=TraceType.TOOL,
-            start_time=datetime.utcnow().timestamp(),
-            inputs=all_kwargs,
-        )
+        trace = _create_trace_from_function_call(f, args=args, kwargs=kwargs, trace_type=TraceType.TOOL)
         obj._push(trace)
         return trace
 
@@ -149,3 +136,23 @@ class Tracer(ThreadLocalSingleton):
             "message": str(error),
             "type": type(error).__qualname__,
         }
+
+
+def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceType.FUNCTION):
+    """Initialize a trace object from a function call."""
+    sig = inspect.signature(f).parameters
+
+    all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
+    all_kwargs = {
+        k: ConnectionType.serialize_conn(v) if ConnectionType.is_connection_value(v) else v
+        for k, v in all_kwargs.items()
+    }
+    # TODO: put parameters in self to inputs for builtin tools
+    all_kwargs.pop("self", None)
+
+    return Trace(
+        name=f.__qualname__,
+        type=trace_type,
+        start_time=datetime.utcnow().timestamp(),
+        inputs=all_kwargs,
+    )

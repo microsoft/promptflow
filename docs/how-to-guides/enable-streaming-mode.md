@@ -227,17 +227,27 @@ If the response code is "424 Model Error", it means that the error is caused by 
 
 ### Consume using Python
 
-We have created [a utility file](../media/how-to-guides/how-to-enable-streaming-mode/scripts/event_stream.py) as an example to demonstrate how to consume the server-sent event. A sample usage would like:
+In this sample usage, we are using the `SSEClient` class. This class is not a built-in Python class and needs to be installed separately. You can install it via pip:
+
+```bash
+pip install sseclient-py  
+```
+
+A sample usage would like:
 
 ```python
+import requests  
+from sseclient import SSEClient  
+from requests.exceptions import HTTPError  
+
 try:
     response = requests.post(url, json=body, headers=headers, stream=stream)
     response.raise_for_status()
 
     content_type = response.headers.get('Content-Type')
     if "text/event-stream" in content_type:
-        event_stream = EventStream(response.iter_lines())
-        for event in event_stream:
+        client = SSEClient(response)
+        for event in client.events():
             # Handle event, i.e. print to stdout
     else:
         # Handle json response

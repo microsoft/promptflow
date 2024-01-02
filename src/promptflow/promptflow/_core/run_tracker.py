@@ -2,9 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import json
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
@@ -168,12 +169,30 @@ class RunTracker(ThreadLocalSingleton):
                 output, ex = None, e
         self._common_postprocess(run_info, output, ex)
 
-    def _update_flow_run_info_with_node_runs(self, run_info):
+    def _update_flow_run_info_with_node_runs(self, run_info: FlowRunInfo):
         run_id = run_info.run_id
-        run_info.api_calls = self._collect_traces_from_nodes(run_id)
         child_run_infos = self.collect_child_node_runs(run_id)
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
+        # TODO: Refactor Tracer to support flow level tracing,
+        # then we can remove the hard-coded root level api_calls here.
+        # It has to be a list for UI backward compatibility.
+        # TODO: Add input, output, error to top level. Adding them would require
+        # the same technique of handingling image and generator in Tracer,
+        # which introduces duplicated logic. We should do it in the refactoring.
+        start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() \
+            if run_info.start_time else None
+        end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() \
+            if run_info.end_time else None
+        run_info.api_calls = [{
+            "name": "flow",
+            "node_name": "flow",
+            "type": "Flow",
+            "start_time": start_timestamp,
+            "end_time": end_timestamp,
+            "children": self._collect_traces_from_nodes(run_id),
+            "system_metrics": run_info.system_metrics,
+            }]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
         run_id = run_info.run_id
@@ -280,8 +299,12 @@ class RunTracker(ThreadLocalSingleton):
 
     def _enrich_run_info_with_exception(self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception):
         """Update exception details into run info."""
-        run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
-        run_info.status = Status.Failed
+        # Update status to Cancelled the run terminates because of KeyboardInterruption or CancelledError.
+        if isinstance(ex, KeyboardInterrupt) or isinstance(ex, asyncio.CancelledError):
+            run_info.status = Status.Canceled
+        else:
+            run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
+            run_info.status = Status.Failed
 
     def collect_all_run_infos_as_dicts(self) -> Mapping[str, List[Mapping[str, Any]]]:
         flow_runs = self.flow_run_list
