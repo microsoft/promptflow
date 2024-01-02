@@ -84,26 +84,24 @@
           <Custom Action="Set_WIXUI_EXITDIALOGOPTIONALTEXT" After="CostFinalize">NOT Installed AND NOT WIX_UPGRADE_DETECTED</Custom>
         </InstallUISequence>
 
-        <CustomAction Id="SetUninstalling" Property="Uninstalling" Value="true"/>
-        <CustomAction Id="SetRemovingForUpgrade" Property="RemovingForUpgrade" Value="true"/>
+<!--         <CustomAction Id="SetUninstalling" Property="Uninstalling" Value="true"/> -->
+<!--         <CustomAction Id="SetRemovingForUpgrade" Property="RemovingForUpgrade" Value="true"/> -->
 <!--         <CustomAction Id="Clean_Custom_Files_After_Uninstall" -->
 <!--             Directory="APPLICATIONFOLDER" -->
 <!--             Execute="deferred" -->
 <!--             ExeCommand="cmd.exe /c rmdir /s /q &quot;[APPLICATIONFOLDER]&quot;" -->
 <!--             Return="ignore" /> -->
-        <CustomAction Id="Clean_Custom_Files_After_Uninstall"
-            Directory="APPLICATIONFOLDER"
-            Execute="commit"
-            Impersonate="no"
-            ExeCommand="cmd.exe /c del /q *"
-            Return="check"/>
-        <InstallExecuteSequence>
-          <Custom Action="SetUninstalling" After="FindRelatedProducts">Installed AND (REMOVE=&quot;ALL&quot;) AND NOT UPGRADINGPRODUCTCODE</Custom>
-          <Custom Action="SetRemovingForUpgrade" Before="RemoveExistingProducts">(REMOVE=&quot;ALL&quot;) AND UPGRADINGPRODUCTCODE</Custom>
-          <Custom Action="Clean_Custom_Files_After_Uninstall" After="RemoveExistingProducts">Uninstalling OR RemovingForUpgrade</Custom>
-<!--           <Custom Action="Clean_Custom_Files_After_Uninstall" Before="RemoveFiles">REMOVE="ALL"</Custom> -->
-
-        </InstallExecuteSequence>
+<!--         <CustomAction Id="Clean_Custom_Files_After_Uninstall" -->
+<!--             Directory="APPLICATIONFOLDER" -->
+<!--             Execute="commit" -->
+<!--             Impersonate="no" -->
+<!--             ExeCommand="cmd.exe /c del /q *" -->
+<!--             Return="check"/> -->
+<!--         <InstallExecuteSequence> -->
+<!--           <Custom Action="SetUninstalling" Before="RemoveExistingProducts">Installed AND REMOVE="ALL" AND NOT WIX_UPGRADE_DETECTED</Custom> -->
+<!--           <Custom Action="SetRemovingForUpgrade" Before="RemoveExistingProducts">REMOVE~="ALL" AND WIX_UPGRADE_DETECTED</Custom> -->
+<!--           <Custom Action="Clean_Custom_Files_After_Uninstall" After="StartPromptFlowService">Uninstalling OR RemovingForUpgrade</Custom> -->
+<!--         </InstallExecuteSequence> -->
 
         <CustomAction Id="StartPromptFlowService"
             Directory="APPLICATIONFOLDER"
@@ -114,6 +112,12 @@
         <InstallExecuteSequence>
             <Custom Action="StartPromptFlowService" Before="InstallFinalize">NOT Installed OR WIX_UPGRADE_DETECTED</Custom>
         </InstallExecuteSequence>
+
+        <CustomAction Id="RunBatchFile" Directory="APPLICATIONFOLDER" ExeCommand="cmd.exe /c delete_pycache.bat [APPLICATIONFOLDER]" Execute="deferred" Return="asyncNoWait" />
+        <InstallExecuteSequence>
+            <Custom Action="RunBatchFile" Before="StartPromptFlowService">NOT Installed OR WIX_UPGRADE_DETECTED OR REMOVE~="ALL"</Custom>
+        </InstallExecuteSequence>
+
     </Product>
 
     <Fragment>
@@ -142,6 +146,10 @@
                      Action="set"
                      System="no" />
                 <CreateFolder />
+            </Component>
+
+            <Component Id="delete_pycache.bat" Directory="APPLICATIONFOLDER" Guid="e9108ee8-0597-4862-af0c-44bbd9973887">
+                <File Id="delete_pycache.bat" Source="scripts\delete_pycache.bat" KeyPath="yes" Checksum="yes"/>
             </Component>
 
             <Component Id="promptflow_service.vbs" Directory="APPLICATIONFOLDER" Guid="$(var.PromptflowServiceGuid)">
