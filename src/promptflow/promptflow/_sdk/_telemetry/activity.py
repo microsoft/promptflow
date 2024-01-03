@@ -174,6 +174,7 @@ def monitor_operation(
             with log_activity(logger, _activity_name, activity_type, custom_dimensions):
                 if _activity_name in HINT_ACTIVITY_NAME:
                     hint_for_update()
+                    # set check_latest_version as deamon thread to avoid blocking main thread
                     thread = threading.Thread(target=check_latest_version, daemon=True)
                     thread.start()
                 return f(self, *args, **kwargs)
