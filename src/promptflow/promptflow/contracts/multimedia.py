@@ -1,5 +1,4 @@
 import base64
-import filetype
 import hashlib
 from typing import Callable, Optional
 
