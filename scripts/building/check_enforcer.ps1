@@ -129,7 +129,7 @@ function trigger_prepare($input_paths, [ref]$failed_reason_ref) {
         if ($input_path.Contains("examples") -or $input_path.Contains("samples")) {
             # Define the input path
             Push-Location $GithubWorkspace
-            $pipelines_samples = (python $GithubWorkspace\scripts\readme\readme.py -c | ConvertFrom-Json)
+            $pipelines_samples = (python $GithubWorkspace/scripts/readme/readme.py -c | ConvertFrom-Json)
             Pop-Location
             $failed_reason_ref.Value = (git diff-index --quiet HEAD -- || "Run readme generation before check in")
             if ($failed_reason_ref.Value -ne "") {
@@ -159,7 +159,7 @@ function trigger_prepare($input_paths, [ref]$failed_reason_ref) {
         # input pattern /*: input_path should match last but one
         # other input pattern: input_path should match last
         $keys = $reverse_checks.Keys
-        $keys = $keys | Where-Object { (python $GithubWorkspace\scripts\building\fnmatch.py -g $_ -f $input_path) -eq "True" }
+        $keys = $keys | Where-Object { (python $GithubWorkspace/scripts/building/fnmatch.py -g $_ -f $input_path) -eq "True" }
         # $reverse_checks.Keys and $keys
         foreach ($key_item in $keys) {
             foreach ($key in $reverse_checks[$key_item]) {
