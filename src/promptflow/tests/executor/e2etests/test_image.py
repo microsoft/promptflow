@@ -4,7 +4,13 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, _is_url, is_multimedia_dict
+from promptflow._utils.multimedia_utils import (
+    MIME_PATTERN,
+    _create_image_from_file,
+    _is_url,
+    is_multimedia_dict,
+    is_multimedia_dict_v2
+)
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -100,6 +106,8 @@ def contain_image_reference(value, parent_path="temp"):
             v = list(value.values())[0]
             assert isinstance(v, str)
             assert _is_url(v) or str(Path(v).parent) == parent_path
+            return True
+        elif is_multimedia_dict_v2(value):
             return True
         return any(contain_image_reference(v, parent_path) for v in value.values())
     return False
