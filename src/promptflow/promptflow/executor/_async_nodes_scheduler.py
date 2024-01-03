@@ -29,8 +29,9 @@ class AsyncNodesScheduler:
         tools_manager: ToolsManager,
         node_concurrency: int,
     ) -> None:
+        node_concurrency = 1
         self._tools_manager = tools_manager
-        # TODO: Add concurrency control in execution
+        self._semaphore = asyncio.Semaphore(node_concurrency)
         self._node_concurrency = node_concurrency
 
     async def execute(
@@ -100,6 +101,10 @@ class AsyncNodesScheduler:
             for node in dag_manager.pop_ready_nodes()
         }
 
+    async def run_task_with_semaphore(self, coroutine):
+        async with self._semaphore:
+            return await coroutine
+
     def _create_node_task(
         self,
         node: Node,
@@ -110,7 +115,8 @@ class AsyncNodesScheduler:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         if inspect.iscoroutinefunction(f):
-            task = context.invoke_tool_async(node, f, kwargs)
+            coroutine = context.invoke_tool_async(node, f, kwargs)
+            task = self.run_task_with_semaphore(coroutine)
         else:
             task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
         # Set the name of the task to the node name for debugging purpose
