@@ -156,56 +156,58 @@ def inject_sync(f):
     return wrapper_fun
 
 
-def available_openai_apis_async():
+def available_openai_apis_and_injectors():
+    """
+    Generates a sequence of tuples containing OpenAI API classes, method names, and
+    corresponding injector functions based on whether the legacy OpenAI interface is used.
+
+    This function handles the discrepancy reported in https://github.com/openai/openai-python/issues/996,
+    where async interfaces were not recognized as coroutines. It ensures that decorators
+    are applied correctly to both synchronous and asynchronous methods.
+
+    Yields:
+        Tuples of (api_class, method_name, injector_function)
+    """
+    # Define API tuples for legacy and new OpenAI interfaces
     if IS_LEGACY_OPENAI:
-        for api in ("Completion", "ChatCompletion", "Embedding"):
-            try:
-                openai_api = getattr(openai, api)
-                if hasattr(openai_api, "acreate"):
-                    yield openai_api
-            except AttributeError:
-                # This is expected for older versions of openai or unsupported APIs.
-                # E.g. ChatCompletion API was introduced in 2023 and requires openai>=0.27.0 to work.
-                # Older versions of openai do not have this API and will raise an AttributeError if we try to use it.
-                pass
+        sync_apis = (
+            (openai, "Completion", "create", inject_sync),
+            (openai, "ChatCompletion", "create", inject_sync),
+            (openai, "Embedding", "create", inject_sync),
+        )
+
+        async_apis = (
+            (openai, "Completion", "acreate", inject_async),
+            (openai, "ChatCompletion", "acreate", inject_async),
+            (openai, "Embedding", "acreate", inject_async),
+        )
     else:
-        for api in ("AsyncCompletions", "AsyncChat", "AsyncEmbeddings"):
+        sync_apis = (
+            (openai.resources.chat, "Completions", "create", inject_sync),
+            (openai.resources, "Completions", "create", inject_sync),
+            (openai.resources, "Embeddings", "create", inject_sync),
+        )
+
+        async_apis = (
+            (openai.resources.chat, "AsyncCompletions", "create", inject_async),
+            (openai.resources, "AsyncCompletions", "create", inject_async),
+            (openai.resources, "AsyncEmbeddings", "create", inject_async),
+        )
+
+    # Helper function to check if the API methods exist and yield the valid tuples
+    def check_apis(apis):
+        for module, clz, method, injector in apis:
             try:
-                if api == "AsyncChat":
-                    openai_api = getattr(openai.resources.chat, "AsyncCompletions")
-                else:
-                    openai_api = getattr(openai.resources, api)
-                if hasattr(openai_api, "create"):
-                    yield openai_api
+                api = getattr(module, clz)
+                if hasattr(api, method):
+                    yield api, method, injector
             except Exception:
-                # To avoid breaking changes included in future upgrades, we ignore all exceptions here.
+                # Ignore all exceptions to avoid breaking changes due to future upgrades
                 pass
 
-
-def available_openai_apis_sync():
-    if IS_LEGACY_OPENAI:
-        for api in ("Completion", "ChatCompletion", "Embedding"):
-            try:
-                openai_api = getattr(openai, api)
-                if hasattr(openai_api, "create"):
-                    yield openai_api
-            except AttributeError:
-                # This is expected for older versions of openai or unsupported APIs.
-                # E.g. ChatCompletion API was introduced in 2023 and requires openai>=0.27.0 to work.
-                # Older versions of openai do not have this API and will raise an AttributeError if we try to use it.
-                pass
-    else:
-        for api in ("Completions", "Chat", "Embeddings"):
-            try:
-                if api == "Chat":
-                    openai_api = getattr(openai.resources.chat, "Completions")
-                else:
-                    openai_api = getattr(openai.resources, api)
-                if hasattr(openai_api, "create"):
-                    yield openai_api
-            except Exception:
-                # To avoid breaking changes included in future upgrades, we ignore all exceptions here.
-                pass
+    # Yield all valid API tuples for both sync and async APIs
+    yield from check_apis(sync_apis)
+    yield from check_apis(async_apis)
 
 
 def inject_openai_api():
@@ -214,30 +216,11 @@ def inject_openai_api():
     It stores the original methods as _original attributes of the create methods.
     2. Updates the openai api configs from environment variables.
     """
-    for openai_api_sync in available_openai_apis_sync():
-        # Check if the create method of the openai_api class has already been modified
-        if hasattr(openai_api_sync, "create") and not hasattr(openai_api_sync.create, "_original"):
-            # If not, modify it by calling the inject function with it as an argument
-            openai_api_sync.create = inject_sync(openai_api_sync.create)
 
-    for openai_api_async in available_openai_apis_async():
-        # Due to the issue reported in https://github.com/openai/openai-python/issues/996,
-        # Async interface was not recognized as a coroutine by inspect.iscoroutinefunction.
-        # This means that async injection needs to be handled differently to ensure decorators
-        # behave correctly for asynchronous methods.
-
-        # Check if the create method of the openai_api class has already been modified
-        if hasattr(openai_api_async, "create") and not hasattr(openai_api_async.create, "_original"):
-            # If not, modify it by calling the inject function with it as an argument
-            openai_api_async.create = inject_async(openai_api_async.create)
+    for api, method, injector in available_openai_apis_and_injectors():
+        setattr(api, method, injector(getattr(api, method)))
 
     if IS_LEGACY_OPENAI:
-        for openai_api_async in available_openai_apis_async():
-            # Check if the acreate method of the openai_api class has already been modified
-            if hasattr(openai_api_async, "acreate") and not hasattr(openai_api_async.acreate, "_original"):
-                # If not, modify it by calling the inject function with it as an argument
-                openai_api_async.acreate = inject_async(openai_api_async.acreate)
-
         # For the openai versions lower than 1.0.0, it reads api configs from environment variables only at
         # import time. So we need to update the openai api configs from environment variables here.
         # Please refer to this issue: https://github.com/openai/openai-python/issues/557.
@@ -254,31 +237,6 @@ def recover_openai_api():
     """This function restores the original create methods of the OpenAI API classes
     by assigning them back from the _original attributes of the modified methods.
     """
-    recover_openai_api_sync()
-    recover_openai_api_async()
-
-
-def recover_openai_api_sync():
-    """This function restores the original create methods of the OpenAI API classes
-    by assigning them back from the _original attributes of the modified methods.
-    """
-    for openai_api_sync in available_openai_apis_sync():
-        # Check if the create method of the openai_api class has been modified
-        if hasattr(openai_api_sync.create, "_original"):
-            # If yes, restore it by assigning it back from the _original attribute of the modified method
-            openai_api_sync.create = getattr(openai_api_sync.create, "_original")
-
-
-def recover_openai_api_async():
-    """This function restores the original create methods of the OpenAI API classes
-    by assigning them back from the _original attributes of the modified methods.
-    """
-    for openai_api_async in available_openai_apis_async():
-        # Check if the create method of the openai_api class has been modified
-        if hasattr(openai_api_async, "acreate") and hasattr(openai_api_async.acreate, "_original"):
-            # If yes, restore it by assigning it back from the _original attribute of the modified method
-            openai_api_async.acreate = getattr(openai_api_async.acreate, "_original")
-
-        if hasattr(openai_api_async, "create") and hasattr(openai_api_async.create, "_original"):
-            # If yes, restore it by assigning it back from the _original attribute of the modified method
-            openai_api_async.create = getattr(openai_api_async.create, "_original")
+    for api, method, _ in available_openai_apis_and_injectors():
+        if hasattr(getattr(api, method), "_original"):
+            setattr(api, method, getattr(getattr(api, method), "_original"))
