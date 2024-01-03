@@ -180,19 +180,19 @@ class RunTracker(ThreadLocalSingleton):
         # TODO: Add input, output, error to top level. Adding them would require
         # the same technique of handingling image and generator in Tracer,
         # which introduces duplicated logic. We should do it in the refactoring.
-        start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() \
-            if run_info.start_time else None
-        end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() \
-            if run_info.end_time else None
-        run_info.api_calls = [{
-            "name": "flow",
-            "node_name": "flow",
-            "type": "Flow",
-            "start_time": start_timestamp,
-            "end_time": end_timestamp,
-            "children": self._collect_traces_from_nodes(run_id),
-            "system_metrics": run_info.system_metrics,
-            }]
+        start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() if run_info.start_time else None
+        end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() if run_info.end_time else None
+        run_info.api_calls = [
+            {
+                "name": "flow",
+                "node_name": "flow",
+                "type": "Flow",
+                "start_time": start_timestamp,
+                "end_time": end_timestamp,
+                "children": self._collect_traces_from_nodes(run_id),
+                "system_metrics": run_info.system_metrics,
+            }
+        ]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
         run_id = run_info.run_id
@@ -419,11 +419,14 @@ class RunTracker(ThreadLocalSingleton):
         # line flow run will have run id f"{root_run_id}_{line_number}"
         # We filter out root flow run accordingly.
         line_flow_run_infos = [
-            flow_run_info for flow_run_info in self.flow_run_list
-            if flow_run_info.root_run_id == run_id and flow_run_info.run_id != run_id]
+            flow_run_info
+            for flow_run_info in self.flow_run_list
+            if flow_run_info.root_run_id == run_id and flow_run_info.run_id != run_id
+        ]
         total_lines = len(line_flow_run_infos)
-        completed_lines = len([flow_run_info for flow_run_info in line_flow_run_infos
-                               if flow_run_info.status == Status.Completed])
+        completed_lines = len(
+            [flow_run_info for flow_run_info in line_flow_run_infos if flow_run_info.status == Status.Completed]
+        )
         status_summary["__pf__.lines.completed"] = completed_lines
         status_summary["__pf__.lines.failed"] = total_lines - completed_lines
         return status_summary
