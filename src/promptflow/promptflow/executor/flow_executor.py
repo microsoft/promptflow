@@ -5,6 +5,7 @@ import asyncio
 import copy
 import functools
 import inspect
+import json
 import os
 import uuid
 from pathlib import Path
@@ -13,7 +14,8 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 import yaml
-from opentelemetry.trace import get_tracer
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.trace import get_tracer, get_tracer_provider
 
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
@@ -23,6 +25,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
+from promptflow._core.telemetry_exporter import MemoryExporter
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
@@ -121,6 +124,10 @@ class FlowExecutor:
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
 
+        provider = get_tracer_provider()
+        self._exporter = MemoryExporter()
+        processor = SimpleSpanProcessor(self._exporter)
+        provider.add_span_processor(processor)
         self._tracer = get_tracer(self._flow_id)
 
         self._connections = connections
@@ -717,6 +724,10 @@ class FlowExecutor:
                     validate_inputs=validate_inputs,
                     allow_generator_output=allow_generator_output,
                 )
+            self._run_tracker._trace = self._exporter.spans()
+            print("Traces:")
+            print(json.dumps(self._run_tracker._trace, indent=4))
+
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index

@@ -45,6 +45,7 @@ class RunTracker(ThreadLocalSingleton):
         self._has_failed_root_run = False
         self._run_mode = run_mode
         self._allow_generator_types = False
+        self._trace = None
 
     @property
     def allow_generator_types(self):

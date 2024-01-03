@@ -45,6 +45,9 @@ from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
+# from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+
+
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
 logger = get_cli_sdk_logger()
