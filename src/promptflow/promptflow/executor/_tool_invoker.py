@@ -74,7 +74,7 @@ class AssistantToolInvoker:
         return [tool.definition for _, tool in self._assistant_tools.items()]
 
     def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
-        to_openai_type = {"str": "string", "int": "number", "float": "number", "bool": "boolean"}
+        to_openai_type = {"str": "string", "int": "number"}
         description, params = DocstringParser.parse(description)
         for input in predefined_inputs:
             if input in params:
