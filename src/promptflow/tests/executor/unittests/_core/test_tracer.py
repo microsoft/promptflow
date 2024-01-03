@@ -68,35 +68,36 @@ class TestTracer:
 
         Tracer.push(trace1)
         assert tracer._traces == [trace1]
-        assert tracer._trace_stack == [trace1]
+        assert tracer._id_to_trace == {trace1.id: trace1}
 
         # test the push method with a nested trace
         Tracer.push(trace2)
         assert tracer._traces == [trace1]  # check if the tracer still has only the first trace in its _traces list
-        assert tracer._trace_stack == [trace1, trace2]  # check if the tracer has both traces in its _trace_stack list
+        # check if the tracer has both traces in its trace dict
+        assert tracer._id_to_trace == {trace1.id: trace1, trace2.id: trace2}
         assert trace1.children == [trace2]  # check if the first trace has the second trace as its child
 
         # test the pop method with generator output
         tool_output = generator()
         error1 = ValueError("something went wrong")
+        assert tracer._get_current_trace() is trace2
         output = Tracer.pop(output=tool_output, error=error1)
 
         # check output iterator
         for i in range(3):
             assert next(output) == i
 
-        assert len(tracer._trace_stack) == 1
-        assert tracer._trace_stack[-1].name == "test1"
         assert isinstance(trace2.output, GeneratorProxy)
         assert trace2.error == {
             "message": str(error1),
             "type": type(error1).__qualname__,
         }
+        assert tracer._get_current_trace() is trace1
 
         # test the pop method with no arguments
         output = Tracer.pop()
 
-        assert len(tracer._trace_stack) == 0
+        assert tracer._get_current_trace() is None
         assert trace1.output is None
         assert output is None
 
@@ -291,7 +292,7 @@ class TestTraced:
         assert trace["inputs"] == {"a": 1}
         assert trace["output"] == 1
         assert trace["error"] is None
-        assert trace["children"] is None
+        assert trace["children"] == []
         assert isinstance(trace["start_time"], float)
         assert isinstance(trace["end_time"], float)
 
@@ -316,7 +317,7 @@ class TestTraced:
         assert trace["inputs"] == {"a": 1}
         assert trace["output"] is None
         assert trace["error"] == {"message": "division by zero", "type": "ZeroDivisionError"}
-        assert trace["children"] is None
+        assert trace["children"] == []
         assert isinstance(trace["start_time"], float)
         assert isinstance(trace["end_time"], float)
 
@@ -377,6 +378,6 @@ class TestTrace:
         assert trace["inputs"] == {"a": 1}
         assert trace["output"] == 1
         assert trace["error"] is None
-        assert trace["children"] is None
+        assert trace["children"] == []
         assert isinstance(trace["start_time"], float)
         assert isinstance(trace["end_time"], float)
