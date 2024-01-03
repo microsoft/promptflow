@@ -5,7 +5,7 @@
 import asyncio
 import json
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
@@ -175,6 +175,25 @@ class RunTracker(ThreadLocalSingleton):
         child_run_infos = self.collect_child_node_runs(run_id)
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
+        # TODO: Refactor Tracer to support flow level tracing,
+        # then we can remove the hard-coded root level api_calls here.
+        # It has to be a list for UI backward compatibility.
+        # TODO: Add input, output, error to top level. Adding them would require
+        # the same technique of handingling image and generator in Tracer,
+        # which introduces duplicated logic. We should do it in the refactoring.
+        start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() if run_info.start_time else None
+        end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() if run_info.end_time else None
+        run_info.api_calls = [
+            {
+                "name": "flow",
+                "node_name": "flow",
+                "type": "Flow",
+                "start_time": start_timestamp,
+                "end_time": end_timestamp,
+                "children": self._collect_traces_from_nodes(run_id),
+                "system_metrics": run_info.system_metrics,
+            }
+        ]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
         run_id = run_info.run_id
@@ -228,10 +247,10 @@ class RunTracker(ThreadLocalSingleton):
                 target=ErrorTarget.RUN_TRACKER,
                 run_id=run_id,
             )
-        run_info.api_calls = traces
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
         elif isinstance(run_info, RunInfo):
+            run_info.api_calls = traces
             self._node_run_postprocess(run_info, result, ex)
         return run_info
 
