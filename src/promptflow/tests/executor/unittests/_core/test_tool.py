@@ -70,7 +70,7 @@ class TestTool:
         assert trace["inputs"] == {"a": 1}
         assert trace["output"] == 1
         assert trace["error"] is None
-        assert trace["children"] is None
+        assert trace["children"] == []
         assert isinstance(trace["start_time"], float)
         assert isinstance(trace["end_time"], float)
 
