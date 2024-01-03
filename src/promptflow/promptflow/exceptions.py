@@ -256,7 +256,8 @@ class _ErrorInfo:
             return True
         if hasattr(e, "status_code") or (hasattr(e, "response") and hasattr(e.response, "status_code")):
             status_code = str(e.status_code) if hasattr(e, "status_code") else str(e.response.status_code)
-            if not status_code.startswith("40"):
+            # Except for 429, 400-499 are all client errors.
+            if not status_code.startswith("4") and status_code != "429":
                 return True
 
         return False
