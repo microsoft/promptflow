@@ -43,7 +43,6 @@ class ToolResolver():
 
     def __init__(
         self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None,
-        need_connections: bool = True
     ):
         try:
             # Import openai and aoai for llm tool
@@ -52,8 +51,7 @@ class ToolResolver():
             pass
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
-        if need_connections:
-            self._connection_manager = ConnectionManager(connections)
+        self._connection_manager = ConnectionManager(connections)
 
     @classmethod
     def start_resolver(

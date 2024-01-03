@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 from promptflow.contracts.flow import InputAssignment, Node, ToolSource
 from promptflow.contracts.tool import ToolType
@@ -20,7 +20,8 @@ class AssistantTool:
 
 
 class AssistantToolInvoker:
-    def __init__(self):
+    def __init__(self, working_dir: Optional[Path] = None):
+        self._working_dir = working_dir or Path(os.getcwd())
         self._assistant_tools: Dict[str, AssistantTool] = {}
 
     def load_tools(self, tools: list):
@@ -38,7 +39,7 @@ class AssistantToolInvoker:
                 )
 
     def _load_tool_as_function(self, tool: dict):
-        tool_resolver = ToolResolver(working_dir=Path(os.getcwd()), need_connections=False)
+        tool_resolver = ToolResolver(self._working_dir)
         node, predefined_inputs = self._generate_node_for_tool(tool)
         resolved_tool = tool_resolver.resolve_tool_by_node(node, convert_input_types=False)
         func_name = resolved_tool.definition.function
