@@ -155,7 +155,7 @@ class TestAOAI:
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template,
-            deployment_name="gpt-4",
+            deployment_name="gpt-35-turbo-1106",
             temperature=0,
             user_input="Write a slogan for product X, please reponse with json.",
             chat_history=chat_history,
@@ -193,7 +193,7 @@ class TestAOAI:
             chat(
                 connection=azure_open_ai_connection,
                 prompt=example_prompt_template,
-                deployment_name="gpt-4",
+                deployment_name="gpt-35-turbo-1106",
                 temperature=0,
                 user_input=user_input,
                 chat_history=chat_history,
