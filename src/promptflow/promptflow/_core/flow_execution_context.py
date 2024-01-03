@@ -16,7 +16,6 @@ from typing import Callable
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
 from promptflow._core.operation_context import OperationContext
-from promptflow._core.otel_tracer import get_otel_tracer
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import generate_elapsed_time_messages
@@ -26,7 +25,6 @@ from promptflow.exceptions import PromptflowException
 
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
-from .tracer import Tracer
 
 
 class FlowExecutionContext(ThreadLocalSingleton):
@@ -52,8 +50,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
         self._variant_id = variant_id
-
-        self._otel_tracer = get_otel_tracer(self._name)
 
     def copy(self):
         return FlowExecutionContext(
@@ -89,9 +85,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
                     hit_cache = True
 
             if not hit_cache:
-                Tracer.start_tracing(node_run_id, node.name, self._otel_tracer)
                 result = self._invoke_tool_with_timer(node, f, kwargs)
-                traces = Tracer.end_tracing(node_run_id)
 
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             # Record result in cache so that future run might reuse its result.
@@ -102,8 +96,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             return result
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
-            if not traces:
-                traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
@@ -139,9 +131,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
         traces = []
         try:
-            Tracer.start_tracing(node_run_id, node.name, self._otel_tracer)
             result = await self._invoke_tool_async_inner(node, f, kwargs)
-            traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             flow_logger.info(f"Node {node.name} completes.")
             return result
@@ -150,12 +140,10 @@ class FlowExecutionContext(ThreadLocalSingleton):
         # Otherwise, the node would end with Completed status.
         except asyncio.CancelledError as e:
             logger.info(f"Node {node.name} in line {self._line_number} is cancelled.")
-            traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
-            traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
