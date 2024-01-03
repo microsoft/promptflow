@@ -156,7 +156,7 @@ class TestCreateTraceFromFunctionCall:
         # They will be filled by the tracer later.
         assert trace.output is None
         assert trace.end_time is None
-        assert trace.children is None
+        assert trace.children == []
         assert trace.error is None
 
     def test_basic_fields_are_filled_for_async_functions(self):
