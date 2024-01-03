@@ -91,6 +91,7 @@ class Tracer(ThreadLocalSingleton):
 
     def _push(self, trace: Trace):
         span = self._otel_tracer.start_span(trace.name)
+        span.set_attribute("span_type", trace.type)
         setattr(trace, "_span", span)
 
         if trace.inputs:
