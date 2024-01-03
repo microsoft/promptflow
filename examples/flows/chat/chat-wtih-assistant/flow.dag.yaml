@@ -5,7 +5,7 @@ inputs:
   content:
     type: string
     is_chat_input: true
-    default: If I run on street for 1 hour in Guangzhou City this afternoon, how many calories will I burn?
+    default: If I run on street for 1.5 hour in Guangzhou City this afternoon, how many calories will I burn?
   file_ids:
     type: list
     default: []
@@ -51,9 +51,4 @@ nodes:
             source:
               type: code
               path: get_temperature.py
-            tool_type: python
-          - type: function
-            source:
-              type: code
-              path: multiply.py
             tool_type: python

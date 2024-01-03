@@ -6,10 +6,10 @@ import random
 def get_calorie_by_jogging(duration: float, temperature: float):
     """Estimate the calories burned by jogging based on duration and temperature.
 
-    :param duration: the length of the jogging in hours.
+    :param duration: The length of the jogging in hour.
     :type duration: float
-    :param temperature: the environment temperature in degrees Celsius.
+    :param temperature: The environment temperature in degrees celsius.
     :type temperature: float
     """
 
-    return random.randint(50, 200)
+    return random.uniform(50, 200)
