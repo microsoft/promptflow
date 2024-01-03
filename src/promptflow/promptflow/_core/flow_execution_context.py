@@ -70,7 +70,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         run_info = self._prepare_node_run(node, f, kwargs)
         node_run_id = run_info.run_id
 
-        traces = []
         try:
             hit_cache = False
             # Get result from cache. If hit cache, no need to execute f.
@@ -87,7 +86,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             if not hit_cache:
                 result = self._invoke_tool_with_timer(node, f, kwargs)
 
-            self._run_tracker.end_run(node_run_id, result=result, traces=traces)
+            self._run_tracker.end_run(node_run_id, result=result)
             # Record result in cache so that future run might reuse its result.
             if not hit_cache and node.enable_cache:
                 self._persist_cache(cache_info, run_info)
@@ -96,7 +95,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             return result
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
-            self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
+            self._run_tracker.end_run(node_run_id, ex=e)
             raise
         finally:
             self._run_tracker.persist_node_run(run_info)
@@ -129,10 +128,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
         run_info = self._prepare_node_run(node, f, kwargs=kwargs)
         node_run_id = run_info.run_id
 
-        traces = []
         try:
             result = await self._invoke_tool_async_inner(node, f, kwargs)
-            self._run_tracker.end_run(node_run_id, result=result, traces=traces)
+            self._run_tracker.end_run(node_run_id, result=result)
             flow_logger.info(f"Node {node.name} completes.")
             return result
         # User tool should reraise the CancelledError after its own handling logic,
@@ -140,11 +138,11 @@ class FlowExecutionContext(ThreadLocalSingleton):
         # Otherwise, the node would end with Completed status.
         except asyncio.CancelledError as e:
             logger.info(f"Node {node.name} in line {self._line_number} is cancelled.")
-            self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
+            self._run_tracker.end_run(node_run_id, ex=e)
             raise
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
-            self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
+            self._run_tracker.end_run(node_run_id, ex=e)
             raise
         finally:
             self._run_tracker.persist_node_run(run_info)
