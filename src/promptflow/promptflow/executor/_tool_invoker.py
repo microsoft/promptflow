@@ -53,7 +53,7 @@ class AssistantToolInvoker:
             name="assistant_node",
             tool="assistant_tool",
             inputs=predefined_inputs,
-            source=ToolSource.deserialize(tool["source"])
+            source=ToolSource.deserialize(tool["source"]),
         )
         resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
         func_name = resolved_tool.definition.function
@@ -74,7 +74,7 @@ class AssistantToolInvoker:
         return [tool.definition for _, tool in self._assistant_tools.items()]
 
     def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
-        to_openai_type = {"str": "string", "int": "number"}
+        to_openai_type = {"str": "string", "int": "number", "float": "number", "bool": "boolean"}
         description, params = DocstringParser.parse(description)
         for input in predefined_inputs:
             if input in params:
@@ -87,10 +87,6 @@ class AssistantToolInvoker:
             "function": {
                 "name": func_name,
                 "description": description,
-                "parameters": {
-                    "type": "object",
-                    "properties": params,
-                    "required": list(params.keys())
-                }
-            }
+                "parameters": {"type": "object", "properties": params, "required": list(params.keys())},
+            },
         }
