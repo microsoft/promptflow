@@ -802,7 +802,7 @@ class FlowExecutor:
             inputs = load_multimedia_data(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
-            Tracer.start_tracing(run_id, self._flow.name, self._tracer)
+            Tracer.start_tracing(run_id, self._flow.name)
             trace = Trace(
                 name=self._flow.name,
                 type=TraceType.FLOW,
