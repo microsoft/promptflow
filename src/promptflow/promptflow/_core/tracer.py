@@ -113,7 +113,6 @@ class Tracer(ThreadLocalSingleton):
         if not parent_trace:
             self._traces.append(trace)
             trace.node_name = self._node_name
-            self._traces.append(trace)
         else:
             parent_trace.children.append(trace)
             trace.parent_id = parent_trace.id
