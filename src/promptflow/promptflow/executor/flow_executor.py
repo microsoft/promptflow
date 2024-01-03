@@ -7,6 +7,7 @@ import functools
 import inspect
 import os
 import uuid
+from datetime import datetime
 from pathlib import Path
 from threading import current_thread
 from types import GeneratorType
@@ -24,6 +25,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._core.tracer import Tracer
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -36,6 +38,7 @@ from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.contracts.trace import Trace, TraceType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
@@ -792,12 +795,21 @@ class FlowExecutor:
         )
         output = {}
         aggregation_inputs = {}
+        traces = []
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             inputs = load_multimedia_data(self._flow.inputs, inputs)
             # Make sure the run_info with converted inputs results rather than original inputs
             run_info.inputs = inputs
+            Tracer.start_tracing(run_id, self._flow.name, self._tracer)
+            trace = Trace(
+                name=self._flow.name,
+                type=TraceType.FLOW,
+                inputs=inputs,
+                start_time=datetime.utcnow().timestamp(),
+            )
+            Tracer.push(trace)
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
@@ -806,17 +818,23 @@ class FlowExecutor:
             ]
             run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
             run_tracker.allow_generator_types = allow_generator_output
-            run_tracker.end_run(line_run_id, result=output)
+            Tracer.pop(output)
+            traces = Tracer.end_tracing(run_id)
+            run_tracker.end_run(line_run_id, result=output, traces=traces)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
         except KeyboardInterrupt as ex:
             # Run will be cancelled when the process receives a SIGINT signal.
             # KeyboardInterrupt will be raised after asyncio finishes its signal handling
             # End run with the KeyboardInterrupt exception, so that its status will be Canceled
             flow_logger.info("Received KeyboardInterrupt, cancel the run.")
-            run_tracker.end_run(line_run_id, ex=ex)
+            Tracer.pop(error=ex)
+            traces = Tracer.end_tracing(run_id)
+            run_tracker.end_run(line_run_id, ex=ex, traces=traces)
             raise
         except Exception as e:
-            run_tracker.end_run(line_run_id, ex=e)
+            Tracer.pop(error=e)
+            traces = Tracer.end_tracing(run_id)
+            run_tracker.end_run(line_run_id, ex=e, traces=traces)
             if self._raise_ex:
                 raise
         finally:
@@ -881,9 +899,10 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
-        return all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        return (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
