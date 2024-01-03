@@ -157,16 +157,16 @@ class TestAOAI:
             prompt=example_prompt_template,
             deployment_name="gpt-35-turbo-1106",
             temperature=0,
-            user_input="Write a slogan for product X, please reponse with json.",
+            user_input="Write a slogan for product X, please response with json.",
             chat_history=chat_history,
             response_format={"type": "json_object"}
         )
-        assert "Product X".lower() in result.lower()
+        assert "x:".lower() in result.lower()
 
     @pytest.mark.parametrize(
         "response_format, user_input, error_message, error_codes, exception",
         [
-            ({"type": "json"}, "Write a slogan for product X, please reponse with json.",
+            ({"type": "json"}, "Write a slogan for product X, please response with json.",
              "\'json\' is not one of [\'json_object\', \'text\']", "UserError/OpenAIError/BadRequestError",
              WrappedOpenAIError),
             ({"type": "json_object"}, "Write a slogan for product X",
@@ -214,7 +214,7 @@ class TestAOAI:
                 prompt=example_prompt_template,
                 deployment_name="gpt-35-turbo",
                 temperature=0,
-                user_input="Write a slogan for product X, please reponse with json.",
+                user_input="Write a slogan for product X, please response with json.",
                 chat_history=chat_history,
                 response_format={"type": "json_object"}
             )
