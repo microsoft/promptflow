@@ -164,6 +164,7 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
         type=trace_type,
         start_time=datetime.utcnow().timestamp(),
         inputs=all_kwargs,
+        children=[],
     )
 
 
