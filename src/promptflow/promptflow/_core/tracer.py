@@ -6,10 +6,11 @@ import functools
 import inspect
 import json
 import logging
+import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Callable, Dict, Optional
 
 from opentelemetry.trace import Tracer as OTelTracer
 
@@ -31,7 +32,8 @@ class Tracer(ThreadLocalSingleton):
         self._otel_tracer = otel_tracer
         self._node_name = node_name
         self._traces = []
-        self._trace_stack = []
+        self._current_trace_id = ContextVar("current_trace_id", default="")
+        self._id_to_trace: Dict[str, Trace] = {}
 
     @classmethod
     def start_tracing(cls, run_id, node_name: Optional[str] = None, otel_tracer: OTelTracer = None):
@@ -89,23 +91,34 @@ class Tracer(ThreadLocalSingleton):
             obj = str(obj)
         return obj
 
+    def _get_current_trace(self):
+        trace_id = self._current_trace_id.get()
+        if not trace_id:
+            return None
+        return self._id_to_trace[trace_id]
+
     def _push(self, trace: Trace):
+        if not trace.id:
+            trace.id = str(uuid.uuid4())
         span = self._otel_tracer.start_span(trace.name)
         span.set_attribute("span_type", trace.type)
         setattr(trace, "_span", span)
 
         if trace.inputs:
             trace.inputs = self.to_serializable(trace.inputs)
+        trace.children = []
         if not trace.start_time:
             trace.start_time = datetime.utcnow().timestamp()
-        if not self._trace_stack:
-            # Set node name for root trace
+        parent_trace = self._get_current_trace()
+        if not parent_trace:
+            self._traces.append(trace)
             trace.node_name = self._node_name
             self._traces.append(trace)
         else:
-            self._trace_stack[-1].children = self._trace_stack[-1].children or []
-            self._trace_stack[-1].children.append(trace)
-        self._trace_stack.append(trace)
+            parent_trace.children.append(trace)
+            trace.parent_id = parent_trace.id
+        self._current_trace_id.set(trace.id)
+        self._id_to_trace[trace.id] = trace
 
     @classmethod
     def pop(cls, output=None, error: Optional[Exception] = None):
@@ -113,7 +126,10 @@ class Tracer(ThreadLocalSingleton):
         return obj._pop(output, error)
 
     def _pop(self, output=None, error: Optional[Exception] = None):
-        last_trace = self._trace_stack[-1]
+        last_trace = self._get_current_trace()
+        if not last_trace:
+            logging.warning("Try to pop trace but no active trace in current context.")
+            return output
         span = getattr(last_trace, "_span")
         if error:
             span.record_exception(error)
@@ -125,8 +141,8 @@ class Tracer(ThreadLocalSingleton):
             last_trace.output = self.to_serializable(output)
         if error is not None:
             last_trace.error = self._format_error(error)
-        self._trace_stack[-1].end_time = datetime.utcnow().timestamp()
-        self._trace_stack.pop()
+        last_trace.end_time = datetime.utcnow().timestamp()
+        self._current_trace_id.set(last_trace.parent_id)
 
         if isinstance(output, GeneratorProxy):
             return generate_from_proxy(output)
@@ -161,6 +177,7 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
         type=trace_type,
         start_time=datetime.utcnow().timestamp(),
         inputs=all_kwargs,
+        children=[],
     )
 
 
