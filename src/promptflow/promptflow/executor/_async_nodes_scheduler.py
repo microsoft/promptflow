@@ -176,6 +176,10 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
             # os._exit https://docs.python.org/3/library/os.html#os._exit
             # Exit the process with status n, without calling cleanup handlers, flushing stdio buffers, etc.
             # Specifially, it stops process without waiting for non-daemon thread.
+            # We cannot ensure persist_flow_run is called before the process exits, sleep for 3 seconds
+            # as a best effort. In runtime scenario, runtime will check whether the flow status
+            # is cancelled after timeout. If not cancelled, it will set the flow status to Cancelled.
+            time.sleep(3)
             os._exit(0)
 
         exceeded_wait_seconds = time.time() - thread_start_time > max_wait_seconds
@@ -190,4 +194,5 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
                              " more time to clean up after cancellation.")
             remaining_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
             flow_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
+        time.sleep(3)
         os._exit(0)
