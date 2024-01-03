@@ -15,7 +15,7 @@ class TestAOAI:
         # test whether tool can handle param "stop" with value empty list
         # as openai raises "[] is not valid under any of the given schemas - 'stop'"
         aoai_provider.completion(
-            prompt=prompt_template, deployment_name="gpt-35-turbo", stop=[], logit_bias={}
+            prompt=prompt_template, deployment_name="gpt-35-turbo-instruct", stop=[], logit_bias={}
         )
 
     def test_aoai_stream_completion(self, aoai_provider):
@@ -23,7 +23,7 @@ class TestAOAI:
         # test whether tool can handle param "stop" with value empty list in stream mode
         # as openai raises "[] is not valid under any of the given schemas - 'stop'"
         aoai_provider.completion(
-            prompt=prompt_template, deployment_name="gpt-35-turbo", stop=[], logit_bias={}, stream=True
+            prompt=prompt_template, deployment_name="gpt-35-turbo-instruct", stop=[], logit_bias={}, stream=True
         )
 
     def test_aoai_chat(self, aoai_provider, example_prompt_template, chat_history):
