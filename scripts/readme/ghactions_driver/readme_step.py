@@ -375,3 +375,4 @@ class ReadmeStepsManage:
         output_telemetry.target_path = target_path
         output_telemetry.readme_folder = ReadmeSteps.working_dir
         output_telemetry.readme_name = ReadmeSteps.readme_name
+        output_telemetry.path_filter = path_filter

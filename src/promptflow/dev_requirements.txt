@@ -3,6 +3,7 @@ azure-keyvault
 beautifulsoup4==4.12.2
 coverage==6.0.1
 keyrings.alt  # this is possibly insecure, do not add this to setup.py
+markdown # for readme generator
 mock
 nox
 portalocker~=1.2
