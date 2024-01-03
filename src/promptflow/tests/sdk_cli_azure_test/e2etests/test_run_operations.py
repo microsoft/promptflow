@@ -12,6 +12,7 @@ from time import sleep
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
 import pydash
 import pytest
 
@@ -858,6 +859,46 @@ class TestFlowRun:
             assert len(request_ids) == 1
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
+
+    def test_get_details_against_partial_completed_run(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str]
+    ) -> None:
+        flow_mod2 = f"{FLOWS_DIR}/mod-n/two"
+        flow_mod3 = f"{FLOWS_DIR}/mod-n/three"
+        data_path = f"{DATAS_DIR}/numbers.jsonl"
+        # batch run against data
+        run1 = pf.run(
+            flow=flow_mod2,
+            data=data_path,
+            column_mapping={"number": "${data.value}"},
+            runtime=runtime,
+            name=randstr("run1"),
+        )
+        pf.runs.stream(run1)
+        details1 = pf.get_details(run1)
+        assert len(details1) == 20
+        assert len(details1[details1["outputs.output"].notnull()]) == 10
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details1.iterrows():
+            if pd.notnull(row["outputs.output"]):
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
+
+        # batch run against previous run
+        run2 = pf.run(
+            flow=flow_mod3,
+            run=run1,
+            column_mapping={"number": "${run.outputs.output}"},
+            runtime=runtime,
+            name=randstr("run2"),
+        )
+        pf.runs.stream(run2)
+        details2 = pf.get_details(run2)
+        assert len(details2) == 10
+        assert len(details2[details2["outputs.output"].notnull()]) == 4
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details2.iterrows():
+            if pd.notnull(row["outputs.output"]):
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
 
 
 # separate some tests as they cannot use the fixture that mocks the aml-user-token
