@@ -8,7 +8,7 @@ from promptflow import tool
 from promptflow.connections import OpenAIConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.exceptions import SystemErrorException
-from promptflow.executor.assistant_tool_invoker import AssistantToolInvoker
+from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
 
 URL_PREFIX = "https://platform.openai.com/files/"
 

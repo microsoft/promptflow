@@ -1,5 +1,5 @@
 inputs:
-  chat_input:
+  assistant_input:
     type: list
     default:
     - type: text
@@ -11,7 +11,7 @@ inputs:
     type: string
     default: ""
 outputs:
-  chat_output:
+  assistant_output:
     type: string
     reference: ${add_message_and_run.output}
   thread_id:
