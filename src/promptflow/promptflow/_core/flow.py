@@ -23,7 +23,6 @@ def flow(
         # All the tools should be traced.
         new_f = _traced(func, trace_type=TraceType.FLOW)
 
-        new_f.__tool = None  # This will be set when generating the tool definition.
         new_f.__name = name
         new_f.__description = description
         new_f.__type = type
@@ -34,7 +33,4 @@ def flow(
 
         return new_f
 
-    # enable use decorator without "()" if all arguments are default values
-    if func is not None:
-        return tool_decorator(func)
     return wrapper
