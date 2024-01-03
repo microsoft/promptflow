@@ -263,12 +263,15 @@ class TestExecutor:
         from pathlib import Path
 
         assert len(flow_result.api_calls) == 1
-        main_trace = flow_result.api_calls[0]
-        Path("main_trace.json").write_text(json.dumps(main_trace, indent=2))
+        top_trace = flow_result.api_calls[0]
+        Path("top_trace.json").write_text(json.dumps(top_trace, indent=2))
 
         # assert flow_result.run_info.status == Status.Completed
         # assert flow_result.output == {'val1': 'val1', 'val2': 'val1'}
-        assert main_trace["name"] == "flow_entry"
+        top_trace = flow_result.api_calls[0]
+        assert top_trace["name"] == "flow"
+        assert len(top_trace["children"]) == 1
+        main_trace = top_trace["children"][0]
         assert len(main_trace["children"]) == 2
         assert main_trace["children"][0]["name"] == "passthrough_str_and_wait_sync"
         assert main_trace["children"][0]["inputs"] == {"input1": "val1", "wait_seconds": 1}
