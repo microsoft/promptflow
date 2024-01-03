@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 from concurrent.futures import ThreadPoolExecutor
 
 from opentelemetry import metrics, trace
@@ -50,13 +51,19 @@ def sync_task(name: str, wait_seconds: int = 1):
         print(f"Task {name} finished")
 
 
+def set_context(context: contextvars.Context):
+    for var, value in context.items():
+        var.set(value)
+
+
 def sync_main():
     with tracer.start_as_current_span("sync_main") as span:
         span.set_attribute("attribute", "value")
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        with ThreadPoolExecutor(
+            max_workers=2, initializer=set_context, initargs=(contextvars.copy_context(),)
+        ) as executor:
             # Submit tasks to the executor
-            future1 = executor.submit(sync_task, "sync_task1")
-            _ = future1
+            executor.submit(sync_task, "sync_task1")
         sync_task("sync_task2", 2)
 
 
