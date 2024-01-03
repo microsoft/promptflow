@@ -168,6 +168,9 @@ class PromptflowException(Exception):
         i.e. For ToolExcutionError which inherits from UserErrorException,
         The result would be ["UserErrorException", "ToolExecutionError"].
         """
+        if getattr(self, "_error_codes", None):
+            return self._error_codes
+
         from promptflow._utils.exception_utils import infer_error_code_from_class
 
         def reversed_error_codes():
@@ -176,9 +179,9 @@ class PromptflowException(Exception):
                     break
                 yield infer_error_code_from_class(clz)
 
-        result = list(reversed_error_codes())
-        result.reverse()
-        return result
+        self._error_codes = list(reversed_error_codes())
+        self._error_codes.reverse()
+        return self._error_codes
 
     def get_arguments_from_message_format(self, message_format):
         """Get the arguments from the message format."""

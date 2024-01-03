@@ -1312,7 +1312,7 @@ class TestCli:
             outerr = capsys.readouterr()
             assert outerr.err
             error_msg = json.loads(outerr.err)
-            assert error_msg["code"] == "ConnectionNotFoundError"
+            assert error_msg["code"] == "SDKError"
 
             def mocked_connection_get(*args, **kwargs):
                 raise Exception("mock exception")

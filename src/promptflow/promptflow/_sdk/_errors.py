@@ -6,13 +6,15 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 
 
 class SDKError(PromptflowException):
+    """SDK base class, target default is CONTROL_PLANE_SDK."""
+
     def __init__(
-            self,
-            message="",
-            message_format="",
-            target: ErrorTarget = ErrorTarget.CONTROL_PLANE_SDK,
-            module=None,
-            **kwargs,
+        self,
+        message="",
+        message_format="",
+        target: ErrorTarget = ErrorTarget.CONTROL_PLANE_SDK,
+        module=None,
+        **kwargs,
     ):
         super().__init__(message=message, message_format=message_format, target=target, module=module, **kwargs)
 

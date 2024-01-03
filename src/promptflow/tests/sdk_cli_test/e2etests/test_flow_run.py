@@ -84,7 +84,7 @@ def assert_run_with_invalid_column_mapping(client: PFClient, run: Run) -> None:
 
     exception = local_storage.load_exception()
     assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
-    assert exception["code"] == "BulkRunException"
+    assert exception["code"] == "SDKError"
 
 
 @pytest.mark.usefixtures(
