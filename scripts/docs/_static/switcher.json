@@ -2,17 +2,12 @@
   {
     "name": "Python",
     "version": "python",
-    "url": "https://promptflow-reference.azurewebsites.net/_build/python/",
+    "url": "https://promptflow.azurewebsites.net/python/",
     "preferred": true
-  },
-  {
-    "name": "JavaScript",
-    "version": "javascript",
-    "url": "https://promptflow-reference.azurewebsites.net/_build/javascript/"
   },
   {
     "name": "C#",
     "version": "csharp",
-    "url": "https://promptflow-reference.azurewebsites.net/_build/csharp/"
+    "url": "https://promptflow.azurewebsites.net/csharp/"
   }
 ]
