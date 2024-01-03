@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import pytest
 from azure.core.exceptions import HttpResponseError
-from promptflow.exceptions import ErrorInfo, ErrorCategory, ErrorTarget
+from promptflow.exceptions import _ErrorInfo, ErrorCategory, ErrorTarget
 from promptflow.executor import FlowValidator
 from promptflow.executor._errors import InvalidNodeReference
 
@@ -18,7 +18,7 @@ class TestExceptions:
             pf.run("./exceptions/flows")
         except Exception as e:
             ex = e
-        error_category, error_type, error_target, error_message = ErrorInfo.get_error_info(ex)
+        error_category, error_type, error_target, error_message = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.UserError
         assert error_type == "FileNotFoundError"
         assert error_target == ErrorTarget.UNKNOWN
@@ -35,7 +35,7 @@ class TestExceptions:
             FlowValidator._validate_aggregation_inputs({}, {"input1": "value1"})
         except Exception as e:
             ex = e
-        error_category, error_type, error_target, error_message = ErrorInfo.get_error_info(ex)
+        error_category, error_type, error_target, error_message = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.SystemError
         assert error_type == "InvalidAggregationInput"
         assert error_target == ErrorTarget.UNKNOWN
@@ -54,7 +54,7 @@ class TestExceptions:
             raise HttpResponseError(message="HttpResponseError")
         except Exception as e:
             ex = e
-        error_category, error_type, error_target, error_message = ErrorInfo.get_error_info(ex)
+        error_category, error_type, error_target, error_message = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.SystemError
         assert error_type == "HttpResponseError"
         assert error_target == ErrorTarget.UNKNOWN
@@ -75,7 +75,7 @@ class TestExceptions:
             raise InvalidNodeReference(message_format=msg_format, invalid_reference=None, node_name="node_name")
         except Exception as e:
             ex = e
-        error_category, error_type, error_target, error_message = ErrorInfo.get_error_info(ex)
+        error_category, error_type, error_target, error_message = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.UserError
         assert error_type == "InvalidNodeReference"
         assert error_target == ErrorTarget.EXECUTOR

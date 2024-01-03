@@ -9,7 +9,7 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
-from promptflow.exceptions import ErrorInfo
+from promptflow.exceptions import _ErrorInfo
 from promptflow._sdk._utils import ClientUserAgentUtil
 from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
 
@@ -93,7 +93,7 @@ def log_activity(
     except BaseException as e:  # pylint: disable=broad-except
         exception = e
         completion_status = ActivityCompletionStatus.FAILURE
-        error_category, error_type, error_target, error_message = ErrorInfo.get_error_info(exception)
+        error_category, error_type, error_target, error_message = _ErrorInfo.get_error_info(exception)
         activity_info["error_category"] = error_category
         activity_info["error_type"] = error_type
         activity_info["error_target"] = error_target

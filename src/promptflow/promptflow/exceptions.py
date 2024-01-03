@@ -218,7 +218,7 @@ class ValidationException(UserErrorException):
     pass
 
 
-class ErrorInfo:
+class _ErrorInfo:
     _exception_codes = dict()
 
     @classmethod
