@@ -24,16 +24,15 @@ from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands  # no
 from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  # noqa: E402
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
-from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
-    LoggerFactory,
     get_promptflow_sdk_version,
     print_pf_version,
     setup_user_agent_to_operation_context,
 )
+from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 
-# configure logger for CLI
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+# get logger for CLI
+logger = get_cli_sdk_logger()
 
 
 def run_command(args):
@@ -42,11 +41,11 @@ def run_command(args):
     try:
         # --verbose, enable info logging
         if hasattr(args, "verbose") and args.verbose:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
+            for handler in logger.handlers:
                 handler.setLevel(logging.INFO)
         # --debug, enable debug logging
         if hasattr(args, "debug") and args.debug:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
+            for handler in logger.handlers:
                 handler.setLevel(logging.DEBUG)
 
         if args.version:
@@ -112,7 +111,11 @@ def entry(argv):
     logger = get_telemetry_logger()
     activity_name = _get_cli_activity_name(cli=prog, args=args)
     activity_name = update_activity_name(activity_name, args=args)
-    with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
+    with log_activity(
+            logger,
+            activity_name,
+            activity_type=ActivityType.PUBLICAPI,
+    ):
         run_command(args)
 
 

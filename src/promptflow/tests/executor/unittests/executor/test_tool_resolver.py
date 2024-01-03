@@ -210,7 +210,7 @@ class TestToolResolver:
         with pytest.raises(NodeInputValidationError) as e:
             tool_resolver = ToolResolver(working_dir=None, connections=connections)
             tool_resolver._convert_node_literal_input_types(node, tool)
-        message = "value invalid is not type int"
+        message = "value 'invalid' is not type int"
         assert message in str(e.value), "Expected: {}, Actual: {}".format(message, str(e.value))
 
         # Case 4: Unresolved value, like newly added type not in old version ValueType enum

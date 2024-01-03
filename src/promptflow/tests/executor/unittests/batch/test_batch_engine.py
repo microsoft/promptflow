@@ -18,7 +18,7 @@ class TestBatchEngine:
                 "promptflow.batch._batch_inputs_processor.BatchInputsProcessor.process_batch_inputs"
             ) as mock_func:
                 mock_func.side_effect = Exception("test error")
-                batch_engine = BatchEngine(get_yaml_file("csharp_flow"))
+                batch_engine = BatchEngine(get_yaml_file("print_input_flow"))
                 batch_engine.run({}, {}, Path("."))
         assert e.value.target == ErrorTarget.BATCH
         assert isinstance(e.value.inner_exception, Exception)
