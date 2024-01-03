@@ -4,6 +4,8 @@ import os
 import queue
 import signal
 import sys
+import threading
+import time
 from datetime import datetime
 from functools import partial
 from logging import INFO
@@ -32,14 +34,16 @@ from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
-
 def signal_handler(signum, frame):
     signame = signal.Signals(signum).name
     bulk_logger.info("Execution stopping. Handling signal %s (%s)", signame, signum)
     try:
         process = psutil.Process(os.getpid())
-        bulk_logger.info("Successfully terminated process with pid %s", process.pid)
+        bulk_logger.info("Start terminating process with pid %s", process.pid)
+        max_wait_seconds = os.environ.get("PF_WAIT_SECONDS_AFTER_CANCELLATION", 30)
+        time.sleep(max_wait_seconds)
         process.terminate()
+        bulk_logger.info("Successfully terminated process with pid %s", process.pid)
     except Exception:
         bulk_logger.warning("Error when handling execution stop signal", exc_info=True)
     finally:
