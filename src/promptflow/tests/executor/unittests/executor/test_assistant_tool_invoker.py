@@ -47,7 +47,7 @@ class TestAssistantToolInvoker:
         for tool_name, assistant_tool in invoker._assistant_tools.items():
             assert tool_name in ("code_interpreter", "retrieval", "sample_tool")
             assert assistant_tool.name == tool_name
-            assert isinstance(assistant_tool.definition, dict)
+            assert isinstance(assistant_tool.openai_definition, dict)
             if tool_name in ("code_interpreter", "retrieval"):
                 assert assistant_tool.func is None
             else:

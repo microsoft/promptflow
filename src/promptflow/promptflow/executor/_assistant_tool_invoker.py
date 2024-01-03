@@ -15,7 +15,7 @@ from promptflow.executor._tool_resolver import ToolResolver
 @dataclass
 class AssistantTool:
     name: str
-    definition: dict
+    openai_definition: dict
     func: Callable
 
 
@@ -27,7 +27,9 @@ class AssistantToolInvoker:
     def load_tools(self, tools: list):
         for tool in tools:
             if tool["type"] in ("code_interpreter", "retrieval"):
-                self._assistant_tools[tool["type"]] = AssistantTool(name=tool["type"], definition=tool, func=None)
+                self._assistant_tools[tool["type"]] = AssistantTool(
+                    name=tool["type"], openai_definition=tool, func=None
+                )
             elif tool["type"] == "function":
                 function_tool = self._load_tool_as_function(tool)
                 self._assistant_tools[function_tool.name] = function_tool
@@ -51,7 +53,7 @@ class AssistantToolInvoker:
             func = partial(resolved_tool.callable, **inputs)
         else:
             func = resolved_tool.callable
-        return AssistantTool(name=func_name, definition=definition, func=func)
+        return AssistantTool(name=func_name, openai_definition=definition, func=func)
 
     def _generate_node_for_tool(self, tool: dict):
         predefined_inputs = {}
@@ -70,7 +72,7 @@ class AssistantToolInvoker:
         return self._assistant_tools[func_name].func(**kwargs)
 
     def to_openai_tools(self):
-        return [tool.definition for tool in self._assistant_tools.values()]
+        return [tool.openai_definition for tool in self._assistant_tools.values()]
 
     def _generate_tool_definition(self, func_name: str, description: str, predefined_inputs: list) -> dict:
         to_openai_type = {
