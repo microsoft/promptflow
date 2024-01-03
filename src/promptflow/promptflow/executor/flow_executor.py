@@ -13,9 +13,7 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 import yaml
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+from opentelemetry.trace import get_tracer
 
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
@@ -123,11 +121,7 @@ class FlowExecutor:
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
 
-        provider = TracerProvider()
-        processor = BatchSpanProcessor(ConsoleSpanExporter())
-        provider.add_span_processor(processor)
-        trace.set_tracer_provider(provider)
-        self._tracer = trace.get_tracer(self._flow_id)
+        self._tracer = get_tracer(self._flow_id)
 
         self._connections = connections
         self._aggregation_inputs_references = get_aggregation_inputs_properties(flow)
