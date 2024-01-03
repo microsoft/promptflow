@@ -1,7 +1,3 @@
-# ---------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# ---------------------------------------------------------
-
 import os
 from dataclasses import dataclass
 from functools import partial
@@ -32,7 +28,7 @@ class AssistantToolInvoker:
             if tool["type"] in ("code_interpreter", "retrieval"):
                 self._assistant_tools[tool["type"]] = AssistantTool(name=tool["type"], definition=tool, func=None)
             elif tool["type"] == "function":
-                function_tool = self._load_function_tool(tool)
+                function_tool = self._load_tool_as_function(tool)
                 self._assistant_tools[function_tool.name] = function_tool
             else:
                 raise UnsupportedAssistantToolType(
@@ -41,9 +37,22 @@ class AssistantToolInvoker:
                     target=ErrorTarget.EXECUTOR,
                 )
 
-    def _load_function_tool(self, tool: dict):
-        working_dir = Path(os.getcwd())
-        tool_resolver = ToolResolver(working_dir, need_connections=False)
+    def _load_tool_as_function(self, tool: dict):
+        tool_resolver = ToolResolver(working_dir=Path(os.getcwd()), need_connections=False)
+        node, predefined_inputs = self._generate_node_for_tool(tool)
+        resolved_tool = tool_resolver.resolve_tool_by_node(node, convert_input_types=False)
+        func_name = resolved_tool.definition.function
+        definition = self._generate_tool_definition(
+            func_name, resolved_tool.definition.description, predefined_inputs
+        )
+        if resolved_tool.node.inputs:
+            inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
+            func = partial(resolved_tool.callable, **inputs)
+        else:
+            func = resolved_tool.callable
+        return AssistantTool(name=func_name, definition=definition, func=func)
+
+    def _generate_node_for_tool(self, tool: dict):
         predefined_inputs = {}
         for input_name, value in tool.get("predefined_inputs", {}).items():
             predefined_inputs[input_name] = InputAssignment.deserialize(value)
@@ -54,17 +63,7 @@ class AssistantToolInvoker:
             source=ToolSource.deserialize(tool["source"]) if "source" in tool else None,
             type=ToolType.PYTHON if "tool_type" in tool and tool["tool_type"] == "python" else None,
         )
-        resolved_tool = tool_resolver.resolve_tool_by_node(node, convert_input_types=False)
-        func_name = resolved_tool.definition.function
-        definition = self._generate_tool_definition(
-            func_name, resolved_tool.definition.description, predefined_inputs.keys()
-        )
-        if resolved_tool.node.inputs:
-            inputs = {name: value.value for name, value in resolved_tool.node.inputs.items()}
-            func = partial(resolved_tool.callable, **inputs)
-        else:
-            func = resolved_tool.callable
-        return AssistantTool(name=func_name, definition=definition, func=func)
+        return node, list(predefined_inputs.keys())
 
     def invoke_tool(self, func_name, kwargs):
         return self._assistant_tools[func_name].func(**kwargs)
