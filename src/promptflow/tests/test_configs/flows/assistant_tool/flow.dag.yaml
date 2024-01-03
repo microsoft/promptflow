@@ -2,11 +2,11 @@ inputs:
   assistant_input:
     type: list
     default:
-    - type: text
-      text: I'm going to run for 2 hours today, how much calories will I burn?
+      - type: text
+        text: If I run on street for 1.5 hour in Guangzhou City this afternoon, how many calories will I burn?
   assistant_id:
     type: string
-    default: asst_yWhdFYoCS1UatnRRQZGY85aL
+    default: asst_eHO2rwEYqGH3pzzHHov2kBCG
   thread_id:
     type: string
     default: ""
@@ -18,55 +18,45 @@ outputs:
     type: string
     reference: ${get_or_create_thread.output}
 nodes:
-- name: get_or_create_thread
-  type: python
-  source:
-    type: code
-    path: get_or_create_thread.py
-  inputs:
-    conn: openai_connection
-    thread_id: ${inputs.thread_id}
-- name: add_message_and_run
-  type: python
-  source:
-    type: code
-    path: add_message_and_run.py
-  inputs:
-    conn: openai_connection
-    message: ${inputs.assistant_input}
-    assistant_id: ${inputs.assistant_id}
-    thread_id: ${get_or_create_thread.output}
-    assistant_definition:
-      model: gpt-4-1106-preview
-      instructions: You are a helpful assistant.
-      tools:
-      - type: code_interpreter
-      - type: function
-        tool_type: python
-        source:
-          type: code
-          path: get_all_clothes.py
-      - type: function
-        tool_type: python
-        source:
-          type: code
-          path: get_calorie.py
-      - type: function
-        tool_type: python
-        source:
-          type: code
-          path: get_current_location.py
-        predefined_inputs:
-          predefined_input: 1
-      - type: function
-        tool_type: python
-        source:
-          type: code
-          path: get_current_weather.py
-      - type: function
-        tool_type: python
-        source:
-          type: code
-          path: multiply.py
-    download_images: true
-version: 2
+  - name: get_or_create_thread
+    type: python
+    source:
+      type: code
+      path: get_or_create_thread.py
+    inputs:
+      conn: chw_openai
+      thread_id: ${inputs.thread_id}
+  - name: add_message_and_run
+    type: python
+    source:
+      type: code
+      path: add_message_and_run.py
+    inputs:
+      conn: chw_openai
+      message: ${inputs.assistant_input}
+      assistant_id: ${inputs.assistant_id}
+      thread_id: ${get_or_create_thread.output}
+      assistant_definition:
+        model: gpt-4-1106-preview
+        instructions: You are a helpful assistant.
+        tools:
+          - type: code_interpreter
+            tool_type: python
+          - type: function
+            source:
+              type: code
+              path: get_calorie.py
+            tool_type: python
+          - type: function
+            source:
+              type: code
+              path: get_current_location.py
+            tool_type: python
+            predefined_inputs:
+              predefined_input: 1
+          - type: function
+            source:
+              type: code
+              path: get_temperature.py
+            tool_type: python
+      download_images: true

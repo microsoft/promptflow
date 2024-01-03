@@ -53,11 +53,15 @@ async def add_message_and_run(
                 print(f"Invoking tool: {tool_call.function.name}")
                 tool_name = tool_call.function.name
                 tool_args = json.loads(tool_call.function.arguments)
+                print(f"tool_name: {tool_name}")
+                print(f"tool args: {tool_args}")
                 output = invoker.invoke_tool(tool_name, tool_args)
+ 
                 tool_outputs.append({
                     "tool_call_id": tool_call.id,
                     "output": str(output),
                 })
+                print(f"outputL {str(output)}")
             await cli.beta.threads.runs.submit_tool_outputs(
                 thread_id=thread_id,
                 run_id=run.id,

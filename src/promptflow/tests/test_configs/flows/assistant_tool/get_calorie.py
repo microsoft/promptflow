@@ -3,13 +3,12 @@ import random
 
 
 @tool
-def get_calorie(location: str, weather: str):
-    """Get the calories of running for one hour according to the location and weather.
-    
-    :param location: Location to get calorie from.
-    :type location: str
-    :param weather: Weather to get calorie from.
-    :type weather: str
+def get_calorie_by_jogging(duration: float, temperature: float):
+    """Estimate the calories burned by jogging based on duration and temperature.
+    :param duration: the length of the jogging in hours.
+    :type duration: float
+    :param temperature: the environment temperature in degrees Celsius.
+    :type temperature: float
     """
 
-    return random.randint(100, 200)
+    return random.randint(50, 200)
