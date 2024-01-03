@@ -13,6 +13,8 @@ from contextvars import ContextVar
 from logging import WARNING
 from typing import Callable
 
+from opentelemetry.trace import get_tracer
+
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
 from promptflow._core.operation_context import OperationContext
@@ -52,6 +54,8 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._line_number = line_number
         self._variant_id = variant_id
 
+        self._otel_tracer = get_tracer(self._name)
+
     def copy(self):
         return FlowExecutionContext(
             name=self._name,
@@ -86,7 +90,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
                     hit_cache = True
 
             if not hit_cache:
-                Tracer.start_tracing(node_run_id, node.name)
+                Tracer.start_tracing(node_run_id, node.name, self._otel_tracer)
                 result = self._invoke_tool_with_timer(node, f, kwargs)
                 traces = Tracer.end_tracing(node_run_id)
 
@@ -136,7 +140,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
         traces = []
         try:
-            Tracer.start_tracing(node_run_id, node.name)
+            Tracer.start_tracing(node_run_id, node.name, self._otel_tracer)
             result = await self._invoke_tool_async_inner(node, f, kwargs)
             traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)

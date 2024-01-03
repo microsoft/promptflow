@@ -11,6 +11,8 @@ from contextvars import ContextVar
 from datetime import datetime
 from typing import Callable, Optional
 
+from opentelemetry.trace import Tracer as OTelTracer
+
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
@@ -24,20 +26,21 @@ class Tracer(ThreadLocalSingleton):
     CONTEXT_VAR_NAME = "Tracer"
     context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
-    def __init__(self, run_id, node_name: Optional[str] = None):
+    def __init__(self, run_id, node_name: Optional[str] = None, otel_tracer: OTelTracer = None):
         self._run_id = run_id
+        self._otel_tracer = otel_tracer
         self._node_name = node_name
         self._traces = []
         self._trace_stack = []
 
     @classmethod
-    def start_tracing(cls, run_id, node_name: Optional[str] = None):
+    def start_tracing(cls, run_id, node_name: Optional[str] = None, otel_tracer: OTelTracer = None):
         current_run_id = cls.current_run_id()
         if current_run_id is not None:
             msg = f"Try to start tracing for run {run_id} but {current_run_id} is already active."
             logging.warning(msg)
             return
-        tracer = cls(run_id, node_name)
+        tracer = cls(run_id, node_name, otel_tracer)
         tracer._activate_in_context()
 
     @classmethod
@@ -87,6 +90,9 @@ class Tracer(ThreadLocalSingleton):
         return obj
 
     def _push(self, trace: Trace):
+        span = self._otel_tracer.start_span(trace.name)
+        setattr(trace, "_span", span)
+
         if trace.inputs:
             trace.inputs = self.to_serializable(trace.inputs)
         if not trace.start_time:
@@ -107,6 +113,11 @@ class Tracer(ThreadLocalSingleton):
 
     def _pop(self, output=None, error: Optional[Exception] = None):
         last_trace = self._trace_stack[-1]
+        span = getattr(last_trace, "_span")
+        if error:
+            span.record_exception(error)
+        span.end()
+
         if isinstance(output, Iterator):
             output = GeneratorProxy(output)
         if output is not None:
