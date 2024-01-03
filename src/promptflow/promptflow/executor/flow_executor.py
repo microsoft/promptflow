@@ -14,8 +14,6 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 import yaml
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-from opentelemetry.trace import get_tracer, get_tracer_provider
 
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
@@ -24,8 +22,8 @@ from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
+from promptflow._core.otel_tracer import get_otel_tracer, memory_exporter
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.telemetry_exporter import MemoryExporter
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
@@ -124,11 +122,7 @@ class FlowExecutor:
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
 
-        provider = get_tracer_provider()
-        self._exporter = MemoryExporter()
-        processor = SimpleSpanProcessor(self._exporter)
-        provider.add_span_processor(processor)
-        self._tracer = get_tracer(self._flow_id)
+        self._tracer = get_otel_tracer(self._flow_id)
 
         self._connections = connections
         self._aggregation_inputs_references = get_aggregation_inputs_properties(flow)
@@ -724,7 +718,7 @@ class FlowExecutor:
                     validate_inputs=validate_inputs,
                     allow_generator_output=allow_generator_output,
                 )
-            self._run_tracker._trace = self._exporter.spans()
+            self._run_tracker._trace = memory_exporter.spans()
             print("Traces:")
             print(json.dumps(self._run_tracker._trace, indent=4))
 

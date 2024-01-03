@@ -13,11 +13,10 @@ from contextvars import ContextVar
 from logging import WARNING
 from typing import Callable
 
-from opentelemetry.trace import get_tracer
-
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
 from promptflow._core.operation_context import OperationContext
+from promptflow._core.otel_tracer import get_otel_tracer
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import generate_elapsed_time_messages
@@ -54,7 +53,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._line_number = line_number
         self._variant_id = variant_id
 
-        self._otel_tracer = get_tracer(self._name)
+        self._otel_tracer = get_otel_tracer(self._name)
 
     def copy(self):
         return FlowExecutionContext(

@@ -12,9 +12,6 @@ import tempfile
 import webbrowser
 from pathlib import Path
 
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-
 from promptflow._cli._params import (
     add_param_config,
     add_param_entry,
@@ -367,10 +364,10 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
 def test_flow(args):
     from promptflow._sdk._load_functions import load_flow
 
-    provider = TracerProvider()
+    # provider = TracerProvider()
     # processor = BatchSpanProcessor(ConsoleSpanExporter())
     # provider.add_span_processor(processor)
-    trace.set_tracer_provider(provider)
+    # trace.set_tracer_provider(provider)
 
     config = list_of_dict_to_dict(args.config)
     pf_client = PFClient(config=config)
