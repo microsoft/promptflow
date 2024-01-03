@@ -36,7 +36,7 @@ nodes:
     path: add_message_and_run.py
   inputs:
     conn: openai_connection
-    message: ${inputs.chat_input}
+    message: ${inputs.assistant_input}
     assistant_id: ${inputs.assistant_id}
     thread_id: ${get_or_create_thread.output}
     assistant_definition:
