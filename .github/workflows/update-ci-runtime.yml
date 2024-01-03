@@ -1,15 +1,6 @@
 name: Update CI runtime
 
 on:
-  pull_request:
-    paths:
-      - scripts/runtime_mgmt/runtime-env/**
-      - scripts/runtime_mgmt/update-runtime.py
-      - .github/workflows/update-ci-runtime.yml
-
-  schedule:
-    - cron: "30 20 * * WED"  # 4:30 Thursday Beijing Time (GMT+8)
-  
   workflow_dispatch:
 
 jobs:
