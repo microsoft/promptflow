@@ -13,6 +13,9 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 import yaml
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
@@ -119,6 +122,13 @@ class FlowExecutor:
 
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
+
+        provider = TracerProvider()
+        processor = BatchSpanProcessor(ConsoleSpanExporter())
+        provider.add_span_processor(processor)
+        trace.set_tracer_provider(provider)
+        self._tracer = trace.get_tracer(self._flow_id)
+
         self._connections = connections
         self._aggregation_inputs_references = get_aggregation_inputs_properties(flow)
         self._aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
@@ -702,16 +712,17 @@ class FlowExecutor:
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
-            operation_context = OperationContext.get_instance()
-            operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
-            line_result = self._exec(
-                inputs,
-                run_id=run_id,
-                line_number=index,
-                variant_id=variant_id,
-                validate_inputs=validate_inputs,
-                allow_generator_output=allow_generator_output,
-            )
+            with self._tracer.start_as_current_span(self._flow.name):
+                operation_context = OperationContext.get_instance()
+                operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
+                line_result = self._exec(
+                    inputs,
+                    run_id=run_id,
+                    line_number=index,
+                    variant_id=variant_id,
+                    validate_inputs=validate_inputs,
+                    allow_generator_output=allow_generator_output,
+                )
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -881,9 +892,10 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
-        return all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        return (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
