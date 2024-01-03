@@ -13,6 +13,7 @@ from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 import yaml
+from concurrent.futures import ThreadPoolExecutor
 
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
@@ -363,6 +364,143 @@ class FlowExecutor:
                     )
                 else:
                     context.invoke_tool(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
+            except Exception:
+                if raise_ex:  # Only raise exception when raise_ex is True
+                    raise
+
+            node_runs = run_tracker.collect_node_runs()
+            if len(node_runs) != 1:
+                # Should not happen except there is bug in run_tracker or thread control.
+                raise UnexpectedError(
+                    message_format=(
+                        "Single node execution failed. Expected one node result, "
+                        "but received {node_result_num}. Please contact support for further assistance."
+                    ),
+                    node_result_num=len(node_runs),
+                )
+            return node_runs[0]
+
+    @classmethod
+    async def load_and_exec_node_async(
+        cls,
+        flow_file: Path,
+        node_name: str,
+        *,
+        storage: AbstractRunStorage = None,
+        output_sub_dir: Optional[str] = None,
+        flow_inputs: Optional[Mapping[str, Any]] = None,
+        dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
+        connections: Optional[dict] = None,
+        working_dir: Optional[Path] = None,
+        raise_ex: bool = False,
+    ):
+        """Load and execute a single node from the flow.
+
+        :param flow_file: The path to the flow file.
+        :type flow_file: Path
+        :param node_name: The name of the node to be executed.
+        :type node_name: str
+        :param storage: The storage to be used for the flow.
+        :type storage: Optional[~promptflow.storage.AbstractRunStorage]
+        :param output_sub_dir: The directory to persist image for the flow. Keep it only for backward compatibility.
+        :type output_sub_dir: Optional[str]
+        :param flow_inputs: The inputs to be used for the flow. Default is None.
+        :type flow_inputs: Optional[Mapping[str, Any]]
+        :param dependency_nodes_outputs: The outputs of the dependency nodes. Default is None.
+        :type dependency_nodes_outputs: Optional[Mapping[str, Any]
+        :param connections: The connections to be used for the flow. Default is None.
+        :type connections: Optional[dict]
+        :param working_dir: The working directory to be used for the flow. Default is None.
+        :type working_dir: Optional[str]
+        :param raise_ex: Whether to raise exceptions or not. Default is False.
+        :type raise_ex: Optional[bool]
+        """
+        # Inject OpenAI API to make sure traces and headers injection works and
+        # update OpenAI API configs from environment variables.
+        inject_openai_api()
+
+        OperationContext.get_instance().run_mode = RunMode.SingleNode.name
+        dependency_nodes_outputs = dependency_nodes_outputs or {}
+
+        # Load the node from the flow file
+        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        with open(working_dir / flow_file, "r") as fin:
+            flow = Flow.deserialize(yaml.safe_load(fin))
+        node = flow.get_node(node_name)
+        if node is None:
+            raise SingleNodeValidationError(
+                message_format=(
+                    "Validation failed when attempting to execute the node. "
+                    "Node '{node_name}' is not found in flow '{flow_file}'. "
+                    "Please change node name or correct the flow file."
+                ),
+                node_name=node_name,
+                flow_file=flow_file,
+            )
+        if not node.source or not node.type:
+            raise SingleNodeValidationError(
+                message_format=(
+                    "Validation failed when attempting to execute the node. "
+                    "Properties 'source' or 'type' are not specified for Node '{node_name}' in flow '{flow_file}'. "
+                    "Please make sure these properties are in place and try again."
+                ),
+                node_name=node_name,
+                flow_file=flow_file,
+            )
+        # Only load the node's referenced flow inputs
+        node_referenced_flow_inputs = FlowExecutor._get_node_referenced_flow_inputs(node, flow.inputs)
+        inputs_with_default_value = apply_default_value_for_input(node_referenced_flow_inputs, flow_inputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
+            flow, node, inputs_with_default_value
+        )
+        inputs = load_multimedia_data(node_referenced_flow_inputs, converted_flow_inputs_for_node)
+        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
+        package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
+        tool_resolver = ToolResolver.start_resolver(working_dir, connections, package_tool_keys)
+        resolved_node = tool_resolver.resolve_tool_by_node(node)
+
+        # Prepare callable and real inputs here
+
+        resolved_inputs = {}
+        for k, v in resolved_node.node.inputs.items():
+            value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, inputs)
+            resolved_inputs[k] = value
+            if resolved_node.node.aggregation:
+                # For aggregation node, we need to convert value to list.
+                if (
+                    v.value_type == InputValueType.FLOW_INPUT
+                    or v.value_type == InputValueType.NODE_REFERENCE
+                    and flow.is_normal_node(v.value)
+                ):
+                    resolved_inputs[k] = [value]
+
+        # Note that the init args are only used when resolving the tool,
+        # so we need to remove them from the inputs before invoking.
+        resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
+
+        if storage is None:
+            sub_dir = "." if output_sub_dir is None else output_sub_dir
+            storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+        run_tracker = RunTracker(storage)
+        with run_tracker.node_log_manager:
+            # Will generate node run in context
+            context = FlowExecutionContext(
+                name=flow.name,
+                run_tracker=run_tracker,
+                cache_manager=AbstractCacheManager.init_from_env(),
+            )
+
+            try:
+                if inspect.iscoroutinefunction(resolved_node.callable):
+                    await context.invoke_tool_async(resolved_node.node, resolved_node.callable, kwargs=resolved_inputs)
+                else:
+                    executor = ThreadPoolExecutor()
+                    await asyncio.get_running_loop().run_in_executor(
+                        executor,
+                        functools.partial(
+                            context.invoke_tool, resolved_node.node, resolved_node.callable, kwargs=resolved_inputs
+                        ),
+                    )
             except Exception:
                 if raise_ex:  # Only raise exception when raise_ex is True
                     raise

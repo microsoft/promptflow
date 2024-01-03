@@ -10,6 +10,7 @@ from promptflow.executor._errors import ConnectionNotFound, InputTypeError, Reso
 
 from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
 
+pytest_plugins = ('pytest_asyncio',)
 SAMPLE_FLOW = "web_classification_no_variants"
 
 
@@ -221,6 +222,29 @@ class TestExecutor:
         yaml_file = get_yaml_file("default_input")
         executor = FlowExecutor.create(yaml_file, {})
         node_result = executor.load_and_exec_node(yaml_file, "test_print_input")
+        assert node_result.status == Status.Completed
+        assert node_result.output == default_input_value
+
+        # Assert for flow run.
+        flow_result = executor.exec_line({})
+        assert flow_result.run_info.status == Status.Completed
+        assert flow_result.output["output"] == default_input_value
+        aggr_results = executor.exec_aggregation({}, aggregation_inputs={})
+        flow_aggregate_node = aggr_results.node_run_infos["aggregate_node"]
+        assert flow_aggregate_node.status == Status.Completed
+        assert flow_aggregate_node.output == [default_input_value]
+
+        # Assert for exec
+        exec_result = executor.exec({})
+        assert exec_result["output"] == default_input_value
+
+    @pytest.mark.asyncio
+    async def test_executor_creation_with_default_input_async(self):
+        # Assert for single node run.
+        default_input_value = "input value from default"
+        yaml_file = get_yaml_file("default_input")
+        executor = FlowExecutor.create(yaml_file, {})
+        node_result = await executor.load_and_exec_node_async(yaml_file, "test_print_input")
         assert node_result.status == Status.Completed
         assert node_result.output == default_input_value
 
