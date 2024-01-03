@@ -17,6 +17,7 @@
 ### Improvements
 - Change `ruamel.yaml` lower bound to 0.17.10.
 - [SDK/CLI] Improve `pfazure run download` to handle large run data files.
+- [Executor] Exit the process when all async tools are done or exceeded timeout after cancellation.
 
 ## 1.2.0 (2023.12.14)
 
