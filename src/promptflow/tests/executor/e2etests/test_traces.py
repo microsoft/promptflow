@@ -226,7 +226,7 @@ class TestExecutorTraces:
         assert is_valid_name_trace["output"] is True
         assert is_valid_name_trace["error"] is None
         assert is_valid_name_trace["end_time"] - is_valid_name_trace["start_time"] == pytest.approx(0.5, abs=0.1)
-        assert is_valid_name_trace["children"] is None
+        assert is_valid_name_trace["children"] == []
         # TODO: to verfiy the system metrics. This might need to be fixed.
         assert is_valid_name_trace["system_metrics"] == {}
 
@@ -238,6 +238,6 @@ class TestExecutorTraces:
         assert format_greeting_trace["output"] == "Hello, User 1!"
         assert format_greeting_trace["error"] is None
         assert format_greeting_trace["end_time"] - format_greeting_trace["start_time"] == pytest.approx(0.5, abs=0.1)
-        assert format_greeting_trace["children"] is None
+        assert format_greeting_trace["children"] == []
         # TODO: to verfiy the system metrics. This might need to be fixed.
         assert format_greeting_trace["system_metrics"] == {}
