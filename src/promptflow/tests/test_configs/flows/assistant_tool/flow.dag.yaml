@@ -3,7 +3,7 @@ inputs:
     type: list
     default:
       - type: text
-        text: If I run on street for 1.5 hour in Guangzhou City this afternoon, how many calories will I burn?
+        text: If I run on street for 1.5 hour this afternoon, how many calories will I burn?
   assistant_id:
     type: string
     default: asst_eHO2rwEYqGH3pzzHHov2kBCG
