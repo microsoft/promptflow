@@ -14,7 +14,6 @@ from pathlib import Path
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
 from promptflow._cli._params import (
     add_param_config,
@@ -366,8 +365,8 @@ def test_flow(args):
     from promptflow._sdk._load_functions import load_flow
 
     provider = TracerProvider()
-    processor = BatchSpanProcessor(ConsoleSpanExporter())
-    provider.add_span_processor(processor)
+    # processor = BatchSpanProcessor(ConsoleSpanExporter())
+    # provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
 
     config = list_of_dict_to_dict(args.config)
