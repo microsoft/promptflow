@@ -4,7 +4,7 @@ from promptflow._utils.exception_utils import (
     ADDITIONAL_INFO_USER_EXECUTION_ERROR,
     is_pf_core_frame,
     last_frame_info,
-    remove_suffix
+    remove_suffix,
 )
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
@@ -34,6 +34,10 @@ class MissingRequiredInputs(ValidationException):
 
 
 class InputTypeMismatch(ValidationException):
+    pass
+
+
+class InvalidSource(ValidationException):
     pass
 
 

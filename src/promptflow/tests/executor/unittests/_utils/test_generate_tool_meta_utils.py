@@ -123,7 +123,7 @@ class TestToolMetaUtils:
                 "python",
                 cd_and_run,
                 r"\(MetaFileNotFound\) Generate tool meta failed for python tool. "
-                r"Meta file '.*aaa.py' can not be found.",
+                r"Meta file 'aaa.py' can not be found.",
                 id="MetaFileNotFound",
             ),
             pytest.param(

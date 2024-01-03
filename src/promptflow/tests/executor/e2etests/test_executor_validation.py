@@ -4,7 +4,7 @@ from tempfile import mkdtemp
 
 import pytest
 
-from promptflow._core._errors import FlowOutputUnserializable
+from promptflow._core._errors import FlowOutputUnserializable, InvalidSource
 from promptflow._core.tool_meta_generator import PythonParsingError
 from promptflow._core.tools_manager import APINotFound
 from promptflow._sdk._constants import DAG_FILE_NAME
@@ -19,7 +19,6 @@ from promptflow.executor._errors import (
     InputNotFound,
     InputReferenceNotFound,
     InputTypeError,
-    InvalidSource,
     NodeCircularDependency,
     NodeInputValidationError,
     NodeReferenceNotFound,
