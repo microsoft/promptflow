@@ -6,7 +6,7 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 
 
 class SDKError(PromptflowException):
-    def __init__(self, target: ErrorTarget = ErrorTarget.SDK, **kwargs):
+    def __init__(self, target: ErrorTarget = ErrorTarget.CONTROL_PLANE_SDK, **kwargs):
         super().__init__(target=target, **kwargs)
 
 

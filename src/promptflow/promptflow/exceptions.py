@@ -31,7 +31,6 @@ class ErrorTarget(str, Enum):
     SERVING_APP = "ServingApp"
     FLOW_INVOKER = "FlowInvoker"
     FUNCTION_PATH = "FunctionPath"
-    SDK = "SDK"
 
 
 class PromptflowException(Exception):
