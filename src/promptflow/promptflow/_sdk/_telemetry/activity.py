@@ -10,7 +10,6 @@ import threading
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
 from promptflow._sdk._utils import ClientUserAgentUtil
-from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
 
 
 class ActivityType(object):
@@ -165,6 +164,7 @@ def monitor_operation(
         @functools.wraps(f)
         def wrapper(self, *args, **kwargs):
             from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
+            from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
 
             logger = get_telemetry_logger()
 

@@ -4,6 +4,7 @@
 
 import argparse
 import importlib
+import json
 import os
 import shutil
 import sys
@@ -16,6 +17,7 @@ import datetime
 import mock
 import pandas as pd
 import pytest
+import time
 
 from promptflow._cli._params import AppendToDictAction
 from promptflow._cli._utils import (
@@ -23,7 +25,7 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._constants import PF_VERSION_CHECK
+from promptflow._constants import PF_VERSION_CHECK, LAST_CHECK_TIME
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PROMPT_FLOW_HOME_DIR_ENV_VAR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
@@ -38,7 +40,8 @@ from promptflow._sdk._utils import (
     snake_to_camel,
 )
 from promptflow._utils.load_data import load_data
-from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version
+from promptflow._utils.version_hint_utils import check_latest_version
+
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -203,19 +206,30 @@ class TestUtils:
             thread.join()
 
     def test_concurrent_hint_for_update(self):
-        import time
-        with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime:
+        def mock_check_latest_version():
+            time.sleep(5)
+            check_latest_version()
+
+        with (patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime,
+              patch("promptflow._utils.version_hint_utils.check_latest_version", side_effect=mock_check_latest_version)):
+            from promptflow._sdk._telemetry import monitor_operation
+            class HintForUpdate:
+                @monitor_operation(activity_name="pf.flows.test")
+                def hint_func(self):
+                    return
+
             mock_datetime.datetime.now.return_value = datetime.datetime.now()
             mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
             mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
-            hint_for_update()
-            prev_time = time.perf_counter()
-            thread = threading.Thread(target=check_latest_version, daemon=True)
-            time1 = time.perf_counter() - prev_time
-            thread.start()
-            time2 = time.perf_counter() - prev_time
+            HintForUpdate().hint_func()
             assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
-            assert time2 - time1 < 0.1
+            with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
+                cached_versions = json.load(f)
+            # since mock_check_latest_version is a demon thread, it will exit when main thread complete, so
+            # LAST_CHECK_TIME won't be updated since sleep 5s
+            assert LAST_CHECK_TIME not in cached_versions
+            print("Main thread exiting...")
+
 
     @pytest.mark.parametrize(
         "data_path",
