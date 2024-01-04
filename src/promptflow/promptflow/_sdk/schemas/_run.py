@@ -48,6 +48,23 @@ class RemotePathStr(fields.Str):
             )
 
 
+class RemoteFlowStr(fields.Str):
+    default_error_messages = {
+        "invalid_path": "Invalid remote flow path. " "Currently only azureml:xxx is supported",
+    }
+
+    def _validate(self, value):
+        # inherited validations like required, allow_none, etc.
+        super(RemoteFlowStr, self)._validate(value)
+
+        if value is None:
+            return
+        if not isinstance(value, str) or not value.startswith("azureml:"):
+            raise self.make_error(
+                "invalid_path",
+            )
+
+
 class RunSchema(YamlFileSchema):
     """Base schema for all run schemas."""
 
@@ -60,7 +77,7 @@ class RunSchema(YamlFileSchema):
     properties = fields.Dict(keys=fields.Str(), values=fields.Str(allow_none=True))
     # endregion: common fields
 
-    flow = UnionField([LocalPathField(required=True), fields.Str(required=True)])
+    flow = UnionField([LocalPathField(required=True), RemoteFlowStr(required=True)])
     # inputs field
     data = UnionField([LocalPathField(), RemotePathStr()])
     column_mapping = fields.Dict(keys=fields.Str)
