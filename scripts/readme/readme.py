@@ -298,21 +298,14 @@ def write_readme(workflow_telemetries, readme_telemetries):
         f.write(template.render(replacement))
     print("finished writing README.md")
 
-
-if __name__ == "__main__":
-    # setup argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-c", "--check", action="store_true", help="Check what file is affected"
-    )
-    args = parser.parse_args()
-    if (args.check):
+def main(check):
+    if (check):
         # Disable print
         sys.stdout = open(os.devnull, 'w')
 
     input_glob = ["examples/**/*.ipynb"]
     workflow_telemetry = []
-    workflow_generator.main(input_glob, workflow_telemetry, check=args.check)
+    workflow_generator.main(input_glob, workflow_telemetry, check=check)
 
     input_glob_readme = [
         "examples/flows/**/README.md",
@@ -329,7 +322,7 @@ if __name__ == "__main__":
 
     write_readme(workflow_telemetry, readme_telemetry)
 
-    if (args.check):
+    if (check):
         output_object = {}
         for workflow in workflow_telemetry:
             workflow_items = re.split('\[|,| |\]',workflow.path_filter)
@@ -353,4 +346,17 @@ if __name__ == "__main__":
                 output_object[readme.workflow_name].append(item)
         # enable output
         sys.stdout = sys.__stdout__
-        print(json.dumps(output_object))
+        return output_object
+    else:
+        return ""
+
+if __name__ == "__main__":
+    # setup argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c", "--check", action="store_true", help="Check what file is affected"
+    )
+    args = parser.parse_args()
+    output = main(args.check)
+    print(json.dumps(output))
+

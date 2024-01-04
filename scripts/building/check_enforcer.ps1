@@ -22,16 +22,13 @@ param(
 )
 
 $github_repository = 'microsoft/promptflow'
-$snippet_debug = 1 # Write debug info to console.
+$snippet_debug = 1
 
-# Special cases for pipelines that need to be triggered more or less than default value 1.
-# If 0, the pipeline will not be ignored in check enforcer.
 $special_care = @{
     "sdk_cli_tests" = 4;
     "sdk_cli_azure_test" = 4;
 }
 
-# copy from original yaml pipelines
 $checks = @{
     "sdk_cli_tests" = @("src/promptflow/**", "scripts/building/**", ".github/workflows/promptflow-sdk-cli-test.yml")
     "sdk_cli_global_config_tests" = @("src/promptflow/**", "scripts/building/**", ".github/workflows/promptflow-global-config-test.yml")
@@ -56,8 +53,6 @@ if ($MergeCommit -eq "") {
 }
 
 function sdk_cli_trigger_checks([ref]$failed_reason_ref, [ref]$valid_status_array_ref) {
-    # Check if all sdk cli pipelines are triggered.
-    # return all valid checks when successful
     $failed_reason_ref.Value = ""
 
     $(gh api /repos/$github_repository/commits/$MergeCommit/check-suites) `
@@ -87,7 +82,6 @@ function sdk_cli_trigger_checks([ref]$failed_reason_ref, [ref]$valid_status_arra
             }
         }
     }
-    # Get pipelines of commit. count should match.
     foreach ($key in $pipelines.Keys) {
         if ($pipelines_count[$key] -lt $pipelines[$key]) {
             $failed_reason_ref.Value = "Not all pipelines are triggered."
@@ -96,7 +90,6 @@ function sdk_cli_trigger_checks([ref]$failed_reason_ref, [ref]$valid_status_arra
 }
 function sdk_cli_checks([ref]$failed_reason_ref, $valid_status_array) {
     $failed_reason_ref.Value = ""
-    # Basic fact of sdk cli checked pipelines
 
     $valid_status_array `
     | ForEach-Object {
@@ -156,14 +149,9 @@ function trigger_prepare($input_paths, [ref]$failed_reason_ref) {
             }
         }
     }
-    # render $pipelines and $pipelines_count using $input_paths
     foreach ($input_path in $input_paths) {
-        # input pattern /**: input_path should match in the middle
-        # input pattern /*: input_path should match last but one
-        # other input pattern: input_path should match last
         $keys = $reverse_checks.Keys
-        $keys = $keys | Where-Object { (python $GithubWorkspace/scripts/building/fnmatch.py -g $_ -f $input_path) -eq "True" }
-        # $reverse_checks.Keys and $keys
+        $keys = $keys | Where-Object { (python $GithubWorkspace/scripts/building/fnmatch.py -g "$_" -f "$input_path") -eq "True" }
         foreach ($key_item in $keys) {
             foreach ($key in $reverse_checks[$key_item]) {
                 if ($pipelines.ContainsKey($key)) {
@@ -199,8 +187,6 @@ function run_checks() {
         $failed_reason = ""
         $valid_status_array = @()
 
-        # Get all triggered pipelines.
-        # If not all pipelines are triggered, continue.
         if ($sdk_cli_check -eq $true) {
             sdk_cli_trigger_checks ([ref]$failed_reason) ([ref]$valid_status_array)
         }
@@ -213,10 +199,6 @@ function run_checks() {
             continue
         }
 
-        # Get pipeline conclusion Priority:
-        # 1. Not successful, Fail.
-        # 2. Not finished, Continue.
-        # 3. Successful, Break.
         if ($sdk_cli_check -eq $true) {
             sdk_cli_checks ([ref]$failed_reason) $valid_status_array
         }
