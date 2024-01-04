@@ -64,7 +64,7 @@ def trigger_checks(valid_status_array):
 
     for key in pipelines.keys():
         if pipelines_count[key] < pipelines[key]:
-            failed_reason[0] = "Not all pipelines are triggered."
+            failed_reason = "Not all pipelines are triggered."
 
 def status_checks(valid_status_array):
     global failed_reason
