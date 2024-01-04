@@ -21,6 +21,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: |
+            SET-PSDebug -Trace 1
             . .\scripts\building\check_enforcer.ps1 -GithubWorkspace ${{ github.workspace }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
