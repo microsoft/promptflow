@@ -21,6 +21,9 @@ from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
 
+PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME = "_pf_async_nodes_scheduler.execute"
+LONG_RUNNING_TASK_LOGGING_INTERVAL_SECONDS = 60
+
 
 class AsyncNodesScheduler:
     def __init__(
@@ -31,6 +34,8 @@ class AsyncNodesScheduler:
         self._tools_manager = tools_manager
         # TODO: Add concurrency control in execution
         self._node_concurrency = node_concurrency
+        self._task_start_time = {}
+        self._task_last_log_time = {}
 
     async def execute(
         self,
@@ -46,6 +51,18 @@ class AsyncNodesScheduler:
             flow_logger.info(
                 "Current thread is not main thread, skip signal handler registration in AsyncNodesScheduler."
             )
+
+        loop = asyncio.get_running_loop()
+        monitor = threading.Thread(
+            target=monitor_long_running_coroutine,
+            args=(loop, self._task_start_time, self._task_last_log_time),
+            daemon=True,
+        )
+        monitor.start()
+
+        # Set the name of scheduler tasks to avoid monitoring its duration
+        task = asyncio.current_task()
+        task.set_name(PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME)
 
         parent_context = contextvars.copy_context()
         executor = ThreadPoolExecutor(
@@ -81,6 +98,8 @@ class AsyncNodesScheduler:
         if not task2nodes:
             raise NoNodeExecutedError("No nodes are ready for execution, but the flow is not completed.")
         tasks = [task for task in task2nodes]
+        for task in tasks:
+            self._task_start_time[task] = time.time()
         done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         dag_manager.complete_nodes({task2nodes[task].name: task.result() for task in done})
         for task in done:
@@ -141,6 +160,57 @@ def signal_handler(sig, frame):
     monitor = threading.Thread(target=monitor_coroutine_after_cancellation, args=(loop,))
     monitor.start()
     raise KeyboardInterrupt
+
+
+def log_stack_recursively(task: asyncio.Task, elapse_time: float):
+    """Recursively log the frame of a task or coroutine.
+    Traditional stacktrace would stop at the first awaited nested inside the coroutine.
+
+    :param task: Task to log
+    :type task_or_coroutine: asyncio.Task
+    :param elapse_time: Seconds elapsed since the task started
+    :type elapse_time: float
+    """
+    messages = [f"Task {task.get_name()} has been running for {elapse_time:.0f} seconds, stacktrace:"]
+    task_or_coroutine = task
+    while True:
+        if isinstance(task_or_coroutine, asyncio.Task):
+            # For a task, get the coroutine it's running
+            coroutine: asyncio.coroutine = task_or_coroutine.get_coro()
+        elif asyncio.iscoroutine(task_or_coroutine):
+            coroutine = task_or_coroutine
+        else:
+            flow_logger.info("\n".join(messages))
+            return
+
+        frame = coroutine.cr_frame
+        if frame is not None:
+            messages.append(str(inspect.getframeinfo(frame)))
+
+        # Follow to the next awaited coroutine, if any
+        task_or_coroutine = coroutine.cr_await
+
+
+def monitor_long_running_coroutine(loop: asyncio.AbstractEventLoop, task_start_time: dict, task_last_log_time: dict):
+    flow_logger.info("monitor_long_running_coroutine started")
+    while True:
+        running_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
+        # get duration of running tasks
+        for task in running_tasks:
+            if task.get_name() == PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME:
+                continue
+            if task_start_time.get(task) is None:
+                flow_logger.warning(f"task {task.get_name()} has no start time, which should not happen")
+            else:
+                duration = time.time() - task_start_time[task]
+                if duration > LONG_RUNNING_TASK_LOGGING_INTERVAL_SECONDS:
+                    if (
+                        task_last_log_time.get(task) is None
+                        or time.time() - task_last_log_time[task] > LONG_RUNNING_TASK_LOGGING_INTERVAL_SECONDS
+                    ):
+                        log_stack_recursively(task, duration)
+                        task_last_log_time[task] = time.time()
+        time.sleep(1)
 
 
 def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
