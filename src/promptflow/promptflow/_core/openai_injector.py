@@ -4,7 +4,9 @@
 
 import asyncio
 import functools
+import importlib
 import inspect
+import logging
 import os
 from datetime import datetime
 from importlib.metadata import version
@@ -156,6 +158,52 @@ def inject_sync(f):
     return wrapper_fun
 
 
+def _openai_api_list(sync=True):
+    if IS_LEGACY_OPENAI:
+        sync_apis = (
+            ("openai", "Completion", "create"),
+            ("openai", "ChatCompletion", "create"),
+            ("openai", "Embedding", "create"),
+        )
+
+        async_apis = (
+            ("openai", "Completion", "acreate"),
+            ("openai", "ChatCompletion", "acreate"),
+            ("openai", "Embedding", "acreate"),
+        )
+    else:
+        sync_apis = (
+            ("openai.resources.chat", "Completions", "create"),
+            ("openai.resources", "Completions", "create"),
+            ("openai.resources", "Embeddings", "create"),
+        )
+
+        async_apis = (
+            ("openai.resources.chat", "AsyncCompletions", "create"),
+            ("openai.resources", "AsyncCompletions", "create"),
+            ("openai.resources", "AsyncEmbeddings", "create"),
+        )
+
+    yield from sync_apis if sync else async_apis
+
+
+def _generate_api_and_injector(apis, sync=True):
+    for module_name, class_name, method_name in apis:
+        try:
+            module = importlib.import_module(module_name)
+            api = getattr(module, class_name)
+            if hasattr(api, method_name):
+                yield api, method_name, inject_sync if sync else inject_async
+        except AttributeError as e:
+            # Log the attribute exception with the missing class information
+            logging.warning(
+                f"AttributeError: The module '{module_name}' does not have the class '{class_name}'. {str(e)}"
+            )
+        except Exception as e:
+            # Log other exceptions as a warning, as we're not sure what they might be
+            logging.warning(f"An unexpected error occurred: {str(e)}")
+
+
 def available_openai_apis_and_injectors():
     """
     Generates a sequence of tuples containing OpenAI API classes, method names, and
@@ -168,46 +216,8 @@ def available_openai_apis_and_injectors():
     Yields:
         Tuples of (api_class, method_name, injector_function)
     """
-    # Define API tuples for legacy and new OpenAI interfaces
-    if IS_LEGACY_OPENAI:
-        sync_apis = (
-            (openai, "Completion", "create", inject_sync),
-            (openai, "ChatCompletion", "create", inject_sync),
-            (openai, "Embedding", "create", inject_sync),
-        )
-
-        async_apis = (
-            (openai, "Completion", "acreate", inject_async),
-            (openai, "ChatCompletion", "acreate", inject_async),
-            (openai, "Embedding", "acreate", inject_async),
-        )
-    else:
-        sync_apis = (
-            (openai.resources.chat, "Completions", "create", inject_sync),
-            (openai.resources, "Completions", "create", inject_sync),
-            (openai.resources, "Embeddings", "create", inject_sync),
-        )
-
-        async_apis = (
-            (openai.resources.chat, "AsyncCompletions", "create", inject_async),
-            (openai.resources, "AsyncCompletions", "create", inject_async),
-            (openai.resources, "AsyncEmbeddings", "create", inject_async),
-        )
-
-    # Helper function to check if the API methods exist and yield the valid tuples
-    def check_apis(apis):
-        for module, clz, method, injector in apis:
-            try:
-                api = getattr(module, clz)
-                if hasattr(api, method):
-                    yield api, method, injector
-            except Exception:
-                # Ignore all exceptions to avoid breaking changes due to future upgrades
-                pass
-
-    # Yield all valid API tuples for both sync and async APIs
-    yield from check_apis(sync_apis)
-    yield from check_apis(async_apis)
+    yield from _generate_api_and_injector(_openai_api_list(sync=True), sync=True)
+    yield from _generate_api_and_injector(_openai_api_list(sync=False), sync=False)
 
 
 def inject_openai_api():
@@ -218,7 +228,8 @@ def inject_openai_api():
     """
 
     for api, method, injector in available_openai_apis_and_injectors():
-        setattr(api, method, injector(getattr(api, method)))
+        if not hasattr(getattr(api, method), "_original"):
+            setattr(api, method, injector(getattr(api, method)))
 
     if IS_LEGACY_OPENAI:
         # For the openai versions lower than 1.0.0, it reads api configs from environment variables only at

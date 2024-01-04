@@ -1,7 +1,8 @@
+import logging
 from collections import namedtuple
 from importlib.metadata import version
 from types import GeneratorType
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import openai
 import pytest
@@ -9,10 +10,14 @@ import pytest
 from promptflow._core.openai_injector import (
     PROMPTFLOW_PREFIX,
     USER_AGENT_HEADER,
-    available_openai_apis_and_injectors,
+    _generate_api_and_injector,
+    _openai_api_list,
     get_aoai_telemetry_headers,
+    inject_async,
     inject_openai_api,
     inject_operation_headers,
+    inject_sync,
+    recover_openai_api,
 )
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.tracer import Tracer
@@ -23,6 +28,12 @@ from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.embedding import embedding
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
+
+
+# Mock classes and functions for test
+class MockAPI:
+    def create(self):
+        pass
 
 
 @pytest.mark.unittest
@@ -294,122 +305,114 @@ def test_aoai_chat_tool_prompt():
 
 
 @pytest.mark.parametrize(
-    "removed_api, expected_apis",
+    "is_legacy, sync, expected_apis",
     [
         (
-            None,
-            {
-                "openai.resources.completions.Completions",
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.Embeddings",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
+            True,
+            True,
+            (
+                ("openai", "Completion", "create"),
+                ("openai", "ChatCompletion", "create"),
+                ("openai", "Embedding", "create"),
+            ),
         ),
         (
-            "Completions",
-            {
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.Embeddings",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
+            True,
+            False,
+            (
+                ("openai", "Completion", "acreate"),
+                ("openai", "ChatCompletion", "acreate"),
+                ("openai", "Embedding", "acreate"),
+            ),
         ),
         (
-            "chat.Completions",
-            {
-                "openai.resources.completions.Completions",
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.Embeddings",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
+            False,
+            True,
+            (
+                ("openai.resources.chat", "Completions", "create"),
+                ("openai.resources", "Completions", "create"),
+                ("openai.resources", "Embeddings", "create"),
+            ),
         ),
         (
-            "Embeddings",
-            {
-                "openai.resources.completions.Completions",
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
-        ),
-        (
-            "AsyncCompletions",
-            {
-                "openai.resources.completions.Completions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.Embeddings",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
-        ),
-        (
-            "chat.AsyncCompletions",
-            {
-                "openai.resources.completions.Completions",
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.embeddings.Embeddings",
-                "openai.resources.embeddings.AsyncEmbeddings",
-            },
-        ),
-        (
-            "AsyncEmbeddings",
-            {
-                "openai.resources.completions.Completions",
-                "openai.resources.completions.AsyncCompletions",
-                "openai.resources.chat.completions.Completions",
-                "openai.resources.chat.completions.AsyncCompletions",
-                "openai.resources.embeddings.Embeddings",
-            },
+            False,
+            False,
+            (
+                ("openai.resources.chat", "AsyncCompletions", "create"),
+                ("openai.resources", "AsyncCompletions", "create"),
+                ("openai.resources", "AsyncEmbeddings", "create"),
+            ),
         ),
     ],
 )
-def test_availabe_openai_apis(removed_api, expected_apis):
-    def validate_api_set(expected_apis):
-        available_apis = available_openai_apis_and_injectors()
-        generated_apis = set()
-        for api, method, _ in available_apis:
-            assert hasattr(api, method)
-            generated_apis.add(f"{api.__module__}.{api.__qualname__}")
-        print(generated_apis)
-        assert generated_apis == expected_apis
-
-    if removed_api:
-        with patch(f"openai.resources.{removed_api}", new=None):
-            validate_api_set(expected_apis)
-    else:
-        validate_api_set(expected_apis)
+def test_api_list(is_legacy, sync, expected_apis):
+    with patch("promptflow._core.openai_injector.IS_LEGACY_OPENAI", is_legacy):
+        apis = list(_openai_api_list(sync=sync))
+        assert apis == list(expected_apis)
 
 
-@pytest.mark.skipif(not IS_LEGACY_OPENAI, reason="Skip on openai>=1.0.0")
 @pytest.mark.parametrize(
-    "removed_api, expected_apis",
+    "sync, expected_output, expected_logs",
     [
-        (None, {"Completion", "ChatCompletion", "Embedding"}),
-        ("ChatCompletion", {"Completion", "Embedding"}),
-        ("Embedding", {"Completion", "ChatCompletion"}),
+        (True, [(MockAPI, "create", inject_sync)], []),
+        (False, [(MockAPI, "create", inject_async)], []),
     ],
 )
-def test_availabe_openai_apis_for_legacy_openai(removed_api, expected_apis):
-    def validate_api_set(expected_apis):
-        available_apis = available_openai_apis_and_injectors()
-        generated_apis = set()
-        for api, method, _ in available_apis:
-            assert hasattr(api, method)
-            generated_apis.add(f"{api.__name__}")
-        print(generated_apis)
-        assert generated_apis == expected_apis
+def test_generate_api_and_injector(sync, expected_output, expected_logs, caplog):
+    apis = [
+        ("MockModule", "MockAPI", "create"),
+    ]
+    with patch("importlib.import_module", return_value=MagicMock(MockAPI=MockAPI)) as mock_import_module:
+        # Capture the logs
+        with caplog.at_level(logging.WARNING):
+            # Run the generator and collect the output
+            result = list(_generate_api_and_injector(apis, sync))
 
-    if removed_api:
-        with patch(f"openai.{removed_api}", new=None):
-            validate_api_set(expected_apis)
-    else:
-        validate_api_set(expected_apis)
+        # Check if the result matches the expected output
+        for (api, method_name, injector), (expected_api, expected_method_name, expected_injector) in zip(
+            result, expected_output
+        ):
+            assert api == expected_api
+            assert method_name == expected_method_name
+            assert injector == expected_injector
+
+        # Check if the logs match the expected logs
+        assert len(caplog.records) == len(expected_logs)
+        for record, expected_message in zip(caplog.records, expected_logs):
+            assert expected_message in record.message
+
+    mock_import_module.assert_called_with("MockModule")
+
+
+def test_generate_api_and_injector_attribute_error_logging(caplog):
+    apis = [
+        ("NonExistentModule", "NonExistentAPI", "create"),
+        ("MockModuleMissingMethod", "MockAPIMissingMethod", "missing_method"),
+    ]
+
+    # Set up the side effect for the mock
+    def import_module_effect(name):
+        if name == "MockModuleMissingMethod":
+            module = MagicMock()
+            delattr(module, "MockAPIMissingMethod")  # Use delattr to remove the attribute
+            return module
+        else:
+            raise ModuleNotFoundError(f"No module named '{name}'")
+
+    with patch("importlib.import_module") as mock_import_module:
+        mock_import_module.side_effect = import_module_effect
+        with caplog.at_level(logging.WARNING):
+            list(_generate_api_and_injector(apis, sync=True))
+
+        assert len(caplog.records) == 2
+        assert "An unexpected error occurred" in caplog.records[0].message
+        assert "NonExistentModule" in caplog.records[0].message
+        assert "does not have the class" in caplog.records[1].message
+        assert "MockAPIMissingMethod" in caplog.records[1].message
+
+    # Verify that `importlib.import_module` was called with correct module names
+    mock_import_module.assert_any_call("NonExistentModule")
+    mock_import_module.assert_any_call("MockModuleMissingMethod")
 
 
 @pytest.mark.unittest
@@ -445,3 +448,64 @@ def test_get_aoai_telemetry_headers():
         assert headers[f"{PROMPTFLOW_PREFIX}index"] == "1"
         assert headers[f"{PROMPTFLOW_PREFIX}run-id"] == "test-run-id"
         assert headers[f"{PROMPTFLOW_PREFIX}variant-id"] == "test-variant-id"
+
+
+@pytest.mark.unittest
+def test_inject_and_recover_openai_api():
+    class FakeAPIWithoutOriginal:
+        @staticmethod
+        def create():
+            pass
+
+    class FakeAPIWithOriginal:
+        @staticmethod
+        def create():
+            pass
+
+    def dummy_api():
+        pass
+
+    # Real injector function that adds an _original attribute
+    def injector(f):
+        def wrapper_fun(*args, **kwargs):
+            return f(*args, **kwargs)
+
+        wrapper_fun._original = f
+        return wrapper_fun
+
+    # Set an _original attribute for the create method of FakeAPIWithOriginal
+    FakeAPIWithOriginal.create._original = dummy_api
+
+    # Store the original create methods before injection
+    original_api_without_original = FakeAPIWithoutOriginal.create
+    original_api_with_original = FakeAPIWithOriginal.create
+
+    # Mock the generator function to yield our mocked api and method
+    with patch(
+        "promptflow._core.openai_injector.available_openai_apis_and_injectors",
+        return_value=[(FakeAPIWithoutOriginal, "create", injector), (FakeAPIWithOriginal, "create", injector)],
+    ):
+        # Call the function to inject the APIs
+        inject_openai_api()
+
+        # Check that the _original attribute was set for the method that didn't have it
+        assert hasattr(FakeAPIWithoutOriginal.create, "_original")
+        # Ensure the _original attribute points to the correct original method
+        assert FakeAPIWithoutOriginal.create._original is original_api_without_original
+
+        # Check that the injector was not applied again to the method that already had an _original attribute
+        # The _original attribute should still point to the mock, not the original method
+        assert getattr(FakeAPIWithOriginal.create, "_original") is not FakeAPIWithOriginal.create
+        # The original method should remain unchanged
+        assert FakeAPIWithOriginal.create is original_api_with_original
+
+        # Call the function to recover the APIs
+        recover_openai_api()
+
+        # Check that the _original attribute was removed for the method that didn't have it
+        assert not hasattr(FakeAPIWithoutOriginal.create, "_original")
+        assert not hasattr(FakeAPIWithOriginal.create, "_original")
+
+        # The original methods should be restored
+        assert FakeAPIWithoutOriginal.create is original_api_without_original
+        assert FakeAPIWithOriginal.create is dummy_api
