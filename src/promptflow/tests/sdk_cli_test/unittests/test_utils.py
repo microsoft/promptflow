@@ -229,7 +229,6 @@ class TestUtils:
             # since mock_check_latest_version is a demon thread, it will exit when main thread complete, so
             # LAST_CHECK_TIME won't be updated since sleep 5s
             assert LAST_CHECK_TIME not in cached_versions or cached_versions[LAST_CHECK_TIME] != str(current_time)
-            print("Main thread exiting...")
 
     @pytest.mark.parametrize(
         "data_path",
