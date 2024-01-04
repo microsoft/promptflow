@@ -1,4 +1,3 @@
-
 # Import necessary libraries
 import os
 import fnmatch
@@ -9,30 +8,40 @@ import json
 import sys
 
 # Define variables
-github_repository = 'microsoft/promptflow'
-snippet_debug = 1 # Write debug info to console.
+github_repository = "microsoft/promptflow"
+snippet_debug = 1  # Write debug info to console.
 merge_commit = ""
 loop_times = 30
 github_workspace = os.path.expanduser("~/promptflow/")
 
 # Special cases for pipelines that need to be triggered more or less than default value 1.
 # If 0, the pipeline will not be ignored in check enforcer.
-special_care = {
-    "sdk_cli_tests": 4,
-    "sdk_cli_azure_test": 4
-}
+special_care = {"sdk_cli_tests": 4, "sdk_cli_azure_test": 4}
 
 # Copy from original yaml pipelines
 checks = {
-    "sdk_cli_tests": ["src/promptflow/**", "scripts/building/**", ".github/workflows/promptflow-sdk-cli-test.yml"],
-    "sdk_cli_global_config_tests": ["src/promptflow/**", "scripts/building/**", ".github/workflows/promptflow-global-config-test.yml"],
-    "sdk_cli_azure_test": ["src/promptflow/**", "scripts/building/**", ".github/workflows/promptflow-sdk-cli-azure-test.yml"]
+    "sdk_cli_tests": [
+        "src/promptflow/**",
+        "scripts/building/**",
+        ".github/workflows/promptflow-sdk-cli-test.yml",
+    ],
+    "sdk_cli_global_config_tests": [
+        "src/promptflow/**",
+        "scripts/building/**",
+        ".github/workflows/promptflow-global-config-test.yml",
+    ],
+    "sdk_cli_azure_test": [
+        "src/promptflow/**",
+        "scripts/building/**",
+        ".github/workflows/promptflow-sdk-cli-azure-test.yml",
+    ],
 }
 
 reverse_checks = {}
 pipelines = {}
 pipelines_count = {}
 failed_reason = ""
+
 
 # Define functions
 def trigger_checks(valid_status_array):
@@ -43,13 +52,19 @@ def trigger_checks(valid_status_array):
     global pipelines
     global pipelines_count
 
-    output = subprocess.check_output(f"gh api /repos/{github_repository}/commits/{merge_commit}/check-suites?per_page=100", shell=True)
+    output = subprocess.check_output(
+        f"gh api /repos/{github_repository}/commits/{merge_commit}/check-suites?per_page=100",
+        shell=True,
+    )
     check_suites = json.loads(output)["check_suites"]
     for suite in check_suites:
         if snippet_debug == 1:
             print(f"check-suites id {suite['id']}")
-        suite_id = suite['id']
-        output = subprocess.check_output(f"gh api /repos/{github_repository}/check-suites/{suite_id}/check-runs?per_page=100", shell=True)
+        suite_id = suite["id"]
+        output = subprocess.check_output(
+            f"gh api /repos/{github_repository}/check-suites/{suite_id}/check-runs?per_page=100",
+            shell=True,
+        )
         check_runs = json.loads(output)["check_runs"]
         for run in check_runs:
             if snippet_debug == 1:
@@ -58,13 +73,14 @@ def trigger_checks(valid_status_array):
                 value = pipelines[key]
                 if value == 0:
                     continue
-                if key in run['name']:
+                if key in run["name"]:
                     pipelines_count[key] += 1
                     valid_status_array.append(run)
 
     for key in pipelines.keys():
         if pipelines_count[key] < pipelines[key]:
             failed_reason = "Not all pipelines are triggered."
+
 
 def status_checks(valid_status_array):
     global failed_reason
@@ -76,18 +92,19 @@ def status_checks(valid_status_array):
     # Loop through each valid status array.
     for status in valid_status_array:
         # Check if the pipeline was successful.
-        if status["conclusion"].lower() == "success":
+        if status["conclusion"] and status["conclusion"].lower() == "success":
             # Add 1 to the count of successful pipelines.
             pass
         # Check if the pipeline failed.
-        elif status["conclusion"].lower() == "failure":
+        elif status["conclusion"] and status["conclusion"].lower() == "failure":
             failed_reason = "Required pipelines are not successful."
         # Check if the pipeline is still running.
         else:
             if failed_reason == "":
                 failed_reason = "Required pipelines are not finished."
         # Print the status of the pipeline to the console.
-        print(status["name"] + " is " + status["conclusion"] + ".")
+        print(status["name"] + " is checking.")
+
 
 def trigger_prepare(input_paths):
     global github_workspace
@@ -102,14 +119,23 @@ def trigger_prepare(input_paths):
             continue
         # Check if the input path contains "examples" or "samples".
         if "examples" in input_path or "samples" in input_path:
-            sys.path.append( os.path.expanduser(github_workspace + "/scripts/readme") )
+            sys.path.append(os.path.expanduser(github_workspace + "/scripts/readme"))
             from readme import main as readme_main
+
             os.chdir(os.path.expanduser(github_workspace))
 
             # Get the list of pipelines from the readme file.
             pipelines_samples = readme_main(check=True)
 
-            git_diff_files = [item for item in subprocess.check_output(["git", "diff", "--name-only", "HEAD"]).decode("utf-8").split("\n") if item != ""]
+            git_diff_files = [
+                item
+                for item in subprocess.check_output(
+                    ["git", "diff", "--name-only", "HEAD"]
+                )
+                .decode("utf-8")
+                .split("\n")
+                if item != ""
+            ]
             for _ in git_diff_files:
                 failed_reason = "Run readme generation before check in"
                 return
@@ -132,7 +158,9 @@ def trigger_prepare(input_paths):
         # Input pattern /**: input_path should match in the middle.
         # Input pattern /*: input_path should match last but one.
         # Other input pattern: input_path should match last.
-        keys = [key for key in reverse_checks.keys() if fnmatch.fnmatch(input_path, key)]
+        keys = [
+            key for key in reverse_checks.keys() if fnmatch.fnmatch(input_path, key)
+        ]
         # Loop through each key in the list of keys.
         for key_item in keys:
             # Loop through each pipeline in the list of pipelines.
@@ -148,6 +176,7 @@ def trigger_prepare(input_paths):
                 # Set the pipeline count to 0.
                 pipelines_count[key] = 0
 
+
 def run_checks():
     global github_repository
     global snippet_debug
@@ -157,7 +186,9 @@ def run_checks():
     global failed_reason
 
     if merge_commit == "":
-        merge_commit = subprocess.check_output(["git", "log", "-1"]).decode("utf-8").split("\n")
+        merge_commit = (
+            subprocess.check_output(["git", "log", "-1"]).decode("utf-8").split("\n")
+        )
         for line in merge_commit:
             if "Merge" in line:
                 merge_commit = line.split(" ")[-3]
@@ -169,7 +200,11 @@ def run_checks():
 
     os.chdir(github_workspace)
     # Get diff of current branch and main branch.
-    diff = subprocess.check_output(["git", "diff", "--name-only", "HEAD", "origin/main"]).decode("utf-8").split("\n")
+    diff = (
+        subprocess.check_output(["git", "diff", "--name-only", "HEAD", "origin/main"])
+        .decode("utf-8")
+        .split("\n")
+    )
 
     # Prepare how many pipelines should be triggered.
     trigger_prepare(diff)
@@ -217,6 +252,7 @@ def run_checks():
     # Check if the failed reason is not empty.
     if failed_reason != "":
         raise Exception(failed_reason)
+
 
 if __name__ == "__main__":
     # Run the checks.
