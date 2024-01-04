@@ -60,27 +60,9 @@ class AzureOpenAI(ToolProvider):
 
         return deployment_names
     
-    deployment_name_list_setting = DynamicList(function=list_deployment_names, input_mapping=("version", "version"))
-    versions_list_setting = DynamicList(function=list_versions)
-    input_settings = {
-        "deployment_name": InputSetting(
-            dynamic_list=deployment_name_list_setting,
-            allow_manual_entry=False,
-            is_multi_select=False,
-            enabled_by="version",
-        ),
-        "version": InputSetting(
-            dynamic_list=versions_list_setting,
-            allow_manual_entry= False,
-            is_multi_select=False,
-        )
-    }
+    
 
-
-    @tool(
-        streaming_option_parameter="stream",
-        input_settings=input_settings
-        )
+    @tool(streaming_option_parameter="stream")
     @handle_openai_error()
     def chat(
         self,
