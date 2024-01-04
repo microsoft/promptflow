@@ -93,11 +93,12 @@ def log_activity(
     except BaseException as e:  # pylint: disable=broad-except
         exception = e
         completion_status = ActivityCompletionStatus.FAILURE
-        error_category, error_type, error_target, error_message = _ErrorInfo.get_error_info(exception)
+        error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(exception)
         activity_info["error_category"] = error_category
         activity_info["error_type"] = error_type
         activity_info["error_target"] = error_target
         activity_info["error_message"] = error_message
+        activity_info["error_detail"] = error_detail
     finally:
         try:
             if first_call:

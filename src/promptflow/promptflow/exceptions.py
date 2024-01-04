@@ -6,12 +6,12 @@ import string
 import traceback
 from enum import Enum
 from functools import cached_property
-from azure.core.exceptions import HttpResponseError
 
 
 class ErrorCategory(str, Enum):
     UserError = "UserError"
     SystemError = "SystemError"
+    UNKNOWN = "Unknown"
 
 
 class ErrorTarget(str, Enum):
@@ -227,38 +227,52 @@ class _ErrorInfo:
     @classmethod
     def get_error_info(cls, e: Exception):
         if not isinstance(e, Exception):
-            return None, None, None, None
+            return None, None, None, None, None
 
         e = cls.select_exception(e)
         if cls._is_system_error(e):
-            return ErrorCategory.SystemError, cls._error_type(e), cls._error_target(e), cls._error_message(e)
+            return (
+                ErrorCategory.SystemError,
+                cls._error_type(e),
+                cls._error_target(e),
+                cls._error_message(e),
+                cls._error_detail(e),
+            )
+        if cls._is_user_error(e):
+            return (
+                ErrorCategory.UserError,
+                cls._error_type(e),
+                cls._error_target(e),
+                cls._error_message(e),
+                cls._error_detail(e),
+            )
 
-        return ErrorCategory.UserError, cls._error_type(e), cls._error_target(e), cls._error_message(e)
+        return ErrorCategory.UNKNOWN, cls._error_type(e), ErrorTarget.UNKNOWN, "", cls._error_detail(e)
 
     @classmethod
     def select_exception(cls, e: Exception):
         """Select the exception  in e and e.__cause__, and prioritize the Exception defined in the promptflow."""
 
-        if e.__cause__ and isinstance(e.__cause__, PromptflowException):
-            return e.__cause__
-
         if isinstance(e, PromptflowException):
             return e
 
-        if e.__cause__:
+        # raise Exception("message") from PromptflowException("message")
+        if e.__cause__ and isinstance(e.__cause__, PromptflowException):
             return e.__cause__
 
         return e
 
     @classmethod
     def _is_system_error(cls, e: Exception):
-        if isinstance(e, (SystemErrorException, HttpResponseError)):
+        if isinstance(e, SystemErrorException):
             return True
-        if hasattr(e, "status_code") or (hasattr(e, "response") and hasattr(e.response, "status_code")):
-            status_code = str(e.status_code) if hasattr(e, "status_code") else str(e.response.status_code)
-            # Except for 429, 400-499 are all client errors.
-            if not (status_code.startswith("4") and status_code != "429"):
-                return True
+
+        return False
+
+    @classmethod
+    def _is_user_error(cls, e: Exception):
+        if isinstance(e, UserErrorException):
+            return True
 
         return False
 
@@ -272,20 +286,21 @@ class _ErrorInfo:
 
     @classmethod
     def _error_message(cls, e: Exception):
+        return getattr(e, "message_format", "")
+
+    @classmethod
+    def _error_detail(cls, e: Exception):
         exception_codes = cls._get_exception_codes(e)
-        msg = "Non promptflow message, not recorded."
         exception_code = {
             "module": "Non promptflow module, not recorded.",
             "exception_code": "Non promptflow code, not recorded.",
             "lineno": "Non promptflow code lineno, not recorded.",
         }
-        for item in exception_codes[::-1]:  # Prioritize recording the location of promptflow package errors
-            if "promptflow" in item["module"]:
-                msg = getattr(e, "message_format", "")
+        for item in exception_codes[::-1]:
+            if "promptflow" in item["module"]:  # Only record information within the promptflow package
                 exception_code = item
                 break
         return (
-            f"exception msg={msg}, "
             f"exception module={exception_code['module']}, "
             f"exception code={exception_code['exception_code']}, "
             f"exception lineno={exception_code['lineno']}"
