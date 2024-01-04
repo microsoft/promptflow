@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+#---------------------------------------------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License. See License.txt in the project root for license information.
+#---------------------------------------------------------------------------------------------
+
+#
+# Bash script to install the prompt flow
+#
+INSTALL_SCRIPT_URL="https://promptflowartifact.blob.core.windows.net/linux-install-scripts/install.py"
+INSTALL_SCRIPT_SHA256=9bb4b883894027b81840a79a279f1173eb510d3a22c2f45e43942ddb36916279
+_TTY=/dev/tty
+
+install_script=$(mktemp -t promptflow_install_tmp_XXXXXX) || exit
+echo "Downloading prompt flow install script from $INSTALL_SCRIPT_URL to $install_script."
+curl -# $INSTALL_SCRIPT_URL > $install_script || exit
+
+if command -v sha256sum >/dev/null 2>&1
+then
+  echo "$INSTALL_SCRIPT_SHA256  $install_script" | sha256sum -c - || exit
+elif command -v shasum >/dev/null 2>&1
+then
+  echo "$INSTALL_SCRIPT_SHA256  $install_script" | shasum -a 256 -c - || exit
+fi
+
+python_cmd=python3
+if ! command -v python3 >/dev/null 2>&1
+then
+  echo "ERROR: python3 not found."
+  echo "If python3 is available on the system, add it to PATH."
+  exit 1
+fi
+
+chmod 775 $install_script
+echo "Running install script."
+$python_cmd $install_script < $_TTY
