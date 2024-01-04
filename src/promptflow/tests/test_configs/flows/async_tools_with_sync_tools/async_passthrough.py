@@ -1,6 +1,7 @@
 from promptflow import tool
 import asyncio
 
+
 @tool
 async def passthrough_str_and_wait(input1: str, wait_seconds=3, wait_seconds_in_cancellation=1) -> str:
     assert isinstance(input1, str), f"input1 should be a string, got {input1}"

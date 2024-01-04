@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Tuple
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._utils.logger_utils import bulk_logger, flow_logger
+from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.utils import set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
@@ -130,7 +130,6 @@ def signal_handler(sig, frame):
     """
     Start a thread to monitor coroutines after receiving signal.
     """
-
     flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}), start coroutine monitor thread.")
     loop = asyncio.get_running_loop()
     monitor = threading.Thread(target=monitor_coroutine_after_cancellation, args=(loop,))
