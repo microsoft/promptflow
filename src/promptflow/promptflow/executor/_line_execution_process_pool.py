@@ -344,9 +344,15 @@ class LineExecutionProcessPool:
         self._control_signal_queue = manager.Queue()
         self._process_info = manager.dict()
 
+        # when using fork, we first create a process with spawn method to establish a clean environment
+        # Then fork the subprocess in this environment to avoid some deadlock problems
         if self._use_fork:
-            # when using fork, we first create a process with spawn method to establish a clean environment
-            # Then fork the subprocess in this environment to avoid some deadlock problems
+            # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
+            # 2. Pass the above queue/dict as parameters to spawn and fork processes to transfer information
+            # between processes.
+            # 3. In the spawn child process, fork _n_process sub-process and start them.
+            # 4. Create _n_process monitoring threads, mainly used to assign tasks and send signals to fork sub-processes,
+            # including restart, kill and start.
             self._processes_manager = ForkProcessManager(
                 self._control_signal_queue,
                 self._flow_file,
