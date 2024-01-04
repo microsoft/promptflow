@@ -210,8 +210,7 @@ class TestUtils:
             time.sleep(5)
             check_latest_version()
 
-        with (patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime,
-              patch("promptflow._utils.version_hint_utils.check_latest_version") as mocked_check_latest_version):
+        with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime, patch("promptflow._utils.version_hint_utils.check_latest_version") as mocked_check_latest_version:
             from promptflow._sdk._telemetry import monitor_operation
 
             class HintForUpdate:
