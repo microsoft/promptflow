@@ -18,32 +18,32 @@ def list_versions() -> List[Dict[str, str]]:
     return ["version1", "version2"]
 
 
- def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection, version) -> List[Dict[str, str]]:
-        from azure.identity import DefaultAzureCredential
+def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection, version) -> List[Dict[str, str]]:
+    from azure.identity import DefaultAzureCredential
 
-        credential = DefaultAzureCredential()
-        token = credential.get_token("https://management.azure.com/.default")
+    credential = DefaultAzureCredential()
+    token = credential.get_token("https://management.azure.com/.default")
 
-        url = (
-            f"https://ml.azure.com/api/eastus2euap/flow/api/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/"
-            f"Microsoft.MachineLearningServices/workspaces/{workspace_name}/Connections/{connection}/AzureOpenAIDeployments"
-        )
-        result = requests.get(url, headers={"Authorization": f"Bearer {token.token}"})
-        import json
-        deployments = json.loads(result.text)
-        
-        deployment_names=[]
-        for deployment in deployments:
-            if(deployment.get("capabilities", {}).get("chat_completion", False)):
-                name = deployment.get('name')
-                cur_item = {
-                    "value": name,
-                    "display_value": name,
-                    "description": f"this is endpoint: {name}",
-                }
-                deployment_names.add(cur_item)
+    url = (
+        f"https://ml.azure.com/api/eastus2euap/flow/api/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/"
+        f"Microsoft.MachineLearningServices/workspaces/{workspace_name}/Connections/{connection}/AzureOpenAIDeployments"
+    )
+    result = requests.get(url, headers={"Authorization": f"Bearer {token.token}"})
+    import json
+    deployments = json.loads(result.text)
+    
+    deployment_names=[]
+    for deployment in deployments:
+        if(deployment.get("capabilities", {}).get("chat_completion", False)):
+            name = deployment.get('name')
+            cur_item = {
+                "value": name,
+                "display_value": name,
+                "description": f"this is endpoint: {name}",
+            }
+            deployment_names.add(cur_item)
 
-        return deployment_names
+    return deployment_names
 
 
 class AzureOpenAI(ToolProvider):
