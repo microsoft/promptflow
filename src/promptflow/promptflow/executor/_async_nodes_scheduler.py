@@ -3,24 +3,23 @@
 # ---------------------------------------------------------
 
 import asyncio
-import inspect
 import contextvars
+import inspect
 import os
 import signal
-import sys
 import threading
 import time
 from asyncio import Task
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Tuple
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._utils.logger_utils import flow_logger
+from promptflow._utils.logger_utils import bulk_logger, flow_logger
 from promptflow._utils.utils import set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
-from concurrent.futures import ThreadPoolExecutor
 
 
 class AsyncNodesScheduler:
@@ -96,8 +95,7 @@ class AsyncNodesScheduler:
             nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         # Create tasks for ready nodes
         return {
-            self._create_node_task(node, dag_manager, context, executor): node
-            for node in dag_manager.pop_ready_nodes()
+            self._create_node_task(node, dag_manager, context, executor): node for node in dag_manager.pop_ready_nodes()
         }
 
     def _create_node_task(
@@ -120,21 +118,19 @@ class AsyncNodesScheduler:
     @staticmethod
     async def _sync_function_to_async_task(
         executor: ThreadPoolExecutor,
-        context: FlowExecutionContext, node,
+        context: FlowExecutionContext,
+        node,
         f,
         kwargs,
     ):
-        return await asyncio.get_running_loop().run_in_executor(
-            executor, context.invoke_tool, node, f, kwargs
-        )
+        return await asyncio.get_running_loop().run_in_executor(executor, context.invoke_tool, node, f, kwargs)
 
 
 def signal_handler(sig, frame):
     """
     Start a thread to monitor coroutines after receiving signal.
     """
-    flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}),"
-                     " start coroutine monitor thread.")
+    flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name})," " start coroutine monitor thread.")
     loop = asyncio.get_running_loop()
     monitor = threading.Thread(target=monitor_coroutine_after_cancellation, args=(loop,))
     monitor.start()
@@ -167,7 +163,6 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
         all_tasks_are_done = all(task.done() for task in asyncio.all_tasks(loop))
         if all_tasks_are_done:
             flow_logger.info("All coroutines are done. Exiting.")
-            # sys.exit(0)
             os._exit(0)
 
         exceeded_wait_seconds = time.time() - thread_start_time > max_wait_seconds
@@ -175,12 +170,14 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
 
     if exceeded_wait_seconds:
         if not all_tasks_are_done:
-            flow_logger.info(f"Not all coroutines are done within {max_wait_seconds}s"
-                             " after cancellation. Exiting the process despite of them."
-                             " Please config the environment variable"
-                             " PF_WAIT_SECONDS_AFTER_CANCELLATION if your tool needs"
-                             " more time to clean up after cancellation.")
+            flow_logger.info(
+                f"Not all coroutines are done within {max_wait_seconds}s"
+                " after cancellation. Exiting the process despite of them."
+                " Please config the environment variable"
+                " PF_WAIT_SECONDS_AFTER_CANCELLATION if your tool needs"
+                " more time to clean up after cancellation."
+            )
             remaining_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
             flow_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
-        # sys.exit(0)
+            bulk_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
         os._exit(0)
