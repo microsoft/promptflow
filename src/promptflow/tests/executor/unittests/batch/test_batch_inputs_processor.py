@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -272,3 +273,22 @@ class TestBatchInputsProcessor:
         with pytest.raises(error_code) as e:
             BatchInputsProcessor("", {})._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         assert error_message == str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
+
+    @pytest.mark.parametrize(
+        "data_path",
+        [
+            "./tests/test_configs/datas/load_data_cases/10k.jsonl",
+            "./tests/test_configs/datas/load_data_cases/10k",
+        ],
+    )
+    def test_resolve_data_from_input_path(self, data_path):
+        result = BatchInputsProcessor("", {})._resolve_data_from_input_path(Path(data_path))
+        assert isinstance(result, list)
+        assert len(result) == 10000
+
+        # specify max_rows_count
+        max_rows_count = 5
+        head_results = BatchInputsProcessor("", {}, max_lines_count=max_rows_count)._resolve_data_from_input_path(Path(data_path))
+        assert isinstance(head_results, list)
+        assert len(head_results) == max_rows_count
+        assert result[:max_rows_count] == head_results
