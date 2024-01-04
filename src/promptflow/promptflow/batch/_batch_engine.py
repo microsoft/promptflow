@@ -122,6 +122,7 @@ class BatchEngine:
         :return: The result of this batch run
         :rtype: ~promptflow.batch._result.BatchResult
         """
+        self._executor_proxy: AbstractExecutorProxy = None
         try:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
