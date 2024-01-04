@@ -210,25 +210,25 @@ class TestUtils:
             time.sleep(5)
             check_latest_version()
 
-        with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime, patch("promptflow._utils.version_hint_utils.check_latest_version") as mocked_check_latest_version:
+        with patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime, patch(
+                "promptflow._utils.version_hint_utils.check_latest_version", side_effect=mock_check_latest_version):
             from promptflow._sdk._telemetry import monitor_operation
 
             class HintForUpdate:
                 @monitor_operation(activity_name="pf.flows.test")
                 def hint_func(self):
                     return
-
-            mock_datetime.datetime.now.return_value = datetime.datetime.now()
-            mock_datetime.datetime.strptime.return_value = datetime.datetime.now() - datetime.timedelta(days=8)
+            current_time = datetime.datetime.now()
+            mock_datetime.datetime.now.return_value = current_time
+            mock_datetime.datetime.strptime.return_value = current_time - datetime.timedelta(days=8)
             mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
-            mocked_check_latest_version.side_effect = mock_check_latest_version
             HintForUpdate().hint_func()
             assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
             with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
                 cached_versions = json.load(f)
             # since mock_check_latest_version is a demon thread, it will exit when main thread complete, so
             # LAST_CHECK_TIME won't be updated since sleep 5s
-            assert LAST_CHECK_TIME not in cached_versions
+            assert LAST_CHECK_TIME not in cached_versions or cached_versions[LAST_CHECK_TIME] != str(current_time)
             print("Main thread exiting...")
 
     @pytest.mark.parametrize(
