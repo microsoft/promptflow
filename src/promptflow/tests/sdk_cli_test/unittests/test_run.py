@@ -96,10 +96,17 @@ class TestRun:
 
     def test_run_invalid_flow_path(self):
         run_id = str(uuid.uuid4())
-        source = f"{RUNS_DIR}/bulk_run_invalid_flow.yaml"
+        source = f"{RUNS_DIR}/bulk_run_invalid_flow_path.yaml"
         with pytest.raises(ValidationError) as e:
             load_run(source=source, params_override=[{"name": run_id}])
         assert "Can't find directory or file in resolved absolute path:" in str(e.value)
+
+    def test_run_invalid_remote_flow(self):
+        run_id = str(uuid.uuid4())
+        source = f"{RUNS_DIR}/bulk_run_invalid_remote_flow_str.yaml"
+        with pytest.raises(ValidationError) as e:
+            load_run(source=source, params_override=[{"name": run_id}])
+        assert "Invalid remote flow path. Currently only azureml:xxx is supported" in str(e.value)
 
     def test_data_not_exist_validation_error(self):
         source = f"{RUNS_DIR}/sample_bulk_run.yaml"
