@@ -106,7 +106,7 @@ class TestRun:
         source = f"{RUNS_DIR}/bulk_run_invalid_remote_flow_str.yaml"
         with pytest.raises(ValidationError) as e:
             load_run(source=source, params_override=[{"name": run_id}])
-        assert "Invalid remote flow path. Currently only azureml:xxx is supported" in str(e.value)
+        assert "Invalid remote flow path. Currently only azureml:<flow-name> is supported" in str(e.value)
 
     def test_data_not_exist_validation_error(self):
         source = f"{RUNS_DIR}/sample_bulk_run.yaml"

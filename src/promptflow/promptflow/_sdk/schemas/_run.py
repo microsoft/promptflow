@@ -50,7 +50,7 @@ class RemotePathStr(fields.Str):
 
 class RemoteFlowStr(fields.Str):
     default_error_messages = {
-        "invalid_path": "Invalid remote flow path. " "Currently only azureml:xxx is supported",
+        "invalid_path": "Invalid remote flow path. Currently only azureml:<flow-name> is supported",
     }
 
     def _validate(self, value):
