@@ -25,7 +25,8 @@ nodes:
     path: async_passthrough.py
   inputs:
     input1: ${async_passthrough.output}
-    wait_seconds: 8
+    wait_seconds: 30
+    wait_seconds_in_cancellation: 1
 - name: sync_passthrough1
   type: python
   source:
