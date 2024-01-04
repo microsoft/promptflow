@@ -122,7 +122,6 @@ class BatchEngine:
         :return: The result of this batch run
         :rtype: ~promptflow.batch._result.BatchResult
         """
-        self._executor_proxy: AbstractExecutorProxy = None
         try:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
@@ -169,8 +168,10 @@ class BatchEngine:
                 )
                 raise unexpected_error from e
         finally:
-            # destroy the executor proxy and end the life cycle of the executor proxy
-            async_run_allowing_running_loop(self._executor_proxy.destroy)
+            # if an error is raised when creating the executor proxy, the executor proxy will be None at this time.
+            # so we need to check whether the executor proxy is None before destroying it.
+            if self._executor_proxy:
+                async_run_allowing_running_loop(self._executor_proxy.destroy)
 
     def cancel(self):
         """Cancel the batch run"""
