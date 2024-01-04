@@ -179,7 +179,7 @@ def run_checks():
     # Loop for 15 minutes at most.
     for i in range(loop_times):
         # Wait for 30 seconds.
-        time.sleep(3)
+        time.sleep(30)
 
         # Reset the failed reason.
         failed_reason = ""
