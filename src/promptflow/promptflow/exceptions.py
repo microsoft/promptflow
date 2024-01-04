@@ -320,11 +320,11 @@ class _ErrorInfo:
                 'lineno': 223
                 }
         """
-        key = str(id(e))
-        if cls._exception_codes.get(key):
-            return cls._exception_codes[key]
+        # key = str(id(e))
+        # if cls._exception_codes.get(key):
+        #     return cls._exception_codes[key]
 
-        cls._exception_codes[key] = []  # Considering multithreading, use dict to save.
+        _exception_codes = []  # Considering multithreading, use dict to save.
         traceback_info = traceback.extract_tb(e.__traceback__)
         for item in traceback_info:
             lineno = item.lineno
@@ -334,6 +334,6 @@ class _ErrorInfo:
             exception_code = {"module": "", "exception_code": line_code, "lineno": lineno}
             if module is not None:
                 exception_code["module"] = module.__name__
-            cls._exception_codes[key].append(exception_code)
+            _exception_codes.append(exception_code)
 
-        return cls._exception_codes.get(key, [])
+        return _exception_codes
