@@ -5,6 +5,11 @@
 import asyncio
 import inspect
 import contextvars
+import os
+import signal
+import sys
+import threading
+import time
 from asyncio import Task
 from typing import Any, Dict, List, Tuple
 
@@ -34,6 +39,9 @@ class AsyncNodesScheduler:
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+
         parent_context = contextvars.copy_context()
         executor = ThreadPoolExecutor(
             max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
@@ -105,7 +113,9 @@ class AsyncNodesScheduler:
             task = context.invoke_tool_async(node, f, kwargs)
         else:
             task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
-        return asyncio.create_task(task)
+        # Set the name of the task to the node name for debugging purpose
+        # It does not need to be unique by design.
+        return asyncio.create_task(task, name=node.name)
 
     @staticmethod
     async def _sync_function_to_async_task(
@@ -117,3 +127,58 @@ class AsyncNodesScheduler:
         return await asyncio.get_running_loop().run_in_executor(
             executor, context.invoke_tool, node, f, kwargs
         )
+
+
+def signal_handler(sig, frame):
+    """
+    Start a thread to monitor coroutines after receiving signal.
+    """
+    flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}),"
+                     " start coroutine monitor thread.")
+    loop = asyncio.get_running_loop()
+    monitor = threading.Thread(target=monitor_coroutine_after_cancellation, args=(loop,))
+    monitor.start()
+    raise KeyboardInterrupt
+
+
+def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
+    """Exit the process when all coroutines are done.
+    We add this function because if a sync tool is running in async mode,
+    the task will be cancelled after receiving SIGINT,
+    but the thread will not be terminated and blocks the program from exiting.
+    :param loop: event loop of main thread
+    :type loop: asyncio.AbstractEventLoop
+    """
+    # TODO: Use environment variable to ensure it is flow test scenario to avoid unexpected exit.
+    # E.g. Customer is integrating Promptflow in their own code, and they want to handle SIGINT by themselves.
+    max_wait_seconds = os.environ.get("PF_WAIT_SECONDS_AFTER_CANCELLATION", 30)
+
+    all_tasks_are_done = False
+    exceeded_wait_seconds = False
+
+    thread_start_time = time.time()
+    flow_logger.info(f"Start to monitor coroutines after cancellation, max wait seconds: {max_wait_seconds}s")
+
+    while not all_tasks_are_done and not exceeded_wait_seconds:
+        # For sync tool running in async mode, the task will be cancelled,
+        # but the thread will not be terminated, we exit the program despite of it.
+        # TODO: Detect whether there is any sync tool running in async mode,
+        # if there is none, avoid sys.exit and let the program exit gracefully.
+        all_tasks_are_done = all(task.done() for task in asyncio.all_tasks(loop))
+        if all_tasks_are_done:
+            flow_logger.info("All coroutines are done. Exiting.")
+            sys.exit(0)
+
+        exceeded_wait_seconds = time.time() - thread_start_time > max_wait_seconds
+        time.sleep(1)
+
+    if exceeded_wait_seconds:
+        if not all_tasks_are_done:
+            flow_logger.info(f"Not all coroutines are done within {max_wait_seconds}s"
+                             " after cancellation. Exiting the process despite of them."
+                             " Please config the environment variable"
+                             " PF_WAIT_SECONDS_AFTER_CANCELLATION if your tool needs"
+                             " more time to clean up after cancellation.")
+            remaining_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
+            flow_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
+        sys.exit(0)

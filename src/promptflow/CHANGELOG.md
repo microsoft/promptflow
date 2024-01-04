@@ -1,5 +1,11 @@
 # Release History
 
+## 1.4.0 (Upcoming)
+
+### Bugs Fixed
+
+- Fix unaligned inputs & outputs or pandas exception during get details against run in Azure.
+
 ## 1.3.0 (2023.12.27)
 
 ### Features Added
@@ -9,6 +15,7 @@
 - [Executor] Handle KeyboardInterrupt in flow test so that the final state is Canceled.
 - [Executor] Calculate system_metrics recursively in api_calls.
 - [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
+- [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
 
 ### Bugs Fixed
 - [SDK/CLI] Fix single node run doesn't work when consuming sub item of upstream node
@@ -16,6 +23,7 @@
 ### Improvements
 - Change `ruamel.yaml` lower bound to 0.17.10.
 - [SDK/CLI] Improve `pfazure run download` to handle large run data files.
+- [Executor] Exit the process when all async tools are done or exceeded timeout after cancellation.
 
 ## 1.2.0 (2023.12.14)
 

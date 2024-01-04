@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import uuid
 from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -1080,3 +1081,39 @@ class TestFlowRun:
         run_dict = run._to_dict()
         assert "error" in run_dict
         assert run_dict["error"] == exception
+
+    # TODO: remove this patch after executor switch to default spawn
+    @patch.dict(os.environ, {"PF_BATCH_METHOD": "spawn"}, clear=True)
+    def test_get_details_against_partial_completed_run(self, pf: PFClient) -> None:
+        flow_mod2 = f"{FLOWS_DIR}/mod-n/two"
+        flow_mod3 = f"{FLOWS_DIR}/mod-n/three"
+        data_path = f"{DATAS_DIR}/numbers.jsonl"
+        # batch run against data
+        run1 = pf.run(
+            flow=flow_mod2,
+            data=data_path,
+            column_mapping={"number": "${data.value}"},
+        )
+        pf.runs.stream(run1)
+        details1 = pf.get_details(run1)
+        assert len(details1) == 20
+        assert len(details1.loc[details1["outputs.output"] != "(Failed)"]) == 10
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details1.iterrows():
+            if str(row["outputs.output"]) != "(Failed)":
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
+
+        # batch run against previous run
+        run2 = pf.run(
+            flow=flow_mod3,
+            run=run1,
+            column_mapping={"number": "${run.outputs.output}"},
+        )
+        pf.runs.stream(run2)
+        details2 = pf.get_details(run2)
+        assert len(details2) == 10
+        assert len(details2.loc[details2["outputs.output"] != "(Failed)"]) == 4
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details2.iterrows():
+            if str(row["outputs.output"]) != "(Failed)":
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
