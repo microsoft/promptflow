@@ -351,8 +351,8 @@ class LineExecutionProcessPool:
             # 2. Pass the above queue/dict as parameters to spawn and fork processes to transfer information
             # between processes.
             # 3. In the spawn child process, fork _n_process sub-process and start them.
-            # 4. Create _n_process monitoring threads, mainly used to assign tasks and send signals to fork sub-processes,
-            # including restart, kill and start.
+            # 4. Create _n_process monitoring threads, mainly used to assign tasks and send signals to fork
+            # sub-processes, including restart, kill and start.
             self._processes_manager = ForkProcessManager(
                 self._control_signal_queue,
                 self._flow_file,
