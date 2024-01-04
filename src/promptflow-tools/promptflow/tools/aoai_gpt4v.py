@@ -14,7 +14,7 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, normalize_connection_config, \
     post_process_chat_api_response
 
-def list_versions() -> List[Dict[str, str]]:
+def list_versions() -> List[str]:
     return ["version1", "version2"]
 
 
