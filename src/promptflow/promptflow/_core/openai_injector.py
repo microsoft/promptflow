@@ -228,6 +228,7 @@ def inject_openai_api():
     """
 
     for api, method, injector in available_openai_apis_and_injectors():
+        # Check if the create method of the openai_api class has already been modified
         if not hasattr(getattr(api, method), "_original"):
             setattr(api, method, injector(getattr(api, method)))
 
