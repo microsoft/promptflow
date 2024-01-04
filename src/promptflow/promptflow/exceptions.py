@@ -222,8 +222,6 @@ class ValidationException(UserErrorException):
 
 
 class _ErrorInfo:
-    _exception_codes = dict()
-
     @classmethod
     def get_error_info(cls, e: Exception):
         if not isinstance(e, Exception):
@@ -320,11 +318,7 @@ class _ErrorInfo:
                 'lineno': 223
                 }
         """
-        # key = str(id(e))
-        # if cls._exception_codes.get(key):
-        #     return cls._exception_codes[key]
-
-        _exception_codes = []  # Considering multithreading, use dict to save.
+        exception_codes = []
         traceback_info = traceback.extract_tb(e.__traceback__)
         for item in traceback_info:
             lineno = item.lineno
@@ -334,6 +328,6 @@ class _ErrorInfo:
             exception_code = {"module": "", "exception_code": line_code, "lineno": lineno}
             if module is not None:
                 exception_code["module"] = module.__name__
-            _exception_codes.append(exception_code)
+            exception_codes.append(exception_code)
 
-        return _exception_codes
+        return exception_codes
