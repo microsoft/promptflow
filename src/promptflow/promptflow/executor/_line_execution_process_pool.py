@@ -28,7 +28,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
-from promptflow.executor._errors import LineExecutionTimeoutError
+from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
@@ -60,10 +60,14 @@ class QueueRunStorage(AbstractRunStorage):
         self.queue.put(run_info)
 
 
-def format_current_process(process_name, pid, line_number: int, is_completed=False):
+def format_current_process(process_name, pid, line_number: int, is_completed=False, is_failed=False):
     if is_completed:
         bulk_logger.info(
             f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} completed."
+        )
+    elif is_failed:
+        bulk_logger.info(
+            f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} failed."
         )
     else:
         bulk_logger.info(
@@ -189,6 +193,9 @@ class ForkProcessManager(ProcessManager):
     def end_process(self, idx):
         self._control_signal_queue.put(('end', idx))
 
+    def new_process(self, idx):
+        self._control_signal_queue.put(('start', idx))
+
 
 def fork_processes_manager(
         log_context_initialization_func,
@@ -204,13 +211,11 @@ def fork_processes_manager(
 ):
     signal.signal(signal.SIGINT, signal_handler)
     context = multiprocessing.get_context("fork")
-    run_storage = QueueRunStorage(output_queues[0])
     executor = FlowExecutor.create(
         flow_file=flow_file,
         connections=connections,
         working_dir=working_dir,
         raise_ex=raise_ex,
-        storage=run_storage
     )
     executor_creation_func = partial(create_executor_fork, flow_executor=executor)
 
@@ -250,23 +255,25 @@ def fork_processes_manager(
         elif control_signal == "restart":
             end_process(i)
             new_process(i)
+        elif control_signal == 'start':
+            new_process(i)
 
     while True:
         all_processes_stopped = True
         for _, info in list(process_info.items()):
             pid = info['pid']
-
             # Check if at least one process is alive.
             if psutil.pid_exists(pid):
                 process = psutil.Process(pid)
-                if process.is_running():
+                if process.status() != 'zombie':
                     all_processes_stopped = False
                 else:
-                    # Check if the process exits normally
-                    exit_code = process.wait()
-                    if exit_code != 0:
-                        all_processes_stopped = False
+                    # If do not call wait(), the child process may become a zombie process,
+                    # and psutil.pid_exists(pid) is always true, which will cause spawn proces
+                    # never exit.
+                    process.wait()
 
+        # If all fork child processes exit, exit the loop.
         if all_processes_stopped:
             break
         try:
@@ -275,37 +282,6 @@ def fork_processes_manager(
         except queue.Empty:
             # Do nothing until the process_queue have not content or process is killed
             pass
-
-
-def create_process_spawn(
-        input_queues,
-        output_queues,
-        control_signal_queue,
-        flow_file,
-        connections,
-        working_dir,
-        raise_ex
-):
-    context = multiprocessing.get_context("spawn")
-    current_log_context = LogContext.get_current()
-    log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
-    current_operation_context = OperationContext.get_instance().get_context_dict()
-
-    process = context.Process(
-        target=fork_processes_manager,
-        args=(
-            log_context_initialization_func,
-            current_operation_context,
-            input_queues,
-            output_queues,
-            control_signal_queue,
-            flow_file,
-            connections,
-            working_dir,
-            raise_ex
-        )
-    )
-    process.start()
 
 
 class LineExecutionProcessPool:
@@ -420,7 +396,6 @@ class LineExecutionProcessPool:
         result_list
     ):
         while True:
-            restart_outer_loop = False
             index, pid, process_name, input_queue, output_queue = process_info
 
             try:
@@ -435,35 +410,15 @@ class LineExecutionProcessPool:
             self._processing_idx[line_number] = format_current_process(process_name, pid, line_number)
             start_time = datetime.utcnow()
             completed = False
+            crashed = False
 
             while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time:
                 try:
-                    # Monitor process aliveness and start new one if it crashes
-                    if self._use_fork:
-                        if not psutil.pid_exists(pid):
-                            # If the process crashes, set the 'restart_outer_loop' to TRUE.
-                            # And re-execute the task from the beginning.
-                            restart_outer_loop = True
-                            # Clear the contents of input_queue to allow its reuse in fork mode.
-                            input_queue.get()
-                            # Put unfinished tasks into task_queue again.
-                            task_queue.put(args)
-                            self._processes_manager.restart_process(index)
-                            process_info = self._get_process_info(
-                                input_queue=input_queue,
-                                output_queue=output_queue
-                            )
-                            break
-                    else:
-                        if not psutil.pid_exists(pid):
-                            restart_outer_loop = True
-                            task_queue.put(args)
-                            self._processes_manager.new_process(index)
-                            process_info = self._get_process_info(
-                                input_queue=input_queue,
-                                output_queue=output_queue
-                            )
-                            break
+                    # Monitor process aliveness.
+                    if not psutil.pid_exists(pid):
+                        crashed = True
+                        completed = True
+                        break
 
                     # Responsible for checking the output queue messages and
                     # processing them within a specified timeout period.
@@ -474,30 +429,27 @@ class LineExecutionProcessPool:
                 except queue.Empty:
                     continue
 
-            if restart_outer_loop:
-                continue
+            # Handle timeout or process crash.
+            if not completed or crashed:
+                if not completed:
+                    self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
+                elif crashed:
+                    self.handle_process_crashed(line_number, inputs, run_id, start_time, result_list)
 
-            self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
-
-            # Handling the timeout of a line execution process.
-            if not completed:
-                self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
-                self._completed_idx[line_number] = format_current_process(process_name, pid, line_number, True)
+                self._completed_idx[line_number] = format_current_process(
+                    process_name, pid, line_number, is_failed=True)
                 if not task_queue.empty():
                     self._processes_manager.restart_process(index)
                     process_info = self._get_process_info(
                         input_queue=input_queue,
                         output_queue=output_queue
                     )
+            else:
+                # Handle line execution completed.
+                self._completed_idx[line_number] = format_current_process(
+                    process_name, pid, line_number, is_completed=True)
 
             self._processing_idx.pop(line_number)
-
-            log_progress(
-                run_start_time=run_start_time,
-                logger=bulk_logger,
-                count=len(result_list),
-                total_count=self._nlines,
-            )
 
     def _get_process_info(self, input_queue, output_queue):
         index = input_queue.get()
@@ -521,6 +473,14 @@ class LineExecutionProcessPool:
     def handle_line_timeout(self, line_number, timeout_time, inputs, run_id, start_time, result_list):
         bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
         ex = LineExecutionTimeoutError(line_number, timeout_time)
+        result = self._generate_line_result_for_exception(
+            inputs, run_id, line_number, self._flow_id, start_time, ex
+        )
+        result_list.append(result)
+
+    def handle_process_crashed(self, line_number, inputs, run_id, start_time, result_list):
+        bulk_logger.warning(f"Process crashed while executing line {line_number},")
+        ex = ProcessCrashError(line_number)
         result = self._generate_line_result_for_exception(
             inputs, run_id, line_number, self._flow_id, start_time, ex
         )
@@ -662,6 +622,12 @@ class LineExecutionProcessPool:
                 try:
                     # Wait for batch run to complete or KeyboardInterrupt
                     while not async_result.ready():
+                        log_progress(
+                            run_start_time=run_start_time,
+                            logger=bulk_logger,
+                            count=len(result_list),
+                            total_count=self._nlines,
+                        )
                         # Check every 1 second
                         async_result.wait(1)
                     # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling
