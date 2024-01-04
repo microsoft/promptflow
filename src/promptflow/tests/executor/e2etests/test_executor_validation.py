@@ -5,7 +5,6 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._core._errors import FlowOutputUnserializable, InvalidSource
-from promptflow._core.tool_meta_generator import PythonParsingError
 from promptflow._core.tools_manager import APINotFound
 from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow._utils.utils import dump_list_to_jsonl
@@ -142,7 +141,7 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, yml_file, error_class, inner_class",
         [
-            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, PythonParsingError),
+            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, InvalidSource),
         ],
     )
     def test_executor_create_failure_type(self, flow_folder, yml_file, error_class, inner_class, dev_connections):
