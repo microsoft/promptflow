@@ -54,6 +54,4 @@ def create_flow_for_prompt(prompt_file):
         yaml.safe_dump(default_flow, f)
     completion_file = Path(__file__).parent / "completion.py"
     shutil.copy(str(completion_file), os.path.join(target_folder, "completion.py"))
-    print(yaml_file)
-    print(default_flow)
     return yaml_file
