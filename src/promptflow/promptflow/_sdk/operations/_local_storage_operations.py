@@ -334,12 +334,17 @@ class LocalStorageOperations(AbstractRunStorage):
         except Exception:
             return {}
 
-    def load_detail(self) -> Dict[str, list]:
+    def load_detail(self, parse_const_as_str: bool = False) -> Dict[str, list]:
         if self._detail_path.is_file():
             # legacy run with local file detail.json, then directly load from the file
             with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 return json.load(f)
         else:
+            # float nan, inf and -inf is not JSON serializable
+            # according to https://docs.python.org/3/library/json.html#json.loads
+            # `parse_constant` will be called to handle these values
+            # so if parse_const_as_str is True, we will parse these values as str with a lambda function
+            json_loads = json.loads if not parse_const_as_str else partial(json.loads, parse_constant=lambda x: str(x))
             # collect from local files and concat in the memory
             flow_runs, node_runs = [], []
             for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
@@ -348,14 +353,14 @@ class LocalStorageOperations(AbstractRunStorage):
                 if line_run_record_file.suffix.lower() != ".jsonl":
                     continue
                 with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                    new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                    new_runs = [json_loads(line)["run_info"] for line in list(f)]
                     flow_runs += new_runs
             for node_folder in sorted(self._node_infos_folder.iterdir()):
                 for node_run_record_file in sorted(node_folder.iterdir()):
                     if node_run_record_file.suffix.lower() != ".jsonl":
                         continue
                     with open(node_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                        new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                        new_runs = [json_loads(line)["run_info"] for line in list(f)]
                         node_runs += new_runs
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 

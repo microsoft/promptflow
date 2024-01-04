@@ -302,7 +302,7 @@ class RunOperations(TelemetryMixin):
             run._check_run_status_is_completed()
 
             local_storage = LocalStorageOperations(run)
-            detail = local_storage.load_detail()
+            detail = local_storage.load_detail(parse_const_as_str=True)
             # ad-hoc step: make logs field empty to avoid too big HTML file
             # we don't provide logs view in visualization page for now
             # when we enable, we will save those big data (e.g. logs) in separate file(s)
