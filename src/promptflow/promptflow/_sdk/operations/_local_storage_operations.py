@@ -340,7 +340,7 @@ class LocalStorageOperations(AbstractRunStorage):
             with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 return json.load(f)
         else:
-            # float nan, inf and -inf is not JSON serializable
+            # nan, inf and -inf are not JSON serializable
             # according to https://docs.python.org/3/library/json.html#json.loads
             # `parse_constant` will be called to handle these values
             # so if parse_const_as_str is True, we will parse these values as str with a lambda function
