@@ -65,54 +65,25 @@ class TestExceptions:
             "exception lineno=Non promptflow code lineno, not recorded."
         ) in error_message
 
-    def test_error_category_with_status_code1(self, subscription_id, resource_group_name, workspace_name):
-        """Raise a Exception and it has status_code, whose status_code non 4XX, it should be SystemError."""
-
+    @pytest.mark.parametrize(
+        "status_code, expected_error_category",
+        [
+            (203, ErrorCategory.SystemError),
+            (304, ErrorCategory.SystemError),
+            (400, ErrorCategory.UserError),
+            (401, ErrorCategory.UserError),
+            (429, ErrorCategory.SystemError),
+            (500, ErrorCategory.SystemError),
+        ],
+    )
+    def test_error_category_with_status_code(self, status_code, expected_error_category):
         try:
             raise Exception()
         except Exception as e:
-            e.status_code = 300
+            e.status_code = status_code
             ex = e
         error_category, error_type, error_target, error_message = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.SystemError
-        assert error_type == "Exception"
-        assert error_target == ErrorTarget.UNKNOWN
-        assert (
-            "exception msg=Non promptflow message, not recorded., "
-            "exception module=Non promptflow module, not recorded., "
-            "exception code=Non promptflow code, not recorded., "
-            "exception lineno=Non promptflow code lineno, not recorded."
-        ) in error_message
-
-    def test_error_category_with_status_code2(self, subscription_id, resource_group_name, workspace_name):
-        """Raise a Exception and it has status_code, whose status_code is 4XX, it should be UserError."""
-
-        try:
-            raise Exception()
-        except Exception as e:
-            e.status_code = 400
-            ex = e
-        error_category, error_type, error_target, error_message = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.UserError
-        assert error_type == "Exception"
-        assert error_target == ErrorTarget.UNKNOWN
-        assert (
-            "exception msg=Non promptflow message, not recorded., "
-            "exception module=Non promptflow module, not recorded., "
-            "exception code=Non promptflow code, not recorded., "
-            "exception lineno=Non promptflow code lineno, not recorded."
-        ) in error_message
-
-    def test_error_category_with_status_code3(self, subscription_id, resource_group_name, workspace_name):
-        """Raise a Exception and it has status_code, whose status_code is 429, it should be SystemError."""
-
-        try:
-            raise Exception()
-        except Exception as e:
-            e.status_code = 429
-            ex = e
-        error_category, error_type, error_target, error_message = _ErrorInfo.get_error_info(ex)
-        assert error_category == ErrorCategory.SystemError
+        assert error_category == expected_error_category
         assert error_type == "Exception"
         assert error_target == ErrorTarget.UNKNOWN
         assert (
