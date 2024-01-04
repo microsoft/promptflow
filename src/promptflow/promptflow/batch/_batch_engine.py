@@ -122,7 +122,6 @@ class BatchEngine:
         :return: The result of this batch run
         :rtype: ~promptflow.batch._result.BatchResult
         """
-        self._executor_proxy: AbstractExecutorProxy = None
         try:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
@@ -143,17 +142,20 @@ class BatchEngine:
                 if isinstance(self._executor_proxy, PythonExecutorProxy):
                     signal.signal(signal.SIGINT, signal_handler)
 
-                # set batch input source from input mapping
-                OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
-                # resolve input data from input dirs and apply inputs mapping
-                batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
-                batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
-                # resolve output dir
-                output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
-                # run flow in batch mode
-                return async_run_allowing_running_loop(
-                    self._exec_in_task, batch_inputs, run_id, output_dir, raise_on_line_failure
-                )
+                try:
+                    # set batch input source from input mapping
+                    OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                    # resolve input data from input dirs and apply inputs mapping
+                    batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
+                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    # resolve output dir
+                    output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
+                    # run flow in batch mode
+                    return async_run_allowing_running_loop(
+                        self._exec_in_task, batch_inputs, run_id, output_dir, raise_on_line_failure
+                    )
+                finally:
+                    async_run_allowing_running_loop(self._executor_proxy.destroy)
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
             if isinstance(e, PromptflowException):
@@ -168,11 +170,6 @@ class BatchEngine:
                     error_type_and_message=f"({e.__class__.__name__}) {e}",
                 )
                 raise unexpected_error from e
-        finally:
-            # if an error is raised when creating the executor proxy, the executor proxy will be None at this time.
-            # so we need to check whether the executor proxy is None before destroying it.
-            if self._executor_proxy:
-                async_run_allowing_running_loop(self._executor_proxy.destroy)
 
     def cancel(self):
         """Cancel the batch run"""
