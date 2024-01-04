@@ -9,7 +9,7 @@ pip install pytest pytest-mock
 
 ## Run tests
 
-- Create connection config file by `cp connections.json.example connections.json`.
+- Create connectiond config file by `cp connections.json.example connections.json`.
 - Fill in fields manually in `connections.json`.
 - `cd tests` and run `pytest -s -v` to run all tests.
 
