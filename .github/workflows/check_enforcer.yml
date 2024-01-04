@@ -15,6 +15,7 @@ jobs:
         uses: "./.github/actions/step_create_python_environment"
         with:
           pythonVersion: 3.9
+      - run: pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
       - name: Summarize check status
         id: summarize_check_status
         working-directory: ${{ github.workspace }}
