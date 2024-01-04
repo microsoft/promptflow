@@ -55,7 +55,7 @@ if __name__ == "__main__":
     data = data[:10]
 
     # load template from file
-    with open("user_intent_zero_shot.md", "r") as f:
+    with open("user_intent_zero_shot.jinja2", "r") as f:
         user_prompt_template = f.read()
 
     # each test
