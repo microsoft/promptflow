@@ -17,7 +17,8 @@ from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
     get_multiprocessing_context,
-    get_available_max_worker_count
+    get_available_max_worker_count,
+    format_current_process
 )
 from promptflow.executor._result import LineResult
 
@@ -467,3 +468,51 @@ class TestGetAvailableMaxWorkerCount:
                             f"estimated available worker count is {available_memory}/{process_memory} "
                             f"= {actual_calculate_worker_count}"
                         )
+
+
+@pytest.mark.unittest
+class TestFormatCurrentProcess:
+    @patch('promptflow.executor._line_execution_process_pool.bulk_logger.info', autospec=True)
+    def test_format_current_process(self, mock_logger_info):
+        process_name = "process_name"
+        process_pid = 123
+        line_number = 13
+        formatted_message = format_current_process(process_name, process_pid, line_number)
+        exexpected_during_execution_log_message = (
+            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution."
+        )
+        expected_returned_log_message = (
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
+        )
+        mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)
+        assert formatted_message == expected_returned_log_message
+
+    @patch('promptflow.executor._line_execution_process_pool.bulk_logger.info', autospec=True)
+    def test_format_completed_process(self, mock_logger_info):
+        process_name = "process_name"
+        process_pid = 123
+        line_number = 13
+        formatted_message = format_current_process(process_name, process_pid, line_number, is_completed=True)
+        exexpected_during_execution_log_message = (
+            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed."
+        )
+        expected_returned_log_message = (
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
+        )
+        mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)
+        assert formatted_message == expected_returned_log_message
+
+    @patch('promptflow.executor._line_execution_process_pool.bulk_logger.info', autospec=True)
+    def test_format_failed_process(self, mock_logger_info):
+        process_name = "process_name"
+        process_pid = 123
+        line_number = 13
+        formatted_message = format_current_process(process_name, process_pid, line_number, is_failed=True)
+        exexpected_during_execution_log_message = (
+            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} failed."
+        )
+        expected_returned_log_message = (
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
+        )
+        mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)
+        assert formatted_message == expected_returned_log_message
