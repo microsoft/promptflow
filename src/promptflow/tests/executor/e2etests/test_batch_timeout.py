@@ -1,4 +1,3 @@
-import signal
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Optional
@@ -10,7 +9,6 @@ from promptflow.batch import BatchEngine, PythonExecutorProxy
 from promptflow.batch._result import BatchResult, LineError
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
-from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.storage._run_storage import AbstractRunStorage
 
 from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get_yaml_file
@@ -104,7 +102,7 @@ class TestBatchTimeout:
 
 class MockPythonExecutorProxy(PythonExecutorProxy):
     @classmethod
-    def create(
+    async def create(
         cls,
         flow_file: Path,
         working_dir: Optional[Path] = None,
@@ -117,5 +115,4 @@ class MockPythonExecutorProxy(PythonExecutorProxy):
         flow_executor = FlowExecutor.create(
             flow_file, connections, working_dir, storage=storage, raise_ex=False, line_timeout_sec=line_timeout_sec
         )
-        signal.signal(signal.SIGINT, signal_handler)
         return cls(flow_executor)
