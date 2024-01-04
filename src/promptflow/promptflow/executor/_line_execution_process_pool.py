@@ -134,7 +134,6 @@ class SpawnProcessManager(ProcessManager):
 
         process.start()
         self._process_info[i] = {'pid': process.pid, 'process_name': process.name}
-        self._input_queues[i].put((i))
         return process
 
     def restart_process(self, i):
@@ -232,7 +231,6 @@ def fork_processes_manager(
         )
         process.start()
         process_info[i] = {'pid': process.pid, 'process_name': process.name}
-        input_queues[i].put((i))
         return process
 
     for i in range(len(input_queues)):
@@ -381,7 +379,6 @@ class LineExecutionProcessPool:
     def _process_task(
         self,
         process_info,
-        run_start_time,
         task_queue,
         timeout_time,
         result_list
@@ -431,10 +428,7 @@ class LineExecutionProcessPool:
                     process_name, pid, line_number, is_failed=True)
                 if not task_queue.empty():
                     self._processes_manager.restart_process(index)
-                    process_info = self._get_process_info(
-                        input_queue=input_queue,
-                        output_queue=output_queue
-                    )
+                    process_info = self._get_process_info(index, input_queue, output_queue)
             else:
                 # Handle line execution completed.
                 self._completed_idx[line_number] = format_current_process(
@@ -442,12 +436,15 @@ class LineExecutionProcessPool:
 
             self._processing_idx.pop(line_number)
 
-    def _get_process_info(self, input_queue, output_queue):
-        index = input_queue.get()
-        pid = self._process_info[index]['pid']
-        process_name = self._process_info[index]['process_name']
-        process_info = (index, pid, process_name, input_queue, output_queue)
-        return process_info
+    def _get_process_info(self, index, input_queue, output_queue):
+        while True:
+            try:
+                pid = self._process_info[index]['pid']
+                process_name = self._process_info[index]['process_name']
+                process_info = (index, pid, process_name, input_queue, output_queue)
+                return process_info
+            except KeyError:
+                continue
 
     def _process_message(self, message, result_list):
         if isinstance(message, LineResult):
@@ -479,21 +476,17 @@ class LineExecutionProcessPool:
 
     def _timeout_process_wrapper(
             self,
-            run_start_time: datetime,
             task_queue: Queue,
             timeout_time,
             result_list,
+            index,
             input_queue,
             output_queue
     ):
-        process_info = self._get_process_info(
-            input_queue=input_queue,
-            output_queue=output_queue
-        )
+        process_info = self._get_process_info(index, input_queue, output_queue)
 
         self._process_task(
             process_info,
-            run_start_time,
             task_queue,
             timeout_time,
             result_list
@@ -598,10 +591,10 @@ class LineExecutionProcessPool:
         ):
             try:
 
-                base_args = (run_start_time, self._inputs_queue, self._line_timeout_sec, result_list)
+                base_args = (self._inputs_queue, self._line_timeout_sec, result_list)
 
                 args_list = [
-                    base_args + (self._input_queues[i], self._output_queues[i])
+                    base_args + (i, self._input_queues[i], self._output_queues[i])
                     for i in range(self._n_process)
                 ]
 

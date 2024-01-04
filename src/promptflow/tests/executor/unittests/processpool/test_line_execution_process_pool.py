@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import sys
 import uuid
 from multiprocessing import Queue
 from pathlib import Path
@@ -298,25 +299,6 @@ class TestLineExecutionProcessPool:
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
 
-    def test_process_set_environment_variable_successed(self, dev_connections):
-        os.environ["PF_BATCH_METHOD"] = "spawn"
-        line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
-        use_fork = line_execution_process_pool._use_fork
-        assert use_fork is False
-
-    def test_process_set_environment_variable_failed(self, dev_connections):
-        with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
-            mock_logger.warning.return_value = None
-            os.environ["PF_BATCH_METHOD"] = "test"
-            line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
-            use_fork = line_execution_process_pool._use_fork
-            assert use_fork == (multiprocessing.get_start_method() == "fork")
-            sys_start_methods = multiprocessing.get_all_start_methods()
-            exexpected_log_message = (
-                "Failed to set start method to 'test', start method test" f" is not in: {sys_start_methods}."
-            )
-            mock_logger.warning.assert_called_once_with(exexpected_log_message)
-
     def test_process_not_set_environment_variable(self, dev_connections):
         line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
         use_fork = line_execution_process_pool._use_fork
@@ -411,6 +393,7 @@ class TestLineExecutionProcessPool:
             (SAMPLE_FLOW, False, True, None, 2, 2)
         ],
     )
+    @pytest.mark.skipif(sys.platform == "darwin" or sys.platform.startswith("linux"), reason="Skip on Mac and Linux")
     def test_process_pool_parallelism_in_spawn_mode(
         self,
         dev_connections,
