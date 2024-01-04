@@ -110,7 +110,7 @@ class TestConnectionUtils:
     def test_get_used_connection_names_from_flow_meta(self, input_value: str, expected_connection_names: list):
         from promptflow._sdk._submitter.utils import SubmitterHelper
 
-        connection_names = SubmitterHelper.get_used_connection_names(
+        connection_names = SubmitterHelper.get_used_connection_names_from_tools_meta(
             {
                 "package": {
                     "(Promptflow.Tools)Promptflow.Tools.BuiltInTools.AOAI.Chat": {

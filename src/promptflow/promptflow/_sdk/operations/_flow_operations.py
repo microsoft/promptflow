@@ -381,7 +381,7 @@ class FlowOperations(TelemetryMixin):
                 from promptflow.batch import CSharpExecutorProxy
 
                 return self._migrate_connections(
-                    connection_names=SubmitterHelper.get_used_connection_names(
+                    connection_names=SubmitterHelper.get_used_connection_names_from_tools_meta(
                         tools_meta=CSharpExecutorProxy.get_tool_metadata(
                             flow_file=flow.flow_dag_path,
                             working_dir=flow.code,

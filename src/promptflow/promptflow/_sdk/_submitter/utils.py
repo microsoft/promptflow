@@ -7,15 +7,15 @@ import contextlib
 import os
 import re
 import tempfile
+import time
 from collections import defaultdict
 from os import PathLike
 from pathlib import Path
-import time
+from types import GeneratorType
 
 import pydash
 from dotenv import load_dotenv
 from pydash import objects
-from types import GeneratorType
 
 from promptflow._sdk._constants import (
     ALL_CONNECTION_TYPES,
@@ -204,22 +204,25 @@ class SubmitterHelper:
             executable=executable, client=client, connections_to_ignore=connections_to_ignore
         )
 
-    @staticmethod
-    def resolve_used_connections(flow: ProtectedFlow, tools_meta: dict, client, connections_to_ignore=None) -> dict:
+    @classmethod
+    def resolve_used_connections(
+        cls, flow: ProtectedFlow, tools_meta: dict, client, connections_to_ignore=None
+    ) -> dict:
         from .._pf_client import PFClient
 
         client = client or PFClient()
-        connection_names = SubmitterHelper.get_used_connection_names(tools_meta=tools_meta, flow_dag=flow.dag)
-        connections_to_ignore = connections_to_ignore or []
-        result = {}
-        for n in connection_names:
-            if n not in connections_to_ignore:
-                conn = client.connections.get(name=n, with_secrets=True)
-                result[n] = conn._to_execution_connection_dict()
-        return result
+        connection_names = SubmitterHelper.get_used_connection_names_from_tools_meta(
+            tools_meta=tools_meta, flow_dag=flow.dag
+        )
+        return cls.resolve_connection_names(
+            connection_names=connection_names,
+            client=client,
+            connections_to_ignore=connections_to_ignore,
+            raise_error=True,
+        )
 
     @staticmethod
-    def get_used_connection_names(tools_meta: dict, flow_dag: dict):
+    def get_used_connection_names_from_tools_meta(tools_meta: dict, flow_dag: dict):
         # TODO: handle code tool meta for python
         connection_inputs = defaultdict(set)
         for package_id, package_meta in tools_meta.get("package", {}).items():
@@ -253,9 +256,12 @@ class SubmitterHelper:
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 
     @staticmethod
-    def resolve_connection_names(connection_names, client, raise_error=False):
+    def resolve_connection_names(connection_names, client, *, raise_error=False, connections_to_ignore=None):
         result = {}
+        connections_to_ignore = connections_to_ignore or []
         for n in connection_names:
+            if n in connections_to_ignore:
+                continue
             try:
                 conn = client.connections.get(name=n, with_secrets=True)
                 result[n] = conn._to_execution_connection_dict()
