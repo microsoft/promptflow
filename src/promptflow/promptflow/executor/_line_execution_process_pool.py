@@ -300,17 +300,9 @@ class LineExecutionProcessPool:
         self._run_id = run_id
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
-        multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
         sys_start_methods = multiprocessing.get_all_start_methods()
-        if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
-            bulk_logger.warning(
-                f"Failed to set start method to '{multiprocessing_start_method}', "
-                f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
-            )
-            bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
-            multiprocessing_start_method = None
-        self.context = get_multiprocessing_context(multiprocessing_start_method)
-        use_fork = self.context.get_start_method() == "fork"
+        use_fork = 'fork' in sys_start_methods
+        self.context = get_multiprocessing_context('fork' if use_fork else 'spawn')
         self._flow_file = flow_executor._flow_file
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
@@ -620,15 +612,20 @@ class LineExecutionProcessPool:
                 async_result = self._pool.starmap_async(self._timeout_process_wrapper, args_list)
 
                 try:
+                    # Only log when the number of results changes to avoid duplicate logging.
+                    last_log_count = 0
                     # Wait for batch run to complete or KeyboardInterrupt
                     while not async_result.ready():
-                        log_progress(
-                            run_start_time=run_start_time,
-                            logger=bulk_logger,
-                            count=len(result_list),
-                            total_count=self._nlines,
-                        )
-                        # Check every 1 second
+                        current_result_count = len(result_list)
+                        if current_result_count != last_log_count:
+                            log_progress(
+                                run_start_time=run_start_time,
+                                logger=bulk_logger,
+                                count=len(result_list),
+                                total_count=self._nlines,
+                            )
+                            last_log_count = current_result_count
+                            # Check every 1 second
                         async_result.wait(1)
                     # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling
                     # The exceptions raised will be re-raised by the get() method.
@@ -854,7 +851,6 @@ def get_available_max_worker_count():
 def get_multiprocessing_context(multiprocessing_start_method=None):
     if multiprocessing_start_method is not None:
         context = multiprocessing.get_context(multiprocessing_start_method)
-        bulk_logger.info(f"Set start method to {multiprocessing_start_method}.")
         return context
     else:
         context = multiprocessing.get_context()
