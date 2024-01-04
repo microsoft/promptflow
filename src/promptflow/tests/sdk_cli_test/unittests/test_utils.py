@@ -211,8 +211,10 @@ class TestUtils:
             check_latest_version()
 
         with (patch('promptflow._utils.version_hint_utils.datetime') as mock_datetime,
-              patch("promptflow._utils.version_hint_utils.check_latest_version", side_effect=mock_check_latest_version)):
+              patch("promptflow._utils.version_hint_utils.check_latest_version",
+                    side_effect=mock_check_latest_version)):
             from promptflow._sdk._telemetry import monitor_operation
+
             class HintForUpdate:
                 @monitor_operation(activity_name="pf.flows.test")
                 def hint_func(self):
@@ -229,7 +231,6 @@ class TestUtils:
             # LAST_CHECK_TIME won't be updated since sleep 5s
             assert LAST_CHECK_TIME not in cached_versions
             print("Main thread exiting...")
-
 
     @pytest.mark.parametrize(
         "data_path",
