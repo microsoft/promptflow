@@ -52,7 +52,6 @@ Setup connections to provisioned resources in prompt flow.
 | logit\_bias            | dictionary  | the logit bias for the language model. Default is empty dictionary.                     | No       |
 
 
-
 ### Chat
 
 
@@ -65,10 +64,11 @@ Setup connections to provisioned resources in prompt flow.
 | stop                   | list        | the stopping sequence for the generated text. Default is null.                                 | No       |
 | top_p                  | float       | the probability of using the top choice from the generated tokens. Default is 1.               | No       |
 | presence\_penalty      | float       | value that controls the model's behavior with regards to repeating phrases. Default is 0.      | No       |
-| frequency\_penalty     | float       | value that controls the model's behavior with regards to generating rare phrases. Default is 0. | No       |
+| frequency\_penalty     | float       | value that controls the model's behavior with regards to generating rare phrases. Default is 0.| No       |
 | logit\_bias            | dictionary  | the logit bias for the language model. Default is empty dictionary.                            | No       |
-
-
+| function\_call         | object      | value that controls which function is called by the model. Default is null.                    | No       |
+| functions              | list        | a list of functions the model may generate JSON inputs for. Default is null.                   | No       |
+| response_format        | object      | an object specifying the format that the model must output. Default is null.                   | No       |
 
 ## Outputs
 
