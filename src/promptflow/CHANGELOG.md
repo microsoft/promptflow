@@ -5,6 +5,7 @@
 ### Bugs Fixed
 
 - Fix unaligned inputs & outputs or pandas exception during get details against run in Azure.
+- Fix "Without Import Data" in run visualize page results from invalid JSON value (`-Infinity`, `Infinity` and `NaN`).
 
 ## 1.3.0 (2023.12.27)
 
