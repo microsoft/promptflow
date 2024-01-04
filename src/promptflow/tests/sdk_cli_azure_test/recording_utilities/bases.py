@@ -32,6 +32,8 @@ from .utils import (
     is_live,
     is_record,
     is_replay,
+    sanitize_automatic_runtime_request_path,
+    sanitize_azure_workspace_triad,
     sanitize_pfs_request_body,
     sanitize_upload_hash,
 )
@@ -235,6 +237,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
 
     def _postprocess_recording(self) -> None:
         self._drop_duplicate_recordings()
+        self._ignore_in_progress_automatic_runtime_polling()
         super(PFAzureRunIntegrationTestRecording, self)._postprocess_recording()
 
     def _drop_duplicate_recordings(self) -> None:
@@ -267,6 +270,20 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         self.cassette.data = dropped_recordings
         return
 
+    def _ignore_in_progress_automatic_runtime_polling(self) -> None:
+        # automatic runtime polling will generate lots of recordings with status "InProgress"
+        # however, we just need those with terminated status
+        dropped_recordings = []
+        for req, resp in self.cassette.data:
+            if "FlowSessions" in str(req.path) and "Install/locations" in str(req.path):
+                if resp["body"]["string"] == b'{"status":"InProgress"}':
+                    continue
+                else:
+                    dropped_recordings.append((req, resp))
+            dropped_recordings.append((req, resp))
+        self.cassette.data = dropped_recordings
+        return
+
     def _custom_request_path_matcher(self, r1: Request, r2: Request) -> bool:
         # NOTE: orders of below conditions matter, please modify with caution
         # in run download scenario, observed below wired path: https://<xxx>/https://<yyy>/<remaining>
@@ -282,6 +299,11 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         # for blob storage request, sanitize the upload hash in path
         if r1.host == r2.host and r1.host == SanitizedValues.BLOB_STORAGE_REQUEST_HOST:
             return sanitize_upload_hash(r1.path) == r2.path
+        # for automatic runtime, sanitize flow session id in path
+        if r1.host == r2.host and ("FlowSessions" in r1.path and "FlowSessions" in r2.path):
+            path1 = sanitize_automatic_runtime_request_path(r1.path)
+            path2 = sanitize_automatic_runtime_request_path(r2.path)
+            return sanitize_azure_workspace_triad(path1) == path2
         return r1.path == r2.path
 
     def _custom_request_body_matcher(self, r1: Request, r2: Request) -> bool:

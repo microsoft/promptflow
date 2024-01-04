@@ -150,6 +150,30 @@ def sanitize_upload_hash(value: str) -> str:
     return value
 
 
+def _sanitize_session_id_creating_automatic_runtime(value: str) -> str:
+    value = re.sub(
+        "/(FlowSessions)/[0-9a-f]{48}",
+        r"/\1/{}".format(SanitizedValues.SESSION_ID),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
+def _sanitize_operation_id_polling_automatic_runtime(value: str) -> str:
+    value = re.sub(
+        "/(operations)/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        r"/\1/{}".format(SanitizedValues.UUID),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
+def sanitize_automatic_runtime_request_path(value: str) -> str:
+    return _sanitize_operation_id_polling_automatic_runtime(_sanitize_session_id_creating_automatic_runtime(value))
+
+
 def sanitize_username(value: str) -> str:
     value = re.sub(
         r"/(Users%2F)([^%?]+)(%2F|\?)",

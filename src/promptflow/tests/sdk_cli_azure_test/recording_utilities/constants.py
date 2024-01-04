@@ -38,6 +38,7 @@ FILTER_HEADERS = [
 
 
 class SanitizedValues:
+    UUID = "00000000-0000-0000-0000-000000000000"
     SUBSCRIPTION_ID = "00000000-0000-0000-0000-000000000000"
     RESOURCE_GROUP_NAME = "00000"
     WORKSPACE_NAME = "00000"
@@ -45,7 +46,7 @@ class SanitizedValues:
     TENANT_ID = "00000000-0000-0000-0000-000000000000"
     USER_OBJECT_ID = "00000000-0000-0000-0000-000000000000"
     # workspace
-    DISCOVERY_URL = "https://eastus.api.azureml.ms/discovery"
+    DISCOVERY_URL = "https://eastus2euap.api.azureml.ms/discovery"
     # datastore
     FAKE_KEY = "this is fake key"
     FAKE_ACCOUNT_NAME = "fake_account_name"
