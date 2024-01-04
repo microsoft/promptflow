@@ -237,7 +237,7 @@ class _ErrorInfo:
 
     @classmethod
     def select_exception(cls, e: Exception):
-        """Select the exception  in e and e.__cause__, and prioritize the Exception defined in the SDK."""
+        """Select the exception  in e and e.__cause__, and prioritize the Exception defined in the promptflow."""
 
         if e.__cause__ and isinstance(e.__cause__, PromptflowException):
             return e.__cause__
@@ -245,7 +245,7 @@ class _ErrorInfo:
         if isinstance(e, PromptflowException):
             return e
 
-        if e.__cause__ and isinstance(e.__cause__, HttpResponseError):
+        if e.__cause__:
             return e.__cause__
 
         return e
@@ -257,7 +257,7 @@ class _ErrorInfo:
         if hasattr(e, "status_code") or (hasattr(e, "response") and hasattr(e.response, "status_code")):
             status_code = str(e.status_code) if hasattr(e, "status_code") else str(e.response.status_code)
             # Except for 429, 400-499 are all client errors.
-            if not status_code.startswith("4") and status_code != "429":
+            if not (status_code.startswith("4") and status_code != "429"):
                 return True
 
         return False
@@ -273,10 +273,15 @@ class _ErrorInfo:
     @classmethod
     def _error_message(cls, e: Exception):
         exception_codes = cls._get_exception_codes(e)
-        msg = getattr(e, "message_format", "")
-        exception_code = exception_codes[-1]
+        msg = "Non promptflow message, not recorded."
+        exception_code = {
+            "module": "Non promptflow module, not recorded.",
+            "exception_code": "Non promptflow code, not recorded.",
+            "lineno": "Non promptflow code lineno, not recorded.",
+        }
         for item in exception_codes[::-1]:  # Prioritize recording the location of promptflow package errors
             if "promptflow" in item["module"]:
+                msg = getattr(e, "message_format", "")
                 exception_code = item
                 break
         return (
