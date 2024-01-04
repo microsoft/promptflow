@@ -6,6 +6,7 @@ jinja2 # for readme generator
 keyrings.alt  # this is possibly insecure, do not add this to setup.py
 markdown # for readme generator
 mock
+nbformat # for readme generator
 nox
 portalocker~=1.2
 pre-commit
