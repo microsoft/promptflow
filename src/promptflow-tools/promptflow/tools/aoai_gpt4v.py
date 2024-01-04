@@ -21,7 +21,7 @@ class AzureOpenAI(ToolProvider):
 
         azure_endpoint = self._connection_dict.get("azure_endpoint")
         api_version = self._connection_dict.get("api_version")
-        api_key = self._connection_dict.get("api_key")
+        api_kdey = self._connection_dict.get("api_key")
 
         self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
 
