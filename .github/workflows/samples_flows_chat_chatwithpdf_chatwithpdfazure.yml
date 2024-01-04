@@ -16,7 +16,7 @@ env:
   IS_IN_CI_PIPELINE: "true"
 
 jobs:
-  samples_notebook_ci:
+  samples_flows_chat_chatwithpdf_chatwithpdfazure:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

@@ -16,7 +16,7 @@ env:
   IS_IN_CI_PIPELINE: "true"
 
 jobs:
-  samples_readme_ci:
+  samples_flows_standard_flow_with_additional_includes:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
