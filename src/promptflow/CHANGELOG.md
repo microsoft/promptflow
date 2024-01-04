@@ -2,9 +2,14 @@
 
 ## 1.4.0 (Upcoming)
 
+### Features Added
+
+- [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
+
 ### Bugs Fixed
 
 - Fix unaligned inputs & outputs or pandas exception during get details against run in Azure.
+- Fix loose flow path validation for run schema.
 
 ## 1.3.0 (2023.12.27)
 
@@ -15,7 +20,7 @@
 - [Executor] Handle KeyboardInterrupt in flow test so that the final state is Canceled.
 - [Executor] Calculate system_metrics recursively in api_calls.
 - [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
-- [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
+
 
 ### Bugs Fixed
 - [SDK/CLI] Fix single node run doesn't work when consuming sub item of upstream node
