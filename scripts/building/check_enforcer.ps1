@@ -131,13 +131,16 @@ function trigger_prepare($input_paths, [ref]$failed_reason_ref) {
             Push-Location $GithubWorkspace
             $pipelines_samples = (python $GithubWorkspace/scripts/readme/readme.py -c | ConvertFrom-Json)
             Pop-Location
-            $failed_reason_ref.Value = (git diff-index --quiet HEAD -- || "Run readme generation before check in")
+            git diff --name-only HEAD | ForEach-Object {
+                $failed_reason_ref.Value = "Run readme generation before check in"
+                return
+            }
             if ($failed_reason_ref.Value -ne "") {
                 return
             }
             # merge piplines_samples to checks
-            foreach ($key in $pipelines_samples.Keys) {
-                $value = $pipelines_samples[$key]
+            foreach ($key in $pipelines_samples.psobject.properties.name) {
+                $value = $pipelines_samples.$key
                 $checks[$key] = $value
             }
         }
