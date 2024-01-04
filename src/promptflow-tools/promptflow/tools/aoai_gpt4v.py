@@ -7,6 +7,9 @@ except Exception:
 from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
+from promptflow.entities import InputSetting, DynamicList
+from typing import List, Union, Dict
+import requests
 
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, normalize_connection_config, \
@@ -25,11 +28,62 @@ class AzureOpenAI(ToolProvider):
 
         self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
 
-    @tool(streaming_option_parameter="stream")
+    def list_versions(subscription_id, resource_group_name, workspace_name, connection_name, prefix: str = "") -> List[Dict[str, str]]:
+        return ["version1", "version2"]
+    
+
+    def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection_name, prefix: str = "") -> List[Dict[str, str]]:
+        from azure.ai.ml import MLClient
+        from azure.identity import DefaultAzureCredential
+
+        credential = DefaultAzureCredential()
+        token = credential.get_token("https://management.azure.com/.default")
+
+        url = (
+            f"https://ml.azure.com/api/eastus2euap/flow/api/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/"
+            f"Microsoft.MachineLearningServices/workspaces/{workspace_name}/Connections/{connection_name}/AzureOpenAIDeployments"
+        )
+        result = requests.get(url, headers={"Authorization": f"Bearer {token.token}"})
+        import json
+        deployments = json.loads(result.text)
+        
+        deployment_names=[]
+        for deployment in deployments:
+            if(deployment.get("capabilities", {}).get("chat_completion", False)):
+                name = deployment.get('name')
+                cur_item = {
+                    "value": name,
+                    "display_value": name,
+                    "description": f"this is endpoint: {name}",
+                }
+                deployment_names.add()
+
+        return deployment_names
+    
+    input_settings = {
+        "deployment_name": InputSetting(
+            dynamic_list=list_deployment_names,
+            allow_manual_entry=False,
+            is_multi_select=False,
+            enabled_by="version",
+        ),
+        "version": InputSetting(
+            dynamic_list=list_versions,
+            allow_manual_entry= False,
+            is_multi_select=False,
+        )
+    }
+
+
+    @tool(
+        streaming_option_parameter="stream",
+        input_settings=input_settings
+        )
     @handle_openai_error()
     def chat(
         self,
         prompt: PromptTemplate,
+        version: str,
         deployment_name: str,
         temperature: float = 1.0,
         top_p: float = 1.0,
