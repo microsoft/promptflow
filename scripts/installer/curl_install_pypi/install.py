@@ -6,10 +6,10 @@
 # --------------------------------------------------------------------------------------------
 
 #
-# This script will install the CLI into a directory and create an executable
-# at a specified file path that is the entry point into the CLI.
+# This script will install the promptflow into a directory and create an executable
+# at a specified file path that is the entry point into the promptflow.
 #
-# The latest versions of all CLI command packages will be installed.
+# The latest versions of all promptflow command packages will be installed.
 #
 
 #pylint: disable=line-too-long
@@ -283,7 +283,7 @@ def warn_other_azs_on_path(exec_dir, exec_filepath):
         print_status()
         print_status(f"** WARNING: Other '{PFS_EXECUTABLE_NAME}/{PFS_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' executables are on your $PATH. **")
         print_status("Conflicting paths: {}".format(', '.join(conflicting_paths)))
-        print_status("You can run this installation of the CLI with '{}'.".format(exec_filepath))
+        print_status("You can run this installation of the promptflow with '{}'.".format(exec_filepath))
 
 
 def handle_path_and_tab_completion (exec_filepath, exec_dir):
@@ -307,14 +307,14 @@ def handle_path_and_tab_completion (exec_filepath, exec_dir):
         print_status()
     else:
         # print_status("If you change your mind, add 'source {}' to your rc file and restart your shell to enable tab completion.".format(completion_file_path))
-        print_status("You can run the CLI with '{}'.".format(exec_filepath))
+        print_status("You can run the promptflow with '{}'.".format(exec_filepath))
 
 
 def verify_python_version():
     print_status('Verifying Python version.')
     v = sys.version_info
     if v < (3, 8):
-        raise CLIInstallError('The CLI does not support Python versions less than 3.8.')
+        raise CLIInstallError('The promptflow does not support Python versions less than 3.8.')
     if 'conda' in sys.version:
         raise CLIInstallError("This script does not support the Python Anaconda environment. "
                               "Create an Anaconda virtual environment and install with 'pip'")
