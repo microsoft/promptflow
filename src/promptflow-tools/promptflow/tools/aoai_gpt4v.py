@@ -14,24 +14,11 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, normalize_connection_config, \
     post_process_chat_api_response
 
+def list_versions() -> List[Dict[str, str]]:
+    return ["version1", "version2"]
 
-class AzureOpenAI(ToolProvider):
-    def __init__(self, connection: AzureOpenAIConnection):
-        super().__init__()
-        self.connection = connection
-        self._connection_dict = normalize_connection_config(self.connection)
 
-        azure_endpoint = self._connection_dict.get("azure_endpoint")
-        api_version = self._connection_dict.get("api_version")
-        api_key = self._connection_dict.get("api_key")
-
-        self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
-
-    def list_versions(self) -> List[Dict[str, str]]:
-        return ["version1", "version2"]
-    
-
-    def list_deployment_names(self, subscription_id, resource_group_name, workspace_name, version) -> List[Dict[str, str]]:
+ def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection, version) -> List[Dict[str, str]]:
         from azure.identity import DefaultAzureCredential
 
         credential = DefaultAzureCredential()
@@ -39,7 +26,7 @@ class AzureOpenAI(ToolProvider):
 
         url = (
             f"https://ml.azure.com/api/eastus2euap/flow/api/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/"
-            f"Microsoft.MachineLearningServices/workspaces/{workspace_name}/Connections/{self.connection.name}/AzureOpenAIDeployments"
+            f"Microsoft.MachineLearningServices/workspaces/{workspace_name}/Connections/{connection}/AzureOpenAIDeployments"
         )
         result = requests.get(url, headers={"Authorization": f"Bearer {token.token}"})
         import json
@@ -57,8 +44,19 @@ class AzureOpenAI(ToolProvider):
                 deployment_names.add(cur_item)
 
         return deployment_names
-    
-    
+
+
+class AzureOpenAI(ToolProvider):
+    def __init__(self, connection: AzureOpenAIConnection):
+        super().__init__()
+        self.connection = connection
+        self._connection_dict = normalize_connection_config(self.connection)
+
+        azure_endpoint = self._connection_dict.get("azure_endpoint")
+        api_version = self._connection_dict.get("api_version")
+        api_key = self._connection_dict.get("api_key")
+
+        self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)    
 
     @tool(streaming_option_parameter="stream")
     @handle_openai_error()
