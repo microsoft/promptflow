@@ -9,6 +9,7 @@ from promptflow._sdk.entities._connection import AzureContentSafetyConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.tool import (
+    AssistantDefinition,
     ConnectionType,
     InputDefinition,
     OutputDefinition,
@@ -66,6 +67,7 @@ class TestValueType:
             (Secret("secret"), ValueType.SECRET),
             (PromptTemplate("prompt"), ValueType.PROMPT_TEMPLATE),
             (FilePath("file_path"), ValueType.FILE_PATH),
+            (AssistantDefinition("model", "instructions", []), ValueType.ASSISTANT_DEFINITION),
         ],
     )
     def test_from_value(self, value, expected):
@@ -84,6 +86,7 @@ class TestValueType:
             (PromptTemplate, ValueType.PROMPT_TEMPLATE),
             (FilePath, ValueType.FILE_PATH),
             (Image, ValueType.IMAGE),
+            (AssistantDefinition, ValueType.ASSISTANT_DEFINITION),
         ],
     )
     def test_from_type(self, value, expected):

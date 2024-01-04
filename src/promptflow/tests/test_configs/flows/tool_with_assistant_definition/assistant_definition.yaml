@@ -1,0 +1,8 @@
+model: mock_model
+instructions: mock_instructions
+tools:
+- type: function
+  tool_type: python
+  source:
+    type: code
+    path: echo.py

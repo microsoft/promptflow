@@ -68,8 +68,6 @@ class ValueType(str, Enum):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
-        if isinstance(t, Image):
-            return ValueType.IMAGE
         if isinstance(t, AssistantDefinition):
             return ValueType.ASSISTANT_DEFINITION
         return ValueType.OBJECT

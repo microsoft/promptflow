@@ -1,5 +1,5 @@
 import pytest
-from promptflow.contracts.types import Secret, PromptTemplate, FilePath
+from promptflow.contracts.types import AssistantDefinition, Secret, PromptTemplate, FilePath
 
 
 @pytest.mark.unittest
@@ -20,3 +20,14 @@ def test_prompt_template():
 def test_file_path():
     file_path = FilePath('my_file_path')
     assert isinstance(file_path, str)
+
+
+@pytest.mark.unittest
+def test_assistant_definition():
+    data = {"model": "model", "instructions": "instructions", "tools": []}
+    assistant_definition = AssistantDefinition.deserialize(data)
+    assert isinstance(assistant_definition, AssistantDefinition)
+    assert assistant_definition.model == "model"
+    assert assistant_definition.instructions == "instructions"
+    assert assistant_definition.tools == []
+    assert assistant_definition.serialize() == data

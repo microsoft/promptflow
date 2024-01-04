@@ -47,7 +47,14 @@ class AssistantDefinition:
 
     def serialize(self):
         return {
-            "module": self.model,
+            "model": self.model,
             "instructions": self.instructions,
             "tools": self.tools,
         }
+
+    def setup_tool_invoker(self, working_dir: str = None):
+        from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
+
+        invoker = AssistantToolInvoker(working_dir=working_dir)
+        invoker.load_tools(self.tools)
+        return invoker
