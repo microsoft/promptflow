@@ -7,8 +7,7 @@ except Exception:
 from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
-from promptflow.entities import InputSetting, DynamicList
-from typing import List, Union, Dict
+from typing import List, Dict
 import requests
 
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
@@ -33,7 +32,6 @@ class AzureOpenAI(ToolProvider):
     
 
     def list_deployment_names(self, subscription_id, resource_group_name, workspace_name, version) -> List[Dict[str, str]]:
-        from azure.ai.ml import MLClient
         from azure.identity import DefaultAzureCredential
 
         credential = DefaultAzureCredential()
@@ -56,7 +54,7 @@ class AzureOpenAI(ToolProvider):
                     "display_value": name,
                     "description": f"this is endpoint: {name}",
                 }
-                deployment_names.add()
+                deployment_names.add(cur_item)
 
         return deployment_names
     
