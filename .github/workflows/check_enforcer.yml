@@ -21,6 +21,6 @@ jobs:
         working-directory: ${{ github.workspace }}
         shell: pwsh
         run: |
-            python .\scripts\building\check_enforcer.py -t "${{ github.workspace }}"
+            python ${{ github.workspace }}/scripts/building/check_enforcer.py -t "${{ github.workspace }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
