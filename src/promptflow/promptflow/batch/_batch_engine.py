@@ -127,7 +127,7 @@ class BatchEngine:
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
                 executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
-                self._executor_proxy = async_run_allowing_running_loop(
+                self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
                     executor_proxy_cls.create,
                     self._flow_file,
                     self._working_dir,
