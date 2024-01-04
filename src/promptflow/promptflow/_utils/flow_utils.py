@@ -9,7 +9,7 @@ from typing import Union
 
 import yaml
 
-from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
+from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING, PROMPT_FLOW_DIR_NAME
 from promptflow._utils.logger_utils import LoggerFactory
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -50,6 +50,8 @@ def get_flow_lineage_id(flow_dir: Union[str, PathLike]):
 def resolve_flow_path(flow_path: Path):
     """Resolve given flow path to dag file path."""
     if flow_path.is_dir():
+        if (flow_path / PROMPT_FLOW_DIR_NAME / DAG_FILE_NAME).exists():
+            return flow_path / PROMPT_FLOW_DIR_NAME / DAG_FILE_NAME
         flow_path = flow_path / DAG_FILE_NAME
     return flow_path
 

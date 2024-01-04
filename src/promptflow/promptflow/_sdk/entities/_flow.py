@@ -164,13 +164,19 @@ class Flow(FlowBase):
 
         flow_path = resolve_flow_path(source_path)
         if flow_path.exists():
+            if flow_path.is_file() and flow_path.suffix == ".prompt":
+                from promptflow.executor._prompty.flow_creator import create_flow_for_prompt
+                flow_path = create_flow_for_prompt(flow_path)
             # TODO: for file, we should read the yaml to get code and set path to source_path
             # read flow file to get hash
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
                 flow_dag = yaml.safe_load(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
-            return cls(code=flow_path.parent.absolute().as_posix(), dag=flow_dag, **kwargs)
+            code = flow_path.parent
+            if code.name == ".promptflow":  # When using .prompt, flow path is in .promptflow folder
+                code = code.parent
+            return cls(code=code.absolute().as_posix(), dag=flow_dag, **kwargs)
 
         raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
 
@@ -250,6 +256,8 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
             return flow_path, DAG_FILE_NAME
         elif flow_path.is_file():
             return flow_path.parent, flow_path.name
+        elif (flow_path / PROMPT_FLOW_DIR_NAME / DAG_FILE_NAME).is_file():
+            return flow_path, PROMPT_FLOW_DIR_NAME + "/" + DAG_FILE_NAME
 
         raise ValueError(f"Can't find flow with path {flow_path.as_posix()}.")
 
