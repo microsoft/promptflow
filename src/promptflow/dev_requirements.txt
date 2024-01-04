@@ -2,6 +2,7 @@ azure-identity
 azure-keyvault
 beautifulsoup4==4.12.2
 coverage==6.0.1
+jinja2 # for readme generator
 keyrings.alt  # this is possibly insecure, do not add this to setup.py
 markdown # for readme generator
 mock
