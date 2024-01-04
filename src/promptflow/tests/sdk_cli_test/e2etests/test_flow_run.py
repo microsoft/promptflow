@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import uuid
 from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -1081,6 +1082,8 @@ class TestFlowRun:
         assert "error" in run_dict
         assert run_dict["error"] == exception
 
+    # TODO: remove this patch after executor switch to default spawn
+    @patch.dict(os.environ, {"PF_BATCH_METHOD": "spawn"}, clear=True)
     def test_get_details_against_partial_completed_run(self, pf: PFClient) -> None:
         flow_mod2 = f"{FLOWS_DIR}/mod-n/two"
         flow_mod3 = f"{FLOWS_DIR}/mod-n/three"

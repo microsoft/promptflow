@@ -55,11 +55,12 @@ Structure of flow folder:
 
 ### Create from existing code
 
+Customer needs to pass the path of tool script to `entry`, and also needs to pass in the promptflow template dict to `prompt-template`, which the key is the input name of the tool and the value is the path to the promptflow template.
 Promptflow CLI can generate the yaml definitions needed for prompt flow from the existing folder, using the tools script and prompt templates.
 
 ```bash
 # Create a flow in existing folder
-pf flow init --flow <flow-name> --entry <entry-file-name> --function <tool-function-name> --prompt-template <prompt-tempate>
+pf flow init --flow <flow-name> --entry <tool-script-path> --function <tool-function-name> --prompt-template <prompt-param-name>=<prompt-tempate-path>
 ```
 
 Take [customer-intent-extraction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/customer-intent-extraction) for example, which demonstrating how to convert a langchain code into a prompt flow.
@@ -69,6 +70,7 @@ Take [customer-intent-extraction](https://github.com/microsoft/promptflow/tree/m
 In this case, promptflow CLI generates `flow.dag.yaml`, `.promptflow/flow.tools.json`  and `extract_intent_tool.py`, it is a python tool in the flow.
 
 ![init_files](../media/how-to-guides/init-and-test-a-flow/flow_init_files.png)
+
 ## Test a flow
 
 :::{admonition} Note
