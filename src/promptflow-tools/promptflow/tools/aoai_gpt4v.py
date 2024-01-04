@@ -28,11 +28,11 @@ class AzureOpenAI(ToolProvider):
 
         self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
 
-    def list_versions(subscription_id, resource_group_name, workspace_name, connection_name, prefix: str = "") -> List[Dict[str, str]]:
+    def list_versions(self) -> List[Dict[str, str]]:
         return ["version1", "version2"]
     
 
-    def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection_name, prefix: str = "") -> List[Dict[str, str]]:
+    def list_deployment_names(self, subscription_id, resource_group_name, workspace_name, version) -> List[Dict[str, str]]:
         from azure.ai.ml import MLClient
         from azure.identity import DefaultAzureCredential
 
@@ -41,7 +41,7 @@ class AzureOpenAI(ToolProvider):
 
         url = (
             f"https://ml.azure.com/api/eastus2euap/flow/api/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/"
-            f"Microsoft.MachineLearningServices/workspaces/{workspace_name}/Connections/{connection_name}/AzureOpenAIDeployments"
+            f"Microsoft.MachineLearningServices/workspaces/{workspace_name}/Connections/{self.connection.name}/AzureOpenAIDeployments"
         )
         result = requests.get(url, headers={"Authorization": f"Bearer {token.token}"})
         import json
@@ -60,15 +60,17 @@ class AzureOpenAI(ToolProvider):
 
         return deployment_names
     
+    deployment_name_list_setting = DynamicList(function=list_deployment_names, input_mapping=("version", "version"))
+    versions_list_setting = DynamicList(function=list_versions)
     input_settings = {
         "deployment_name": InputSetting(
-            dynamic_list=list_deployment_names,
+            dynamic_list=deployment_name_list_setting,
             allow_manual_entry=False,
             is_multi_select=False,
             enabled_by="version",
         ),
         "version": InputSetting(
-            dynamic_list=list_versions,
+            dynamic_list=versions_list_setting,
             allow_manual_entry= False,
             is_multi_select=False,
         )
