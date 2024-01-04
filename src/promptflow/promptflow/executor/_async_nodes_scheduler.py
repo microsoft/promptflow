@@ -130,7 +130,8 @@ def signal_handler(sig, frame):
     """
     Start a thread to monitor coroutines after receiving signal.
     """
-    flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name})," " start coroutine monitor thread.")
+
+    flow_logger.info(f"Received signal {sig}({signal.Signals(sig).name}), start coroutine monitor thread.")
     loop = asyncio.get_running_loop()
     monitor = threading.Thread(target=monitor_coroutine_after_cancellation, args=(loop,))
     monitor.start()
@@ -163,6 +164,19 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
         all_tasks_are_done = all(task.done() for task in asyncio.all_tasks(loop))
         if all_tasks_are_done:
             flow_logger.info("All coroutines are done. Exiting.")
+            # We cannot ensure persist_flow_run is called before the process exits in the case that there is
+            # non-daemon thread running, sleep for 3 seconds as a best effort.
+            # If the caller wants to ensure flow status is cancelled in storage, it should check the flow status
+            # after timeout and set the flow status to Cancelled.
+            time.sleep(3)
+            # Use os._exit instead of sys.exit, so that the process can stop without
+            # waiting for the thread created by run_in_executor to finish.
+            # sys.exit: https://docs.python.org/3/library/sys.html#sys.exit
+            # Raise a SystemExit exception, signaling an intention to exit the interpreter.
+            # Specifically, it does not exit non-daemon thread
+            # os._exit https://docs.python.org/3/library/os.html#os._exit
+            # Exit the process with status n, without calling cleanup handlers, flushing stdio buffers, etc.
+            # Specifically, it stops process without waiting for non-daemon thread.
             os._exit(0)
 
         exceeded_wait_seconds = time.time() - thread_start_time > max_wait_seconds
@@ -179,5 +193,5 @@ def monitor_coroutine_after_cancellation(loop: asyncio.AbstractEventLoop):
             )
             remaining_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
             flow_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
-            bulk_logger.info(f"Remaining tasks: {[task.get_name() for task in remaining_tasks]}")
+        time.sleep(3)
         os._exit(0)
