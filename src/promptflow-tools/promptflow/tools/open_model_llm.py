@@ -524,22 +524,27 @@ def parse_endpoint_connection_type(endpoint_connection_name: str) -> Tuple[str, 
 def list_endpoint_names(subscription_id: str,
                         resource_group_name: str,
                         workspace_name: str,
-                        return_endpoint_url: bool = False) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+                        return_endpoint_url: bool = False,
+                        force_refresh: bool = False) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
     cache_file_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             cache_file_path = os.path.join(os.path.dirname(temp_file.name), CONNECTION_CACHE_FILE)
             print(f"Attempting to read connection cache. File path: {cache_file_path}", file=sys.stdout)
-            with open(cache_file_path, 'r') as file:
-                cache = ConnectionCache.from_filename(file)
-                if cache.can_use(subscription_id, resource_group_name, workspace_name):
-                    if len(cache.connection_names) > 0:
-                        print("....using Connection Cache File", file=sys.stdout)
-                        return cache.connection_names
+
+            if force_refresh:
+                print("....skipping. force_refresh is True", file=sys.stdout)
+            else:
+                with open(cache_file_path, 'r') as file:
+                    cache = ConnectionCache.from_filename(file)
+                    if cache.can_use(subscription_id, resource_group_name, workspace_name):
+                        if len(cache.connection_names) > 0:
+                            print("....using Connection Cache File", file=sys.stdout)
+                            return cache.connection_names
+                        else:
+                            print("....skipping. No connections in file", file=sys.stdout)
                     else:
-                        print("....skipping. No connections in file", file=sys.stdout)
-                else:
-                    print("....skipping. File not relevant", file=sys.stdout)
+                        print("....skipping. File not relevant", file=sys.stdout)
     except Exception as e:
         print(f"....failed to find\\read connection cache file. Regenerating. Error:{e}", file=sys.stdout)
 

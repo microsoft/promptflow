@@ -423,7 +423,7 @@ user:
 
         from tests.utils import verify_url_exists
         for endpoint in endpoints:
-            if not verify_url_exists(endpoint["url"]):
+            if "localConnection/" in endpoint['value'] or not verify_url_exists(endpoint["url"]):
                 continue
 
             is_chat = "serverless" in endpoint['value'] or "chat" in endpoint['value']
@@ -525,3 +525,67 @@ user:
         for asset_name in bad_model_assets:
             val = get_model_type(asset_name)
             assert val is None
+
+    def test_open_model_llm_local_connection(self, verify_service_endpoints, gpt2_custom_connection):
+        endpoints = list_endpoint_names(
+            subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
+            resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
+            workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
+            return_endpoint_url=True
+            )
+
+        import uuid
+        connection_name = f"test_local_connection_{uuid.uuid4()}"
+
+        for e in endpoints:
+            assert e['value'] != connection_name
+
+        from promptflow._sdk.entities import CustomConnection
+        connection = CustomConnection(name=connection_name,
+                                      configs={
+                                          "endpoint_url": gpt2_custom_connection.configs['endpoint_url'],
+                                          "model_family": gpt2_custom_connection.configs['model_family']},
+                                      secrets={
+                                          "endpoint_api_key": gpt2_custom_connection.secrets['endpoint_api_key']})
+
+        from promptflow import PFClient as LocalPFClient
+        pf_client = LocalPFClient()
+        pf_client.connections.create_or_update(connection)
+
+        endpoints = list_endpoint_names(
+            subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
+            resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
+            workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
+            force_refresh=True
+            )
+
+        found = False
+        target_connection_name = f"localConnection/{connection_name}"
+        for e in endpoints:
+            if e['value'] == target_connection_name:
+                found = True
+                break
+        assert found
+
+        response = self.stateless_os_llm.call(
+            self.completion_prompt,
+            API.COMPLETION,
+            endpoint_name=target_connection_name)
+        validate_response(response)
+
+    def test_open_model_llm_package(self):
+        target_tool_identifier = "promptflow.tools.open_model_llm.OpenModelLLM.call"
+        found = False
+
+        import pkg_resources
+        for entry_point in pkg_resources.iter_entry_points(group="package_tools"):
+            list_tool_func = entry_point.resolve()
+            package_tools = list_tool_func()
+
+            for identifier, tool in package_tools.items():
+                if identifier == target_tool_identifier:
+                    import importlib
+                    importlib.import_module(tool["module"])  # Import the module to ensure its validity
+                    assert not found
+                    found = True
+        assert found
