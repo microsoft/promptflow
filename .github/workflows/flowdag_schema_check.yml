@@ -24,6 +24,6 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/src/promptflow
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd ${{ github.workspace }}/promptflow/src
-          pip install -e promptflow
+          cd ${{ github.workspace }}/src/promptflow
+          pip install -e .
           python ${{ github.workspace }}/scripts/readme/schema_checker.py
