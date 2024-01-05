@@ -15,10 +15,15 @@ class TestAPIBasedExecutorProxy:
     @pytest.mark.asyncio
     async def test_check_health(self, mocker):
         mock_executor_proxy = MockAPIBasedExecutorProxy()
-        # case 1: assume executor proxy is healthy
         with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+            # case 1: assume executor proxy is healthy
             mock_get.return_value = httpx.Response(200)
             assert await mock_executor_proxy._check_health() is True
+            # case 1: assume executor proxy is not healthy
+            mock_get.return_value = httpx.Response(500)
+            assert await mock_executor_proxy._check_health() is False
+            mock_get.side_effect = Exception("error")
+            assert await mock_executor_proxy._check_health() is False
 
     @pytest.mark.asyncio
     async def test_ensure_executor_startup(self):
