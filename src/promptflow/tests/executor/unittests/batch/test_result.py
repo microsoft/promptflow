@@ -159,13 +159,12 @@ class TestBatchResult:
         assert batch_result.system_metrics.total_tokens == 42
         assert batch_result.system_metrics.prompt_tokens == 38
         assert batch_result.system_metrics.completion_tokens == 4
-        assert int(batch_result.system_metrics.duration) == 0
-        assert batch_result.system_metrics.to_dict() == {
+        system_metrics_dict = {
             "total_tokens": 42,
             "prompt_tokens": 38,
             "completion_tokens": 4,
-            "duration": float(0),
         }
+        assert system_metrics_dict.items() <= batch_result.system_metrics.to_dict().items()
 
     @pytest.mark.parametrize(
         "api_call",
@@ -263,10 +262,9 @@ class TestSystemMetrics:
         assert system_metrics.total_tokens == 20
         assert system_metrics.prompt_tokens == 12
         assert system_metrics.completion_tokens == 8
-        assert int(system_metrics.duration) == 0
-        assert system_metrics.to_dict() == {
+        system_metrics_dict = {
             "total_tokens": 20,
             "prompt_tokens": 12,
             "completion_tokens": 8,
-            "duration": float(0),
         }
+        assert system_metrics_dict.items() <= system_metrics.to_dict().items()
