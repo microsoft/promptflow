@@ -13,7 +13,7 @@
 
 # Check pipelines succeed or not:
 # 1. These pipelines should return status within loop-times rounds.
-# 1. If there is failed pipeline in the triggered pipelines, fail.
+# 2. If there is failed pipeline in the triggered pipelines, fail.
 
 # Import necessary libraries
 import os
