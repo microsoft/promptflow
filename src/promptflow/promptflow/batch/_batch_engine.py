@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import signal
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -20,7 +21,13 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
 )
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.utils import dump_list_to_jsonl, log_progress, resolve_dir_to_absolute, transpose
+from promptflow._utils.utils import (
+    dump_list_to_jsonl,
+    get_int_env_var,
+    log_progress,
+    resolve_dir_to_absolute,
+    transpose,
+)
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
@@ -29,6 +36,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -89,9 +97,20 @@ class BatchEngine:
 
         executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
         with _change_working_dir(self._working_dir):
-            self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
-                flow_file, self._working_dir, connections=connections, storage=storage, **kwargs
+            self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
+                executor_proxy_cls.create,
+                flow_file,
+                self._working_dir,
+                connections=connections,
+                storage=storage,
+                **kwargs,
             )
+            # register signal handler for python flow in the main thread
+            # TODO: For all executor proxies that are executed locally, it might be necessary to
+            # register a signal for Ctrl+C in order to customize some actions beyond just killing
+            # the process, such as terminating the executor service.
+            if isinstance(self._executor_proxy, PythonExecutorProxy):
+                signal.signal(signal.SIGINT, signal_handler)
         self._storage = storage
         # set it to True when the batch run is canceled
         self._is_canceled = False
@@ -152,7 +171,7 @@ class BatchEngine:
                 )
                 raise unexpected_error from e
         finally:
-            self._executor_proxy.destroy()
+            async_run_allowing_running_loop(self._executor_proxy.destroy)
 
     def cancel(self):
         """Cancel the batch run"""
@@ -228,7 +247,8 @@ class BatchEngine:
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
-        semaphore = asyncio.Semaphore(DEFAULT_CONCURRENCY)
+        worker_count = get_int_env_var("PF_WORKER_COUNT", DEFAULT_CONCURRENCY)
+        semaphore = asyncio.Semaphore(worker_count)
         pending = [
             asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
             for i, line_inputs in enumerate(batch_inputs)

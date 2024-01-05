@@ -12,6 +12,7 @@ class TraceType(str, Enum):
 
     LLM = "LLM"
     TOOL = "Tool"
+    FUNCTION = "Function"
     LANGCHAIN = "LangChain"
 
 
@@ -38,7 +39,6 @@ class Trace:
     :param node_name: The node name of the trace, used for flow level trace, or None if not applicable.
     :type node_name: Optional[str]
     """
-
     name: str
     type: TraceType
     inputs: Dict[str, Any]
@@ -48,3 +48,5 @@ class Trace:
     error: Optional[str] = None
     children: Optional[List["Trace"]] = None
     node_name: Optional[str] = None  # The node name of the trace, used for flow level trace
+    parent_id: str = ""  # The parent trace id of the trace
+    id: str = ""  # The trace id

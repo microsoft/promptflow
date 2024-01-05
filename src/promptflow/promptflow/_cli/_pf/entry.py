@@ -111,7 +111,11 @@ def entry(argv):
     logger = get_telemetry_logger()
     activity_name = _get_cli_activity_name(cli=prog, args=args)
     activity_name = update_activity_name(activity_name, args=args)
-    with log_activity(logger, activity_name, activity_type=ActivityType.PUBLICAPI):
+    with log_activity(
+            logger,
+            activity_name,
+            activity_type=ActivityType.PUBLICAPI,
+    ):
         run_command(args)
 
 

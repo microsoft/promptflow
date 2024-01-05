@@ -1,6 +1,19 @@
 # Release History
 
-## 1.3.0 (Upcoming)
+## 1.4.0 (Upcoming)
+
+### Features Added
+
+- [Executor] Calculate system_metrics recursively in api_calls.
+- [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
+- [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
+
+### Bugs Fixed
+
+- Fix unaligned inputs & outputs or pandas exception during get details against run in Azure.
+- Fix loose flow path validation for run schema.
+
+## 1.3.0 (2023.12.27)
 
 ### Features Added
 - [SDK/CLI] Support `pfazure run cancel` to cancel a run on Azure AI.
@@ -14,6 +27,7 @@
 ### Improvements
 - Change `ruamel.yaml` lower bound to 0.17.10.
 - [SDK/CLI] Improve `pfazure run download` to handle large run data files.
+- [Executor] Exit the process when all async tools are done or exceeded timeout after cancellation.
 
 ## 1.2.0 (2023.12.14)
 

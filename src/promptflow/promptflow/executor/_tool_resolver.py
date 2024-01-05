@@ -39,9 +39,10 @@ class ResolvedTool:
     init_args: dict
 
 
-class ToolResolver:
+class ToolResolver():
+
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
+        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None,
     ):
         try:
             # Import openai and aoai for llm tool
@@ -51,6 +52,17 @@ class ToolResolver:
         self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
+
+    @classmethod
+    def start_resolver(
+        cls,
+        working_dir: Path,
+        connections: Optional[dict] = None,
+        package_tool_keys: Optional[List[str]] = None
+    ):
+        resolver = cls(working_dir, connections, package_tool_keys)
+        resolver._activate_in_context(force=True)
+        return resolver
 
     def _convert_to_connection_value(self, k: str, v: InputAssignment, node: Node, conn_types: List[ValueType]):
         connection_value = self._connection_manager.get(v.value)
