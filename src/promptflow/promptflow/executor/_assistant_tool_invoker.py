@@ -25,7 +25,7 @@ class AssistantToolInvoker:
         self._assistant_tools: Dict[str, AssistantTool] = {}
 
     @classmethod
-    def setup(cls, tools: list, working_dir: Optional[Path] = None):
+    def init(cls, tools: list, working_dir: Optional[Path] = None):
         invoker = cls(working_dir=working_dir)
         invoker._load_tools(tools)
         return invoker

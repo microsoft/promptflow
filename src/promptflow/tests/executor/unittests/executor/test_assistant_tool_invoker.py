@@ -39,7 +39,7 @@ class TestAssistantToolInvoker:
         ]
 
         # Test load tools
-        invoker = AssistantToolInvoker.setup(tool_definitions, working_dir=Path(__file__).parent)
+        invoker = AssistantToolInvoker.init(tool_definitions, working_dir=Path(__file__).parent)
         for tool_name, assistant_tool in invoker._assistant_tools.items():
             assert tool_name in ("code_interpreter", "retrieval", "sample_tool")
             assert assistant_tool.name == tool_name
@@ -85,7 +85,7 @@ class TestAssistantToolInvoker:
     def test_load_tools_with_invalid_case(self):
         tool_definitions = [{"type": "invalid_type"}]
         with pytest.raises(UnsupportedAssistantToolType) as exc_info:
-            AssistantToolInvoker.setup(tool_definitions)
+            AssistantToolInvoker.init(tool_definitions)
         assert "Unsupported assistant tool type" in exc_info.value.message
 
     def _remove_predefined_inputs(self, value: any, predefined_inputs: list):

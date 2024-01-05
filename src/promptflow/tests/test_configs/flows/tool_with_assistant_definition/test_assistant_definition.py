@@ -6,7 +6,7 @@ from promptflow.contracts.types import AssistantDefinition
 def test_assistant_definition(message: str, assistant_definition: AssistantDefinition):
     assert assistant_definition.model == "mock_model"
     assert assistant_definition.instructions == "mock_instructions"
-    invoker = assistant_definition.setup_tool_invoker()
+    invoker = assistant_definition.init_tool_invoker()
     openai_definition = invoker.to_openai_tools()
     assert len(openai_definition) == 1
     assert openai_definition[0]["function"]["description"] == "This tool is used to echo the message back."

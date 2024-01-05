@@ -54,7 +54,7 @@ class AssistantDefinition:
             "tools": self.tools,
         }
 
-    def setup_tool_invoker(self, working_dir: Optional[Path] = None):
+    def init_tool_invoker(self):
         from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
 
-        return AssistantToolInvoker.setup(self.tools, working_dir=working_dir)
+        return AssistantToolInvoker.init(self.tools)
