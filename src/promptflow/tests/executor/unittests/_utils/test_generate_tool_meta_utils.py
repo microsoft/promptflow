@@ -132,7 +132,7 @@ class TestToolMetaUtils:
                 "python",
                 cd_and_run_with_read_text_error,
                 r"\(MetaFileReadError\) Generate tool meta failed for python tool. "
-                r"Read meta file '.*divide_num.py' failed: \(Exception\) Mock read text error.",
+                r"Read meta file 'divide_num.py' failed: \(Exception\) Mock read text error.",
                 id="MetaFileReadError",
             ),
             pytest.param(
