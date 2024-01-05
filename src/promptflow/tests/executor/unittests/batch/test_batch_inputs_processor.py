@@ -13,6 +13,24 @@ from promptflow.contracts.tool import ValueType
 
 @pytest.mark.unittest
 class TestBatchInputsProcessor:
+    def test_process_batch_inputs(self):
+        data = [
+            {"question": "What's promptflow?"},
+            {"question": "Do you like promptflow?"},
+        ]
+        data_file = Path(mkdtemp()) / "data.jsonl"
+        with open(data_file, "w") as file:
+            for item in data:
+                json_line = json.dumps(item)
+                file.write(json_line + "\n")
+        input_dirs = {"data": data_file}
+        inputs_mapping = {"question": "${data.question}"}
+        batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
+        assert batch_inputs == [
+            {"line_number": 0, "question": "What's promptflow?"},
+            {"line_number": 1, "question": "Do you like promptflow?"},
+        ]
+
     def test_process_batch_inputs_error(self):
         data_file = Path(mkdtemp()) / "data.jsonl"
         data_file.touch()
