@@ -13,6 +13,10 @@
 - Fix unaligned inputs & outputs or pandas exception during get details against run in Azure.
 - Fix loose flow path validation for run schema.
 
+### Improvements
+
+- [SDK/CLI] For `pfazure flow create` used by non-msft tenant user, use user name instead of user object id in the remote flow folder path.
+
 ## 1.3.0 (2023.12.27)
 
 ### Features Added
