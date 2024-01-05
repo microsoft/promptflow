@@ -29,7 +29,7 @@ class AsyncNodesScheduler:
         node_concurrency: int,
     ) -> None:
         self._tools_manager = tools_manager
-        node_concurrency = 1
+        node_concurrency = 2
         self._semaphore = asyncio.Semaphore(node_concurrency)
         self._node_concurrency = node_concurrency
 
@@ -90,6 +90,7 @@ class AsyncNodesScheduler:
         executor: ThreadPoolExecutor,
     ) -> Dict[Task, Node]:
         # Bypass nodes and update node run info until there are no nodes to bypass
+        print("executing nodes")
         nodes_to_bypass = dag_manager.pop_bypassable_nodes()
         while nodes_to_bypass:
             for node in nodes_to_bypass:
@@ -114,15 +115,22 @@ class AsyncNodesScheduler:
     ) -> Task:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
+        print("?????")
         if inspect.iscoroutinefunction(f):
-            # task = context.invoke_tool_async(node, f, kwargs)
+            print("async function")
+            # coroutine = context.invoke_tool_async(node, f, kwargs)
+            # task = self.run_task_with_semaphore(coroutine)
+            # task = context.invoke_tool_async(node, f, **kwargs)
             coroutine = context.invoke_tool_async(node, f, kwargs)
-            return asyncio.create_task(self.run_task_with_semaphore(coroutine), name=node.name)  
+            return asyncio.create_task(self.run_task_with_semaphore(coroutine), name=node.name)
+
         else:
-            func = lambda: context.invoke_tool(node, f, kwargs)
-            coroutine = self._sync_function_to_async_task(executor, context, node, func, kwargs)
-            return asyncio.create_task(self.run_task_with_semaphore(coroutine), name=node.name)  
-            # task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
+            print("sync function")
+            task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
+
+            # func = lambda: context.invoke_tool(node, f, kwargs)
+            # coroutine = self._sync_function_to_async_task(executor, context, node, func, kwargs)
+            # return asyncio.create_task(self.run_task_with_semaphore(coroutine), name=node.name)  
          
         # Set the name of the task to the node name for debugging purpose
         # It does not need to be unique by design.
