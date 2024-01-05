@@ -1,4 +1,4 @@
-name: flowdag_schema_check
+name: examples_flowdag_schema_check
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - examples/**
       - .github/workflows/flowdag_schema_check.yml
 jobs:
-  flowdag_schema_check:
+  examples_flowdag_schema_check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
