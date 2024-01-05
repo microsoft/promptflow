@@ -158,7 +158,7 @@ def inject_sync(f):
     return wrapper_fun
 
 
-def _openai_api_list(sync=True):
+def _openai_api_list():
     if IS_LEGACY_OPENAI:
         sync_apis = (
             ("openai", "Completion", "create"),
@@ -184,24 +184,26 @@ def _openai_api_list(sync=True):
             ("openai.resources", "AsyncEmbeddings", "create"),
         )
 
-    yield from sync_apis if sync else async_apis
+    yield sync_apis, inject_sync
+    yield async_apis, inject_async
 
 
-def _generate_api_and_injector(apis, sync=True):
-    for module_name, class_name, method_name in apis:
-        try:
-            module = importlib.import_module(module_name)
-            api = getattr(module, class_name)
-            if hasattr(api, method_name):
-                yield api, method_name, inject_sync if sync else inject_async
-        except AttributeError as e:
-            # Log the attribute exception with the missing class information
-            logging.warning(
-                f"AttributeError: The module '{module_name}' does not have the class '{class_name}'. {str(e)}"
-            )
-        except Exception as e:
-            # Log other exceptions as a warning, as we're not sure what they might be
-            logging.warning(f"An unexpected error occurred: {str(e)}")
+def _generate_api_and_injector(apis):
+    for apis, injector in apis:
+        for module_name, class_name, method_name in apis:
+            try:
+                module = importlib.import_module(module_name)
+                api = getattr(module, class_name)
+                if hasattr(api, method_name):
+                    yield api, method_name, injector
+            except AttributeError as e:
+                # Log the attribute exception with the missing class information
+                logging.warning(
+                    f"AttributeError: The module '{module_name}' does not have the class '{class_name}'. {str(e)}"
+                )
+            except Exception as e:
+                # Log other exceptions as a warning, as we're not sure what they might be
+                logging.warning(f"An unexpected error occurred: {str(e)}")
 
 
 def available_openai_apis_and_injectors():
@@ -216,8 +218,7 @@ def available_openai_apis_and_injectors():
     Yields:
         Tuples of (api_class, method_name, injector_function)
     """
-    yield from _generate_api_and_injector(_openai_api_list(sync=True), sync=True)
-    yield from _generate_api_and_injector(_openai_api_list(sync=False), sync=False)
+    yield from _generate_api_and_injector(_openai_api_list())
 
 
 def inject_openai_api():

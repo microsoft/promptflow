@@ -304,77 +304,78 @@ def test_aoai_chat_tool_prompt():
             )
 
 
+# The new generator-based test function
 @pytest.mark.parametrize(
-    "is_legacy, sync, expected_apis",
+    "is_legacy, expected_apis_with_injectors",
     [
         (
             True,
-            True,
-            (
-                ("openai", "Completion", "create"),
-                ("openai", "ChatCompletion", "create"),
-                ("openai", "Embedding", "create"),
-            ),
-        ),
-        (
-            True,
-            False,
-            (
-                ("openai", "Completion", "acreate"),
-                ("openai", "ChatCompletion", "acreate"),
-                ("openai", "Embedding", "acreate"),
-            ),
-        ),
-        (
-            False,
-            True,
-            (
-                ("openai.resources.chat", "Completions", "create"),
-                ("openai.resources", "Completions", "create"),
-                ("openai.resources", "Embeddings", "create"),
-            ),
+            [
+                (
+                    (
+                        ("openai", "Completion", "create"),
+                        ("openai", "ChatCompletion", "create"),
+                        ("openai", "Embedding", "create"),
+                    ),
+                    inject_sync,
+                ),
+                (
+                    (
+                        ("openai", "Completion", "acreate"),
+                        ("openai", "ChatCompletion", "acreate"),
+                        ("openai", "Embedding", "acreate"),
+                    ),
+                    inject_async,
+                ),
+            ],
         ),
         (
             False,
-            False,
-            (
-                ("openai.resources.chat", "AsyncCompletions", "create"),
-                ("openai.resources", "AsyncCompletions", "create"),
-                ("openai.resources", "AsyncEmbeddings", "create"),
-            ),
+            [
+                (
+                    (
+                        ("openai.resources.chat", "Completions", "create"),
+                        ("openai.resources", "Completions", "create"),
+                        ("openai.resources", "Embeddings", "create"),
+                    ),
+                    inject_sync,
+                ),
+                (
+                    (
+                        ("openai.resources.chat", "AsyncCompletions", "create"),
+                        ("openai.resources", "AsyncCompletions", "create"),
+                        ("openai.resources", "AsyncEmbeddings", "create"),
+                    ),
+                    inject_async,
+                ),
+            ],
         ),
     ],
 )
-def test_api_list(is_legacy, sync, expected_apis):
+def test_api_list(is_legacy, expected_apis_with_injectors):
     with patch("promptflow._core.openai_injector.IS_LEGACY_OPENAI", is_legacy):
-        apis = list(_openai_api_list(sync=sync))
-        assert apis == list(expected_apis)
+        # Using list comprehension to get all items from the generator
+        actual_apis_with_injectors = list(_openai_api_list())
+        # Assert that the actual list matches the expected list
+        assert actual_apis_with_injectors == expected_apis_with_injectors
 
 
 @pytest.mark.parametrize(
-    "sync, expected_output, expected_logs",
+    "apis_with_injectors, expected_output, expected_logs",
     [
-        (True, [(MockAPI, "create", inject_sync)], []),
-        (False, [(MockAPI, "create", inject_async)], []),
+        ([((("MockModule", "MockAPI", "create"),), inject_sync)], [(MockAPI, "create", inject_sync)], []),
+        ([((("MockModule", "MockAPI", "create"),), inject_async)], [(MockAPI, "create", inject_async)], []),
     ],
 )
-def test_generate_api_and_injector(sync, expected_output, expected_logs, caplog):
-    apis = [
-        ("MockModule", "MockAPI", "create"),
-    ]
+def test_generate_api_and_injector(apis_with_injectors, expected_output, expected_logs, caplog):
     with patch("importlib.import_module", return_value=MagicMock(MockAPI=MockAPI)) as mock_import_module:
         # Capture the logs
         with caplog.at_level(logging.WARNING):
             # Run the generator and collect the output
-            result = list(_generate_api_and_injector(apis, sync))
+            result = list(_generate_api_and_injector(apis_with_injectors))
 
         # Check if the result matches the expected output
-        for (api, method_name, injector), (expected_api, expected_method_name, expected_injector) in zip(
-            result, expected_output
-        ):
-            assert api == expected_api
-            assert method_name == expected_method_name
-            assert injector == expected_injector
+        assert result == expected_output
 
         # Check if the logs match the expected logs
         assert len(caplog.records) == len(expected_logs)
@@ -386,8 +387,8 @@ def test_generate_api_and_injector(sync, expected_output, expected_logs, caplog)
 
 def test_generate_api_and_injector_attribute_error_logging(caplog):
     apis = [
-        ("NonExistentModule", "NonExistentAPI", "create"),
-        ("MockModuleMissingMethod", "MockAPIMissingMethod", "missing_method"),
+        ((("NonExistentModule", "NonExistentAPI", "create"),), MagicMock()),
+        ((("MockModuleMissingMethod", "MockAPIMissingMethod", "missing_method"),), MagicMock()),
     ]
 
     # Set up the side effect for the mock
@@ -402,7 +403,7 @@ def test_generate_api_and_injector_attribute_error_logging(caplog):
     with patch("importlib.import_module") as mock_import_module:
         mock_import_module.side_effect = import_module_effect
         with caplog.at_level(logging.WARNING):
-            list(_generate_api_and_injector(apis, sync=True))
+            list(_generate_api_and_injector(apis))
 
         assert len(caplog.records) == 2
         assert "An unexpected error occurred" in caplog.records[0].message
