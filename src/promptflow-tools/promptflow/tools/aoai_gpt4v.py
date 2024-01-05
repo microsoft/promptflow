@@ -15,8 +15,16 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
     post_process_chat_api_response
 
 
-def list_versions() -> List[str]:
-    return ["version1", "version2"]
+def list_versions() -> List[Dict[str, str]]:
+    result = []
+    for i in range(2):
+        random_word = f"version_{i}"
+        cur_item = {
+            "value": random_word,
+        }
+        result.append(cur_item)
+
+    return result
 
 
 def list_deployment_names(subscription_id, resource_group_name, workspace_name, version) -> List[Dict[str, str]]:
@@ -31,6 +39,7 @@ def list_deployment_names(subscription_id, resource_group_name, workspace_name, 
     )
     result = requests.get(url, headers={"Authorization": f"Bearer {token.token}"})
     import json
+    print(result.text)
     deployments = json.loads(result.text)
     
     deployment_names=[]
