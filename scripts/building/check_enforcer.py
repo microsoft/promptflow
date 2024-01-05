@@ -1,9 +1,9 @@
 # Enforce the check of pipelines.
-# This script will get the diff of the current branch and main branch, and calculate the pipelines that should be triggered.
+# This script will get the diff of the current branch and main branch, calculate the pipelines that should be triggered.
 # Then it will check if the triggered pipelines are successful. This script will loop for 30*loop-times seconds at most.
 
 # How many checks are triggered:
-# 1. sdk checks: sdk_cli_tests, sdk_cli_azure_test, sdk_cli_global_config_tests are tirggered.
+# 1. sdk checks: sdk_cli_tests, sdk_cli_azure_test, sdk_cli_global_config_tests are triggered.
 # 2. examples checks: this script calculate the path filters and decide what should be triggered.
 
 # Trigger checks and return the status of the checks:
