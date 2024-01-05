@@ -8,7 +8,7 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 
-from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
+from ..utils import FLOW_ROOT, MemoryRunStorage, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -70,8 +70,10 @@ class TestExecutor:
         assert flow_result.run_info.status == Status.Completed
         node_count = len(executor._flow.nodes)
         assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == 1
-        assert isinstance(flow_result.run_info.api_calls[0]["children"], list) and \
-            len(flow_result.run_info.api_calls[0]["children"]) == node_count
+        assert (
+            isinstance(flow_result.run_info.api_calls[0]["children"], list)
+            and len(flow_result.run_info.api_calls[0]["children"]) == node_count
+        )
         assert len(flow_result.node_run_infos) == node_count
         for node, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
@@ -115,7 +117,7 @@ class TestExecutor:
         queue = context.Queue()
         process = context.Process(
             target=exec_node_within_process,
-            args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True)
+            args=(queue, "llm_tool", "joke", {"topic": "fruit"}, {}, dev_connections, True),
         )
         process.start()
         process.join()
@@ -243,6 +245,39 @@ class TestExecutor:
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.output["output"] == "Hello World"
 
+    def test_executor_flow_entry(self):
+        run_storage = MemoryRunStorage()
+        executor = FlowExecutor.create(
+            get_yaml_file("flow_no_yaml", file_name="flow_entry.py"),
+            connections={},
+            storage=run_storage,
+        )
+        try:
+            flow_result = executor.exec_line({"input1": "val1", "wait_seconds": 1})
+        except Exception as ex:
+            print(ex)
+
+        flow_result = list(run_storage._flow_runs.values())[0]
+
+        import json
+        from pathlib import Path
+
+        assert len(flow_result.api_calls) == 1
+        top_trace = flow_result.api_calls[0]
+        Path("top_trace.json").write_text(json.dumps(top_trace, indent=2))
+
+        # assert flow_result.run_info.status == Status.Completed
+        # assert flow_result.output == {'val1': 'val1', 'val2': 'val1'}
+        top_trace = flow_result.api_calls[0]
+        assert top_trace["name"] == "flow"
+        assert len(top_trace["children"]) == 1
+        main_trace = top_trace["children"][0]
+        assert len(main_trace["children"]) == 2
+        assert main_trace["children"][0]["name"] == "passthrough_str_and_wait_sync"
+        assert main_trace["children"][0]["inputs"] == {"input1": "val1", "wait_seconds": 1}
+        assert main_trace["children"][1]["name"] == "passthrough_str_and_wait_sync"
+        assert main_trace["children"][1]["inputs"] == {"input1": "val1", "wait_seconds": 3}
+
 
 def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
     try:
@@ -252,18 +287,17 @@ def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependenc
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=connections,
-            raise_ex=raise_ex
+            raise_ex=raise_ex,
         )
         # Assert llm single node run contains openai traces
         # And the traces contains system metrics
         OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
         assert len(result.api_calls) == 1
         assert len(result.api_calls[0]["children"]) == 1
-        assert isinstance(result.api_calls[0]["children"][0]["system_metrics"], dict)
+        assert isinstance(result.get_user_name_trace["system_metrics"], dict)
         for key in OPENAI_AGGREGATE_METRICS:
-            assert key in result.api_calls[0]["children"][0]["system_metrics"]
+            assert key in result.get_user_name_trace["system_metrics"]
         for key in OPENAI_AGGREGATE_METRICS:
-            assert result.api_calls[0]["system_metrics"][key] == \
-                result.api_calls[0]["children"][0]["system_metrics"][key]
+            assert result.api_calls[0]["system_metrics"][key] == result.get_user_name_trace["system_metrics"][key]
     except Exception as ex:
         queue.put(ex)

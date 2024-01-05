@@ -1117,3 +1117,12 @@ class TestFlowRun:
         for _, row in details2.iterrows():
             if str(row["outputs.output"]) != "(Failed)":
                 assert int(row["inputs.number"]) == int(row["outputs.output"])
+
+    def test_eager_flow_run(self, pf):
+        flow_path = Path(f"{FLOWS_DIR}/simple_eager_flow/entry.py").absolute()
+        run = pf.run(
+            flow=flow_path,
+            data=f"{FLOWS_DIR}/simple_eager_flow/data.jsonl",
+        )
+        print(run)
+        assert run.status == "Completed"

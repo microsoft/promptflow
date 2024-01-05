@@ -325,7 +325,7 @@ class RunOperations(TelemetryMixin):
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
             # TODO: add language to run metadata
-            flow_dag = yaml.safe_load(metadata.dag)
+            flow_dag = yaml.safe_load(metadata.dag) or {}
             configs.append(
                 VisualizationConfig(
                     [AvailableIDE.VS_CODE]

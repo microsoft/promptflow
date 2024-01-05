@@ -7,15 +7,15 @@ import contextlib
 import os
 import re
 import tempfile
+import time
 from collections import defaultdict
 from os import PathLike
 from pathlib import Path
-import time
+from types import GeneratorType
 
 import pydash
 from dotenv import load_dotenv
 from pydash import objects
-from types import GeneratorType
 
 from promptflow._sdk._constants import (
     ALL_CONNECTION_TYPES,
@@ -193,8 +193,12 @@ class SubmitterHelper:
     @staticmethod
     def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
         # TODO 2856400: use resolve_used_connections instead of this function to avoid using executable in control-plane
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
         from .._pf_client import PFClient
 
+        if isinstance(flow, EagerFlow):
+            return {}
         client = client or PFClient()
         with _change_working_dir(flow.code):
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
