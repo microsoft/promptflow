@@ -21,7 +21,13 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
 )
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.utils import dump_list_to_jsonl, log_progress, resolve_dir_to_absolute, transpose
+from promptflow._utils.utils import (
+    dump_list_to_jsonl,
+    get_int_env_var,
+    log_progress,
+    resolve_dir_to_absolute,
+    transpose,
+)
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
@@ -246,7 +252,8 @@ class BatchEngine:
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
-        semaphore = asyncio.Semaphore(DEFAULT_CONCURRENCY)
+        worker_count = get_int_env_var("PF_WORKER_COUNT", DEFAULT_CONCURRENCY)
+        semaphore = asyncio.Semaphore(worker_count)
         pending = [
             asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
             for i, line_inputs in enumerate(batch_inputs)
