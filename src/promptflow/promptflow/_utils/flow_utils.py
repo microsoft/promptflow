@@ -7,7 +7,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
-from ruamel.yaml import YAML
+import yaml
 
 from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
 from promptflow._utils.logger_utils import LoggerFactory
@@ -59,17 +59,14 @@ def load_flow_dag(flow_path: Path):
     flow_path = resolve_flow_path(flow_path)
     if not flow_path.exists():
         raise FileNotFoundError(f"Flow file {flow_path} not found")
-    yaml = YAML()
-    yaml.preserve_quotes = True
     with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
-        flow_dag = yaml.load(f)
+        flow_dag = yaml.safe_load(f)
     return flow_path, flow_dag
 
 
 def dump_flow_dag(flow_dag: dict, flow_path: Path):
     """Dump flow dag to given flow path."""
     flow_path = resolve_flow_path(flow_path)
-    yaml = YAML()
     with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        yaml.dump(flow_dag, f, default_flow_style=False)
+        yaml.safe_dump(flow_dag, f, default_flow_style=False)
     return flow_path
