@@ -1,16 +1,31 @@
 import json
+from pathlib import Path
+from tempfile import mkdtemp
 
 import pytest
 
 from promptflow._core._errors import UnexpectedError
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor, apply_inputs_mapping
-from promptflow.batch._errors import InputMappingError
+from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
 
 
 @pytest.mark.unittest
 class TestBatchInputsProcessor:
+    def test_process_batch_inputs_error(self):
+        data_file = Path(mkdtemp()) / "data.jsonl"
+        data_file.touch()
+        input_dirs = {"data": data_file}
+        inputs_mapping = {"question": "${data.question}"}
+        with pytest.raises(EmptyInputsData) as e:
+            BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
+        expected_error_message = (
+            "Couldn't find any inputs data at the given input paths. "
+            "Please review the provided path and consider resubmitting."
+        )
+        assert expected_error_message in e.value.message
+
     @pytest.mark.parametrize(
         "inputs, inputs_mapping, expected",
         [
