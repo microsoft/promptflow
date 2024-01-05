@@ -32,4 +32,4 @@ def test_assistant_definition():
     assert assistant_definition.instructions == "instructions"
     assert assistant_definition.tools == []
     assert assistant_definition.serialize() == data
-    assert isinstance(assistant_definition.setup_tool_invoker(), AssistantToolInvoker)
+    assert isinstance(assistant_definition.init_tool_invoker(), AssistantToolInvoker)
