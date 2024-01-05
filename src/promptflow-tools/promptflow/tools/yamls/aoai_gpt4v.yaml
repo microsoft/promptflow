@@ -24,23 +24,21 @@ promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
     version:
       type:
         - string
-      dynamic_list:
-        func_path: promptflow.tools.aoai_gpt4v.list_versions
       enabled_by: connection
       enabled_by_type: [AzureOpenAIConnection]
+      enum:
+      - version1
+      - version2
       allow_manual_entry: true
       is_multi_select: false
     deployment_name:
       type:
         - string
-      dynamic_list:
-        func_path: promptflow.tools.aoai_gpt4v.list_deployment_names
-        func_kwargs: 
-        - name: version
-          type: 
-          - string
-          reference: ${inputs.version}
       enabled_by: version
+      capabilities:
+        completion: true
+        chat_completion: false
+        embeddings: false
       allow_manual_entry: false
       is_multi_select: false
     temperature:
