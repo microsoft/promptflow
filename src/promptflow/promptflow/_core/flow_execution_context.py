@@ -16,6 +16,7 @@ from typing import Callable
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
 from promptflow._core.operation_context import OperationContext
+from promptflow._core.otel_tracer import get_otel_tracer
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import generate_elapsed_time_messages
@@ -25,6 +26,7 @@ from promptflow.exceptions import PromptflowException
 
 from .run_tracker import RunTracker
 from .thread_local_singleton import ThreadLocalSingleton
+from .tracer import Tracer
 
 
 class FlowExecutionContext(ThreadLocalSingleton):
@@ -51,6 +53,8 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._line_number = line_number
         self._variant_id = variant_id
 
+        self._otel_tracer = get_otel_tracer(self._name)
+
     def copy(self):
         return FlowExecutionContext(
             name=self._name,
@@ -70,6 +74,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         run_info = self._prepare_node_run(node, f, kwargs)
         node_run_id = run_info.run_id
 
+        traces = []
         try:
             hit_cache = False
             # Get result from cache. If hit cache, no need to execute f.
@@ -84,9 +89,11 @@ class FlowExecutionContext(ThreadLocalSingleton):
                     hit_cache = True
 
             if not hit_cache:
+                Tracer.start_tracing(node_run_id, node.name, self._otel_tracer)
                 result = self._invoke_tool_with_timer(node, f, kwargs)
+                traces = Tracer.end_tracing(node_run_id)
 
-            self._run_tracker.end_run(node_run_id, result=result)
+            self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             # Record result in cache so that future run might reuse its result.
             if not hit_cache and node.enable_cache:
                 self._persist_cache(cache_info, run_info)
@@ -95,7 +102,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
             return result
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
-            self._run_tracker.end_run(node_run_id, ex=e)
+            if not traces:
+                traces = Tracer.end_tracing(node_run_id)
+            self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
             self._run_tracker.persist_node_run(run_info)
@@ -128,9 +137,12 @@ class FlowExecutionContext(ThreadLocalSingleton):
         run_info = self._prepare_node_run(node, f, kwargs=kwargs)
         node_run_id = run_info.run_id
 
+        traces = []
         try:
+            Tracer.start_tracing(node_run_id, node.name, self._otel_tracer)
             result = await self._invoke_tool_async_inner(node, f, kwargs)
-            self._run_tracker.end_run(node_run_id, result=result)
+            traces = Tracer.end_tracing(node_run_id)
+            self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             flow_logger.info(f"Node {node.name} completes.")
             return result
         # User tool should reraise the CancelledError after its own handling logic,
@@ -138,11 +150,13 @@ class FlowExecutionContext(ThreadLocalSingleton):
         # Otherwise, the node would end with Completed status.
         except asyncio.CancelledError as e:
             logger.info(f"Node {node.name} in line {self._line_number} is cancelled.")
-            self._run_tracker.end_run(node_run_id, ex=e)
+            traces = Tracer.end_tracing(node_run_id)
+            self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
-            self._run_tracker.end_run(node_run_id, ex=e)
+            traces = Tracer.end_tracing(node_run_id)
+            self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise
         finally:
             self._run_tracker.persist_node_run(run_info)
