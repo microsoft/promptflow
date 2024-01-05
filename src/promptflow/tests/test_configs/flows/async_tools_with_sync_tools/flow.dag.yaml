@@ -8,7 +8,7 @@ outputs:
     reference: ${async_passthrough1.output}
   output2:
     type: string
-    reference: ${sync_passthrough1.output}
+    reference: ${async_passthrough2.output}
 nodes:
 - name: async_passthrough
   type: python
@@ -25,13 +25,13 @@ nodes:
     path: async_passthrough.py
   inputs:
     input1: ${async_passthrough.output}
-    wait_seconds: 30
+    wait_seconds: 15
     wait_seconds_in_cancellation: 1
-- name: sync_passthrough1
+- name: async_passthrough2
   type: python
   source:
     type: code
-    path: sync_passthrough.py
+    path: async_passthrough.py
   inputs:
     input1: ${async_passthrough.output}
     wait_seconds: 10

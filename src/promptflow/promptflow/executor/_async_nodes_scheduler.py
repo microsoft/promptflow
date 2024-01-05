@@ -29,7 +29,8 @@ class AsyncNodesScheduler:
         node_concurrency: int,
     ) -> None:
         self._tools_manager = tools_manager
-        # TODO: Add concurrency control in execution
+        node_concurrency = 1
+        self._semaphore = asyncio.Semaphore(node_concurrency)
         self._node_concurrency = node_concurrency
 
     async def execute(
@@ -78,6 +79,7 @@ class AsyncNodesScheduler:
         done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
         dag_manager.complete_nodes({task2nodes[task].name: task.result() for task in done})
         for task in done:
+            self._semaphore.release()
             del task2nodes[task]
         return task2nodes
 
@@ -98,6 +100,11 @@ class AsyncNodesScheduler:
             self._create_node_task(node, dag_manager, context, executor): node for node in dag_manager.pop_ready_nodes()
         }
 
+    async def run_task_with_semaphore(self, coroutine):
+        async with self._semaphore:
+            result = await coroutine
+        return result
+
     def _create_node_task(
         self,
         node: Node,
@@ -108,9 +115,15 @@ class AsyncNodesScheduler:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         if inspect.iscoroutinefunction(f):
-            task = context.invoke_tool_async(node, f, kwargs)
+            # task = context.invoke_tool_async(node, f, kwargs)
+            coroutine = context.invoke_tool_async(node, f, kwargs)
+            return asyncio.create_task(self.run_task_with_semaphore(coroutine), name=node.name)  
         else:
-            task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
+            func = lambda: context.invoke_tool(node, f, kwargs)
+            coroutine = self._sync_function_to_async_task(executor, context, node, func, kwargs)
+            return asyncio.create_task(self.run_task_with_semaphore(coroutine), name=node.name)  
+            # task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
+         
         # Set the name of the task to the node name for debugging purpose
         # It does not need to be unique by design.
         return asyncio.create_task(task, name=node.name)
