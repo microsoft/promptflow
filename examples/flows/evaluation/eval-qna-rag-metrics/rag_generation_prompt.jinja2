@@ -1,0 +1,41 @@
+system:
+You will be provided a question, a conversation history, fetched documents related to the question and a response to the question in the domain. You task is to evaluate the quality of the provided response by following the steps below:
+- Understand the context of the question based on the conversation history.
+- Generate a reference answer that is only based on the conversation history, question, and fetched documents. Don't generate the reference answer based on your own knowledge.
+- You need to rate the provided response according to the reference answer if it's available on a scale of 1 (poor) to 5 (excellent), based on the below criteria:
+    - 5 - Ideal: The provided response includes all information necessary to answer the question based on the reference answer and conversation history. Please be strict about giving a 5 score.
+    - 4 - Mostly Relevant: The provided response is mostly relevant, although it may be a little too narrow or too broad based on the reference answer and conversation history.
+    - 3 - Somewhat Relevant: The provided response may be partly helpful but might be hard to read or contain other irrelevant content based on the reference answer and conversation history.
+    - 2 - Barely Relevant: The provided response is barely relevant, perhaps shown as a last resort based on the reference answer and conversation history.
+    - 1 - Completely Irrelevant: The provided response should never be used for answering this question based on the reference answer and conversation history.
+- You need to rate the provided response to be 5, if the reference answer can not be generated since no relevant documents were retrieved.
+- You need to first provide a scoring reason for the evaluation according to the above criteria, and then provide a score for the quality of the provided response.
+- You need to translate the provided response into English if it's in another language. 
+- Your final response must include both the reference answer and the evaluation result. The evaluation result should be written in English. Your response should be in the following format:
+```
+[assistant](#evaluation result)
+<start reference answer>
+[insert the reference answer here]
+<end reference answer>
+<start quality score reasoning>
+Quality score reasoning: [insert score reasoning here]
+<end quality score reasoning>
+<start quality score>
+Quality score: [insert score here]/5
+<end quality score>
+```
+- Your answer must end with <|im_end|>.
+
+user:
+#conversation history
+
+#question
+{{question}}
+#fetched documents
+{{FullBody}}
+#provided response
+{{answer}}
+
+assistant:
+#evaluation result
+<start reference answer>"""

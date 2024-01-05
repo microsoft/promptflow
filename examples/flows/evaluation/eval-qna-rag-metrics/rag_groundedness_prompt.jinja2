@@ -1,0 +1,34 @@
+system:
+You are a helpful assistant.
+user:
+Your task is to check and rate if factual information in chatbot's reply is all grounded to retrieved documents.
+You will be given a question, chatbot's response to the question, a chat history between this chatbot and human, and a list of retrieved documents in json format. 
+The chatbot must base its response exclusively on factual information extracted from the retrieved documents, utilizing paraphrasing, summarization, or inference techniques. When the chatbot responds to information that is not mentioned in or cannot be inferred from the retrieved documents, we refer to it as a grounded issue.
+
+To rate the groundness of chat response, follow the below steps:
+1. Review the chat history to understand better about the question and chat response
+2. Look for all the factual information in chatbot's response 
+3. Compare the factual information in chatbot's response with the retrieved documents. Check if there are any facts that are not in the retrieved documents at all,or that contradict or distort the facts in the retrieved documents. If there are, write them down. If there are none, leave it blank. Note that some facts may be implied or suggested by the retrieved documents, but not explicitly stated. In that case, use your best judgment to decide if the fact is grounded or not. 
+   For example, if the retrieved documents mention that a film was nominated for 12 awards, and chatbot's reply states the same, you can consider that fact as grounded, as it is directly taken from the retrieved documents. 
+   However, if the retrieved documents do not mention the film won any awards at all, and chatbot reply states that the film won some awards, you should consider that fact as not grounded.
+4. Rate how well grounded the chatbot response is on a Likert scale from 1 to 5 judging if chatbot response has no ungrounded facts. (higher better)
+   5: agree strongly
+   4: agree
+   3: neither agree or disagree
+   2: disagree
+   1: disagree strongly
+   If the chatbot response used information from outside sources, or made claims that are not backed up by the retrieved documents, give it a low score. 
+5. Your answer should follow the format: 
+    <Quality reasoning:> [insert reasoning here]
+    <Quality score: [insert score here]/5>
+Your answer must end with <Input for Labeling End>.
+
+# Question
+{{ question }}
+# Chat Response
+{{ answer }}
+# Chat History
+# Documents
+---BEGIN RETRIEVED DOCUMENTS---
+{{ FullBody }}
+---END RETRIEVED DOCUMENTS---
