@@ -2,14 +2,14 @@ from datetime import datetime
 
 import pytest
 
-from promptflow.batch._result import BatchResult, ErrorSummary, LineError
+from promptflow.batch._result import BatchResult, ErrorSummary, LineError, SystemMetrics
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor._result import AggregationResult, LineResult
 
 
-def get_node_run_infos(node_dict: dict, index=None, api_calls=None):
+def get_node_run_infos(node_dict: dict, index=None, api_calls=None, system_metrics=None):
     return {
         k: NodeRunInfo(
             node=k,
@@ -25,6 +25,7 @@ def get_node_run_infos(node_dict: dict, index=None, api_calls=None):
             end_time=None,
             index=index,
             api_calls=api_calls,
+            system_metrics=system_metrics,
         )
         for k, v in node_dict.items()
     }
@@ -51,21 +52,23 @@ def get_flow_run_info(status_dict: dict, index: int):
     )
 
 
-def get_line_results(line_dict: dict, api_calls=None):
+def get_line_results(line_dict: dict, api_calls=None, system_metrics=None):
     return [
         LineResult(
             output={},
             aggregation_inputs={},
             run_info=get_flow_run_info(status_dict=v, index=k),
-            node_run_infos=get_node_run_infos(node_dict=v, index=k, api_calls=api_calls),
+            node_run_infos=get_node_run_infos(node_dict=v, index=k, api_calls=api_calls, system_metrics=system_metrics),
         )
         for k, v in line_dict.items()
     ]
 
 
-def get_aggregation_result(aggr_dict: dict, api_calls=None):
+def get_aggregation_result(aggr_dict: dict, api_calls=None, system_metrics=None):
     return AggregationResult(
-        output={}, metrics={}, node_run_infos=get_node_run_infos(node_dict=aggr_dict, api_calls=api_calls)
+        output={},
+        metrics={},
+        node_run_infos=get_node_run_infos(node_dict=aggr_dict, api_calls=api_calls, system_metrics=system_metrics),
     )
 
 
@@ -238,5 +241,32 @@ class TestErrorSummary:
 
 @pytest.mark.unittest
 class TestSystemMetrics:
-    def test_get_openai_metrics(slef):
-        pass
+    def test_create(slef):
+        line_dict = {
+            0: {"node_0": Status.Completed, "node_1": Status.Completed},
+            1: {"node_0": Status.Completed, "node_1": Status.Completed},
+        }
+        line_system_metrics = {
+            "total_tokens": 5,
+            "prompt_tokens": 3,
+            "completion_tokens": 2,
+        }
+        line_results = get_line_results(line_dict, system_metrics=line_system_metrics)
+        aggr_dict = {"aggr_0": Status.Completed}
+        # invalid system metrics
+        aggr_system_metrics = {
+            "total_tokens": 10,
+            "prompt_tokens": 6,
+        }
+        aggr_result = get_aggregation_result(aggr_dict, system_metrics=aggr_system_metrics)
+        system_metrics = SystemMetrics.create(datetime.utcnow(), datetime.utcnow(), line_results, aggr_result)
+        assert system_metrics.total_tokens == 20
+        assert system_metrics.prompt_tokens == 12
+        assert system_metrics.completion_tokens == 8
+        assert system_metrics.duration == 0
+        assert system_metrics.to_dict() == {
+            "total_tokens": 20,
+            "prompt_tokens": 12,
+            "completion_tokens": 8,
+            "duration": 0,
+        }
