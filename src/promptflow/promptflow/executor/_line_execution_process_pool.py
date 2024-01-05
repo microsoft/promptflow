@@ -31,6 +31,7 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
+from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager
 from promptflow.storage import AbstractRunStorage
 
 
@@ -142,7 +143,6 @@ class LineExecutionProcessPool:
         # when using fork, we first create a process with spawn method to establish a clean environment
         # Then fork the subprocess in this environment to avoid some deadlock problems
         if self._use_fork:
-            from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager
             # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
             # 2. Pass the above queue/dict as parameters to spawn and fork processes to transfer information
             # between processes.
