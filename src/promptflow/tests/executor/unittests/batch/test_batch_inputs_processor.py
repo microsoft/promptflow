@@ -69,11 +69,12 @@ class TestBatchInputsProcessor:
         "inputs, inputs_mapping, expected",
         [
             (
-                {"data.test": {"question": "longer input key has lower priority."}, "line_number": 1},
+                {"data.test": {"question": "longer input key has lower priority."}, "line_number": 0},
                 {
                     "question": "${data.test.question}",  # Question from the data
+                    "value": 1,
                 },
-                {"question": "longer input key has lower priority.", "line_number": 1},
+                {"question": "longer input key has lower priority.", "value": 1, "line_number": 0},
             ),
             (
                 {
