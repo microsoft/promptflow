@@ -49,6 +49,7 @@ def create_flow_for_prompt(prompt_file):
         dummy_node_inputs["deployment_name"] = model_config["deployment"]
 
     target_folder = Path(prompt_file).parent / ".promptflow"
+    target_folder.mkdir(exist_ok=True)
     yaml_file = Path(target_folder) / "flow.dag.yaml"
     with open(yaml_file, "w") as f:
         yaml.safe_dump(default_flow, f)
