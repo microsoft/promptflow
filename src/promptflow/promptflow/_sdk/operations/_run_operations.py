@@ -13,7 +13,6 @@ import yaml
 
 from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
-    LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
     FlowRunProperties,
@@ -28,13 +27,13 @@ from promptflow._sdk._utils import incremental_print, print_red_error, safe_pars
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization, VisualizationConfig
 from promptflow.exceptions import UserErrorException
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 class RunOperations(TelemetryMixin):

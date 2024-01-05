@@ -58,14 +58,14 @@ def item_render_message(value, key=None):
         show_image(value)
     else:
         if key is None:
-            st.markdown(f"`{json_dumps(value)},`")
+            st.markdown(f"{json_dumps(value)},")
         else:
-            st.markdown(f"`{key}: {json_dumps(value)},`")
+            st.markdown(f"{key}: {json_dumps(value)},")
 
 
 def list_iter_render_message(message_items):
     if is_list_contains_rich_text(message_items):
-        st.markdown("`[ `")
+        st.markdown("[ ")
         for item in message_items:
             if isinstance(item, list):
                 list_iter_render_message(item)
@@ -73,9 +73,9 @@ def list_iter_render_message(message_items):
                 dict_iter_render_message(item)
             else:
                 item_render_message(item)
-        st.markdown("`], `")
+        st.markdown("], ")
     else:
-        st.markdown(f"`{json_dumps(message_items)},`")
+        st.markdown(f"{json_dumps(message_items)},")
 
 
 def dict_iter_render_message(message_items):
@@ -84,22 +84,22 @@ def dict_iter_render_message(message_items):
         value = message_items[key]
         show_image(value, key)
     elif is_dict_contains_rich_text(message_items):
-        st.markdown("`{ `")
+        st.markdown("{ ")
         for key, value in message_items.items():
             if re.match(MIME_PATTERN, key):
                 show_image(value, key)
             else:
                 if isinstance(value, list):
-                    st.markdown(f"`{key}: `")
+                    st.markdown(f"{key}: ")
                     list_iter_render_message(value)
                 elif isinstance(value, dict):
-                    st.markdown(f"`{key}: `")
+                    st.markdown(f"{key}: ")
                     dict_iter_render_message(value)
                 else:
                     item_render_message(value, key)
-        st.markdown("`}, `")
+        st.markdown("}, ")
     else:
-        st.markdown(f"`{json_dumps(message_items)},`")
+        st.markdown(f"{json_dumps(message_items)},")
 
 
 def render_single_list_message(message_items):

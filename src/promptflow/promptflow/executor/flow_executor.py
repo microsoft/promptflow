@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import asyncio
 import copy
 import functools
@@ -22,7 +23,7 @@ from promptflow._core.metric_logger import add_metric_logger, remove_metric_logg
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolInvoker
+from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -46,7 +47,6 @@ from promptflow.executor._flow_nodes_scheduler import (
     FlowNodesScheduler,
 )
 from promptflow.executor._result import AggregationResult, LineResult
-from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
@@ -209,6 +209,7 @@ class FlowExecutor:
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
     ):
+        logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
@@ -232,9 +233,7 @@ class FlowExecutor:
 
         cache_manager = AbstractCacheManager.init_from_env()
 
-        ToolInvoker.activate(DefaultToolInvoker())
-
-        return FlowExecutor(
+        executor = FlowExecutor(
             flow=flow,
             connections=connections,
             run_tracker=run_tracker,
@@ -245,6 +244,8 @@ class FlowExecutor:
             line_timeout_sec=line_timeout_sec,
             flow_file=flow_file,
         )
+        logger.debug("The flow executor is initialized successfully.")
+        return executor
 
     @classmethod
     def load_and_exec_node(
@@ -252,6 +253,7 @@ class FlowExecutor:
         flow_file: Path,
         node_name: str,
         *,
+        storage: AbstractRunStorage = None,
         output_sub_dir: Optional[str] = None,
         flow_inputs: Optional[Mapping[str, Any]] = None,
         dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
@@ -265,6 +267,10 @@ class FlowExecutor:
         :type flow_file: Path
         :param node_name: The name of the node to be executed.
         :type node_name: str
+        :param storage: The storage to be used for the flow.
+        :type storage: Optional[~promptflow.storage.AbstractRunStorage]
+        :param output_sub_dir: The directory to persist image for the flow. Keep it only for backward compatibility.
+        :type output_sub_dir: Optional[str]
         :param flow_inputs: The inputs to be used for the flow. Default is None.
         :type flow_inputs: Optional[Mapping[str, Any]]
         :param dependency_nodes_outputs: The outputs of the dependency nodes. Default is None.
@@ -339,9 +345,9 @@ class FlowExecutor:
         # so we need to remove them from the inputs before invoking.
         resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
 
-        # TODO: Simplify the logic here
-        sub_dir = "." if output_sub_dir is None else output_sub_dir
-        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+        if storage is None:
+            sub_dir = "." if output_sub_dir is None else output_sub_dir
+            storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
             # Will generate node run in context
@@ -803,6 +809,13 @@ class FlowExecutor:
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+        except KeyboardInterrupt as ex:
+            # Run will be cancelled when the process receives a SIGINT signal.
+            # KeyboardInterrupt will be raised after asyncio finishes its signal handling
+            # End run with the KeyboardInterrupt exception, so that its status will be Canceled
+            flow_logger.info("Received KeyboardInterrupt, cancel the run.")
+            run_tracker.end_run(line_run_id, ex=ex)
+            raise
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
             if self._raise_ex:
@@ -868,14 +881,16 @@ class FlowExecutor:
             )
         return outputs
 
+    def _should_use_async(self):
+        return all(
+            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
+        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         #  TODO: Use a mixed scheduler to support both async and thread pool mode.
-        should_use_async = all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
-        if should_use_async:
+        if self._should_use_async():
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
             nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
