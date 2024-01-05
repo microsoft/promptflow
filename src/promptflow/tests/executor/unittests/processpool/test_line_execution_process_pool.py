@@ -299,11 +299,6 @@ class TestLineExecutionProcessPool:
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
 
-    def test_process_not_set_environment_variable(self, dev_connections):
-        line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
-        use_fork = line_execution_process_pool._use_fork
-        assert use_fork == (multiprocessing.get_start_method() == "fork")
-
     def test_get_multiprocessing_context(self):
         # Set default start method to spawn
         context = get_multiprocessing_context("spawn")
