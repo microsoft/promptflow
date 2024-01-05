@@ -51,21 +51,21 @@ class BatchInputsProcessor:
     def _resolve_data_from_input_path(self, input_path: Path):
         """Resolve input data from directory"""
         result = []
-        row_count: int = None
+        max_rows_count: int = None
         if self._max_lines_count:
             # Add one more row to check if the data exceeds the limit.
-            row_count = self._max_lines_count + 1
+            max_rows_count = self._max_lines_count + 1
         if input_path.is_file():
             result.extend(resolve_multimedia_data_recursively(
                 input_path.parent,
-                load_data(local_path=input_path, max_rows_count=row_count))
+                load_data(local_path=input_path, max_rows_count=max_rows_count))
             )
         else:
             for input_file in input_path.rglob("*"):
                 if input_file.is_file():
                     result.extend(resolve_multimedia_data_recursively(
                         input_file.parent,
-                        load_data(local_path=input_file, max_rows_count=row_count))
+                        load_data(local_path=input_file, max_rows_count=max_rows_count))
                     )
                     if self._max_lines_count and len(result) >= self._max_lines_count:
                         break
