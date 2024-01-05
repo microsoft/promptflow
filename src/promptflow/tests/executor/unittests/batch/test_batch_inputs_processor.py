@@ -5,6 +5,7 @@ from tempfile import mkdtemp
 import pytest
 
 from promptflow._core._errors import UnexpectedError
+from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor, apply_inputs_mapping
 from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
@@ -19,10 +20,7 @@ class TestBatchInputsProcessor:
             {"question": "Do you like promptflow?"},
         ]
         data_file = Path(mkdtemp()) / "data.jsonl"
-        with open(data_file, "w") as file:
-            for item in data:
-                json_line = json.dumps(item)
-                file.write(json_line + "\n")
+        dump_list_to_jsonl(data_file, data)
         input_dirs = {"data": data_file}
         inputs_mapping = {"question": "${data.question}"}
         batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
@@ -43,6 +41,27 @@ class TestBatchInputsProcessor:
             "Please review the provided path and consider resubmitting."
         )
         assert expected_error_message in e.value.message
+
+    def test_resolve_data_from_input_path(self):
+        inputs_dir = Path(mkdtemp())
+        # data.jsonl
+        data = [
+            {"question": "What's promptflow?"},
+            {"question": "Do you like promptflow?"},
+        ]
+        data_file = inputs_dir / "data.jsonl"
+        dump_list_to_jsonl(data_file, data)
+        # inputs.json
+        inputs_file = inputs_dir / "inputs.json"
+        with open(inputs_file, "w") as file:
+            file.write(json.dumps(data))
+
+        result = BatchInputsProcessor("", {})._resolve_data_from_input_path(inputs_dir)
+        assert result == data + data
+
+        # if has max_lines_count
+        result = BatchInputsProcessor("", {}, max_lines_count=2)._resolve_data_from_input_path(inputs_dir)
+        assert result == data
 
     @pytest.mark.parametrize(
         "inputs, inputs_mapping, expected",
