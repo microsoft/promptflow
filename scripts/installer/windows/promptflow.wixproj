@@ -14,11 +14,11 @@
   </PropertyGroup>
   <!-- Local WiX -->
   <PropertyGroup>
-    <LocalWixRoot>wix</LocalWixRoot>
+    <LocalWixRoot>artifacts\wix</LocalWixRoot>
     <WixToolPath>$(MSBuildThisFileDirectory)$(LocalWixRoot)</WixToolPath>
     <WixTargetsPath Condition="Exists('$(WixToolPath)\Wix.targets')">$(WixToolPath)\Wix.targets</WixTargetsPath>
     <WixTasksPath Condition="Exists('$(WixToolPath)\wixtasks.dll')">$(WixToolPath)\wixtasks.dll</WixTasksPath>
-    <PromptflowSource>scripts\dist\promptflow</PromptflowSource>
+    <PromptflowSource>artifacts\cli</PromptflowSource>
     <LinkerAdditionalOptions>-fv</LinkerAdditionalOptions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -48,7 +48,7 @@
     <Compile Include="product.wxs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".\resources\logo_pf.png" />
+    <None Include=".\resources\logo32.ico" />
   </ItemGroup>
   <!-- UI -->
   <ItemGroup>

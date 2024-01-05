@@ -21,10 +21,6 @@ on:
         required: false
         description: 'Set the version of the private msi installer'
 
-env:
-  packageSetupType: promptflow_with_extra
-  testWorkingDirectory: src/promptflow
-
 jobs:
   build_msi_installer:
     runs-on: windows-latest
@@ -45,51 +41,28 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
 
-      - name: Install WIX Toolset
-        shell:  pwsh
-        working-directory: ${{ github.workspace }}/scripts/installer/windows
+      - name: Setup and Install promptflow
+        shell: cmd
         run: |
-          Invoke-WebRequest -Uri 'https://azurecliprod.blob.core.windows.net/msi/wix310-binaries-mirror.zip' -OutFile 'wix-archive.zip'
-          Expand-Archive -Path 'wix-archive.zip' -DestinationPath 'wix'
-          Remove-Item -Path 'wix-archive.zip'
-
-      - name: Python Setup
-        uses: "./.github/actions/step_create_python_environment"
-
-      - name: Setup and Install dev promptflow
-        if: ${{ github.event.inputs.version == null || github.event.inputs.version == '' }}
-        uses: "./.github/actions/step_sdk_setup"
-        with:
-          setupType: promptflow_with_extra
-          scriptPath: ${{ env.testWorkingDirectory }}
-
-      - name: Install stable promptflow
-        if: ${{ github.event.inputs.version != null && github.event.inputs.version != '' }}
-        run: |
-          pip install promptflow[azure,executable,pfs]==$env:INPUT_VERSION promptflow-tools
+          build.cmd %INPUT_VERSION%
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
-        shell: pwsh
+        working-directory: ${{ github.workspace }}/scripts/installer/windows/
 
       - name: Get promptflow version
         id: get-version
-        # Convert string to int since the version tuple used in "version_info" can't start with 0.
         run: |
           if ($env:INPUT_VERSION) {
             $version=$env:INPUT_VERSION
-            $run_version=$(python -c "import promptflow; print(promptflow.__version__)")
-            if ($version -ne $run_version) {
-              throw "Version input does not match the version in promptflow package. Version input: $version, version in promptflow package: $run_version"
-            }
           } 
           elseif ($env:MSI_PRIVATE_VERSION) {
             $version=$env:MSI_PRIVATE_VERSION
           }
           else {
             $prefix = 0
-            $year = [int](Get-Date -Format "yy")
-            $monthday = [int](Get-Date -Format "MMdd")
-            $hourminutesecond = [int](Get-Date -Format "HHmmss")
+            $year = Get-Date -Format "yy"
+            $monthday = Get-Date -Format "MMdd"
+            $hourminutesecond = Get-Date -Format "HHmmss"
             $version="$prefix.$year.$monthday.$hourminutesecond"
           }
           echo "::set-output name=version::$version"
@@ -98,28 +71,6 @@ jobs:
           MSI_PRIVATE_VERSION: ${{ github.event.inputs.set_msi_private_version }}
         shell: pwsh
 
-      - name: Build Pyinstaller project
-        working-directory: ${{ github.workspace }}/scripts/installer/windows/scripts
-        run: |
-          echo 'Version from promptflow: ${{ steps.get-version.outputs.version }}'
-          $text = Get-Content "version_info.txt" -Raw
-
-          $versionString = '${{ steps.get-version.outputs.version }}'
-          $versionArray = $versionString.Split('.')
-          if ($versionArray.Count -ge 4) {
-              $versionArray = $versionArray[0..3]
-          } else {
-              $remainingLength = 4 - $versionArray.Count
-              $zerosToAppend = @(0) * $remainingLength
-              $versionArray += $zerosToAppend
-          }
-          $versionTuple = [string]::Join(', ', $versionArray)
-          $text = $text -replace '\$\((env\.FILE_VERSION)\)', $versionTuple
-
-          $text = $text -replace '\$\((env\.CLI_VERSION)\)', '${{ steps.get-version.outputs.version }}'
-          $text | Out-File -FilePath "version_info.txt" -Encoding utf8
-          pyinstaller promptflow.spec
-        shell: pwsh
 
       - name: Build WIX project
         working-directory: ${{ github.workspace }}/scripts/installer/windows
@@ -171,7 +122,7 @@ jobs:
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "promptflow.msi" --overwrite
             az storage blob copy start --account-name promptflowartifact --destination-container msi-installer --destination-blob "$($msi_file.Name)" --source-container msi-installer --source-blob "promptflow.msi"
           } else {
-            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "$($msi_file.Name)" --overwrite
+            az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "scripts/installer/windows/out/$($msi_file.Name)" --name "test_$($msi_file.Name)" --overwrite
           }
           }
         env:
