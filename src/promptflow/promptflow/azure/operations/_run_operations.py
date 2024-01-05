@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import requests
+import yaml
 from azure.ai.ml._scope_dependent_operations import (
     OperationConfig,
     OperationsContainer,
@@ -26,7 +27,6 @@ from azure.ai.ml.constants._common import AzureMLResourceType
 from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
-from ruamel.yaml import YAML
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
@@ -808,10 +808,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         flow = run.flow
         if os.path.isdir(flow):
             flow = os.path.join(flow, DAG_FILE_NAME)
-        yaml = YAML()
-        yaml.preserve_quotes = True
         with open(flow, "r") as f:
-            flow_dict = yaml.load(f)
+            flow_dict = yaml.safe_load(f)
         environment = flow_dict.get("environment", {})
 
         if not isinstance(environment, dict):
