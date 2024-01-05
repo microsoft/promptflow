@@ -10,10 +10,6 @@ from promptflow.executor._errors import UnsupportedAssistantToolType
 @pytest.mark.unittest
 class TestAssistantToolInvoker:
     @pytest.fixture
-    def invoker(self):
-        return AssistantToolInvoker(working_dir=Path(__file__).parent)
-
-    @pytest.fixture
     def tool_definitions(self):
         return [
             {"type": "code_interpreter"},
@@ -28,7 +24,7 @@ class TestAssistantToolInvoker:
     @pytest.mark.parametrize(
         "predefined_inputs", [({}), ({"input_int": 1})]
     )
-    def test_load_tools(self, invoker, predefined_inputs):
+    def test_load_tools(self, predefined_inputs):
         input_int = 1
         input_str = "test"
         tool_definitions = [
@@ -43,7 +39,7 @@ class TestAssistantToolInvoker:
         ]
 
         # Test load tools
-        invoker.load_tools(tool_definitions)
+        invoker = AssistantToolInvoker.setup(tool_definitions, working_dir=Path(__file__).parent)
         for tool_name, assistant_tool in invoker._assistant_tools.items():
             assert tool_name in ("code_interpreter", "retrieval", "sample_tool")
             assert assistant_tool.name == tool_name
@@ -86,10 +82,10 @@ class TestAssistantToolInvoker:
         result = invoker.invoke_tool(func_name="sample_tool", kwargs=kwargs)
         assert result == (input_int, input_str)
 
-    def test_load_tools_with_invalid_case(self, invoker):
+    def test_load_tools_with_invalid_case(self):
         tool_definitions = [{"type": "invalid_type"}]
         with pytest.raises(UnsupportedAssistantToolType) as exc_info:
-            invoker.load_tools(tool_definitions)
+            AssistantToolInvoker.setup(tool_definitions)
         assert "Unsupported assistant tool type" in exc_info.value.message
 
     def _remove_predefined_inputs(self, value: any, predefined_inputs: list):

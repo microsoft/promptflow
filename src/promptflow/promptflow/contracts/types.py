@@ -3,6 +3,8 @@
 # ---------------------------------------------------------
 
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
 
 
 class Secret(str):
@@ -52,9 +54,7 @@ class AssistantDefinition:
             "tools": self.tools,
         }
 
-    def setup_tool_invoker(self, working_dir: str = None):
+    def setup_tool_invoker(self, working_dir: Optional[Path] = None):
         from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
 
-        invoker = AssistantToolInvoker(working_dir=working_dir)
-        invoker.load_tools(self.tools)
-        return invoker
+        return AssistantToolInvoker.setup(self.tools, working_dir=working_dir)
