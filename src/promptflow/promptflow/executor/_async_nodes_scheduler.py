@@ -197,7 +197,12 @@ def monitor_long_running_coroutine(loop: asyncio.AbstractEventLoop, task_start_t
         running_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
         # get duration of running tasks
         for task in running_tasks:
+            # Do not monitor the scheduler task
             if task.get_name() == PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME:
+                continue
+            # Do not monitor sync tools, since they will run in executor thread and will
+            # be monitored by RepeatLogTimer.
+            if task.get_stack(limit=1)[0].f_code.co_name == AsyncNodesScheduler._sync_function_to_async_task.__name__:
                 continue
             if task_start_time.get(task) is None:
                 flow_logger.warning(f"task {task.get_name()} has no start time, which should not happen")
