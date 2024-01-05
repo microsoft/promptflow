@@ -91,12 +91,12 @@ class TestMultimediaUtils:
     def test_create_image_with_string(self, mocker):
         ## From path
         image_from_path = create_image(str(TEST_IMAGE_PATH))
-        assert image_from_path._mime_type == "image/jpg"
+        assert image_from_path._mime_type == "image/jpeg"
 
         # From base64
         image_from_base64 = create_image(image_from_path.to_base64())
         assert str(image_from_path) == str(image_from_base64)
-        assert image_from_base64._mime_type in ["image/jpg", "image/jpeg"]
+        assert image_from_base64._mime_type == "image/jpeg"
 
         ## From url
         mocker.patch("promptflow._utils.multimedia_utils._is_url", return_value=True)
@@ -104,7 +104,7 @@ class TestMultimediaUtils:
         mocker.patch("requests.get", return_value=mocker.Mock(content=image_from_path, status_code=200))
         image_from_url = create_image("Test")
         assert str(image_from_path) == str(image_from_url)
-        assert image_from_url._mime_type in ["image/jpg", "image/jpeg"]
+        assert image_from_url._mime_type == "image/jpeg"
 
         ## From image
         image_from_image = create_image(image_from_path)
@@ -136,10 +136,10 @@ class TestMultimediaUtils:
         mocker.patch("builtins.open", mock_open())
         data = {"image": image, "images": [image, image, "other_data"], "other_data": "other_data"}
         persisted_data = persist_multimedia_data(data, base_dir=Path(__file__).parent)
-        file_name = re.compile(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}.jpg$")
-        assert re.match(file_name, persisted_data["image"]["data:image/jpg;path"])
-        assert re.match(file_name, persisted_data["images"][0]["data:image/jpg;path"])
-        assert re.match(file_name, persisted_data["images"][1]["data:image/jpg;path"])
+        file_name = re.compile(r"^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}.jpeg$")
+        assert re.match(file_name, persisted_data["image"]["data:image/jpeg;path"])
+        assert re.match(file_name, persisted_data["images"][0]["data:image/jpeg;path"])
+        assert re.match(file_name, persisted_data["images"][1]["data:image/jpeg;path"])
 
     def test_convert_multimedia_date_to_base64(self):
         image = _create_image_from_file(TEST_IMAGE_PATH)
