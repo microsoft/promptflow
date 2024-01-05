@@ -180,7 +180,7 @@ def log_stack_recursively(task: asyncio.Task, elapse_time: float):
         elif asyncio.iscoroutine(task_or_coroutine):
             coroutine = task_or_coroutine
         else:
-            flow_logger.info("\n".join(messages))
+            flow_logger.warning("\n".join(messages))
             return
 
         frame = coroutine.cr_frame
