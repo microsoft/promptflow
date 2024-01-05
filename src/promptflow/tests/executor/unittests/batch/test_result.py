@@ -159,12 +159,12 @@ class TestBatchResult:
         assert batch_result.system_metrics.total_tokens == 42
         assert batch_result.system_metrics.prompt_tokens == 38
         assert batch_result.system_metrics.completion_tokens == 4
-        assert batch_result.system_metrics.duration == 0
+        assert int(batch_result.system_metrics.duration) == 0
         assert batch_result.system_metrics.to_dict() == {
             "total_tokens": 42,
             "prompt_tokens": 38,
             "completion_tokens": 4,
-            "duration": 0,
+            "duration": float(0),
         }
 
     @pytest.mark.parametrize(
@@ -263,10 +263,10 @@ class TestSystemMetrics:
         assert system_metrics.total_tokens == 20
         assert system_metrics.prompt_tokens == 12
         assert system_metrics.completion_tokens == 8
-        assert system_metrics.duration == 0
+        assert int(system_metrics.duration) == 0
         assert system_metrics.to_dict() == {
             "total_tokens": 20,
             "prompt_tokens": 12,
             "completion_tokens": 8,
-            "duration": 0,
+            "duration": float(0),
         }
