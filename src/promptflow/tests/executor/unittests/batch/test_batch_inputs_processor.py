@@ -288,7 +288,11 @@ class TestBatchInputsProcessor:
 
         # specify max_rows_count
         max_rows_count = 5
-        head_results = BatchInputsProcessor("", {}, max_lines_count=max_rows_count)._resolve_data_from_input_path(Path(data_path))
+        head_results = BatchInputsProcessor(
+            working_dir="",
+            flow_inputs={},
+            max_lines_count=max_rows_count,
+        )._resolve_data_from_input_path(Path(data_path))
         assert isinstance(head_results, list)
         assert len(head_results) == max_rows_count
         assert result[:max_rows_count] == head_results
