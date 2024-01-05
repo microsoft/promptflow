@@ -3,7 +3,7 @@ name: flowdag_schema_check
 on:
   pull_request:
     paths:
-      - flowdag_schema/**
+      - examples/**
       - .github/workflows/flowdag_schema_check.yml
 jobs:
   check_enforcer:
