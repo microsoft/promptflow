@@ -16,7 +16,12 @@ github_workspace = os.path.expanduser("~/promptflow/")
 
 # Special cases for pipelines that need to be triggered more or less than default value 1.
 # If 0, the pipeline will not be ignored in check enforcer.
-special_care = {"sdk_cli_tests": 4, "sdk_cli_azure_test": 4}
+# Please notice that the key should be the Job Name in the pipeline.
+special_care = {
+    "sdk_cli_tests": 4,
+    "sdk_cli_azure_test": 4,
+    # "samples_connections_connection": 0,
+}
 
 # Copy from original yaml pipelines
 checks = {
