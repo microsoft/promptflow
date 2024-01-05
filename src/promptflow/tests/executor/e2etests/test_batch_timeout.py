@@ -1,11 +1,15 @@
 from pathlib import Path
 from tempfile import mkdtemp
+from typing import Optional
 
 import pytest
 
-from promptflow.batch import BatchEngine
+from promptflow._constants import LINE_TIMEOUT_SEC, FlowLanguage
+from promptflow.batch import BatchEngine, PythonExecutorProxy
 from promptflow.batch._result import BatchResult, LineError
 from promptflow.contracts.run_info import Status
+from promptflow.executor import FlowExecutor
+from promptflow.storage._run_storage import AbstractRunStorage
 
 from ..utils import MemoryRunStorage, get_flow_folder, get_flow_inputs_file, get_yaml_file
 
@@ -16,6 +20,9 @@ ONE_LINE_OF_BULK_TEST_TIMEOUT = "one_line_of_bulktest_timeout"
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestBatchTimeout:
+    def setup_method(self):
+        BatchEngine.register_executor(FlowLanguage.Python, MockPythonExecutorProxy)
+
     @pytest.mark.parametrize(
         "flow_folder",
         [
@@ -23,11 +30,13 @@ class TestBatchTimeout:
         ],
     )
     def test_batch_with_timeout(self, flow_folder, dev_connections):
-        batch_engine = BatchEngine(
-            get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
-        )
         # set line timeout to 1 second for testing
-        batch_engine._executor_proxy._flow_executor._line_timeout_sec = 1
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            line_timeout_sec=1,
+        )
         # prepare input file and output dir
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
         output_dir = Path(mkdtemp())
@@ -59,9 +68,9 @@ class TestBatchTimeout:
             get_flow_folder(flow_folder),
             connections=dev_connections,
             storage=mem_run_storage,
+            line_timeout_sec=60,
         )
         # set line timeout to 1 second for testing
-        batch_engine._executor_proxy._flow_executor._line_timeout_sec = 60
         # prepare input file and output dir
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
         output_dir = Path(mkdtemp())
@@ -89,3 +98,21 @@ class TestBatchTimeout:
         # assert mem_run_storage persists run infos correctly
         assert len(mem_run_storage._flow_runs) == 3, "Flow run is not persisted in memory storage."
         assert len(mem_run_storage._node_runs) == 5, "Node run is not persisted in memory storage."
+
+
+class MockPythonExecutorProxy(PythonExecutorProxy):
+    @classmethod
+    async def create(
+        cls,
+        flow_file: Path,
+        working_dir: Optional[Path] = None,
+        *,
+        connections: Optional[dict] = None,
+        storage: Optional[AbstractRunStorage] = None,
+        **kwargs,
+    ) -> "MockPythonExecutorProxy":
+        line_timeout_sec = kwargs.get("line_timeout_sec", LINE_TIMEOUT_SEC)
+        flow_executor = FlowExecutor.create(
+            flow_file, connections, working_dir, storage=storage, raise_ex=False, line_timeout_sec=line_timeout_sec
+        )
+        return cls(flow_executor)
