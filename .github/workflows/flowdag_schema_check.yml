@@ -6,7 +6,7 @@ on:
       - examples/**
       - .github/workflows/flowdag_schema_check.yml
 jobs:
-  check_enforcer:
+  flowdag_schema_check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,4 +24,6 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/src/promptflow
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-            python ${{ github.workspace }}/scripts/readme/schema_checker.py
+          cd ${{ github.workspace }}/promptflow/src
+          pip install -e promptflow
+          python ${{ github.workspace }}/scripts/readme/schema_checker.py
