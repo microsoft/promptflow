@@ -60,8 +60,10 @@ class TestBatchInputsProcessor:
         assert result == data + data
 
         # if has max_lines_count
-        result = BatchInputsProcessor("", {}, max_lines_count=2)._resolve_data_from_input_path(inputs_dir)
-        assert result == data
+        result = BatchInputsProcessor("", {}, max_lines_count=1)._resolve_data_from_input_path(inputs_dir)
+        assert result == [
+            {"question": "What's promptflow?"},
+        ]
 
     @pytest.mark.parametrize(
         "inputs, inputs_mapping, expected",
