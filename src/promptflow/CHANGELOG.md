@@ -14,6 +14,10 @@
 - Fix loose flow path validation for run schema.
 - Fix "Without Import Data" in run visualize page results from invalid JSON value (`-Infinity`, `Infinity` and `NaN`).
 
+### Improvements
+
+- [SDK/CLI] For `pfazure flow create` used by non-msft tenant user, use user name instead of user object id in the remote flow folder path. (e.g. `Users/<user-name>/promptflow`).
+
 ## 1.3.0 (2023.12.27)
 
 ### Features Added
