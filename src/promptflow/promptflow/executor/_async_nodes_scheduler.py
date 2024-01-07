@@ -9,6 +9,7 @@ import os
 import signal
 import threading
 import time
+import traceback
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Tuple
@@ -16,13 +17,14 @@ from typing import Any, Dict, List, Tuple
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.logger_utils import flow_logger
-from promptflow._utils.utils import set_context
+from promptflow._utils.utils import extract_user_frame_summaries, set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
 
 PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME = "_pf_async_nodes_scheduler.execute"
-LONG_RUNNING_TASK_LOGGING_INTERVAL_SECONDS = 60
+DEFAULT_TASK_LOGGING_INTERVAL = 60
+ASYNC_DAG_MANAGER_COMPLETED = False
 
 
 class AsyncNodesScheduler:
@@ -84,12 +86,14 @@ class AsyncNodesScheduler:
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
         flow_logger.info(f"Start to run {len(nodes)} nodes with the current event loop.")
+        global ASYNC_DAG_MANAGER_COMPLETED
         dag_manager = DAGManager(nodes, inputs)
         task2nodes = self._execute_nodes(dag_manager, context, executor)
         while not dag_manager.completed():
             task2nodes = await self._wait_and_complete_nodes(task2nodes, dag_manager)
             submitted_tasks2nodes = self._execute_nodes(dag_manager, context, executor)
             task2nodes.update(submitted_tasks2nodes)
+        ASYNC_DAG_MANAGER_COMPLETED = True
         for node in dag_manager.bypassed_nodes:
             dag_manager.completed_nodes_outputs[node] = None
         return dag_manager.completed_nodes_outputs, dag_manager.bypassed_nodes
@@ -171,8 +175,12 @@ def log_stack_recursively(task: asyncio.Task, elapse_time: float):
     :param elapse_time: Seconds elapsed since the task started
     :type elapse_time: float
     """
-    messages = [f"Task {task.get_name()} has been running for {elapse_time:.0f} seconds, stacktrace:"]
+    # We cannot use task.get_stack() to get the stack, because only one stack frame is
+    # returned for a suspended coroutine because of the implementation of CPython
+    # Ref: https://github.com/python/cpython/blob/main/Lib/asyncio/tasks.py
+    # "only one stack frame is returned for a suspended coroutine."
     task_or_coroutine = task
+    frame_summaries = []
     while True:
         if isinstance(task_or_coroutine, asyncio.Task):
             # For a task, get the coroutine it's running
@@ -180,20 +188,43 @@ def log_stack_recursively(task: asyncio.Task, elapse_time: float):
         elif asyncio.iscoroutine(task_or_coroutine):
             coroutine = task_or_coroutine
         else:
-            flow_logger.warning("\n".join(messages))
+            user_frame_summaries = extract_user_frame_summaries(frame_summaries)
+            stack_messages = traceback.format_list(user_frame_summaries)
+            all_stack_message = "".join(stack_messages)
+            task_msg = (
+                f"Task {task.get_name()} has been running for {elapse_time:.0f} seconds,"
+                f" stacktrace:\n{all_stack_message}"
+            )
+            flow_logger.warning(task_msg)
             return
 
         frame = coroutine.cr_frame
-        if frame is not None:
-            messages.append(str(inspect.getframeinfo(frame)))
-
-        # Follow to the next awaited coroutine, if any
+        stack_summary: traceback.StackSummary = traceback.extract_stack(frame)
+        frame_summaries.extend(stack_summary)
         task_or_coroutine = coroutine.cr_await
 
 
 def monitor_long_running_coroutine(loop: asyncio.AbstractEventLoop, task_start_time: dict, task_last_log_time: dict):
+    global ASYNC_DAG_MANAGER_COMPLETED
+    logging_interval = DEFAULT_TASK_LOGGING_INTERVAL
+    logging_level_in_env = os.environ.get("PF_TASK_PEEKING_INTERVAL")
+    if logging_level_in_env:
+        try:
+            value = int(logging_level_in_env)
+            if value <= 0:
+                raise ValueError
+            logging_interval = value
+            flow_logger.info(
+                f"Using value of PF_TASK_PEEKING_INTERVAL in environment variable as "
+                f"logging interval: {logging_level_in_env}"
+            )
+        except ValueError:
+            flow_logger.warning(
+                f"Value of PF_TASK_PEEKING_INTERVAL in environment variable ('{logging_level_in_env}') "
+                f"is invalid, use default value {DEFAULT_TASK_LOGGING_INTERVAL}"
+            )
     flow_logger.info("monitor_long_running_coroutine started")
-    while True:
+    while not ASYNC_DAG_MANAGER_COMPLETED:
         running_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
         # get duration of running tasks
         for task in running_tasks:
@@ -202,16 +233,21 @@ def monitor_long_running_coroutine(loop: asyncio.AbstractEventLoop, task_start_t
                 continue
             # Do not monitor sync tools, since they will run in executor thread and will
             # be monitored by RepeatLogTimer.
-            if task.get_stack(limit=1)[0].f_code.co_name == AsyncNodesScheduler._sync_function_to_async_task.__name__:
+            task_stacks = task.get_stack()
+            if (
+                task_stacks
+                and task_stacks[-1].f_code
+                and task_stacks[-1].f_code.co_name == AsyncNodesScheduler._sync_function_to_async_task.__name__
+            ):
                 continue
             if task_start_time.get(task) is None:
                 flow_logger.warning(f"task {task.get_name()} has no start time, which should not happen")
             else:
                 duration = time.time() - task_start_time[task]
-                if duration > LONG_RUNNING_TASK_LOGGING_INTERVAL_SECONDS:
+                if duration > logging_interval:
                     if (
                         task_last_log_time.get(task) is None
-                        or time.time() - task_last_log_time[task] > LONG_RUNNING_TASK_LOGGING_INTERVAL_SECONDS
+                        or time.time() - task_last_log_time[task] > logging_interval
                     ):
                         log_stack_recursively(task, duration)
                         task_last_log_time[task] = time.time()
