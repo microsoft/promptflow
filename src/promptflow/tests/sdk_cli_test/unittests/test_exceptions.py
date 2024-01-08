@@ -77,11 +77,7 @@ class TestExceptions:
         assert error_type == "HttpResponseError"
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
-        assert (
-            "module=Non promptflow module, not recorded, "
-            "code=Non promptflow code, not recorded, "
-            "lineno=Non promptflow code lineno, not recorded."
-        ) in error_detail
+        assert error_detail == ""
 
     @pytest.mark.parametrize(
         "status_code, expected_error_category",
@@ -105,11 +101,7 @@ class TestExceptions:
         assert error_type == "Exception"
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
-        assert (
-            "module=Non promptflow module, not recorded, "
-            "code=Non promptflow code, not recorded, "
-            "lineno=Non promptflow code lineno, not recorded."
-        ) in error_detail
+        assert error_detail == ""
 
     def test_error_category_with_executor_error(self):
         try:
@@ -130,11 +122,7 @@ class TestExceptions:
             "cannot be referenced in the activate config of the aggregation node '{node_name}'. Please "
             "review and rectify the node reference."
         )
-        assert (
-            "module=Non promptflow module, not recorded, "
-            "code=Non promptflow code, not recorded, "
-            "lineno=Non promptflow code lineno, not recorded."
-        ) in error_detail
+        assert error_detail == ""
 
     def test_error_category_with_cause_exception1(self):
         """cause exception is PromptflowException and e is PromptflowException, recording e."""
@@ -152,11 +140,7 @@ class TestExceptions:
         assert error_type == "UserErrorException"
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
-        assert (
-            "module=Non promptflow module, not recorded, "
-            "code=Non promptflow code, not recorded, "
-            "lineno=Non promptflow code lineno, not recorded."
-        ) in error_detail
+        assert error_detail == ""
 
     def test_error_category_with_cause_exception2(self):
         """cause exception is PromptflowException and e is not PromptflowException, recording cause exception."""
@@ -198,8 +182,4 @@ class TestExceptions:
         assert error_type == "Exception"
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
-        assert (
-            "module=Non promptflow module, not recorded, "
-            "code=Non promptflow code, not recorded, "
-            "lineno=Non promptflow code lineno, not recorded."
-        ) in error_detail
+        assert error_detail == ""
