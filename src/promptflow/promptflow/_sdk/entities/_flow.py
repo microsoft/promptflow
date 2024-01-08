@@ -316,7 +316,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def invoke(self, inputs: dict) -> "LineResult":
         """Invoke a flow and get a LineResult object."""
-        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        from promptflow._sdk._submitter.test_submitter_via_proxy import TestSubmitterViaProxy
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
         if self.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:

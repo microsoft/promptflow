@@ -130,7 +130,7 @@ class FlowOperations(TelemetryMixin):
         flow = load_flow(flow)
         flow.context.variant = variant
         from promptflow._constants import FlowLanguage
-        from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
+        from promptflow._sdk._submitter.test_submitter_via_proxy import TestSubmitterViaProxy
 
         if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
@@ -381,7 +381,7 @@ class FlowOperations(TelemetryMixin):
                 from promptflow.batch import CSharpExecutorProxy
 
                 return self._migrate_connections(
-                    connection_names=SubmitterHelper.get_used_connection_names(
+                    connection_names=SubmitterHelper.get_used_connection_names_from_tools_meta(
                         tools_meta=CSharpExecutorProxy.get_tool_metadata(
                             flow_file=flow.flow_dag_path,
                             working_dir=flow.code,
