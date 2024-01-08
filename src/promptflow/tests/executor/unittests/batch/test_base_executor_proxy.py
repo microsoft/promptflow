@@ -100,7 +100,10 @@ class TestAPIBasedExecutorProxy:
     @pytest.mark.parametrize(
         "response, expected_result",
         [
-            (httpx.Response(200, json={"result": "test"}), {"result": "test"}),
+            (
+                httpx.Response(200, json={"result": "test"}),
+                {"result": "test"},
+            ),
         ],
     )
     async def test_process_http_response(self, response, expected_result):
