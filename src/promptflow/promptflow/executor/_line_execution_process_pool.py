@@ -31,7 +31,7 @@ from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
-from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager
+from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager, ProcessInfo
 from promptflow.storage import AbstractRunStorage
 
 
@@ -132,7 +132,7 @@ class LineExecutionProcessPool:
         self._processing_idx = manager.dict()
         self._completed_idx = manager.dict()
 
-        self._inputs_queue = Queue()
+        self._task_queue = Queue()
         self._n_process = self._determine_worker_count()
 
         self._input_queues = [manager.Queue() for _ in range(self._n_process)]
@@ -146,9 +146,6 @@ class LineExecutionProcessPool:
             # 1. Create input_queue, output_queue, control_signal_queue and _process_info in the main process.
             # 2. Pass the above queue/dict as parameters to spawn and fork processes to transfer information
             # between processes.
-            # 3. In the spawn child process, fork _n_process sub-process and start them.
-            # 4. Create _n_process monitoring threads, mainly used to assign tasks and send signals to fork
-            # sub-processes, including restart, kill and start.
             self._processes_manager = ForkProcessManager(
                 self._control_signal_queue,
                 self._flow_file,
@@ -161,6 +158,9 @@ class LineExecutionProcessPool:
                 False,
             )
         else:
+            # 1. Create input_queue, output_queue, and _process_info in the main process.
+            # 2. Spawn _n_process sub-process and pass the above queue/dict to these sub-process to transfer information
+            # between main process and sub process.
             self._processes_manager = SpawnProcessManager(
                 self._executor_creation_func,
                 self._input_queues,
@@ -169,6 +169,7 @@ class LineExecutionProcessPool:
                 _process_wrapper,
                 False,
             )
+
         self._processes_manager.start_processes()
 
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
@@ -189,7 +190,13 @@ class LineExecutionProcessPool:
         result_list
     ):
         while True:
-            index, pid, process_name, input_queue, output_queue = process_info
+            index, process_id, process_name, input_queue, output_queue = (
+                process_info.index,
+                process_info.process_id,
+                process_info.process_name,
+                process_info.input_queue,
+                process_info.output_queue
+            )
 
             try:
                 args = task_queue.get(timeout=1)
@@ -200,7 +207,7 @@ class LineExecutionProcessPool:
             input_queue.put(args)
             inputs, line_number, run_id = args[:3]
 
-            self._processing_idx[line_number] = format_current_process(process_name, pid, line_number)
+            self._processing_idx[line_number] = format_current_process(process_name, process_id, line_number)
             start_time = datetime.utcnow()
             completed = False
             crashed = False
@@ -208,7 +215,7 @@ class LineExecutionProcessPool:
             while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time:
                 try:
                     # Monitor process aliveness.
-                    if not psutil.pid_exists(pid):
+                    if not psutil.pid_exists(process_id):
                         crashed = True
                         break
 
@@ -229,23 +236,24 @@ class LineExecutionProcessPool:
                     self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
 
                 self._completed_idx[line_number] = format_current_process(
-                    process_name, pid, line_number, is_failed=True)
+                    process_name, process_id, line_number, is_failed=True)
                 if not task_queue.empty():
                     self._processes_manager.restart_process(index)
                     process_info = self._get_process_info(index, input_queue, output_queue)
             else:
                 # Handle line execution completed.
                 self._completed_idx[line_number] = format_current_process(
-                    process_name, pid, line_number, is_completed=True)
+                    process_name, process_id, line_number, is_completed=True)
 
             self._processing_idx.pop(line_number)
 
     def _get_process_info(self, index, input_queue, output_queue):
         while True:
             try:
-                pid = self._process_info[index].process_id
+                process_id = self._process_info[index].process_id
                 process_name = self._process_info[index].process_name
-                process_info = (index, pid, process_name, input_queue, output_queue)
+                process_info = ProcessInfo(index=index, process_id=process_id, process_name=process_name,
+                                           input_queue=input_queue, output_queue=output_queue)
                 return process_info
             except KeyError:
                 continue
@@ -278,7 +286,7 @@ class LineExecutionProcessPool:
         )
         result_list.append(result)
 
-    def _timeout_process_wrapper(
+    def _monitor_process_and_manage_tasks_and_results(
             self,
             task_queue: Queue,
             timeout_time,
@@ -370,7 +378,7 @@ class LineExecutionProcessPool:
 
     def run(self, batch_inputs):
         for index, inputs in batch_inputs:
-            self._inputs_queue.put(
+            self._task_queue.put(
                 (
                     inputs,
                     index,
@@ -394,18 +402,28 @@ class LineExecutionProcessPool:
             ),
         ):
             try:
-
-                base_args = (self._inputs_queue, self._line_timeout_sec, result_list)
-
                 args_list = [
-                    base_args + (i, self._input_queues[i], self._output_queues[i])
+                    (
+                        self._task_queue,        # Shared task queue for all sub processes to read the input data.
+                        self._line_timeout_sec,  # Line execution timeout.
+                        result_list,             # Bath run result lit.
+                        i,                       # Index of the sub process.
+                        # Specific input queue for sub process, used to send input data to it.
+                        self._input_queues[i],
+                        # Specific output queue for the sub process, used to receive results from it.
+                        self._output_queues[i]
+                    )
                     for i in range(self._n_process)
                 ]
 
                 # The variable 'async_result' here is not the actual result of the batch run
                 # but an AsyncResult object that can be used to check if the execution are finished
                 # The actual results of the batch run are stored in 'result_list'
-                async_result = self._pool.starmap_async(self._timeout_process_wrapper, args_list)
+
+                # Create _n_process monitoring threads, mainly used to assign tasks and receive line result.
+                # When task_queue is empty, end the process.
+                # When line execution timeout or process crash, restart the process.
+                async_result = self._pool.starmap_async(self._monitor_process_and_manage_tasks_and_results, args_list)
 
                 try:
                     # Only log when the number of results changes to avoid duplicate logging.
