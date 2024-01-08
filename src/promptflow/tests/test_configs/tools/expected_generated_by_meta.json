@@ -93,17 +93,20 @@
             }
           ],
           "reverse_func_path": "test_tool.tool_with_generated_by_input.reverse_generate_index_json"
-        }
+        },
+        "ui_hints": {"index": 0}
       },
       "queries": {
         "type": [
           "string"
-        ]
+        ],
+        "ui_hints": {"index": 1}
       },
       "top_k": {
         "type": [
           "int"
-        ]
+        ],
+        "ui_hints": {"index": 2}
       },
       "index_type": {
         "dynamic_list": {

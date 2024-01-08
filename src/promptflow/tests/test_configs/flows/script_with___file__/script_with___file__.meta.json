@@ -5,7 +5,10 @@
     "input1": {
       "type": [
         "string"
-      ]
+      ],
+      "ui_hints": {
+        "index": 0
+      }
     }
   },
   "source": "script_with___file__.py",

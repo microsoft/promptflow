@@ -111,7 +111,7 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
 
 
 def function_to_interface(
-    f: Callable, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False
+    f: Callable, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False, add_ui_hints=True
 ) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
@@ -131,13 +131,22 @@ def function_to_interface(
         }
     )
     # Resolve inputs to definitions.
+    input_index = 0
     for k, v in all_inputs.items():
         # Get value type from annotation
         value_type = resolve_annotation(v.annotation)
         if skip_prompt_template and value_type is PromptTemplate:
             # custom llm tool has prompt template as input, skip it
             continue
+
         input_def, is_connection = param_to_definition(v, gen_custom_type_conn=gen_custom_type_conn)
+        # Set ui_hints and index
+        if add_ui_hints:
+            if input_def.ui_hints is None:
+                input_def.ui_hints = {}
+            input_def.ui_hints['index'] = input_index
+
+        input_index += 1
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
@@ -189,17 +198,23 @@ def get_inputs_for_prompt_template(template_str):
     >>> get_inputs_for_prompt_template(
         template_str="Prompt with only one string input {{str_input}}"
     )
-    {"str_input": InputDefinition(type=[ValueType.STRING])}
+    {"str_input": InputDefinition(type=[ValueType.STRING], ui_hints={"index": 0})}
 
     >>> get_inputs_for_prompt_template(
         template_str="Prompt with image input ![image]({{image_input}}) and string input {{str_input}}"
     )
-    {"image_input": InputDefinition(type=[ValueType.IMAGE]), "str_input": InputDefinition(type=[ValueType.STRING])
+    {
+        "image_input": InputDefinition(type=[ValueType.IMAGE], ui_hints={"index": 0}),
+        "str_input": InputDefinition(type=[ValueType.STRING], ui_hints={"index": 1})
+    }
     """
     env = Environment()
     template = env.parse(template_str)
-    inputs = sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x))
-    result_dict = {i: InputDefinition(type=[ValueType.STRING]) for i in inputs}
+    inputs = sorted(
+        meta.find_undeclared_variables(template),
+        key=lambda x: _find_template_variable_index(template_str, x)
+    )
+    result_dict = {i: InputDefinition(type=[ValueType.STRING], ui_hints={"index": inputs.index(i)}) for i in inputs}
 
     # currently we only support image type
     pattern = r"\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)"
@@ -207,7 +222,10 @@ def get_inputs_for_prompt_template(template_str):
 
     for match in matches:
         input_name = match.group(2).strip()
-        result_dict[input_name] = InputDefinition([ValueType(match.group(1).strip())])
+        result_dict[input_name] = InputDefinition(
+            type=[ValueType(match.group(1).strip())],
+            ui_hints={"index": inputs.index(input_name)}
+        )
 
     return result_dict
 
@@ -344,6 +362,16 @@ def _get_function_path(function):
     else:
         raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
     return func, func_path
+
+
+def _find_template_variable_index(template_str, variable):
+    matches = re.finditer(r'\{([^}]*)\}', template_str)
+
+    for match in matches:
+        if variable in match.group(1):
+            return match.start(1) + match.group(1).find(variable)
+
+    return 0
 
 
 class RetrieveToolFuncResultError(UserErrorException):

@@ -148,6 +148,7 @@ class TestUtils:
                                 "type": [
                                     "string",
                                 ],
+                                'ui_hints': {'index': 0},
                             },
                         },
                         "source": "hello.py",

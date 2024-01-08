@@ -5,32 +5,50 @@
     "text": {
       "type": [
         "string"
-      ]
+      ],
+      "ui_hints": {
+        "index": 0
+      }
     },
     "image1": {
       "type": [
         "image"
-      ]
+      ],
+      "ui_hints": {
+        "index": 1
+      }
     },
     "image2": {
       "type": [
         "image"
-      ]
+      ],
+      "ui_hints": {
+        "index": 2
+      }
     },
     "image3": {
       "type": [
         "image"
-      ]
+      ],
+      "ui_hints": {
+        "index": 3
+      }
     },
     "image4": {
       "type": [
         "image"
-      ]
+      ],
+      "ui_hints": {
+        "index": 4
+      }
     },
     "video1": {
       "type": [
         "string"
-      ]
+      ],
+      "ui_hints": {
+        "index": 5
+      }
     }
   },
   "source": "summarize_text_content_prompt.jinja2"
