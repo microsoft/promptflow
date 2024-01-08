@@ -6,6 +6,8 @@ from promptflow import tool
 
 @tool
 def fetch_text_content_from_url(url: str):
+    import time
+    time.sleep(20)
     # Send a request to the URL
     try:
         headers = {
