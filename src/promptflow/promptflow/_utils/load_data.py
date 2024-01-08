@@ -81,11 +81,10 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
         for file in files:
             current_df = _pd_read_file(file, logger=logger, max_rows_count=max_rows_count)
             df = pd.concat([df, current_df])
-        length = len(df)
-        if max_rows_count and length > 0:
-            if length > max_rows_count:
+            length = len(df)
+            if max_rows_count and length >= max_rows_count:
                 df = df.head(max_rows_count)
-            break
+                return df
         # no readable data in current level, dive into next level
         target_dir = dirs
     return df

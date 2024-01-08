@@ -53,8 +53,7 @@ class BatchInputsProcessor:
         result = []
         max_rows_count: int = None
         if self._max_lines_count:
-            # Add one more row to check if the data exceeds the limit.
-            max_rows_count = self._max_lines_count + 1
+            max_rows_count = self._max_lines_count
         if input_path.is_file():
             result.extend(resolve_multimedia_data_recursively(
                 input_path.parent,
@@ -69,7 +68,7 @@ class BatchInputsProcessor:
                     )
                     if self._max_lines_count and len(result) >= self._max_lines_count:
                         break
-        if self._max_lines_count and len(result) > self._max_lines_count:
+        if self._max_lines_count and len(result) >= self._max_lines_count:
             logger.warning(
                 (
                     "The data provided exceeds the maximum lines limit. Currently, only the first "
