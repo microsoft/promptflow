@@ -17,6 +17,8 @@
 ### Improvements
 
 - [SDK/CLI] For `pfazure flow create` used by non-msft tenant user, use user name instead of user object id in the remote flow folder path. (e.g. `Users/<user-name>/promptflow`).
+- [SDK/CLI] For `pfazure flow create`, when flow has unknown attribute, log warning instead of raising error.
+- [SDK/CLI] For `pf/pfazure run create`, when run has unknown attribute, log warning instead of raising error.
 
 ## 1.3.0 (2023.12.27)
 
