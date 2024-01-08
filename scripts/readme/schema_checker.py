@@ -3,6 +3,11 @@ from promptflow._sdk._pf_client import PFClient
 from ghactions_driver.readme_step import ReadmeStepsManage
 from pathlib import Path
 import os
+import subprocess
+import sys
+
+def install(filename):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", filename])
 
 
 def main(input_glob_flow_dag):
@@ -23,6 +28,8 @@ def main(input_glob_flow_dag):
             error = True
         if error is False:
             new_links = []
+            if (Path(file).parent / "requirements.txt").exists():
+                install(Path(file).parent / "requirements.txt")
             if "flow-with-symlinks" in str(file):
                 saved_path = os.getcwd()
                 os.chdir(str(file.parent))

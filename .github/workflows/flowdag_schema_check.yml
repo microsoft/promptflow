@@ -16,7 +16,9 @@ jobs:
         uses: "./.github/actions/step_create_python_environment"
         with:
           pythonVersion: 3.9
-      - run: pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
+      - run: |
+          pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
+          pip install -r ${{ github.workspace }}/examples/requirements.txt
       - name: Summarize check status
         id: summarize_check_status
         working-directory: ${{ github.workspace }}
@@ -25,6 +27,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/src/promptflow
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd ${{ github.workspace }}/src/promptflow
-          pip install -e .
+          cd ${{ github.workspace }}/src
+          pip install -e promptflow[azure]
+          pip install -e promptflow-tools
           python ${{ github.workspace }}/scripts/readme/schema_checker.py
