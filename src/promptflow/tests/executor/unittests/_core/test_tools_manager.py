@@ -133,7 +133,7 @@ def sample_tool(input: str):
 
 @pytest.mark.unittest
 class TestToolsManager:
-    def test_collect_package_tools_if_node_source_tool_is_legacy(self):
+    def test_collect_package_tools_if_node_source_tool_is_legacy(self, recording_injection):
         legacy_node_source_tools = ["content_safety_text.tools.content_safety_text_tool.analyze_text"]
         package_tools = collect_package_tools(legacy_node_source_tools)
         assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()

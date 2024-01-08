@@ -35,7 +35,7 @@ ACTIVATE_FLOW_TEST_CASES = [
 @pytest.mark.e2etest
 class TestExecutorActivate:
     @pytest.mark.parametrize("flow_folder", ACTIVATE_FLOW_TEST_CASES)
-    def test_flow_run_activate(self, dev_connections, flow_folder):
+    def test_flow_run_activate(self, dev_connections, flow_folder, recording_injection):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         results = executor.exec_line(get_flow_inputs(flow_folder))
         # Assert the flow result
@@ -44,7 +44,7 @@ class TestExecutorActivate:
         self.assert_activate_flow_run_result(results.run_info, expected_result)
         self.assert_activate_node_run_result(results.node_run_infos, expected_result)
 
-    def test_batch_run_activate(self, dev_connections):
+    def test_batch_run_activate(self, dev_connections, recording_injection):
         flow_folder = "conditional_flow_with_activate"
         mem_run_storage = MemoryRunStorage()
         batch_engine = BatchEngine(
