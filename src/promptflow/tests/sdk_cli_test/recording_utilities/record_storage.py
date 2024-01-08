@@ -10,8 +10,7 @@ from typing import Dict
 
 from filelock import FileLock
 
-from promptflow._sdk._errors import PromptflowException
-
+from promptflow.exceptions import PromptflowException
 from .constants import ENVIRON_TEST_MODE, RecordMode
 
 

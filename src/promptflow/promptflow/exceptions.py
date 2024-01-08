@@ -1,10 +1,17 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import inspect
 import string
+import traceback
 from enum import Enum
 from functools import cached_property
+
+
+class ErrorCategory(str, Enum):
+    USER_ERROR = "UserError"
+    SYSTEM_ERROR = "SystemError"
+    UNKNOWN = "Unknown"
 
 
 class ErrorTarget(str, Enum):
@@ -161,6 +168,9 @@ class PromptflowException(Exception):
         i.e. For ToolExcutionError which inherits from UserErrorException,
         The result would be ["UserErrorException", "ToolExecutionError"].
         """
+        if getattr(self, "_error_codes", None):
+            return self._error_codes
+
         from promptflow._utils.exception_utils import infer_error_code_from_class
 
         def reversed_error_codes():
@@ -169,9 +179,9 @@ class PromptflowException(Exception):
                     break
                 yield infer_error_code_from_class(clz)
 
-        result = list(reversed_error_codes())
-        result.reverse()
-        return result
+        self._error_codes = list(reversed_error_codes())
+        self._error_codes.reverse()
+        return self._error_codes
 
     def get_arguments_from_message_format(self, message_format):
         """Get the arguments from the message format."""
@@ -209,3 +219,113 @@ class ValidationException(UserErrorException):
     """Exception raised when validation fails."""
 
     pass
+
+
+class _ErrorInfo:
+    @classmethod
+    def get_error_info(cls, e: Exception):
+        if not isinstance(e, Exception):
+            return None, None, None, None, None
+
+        e = cls.select_exception(e)
+        if cls._is_system_error(e):
+            return (
+                ErrorCategory.SYSTEM_ERROR,
+                cls._error_type(e),
+                cls._error_target(e),
+                cls._error_message(e),
+                cls._error_detail(e),
+            )
+        if cls._is_user_error(e):
+            return (
+                ErrorCategory.USER_ERROR,
+                cls._error_type(e),
+                cls._error_target(e),
+                cls._error_message(e),
+                cls._error_detail(e),
+            )
+
+        return ErrorCategory.UNKNOWN, cls._error_type(e), ErrorTarget.UNKNOWN, "", cls._error_detail(e)
+
+    @classmethod
+    def select_exception(cls, e: Exception):
+        """Select the exception  in e and e.__cause__, and prioritize the Exception defined in the promptflow."""
+
+        if isinstance(e, PromptflowException):
+            return e
+
+        # raise Exception("message") from PromptflowException("message")
+        if e.__cause__ and isinstance(e.__cause__, PromptflowException):
+            return e.__cause__
+
+        return e
+
+    @classmethod
+    def _is_system_error(cls, e: Exception):
+        if isinstance(e, SystemErrorException):
+            return True
+
+        return False
+
+    @classmethod
+    def _is_user_error(cls, e: Exception):
+        if isinstance(e, UserErrorException):
+            return True
+
+        return False
+
+    @classmethod
+    def _error_type(cls, e: Exception):
+        return type(e).__name__
+
+    @classmethod
+    def _error_target(cls, e: Exception):
+        return getattr(e, "target", ErrorTarget.UNKNOWN)
+
+    @classmethod
+    def _error_message(cls, e: Exception):
+        return getattr(e, "message_format", "")
+
+    @classmethod
+    def _error_detail(cls, e: Exception):
+        exception_codes = cls._get_exception_codes(e)
+        exception_code = None
+        for item in exception_codes[::-1]:
+            if "promptflow" in item["module"]:  # Only record information within the promptflow package
+                exception_code = item
+                break
+        if not exception_code:
+            return ""
+        return (
+            f"module={exception_code['module']}, "
+            f"code={exception_code['exception_code']}, "
+            f"lineno={exception_code['lineno']}."
+        )
+
+    @classmethod
+    def _get_exception_codes(cls, e: Exception) -> list:
+        """
+        Obtain information on each line of the traceback, including the module name,
+        exception code and lineno where the error occurred.
+
+        :param e: Exception object
+        :return: A list, each item contains information for each row of the traceback, which format is like this:
+                {
+                'module': 'promptflow.executor.errors',
+                'exception_code': 'return self.inner_exception.additional_info',
+                'lineno': 223
+                }
+        """
+        exception_codes = []
+        traceback_info = traceback.extract_tb(e.__traceback__)
+        for item in traceback_info:
+            lineno = item.lineno
+            filename = item.filename
+            line_code = item.line
+            module = inspect.getmodule(None, _filename=filename)
+            exception_code = {"module": "", "exception_code": line_code, "lineno": lineno}
+            if module is not None:
+                exception_code["module"] = module.__name__
+            exception_codes.append(exception_code)
+
+        return exception_codes
