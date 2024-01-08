@@ -7,6 +7,9 @@ on:
 jobs:
   check_enforcer:
     runs-on: ubuntu-latest
+    permissions:
+      checks: read
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - run: git fetch origin main
