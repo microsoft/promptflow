@@ -1,0 +1,28 @@
+my_tool_package.tools.tool_with_custom_llm_type_add_uihints.my_tool:
+  name: Custom LLM Tool with UI Hints
+  description: This is a custom LLM tool with UI hints.
+  type: custom_llm
+  module: my_tool_package.tools.tool_with_custom_llm_type_add_uihints
+  function: my_tool
+  inputs:
+    connection:
+      type:
+        - CustomConnection
+      ui_hints:
+        text_box_size: lg
+    endpoint_name:
+      type:
+      - string
+      ui_hints:
+        text_box_size: md
+    api:
+      type:
+      - string
+      ui_hints:
+        text_box_size: sm
+    temperature:
+      default: 1.0
+      type:
+      - double
+      ui_hints:
+        text_box_size: xs
