@@ -5,6 +5,7 @@
 import copy
 import inspect
 import types
+import yaml
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -17,7 +18,7 @@ from promptflow._utils.multimedia_utils import create_image, load_multimedia_dat
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
-from promptflow.contracts.types import PromptTemplate
+from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -94,6 +95,21 @@ class ToolResolver():
             module=module, to_class=custom_defined_connection_class_name
         )
 
+    def _convert_to_assistant_definition(self, assistant_definition_path: str, input_name: str, node_name: str):
+        if assistant_definition_path is None or not (self._working_dir / assistant_definition_path).is_file():
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Input '{input_name}' for node '{node_name}' of value '{source_path}' "
+                "is not a valid path.",
+                input_name=input_name,
+                source_path=assistant_definition_path,
+                node_name=node_name,
+            )
+        file = self._working_dir / assistant_definition_path
+        with open(file, "r", encoding="utf-8") as file:
+            assistant_definition = yaml.safe_load(file)
+        return AssistantDefinition.deserialize(assistant_definition)
+
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_inputs = {
             k: v
@@ -122,6 +138,17 @@ class ToolResolver():
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
+                        key=k, error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR
+                    ) from e
+            elif value_type == ValueType.ASSISTANT_DEFINITION:
+                try:
+                    updated_inputs[k].value = self._convert_to_assistant_definition(v.value, k, node.name)
+                except Exception as e:
+                    error_type_and_message = f"({e.__class__.__name__}) {e}"
+                    raise NodeInputValidationError(
+                        message_format="Failed to load assistant definition from input '{key}': "
+                        "{error_type_and_message}",
                         key=k, error_type_and_message=error_type_and_message,
                         target=ErrorTarget.EXECUTOR
                     ) from e

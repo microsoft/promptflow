@@ -256,8 +256,10 @@ class TestUtils:
         df = load_data(data_path)
         assert len(df) == 10000
         # specify max_rows_count
-        df = load_data(data_path, max_rows_count=5000)
-        assert len(df) == 5000
+        max_rows_count = 5000
+        head_rows = load_data(data_path, max_rows_count=max_rows_count)
+        assert len(head_rows) == max_rows_count
+        assert head_rows == df[:max_rows_count]
 
     @pytest.mark.parametrize(
         "script_name, expected_result",

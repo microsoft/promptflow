@@ -38,8 +38,14 @@ class AsyncNodesScheduler:
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
+        # TODO: Provide cancel API
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, signal_handler)
+            signal.signal(signal.SIGTERM, signal_handler)
+        else:
+            flow_logger.info(
+                "Current thread is not main thread, skip signal handler registration in AsyncNodesScheduler."
+            )
 
         parent_context = contextvars.copy_context()
         executor = ThreadPoolExecutor(

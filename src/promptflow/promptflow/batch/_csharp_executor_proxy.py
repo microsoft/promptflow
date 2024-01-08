@@ -60,7 +60,10 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         ]
         process = subprocess.Popen(command)
         executor_proxy = cls(process, port)
-        await executor_proxy.ensure_executor_startup(init_error_file)
+        try:
+            await executor_proxy.ensure_executor_startup(init_error_file)
+        finally:
+            Path(init_error_file).unlink()
         return executor_proxy
 
     async def destroy(self):
@@ -79,6 +82,13 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         return AggregationResult({}, {}, {})
+
+    def _is_executor_active(self):
+        """Check if the process is still running and return False if it has exited"""
+        exit_code = self._process.poll()
+        if exit_code and exit_code != 0:
+            return False
+        return True
 
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
