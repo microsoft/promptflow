@@ -275,7 +275,7 @@ class MetricsRecorder(object):
         if api_calls and len(api_calls) > 0:
             for api_call in api_calls:
                 cur_name = api_call.get("name")
-                api_name = "_".join(prefix, cur_name) if prefix else cur_name
+                api_name = f"{prefix}_{cur_name}" if prefix else cur_name
                 # api-call latency metrics
                 # sample data: {"start_time":1688462182.744916, "end_time":1688462184.280989}
                 start_time = api_call.get("start_time", None)
