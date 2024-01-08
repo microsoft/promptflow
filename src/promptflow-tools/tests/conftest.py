@@ -8,7 +8,6 @@ from pytest_mock import MockerFixture  # noqa: E402
 from tests.utils import verify_url_exists
 
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
-# since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
 from promptflow.connections import CustomConnection, OpenAIConnection, SerpConnection
 from promptflow.contracts.multimedia import Image
