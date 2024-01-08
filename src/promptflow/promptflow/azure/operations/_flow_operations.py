@@ -184,12 +184,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             params_override["type"] = type
 
         flow_entity = ProtectedFlow.load(source=source, params_override=params_override)
+        flow_entity._validate(raise_error=True)  # raise error if validation failed
         flow_dict = flow_entity._dump_for_validation()
-
-        validation_result = flow_entity._validate(raise_error=True)
-        if validation_result._warnings:
-            logger.warning("Flow schema validation warnings: %s", str(validation_result._warnings))
-
         return flow_dict
 
     def _resolve_flow_code_and_upload_to_file_share(

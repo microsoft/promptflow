@@ -15,9 +15,9 @@ import pydash
 import strictyaml
 from marshmallow import ValidationError
 
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 
-module_logger = LoggerFactory.get_logger(__name__)
+logger = get_cli_sdk_logger()
 
 
 class _ValidationStatus:
@@ -254,7 +254,7 @@ class MutableValidationResult(ValidationResult):
             return self
 
         if self._warnings:
-            module_logger.warning("Warnings: %s" % str(self._warnings))
+            logger.warning("Schema validation warnings: %s" % str(self._warnings))
 
         if not self.passed:
             if error_func is None:
@@ -510,7 +510,7 @@ class _YamlLocationResolver:
                 loaded_yaml = strictyaml.load(f.read())
             except Exception as e:  # pylint: disable=broad-except
                 msg = "Can't load source file %s as a strict yaml:\n%s" % (source_path, str(e))
-                module_logger.debug(msg)
+                logger.debug(msg)
                 return None, None
 
         while attrs:
