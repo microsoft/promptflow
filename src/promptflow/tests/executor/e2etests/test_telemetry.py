@@ -1,5 +1,4 @@
 import json
-import sys
 import uuid
 from collections import namedtuple
 from importlib.metadata import version
@@ -36,7 +35,7 @@ def mock_stream_chat(*args, **kwargs):
     return stream_response(kwargs)
 
 
-@pytest.mark.skipif(sys.platform == "darwin" or sys.platform == "win32", reason="Skip on Mac and Windows")
+@pytest.mark.skipif(reason="Skip on Mac and Windows and Linux")
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:

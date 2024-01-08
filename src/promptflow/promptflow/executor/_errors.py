@@ -175,6 +175,15 @@ class LineExecutionTimeoutError(UserErrorException):
         )
 
 
+class ProcessCrashError(UserErrorException):
+    """Exception raised when process crashed."""
+
+    def __init__(self, line_number):
+        super().__init__(
+            message=f"Process crashed while executing line {line_number},", target=ErrorTarget.EXECUTOR
+        )
+
+
 class EmptyLLMApiMapping(UserErrorException):
     """Exception raised when connection_type_to_api_mapping is empty and llm node provider can't be inferred"""
 

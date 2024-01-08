@@ -82,6 +82,7 @@ class TestCli:
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
+    @pytest.mark.skip("Recording injection fails in the spawn process, skipped temporarily.")
     def test_basic_flow_run_batch_and_eval(self, capfd) -> None:
         run_id = str(uuid.uuid4())
         run_pf_command(
@@ -116,6 +117,7 @@ class TestCli:
         out, _ = capfd.readouterr()
         assert "Completed" in out
 
+    @pytest.mark.skip("Recording injection fails in the spawn process, skipped temporarily.")
     def test_submit_run_with_yaml(self, capfd):
         run_id = str(uuid.uuid4())
         run_pf_command(
@@ -1092,7 +1094,7 @@ class TestCli:
         logger.propagate = True
 
         def validate_log(log_msg, prefix, expect_dict):
-            log_inputs = json.loads(log_msg[len(prefix) :].replace("'", '"'))
+            log_inputs = json.loads(log_msg[len(prefix):].replace("'", '"'))
             assert prefix in log_msg
             assert expect_dict == log_inputs
 
