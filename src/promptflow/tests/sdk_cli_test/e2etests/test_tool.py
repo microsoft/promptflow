@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from promptflow._core.tool import tool
+from promptflow import ToolProvider, tool
 from promptflow._core.tool_meta_generator import ToolValidationError
 from promptflow._sdk._pf_client import PFClient
 from promptflow.entities import DynamicList, InputSetting
@@ -135,32 +135,47 @@ class TestTool:
         tool_meta = self.get_tool_meta(tool_path)
         expect_tool_meta = {
             "test_tool.tool_with_dynamic_list_input.my_tool": {
-                "name": "My Tool with Dynamic List Input",
-                "type": "python",
+                "description": "This is my tool with dynamic list input",
+                "function": "my_tool",
                 "inputs": {
-                    "input_text": {
-                        "type": ["list"],
-                        "is_multi_select": True,
-                        "allow_manual_entry": True,
+                    "endpoint_name": {
                         "dynamic_list": {
-                            "func_path": "test_tool.tool_with_dynamic_list_input.my_list_func",
                             "func_kwargs": [
                                 {
-                                    "name": "prefix",
-                                    "type": ["string"],
-                                    "reference": "${inputs.input_prefix}",
-                                    "optional": True,
                                     "default": "",
-                                },
-                                {"name": "size", "type": ["int"], "optional": True, "default": 10},
+                                    "name": "prefix",
+                                    "optional": True,
+                                    "reference": "${inputs.input_prefix}",
+                                    "type": ["string"],
+                                }
                             ],
+                            "func_path": "test_tool.tool_with_dynamic_list_input.list_endpoint_names",
                         },
+                        "type": ["string"],
                     },
                     "input_prefix": {"type": ["string"]},
+                    "input_text": {
+                        "allow_manual_entry": True,
+                        "dynamic_list": {
+                            "func_kwargs": [
+                                {
+                                    "default": "",
+                                    "name": "prefix",
+                                    "optional": True,
+                                    "reference": "${inputs.input_prefix}",
+                                    "type": ["string"],
+                                },
+                                {"default": 10, "name": "size", "optional": True, "type": ["int"]},
+                            ],
+                            "func_path": "test_tool.tool_with_dynamic_list_input.my_list_func",
+                        },
+                        "is_multi_select": True,
+                        "type": ["list"],
+                    },
                 },
-                "description": "This is my tool with dynamic list input",
                 "module": "test_tool.tool_with_dynamic_list_input",
-                "function": "my_tool",
+                "name": "My Tool with Dynamic List Input",
+                "type": "python",
             }
         }
         assert tool_meta == expect_tool_meta
@@ -288,6 +303,10 @@ class TestTool:
         result = _client.tools.validate(tool_script_path)
         assert result.passed
 
+        tool_script_path = TOOL_ROOT / "tool_with_dynamic_list_input.py"
+        result = _client.tools.validate(tool_script_path)
+        assert result.passed
+
         tool_script_path = TOOL_ROOT / "invalid_tool.py"
         result = _client.tools.validate(tool_script_path)
         assert len(result._errors) == 4
@@ -357,3 +376,28 @@ class TestTool:
             'Cannot find the input "invalid_input" for the enabled_by of student_id.'
             in result.error_messages["invalid_input_settings"]
         )
+
+    def test_validate_tool_class(self):
+        from promptflow.tools.serpapi import SerpAPI
+
+        result = _client.tools.validate(SerpAPI)
+        assert result.passed
+
+        class InvalidToolClass(ToolProvider):
+            def __init__(self):
+                super().__init__()
+
+            @tool(name="My Custom Tool")
+            def tool_func(self, api: str):
+                pass
+
+            @tool(name=1)
+            def invalid_tool_func(self, api: str):
+                pass
+
+        result = _client.tools.validate(InvalidToolClass)
+        assert not result.passed
+        assert result._kwargs["total_count"] == 2
+        assert result._kwargs["invalid_count"] == 1
+        assert len(result._errors) == 1
+        assert "1 is not of type 'string'" in result._errors[0].message
