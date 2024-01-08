@@ -14,8 +14,11 @@ from promptflow.executor.flow_executor import FlowExecutor
 
 @dataclass
 class ProcessInfo:
+    index: int = None
     process_id: str = None
     process_name: str = None
+    input_queue: Queue = None
+    output_queue: Queue = None
 
 
 class ProcessControlSignal(str, Enum):
@@ -206,7 +209,7 @@ class ForkProcessManager(AbstractProcessManager):
 
     def start_processes(self):
         '''
-        Initiates a process using the 'spawn' method.
+        Initiates a process with "spawn" method to establish a clean environment.
         '''
         context = multiprocessing.get_context("spawn")
         process = context.Process(
