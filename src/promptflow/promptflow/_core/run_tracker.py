@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
+from promptflow._core.tracer import Tracer
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
@@ -177,9 +178,6 @@ class RunTracker(ThreadLocalSingleton):
         # TODO: Refactor Tracer to support flow level tracing,
         # then we can remove the hard-coded root level api_calls here.
         # It has to be a list for UI backward compatibility.
-        # TODO: Add input, output, error to top level. Adding them would require
-        # the same technique of handingling image and generator in Tracer,
-        # which introduces duplicated logic. We should do it in the refactoring.
         start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() \
             if run_info.start_time else None
         end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() \
@@ -192,6 +190,9 @@ class RunTracker(ThreadLocalSingleton):
             "end_time": end_timestamp,
             "children": self._collect_traces_from_nodes(run_id),
             "system_metrics": run_info.system_metrics,
+            "inputs": Tracer.to_serializable(run_info.inputs) if run_info.inputs else None,
+            "output": Tracer.to_serializable(run_info.output) if run_info.output else None,
+            "error": Tracer._format_error(run_info.error) if run_info.error else None,
             }]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
