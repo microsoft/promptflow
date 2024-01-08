@@ -57,7 +57,7 @@ def run_pf_command(*args, cwd=None):
 
 
 @pytest.mark.usefixtures(
-    "use_secrets_config_file", "recording_injection", "setup_local_connection", "install_custom_tool_pkg"
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg"
 )
 @pytest.mark.cli_test
 @pytest.mark.e2etest
@@ -95,6 +95,33 @@ class TestCli:
             run_id,
         )
         out, _ = capfd.readouterr()
+
+        from promptflow import PFClient
+        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+
+        client = PFClient()
+        run = client.runs.get(name=run_id)
+        local_storage = LocalStorageOperations(run=run)
+
+        with open(local_storage._log_path, "r") as file:
+            logs = file.read()
+
+        try:
+            connection_file_path = os.environ.get('PROMPTFLOW_CONNECTIONS', None)
+            print(f"PROMPTFLOW_CONNECTIONS in main process = {connection_file_path}")
+            with open(connection_file_path, "r") as file:
+                connections = json.load(file)
+                print(f"connections = {connections}")
+        except Exception as e:
+            print(f"Failed to load connections file, {e}")
+
+        print(f"test_basic_flow_run_batch_and_eval logs:{logs}")
+        outputs_run = client.runs.get_details(name=run_id)
+        print(f"============test_basic_flow_run_batch_and_eval:outputs_run================: {outputs_run}")
+
+        _, outputs = local_storage.load_inputs_and_outputs()
+        print(f"=============test_basic_flow_run_batch_and_eval:outputs=============, {outputs}")
+
         assert "Completed" in out
 
         # Check the CLI works correctly when the parameter is surrounded by quotation, as below shown:
@@ -129,6 +156,25 @@ class TestCli:
         )
         out, _ = capfd.readouterr()
         assert "Completed" in out
+
+        from promptflow import PFClient
+        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+
+        client = PFClient()
+        run = client.runs.get(name=run_id)
+
+        local_storage = LocalStorageOperations(run=run)
+
+        with open(local_storage._log_path, "r") as file:
+            logs = file.read()
+
+        print(f"test_basic_flow_run_batch_and_eval logs:{logs}")
+
+        outputs_run = client.runs.get_details(name=run_id)
+        print(f"============test_submit_run_with_yaml:outputs_run================: {outputs_run}")
+
+        _, outputs = local_storage.load_inputs_and_outputs()
+        print(f"=============test_submit_run_with_yaml:outputs=============, {outputs}")
 
         run_pf_command(
             "run",
@@ -1092,7 +1138,7 @@ class TestCli:
         logger.propagate = True
 
         def validate_log(log_msg, prefix, expect_dict):
-            log_inputs = json.loads(log_msg[len(prefix) :].replace("'", '"'))
+            log_inputs = json.loads(log_msg[len(prefix):].replace("'", '"'))
             assert prefix in log_msg
             assert expect_dict == log_inputs
 
