@@ -14,3 +14,11 @@ nodes:
     path: greetings.py
   inputs:
     user_id: ${inputs.user_id}
+
+- name: greetings2
+  type: python
+  source:
+    type: code
+    path: greetings.py
+  inputs:
+    user_id: ${inputs.user_id}

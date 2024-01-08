@@ -205,6 +205,18 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
     def create_trace(func, args, kwargs):
         return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
 
+    def enrich_span_with_trace(span, trace):
+        span.set_attributes(
+            {
+                "framework": "promptflow",
+                "span_type": f"promptflow.{trace_type}",
+                "inputs": trace.inputs,
+                "output": trace.output,
+                "node_name": "node_name",  # TODO: Check how to pass the node name in
+                "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
+            }
+        )
+
     if inspect.iscoroutinefunction(func):
 
         @functools.wraps(func)
@@ -215,8 +227,10 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             # We directly call func instead of calling Tracer.invoke,
             # because we want to avoid long stack trace when hitting an exception.
             try:
-                Tracer.push(create_trace(func, args, kwargs))
-                with tracer.start_as_current_span(func.__qualname__):
+                trace = create_trace(func, args, kwargs)
+                Tracer.push(trace)
+                with tracer.start_as_current_span(func.__qualname__) as span:
+                    enrich_span_with_trace(span, trace)
                     output = await func(*args, **kwargs)
                 return Tracer.pop(output)
             except Exception as e:
@@ -233,8 +247,10 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             # We directly call func instead of calling Tracer.invoke,
             # because we want to avoid long stack trace when hitting an exception.
             try:
-                Tracer.push(create_trace(func, args, kwargs))
-                with tracer.start_as_current_span(func.__qualname__):
+                trace = create_trace(func, args, kwargs)
+                Tracer.push(trace)
+                with tracer.start_as_current_span(func.__qualname__) as span:
+                    enrich_span_with_trace(span, trace)
                     output = func(*args, **kwargs)
                 return Tracer.pop(output)
             except Exception as e:

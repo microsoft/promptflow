@@ -28,6 +28,7 @@ async def format_greeting(user_name):
 @tool
 async def greetings(user_id):
     user_name = await get_user_name(user_id)
-    greeting = await format_greeting(user_name) 
-    print(greeting)
+    greeting_task1 = asyncio.create_task(format_greeting(user_name))
+    greeting_task2 = asyncio.create_task(format_greeting(user_name))
+    greeting = await greeting_task1 + "\n" + await greeting_task2
     return {"greeting": greeting}
