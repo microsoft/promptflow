@@ -4,10 +4,17 @@ from typing import List
 import queue
 import signal
 from functools import partial
+from dataclasses import dataclass
 import psutil
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor.flow_executor import FlowExecutor
+
+
+@dataclass
+class ProcessInfo:
+    process_id: str = None
+    process_name: str = None
 
 
 class AbstractProcessManager:
@@ -26,7 +33,7 @@ class AbstractProcessManager:
     :param process_target_func: The target function that the processes will execute.
 
     :param raise_ex: Flag to determine whether to raise exceptions or not.
-    :type control_signal_queue: multiprocessing.Queue
+    :type raise_ex: bool
     '''
 
     def __init__(
@@ -109,7 +116,7 @@ class SpawnProcessManager(AbstractProcessManager):
         )
 
         process.start()
-        self._process_info[i] = {'pid': process.pid, 'process_name': process.name}
+        self._process_info[i] = ProcessInfo(process_id=process.pid, process_name=process.name)
         return process
 
     def restart_process(self, i):
@@ -130,7 +137,7 @@ class SpawnProcessManager(AbstractProcessManager):
         :type i: int
         """
         try:
-            pid = self._process_info[i]['pid']
+            pid = self._process_info[i].process_id
             process = psutil.Process(pid)
             process.terminate()
             process.wait()
@@ -272,7 +279,7 @@ def fork_processes_manager(
             daemon=True
         )
         process.start()
-        process_info[i] = {'pid': process.pid, 'process_name': process.name}
+        process_info[i] = ProcessInfo(process_id=process.pid, process_name=process.name)
         return process
 
     # Initialize processes.
@@ -282,7 +289,7 @@ def fork_processes_manager(
     # Function to terminate a process.
     def end_process(i):
         try:
-            pid = process_info[i]['pid']
+            pid = process_info[i].process_id
             process = psutil.Process(pid)
             process.terminate()
             process.wait()
@@ -304,7 +311,7 @@ def fork_processes_manager(
     while True:
         all_processes_stopped = True
         for _, info in list(process_info.items()):
-            pid = info['pid']
+            pid = info.process_id
             # Check if at least one process is alive.
             if psutil.pid_exists(pid):
                 process = psutil.Process(pid)

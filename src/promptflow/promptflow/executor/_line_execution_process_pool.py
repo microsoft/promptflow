@@ -244,8 +244,8 @@ class LineExecutionProcessPool:
     def _get_process_info(self, index, input_queue, output_queue):
         while True:
             try:
-                pid = self._process_info[index]['pid']
-                process_name = self._process_info[index]['process_name']
+                pid = self._process_info[index].process_id
+                process_name = self._process_info[index].process_name
                 process_info = (index, pid, process_name, input_queue, output_queue)
                 return process_info
             except KeyError:

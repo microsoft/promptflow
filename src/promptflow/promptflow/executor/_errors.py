@@ -176,7 +176,7 @@ class LineExecutionTimeoutError(UserErrorException):
 
 
 class ProcessCrashError(UserErrorException):
-    """Exception raised when single line execution timeout"""
+    """Exception raised when process crashed."""
 
     def __init__(self, line_number):
         super().__init__(
