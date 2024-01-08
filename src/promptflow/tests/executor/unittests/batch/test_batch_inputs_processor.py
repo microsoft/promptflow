@@ -66,6 +66,29 @@ class TestBatchInputsProcessor:
         ]
 
     @pytest.mark.parametrize(
+        "data_path",
+        [
+            "./tests/test_configs/datas/load_data_cases/10k.jsonl",
+            "./tests/test_configs/datas/load_data_cases/10k",
+        ],
+    )
+    def test_resolve_data_from_input_path_with_large_data(self, data_path):
+        result = BatchInputsProcessor("", {})._resolve_data_from_input_path(Path(data_path))
+        assert isinstance(result, list)
+        assert len(result) == 10000
+
+        # specify max_rows_count
+        max_rows_count = 5
+        head_results = BatchInputsProcessor(
+            working_dir="",
+            flow_inputs={},
+            max_lines_count=max_rows_count,
+        )._resolve_data_from_input_path(Path(data_path))
+        assert isinstance(head_results, list)
+        assert len(head_results) == max_rows_count
+        assert result[:max_rows_count] == head_results
+
+    @pytest.mark.parametrize(
         "inputs, inputs_mapping, expected",
         [
             (

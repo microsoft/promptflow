@@ -52,14 +52,20 @@ class BatchInputsProcessor:
         """Resolve input data from directory"""
         result = []
         if input_path.is_file():
-            result.extend(resolve_multimedia_data_recursively(input_path.parent, load_data(input_path)))
+            result.extend(resolve_multimedia_data_recursively(
+                input_path.parent,
+                load_data(local_path=input_path, max_rows_count=self._max_lines_count))
+            )
         else:
             for input_file in input_path.rglob("*"):
                 if input_file.is_file():
-                    result.extend(resolve_multimedia_data_recursively(input_file.parent, load_data(input_file)))
+                    result.extend(resolve_multimedia_data_recursively(
+                        input_file.parent,
+                        load_data(local_path=input_file, max_rows_count=self._max_lines_count))
+                    )
                     if self._max_lines_count and len(result) >= self._max_lines_count:
                         break
-        if self._max_lines_count and len(result) > self._max_lines_count:
+        if self._max_lines_count and len(result) >= self._max_lines_count:
             logger.warning(
                 (
                     "The data provided exceeds the maximum lines limit. Currently, only the first "
