@@ -1313,6 +1313,7 @@ class TestCli:
             assert outerr.err
             error_msg = json.loads(outerr.err)
             assert error_msg["code"] == "SDKError"
+            assert error_msg["innerError"]["code"] == "ConnectionNotFoundError"
 
             def mocked_connection_get(*args, **kwargs):
                 raise Exception("mock exception")

@@ -9,8 +9,8 @@ from functools import cached_property
 
 
 class ErrorCategory(str, Enum):
-    UserError = "UserError"
-    SystemError = "SystemError"
+    USER_ERROR = "UserError"
+    SYSTEM_ERROR = "SystemError"
     UNKNOWN = "Unknown"
 
 
@@ -230,7 +230,7 @@ class _ErrorInfo:
         e = cls.select_exception(e)
         if cls._is_system_error(e):
             return (
-                ErrorCategory.SystemError,
+                ErrorCategory.SYSTEM_ERROR,
                 cls._error_type(e),
                 cls._error_target(e),
                 cls._error_message(e),
@@ -238,7 +238,7 @@ class _ErrorInfo:
             )
         if cls._is_user_error(e):
             return (
-                ErrorCategory.UserError,
+                ErrorCategory.USER_ERROR,
                 cls._error_type(e),
                 cls._error_target(e),
                 cls._error_message(e),
