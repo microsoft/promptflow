@@ -1,5 +1,6 @@
 import asyncio
 import contextvars
+import os
 from concurrent.futures import ThreadPoolExecutor
 
 from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
@@ -23,7 +24,10 @@ traceProvider = TracerProvider(resource=resource)
 # traceProvider = get_tracer_provider()
 # processor = BatchSpanProcessor(ConsoleSpanExporter())
 # traceProvider.add_span_processor(processor)
-processor = BatchSpanProcessor(AzureMonitorTraceExporter(connection_string=""))
+connection_string = os.environ.get("APPINSIGHTS_CONNECTION_STRING")
+if not connection_string:
+    raise ValueError("No connection string provided")
+processor = BatchSpanProcessor(AzureMonitorTraceExporter(connection_string=connection_string))
 traceProvider.add_span_processor(processor)
 processor = BatchSpanProcessor(jaeger_exporter)
 traceProvider.add_span_processor(processor)
