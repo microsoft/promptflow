@@ -81,7 +81,8 @@
     "junit",
     "nunit",
     "astext",
-    "Likert"
+    "Likert",
+    "uihints"
   ],
   "ignoreWords": [
     "openmpi",
