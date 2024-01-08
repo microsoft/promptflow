@@ -22,7 +22,6 @@ jobs:
         shell: pwsh
         env:
           PYTHONPATH: ${{ github.workspace }}/src/promptflow
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd ${{ github.workspace }}/src/promptflow
           pip install -e .

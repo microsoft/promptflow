@@ -148,5 +148,4 @@ jobs:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 40
-        token: ${{ secrets.GITHUB_TOKEN }}
         context: test/sdk_cli
