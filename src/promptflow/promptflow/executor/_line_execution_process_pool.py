@@ -210,24 +210,23 @@ class LineExecutionProcessPool:
                     # Monitor process aliveness.
                     if not psutil.pid_exists(pid):
                         crashed = True
-                        completed = True
                         break
 
                     # Responsible for checking the output queue messages and
                     # processing them within a specified timeout period.
                     message = output_queue.get(timeout=1)
-                    completed = self._process_message(message, result_list)
+                    completed = self._process_output_message(message, result_list)
                     if completed:
                         break
                 except queue.Empty:
                     continue
 
             # Handle timeout or process crash.
-            if not completed or crashed:
-                if not completed:
-                    self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
-                elif crashed:
+            if not completed:
+                if crashed:
                     self.handle_process_crashed(line_number, inputs, run_id, start_time, result_list)
+                else:
+                    self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
 
                 self._completed_idx[line_number] = format_current_process(
                     process_name, pid, line_number, is_failed=True)
@@ -251,7 +250,7 @@ class LineExecutionProcessPool:
             except KeyError:
                 continue
 
-    def _process_message(self, message, result_list):
+    def _process_output_message(self, message, result_list):
         if isinstance(message, LineResult):
             message = self._process_multimedia(message)
             result_list.append(message)
