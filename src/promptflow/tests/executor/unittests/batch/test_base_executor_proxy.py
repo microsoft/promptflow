@@ -57,7 +57,30 @@ class TestAPIBasedExecutorProxy:
             mock.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_ensure_executor_startup(self):
+    async def test_ensure_executor_startup_when_no_error(self):
+        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
+        with patch.object(APIBasedExecutorProxy, "ensure_executor_health", new_callable=AsyncMock) as mock:
+            with patch.object(APIBasedExecutorProxy, "_check_startup_error_from_file") as mock_check_startup_error:
+                await mock_executor_proxy.ensure_executor_startup("")
+                mock_check_startup_error.assert_not_called()
+            mock.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_ensure_executor_startup_when_not_healthy(self):
+        # empty error file
+        error_file = Path(mkdtemp()) / "error.json"
+        error_file.touch()
+
+        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
+        with patch.object(APIBasedExecutorProxy, "ensure_executor_health", new_callable=AsyncMock) as mock:
+            mock.side_effect = ExecutorServiceUnhealthy("executor unhealthy")
+            with pytest.raises(ExecutorServiceUnhealthy) as ex:
+                await mock_executor_proxy.ensure_executor_startup(error_file)
+            assert ex.value.message == "executor unhealthy"
+            mock.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_ensure_executor_startup_when_existing_validation_error(self):
         # prepare the error file
         error_file = Path(mkdtemp()) / "error.json"
         error_message = "Connection 'aoai_conn' not found"
