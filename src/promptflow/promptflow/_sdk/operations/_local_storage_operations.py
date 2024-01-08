@@ -20,7 +20,6 @@ from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
     LOCAL_STORAGE_BATCH_SIZE,
-    LOGGER_NAME,
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
 )
@@ -30,7 +29,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
-from promptflow._utils.logger_utils import LogContext, LoggerFactory
+from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import get_file_reference_encoder
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
@@ -41,7 +40,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 from promptflow.storage import AbstractRunStorage
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 RunInputs = NewType("RunInputs", Dict[str, List[Any]])
 RunOutputs = NewType("RunOutputs", Dict[str, List[Any]])
@@ -291,11 +290,13 @@ class LocalStorageOperations(AbstractRunStorage):
         :param batch_result: Bulk run outputs. If exception not raised, store line run error messages.
         """
         # extract line run errors
-        message = ""
         errors = []
         if batch_result:
             for line_error in batch_result.error_summary.error_list:
                 errors.append(line_error.to_dict())
+            # collect aggregation node error
+            for node_name, aggr_error in batch_result.error_summary.aggr_error_dict.items():
+                errors.append({"error": aggr_error, "aggregation_node_name": node_name})
         if errors:
             try:
                 # use first line run error message as exception message if no exception raised
@@ -319,7 +320,7 @@ class LocalStorageOperations(AbstractRunStorage):
                 error=exception,
                 failed_lines=batch_result.failed_lines if batch_result else "unknown",
                 total_lines=batch_result.total_lines if batch_result else "unknown",
-                line_errors={"errors": errors},
+                errors={"errors": errors},
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(
@@ -333,12 +334,17 @@ class LocalStorageOperations(AbstractRunStorage):
         except Exception:
             return {}
 
-    def load_detail(self) -> Dict[str, list]:
+    def load_detail(self, parse_const_as_str: bool = False) -> Dict[str, list]:
         if self._detail_path.is_file():
             # legacy run with local file detail.json, then directly load from the file
             with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 return json.load(f)
         else:
+            # nan, inf and -inf are not JSON serializable
+            # according to https://docs.python.org/3/library/json.html#json.loads
+            # `parse_constant` will be called to handle these values
+            # so if parse_const_as_str is True, we will parse these values as str with a lambda function
+            json_loads = json.loads if not parse_const_as_str else partial(json.loads, parse_constant=lambda x: str(x))
             # collect from local files and concat in the memory
             flow_runs, node_runs = [], []
             for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
@@ -347,14 +353,14 @@ class LocalStorageOperations(AbstractRunStorage):
                 if line_run_record_file.suffix.lower() != ".jsonl":
                     continue
                 with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                    new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                    new_runs = [json_loads(line)["run_info"] for line in list(f)]
                     flow_runs += new_runs
             for node_folder in sorted(self._node_infos_folder.iterdir()):
                 for node_run_record_file in sorted(node_folder.iterdir()):
                     if node_run_record_file.suffix.lower() != ".jsonl":
                         continue
                     with open(node_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                        new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                        new_runs = [json_loads(line)["run_info"] for line in list(f)]
                         node_runs += new_runs
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 

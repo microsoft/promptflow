@@ -70,7 +70,9 @@ class TestExecutor:
         assert isinstance(flow_result.output, dict)
         assert flow_result.run_info.status == Status.Completed
         node_count = len(executor._flow.nodes)
-        assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == node_count
+        assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == 1
+        assert isinstance(flow_result.run_info.api_calls[0]["children"], list) and \
+            len(flow_result.run_info.api_calls[0]["children"]) == node_count
         assert len(flow_result.node_run_infos) == node_count
         for node, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
@@ -258,8 +260,16 @@ def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependenc
             connections=connections,
             raise_ex=raise_ex,
         )
-        assert len(result.api_calls) == 1
         # Assert llm single node run contains openai traces
-        assert result.api_calls[0]["children"]
+        # And the traces contains system metrics
+        OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
+        assert len(result.api_calls) == 1
+        assert len(result.api_calls[0]["children"]) == 1
+        assert isinstance(result.api_calls[0]["children"][0]["system_metrics"], dict)
+        for key in OPENAI_AGGREGATE_METRICS:
+            assert key in result.api_calls[0]["children"][0]["system_metrics"]
+        for key in OPENAI_AGGREGATE_METRICS:
+            assert result.api_calls[0]["system_metrics"][key] == \
+                result.api_calls[0]["children"][0]["system_metrics"][key]
     except Exception as ex:
         queue.put(ex)

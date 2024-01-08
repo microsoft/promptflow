@@ -2,13 +2,15 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import functools
 import inspect
 import logging
 from abc import ABC
 from dataclasses import InitVar, asdict, dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Union
+
+from promptflow._core.tracer import _traced
+from promptflow.contracts.trace import TraceType
 
 module_logger = logging.getLogger(__name__)
 STREAMING_OPTION_PARAMETER_ATTR = "_streaming_option_parameter"
@@ -70,52 +72,12 @@ def tool(
     def tool_decorator(func: Callable) -> Callable:
         from promptflow.exceptions import UserErrorException
 
-        if inspect.iscoroutinefunction(func):
-
-            @functools.wraps(func)
-            async def decorated_tool(*args, **kwargs):
-                from .tracer import Tracer
-
-                if Tracer.active_instance() is None:
-                    return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push_tool(func, args, kwargs)
-                    output = await func(*args, **kwargs)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-            new_f = decorated_tool
-        else:
-
-            @functools.wraps(func)
-            def decorated_tool(*args, **kwargs):
-                from .tracer import Tracer
-
-                if Tracer.active_instance() is None:
-                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-                # Should not extract these codes to a separate function here.
-                # We directly call func instead of calling Tracer.invoke,
-                # because we want to avoid long stack trace when hitting an exception.
-                try:
-                    Tracer.push_tool(func, args, kwargs)
-                    output = func(*args, **kwargs)
-                    return Tracer.pop(output)
-                except Exception as e:
-                    Tracer.pop(None, e)
-                    raise
-
-            new_f = decorated_tool
-
         if type is not None and type not in [k.value for k in ToolType]:
             raise UserErrorException(f"Tool type {type} is not supported yet.")
 
-        new_f.__original_function = func
-        func.__wrapped_function = new_f
+        # Calls to tool functions should be traced automatically.
+        new_f = _traced(func, trace_type=TraceType.TOOL)
+
         new_f.__tool = None  # This will be set when generating the tool definition.
         new_f.__name = name
         new_f.__description = description

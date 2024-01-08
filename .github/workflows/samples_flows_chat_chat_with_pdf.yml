@@ -16,7 +16,7 @@ env:
   IS_IN_CI_PIPELINE: "true"
 
 jobs:
-  samples_readme_ci:
+  samples_flows_chat_chat_with_pdf:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -53,9 +53,11 @@ jobs:
         run: |
           if [[ -e .env ]]; then
             pf connection create --file .env --name chat_with_pdf_custom_connection
-            pf connection list
           fi
-          
+          if [[ -e azure_openai.yml ]]; then
+            pf connection create --file azure_openai.yml --name chat_with_pdf_custom_connection
+          fi
+          pf connection list
       - name: Create run.yml
         working-directory: examples/flows/chat/chat-with-pdf
         run: |

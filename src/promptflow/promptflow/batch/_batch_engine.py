@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import signal
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -20,7 +21,13 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
 )
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.utils import dump_list_to_jsonl, log_progress, resolve_dir_to_absolute, transpose
+from promptflow._utils.utils import (
+    dump_list_to_jsonl,
+    get_int_env_var,
+    log_progress,
+    resolve_dir_to_absolute,
+    transpose,
+)
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
@@ -29,6 +36,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -83,16 +91,14 @@ class BatchEngine:
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
+        self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
         FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
 
-        executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
-        with _change_working_dir(self._working_dir):
-            self._executor_proxy: AbstractExecutorProxy = executor_proxy_cls.create(
-                flow_file, self._working_dir, connections=connections, storage=storage, **kwargs
-            )
+        self._connections = connections
         self._storage = storage
+        self._kwargs = kwargs
         # set it to True when the batch run is canceled
         self._is_canceled = False
 
@@ -122,21 +128,40 @@ class BatchEngine:
         :return: The result of this batch run
         :rtype: ~promptflow.batch._result.BatchResult
         """
-
         try:
             self._start_time = datetime.utcnow()
-            # set batch input source from input mapping
-            OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
-            # resolve input data from input dirs and apply inputs mapping
-            batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
-            batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
-            # resolve output dir
-            output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
-            # run flow in batch mode
             with _change_working_dir(self._working_dir):
-                return async_run_allowing_running_loop(
-                    self._exec_in_task, batch_inputs, run_id, output_dir, raise_on_line_failure
+                # create executor proxy instance according to the flow program language
+                executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
+                self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
+                    executor_proxy_cls.create,
+                    self._flow_file,
+                    self._working_dir,
+                    connections=self._connections,
+                    storage=self._storage,
+                    **self._kwargs,
                 )
+                try:
+                    # register signal handler for python flow in the main thread
+                    # TODO: For all executor proxies that are executed locally, it might be necessary to
+                    # register a signal for Ctrl+C in order to customize some actions beyond just killing
+                    # the process, such as terminating the executor service.
+                    if isinstance(self._executor_proxy, PythonExecutorProxy):
+                        signal.signal(signal.SIGINT, signal_handler)
+
+                    # set batch input source from input mapping
+                    OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                    # resolve input data from input dirs and apply inputs mapping
+                    batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
+                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    # resolve output dir
+                    output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
+                    # run flow in batch mode
+                    return async_run_allowing_running_loop(
+                        self._exec_in_task, batch_inputs, run_id, output_dir, raise_on_line_failure
+                    )
+                finally:
+                    async_run_allowing_running_loop(self._executor_proxy.destroy)
         except Exception as e:
             bulk_logger.error(f"Error occurred while executing batch run. Exception: {str(e)}")
             if isinstance(e, PromptflowException):
@@ -151,8 +176,6 @@ class BatchEngine:
                     error_type_and_message=f"({e.__class__.__name__}) {e}",
                 )
                 raise unexpected_error from e
-        finally:
-            self._executor_proxy.destroy()
 
     def cancel(self):
         """Cancel the batch run"""
@@ -193,6 +216,7 @@ class BatchEngine:
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
     ) -> BatchResult:
+        # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
         batch_inputs = [
@@ -228,7 +252,8 @@ class BatchEngine:
         batch_inputs: List[Mapping[str, Any]],
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
-        semaphore = asyncio.Semaphore(DEFAULT_CONCURRENCY)
+        worker_count = get_int_env_var("PF_WORKER_COUNT", DEFAULT_CONCURRENCY)
+        semaphore = asyncio.Semaphore(worker_count)
         pending = [
             asyncio.create_task(self._exec_line_under_semaphore(semaphore, line_inputs, i, run_id))
             for i, line_inputs in enumerate(batch_inputs)

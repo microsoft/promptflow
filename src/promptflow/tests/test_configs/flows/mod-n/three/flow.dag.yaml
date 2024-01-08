@@ -1,0 +1,15 @@
+inputs:
+  number:
+    type: int
+outputs:
+  output:
+    type: int
+    reference: ${mod_three.output.value}
+nodes:
+- name: mod_three
+  type: python
+  source:
+    type: code
+    path: mod_three.py
+  inputs:
+    number: ${inputs.number}
