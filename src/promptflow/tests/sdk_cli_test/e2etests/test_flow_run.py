@@ -84,8 +84,8 @@ def assert_run_with_invalid_column_mapping(client: PFClient, run: Run) -> None:
 
     exception = local_storage.load_exception()
     assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
-    assert exception["code"] == "SDKError"
-    assert exception["innerError"]["code"] == "BulkRunException"
+    assert exception["code"] == "UserError"
+    assert exception["innerError"]["innerError"]["code"] == "BulkRunException"
 
 
 @pytest.mark.usefixtures(
@@ -448,7 +448,6 @@ class TestFlowRun:
             assert "Please make sure it exists and not deleted." in str(e.value)
 
     def test_eval_run_data_not_exist(self, pf):
-
         base_run = pf.run(
             flow=f"{FLOWS_DIR}/print_env_var",
             data=f"{DATAS_DIR}/env_var_names.jsonl",

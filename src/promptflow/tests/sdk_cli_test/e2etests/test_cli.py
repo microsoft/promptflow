@@ -1098,9 +1098,7 @@ class TestCli:
 
         with caplog.at_level(level=logging.INFO, logger=LOGGER_NAME):
             run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/web_classification", *extra_args)
-            for (log, expected_input, expected_log_prefix) in zip(
-                caplog.records, expected_inputs, expected_log_prefixes
-            ):
+            for log, expected_input, expected_log_prefix in zip(caplog.records, expected_inputs, expected_log_prefixes):
                 validate_log(
                     prefix=expected_log_prefix,
                     log_msg=log.message,
@@ -1276,7 +1274,6 @@ class TestCli:
             assert keyword not in out
 
     def test_pf_run_no_stream_log(self, capfd):
-
         # without --stream, logs will be in the run's log file
 
         run_pf_command(
@@ -1312,8 +1309,8 @@ class TestCli:
             outerr = capsys.readouterr()
             assert outerr.err
             error_msg = json.loads(outerr.err)
-            assert error_msg["code"] == "SDKError"
-            assert error_msg["innerError"]["code"] == "ConnectionNotFoundError"
+            assert error_msg["code"] == "UserError"
+            assert error_msg["innerError"]["innerError"]["code"] == "ConnectionNotFoundError"
 
             def mocked_connection_get(*args, **kwargs):
                 raise Exception("mock exception")
