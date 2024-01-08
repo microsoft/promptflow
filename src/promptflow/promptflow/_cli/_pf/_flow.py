@@ -42,6 +42,9 @@ from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
+# from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+
+
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
 logger = get_cli_sdk_logger()
@@ -360,6 +363,11 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
 @exception_handler("Flow test")
 def test_flow(args):
     from promptflow._sdk._load_functions import load_flow
+
+    # provider = TracerProvider()
+    # processor = BatchSpanProcessor(ConsoleSpanExporter())
+    # provider.add_span_processor(processor)
+    # trace.set_tracer_provider(provider)
 
     config = list_of_dict_to_dict(args.config)
     pf_client = PFClient(config=config)

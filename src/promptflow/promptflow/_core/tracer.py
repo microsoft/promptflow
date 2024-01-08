@@ -10,7 +10,9 @@ import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
-from typing import Callable, Optional, Dict
+from typing import Callable, Dict, Optional
+
+from opentelemetry.trace import Tracer as OTelTracer
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._utils.dataclass_serializer import serialize
@@ -25,21 +27,22 @@ class Tracer(ThreadLocalSingleton):
     CONTEXT_VAR_NAME = "Tracer"
     context_var = ContextVar(CONTEXT_VAR_NAME, default=None)
 
-    def __init__(self, run_id, node_name: Optional[str] = None):
+    def __init__(self, run_id, node_name: Optional[str] = None, otel_tracer: OTelTracer = None):
         self._run_id = run_id
+        self._otel_tracer = otel_tracer
         self._node_name = node_name
         self._traces = []
         self._current_trace_id = ContextVar("current_trace_id", default="")
         self._id_to_trace: Dict[str, Trace] = {}
 
     @classmethod
-    def start_tracing(cls, run_id, node_name: Optional[str] = None):
+    def start_tracing(cls, run_id, node_name: Optional[str] = None, otel_tracer: OTelTracer = None):
         current_run_id = cls.current_run_id()
         if current_run_id is not None:
             msg = f"Try to start tracing for run {run_id} but {current_run_id} is already active."
             logging.warning(msg)
             return
-        tracer = cls(run_id, node_name)
+        tracer = cls(run_id, node_name, otel_tracer)
         tracer._activate_in_context()
 
     @classmethod
@@ -97,6 +100,10 @@ class Tracer(ThreadLocalSingleton):
     def _push(self, trace: Trace):
         if not trace.id:
             trace.id = str(uuid.uuid4())
+        span = self._otel_tracer.start_span(trace.name)
+        span.set_attribute("span_type", trace.type)
+        setattr(trace, "_span", span)
+
         if trace.inputs:
             trace.inputs = self.to_serializable(trace.inputs)
         trace.children = []
@@ -122,6 +129,11 @@ class Tracer(ThreadLocalSingleton):
         if not last_trace:
             logging.warning("Try to pop trace but no active trace in current context.")
             return output
+        span = getattr(last_trace, "_span")
+        if error:
+            span.record_exception(error)
+        span.end()
+
         if isinstance(output, Iterator):
             output = GeneratorProxy(output)
         if output is not None:
