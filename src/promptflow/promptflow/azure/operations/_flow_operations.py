@@ -25,7 +25,6 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
 from promptflow._sdk._constants import (
-    BASE_PATH_CONTEXT_KEY,
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
     FLOW_TOOLS_JSON,
@@ -37,7 +36,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json, load_from_dict
+from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
@@ -136,7 +135,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return result_flow
 
     @staticmethod
-    def _validate_flow_creation_parameters(source, flow_display_name, flow_type, **kwargs):
+    def _validate_flow_creation_parameters(source, flow_display_name=None, flow_type=None, **kwargs):
         """Validate the parameters for flow creation operation."""
         # validate the source folder
         logger.info("Validating flow source.")
@@ -176,27 +175,20 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_schema(source, display_name=None, type=None, **kwargs):
         """Validate the flow schema."""
-        from marshmallow import ValidationError
-
         from promptflow._sdk.entities._flow import ProtectedFlow
-        from promptflow._sdk.schemas._flow import FlowSchema
 
         params_override = copy.deepcopy(kwargs)
-        if display_name:
+        if display_name is not None:
             params_override["display_name"] = display_name
-        if type:
+        if type is not None:
             params_override["type"] = type
 
         flow_entity = ProtectedFlow.load(source=source, params_override=params_override)
         flow_dict = flow_entity._dump_for_validation()
-        try:
-            load_from_dict(
-                schema=FlowSchema,
-                data=flow_dict,
-                context={BASE_PATH_CONTEXT_KEY: Path(source)},
-            )
-        except ValidationError as e:
-            raise UserErrorException(f"Failed to validate flow schema due to: {str(e)}") from e
+
+        validation_result = flow_entity._validate(raise_error=True)
+        if validation_result._warnings:
+            logger.warning("Flow schema validation warnings: %s", str(validation_result._warnings))
 
         return flow_dict
 

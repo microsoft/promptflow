@@ -262,10 +262,9 @@ class MutableValidationResult(ValidationResult):
                 def error_func(msg, _):
                     return ValidationError(message=msg)
 
-            fields = [key for key in self.error_messages if key]
             raise error_func(
                 self.__repr__(),
-                "validation failed on the following fields: " + ", ".join(fields),
+                f"Schema validation failed: {self.error_messages}",
             )
         return self
 
