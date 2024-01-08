@@ -15,6 +15,7 @@ from typing import Callable, Dict, Optional
 from opentelemetry.trace import Tracer as OTelTracer
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
+from promptflow._core.otel_tracer import get_otel_tracer
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow.contracts.tool import ConnectionType
@@ -29,7 +30,7 @@ class Tracer(ThreadLocalSingleton):
 
     def __init__(self, run_id, node_name: Optional[str] = None, otel_tracer: OTelTracer = None):
         self._run_id = run_id
-        self._otel_tracer = otel_tracer
+        # self._otel_tracer = otel_tracer
         self._node_name = node_name
         self._traces = []
         self._current_trace_id = ContextVar("current_trace_id", default="")
@@ -100,9 +101,9 @@ class Tracer(ThreadLocalSingleton):
     def _push(self, trace: Trace):
         if not trace.id:
             trace.id = str(uuid.uuid4())
-        span = self._otel_tracer.start_span(trace.name)
-        span.set_attribute("span_type", trace.type)
-        setattr(trace, "_span", span)
+        # span = self._otel_tracer.start_span(trace.name)
+        # span.set_attribute("span_type", trace.type)
+        # setattr(trace, "_span", span)
 
         if trace.inputs:
             trace.inputs = self.to_serializable(trace.inputs)
@@ -129,10 +130,10 @@ class Tracer(ThreadLocalSingleton):
         if not last_trace:
             logging.warning("Try to pop trace but no active trace in current context.")
             return output
-        span = getattr(last_trace, "_span")
-        if error:
-            span.record_exception(error)
-        span.end()
+        # span = getattr(last_trace, "_span")
+        # if error:
+        #    span.record_exception(error)
+        # span.end()
 
         if isinstance(output, Iterator):
             output = GeneratorProxy(output)
@@ -180,6 +181,9 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     )
 
 
+tracer = get_otel_tracer("promptflow")
+
+
 def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
     """A wrapper to add trace to a function.
 
@@ -212,7 +216,8 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             # because we want to avoid long stack trace when hitting an exception.
             try:
                 Tracer.push(create_trace(func, args, kwargs))
-                output = await func(*args, **kwargs)
+                with tracer.start_as_current_span(func.__qualname__):
+                    output = await func(*args, **kwargs)
                 return Tracer.pop(output)
             except Exception as e:
                 Tracer.pop(None, e)
@@ -229,7 +234,8 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             # because we want to avoid long stack trace when hitting an exception.
             try:
                 Tracer.push(create_trace(func, args, kwargs))
-                output = func(*args, **kwargs)
+                with tracer.start_as_current_span(func.__qualname__):
+                    output = func(*args, **kwargs)
                 return Tracer.pop(output)
             except Exception as e:
                 Tracer.pop(None, e)
