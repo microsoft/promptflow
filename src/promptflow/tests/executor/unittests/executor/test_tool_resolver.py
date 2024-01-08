@@ -2,6 +2,8 @@ import re
 import sys
 from pathlib import Path
 from typing import List
+from unittest.mock import mock_open
+
 
 import pytest
 from jinja2 import TemplateSyntaxError
@@ -11,7 +13,7 @@ from promptflow._internal import tool
 from promptflow._sdk.entities import CustomConnection, CustomStrongTypeConnection
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
-from promptflow.contracts.tool import InputDefinition, Secret, Tool, ToolType, ValueType
+from promptflow.contracts.tool import AssistantDefinition, InputDefinition, Secret, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._errors import (
@@ -38,9 +40,9 @@ class MyFirstCSTConnection(CustomStrongTypeConnection):
 
 @tool(streaming_option_parameter="stream_enabled")
 def mock_package_func(prompt: PromptTemplate, **kwargs):
-    from promptflow.tools.template_rendering import render_template_jinja2
-
-    return render_template_jinja2(prompt, **kwargs)
+    for k, v in kwargs.items():
+        prompt = prompt.replace(f"{{{{{k}}}}}", str(v))
+    return prompt
 
 
 @pytest.mark.unittest
@@ -178,7 +180,7 @@ class TestToolResolver:
         )
         assert expected_message in exec_info.value.message
 
-    def test_ensure_node_inputs_type(self):
+    def test_convert_node_literal_input_types_with_invalid_case(self):
         # Case 1: conn_name not in connections, should raise conn_name not found error
         tool = Tool(name="mock", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})
         node = Node(
@@ -186,18 +188,17 @@ class TestToolResolver:
             tool=tool,
             inputs={"conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)},
         )
-        connections = {}
         with pytest.raises(ConnectionNotFound):
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connections={})
             tool_resolver._convert_node_literal_input_types(node, tool)
 
         # Case 2: conn_name in connections, but type not matched
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
-        with pytest.raises(NodeInputValidationError) as e:
+        with pytest.raises(NodeInputValidationError) as exe_info:
             tool_resolver = ToolResolver(working_dir=None, connections=connections)
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "'AzureOpenAIConnection' is not supported, valid types ['CustomConnection']"
-        assert message in str(e.value), "Expected: {}, Actual: {}".format(message, str(e.value))
+        assert message in exe_info.value.message, "Expected: {}, Actual: {}".format(message, exe_info.value.message)
 
         # Case 3: Literal value, type mismatch
         tool = Tool(name="mock", type="python", inputs={"int_input": InputDefinition(type=[ValueType.INT])})
@@ -206,12 +207,11 @@ class TestToolResolver:
             tool=tool,
             inputs={"int_input": InputAssignment(value="invalid", value_type=InputValueType.LITERAL)},
         )
-        connections = {}
-        with pytest.raises(NodeInputValidationError) as e:
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        with pytest.raises(NodeInputValidationError) as exe_info:
+            tool_resolver = ToolResolver(working_dir=None, connections={})
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "value 'invalid' is not type int"
-        assert message in str(e.value), "Expected: {}, Actual: {}".format(message, str(e.value))
+        assert message in exe_info.value.message, "Expected: {}, Actual: {}".format(message, exe_info.value.message)
 
         # Case 4: Unresolved value, like newly added type not in old version ValueType enum
         tool = Tool(name="mock", type="python", inputs={"int_input": InputDefinition(type=["A_good_type"])})
@@ -220,9 +220,8 @@ class TestToolResolver:
             tool=tool,
             inputs={"int_input": InputAssignment(value="invalid", value_type=InputValueType.LITERAL)},
         )
-        connections = {}
         with pytest.raises(ValueTypeUnresolved):
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+            tool_resolver = ToolResolver(working_dir=None, connections={})
             tool_resolver._convert_node_literal_input_types(node, tool)
 
         # Case 5: Literal value, invalid image in list
@@ -233,12 +232,30 @@ class TestToolResolver:
             tool=tool,
             inputs={"list_input": InputAssignment(value=[invalid_image], value_type=InputValueType.LITERAL)},
         )
-        connections = {}
-        with pytest.raises(NodeInputValidationError) as e:
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        with pytest.raises(NodeInputValidationError) as exe_info:
+            tool_resolver = ToolResolver(working_dir=None, connections={})
             tool_resolver._convert_node_literal_input_types(node, tool)
         message = "Invalid base64 image"
-        assert message in str(e.value), "Expected: {}, Actual: {}".format(message, str(e.value))
+        assert message in exe_info.value.message, "Expected: {}, Actual: {}".format(message, exe_info.value.message)
+
+        # Case 6: Literal value, invalid assistant definition path
+        tool = Tool(
+            name="mock",
+            type="python",
+            inputs={"assistant_definition": InputDefinition(type=[ValueType.ASSISTANT_DEFINITION])}
+        )
+        node = Node(
+            name="mock",
+            tool=tool,
+            inputs={"assistant_definition": InputAssignment(value="invalid_path", value_type=InputValueType.LITERAL)},
+        )
+        with pytest.raises(NodeInputValidationError) as exe_info:
+            tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections={})
+            tool_resolver._convert_node_literal_input_types(node, tool)
+        assert (
+            "Failed to load assistant definition" in exe_info.value.message
+            and "is not a valid path" in exe_info.value.message
+        ), "Expected: {}, Actual: {}".format(message, exe_info.value.message)
 
     def test_resolve_llm_connection_to_inputs(self):
         # Case 1: node.connection is not specified
@@ -315,9 +332,9 @@ class TestToolResolver:
 
     def test_resolve_llm_node(self, mocker):
         def mock_llm_api_func(prompt: PromptTemplate, **kwargs):
-            from promptflow.tools.template_rendering import render_template_jinja2
-
-            return render_template_jinja2(prompt, **kwargs)
+            for k, v in kwargs.items():
+                prompt = prompt.replace(f"{{{{{k}}}}}", str(v))
+            return prompt
 
         tool_loader = ToolLoader(working_dir=None)
         tool = Tool(name="mock", type=ToolType.LLM, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
@@ -353,9 +370,9 @@ class TestToolResolver:
 
     def test_resolve_script_node(self, mocker):
         def mock_python_func(prompt: PromptTemplate, **kwargs):
-            from promptflow.tools.template_rendering import render_template_jinja2
-
-            return render_template_jinja2(prompt, **kwargs)
+            for k, v in kwargs.items():
+                prompt = prompt.replace(f"{{{{{k}}}}}", str(v))
+            return prompt
 
         tool_loader = ToolLoader(working_dir=None)
         tool = Tool(name="mock", type=ToolType.PYTHON, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
@@ -385,6 +402,42 @@ class TestToolResolver:
         assert len(resolved_tool.node.inputs) == 2
         kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
         assert resolved_tool.callable(**kwargs) == "Hello World!"
+
+    def test_resolve_script_node_with_assistant_definition(self, mocker):
+        def mock_python_func(input: AssistantDefinition):
+            if (
+                input.model == "model"
+                and input.instructions == "instructions"
+                and input.tools == []
+            ):
+                return True
+            return False
+
+        tool_loader = ToolLoader(working_dir=None)
+        tool = Tool(
+            name="mock", type=ToolType.PYTHON,
+            inputs={"input": InputDefinition(type=[ValueType.ASSISTANT_DEFINITION])}
+        )
+        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(None, tool))
+
+        mocker.patch(
+            "promptflow._core.tools_manager.BuiltinsManager._load_tool_from_module",
+            return_value=(mock_python_func, {}),
+        )
+
+        tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections={})
+        tool_resolver._tool_loader = tool_loader
+        mocker.patch("builtins.open", mock_open())
+        mocker.patch("yaml.safe_load", return_value={"model": "model", "instructions": "instructions", "tools": []})
+
+        node = Node(
+            name="mock", tool=None,
+            inputs={"input": InputAssignment(value="test_tool_resolver.py", value_type=InputValueType.LITERAL)}
+        )
+        resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
+        assert len(resolved_tool.node.inputs) == 1
+        kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
+        assert resolved_tool.callable(**kwargs)
 
     def test_resolve_package_node(self, mocker):
         tool_loader = ToolLoader(working_dir=None)
