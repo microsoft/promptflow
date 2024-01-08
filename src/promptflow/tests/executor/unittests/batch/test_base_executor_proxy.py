@@ -97,11 +97,15 @@ class TestAPIBasedExecutorProxy:
             assert await mock_executor_proxy._check_health() is expected_result
 
     @pytest.mark.asyncio
-    async def test_process_http_response(self):
+    @pytest.mark.parametrize(
+        "response, expected_result",
+        [
+            (httpx.Response(200, json={"result": "test"}), {"result": "test"}),
+        ],
+    )
+    async def test_process_http_response(self, response, expected_result):
         mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
-        resp_body = {"result": "test"}
-        response = httpx.Response(200, json=resp_body)
-        assert mock_executor_proxy._process_http_response(response) == resp_body
+        assert mock_executor_proxy._process_http_response(response) == expected_result
 
 
 class MockAPIBasedExecutorProxy(APIBasedExecutorProxy):
