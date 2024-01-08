@@ -302,7 +302,9 @@ class RunOperations(TelemetryMixin):
             run._check_run_status_is_completed()
 
             local_storage = LocalStorageOperations(run)
-            detail = local_storage.load_detail()
+            # nan, inf and -inf are not JSON serializable, which will lead to JavaScript parse error
+            # so specify `parse_const_as_str` as True to parse them as string
+            detail = local_storage.load_detail(parse_const_as_str=True)
             # ad-hoc step: make logs field empty to avoid too big HTML file
             # we don't provide logs view in visualization page for now
             # when we enable, we will save those big data (e.g. logs) in separate file(s)

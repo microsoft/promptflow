@@ -6,6 +6,10 @@ import readme_generator
 from jinja2 import Environment, FileSystemLoader
 from ghactions_driver.readme_step import ReadmeStepsManage
 from operator import itemgetter
+import argparse
+import sys
+import os
+import re
 
 BRANCH = "main"
 
@@ -49,7 +53,7 @@ def get_readme_description_first_sentence(readme) -> str:
                     if sentence == "":
                         sentence += line.strip()
                     elif line.strip() != "":
-                        sentence += ' ' + line.strip()
+                        sentence += " " + line.strip()
             return sentence
     except Exception:
         print(f"Error during reading {readme}")
@@ -295,10 +299,14 @@ def write_readme(workflow_telemetries, readme_telemetries):
     print("finished writing README.md")
 
 
-if __name__ == "__main__":
+def main(check):
+    if check:
+        # Disable print
+        sys.stdout = open(os.devnull, "w")
+
     input_glob = ["examples/**/*.ipynb"]
     workflow_telemetry = []
-    workflow_generator.main(input_glob, workflow_telemetry)
+    workflow_generator.main(input_glob, workflow_telemetry, check=check)
 
     input_glob_readme = [
         "examples/flows/**/README.md",
@@ -306,11 +314,60 @@ if __name__ == "__main__":
         "examples/tutorials/e2e-development/*.md",
         "examples/tutorials/flow-fine-tuning-evaluation/*.md",
         "examples/tutorials/**/README.md",
-        "examples/tools/use-cases/**/README.md"
+        "examples/tools/use-cases/**/README.md",
     ]
     # exclude the readme since this is 3p integration folder, pipeline generation is not included
     input_glob_readme_exclude = ["examples/flows/integrations/**/README.md"]
     readme_telemetry = []
-    readme_generator.main(input_glob_readme, input_glob_readme_exclude, readme_telemetry)
+    readme_generator.main(
+        input_glob_readme, input_glob_readme_exclude, readme_telemetry
+    )
 
     write_readme(workflow_telemetry, readme_telemetry)
+
+    if check:
+        output_object = {}
+        for workflow in workflow_telemetry:
+            workflow_items = re.split(r"\[|,| |\]", workflow.path_filter)
+            workflow_items = list(filter(None, workflow_items))
+            output_object[workflow.workflow_name] = []
+            for item in workflow_items:
+                if item == "examples/*requirements.txt":
+                    output_object[workflow.workflow_name].append(
+                        "examples/requirements.txt"
+                    )
+                    output_object[workflow.workflow_name].append(
+                        "examples/dev_requirements.txt"
+                    )
+                    continue
+                output_object[workflow.workflow_name].append(item)
+        for readme in readme_telemetry:
+            output_object[readme.workflow_name] = []
+            readme_items = re.split(r"\[|,| |\]", readme.path_filter)
+            readme_items = list(filter(None, readme_items))
+            for item in readme_items:
+                if item == "examples/*requirements.txt":
+                    output_object[readme.workflow_name].append(
+                        "examples/requirements.txt"
+                    )
+                    output_object[readme.workflow_name].append(
+                        "examples/dev_requirements.txt"
+                    )
+                    continue
+                output_object[readme.workflow_name].append(item)
+        # enable output
+        sys.stdout = sys.__stdout__
+        return output_object
+    else:
+        return ""
+
+
+if __name__ == "__main__":
+    # setup argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c", "--check", action="store_true", help="Check what file is affected"
+    )
+    args = parser.parse_args()
+    output = main(args.check)
+    print(json.dumps(output))
