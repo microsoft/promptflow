@@ -4,6 +4,7 @@
 
 import asyncio
 import signal
+import threading
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -147,7 +148,12 @@ class BatchEngine:
                     # register a signal for Ctrl+C in order to customize some actions beyond just killing
                     # the process, such as terminating the executor service.
                     if isinstance(self._executor_proxy, PythonExecutorProxy):
-                        signal.signal(signal.SIGINT, signal_handler)
+                        if threading.current_thread() is threading.main_thread():
+                            signal.signal(signal.SIGINT, signal_handler)
+                        else:
+                            bulk_logger.info(
+                                "Current thread is not main thread, skip signal handler registration in BatchEngine."
+                            )
 
                     # set batch input source from input mapping
                     OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
