@@ -290,18 +290,18 @@ class _ErrorInfo:
     def _error_detail(cls, e: Exception):
         exception_codes = cls._get_exception_codes(e)
         exception_code = {
-            "module": "Non promptflow module, not recorded.",
-            "exception_code": "Non promptflow code, not recorded.",
-            "lineno": "Non promptflow code lineno, not recorded.",
+            "module": "Non promptflow module, not recorded",
+            "exception_code": "Non promptflow code, not recorded",
+            "lineno": "Non promptflow code lineno, not recorded",
         }
         for item in exception_codes[::-1]:
             if "promptflow" in item["module"]:  # Only record information within the promptflow package
                 exception_code = item
                 break
         return (
-            f"exception module={exception_code['module']}, "
-            f"exception code={exception_code['exception_code']}, "
-            f"exception lineno={exception_code['lineno']}"
+            f"module={exception_code['module']}, "
+            f"code={exception_code['exception_code']}, "
+            f"lineno={exception_code['lineno']}."
         )
 
     @classmethod

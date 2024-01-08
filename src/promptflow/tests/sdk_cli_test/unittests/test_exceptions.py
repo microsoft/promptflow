@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import pytest
 from azure.core.exceptions import HttpResponseError
+from promptflow._sdk._orm import RunInfo
 from promptflow.exceptions import _ErrorInfo, ErrorCategory, ErrorTarget, UserErrorException
 from promptflow.executor import FlowValidator
 from promptflow.executor._errors import InvalidNodeReference
@@ -12,7 +13,7 @@ FLOWS_DIR = "./tests/test_configs/flows/print_input_flow"
 
 @pytest.mark.unittest
 class TestExceptions:
-    def test_error_category_with_user_error(self, pf):
+    def test_error_category_with_unknow_error(self, pf):
         ex = None
         try:
             pf.run("./exceptions/flows")
@@ -24,9 +25,26 @@ class TestExceptions:
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
         assert (
-            "exception module=promptflow._sdk._pf_client, "
-            'exception code=raise FileNotFoundError(f"flow path {flow} does not exist"), '
-            "exception lineno="
+            "module=promptflow._sdk._pf_client, "
+            'code=raise FileNotFoundError(f"flow path {flow} does not exist"), '
+            "lineno="
+        ) in error_detail
+
+    def test_error_category_with_user_error(self, pf):
+        ex = None
+        try:
+            RunInfo.get("run_name")
+        except Exception as e:
+            ex = e
+        error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
+        assert error_category == ErrorCategory.USER_ERROR
+        assert error_type == "RunNotFoundError"
+        assert error_target == ErrorTarget.CONTROL_PLANE_SDK
+        assert error_message == ""
+        assert (
+            "module=promptflow._sdk._orm.run_info, "
+            'code=raise RunNotFoundError(f"Run name {name!r} cannot be found."), '
+            "lineno="
         ) in error_detail
 
     def test_error_category_with_system_error(self):
@@ -46,9 +64,7 @@ class TestExceptions:
             "Please adjust the input value to match the expected format."
         )
         assert (
-            "exception module=promptflow.executor.flow_validator, "
-            "exception code=raise InvalidAggregationInput(, "
-            "exception lineno="
+            "module=promptflow.executor.flow_validator, " "code=raise InvalidAggregationInput(, " "lineno="
         ) in error_detail
 
     def test_error_category_with_http_error(self, subscription_id, resource_group_name, workspace_name):
@@ -62,9 +78,9 @@ class TestExceptions:
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
         assert (
-            "exception module=Non promptflow module, not recorded., "
-            "exception code=Non promptflow code, not recorded., "
-            "exception lineno=Non promptflow code lineno, not recorded."
+            "module=Non promptflow module, not recorded, "
+            "code=Non promptflow code, not recorded, "
+            "lineno=Non promptflow code lineno, not recorded."
         ) in error_detail
 
     @pytest.mark.parametrize(
@@ -90,9 +106,9 @@ class TestExceptions:
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
         assert (
-            "exception module=Non promptflow module, not recorded., "
-            "exception code=Non promptflow code, not recorded., "
-            "exception lineno=Non promptflow code lineno, not recorded."
+            "module=Non promptflow module, not recorded, "
+            "code=Non promptflow code, not recorded, "
+            "lineno=Non promptflow code lineno, not recorded."
         ) in error_detail
 
     def test_error_category_with_executor_error(self):
@@ -115,9 +131,9 @@ class TestExceptions:
             "review and rectify the node reference."
         )
         assert (
-            "exception module=Non promptflow module, not recorded., "
-            "exception code=Non promptflow code, not recorded., "
-            "exception lineno=Non promptflow code lineno, not recorded."
+            "module=Non promptflow module, not recorded, "
+            "code=Non promptflow code, not recorded, "
+            "lineno=Non promptflow code lineno, not recorded."
         ) in error_detail
 
     def test_error_category_with_cause_exception1(self):
@@ -137,9 +153,9 @@ class TestExceptions:
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
         assert (
-            "exception module=Non promptflow module, not recorded., "
-            "exception code=Non promptflow code, not recorded., "
-            "exception lineno=Non promptflow code lineno, not recorded."
+            "module=Non promptflow module, not recorded, "
+            "code=Non promptflow code, not recorded, "
+            "lineno=Non promptflow code lineno, not recorded."
         ) in error_detail
 
     def test_error_category_with_cause_exception2(self):
@@ -163,9 +179,7 @@ class TestExceptions:
             "adjust the input value to match the expected format."
         )
         assert (
-            "exception module=promptflow.executor.flow_validator, "
-            "exception code=raise InvalidAggregationInput(, "
-            "exception lineno="
+            "module=promptflow.executor.flow_validator, " "code=raise InvalidAggregationInput(, " "lineno="
         ) in error_detail
 
     def test_error_category_with_cause_exception3(self, pf):
@@ -185,7 +199,7 @@ class TestExceptions:
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
         assert (
-            "exception module=Non promptflow module, not recorded., "
-            "exception code=Non promptflow code, not recorded., "
-            "exception lineno=Non promptflow code lineno, not recorded."
+            "module=Non promptflow module, not recorded, "
+            "code=Non promptflow code, not recorded, "
+            "lineno=Non promptflow code lineno, not recorded."
         ) in error_detail

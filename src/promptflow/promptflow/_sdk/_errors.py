@@ -2,10 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from promptflow._sdk._constants import BULK_RUN_ERRORS
-from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
 
-class SDKError(PromptflowException):
+class SDKError(UserErrorException):
     """SDK base class, target default is CONTROL_PLANE_SDK."""
 
     def __init__(
