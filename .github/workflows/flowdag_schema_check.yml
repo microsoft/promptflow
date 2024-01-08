@@ -6,9 +6,12 @@ on:
       - examples/**
       - .github/workflows/flowdag_schema_check.yml
       - scripts/readme/schema_checker.py
+env:
+  IS_IN_CI_PIPELINE: "true"
 jobs:
   examples_flowdag_schema_check:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - run: env | sort >> $GITHUB_OUTPUT
@@ -25,7 +28,6 @@ jobs:
         shell: pwsh
         env:
           PYTHONPATH: ${{ github.workspace }}/src/promptflow
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd ${{ github.workspace }}/src
           pip install -e promptflow[azure]
