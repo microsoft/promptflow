@@ -158,6 +158,8 @@ def variant_overwrite_context(
     """Override variant and connections in the flow."""
     flow_dag_path, flow_dag = load_flow_dag(flow_path)
     flow_dir_path = flow_dag_path.parent
+    if flow_dir_path.name == ".promptflow":
+        flow_dir_path = flow_dir_path.parent
     if _get_additional_includes(flow_dag_path):
         # Merge the flow folder and additional includes to temp folder.
         with _merge_local_code_and_additional_includes(code_path=flow_path) as temp_dir:
