@@ -9,14 +9,14 @@ on:
     - cron: "44 20 * * *" # Every day starting at 4:44 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/chat/chat-with-pdf/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_chatwithpdf_chatwithpdfazure.yml, '!examples/flows/integrations/**' ]
+    paths: [ examples/flows/chat/chat-with-pdf/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_chatwithpdf_chatwithpdfazure.yml ]
   workflow_dispatch:
 
 env:
   IS_IN_CI_PIPELINE: "true"
 
 jobs:
-  samples_notebook_ci:
+  samples_flows_chat_chatwithpdf_chatwithpdfazure:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
