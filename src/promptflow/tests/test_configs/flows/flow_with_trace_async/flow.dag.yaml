@@ -1,0 +1,16 @@
+inputs:
+  user_id:
+    type: int
+    default: 1
+outputs:
+  output:
+    type: string
+    reference: ${greetings.output.greeting}
+nodes:
+- name: greetings
+  type: python
+  source:
+    type: code
+    path: greetings.py
+  inputs:
+    user_id: ${inputs.user_id}

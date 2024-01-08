@@ -1,0 +1,3 @@
+azure-identity
+azure-ai-ml
+sseclient-py

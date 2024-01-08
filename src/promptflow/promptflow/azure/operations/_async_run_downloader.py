@@ -2,20 +2,19 @@ import asyncio
 import contextvars
 import functools
 import json
-import logging
 from pathlib import Path
 from typing import Optional, Union
 
 import httpx
 from azure.storage.blob.aio import BlobServiceClient
 
-from promptflow._sdk._constants import DEFAULT_ENCODING, LOGGER_NAME, DownloadedRun
+from promptflow._sdk._constants import DEFAULT_ENCODING, DownloadedRun
 from promptflow._sdk._errors import RunNotFoundError, RunOperationError
 from promptflow._sdk.entities import Run
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+logger = get_cli_sdk_logger()
 
 
 class AsyncRunDownloader:

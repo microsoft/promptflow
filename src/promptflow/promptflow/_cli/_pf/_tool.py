@@ -18,12 +18,11 @@ from promptflow._cli._pf._init_entry_generators import (
     ToolReadmeGenerator,
 )
 from promptflow._cli._utils import activate_action, exception_handler, list_of_dict_to_dict
-from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 def add_tool_parser(subparsers):
@@ -157,10 +156,10 @@ def init_tool(args):
         script_code_path = package_path / package_name
         script_code_path.mkdir(parents=True, exist_ok=True)
         if icon_path:
-            package_icon_path = package_path / "icon"
+            package_icon_path = package_path / "icons"
             package_icon_path.mkdir(exist_ok=True)
             dst = shutil.copy2(icon_path, package_icon_path)
-            icon_path = f'Path(__file__).parent.parent / "icon" / "{Path(dst).name}"'
+            icon_path = f'Path(__file__).parent.parent / "icons" / "{Path(dst).name}"'
         # Generate package setup.py
         SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
         # Generate manifest file

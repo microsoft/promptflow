@@ -79,7 +79,9 @@
     "pfbytes",
     "Apim",
     "junit",
-    "nunit"
+    "nunit",
+    "astext",
+    "Likert"
   ],
   "ignoreWords": [
     "openmpi",
@@ -157,6 +159,7 @@
     "tiiuae",
     "nohup",
     "metagenai",
+    "WBITS",
     "laddr"
   ],
   "flagWords": [

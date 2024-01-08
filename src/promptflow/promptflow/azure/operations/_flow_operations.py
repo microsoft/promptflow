@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: disable=protected-access
+import copy
 import json
-import logging
 import os
 import re
 from datetime import datetime
@@ -25,10 +25,10 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
 from promptflow._sdk._constants import (
+    BASE_PATH_CONTEXT_KEY,
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
     FLOW_TOOLS_JSON,
-    LOGGER_NAME,
     MAX_LIST_CLI_RESULTS,
     PROMPT_FLOW_DIR_NAME,
     WORKSPACE_LINKED_DATASTORE_NAME,
@@ -37,18 +37,18 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
+from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json, load_from_dict
 from promptflow._sdk._vendor._asset_utils import traverse_directory
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure.operations._artifact_utilities import _get_datastore_name, get_datastore_info
 from promptflow.azure.operations._fileshare_storeage_helper import FlowFileStorageClient
-from promptflow.exceptions import SystemErrorException
+from promptflow.exceptions import SystemErrorException, UserErrorException
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+logger = get_cli_sdk_logger()
 
 
 class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
@@ -93,44 +93,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         endpoint = self._service_caller._service_endpoint
         return endpoint + "index/v1.0" + self._service_caller._common_azure_url_pattern
 
-    def _get_flow_portal_url_from_resource_id(self, flow_resource_id: str):
-        """Get the portal url for the run."""
-        match = self._FLOW_RESOURCE_PATTERN.match(flow_resource_id)
-        if not match or len(match.groups()) != 2:
-            logger.warning("Failed to parse flow resource id '%s'", flow_resource_id)
-            return None
-        experiment_id, flow_id = match.groups()
-        return self._get_flow_portal_url(experiment_id, flow_id)
-
-    def _get_flow_portal_url_from_index_entity(self, entity: Dict):
-        """Enrich the index entity with flow portal url."""
-        result = None
-        experiment_id = entity["properties"].get("experimentId", None)
-        flow_id = entity["properties"].get("flowId", None)
-
-        if experiment_id and flow_id:
-            result = self._get_flow_portal_url(experiment_id, flow_id)
-        return result
-
-    def _get_flow_portal_url(self, experiment_id, flow_id):
-        """Get the portal url for the run."""
-        # TODO[2785705]: Handle the case when endpoint is other clouds
-        workspace_kind = str(self._workspace._kind).lower()
-        # default refers to azure machine learning studio
-        if workspace_kind == "default":
-            return (
-                f"https://ml.azure.com/prompts/flow/{experiment_id}/{flow_id}/"
-                f"details?wsid={self._service_caller._common_azure_url_pattern}"
-            )
-        # project refers to azure ai studio
-        elif workspace_kind == "project":
-            return (
-                f"https://ai.azure.com/projectflows/{flow_id}/{experiment_id}/"
-                f"details/Flow?wsid={self._service_caller._common_azure_url_pattern}"
-            )
-        else:
-            raise FlowOperationError(f"Workspace kind {workspace_kind!r} is not supported for promptflow operations.")
-
     @monitor_operation(activity_name="pfazure.flows.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, flow: Union[str, Path], display_name=None, type=None, **kwargs) -> Flow:
         """Create a flow to remote from local source.
@@ -149,7 +111,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :type tags: Dict[str, str]
         """
         # validate the parameters
-        azure_flow, flow_display_name, flow_type, kwargs = self._validate_flow_creation_parameters(
+        azure_flow, flow_display_name, flow_type, kwargs = FlowOperations._validate_flow_creation_parameters(
             flow, display_name, type, **kwargs
         )
         # upload to file share
@@ -168,52 +130,75 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             **kwargs,
         )
         result_flow = Flow._from_pf_service(rest_flow)
-        result_flow.flow_portal_url = self._get_flow_portal_url_from_resource_id(rest_flow.flow_resource_id)
         flow_dict = result_flow._to_dict()
         print(f"Flow created successfully:\n{json.dumps(flow_dict, indent=4)}")
 
         return result_flow
 
-    def _validate_flow_creation_parameters(self, source, flow_display_name, flow_type, **kwargs):
+    @staticmethod
+    def _validate_flow_creation_parameters(source, flow_display_name, flow_type, **kwargs):
         """Validate the parameters for flow creation operation."""
+        # validate the source folder
+        logger.info("Validating flow source.")
+        if not Path(source, DAG_FILE_NAME).exists():
+            raise UserErrorException(
+                f"Flow source must be a directory with flow definition yaml '{DAG_FILE_NAME}'. "
+                f"Got {Path(source).resolve().as_posix()!r}."
+            )
+
+        # validate flow source with flow schema
+        logger.info("Validating flow schema.")
+        flow_dict = FlowOperations._validate_flow_schema(source, flow_display_name, flow_type, **kwargs)
+
+        logger.info("Validating flow creation parameters.")
         flow = load_flow(source)
         # if no flow name specified, use "flow name + timestamp"
+        flow_display_name = flow_dict.get("display_name", None)
         if not flow_display_name:
-            flow_display_name = f"{flow.display_name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
-        elif not isinstance(flow_display_name, str):
-            raise FlowOperationError(
-                f"Flow name must be a string, got {type(flow_display_name)!r}: {flow_display_name!r}."
-            )
+            flow_display_name = f"{Path(source).name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
 
         # if no flow type specified, use default flow type "standard"
-        supported_flow_types = FlowType.get_all_values()
+        flow_type = flow_dict.get("type", None)
         if not flow_type:
             flow_type = FlowType.STANDARD
-        elif flow_type not in supported_flow_types:
-            raise FlowOperationError(
-                f"Flow type {flow_type!r} is not supported, supported types are {supported_flow_types}"
-            )
 
-        # check description type
-        description = kwargs.get("description", None) or flow.description
-
+        # update description and tags to be the final value
+        description = flow_dict.get("description", None)
         if isinstance(description, str):
             kwargs["description"] = description
-        elif description is not None:
-            raise FlowOperationError(f"Description must be a string, got {type(description)!r}: {description!r}.")
 
-        # check if the tags type is Dict[str, str]
-        tags = kwargs.get("tags", None) or flow.tags
-        if isinstance(tags, dict) and all(
-            isinstance(key, str) and isinstance(value, str) for key, value in tags.items()
-        ):
+        tags = flow_dict.get("tags", None)
+        if tags:
             kwargs["tags"] = tags
-        elif tags is not None:
-            raise FlowOperationError(
-                f"Tags type must be 'Dict[str, str]', got non-dict or non-string key/value in tags: {tags}."
-            )
 
         return flow, flow_display_name, flow_type, kwargs
+
+    @staticmethod
+    def _validate_flow_schema(source, display_name=None, type=None, **kwargs):
+        """Validate the flow schema."""
+        from marshmallow import ValidationError
+
+        from promptflow._sdk.entities._flow import ProtectedFlow
+        from promptflow._sdk.schemas._flow import FlowSchema
+
+        params_override = copy.deepcopy(kwargs)
+        if display_name:
+            params_override["display_name"] = display_name
+        if type:
+            params_override["type"] = type
+
+        flow_entity = ProtectedFlow.load(source=source, params_override=params_override)
+        flow_dict = flow_entity._dump_for_validation()
+        try:
+            load_from_dict(
+                schema=FlowSchema,
+                data=flow_dict,
+                context={BASE_PATH_CONTEXT_KEY: Path(source)},
+            )
+        except ValidationError as e:
+            raise UserErrorException(f"Failed to validate flow schema due to: {str(e)}") from e
+
+        return flow_dict
 
     def _resolve_flow_code_and_upload_to_file_share(
         self, flow: Flow, flow_display_name: str, ignore_tools_json=False
@@ -221,6 +206,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         file_share_flow_path = ""
 
+        logger.info("Building flow code.")
         with flow._build_code() as code:
             if code is None:
                 raise FlowOperationError("Failed to build flow code.")
@@ -240,18 +226,20 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             datastore_name = _get_datastore_name(datastore_name=DEFAULT_STORAGE)
             datastore_operation = ops._code_assets._datastore_operation
             datastore_info = get_datastore_info(datastore_operation, datastore_name)
+
+            logger.debug("Creating storage client for uploading flow to file share.")
             storage_client = FlowFileStorageClient(
                 credential=datastore_info["credential"],
                 file_share_name=datastore_info["container_name"],
                 account_url=datastore_info["account_url"],
                 azure_cred=datastore_operation._credential,
             )
-            logger.debug("Created storage client for uploading flow to file share.")
 
             # set storage client to flow operation, can be used in test case
             self._storage_client = storage_client
 
             # check if the file share directory exists
+            logger.debug("Checking if the file share directory exists.")
             if storage_client._check_file_share_directory_exist(flow_display_name):
                 raise FlowOperationError(
                     f"Remote flow folder {flow_display_name!r} already exists under "
@@ -259,6 +247,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 )
 
             try:
+                logger.info("Uploading flow directory to file share.")
                 storage_client.upload_dir(
                     source=code.path,
                     dest=flow_display_name,
@@ -318,7 +307,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 raise FlowOperationError(f"Failed to get flow {name!r} due to: {str(e)}.") from e
 
         flow = Flow._from_pf_service(rest_flow)
-        flow.flow_portal_url = self._get_flow_portal_url_from_resource_id(rest_flow.flow_resource_id)
         return flow
 
     @monitor_operation(activity_name="pfazure.flows.list", activity_type=ActivityType.PUBLICAPI)
@@ -409,8 +397,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         flow_instances = []
         for entity in flow_entities:
             flow = Flow._from_index_service(entity)
-            # add flow portal url
-            flow.flow_portal_url = self._get_flow_portal_url_from_index_entity(entity)
             flow_instances.append(flow)
 
         return flow_instances
@@ -469,7 +455,6 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                         ignore_file=ignore_file,
                     )
                 )
-            logger = LoggerFactory.get_logger(LOGGER_NAME)
 
             ignore_files = code._ignore_file._get_ignore_list()
             for file_path in ignore_files:
