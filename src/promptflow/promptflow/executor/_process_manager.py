@@ -63,16 +63,31 @@ class AbstractProcessManager:
         self._current_operation_context = OperationContext.get_instance().get_context_dict()
 
     def new_process(self, i):
-        # i: Index of the new process to start.
-        pass
+        """
+        Create and start a new process.
+
+        :param i: Index of the new process to start.
+        :type i: int
+        """
+        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for new_process.")
 
     def restart_process(self, i):
-        # i: Index of the process to restart.
-        pass
+        '''
+        Restarts a specified process
+
+        :param i: Index of the process to restart.
+        :type i: int
+        '''
+        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for restart_process.")
 
     def end_process(self, i):
-        # i: Index of the process to end.
-        pass
+        """
+        Terminates a specified process.
+
+        :param i: Index of the process to terminate.
+        :type i: int
+        """
+        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for end_process.")
 
 
 class SpawnProcessManager(AbstractProcessManager):
