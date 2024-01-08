@@ -5,6 +5,7 @@ on:
     paths:
       - examples/**
       - .github/workflows/flowdag_schema_check.yml
+      - scripts/readme/schema_checker.py
 jobs:
   examples_flowdag_schema_check:
     runs-on: ubuntu-latest
