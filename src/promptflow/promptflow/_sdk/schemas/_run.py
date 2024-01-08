@@ -4,11 +4,14 @@
 import os.path
 
 from dotenv import dotenv_values
-from marshmallow import fields, post_load
+from marshmallow import fields, post_load, pre_load
 
 from promptflow._sdk._utils import is_remote_uri
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import LocalPathField, NestedField, UnionField
+from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+logger = get_cli_sdk_logger()
 
 
 def _resolve_dot_env_file(data, **kwargs):
@@ -101,3 +104,12 @@ class RunSchema(YamlFileSchema):
     @post_load
     def resolve_dot_env_file(self, data, **kwargs):
         return _resolve_dot_env_file(data, **kwargs)
+
+    @pre_load
+    def warning_unknown_fields(self, data, **kwargs):
+        # log warnings for unknown schema fields
+        unknown_fields = set(data) - set(self.fields)
+        if unknown_fields:
+            logger.warning("Run schema validation warnings. Unknown fields found: %s", unknown_fields)
+
+        return data

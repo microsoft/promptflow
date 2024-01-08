@@ -26,7 +26,7 @@ from promptflow._sdk._errors import (
     RunExistsError,
     RunNotFoundError,
 )
-from promptflow._sdk._load_functions import load_flow
+from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
@@ -1145,3 +1145,9 @@ class TestFlowRun:
         assert first_line_run_output["nan"] == "NaN"
         assert isinstance(first_line_run_output["inf"], str)
         assert first_line_run_output["inf"] == "Infinity"
+
+    @pytest.mark.usefixtures("enable_logger_propagate")
+    def test_flow_run_with_unknown_field(self, caplog):
+        run_yaml = Path(RUNS_DIR) / "sample_bulk_run.yaml"
+        load_run(source=run_yaml, params_override=[{"unknown_field": "unknown_value"}])
+        assert "Unknown fields found" in caplog.text
