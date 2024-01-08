@@ -1,10 +1,8 @@
-from functools import reduce
 from promptflow._sdk._load_functions import load_yaml
 from promptflow._sdk._pf_client import PFClient
 from ghactions_driver.readme_step import ReadmeStepsManage
 from pathlib import Path
 import os
-import subprocess
 
 
 def main(input_glob_flow_dag):
@@ -47,7 +45,6 @@ def main(input_glob_flow_dag):
             if not validation_result.passed:
                 print(f"{file} is not valid.")
                 error = True
-
 
     if error:
         raise Exception("Some flow.dag.yaml validation failed.")
