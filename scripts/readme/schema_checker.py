@@ -53,6 +53,9 @@ def main(input_glob_flow_dag):
             if not validation_result.passed:
                 print(f"{file} is not valid.")
                 error = True
+            if len(validation_result._warnings) > 0:
+                print(f"{file} has warnings.")
+                error = True
 
     if error:
         raise Exception("Some flow.dag.yaml validation failed.")
