@@ -18,45 +18,6 @@ from promptflow.storage._run_storage import AbstractRunStorage
 @pytest.mark.unittest
 class TestAPIBasedExecutorProxy:
     @pytest.mark.asyncio
-    @pytest.mark.parametrize(
-        "mock_value, expected_result",
-        [
-            (httpx.Response(200), True),
-            (httpx.Response(500), False),
-            (Exception("error"), False),
-        ],
-    )
-    async def test_check_health(self, mock_value, expected_result):
-        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
-        with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock:
-            mock.return_value = mock_value
-            assert await mock_executor_proxy._check_health() is expected_result
-
-    @pytest.mark.asyncio
-    async def test_ensure_executor_health_when_healthy(self):
-        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
-        with patch.object(APIBasedExecutorProxy, "_check_health", return_value=True) as mock:
-            await mock_executor_proxy.ensure_executor_health()
-            mock.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_ensure_executor_health_when_unhealthy(self):
-        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
-        with patch.object(APIBasedExecutorProxy, "_check_health", return_value=False) as mock:
-            with pytest.raises(ExecutorServiceUnhealthy):
-                await mock_executor_proxy.ensure_executor_health()
-            assert mock.call_count == 20
-
-    @pytest.mark.asyncio
-    async def test_ensure_executor_health_when_not_active(self):
-        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
-        with patch.object(APIBasedExecutorProxy, "_check_health", return_value=False) as mock:
-            with patch.object(APIBasedExecutorProxy, "_is_executor_active", return_value=False):
-                with pytest.raises(ExecutorServiceUnhealthy):
-                    await mock_executor_proxy.ensure_executor_health()
-            mock.assert_not_called()
-
-    @pytest.mark.asyncio
     async def test_ensure_executor_startup_when_no_error(self):
         mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
         with patch.object(APIBasedExecutorProxy, "ensure_executor_health", new_callable=AsyncMock) as mock:
@@ -95,6 +56,45 @@ class TestAPIBasedExecutorProxy:
                 await mock_executor_proxy.ensure_executor_startup(error_file)
             assert ex.value.message == error_message
             assert ex.value.target == ErrorTarget.BATCH
+
+    @pytest.mark.asyncio
+    async def test_ensure_executor_health_when_healthy(self):
+        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
+        with patch.object(APIBasedExecutorProxy, "_check_health", return_value=True) as mock:
+            await mock_executor_proxy.ensure_executor_health()
+            mock.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_ensure_executor_health_when_unhealthy(self):
+        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
+        with patch.object(APIBasedExecutorProxy, "_check_health", return_value=False) as mock:
+            with pytest.raises(ExecutorServiceUnhealthy):
+                await mock_executor_proxy.ensure_executor_health()
+            assert mock.call_count == 20
+
+    @pytest.mark.asyncio
+    async def test_ensure_executor_health_when_not_active(self):
+        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
+        with patch.object(APIBasedExecutorProxy, "_check_health", return_value=False) as mock:
+            with patch.object(APIBasedExecutorProxy, "_is_executor_active", return_value=False):
+                with pytest.raises(ExecutorServiceUnhealthy):
+                    await mock_executor_proxy.ensure_executor_health()
+            mock.assert_not_called()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "mock_value, expected_result",
+        [
+            (httpx.Response(200), True),
+            (httpx.Response(500), False),
+            (Exception("error"), False),
+        ],
+    )
+    async def test_check_health(self, mock_value, expected_result):
+        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
+        with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock:
+            mock.return_value = mock_value
+            assert await mock_executor_proxy._check_health() is expected_result
 
 
 class MockAPIBasedExecutorProxy(APIBasedExecutorProxy):
