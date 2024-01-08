@@ -138,7 +138,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         within the allocated timeout, an exception is thrown to indicate a potential problem.
         """
         retry_count = 0
-        max_retry_count = 10
+        max_retry_count = 20
         while retry_count < max_retry_count:
             if not self._is_executor_active():
                 bulk_logger.error("The executor service is not active. Please check the logs for more details.")
