@@ -55,8 +55,10 @@ def is_json_serializable(value: Any) -> bool:
 
 
 def load_json(file_path: Union[str, Path]) -> dict:
-    with open(file_path, "r") as f:
-        return json.load(f)
+    if os.path.getsize(file_path) > 0:
+        with open(file_path, "r") as f:
+            return json.load(f)
+    return {}
 
 
 def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
