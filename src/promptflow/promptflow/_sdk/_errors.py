@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from promptflow._sdk._constants import BULK_RUN_ERRORS
-from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
 class SDKError(UserErrorException):
