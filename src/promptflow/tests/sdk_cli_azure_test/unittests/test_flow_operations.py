@@ -1,13 +1,11 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import logging
 from pathlib import Path
 
 import pytest
 
 from promptflow._sdk._errors import FlowOperationError
-from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
 tests_root_dir = Path(__file__).parent.parent.parent
@@ -34,13 +32,11 @@ class TestFlowOperations:
         with pytest.raises(UserErrorException, match="Not a valid string"):
             pf.flows.create_or_update(flow=flow_source, tags={"key": False})
 
+    @pytest.mark.usefixtures("enable_logger_propagate")
     def test_create_flow_with_warnings(self, pf, caplog):
         flow_source = flow_test_dir / "web_classification/"
-        logger = get_cli_sdk_logger()
-        logger.propagate = True  # enable caplog to see the log
-        with caplog.at_level(logging.WARNING):
-            pf.flows._validate_flow_creation_parameters(source=flow_source, random="random")
-            assert "random: Unknown field" in caplog.text
+        pf.flows._validate_flow_creation_parameters(source=flow_source, random="random")
+        assert "random: Unknown field" in caplog.text
 
     def test_list_flows_invalid_cases(self, pf):
         with pytest.raises(FlowOperationError, match="'max_results' must be a positive integer"):
