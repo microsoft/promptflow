@@ -16,6 +16,7 @@ import yaml
 
 from promptflow._core._errors import (
     InputTypeMismatch,
+    InvalidSource,
     MissingRequiredInputs,
     PackageToolNotFoundError,
     ToolLoadError,
@@ -94,7 +95,7 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
                 m = tool["module"]
                 importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.metadata['Name']
+                tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
         except Exception as e:
@@ -124,7 +125,7 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     continue
                 m = tool["module"]
                 module = importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.metadata['Name']
+                tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
 
@@ -141,11 +142,11 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     for cls in custom_strong_type_connections_classes:
                         identifier = f"{cls.__module__}.{cls.__name__}"
                         connection_spec = generate_custom_strong_type_connection_spec(
-                            cls, entry_point.dist.metadata['Name'], entry_point.dist.version
+                            cls, entry_point.dist.metadata["Name"], entry_point.dist.version
                         )
                         all_package_connection_specs[identifier] = connection_spec
                         all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
-                            cls, connection_spec, entry_point.dist.metadata['Name'], entry_point.dist.version
+                            cls, connection_spec, entry_point.dist.metadata["Name"], entry_point.dist.version
                         )
         except Exception as e:
             msg = (
@@ -422,8 +423,19 @@ class ToolLoader:
 
     def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Tool]:
         if node.source.path is None:
-            raise UserErrorException(f"Node {node.name} does not have source path defined.")
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Load tool failed for node '{node_name}'. The source path is 'None'.",
+                node_name=node.name,
+            )
         path = node.source.path
+        if not (self._working_dir / path).is_file():
+            raise InvalidSource(
+                target=ErrorTarget.EXECUTOR,
+                message_format="Load tool failed for node '{node_name}'. Tool file '{source_path}' can not be found.",
+                source_path=path,
+                node_name=node.name,
+            )
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")

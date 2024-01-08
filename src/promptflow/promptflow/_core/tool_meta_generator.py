@@ -256,6 +256,7 @@ def generate_python_meta_dict(name, content, source=None):
     return asdict_without_none(generate_python_tool(name, content, source))
 
 
+# Only used in non-code first experience.
 def generate_python_meta(name, content, source=None):
     return json.dumps(generate_python_meta_dict(name, content, source), indent=2)
 
@@ -269,12 +270,12 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
     note that if a python file is passed, correct working directory must be set and should be added to sys.path.
     """
     tool_type = ToolType(tool_type)
-    file = Path(path).resolve()
+    file = Path(path)
     if not file.is_file():
         raise MetaFileNotFound(
             message_format="Generate tool meta failed for {tool_type} tool. Meta file '{file_path}' can not be found.",
             tool_type=tool_type.value,
-            file_path=str(file),
+            file_path=path,  # Use a relative path here to make the error message more readable.
         )
     try:
         content = file.read_text(encoding="utf-8")
@@ -286,7 +287,7 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
                 "Read meta file '{file_path}' failed: {error_type_and_message}"
             ),
             tool_type=tool_type.value,
-            file_path=str(file),
+            file_path=path,
             error_type_and_message=error_type_and_message,
         ) from e
 
