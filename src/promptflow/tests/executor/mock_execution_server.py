@@ -3,6 +3,8 @@ from functools import partial
 
 from aiohttp import web
 
+from promptflow.exceptions import ValidationException
+
 
 def run_executor_server(port, has_error=False, init_error_file=None):
     app = web.Application()
@@ -14,6 +16,8 @@ def run_executor_server(port, has_error=False, init_error_file=None):
     print(f"Starting server on port {port}")
     if init_error_file is None:
         web.run_app(app, host="localhost", port=port)
+    else:
+        raise ValidationException("Error for tests")
 
 
 async def _handle_health(request: web.Request):
