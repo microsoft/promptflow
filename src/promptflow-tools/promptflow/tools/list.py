@@ -1,13 +1,14 @@
 from pathlib import Path
 
-import yaml
+from ruamel.yaml import YAML
 
 
 def collect_tools_from_directory(base_dir) -> dict:
     tools = {}
+    yaml = YAML()
     for f in Path(base_dir).glob("**/*.yaml"):
         with open(f, "r") as f:
-            tools_in_file = yaml.safe_load(f)
+            tools_in_file = yaml.load(f)
             for identifier, tool in tools_in_file.items():
                 tools[identifier] = tool
     return tools

@@ -1,12 +1,11 @@
 import pytest
-import yaml
 
 from promptflow.contracts.flow import Flow, FlowInputDefinition
 from promptflow.contracts.tool import ValueType
 from promptflow.executor._errors import InputParseError, InputTypeError, InvalidAggregationInput, InvalidFlowRequest
 from promptflow.executor.flow_validator import FlowValidator
 
-from ...utils import WRONG_FLOW_ROOT, get_yaml_file
+from ...utils import WRONG_FLOW_ROOT, get_flow_from_folder
 
 
 @pytest.mark.unittest
@@ -20,9 +19,7 @@ class TestFlowValidator:
         ],
     )
     def test_ensure_nodes_order(self, flow_folder, expected_node_order):
-        flow_yaml = get_yaml_file(flow_folder)
-        with open(flow_yaml, "r") as fin:
-            flow = Flow.deserialize(yaml.safe_load(fin))
+        flow = get_flow_from_folder(flow_folder)
         flow = FlowValidator._ensure_nodes_order(flow)
         node_order = [node.name for node in flow.nodes]
         assert node_order == expected_node_order
@@ -73,9 +70,7 @@ class TestFlowValidator:
         ],
     )
     def test_ensure_nodes_order_with_exception(self, flow_folder, error_message):
-        flow_yaml = get_yaml_file(flow_folder, root=WRONG_FLOW_ROOT)
-        with open(flow_yaml, "r") as fin:
-            flow = Flow.deserialize(yaml.safe_load(fin))
+        flow = get_flow_from_folder(flow_folder, root=WRONG_FLOW_ROOT)
         with pytest.raises(InvalidFlowRequest) as e:
             FlowValidator._ensure_nodes_order(flow)
         assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
@@ -131,9 +126,7 @@ class TestFlowValidator:
         ["simple_flow_with_python_tool_and_aggregate"],
     )
     def test_ensure_outputs_valid_with_aggregation(self, flow_folder):
-        flow_yaml = get_yaml_file(flow_folder)
-        with open(flow_yaml, "r") as fin:
-            flow = Flow.deserialize(yaml.safe_load(fin))
+        flow = get_flow_from_folder(flow_folder)
         assert flow.outputs["content"] is not None
         assert flow.outputs["aggregate_content"] is not None
         flow.outputs = FlowValidator._ensure_outputs_valid(flow)
@@ -173,10 +166,7 @@ class TestFlowValidator:
     def test_resolve_flow_inputs_type_json_error_for_list_type(
         self, flow_folder, inputs, index, error_type, error_message
     ):
-        flow_yaml = get_yaml_file(flow_folder)
-        with open(flow_yaml, "r") as fin:
-            flow = Flow.deserialize(yaml.safe_load(fin))
-
+        flow = get_flow_from_folder(flow_folder)
         with pytest.raises(error_type) as exe_info:
             FlowValidator.resolve_flow_inputs_type(flow, inputs, idx=index)
         assert error_message == exe_info.value.message

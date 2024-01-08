@@ -13,7 +13,7 @@ from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-import yaml
+from ruamel.yaml import YAML
 
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
@@ -291,8 +291,10 @@ class FlowExecutor:
 
         # Load the node from the flow file
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        yaml = YAML()
+        yaml.preserve_quotes = True
         with open(working_dir / flow_file, "r") as fin:
-            flow = Flow.deserialize(yaml.safe_load(fin))
+            flow = Flow.deserialize(yaml.load(fin))
         node = flow.get_node(node_name)
         if node is None:
             raise SingleNodeValidationError(
@@ -882,9 +884,10 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
-        return all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        return (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
