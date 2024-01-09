@@ -101,8 +101,6 @@ class LineExecutionProcessPool:
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
 
-        # When using fork, we use this method to create the executor to avoid reloading the flow
-        # which will introduce a lot more memory.
         if not use_fork:
             if flow_executor._flow_file:
                 self._executor_creation_func = partial(

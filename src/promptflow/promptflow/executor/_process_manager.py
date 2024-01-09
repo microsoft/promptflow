@@ -402,6 +402,8 @@ def fork_processes_manager(
         raise_ex=raise_ex,
     )
 
+    # When using fork, we use this method to create the executor to avoid reloading the flow
+    # which will introduce a lot more memory.
     executor_creation_func = partial(create_executor_fork, flow_executor=executor)
 
     manager = SpawnedForkProcessManager(
