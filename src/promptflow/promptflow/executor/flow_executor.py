@@ -647,7 +647,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs = apply_default_value_for_input(self._flow.inputs, inputs)
-        result = _traced(self._exec(inputs))
+        result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
         return result.output or {}
@@ -750,6 +750,7 @@ class FlowExecutor:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
 
+    @_traced
     def _exec(
         self,
         inputs: Mapping[str, Any],
