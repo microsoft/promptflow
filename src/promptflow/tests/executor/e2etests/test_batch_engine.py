@@ -199,7 +199,8 @@ class TestBatch:
             ),
         ],
     )
-    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
+    @recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
+    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections, recording_injection):
         if "forkserver" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: forkserver")
         p = multiprocessing.Process(
