@@ -1,0 +1,25 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+
+name: doc_split_0
+display_name: docSplit0
+version: 3
+
+inputs:
+  doc_split_0_input:
+    type: uri_folder
+  doc_split_0_chunk_size:
+    type: integer
+
+outputs:
+  doc_split_0_output:
+    type: uri_folder
+
+code: ./document_split_src
+
+environment:
+  conda_file: ./conda.yml
+  image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04
+
+command: >-
+  python split.py --doc_split_0_input ${{inputs.doc_split_0_input}} --doc_split_0_chunk_size ${{inputs.doc_split_0_chunk_size}} --doc_split_0_output ${{outputs.doc_split_0_output}}
