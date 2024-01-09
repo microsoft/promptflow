@@ -23,6 +23,7 @@ class TestAPIBasedExecutorProxy:
     @pytest.mark.asyncio
     async def test_exec_line_async_no_error(self):
         mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
+        assert mock_executor_proxy.api_endpoint == "http://localhost:8080"
         run_id = "test_run_id"
         index = 1
         inputs = {"question": "test"}
