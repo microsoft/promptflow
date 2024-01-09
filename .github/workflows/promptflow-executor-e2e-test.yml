@@ -161,5 +161,4 @@ jobs:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 70
-        token: ${{ secrets.GITHUB_TOKEN }}
         context: test/executor_e2e
