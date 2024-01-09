@@ -96,17 +96,10 @@ class LineExecutionProcessPool:
         self._validate_inputs = validate_inputs
         sys_start_methods = multiprocessing.get_all_start_methods()
         use_fork = 'fork' in sys_start_methods
+        self.context = get_multiprocessing_context('fork' if use_fork else 'spawn')
         self._flow_file = flow_executor._flow_file
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
-        self._process_start_method_in_spawn_process_manager = "spawn"
-
-        # When using legacy flow executor in 'fork' mode, to be compatibled, set the 'use_fork' to False to create the
-        # legacy flow executor, set the process startup mode to 'fork' to avoid 'cannot pickle '_thread.RLock' object'.
-        # This Will be deprecated with the legacy pf portal.
-        if use_fork and flow_executor._flow_file is None:
-            use_fork = False
-            self._process_start_method_in_spawn_process_manager = "fork"
 
         if not use_fork:
             if flow_executor._flow_file:
@@ -167,7 +160,6 @@ class LineExecutionProcessPool:
             # 2. Spawn _n_process sub-process and pass the above queue/dict to these sub-process to transfer information
             # between main process and sub process.
             self._processes_manager = SpawnProcessManager(
-                self._process_start_method_in_spawn_process_manager,
                 self._executor_creation_func,
                 self._input_queues,
                 self._output_queues,
@@ -692,3 +684,12 @@ def get_available_max_worker_count():
             f"= {estimated_available_worker_count}"
         )
     return estimated_available_worker_count
+
+
+def get_multiprocessing_context(multiprocessing_start_method=None):
+    if multiprocessing_start_method is not None:
+        context = multiprocessing.get_context(multiprocessing_start_method)
+        return context
+    else:
+        context = multiprocessing.get_context()
+        return context
