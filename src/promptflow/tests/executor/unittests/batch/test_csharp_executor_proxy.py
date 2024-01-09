@@ -70,6 +70,21 @@ class TestCSharpExecutorProxy:
         mock_process.wait.assert_called_once_with(timeout=5)
         mock_process.kill.assert_called_once()
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "exit_code, expected_result",
+        [
+            (None, True),
+            (0, False),
+            (1, False),
+        ],
+    )
+    async def test_is_executor_active_running(self, exit_code, expected_result):
+        executor_proxy = await get_executor_proxy()
+        executor_proxy._process = MagicMock()
+        executor_proxy._process.poll.return_value = exit_code
+        assert executor_proxy._is_executor_active() == expected_result
+
     def test_find_available_port(self):
         port = CSharpExecutorProxy.find_available_port()
         assert isinstance(port, str)

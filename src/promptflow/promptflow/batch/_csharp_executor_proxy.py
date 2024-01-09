@@ -85,10 +85,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
 
     def _is_executor_active(self):
         """Check if the process is still running and return False if it has exited"""
-        exit_code = self._process.poll()
-        if exit_code and exit_code != 0:
-            return False
-        return True
+        return self._process.poll() is None
 
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
