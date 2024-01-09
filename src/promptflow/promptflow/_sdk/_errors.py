@@ -103,3 +103,15 @@ class FlowOperationError(PromptflowException):
     """Exception raised when flow operation failed."""
 
     pass
+
+
+class ExperimentExistsError(PromptflowException):
+    """Exception raised when experiment already exists."""
+
+    pass
+
+
+class ExperimentNotFoundError(PromptflowException):
+    """Exception raised if experiment cannot be found."""
+
+    pass
