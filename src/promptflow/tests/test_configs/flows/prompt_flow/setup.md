@@ -1,4 +1,4 @@
-1. Create a conda environment with Python 11 and activate this conda env.
+1. Create a conda environment with python=3.9 or higher version like 3.10 and activate this conda env.
 2. Download vsix and install the extension: https://aka.ms/prompty/vsc
 3. Install prompt flow sdk from the private wheel:
    https://msdata.visualstudio.com/Vienna/_build/results?buildId=115503045&view=artifacts&pathAsName=false&type=publishedArtifacts
