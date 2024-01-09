@@ -141,7 +141,12 @@ class SpawnProcessManager(AbstractProcessManager):
         )
 
         process.start()
-        self._process_info[i] = ProcessInfo(process_id=process.pid, process_name=process.name)
+        try:
+            self._process_info[i] = ProcessInfo(process_id=process.pid, process_name=process.name)
+        except Exception as e:
+            bulk_logger.info(
+                f"Unable to access shared dictionary 'process_info', possibly "
+                f"because the main process is down. Exception: {e}")
         return process
 
     def restart_process(self, i):
@@ -169,6 +174,10 @@ class SpawnProcessManager(AbstractProcessManager):
             self._process_info.pop(i)
         except psutil.NoSuchProcess:
             bulk_logger.warning(f"Process {pid} had been terminated")
+        except Exception as e:
+            bulk_logger.info(
+                f"Unable to access shared dictionary 'process_info', possibly "
+                f"because the main process is down. Exception: {e}")
 
 
 class ForkProcessManager(AbstractProcessManager):
@@ -308,7 +317,12 @@ class SpawnedForkProcessManager(AbstractProcessManager):
             daemon=True
         )
         process.start()
-        self._process_info[i] = ProcessInfo(process_id=process.pid, process_name=process.name)
+        try:
+            self._process_info[i] = ProcessInfo(process_id=process.pid, process_name=process.name)
+        except Exception as e:
+            bulk_logger.info(
+                f"Unable to access shared dictionary 'process_info', possibly "
+                f"because the main process is down. Exception: {e}")
         return process
 
     def end_process(self, i):
@@ -326,6 +340,10 @@ class SpawnedForkProcessManager(AbstractProcessManager):
             self._process_info.pop(i)
         except psutil.NoSuchProcess:
             bulk_logger.warning(f"Process {pid} had been terminated")
+        except Exception as e:
+            bulk_logger.info(
+                f"Unable to access shared dictionary 'process_info', possibly "
+                f"because the main process is down. Exception: {e}")
 
     def restart_process(self, i):
         """
@@ -405,7 +423,16 @@ def fork_processes_manager(
     # Main loop to handle control signals and manage process lifecycle.
     while True:
         all_processes_stopped = True
-        for _, info in list(process_info.items()):
+
+        try:
+            process_info_list = process_info.items()
+        except Exception as e:
+            bulk_logger.info(
+                f"Unable to access shared dictionary 'process_info', possibly "
+                f"because the main process is down. Exception: {e}")
+            break
+
+        for _, info in list(process_info_list):
             pid = info.process_id
             # Check if at least one process is alive.
             if psutil.pid_exists(pid):
