@@ -72,10 +72,64 @@ def recording_injection_decorator_compatible_with_spawn(mock_class):
     return decorator
 
 
+def recording_injection_decorator_compatible_with_fork(mock_class):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            original_process_class = multiprocessing.get_context("fork").Process
+            multiprocessing.get_context("fork").Process = mock_class
+            multiprocessing.Process = mock_class
+            try:
+                with apply_recording_injection_if_enabled():
+                    return func(*args, **kwargs)
+            finally:
+                multiprocessing.get_context("fork").Process = original_process_class
+                multiprocessing.Process = original_process_class
+
+        return wrapper
+
+    return decorator
+
+
+def recording_injection_decorator_compatible_with_forkserver(mock_class):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            original_process_class = multiprocessing.get_context("forkserver").Process
+            multiprocessing.get_context("forkserver").Process = mock_class
+            multiprocessing.Process = mock_class
+            try:
+                with apply_recording_injection_if_enabled():
+                    return func(*args, **kwargs)
+            finally:
+                multiprocessing.get_context("forkserver").Process = original_process_class
+                multiprocessing.Process = original_process_class
+
+        return wrapper
+
+    return decorator
+
+
 SpawnProcess = multiprocessing.get_context("spawn").Process
+ForkProcess = multiprocessing.get_context("fork").Process
+ForkServerProcess = multiprocessing.get_context("forkserver").Process
 
 
 class MockSpawnProcess(SpawnProcess):
+    def __init__(self, group=None, target=None, *args, **kwargs):
+        if target == _process_wrapper:
+            target = _mock_process_wrapper
+        super().__init__(group, target, *args, **kwargs)
+
+
+class MockForkProcess(ForkProcess):
+    def __init__(self, group=None, target=None, *args, **kwargs):
+        if target == _process_wrapper:
+            target = _mock_process_wrapper
+        super().__init__(group, target, *args, **kwargs)
+
+
+class MockForkServerProcess(ForkServerProcess):
     def __init__(self, group=None, target=None, *args, **kwargs):
         if target == _process_wrapper:
             target = _mock_process_wrapper
