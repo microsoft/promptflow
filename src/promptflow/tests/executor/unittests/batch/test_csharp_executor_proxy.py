@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from promptflow.batch import CSharpExecutorProxy
+from promptflow.executor._result import AggregationResult
 
 from ...utils import get_flow_folder, get_yaml_file
 
@@ -71,6 +72,12 @@ class TestCSharpExecutorProxy:
         mock_process.kill.assert_called_once()
 
     @pytest.mark.asyncio
+    async def test_exec_aggregation_async(self):
+        executor_proxy = await get_executor_proxy()
+        aggr_result = await executor_proxy.exec_aggregation_async("", "", "")
+        assert isinstance(aggr_result, AggregationResult)
+
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "exit_code, expected_result",
         [
@@ -79,11 +86,17 @@ class TestCSharpExecutorProxy:
             (1, False),
         ],
     )
-    async def test_is_executor_active_running(self, exit_code, expected_result):
+    async def test_is_executor_active(self, exit_code, expected_result):
         executor_proxy = await get_executor_proxy()
         executor_proxy._process = MagicMock()
         executor_proxy._process.poll.return_value = exit_code
         assert executor_proxy._is_executor_active() == expected_result
+
+    def test_get_tool_metadata(self):
+        flow_file = get_yaml_file("csharp_flow")
+        working_dir = get_flow_folder("csharp_flow")
+        with pytest.raises(FileNotFoundError):
+            CSharpExecutorProxy.get_tool_metadata(flow_file, working_dir)
 
     def test_find_available_port(self):
         port = CSharpExecutorProxy.find_available_port()
