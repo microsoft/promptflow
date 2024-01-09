@@ -68,6 +68,7 @@
     "ROBOCOPY",
     "undoc",
     "retriable",
+    "pfcli",
     "pfutil",
     "mgmt",
     "wsid",
@@ -78,7 +79,9 @@
     "pfbytes",
     "Apim",
     "junit",
-    "nunit"
+    "nunit",
+    "astext",
+    "Likert"
   ],
   "ignoreWords": [
     "openmpi",
@@ -154,7 +157,11 @@
     "restx",
     "httpx",
     "tiiuae",
-    "metagenai"
+    "nohup",
+    "metagenai",
+    "WBITS",
+    "laddr",
+    "nrows"
   ],
   "flagWords": [
     "Prompt Flow"

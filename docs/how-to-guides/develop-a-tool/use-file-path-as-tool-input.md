@@ -1,4 +1,4 @@
-# Using File Path as Tool Input
+# Using file path as tool input
 
 Users sometimes need to reference local files within a tool to implement specific logic. To simplify this, we've introduced the `FilePath` input type. This input type enables users to either select an existing file or create a new one, then pass it to a tool, allowing the tool to access the file's content.
 
@@ -6,9 +6,9 @@ In this guide, we will provide a detailed walkthrough on how to use `FilePath` a
 
 ## Prerequisites
 
-- Please install promptflow package and ensure that its version is 0.1.0b8 or later.
+- Please install promptflow package and ensure that its version is 1.0.0 or later.
   ```
-  pip install promptflow>=0.1.0b8
+  pip install promptflow>=1.0.0
   ```
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.0 or later.
 
@@ -18,44 +18,25 @@ In this guide, we will provide a detailed walkthrough on how to use `FilePath` a
 
 Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your own tool, please refer to [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package).
 
-1. Add a `FilePath` input for your tool, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_file_path_input.py).
+Add a `FilePath` input for your tool, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_file_path_input.py).
 
-    ```python
-    import importlib
-    from pathlib import Path
-    from promptflow import tool
-    # 1. import the FilePath type
-    from promptflow.contracts.types import FilePath
+```python
+import importlib
+from pathlib import Path
+from promptflow import tool
+# 1. import the FilePath type
+from promptflow.contracts.types import FilePath
 
-    # 2. add a FilePath input for your tool method
-    @tool
-    def my_tool(input_file: FilePath, input_text: str) -> str:
-        # 3. customise your own code to handle and use the input_file here
-        new_module = importlib.import_module(Path(input_file).stem)
-    
-        return new_module.hello(input_text)   
-    ```
+# 2. add a FilePath input for your tool method
+@tool()
+def my_tool(input_file: FilePath, input_text: str) -> str:
+    # 3. customise your own code to handle and use the input_file here
+    new_module = importlib.import_module(Path(input_file).stem)
 
-2. `FilePath` input format in a tool YAML, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_file_path_input.yaml).
+    return new_module.hello(input_text)   
+```
 
-   ```yaml
-    my_tool_package.tools.tool_with_file_path_input.my_tool:
-      function: my_tool
-        inputs:
-          # yaml format for FilePath input
-          input_file:
-            type:
-            - file_path
-          input_text:
-            type:
-            - string
-      module: my_tool_package.tools.tool_with_file_path_input
-      name: Tool with FilePath Input
-      description: This is a tool to demonstrate the usage of FilePath input
-      type: python   
-    ```
-
-    > [!Note] tool yaml file can be generated using a python script. For further details, please refer to [create custom tool package](create-and-use-tool-package.md#create-custom-tool-package).
+> [!Note] tool yaml file can be generated using a python script. For further details, please refer to [create custom tool package](create-and-use-tool-package.md#create-custom-tool-package).
 
 
 ### Use tool with a file path input in VS Code extension

@@ -14,15 +14,14 @@ import pydash
 from promptflow._sdk._constants import (
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     HOME_PROMPT_FLOW_DIR,
-    LOGGER_NAME,
     SERVICE_CONFIG_FILE,
     ConnectionProvider,
 )
 from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml, read_write_by_user
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, ValidationException
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+logger = get_cli_sdk_logger()
 
 
 class ConfigFileNotFound(ValidationException):
@@ -45,6 +44,7 @@ class Configuration(object):
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
     RUN_OUTPUT_PATH = "run.output_path"
+    USER_AGENT = "user_agent"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -161,18 +161,18 @@ class Configuration(object):
             )
         return RESOURCE_ID_FORMAT.format(subscription_id, resource_group, AZUREML_RESOURCE_PROVIDER, workspace_name)
 
-    def get_connection_provider(self) -> Optional[str]:
+    def get_connection_provider(self, path=None) -> Optional[str]:
         """Get the current connection provider. Default to local if not configured."""
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
-        return self.resolve_connection_provider(provider)
+        return self.resolve_connection_provider(provider, path=path)
 
     @classmethod
-    def resolve_connection_provider(cls, provider) -> Optional[str]:
+    def resolve_connection_provider(cls, provider, path=None) -> Optional[str]:
         if provider is None:
             return ConnectionProvider.LOCAL
         if provider == ConnectionProvider.AZUREML.value:
             # Note: The below function has azure-ai-ml dependency.
-            return "azureml:" + cls._get_workspace_from_config()
+            return "azureml:" + cls._get_workspace_from_config(path=path)
         # If provider not None and not Azure, return it directly.
         # It can be the full path of a workspace.
         return provider
@@ -214,3 +214,10 @@ class Configuration(object):
                     "please use its child folder, e.g. '${flow_directory}/.runs'."
                 )
         return
+
+    def get_user_agent(self) -> Optional[str]:
+        """Get customer set user agent. If set, will add prefix `PFCustomer_`"""
+        user_agent = self.get_config(key=self.USER_AGENT)
+        if user_agent:
+            return f"PFCustomer_{user_agent}"
+        return user_agent

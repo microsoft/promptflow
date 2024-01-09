@@ -1,9 +1,5 @@
-from promptflow.exceptions import UserErrorException, ValidationException
+from promptflow.exceptions import UserErrorException
 
 
 class FailedToImportModule(UserErrorException):
-    pass
-
-
-class InvalidImageInput(ValidationException):
     pass

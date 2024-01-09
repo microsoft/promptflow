@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # stop services created by runsv and propagate SIGINT, SIGTERM to child jobs
 sv_stop() {

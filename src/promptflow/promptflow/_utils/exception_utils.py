@@ -386,3 +386,27 @@ def is_pf_core_frame(frame: FrameType):
     from promptflow import _core
     folder_of_core = os.path.dirname(_core.__file__)
     return folder_of_core in frame.f_code.co_filename
+
+
+def remove_suffix(text: str, suffix: str = None):
+    """
+    Given a string, removes specified suffix, if it has.
+
+    >>> remove_suffix('hello world', 'world')
+    'hello '
+    >>> remove_suffix('hello world', 'hello ')
+    'hello world'
+    >>> remove_suffix('NoColumnFoundError', 'Error')
+    'NoColumnFound'
+
+    :param text: string from which prefix will be removed.
+    :param suffix: suffix to be removed.
+    :return: string removed suffix.
+    """
+    if not text or not suffix:
+        return text
+
+    if not text.endswith(suffix):
+        return text
+
+    return text[:-len(suffix)]

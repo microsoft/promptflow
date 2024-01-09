@@ -6,7 +6,7 @@ import abc
 import json
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import yaml
 from marshmallow import Schema
@@ -14,20 +14,18 @@ from marshmallow import Schema
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
-    LOGGER_NAME,
     PROMPT_FLOW_DIR_NAME,
 )
+from promptflow._sdk.entities._connection import _Connection
+from promptflow._sdk.entities._validation import SchemaValidatableMixin
+from promptflow._utils.flow_utils import resolve_flow_path
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
-from ..._utils.flow_utils import resolve_flow_path
-from ..._utils.logger_utils import LoggerFactory
-from .._constants import DAG_FILE_NAME
-from ._connection import _Connection
-from ._validation import SchemaValidatableMixin
-
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 class FlowBase(abc.ABC):
@@ -210,12 +208,14 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
     def __init__(
         self,
         code: str,
+        params_override: Optional[Dict] = None,
         **kwargs,
     ):
         super().__init__(code=code, **kwargs)
 
         self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
         self._executable = None
+        self._params_override = params_override
 
     @property
     def flow_dag_path(self) -> Path:
@@ -227,7 +227,11 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     @property
     def display_name(self) -> str:
-        return self.dag.get("display_name", None)
+        return self.dag.get("display_name", self.name)
+
+    @property
+    def language(self) -> str:
+        return self.dag.get(LANGUAGE_KEY, FlowLanguage.Python)
 
     @property
     def tools_meta_path(self) -> Path:
@@ -269,7 +273,10 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def _dump_for_validation(self) -> Dict:
         # Flow is read-only in control plane, so we always dump the flow from file
-        return yaml.safe_load(self.flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+        data = yaml.safe_load(self.flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+        if isinstance(self._params_override, dict):
+            data.update(self._params_override)
+        return data
 
     # endregion
 

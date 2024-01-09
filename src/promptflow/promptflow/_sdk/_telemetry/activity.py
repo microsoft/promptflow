@@ -6,8 +6,11 @@ import functools
 import uuid
 from contextvars import ContextVar
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
+from promptflow._sdk._utils import ClientUserAgentUtil
+from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
 
 
 class ActivityType(object):
@@ -55,13 +58,10 @@ def log_activity(
     :type custom_dimensions: dict
     :return: None
     """
-    from promptflow._core.operation_context import OperationContext
-
     if not custom_dimensions:
         custom_dimensions = {}
 
-    context = OperationContext.get_instance()
-    user_agent = context.get_user_agent()
+    user_agent = ClientUserAgentUtil.get_user_agent()
     request_id = request_id_context.get()
     if not request_id:
         # public function call
@@ -126,6 +126,19 @@ def extract_telemetry_info(self):
     return result
 
 
+def update_activity_name(activity_name, kwargs=None, args=None):
+    """Update activity name according to kwargs. For flow test, we want to know if it's node test."""
+    if activity_name == "pf.flows.test":
+        # SDK
+        if kwargs.get("node", None):
+            activity_name = "pf.flows.node_test"
+    elif activity_name == "pf.flow.test":
+        # CLI
+        if getattr(args, "node", None):
+            activity_name = "pf.flow.node_test"
+    return activity_name
+
+
 def monitor_operation(
     activity_name,
     activity_type=ActivityType.INTERNALCALL,
@@ -156,10 +169,14 @@ def monitor_operation(
             logger = get_telemetry_logger()
 
             custom_dimensions.update(extract_telemetry_info(self))
-
-            with log_activity(logger, activity_name, activity_type, custom_dimensions):
+            # update activity name according to kwargs.
+            _activity_name = update_activity_name(activity_name, kwargs=kwargs)
+            with log_activity(logger, _activity_name, activity_type, custom_dimensions):
+                if _activity_name in HINT_ACTIVITY_NAME:
+                    hint_for_update()
+                    with ThreadPoolExecutor() as pool:
+                        pool.submit(check_latest_version)
                 return f(self, *args, **kwargs)
-
         return wrapper
 
     return monitor

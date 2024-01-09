@@ -1,8 +1,12 @@
+---
+resources: examples/connections/azure_openai.yml, examples/flows/standard/web-classification
+---
+
 # Distribute flow as executable app
-This example demos how to package flow as a executable app. 
+This example demos how to package flow as a executable app.
 We will use [web-classification](../../../flows/standard/web-classification/README.md) as example in this tutorial.
 
-Please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) for a comprehensive list of prerequisites and installation instructions. And we recommend you to add a `requirements.txt` to indicate all the required dependencies for each flow. 
+Please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) for a comprehensive list of prerequisites and installation instructions. And we recommend you to add a `requirements.txt` to indicate all the required dependencies for each flow.
 
 [Pyinstaller](https://pyinstaller.org/en/stable/installation.html) is a popular tool used for converting Python applications into standalone executables. It allows you to package your Python scripts into a single executable file, which can be run on a target machine without requiring the Python interpreter to be installed.
 [Streamlit](https://docs.streamlit.io/library/get-started) is an open-source Python library used for creating web applications quickly and easily. It's designed for data scientists and engineers who want to turn data scripts into shareable web apps with minimal effort.
@@ -33,7 +37,7 @@ Exported files & its dependencies are located in the same folder. The structure 
 - README.md: Simple introduction of the files.
 
 ### A template script of the entry file
-PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and library your script needs in order to execute. Then it collects copies of all those files, including the active Python interpreter, and puts them with your script in a single folder, or optionally in a single executable file. 
+PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and library your script needs in order to execute. Then it collects copies of all those files, including the active Python interpreter, and puts them with your script in a single folder, or optionally in a single executable file.
 
 We provide a Python entry script named `app.py` as the entry point for the bundled app, which enables you to serve a flow folder as an endpoint.
 
@@ -147,13 +151,13 @@ api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 ```
 
 ## Test the endpoint
-Finally, You can distribute the bundled application `app` to other people. They can execute your program by double clicking the executable file, e.g. `app.exe` in Windows system or running the binary file, e.g. `app` in Linux system. 
+Finally, You can distribute the bundled application `app` to other people. They can execute your program by double clicking the executable file, e.g. `app.exe` in Windows system or running the binary file, e.g. `app` in Linux system.
 
 The development server has a built-in web page they can use to test the flow by opening 'http://localhost:8501' in the browser. The expected result is as follows: if the flow served successfully, the process will keep alive until it is killed manually.
 
 To your users, the app is self-contained. They do not need to install any particular version of Python or any modules. They do not need to have Python installed at all.
 
-**Note**: The executable generated is not cross-platform. One platform (e.g. Windows) packaged executable can't run on others (Mac, Linux). 
+**Note**: The executable generated is not cross-platform. One platform (e.g. Windows) packaged executable can't run on others (Mac, Linux).
 
 ## Known issues
 1. Note that Python 3.10.0 contains a bug making it unsupportable by PyInstaller. PyInstaller will also not work with beta releases of Python 3.13.

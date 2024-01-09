@@ -37,8 +37,6 @@ def add_parser_flow(subparsers):
     add_parser_flow_create(flow_subparsers)
     add_parser_flow_show(flow_subparsers)
     add_parser_flow_list(flow_subparsers)
-    # add_parser_flow_delete(flow_subparsers)
-    # add_parser_flow_download(flow_subparsers)
     flow_parser.set_defaults(action="flow")
 
 
@@ -188,13 +186,7 @@ def create_flow(args: argparse.Namespace):
     """Create a flow for promptflow."""
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     params = _parse_flow_metadata_args(args.params_override)
-    pf.flows.create_or_update(
-        flow=args.flow,
-        display_name=params.get("display_name", None),
-        type=params.get("type", None),
-        description=params.get("description", None),
-        tags=params.get("tags", None),
-    )
+    pf.flows.create_or_update(flow=args.flow, **params)
 
 
 @exception_handler("Show flow")
@@ -218,19 +210,6 @@ def list_flows(args: argparse.Namespace):
     _output_result_list_with_format(flow_list, args.output)
 
 
-def download_flow(
-    source: str,
-    destination: str,
-    workspace_name: str,
-    resource_group: str,
-    subscription_id: str,
-):
-    """Download a flow from file share to local."""
-    flow_operations = _get_flow_operation(subscription_id, resource_group, workspace_name)
-    flow_operations.download(source, destination)
-    print(f"Successfully download flow from file share path {source!r} to {destination!r}.")
-
-
 def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
     result, tags = {}, {}
     if not params:
@@ -241,8 +220,6 @@ def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
                 tag_key = k.replace("tags.", "")
                 tags[tag_key] = v
                 continue
-            # replace "-" with "_" to handle the usage for both "-" and "_" in the command key
-            normalized_key = k.replace("-", "_")
-            result[normalized_key] = v
+            result[k] = v
     result["tags"] = tags
     return result

@@ -17,7 +17,8 @@ Download swagger.json from [here](https://int.api.azureml-test.ms/flow/swagger/v
 
 ## Update the generation history
 
-- 2023.11.13 - Generated.
+- 2023.11.13 - [Update SDK restclient](https://github.com/microsoft/promptflow/pull/1101).
+- 2023.12.18 - [Remove data portal url from the result of pfazure run show](https://github.com/microsoft/promptflow/pull/1497)
 
 ## Troubleshooting
 

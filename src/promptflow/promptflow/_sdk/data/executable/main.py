@@ -5,14 +5,18 @@ from PIL import Image
 import streamlit as st
 from streamlit_quill import st_quill
 from copy import copy
+from types import GeneratorType
+import time
 
 from promptflow import load_flow
 from promptflow._sdk._utils import dump_flow_result
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow._sdk._submitter.utils import get_result_output, resolve_generator
 
 from utils import dict_iter_render_message, parse_list_from_html, parse_image_content, render_single_dict_message
 
 invoker = None
+generator_record = {}
 
 
 def start():
@@ -39,18 +43,8 @@ def start():
             return st.session_state.history
         return []
 
-    def submit(**kwargs) -> None:
-        st.session_state.messages.append(("user", kwargs))
-        session_state_history = dict()
-        session_state_history.update({"inputs": kwargs})
-        with container:
-            render_message("user", kwargs)
-        # Force append chat history to kwargs
-        if is_chat_flow:
-            response = run_flow({chat_history_input_name: get_chat_history_from_session(), **kwargs})
-        else:
-            response = run_flow(kwargs)
-
+    def post_process_dump_result(response, session_state_history):
+        response = resolve_generator(response, generator_record)
         # Get base64 for multi modal object
         resolved_outputs = {
             k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True)
@@ -65,6 +59,39 @@ def start():
                 response.output, base_dir=dump_path, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=dump_path, flow_result=response, prefix="chat")
+        return resolved_outputs
+
+    def submit(**kwargs) -> None:
+        st.session_state.messages.append(("user", kwargs))
+        session_state_history = dict()
+        session_state_history.update({"inputs": kwargs})
+        with container:
+            render_message("user", kwargs)
+        # Force append chat history to kwargs
+        if is_chat_flow:
+            response = run_flow({chat_history_input_name: get_chat_history_from_session(), **kwargs})
+        else:
+            response = run_flow(kwargs)
+
+        if is_streaming:
+            # Display assistant response in chat message container
+            with container:
+                with st.chat_message("assistant"):
+                    message_placeholder = st.empty()
+                    full_response = f"{chat_output_name}:"
+                    chat_output = response.output[chat_output_name]
+                    if isinstance(chat_output, GeneratorType):
+                        # Simulate stream of response with milliseconds delay
+                        for chunk in get_result_output(chat_output, generator_record):
+                            full_response += chunk + " "
+                            time.sleep(0.05)
+                            # Add a blinking cursor to simulate typing
+                            message_placeholder.markdown(full_response + "▌")
+                        message_placeholder.markdown(full_response)
+                        post_process_dump_result(response, session_state_history)
+                        return
+
+        resolved_outputs = post_process_dump_result(response, session_state_history)
         with container:
             render_message("assistant", resolved_outputs)
 
@@ -80,6 +107,7 @@ def start():
             else:
                 os.chdir(flow.parent)
             invoker = load_flow(flow)
+            invoker.context.streaming = is_streaming
         result = invoker.invoke(data)
         return result
 
@@ -167,5 +195,7 @@ if __name__ == "__main__":
         flow_name = config["flow_name"]
         flow_inputs = config["flow_inputs"]
         label = config["label"]
+        is_streaming = config["is_streaming"]
+        chat_output_name = config["chat_output_name"]
 
     start()

@@ -5,6 +5,7 @@
 import json
 import time
 
+from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._cli._utils import _get_cli_activity_name, get_client_info_for_cli
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
@@ -19,16 +20,15 @@ import sys  # noqa: E402
 
 from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
-from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
     get_promptflow_sdk_version,
     print_pf_version,
     setup_user_agent_to_operation_context,
 )
-from promptflow._utils.logger_utils import LoggerFactory  # noqa: E402
+from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 
-# configure logger for CLI
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+# get logger for CLI
+logger = get_cli_sdk_logger()
 
 
 def run_command(args):
@@ -37,11 +37,11 @@ def run_command(args):
     try:
         # --verbose, enable info logging
         if hasattr(args, "verbose") and args.verbose:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
+            for handler in logger.handlers:
                 handler.setLevel(logging.INFO)
         # --debug, enable debug logging
         if hasattr(args, "debug") and args.debug:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
+            for handler in logger.handlers:
                 handler.setLevel(logging.DEBUG)
         if args.version:
             print_pf_version()
@@ -129,7 +129,14 @@ def main():
         version_dict = {"promptflow": get_promptflow_sdk_version()}
         return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
     if len(command_args) == 0:
+        # print privacy statement & welcome message like azure-cli
+        show_privacy_statement()
+        show_welcome_message()
         command_args.append("-h")
+    elif len(command_args) == 1:
+        # pfazure only has "pf --version" with 1 layer
+        if command_args[0] not in ["--version", "-v"]:
+            command_args.append("-h")
     setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 

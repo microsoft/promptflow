@@ -93,6 +93,17 @@ def flow_serving_client(mocker: MockerFixture):
 
 
 @pytest.fixture
+def flow_serving_client_with_encoded_connection(mocker: MockerFixture):
+    from promptflow._sdk._serving.utils import encode_dict
+    from promptflow._core.connection_manager import ConnectionManager
+
+    connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
+    connection_manager = ConnectionManager(connection_dict)
+    connections = {"PROMPTFLOW_ENCODED_CONNECTIONS": encode_dict(connection_manager.to_connections_dict())}
+    return create_client_by_model("basic-with-connection", mocker, connections, extension_type="azureml")
+
+
+@pytest.fixture
 def evaluation_flow_serving_client(mocker: MockerFixture):
     model_path = (Path(MODEL_ROOT) / "web_classification").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
@@ -105,10 +116,17 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
     return app.test_client()
 
 
-def create_client_by_model(model_name: str, mocker: MockerFixture):
+def create_client_by_model(model_name: str, mocker: MockerFixture, connections: dict = {}, extension_type=None):
     model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
-    app = create_serving_app()
+    if connections:
+        mocker.patch.dict(os.environ, connections)
+    environment_variables = {}
+    if extension_type and extension_type == "azureml":
+        environment_variables = {"API_TYPE": "${azure_open_ai_connection.api_type}"}
+    app = create_serving_app(
+        environment_variables=environment_variables,
+        extension_type=extension_type)
     app.config.update(
         {
             "TESTING": True,

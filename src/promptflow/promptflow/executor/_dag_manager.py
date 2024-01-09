@@ -1,6 +1,7 @@
 import inspect
 from typing import Any, Callable, Dict, List, Mapping
 
+from promptflow._utils.logger_utils import logger
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node
 from promptflow.executor import _input_assignment_parser
 
@@ -67,6 +68,10 @@ class DAGManager:
                     continue
                 # If the parameter has no default value, the input will be set to None so that function will not fail.
                 else:
+                    logger.warning(
+                        f"The node '{i.value}' referenced by the input '{name}' of the current node '{node.name}' "
+                        "has been bypassed, and no default value is set. Will use 'None' as the value for this input."
+                    )
                     results[name] = None
             else:
                 results[name] = self._get_node_dependency_value(i)

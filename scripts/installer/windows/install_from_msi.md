@@ -35,7 +35,7 @@ https://promptflowartifact.blob.core.windows.net/msi-installer/promptflow-<versi
 
 ### PowerShell
 
-To install the prompt flow using PowerShell, start PowerShell **as administrator** and 
+To install the prompt flow using PowerShell, start PowerShell and 
 run the following command:
 
    ```PowerShell
@@ -77,7 +77,7 @@ Select this application, then select the `Uninstall` button.
 ## FAQ
 
 ### Where is the prompt flow installed?
-In Windows, the 64-bit prompt flow installs in `C:\Program Files\promptflow` by default. 
+In Windows, the 64-bit prompt flow installs in `C:\Users\**\AppData\Local\Apps\promptflow` by default. 
 
 
 ### What version of the prompt flow is installed?

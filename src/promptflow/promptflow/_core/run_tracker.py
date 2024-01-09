@@ -2,9 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import json
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
@@ -168,12 +169,30 @@ class RunTracker(ThreadLocalSingleton):
                 output, ex = None, e
         self._common_postprocess(run_info, output, ex)
 
-    def _update_flow_run_info_with_node_runs(self, run_info):
+    def _update_flow_run_info_with_node_runs(self, run_info: FlowRunInfo):
         run_id = run_info.run_id
-        run_info.api_calls = self._collect_traces_from_nodes(run_id)
         child_run_infos = self.collect_child_node_runs(run_id)
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
+        # TODO: Refactor Tracer to support flow level tracing,
+        # then we can remove the hard-coded root level api_calls here.
+        # It has to be a list for UI backward compatibility.
+        # TODO: Add input, output, error to top level. Adding them would require
+        # the same technique of handingling image and generator in Tracer,
+        # which introduces duplicated logic. We should do it in the refactoring.
+        start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() \
+            if run_info.start_time else None
+        end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() \
+            if run_info.end_time else None
+        run_info.api_calls = [{
+            "name": "flow",
+            "node_name": "flow",
+            "type": "Flow",
+            "start_time": start_timestamp,
+            "end_time": end_timestamp,
+            "children": self._collect_traces_from_nodes(run_id),
+            "system_metrics": run_info.system_metrics,
+            }]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
         run_id = run_info.run_id
@@ -280,8 +299,12 @@ class RunTracker(ThreadLocalSingleton):
 
     def _enrich_run_info_with_exception(self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception):
         """Update exception details into run info."""
-        run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
-        run_info.status = Status.Failed
+        # Update status to Cancelled the run terminates because of KeyboardInterruption or CancelledError.
+        if isinstance(ex, KeyboardInterrupt) or isinstance(ex, asyncio.CancelledError):
+            run_info.status = Status.Canceled
+        else:
+            run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
+            run_info.status = Status.Failed
 
     def collect_all_run_infos_as_dicts(self) -> Mapping[str, List[Mapping[str, Any]]]:
         flow_runs = self.flow_run_list
@@ -380,29 +403,29 @@ class RunTracker(ThreadLocalSingleton):
     def get_status_summary(self, run_id: str):
         node_run_infos = self.collect_node_runs(run_id)
         status_summary = {}
-        line_status = {}
+
         for run_info in node_run_infos:
             node_name = run_info.node
             if run_info.index is not None:
-                if run_info.index not in line_status.keys():
-                    line_status[run_info.index] = True
-
-                line_status[run_info.index] = line_status[run_info.index] and run_info.status in (
-                    Status.Completed,
-                    Status.Bypassed,
-                )
-
                 # Only consider Completed, Bypassed and Failed status, because the UX only support three status.
                 if run_info.status in (Status.Completed, Status.Bypassed, Status.Failed):
                     node_status_key = f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"
                     status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
-
             # For reduce node, the index is None.
             else:
                 status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
 
-        status_summary["__pf__.lines.completed"] = sum(line_status.values())
-        status_summary["__pf__.lines.failed"] = len(line_status) - status_summary["__pf__.lines.completed"]
+        # Runtime will start root flow run with run_id == root_run_id,
+        # line flow run will have run id f"{root_run_id}_{line_number}"
+        # We filter out root flow run accordingly.
+        line_flow_run_infos = [
+            flow_run_info for flow_run_info in self.flow_run_list
+            if flow_run_info.root_run_id == run_id and flow_run_info.run_id != run_id]
+        total_lines = len(line_flow_run_infos)
+        completed_lines = len([flow_run_info for flow_run_info in line_flow_run_infos
+                               if flow_run_info.status == Status.Completed])
+        status_summary["__pf__.lines.completed"] = completed_lines
+        status_summary["__pf__.lines.failed"] = total_lines - completed_lines
         return status_summary
 
     def persist_status_summary(self, status_summary: Dict[str, int], run_id: str):

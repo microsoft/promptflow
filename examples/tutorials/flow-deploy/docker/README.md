@@ -1,6 +1,10 @@
+---
+resources: examples/connections/azure_openai.yml, examples/flows/standard/web-classification
+---
+
 # Deploy a flow using Docker
 
-This example demos how to deploy flow as a docker app. 
+This example demos how to deploy flow as a docker app.
 We will use [web-classification](../../../flows/standard/web-classification/README.md) as example in this tutorial.
 
 ## Build a flow as docker format app
@@ -30,7 +34,7 @@ docker build dist -t web-classification-serve
 
 ### Run Docker image
 
-Run the docker image will start a service to serve the flow inside the container. 
+Run the docker image will start a service to serve the flow inside the container.
 
 #### Connections
 If the service involves connections, all related connections will be exported as yaml files and recreated in containers.

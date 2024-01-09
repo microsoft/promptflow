@@ -48,10 +48,11 @@ class RunInfo(Base):
     start_time = Column(TEXT)  # ISO8601("YYYY-MM-DD HH:MM:SS.SSS"), string
     end_time = Column(TEXT)  # ISO8601("YYYY-MM-DD HH:MM:SS.SSS"), string
     data = Column(TEXT)  # local path of original run data, string
+    run_source = Column(TEXT)  # run source, string
 
     __table_args__ = (Index(RUN_INFO_CREATED_ON_INDEX_NAME, "created_on"),)
     # schema version, increase the version number when you change the schema
-    __pf_schema_version__ = "2"
+    __pf_schema_version__ = "3"
 
     @sqlite_retry
     def dump(self) -> None:
@@ -158,3 +159,14 @@ class RunInfo(Base):
                 return [run_info for run_info in basic_statement.limit(max_results)]
             else:
                 return [run_info for run_info in basic_statement.all()]
+
+    @staticmethod
+    @sqlite_retry
+    def delete(name: str) -> None:
+        with mgmt_db_session() as session:
+            run_info = session.query(RunInfo).filter(RunInfo.name == name).first()
+            if run_info is not None:
+                session.delete(run_info)
+                session.commit()
+            else:
+                raise RunNotFoundError(f"Run name {name!r} cannot be found.")

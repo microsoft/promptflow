@@ -1,0 +1,482 @@
+interactions:
+- request:
+    body: '{"hidden": false}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '17'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: PATCH
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/runs/test_run/modify
+  response:
+    body:
+      string: '{"runNumber": 1702024180, "rootRunId": "test_run", "createdUtc": "2023-12-08T08:29:40.2675619+00:00",
+        "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000", "userPuId":
+        "10032001A114F500", "userIdp": null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Chenyang
+        Zhang", "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token":
+        null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
+        7, "statusRevision": 3, "runUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
+        "parentRunUuid": null, "rootRunUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
+        "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:03.8575617",
+        "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+        "userPuId": "10032001A114F500", "userIdp": null, "userAltSecId": null, "userIss":
+        "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Chenyang Zhang", "upn":
+        "username@microsoft.com"}, "lastModifiedUtc": "2023-12-08T08:52:58.5632046+00:00",
+        "duration": "00:00:03.8575617", "cancelationReason": null, "currentAttemptId":
+        1, "runId": "test_run", "parentRunId": null, "experimentId": "00000000-0000-0000-0000-000000000000",
+        "status": "Completed", "startTimeUtc": "2023-12-08T08:29:56.3873783+00:00",
+        "endTimeUtc": "2023-12-08T08:30:00.24494+00:00", "scheduleId": null, "displayName":
+        "test_run", "name": null, "dataContainerId": "dcid.test_run", "description":
+        "test_description", "hidden": false, "runType": "azureml.promptflow.FlowRun",
+        "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
+        "computeType": "AmlcDsi"}, "properties": {"azureml.promptflow.runtime_name":
+        "perf_monitor", "azureml.promptflow.runtime_version": "20231204.v4", "azureml.promptflow.definition_file_name":
+        "flow.dag.yaml", "azureml.promptflow.session_id": "96c35660d759b526cb14cf69bbb56fcaa90c05a778b147b4",
+        "azureml.promptflow.flow_lineage_id": "fcb01d4faf8f2137f9d142cc1f3f22ecdf3d485e1435c4c971ff0ee09077f1b5",
+        "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
+        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/a9d2fb6128166fc3cfb3e70d7174c707/print_input_flow/flow.dag.yaml",
+        "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/80d5ca5a93c8c6ea7c2fcdf1cd4b9d07/print_input_flow.jsonl",
+        "_azureml.evaluation_run": "promptflow.BatchRun", "azureml.promptflow.snapshot_id":
+        "44bc3252-4181-4429-b0ac-df2315b73157", "azureml.promptflow.total_tokens":
+        "0", "_azureml.evaluate_artifacts": "[{\"path\": \"instance_results.jsonl\",
+        \"type\": \"table\"}]"}, "parameters": {}, "actionUris": {}, "scriptName":
+        null, "target": null, "uniqueChildRunComputeTargets": [], "tags": {"key1":
+        "value1"}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
+        [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
+        null, "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
+        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        false, "queueingInfo": null, "inputs": null, "outputs": null}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '3600'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.042'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "test_run", "selectRunMetadata": true, "selectRunDefinition":
+      true, "selectJobSpecification": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '109'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
+  response:
+    body:
+      string: '{"runMetadata": {"runNumber": 1702024180, "rootRunId": "test_run",
+        "createdUtc": "2023-12-08T08:29:40.2675619+00:00", "createdBy": {"userObjectId":
+        "00000000-0000-0000-0000-000000000000", "userPuId": "10032001A114F500", "userIdp":
+        null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Chenyang
+        Zhang", "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token":
+        null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
+        7, "statusRevision": 3, "runUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
+        "parentRunUuid": null, "rootRunUuid": "552ed65c-0179-4894-81c3-5920a8ba952e",
+        "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:03.8575617",
+        "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+        "userPuId": "10032001A114F500", "userIdp": null, "userAltSecId": null, "userIss":
+        "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Chenyang Zhang", "upn":
+        "username@microsoft.com"}, "lastModifiedUtc": "2023-12-08T08:44:04.9130973+00:00",
+        "duration": "00:00:03.8575617", "cancelationReason": null, "currentAttemptId":
+        1, "runId": "test_run", "parentRunId": null, "experimentId": "3285bc8b-1f69-4803-bf44-4770e5b43a04",
+        "status": "Completed", "startTimeUtc": "2023-12-08T08:29:56.3873783+00:00",
+        "endTimeUtc": "2023-12-08T08:30:00.24494+00:00", "scheduleId": null, "displayName":
+        "test_run", "name": null, "dataContainerId": "dcid.test_run", "description":
+        "test_description", "hidden": false, "runType": "azureml.promptflow.FlowRun",
+        "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
+        "computeType": "AmlcDsi"}, "properties": {"azureml.promptflow.runtime_name":
+        "perf_monitor", "azureml.promptflow.runtime_version": "20231204.v4", "azureml.promptflow.definition_file_name":
+        "flow.dag.yaml", "azureml.promptflow.session_id": "96c35660d759b526cb14cf69bbb56fcaa90c05a778b147b4",
+        "azureml.promptflow.flow_lineage_id": "fcb01d4faf8f2137f9d142cc1f3f22ecdf3d485e1435c4c971ff0ee09077f1b5",
+        "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
+        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/a9d2fb6128166fc3cfb3e70d7174c707/print_input_flow/flow.dag.yaml",
+        "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/80d5ca5a93c8c6ea7c2fcdf1cd4b9d07/print_input_flow.jsonl",
+        "_azureml.evaluation_run": "promptflow.BatchRun", "azureml.promptflow.snapshot_id":
+        "44bc3252-4181-4429-b0ac-df2315b73157", "azureml.promptflow.total_tokens":
+        "0", "_azureml.evaluate_artifacts": "[{\"path\": \"instance_results.jsonl\",
+        \"type\": \"table\"}]"}, "parameters": {}, "actionUris": {}, "scriptName":
+        null, "target": null, "uniqueChildRunComputeTargets": [], "tags": {"key1":
+        "value1"}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
+        [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
+        null, "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
+        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        false, "queueingInfo": null, "inputs": null, "outputs": {"debug_info": {"assetId":
+        "azureml://locations/eastus/workspaces/00000/data/azureml_test_run_output_data_debug_info/versions/1",
+        "type": "UriFolder"}, "flow_outputs": {"assetId": "azureml://locations/eastus/workspaces/00000/data/azureml_test_run_output_data_flow_outputs/versions/1",
+        "type": "UriFolder"}}}, "runDefinition": {"Nodes": [{"Name": "print_input",
+        "Type": "python", "Source": {"Type": "code", "Tool": null, "Path": "print_input.py"},
+        "Inputs": {"text": "${inputs.text}"}, "Tool": "print_input.py", "Reduce":
+        false, "Activate": null, "Comment": null, "Api": null, "Provider": null, "Connection":
+        null, "Module": null}], "Tools": [{"Name": "Content Safety (Text Analyze)",
+        "Type": "python", "Inputs": {"connection": {"Name": null, "Type": ["AzureContentSafetyConnection"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "hate_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
+        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
+        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "self_harm_category": {"Name": null,
+        "Type": ["string"], "Default": "medium_sensitivity", "Description": null,
+        "Enum": ["disable", "low_sensitivity", "medium_sensitivity", "high_sensitivity"],
+        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false, "generated_by": null, "input_type": "default", "advanced":
+        null, "ui_hints": null}, "sexual_category": {"Name": null, "Type": ["string"],
+        "Default": "medium_sensitivity", "Description": null, "Enum": ["disable",
+        "low_sensitivity", "medium_sensitivity", "high_sensitivity"], "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false, "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "text": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "violence_category": {"Name": null, "Type":
+        ["string"], "Default": "medium_sensitivity", "Description": null, "Enum":
+        ["disable", "low_sensitivity", "medium_sensitivity", "high_sensitivity"],
+        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false, "generated_by": null, "input_type": "default", "advanced":
+        null, "ui_hints": null}}, "Outputs": null, "Description": "Use Azure Content
+        Safety to detect harmful content.", "connection_type": null, "Module": "promptflow.tools.azure_content_safety",
+        "class_name": null, "Source": null, "LkgCode": null, "Code": null, "Function":
+        "analyze_text", "action_type": null, "provider_config": null, "function_config":
+        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
+        "promptflow-tools", "package_version": "0.0.216", "default_prompt": null,
+        "enable_kwargs": false, "deprecated_tools": ["content_safety_text.tools.content_safety_text_tool.analyze_text"],
+        "tool_state": "stable"}, {"Name": "Embedding", "Type": "python", "Inputs":
+        {"connection": {"Name": null, "Type": ["AzureOpenAIConnection", "OpenAIConnection"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "deployment_name": {"Name": null, "Type": ["string"], "Default": null,
+        "Description": null, "Enum": null, "enabled_by": "connection", "enabled_by_type":
+        ["AzureOpenAIConnection"], "enabled_by_value": null, "model_list": ["text-embedding-ada-002",
+        "text-search-ada-doc-001", "text-search-ada-query-001"], "Capabilities": {"completion":
+        false, "chat_completion": false, "embeddings": true}, "dynamic_list": null,
+        "allow_manual_entry": false, "is_multi_select": false, "generated_by": null,
+        "input_type": "default", "advanced": null, "ui_hints": null}, "input": {"Name":
+        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
+        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false, "generated_by": null, "input_type": "default", "advanced":
+        null, "ui_hints": null}, "model": {"Name": null, "Type": ["string"], "Default":
+        null, "Description": null, "Enum": ["text-embedding-ada-002", "text-search-ada-doc-001",
+        "text-search-ada-query-001"], "enabled_by": "connection", "enabled_by_type":
+        ["OpenAIConnection"], "enabled_by_value": null, "model_list": null, "Capabilities":
+        null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false, "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}}, "Outputs": null, "Description": "Use Open AI''s embedding model to
+        create an embedding vector representing the input text.", "connection_type":
+        null, "Module": "promptflow.tools.embedding", "class_name": null, "Source":
+        null, "LkgCode": null, "Code": null, "Function": "embedding", "action_type":
+        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
+        null, "Tags": null, "is_builtin": true, "package": "promptflow-tools", "package_version":
+        "0.0.216", "default_prompt": null, "enable_kwargs": false, "deprecated_tools":
+        null, "tool_state": "stable"}, {"Name": "Open Source LLM", "Type": "custom_llm",
+        "Inputs": {"api": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": ["chat", "completion"], "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "connection": {"Name": null, "Type": ["CustomConnection"], "Default":
+        null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "deployment_name": {"Name": null, "Type": ["string"], "Default": null,
+        "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "endpoint_name": {"Name": null, "Type": ["string"], "Default": "--
+        please enter an endpoint name --", "Description": null, "Enum": null, "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false, "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "max_new_tokens": {"Name": null, "Type": ["int"], "Default": 500, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "model_kwargs": {"Name": null, "Type":
+        ["object"], "Default": "{}", "Description": null, "Enum": null, "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false, "generated_by": null, "input_type": "default", "advanced": true, "ui_hints":
+        null}, "temperature": {"Name": null, "Type": ["double"], "Default": 1.0, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "top_p": {"Name": null, "Type": ["double"],
+        "Default": 1.0, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": true, "ui_hints":
+        null}}, "Outputs": null, "Description": "Use an Open Source model from the
+        Azure Model catalog, deployed to an AzureML Online Endpoint for LLM Chat or
+        Completion API calls.", "connection_type": null, "Module": "promptflow.tools.open_source_llm",
+        "class_name": "OpenSourceLLM", "Source": null, "LkgCode": null, "Code": null,
+        "Function": "call", "action_type": null, "provider_config": null, "function_config":
+        null, "Icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACgElEQVR4nGWSz2vcVRTFP/e9NzOZ1KDGohASslLEH6VLV0ak4l/QpeDCrfQPcNGliODKnVm4EBdBsIjQIlhciKW0ycKFVCSNbYnjdDLtmPnmO/nO9917XcxMkjYX3uLx7nnn3HOuMK2Nix4fP78ZdrYXVkLVWjf3l3B1B+HpcjzGFtmqa6cePz7/x0dnn1n5qhj3iBJPYREIURAJuCtpY8PjReDbrf9WG7H1fuefwQU9qKztTcMJT+PNnEFvjGVDBDlSsH6p/9MLzy6+NxwVqI8RAg4IPmWedMckdLYP6O6UpIaQfvyyXG012+e79/ZfHukoS1ISMT2hGTB1RkUmNgQ5QZ0w+a2VWDq73MbdEWmfnnv6UWe7oNzPaLapl5CwuLTXK9WUGBuCjqekzhP+z52ZXOrKMD3OJg0Hh778aiOuvpnYvp05d6GJO4iAO4QAe/eV36/X5LFRV4Zmn+AdkqlL8Vjp3oVioOz+WTPzzYEgsN+fgPLYyJVheSbPPVl2ikeGZRjtG52/8rHuaV9VOlpP2OtKyVndcRVCSqOhsvxa4vW359i6OuKdD+aP8Q4SYPdOzS/flGjt1JUSaMqZ5nwa1Y8qWb/Ud/eZZkHisYezEM0m+fcelDr8F1SqW2LNK6r1jXQwyLzy1hxvrLXZulry7ocL+FS6G4QIu3fG/Px1gdYeW7LIgXU2P/115TOA5G7e3Rmj2aS/m7l5pThiZzrCcE/d1XHzbln373nw7y6veeoUm5KCNKT/IPPwbiY1hYd/l5MIT65BMFt87sU4v9D7/JMflr44uV6hGh1+L4RCkg6z5iK2tAhNLeLsNGwYA4fDYnC/drvuuFxe86NV/x+Ut27g0FvykgAAAABJRU5ErkJggg==",
+        "Category": null, "Tags": null, "is_builtin": true, "package": "promptflow-tools",
+        "package_version": "0.0.216", "default_prompt": null, "enable_kwargs": false,
+        "deprecated_tools": null, "tool_state": "stable"}, {"Name": "OpenAI GPT-4V",
+        "Type": "custom_llm", "Inputs": {"connection": {"Name": null, "Type": ["OpenAIConnection"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "frequency_penalty": {"Name": null, "Type": ["double"], "Default":
+        0, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "max_tokens": {"Name": null, "Type": ["int"], "Default": "", "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "model": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": ["gpt-4-vision-preview"], "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": true, "is_multi_select":
+        false, "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "presence_penalty": {"Name": null, "Type": ["double"], "Default": 0,
+        "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "stop": {"Name": null, "Type": ["list"], "Default": "", "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "temperature": {"Name": null, "Type":
+        ["double"], "Default": 1, "Description": null, "Enum": null, "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false, "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "top_p": {"Name": null, "Type": ["double"], "Default": 1, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}}, "Outputs": null, "Description": "Use
+        OpenAI GPT-4V to leverage vision ability.", "connection_type": null, "Module":
+        "promptflow.tools.openai_gpt4v", "class_name": "OpenAI", "Source": null, "LkgCode":
+        null, "Code": null, "Function": "chat", "action_type": null, "provider_config":
+        null, "function_config": null, "Icon": null, "Category": null, "Tags": null,
+        "is_builtin": true, "package": "promptflow-tools", "package_version": "0.0.216",
+        "default_prompt": "# system:\nAs an AI assistant, your task involves interpreting
+        images and responding to questions about the image.\nRemember to provide accurate
+        answers based on the information present in the image.\n\n# user:\nCan you
+        tell me what the image depicts?\n![image]({{image_input}})\n", "enable_kwargs":
+        false, "deprecated_tools": null, "tool_state": "stable"}, {"Name": "Serp API",
+        "Type": "python", "Inputs": {"connection": {"Name": null, "Type": ["SerpConnection"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "engine": {"Name": null, "Type": ["string"], "Default": "google", "Description":
+        null, "Enum": ["google", "bing"], "enabled_by": null, "enabled_by_type": null,
+        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
+        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
+        null, "input_type": "default", "advanced": null, "ui_hints": null}, "location":
+        {"Name": null, "Type": ["string"], "Default": "", "Description": null, "Enum":
+        null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null,
+        "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "num": {"Name": null, "Type": ["int"],
+        "Default": "10", "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "query": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "safe": {"Name": null, "Type": ["string"],
+        "Default": "off", "Description": null, "Enum": ["active", "off"], "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false, "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}}, "Outputs": null, "Description": "Use Serp API to obtain search results
+        from a specific search engine.", "connection_type": null, "Module": "promptflow.tools.serpapi",
+        "class_name": "SerpAPI", "Source": null, "LkgCode": null, "Code": null, "Function":
+        "search", "action_type": null, "provider_config": null, "function_config":
+        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
+        "promptflow-tools", "package_version": "0.0.216", "default_prompt": null,
+        "enable_kwargs": false, "deprecated_tools": null, "tool_state": "stable"},
+        {"Name": "Faiss Index Lookup", "Type": "python", "Inputs": {"path": {"Name":
+        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
+        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false, "generated_by": null, "input_type": "default", "advanced":
+        null, "ui_hints": null}, "top_k": {"Name": null, "Type": ["int"], "Default":
+        "3", "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "vector": {"Name": null, "Type": ["list"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}}, "Outputs": null, "Description": "Search
+        vector based query from the FAISS index file.", "connection_type": null, "Module":
+        "promptflow_vectordb.tool.faiss_index_lookup", "class_name": "FaissIndexLookup",
+        "Source": null, "LkgCode": null, "Code": null, "Function": "search", "action_type":
+        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
+        null, "Tags": null, "is_builtin": true, "package": "promptflow-vectordb",
+        "package_version": "0.0.1", "default_prompt": null, "enable_kwargs": false,
+        "deprecated_tools": null, "tool_state": "stable"}, {"Name": "Vector DB Lookup",
+        "Type": "python", "Inputs": {"class_name": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": "connection",
+        "enabled_by_type": ["WeaviateConnection"], "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false, "generated_by": null, "input_type": "default", "advanced":
+        null, "ui_hints": null}, "collection_name": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": "connection",
+        "enabled_by_type": ["QdrantConnection"], "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false, "generated_by": null, "input_type": "default", "advanced":
+        null, "ui_hints": null}, "connection": {"Name": null, "Type": ["CognitiveSearchConnection",
+        "QdrantConnection", "WeaviateConnection"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "index_name": {"Name": null, "Type":
+        ["string"], "Default": null, "Description": null, "Enum": null, "enabled_by":
+        "connection", "enabled_by_type": ["CognitiveSearchConnection"], "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "search_filters": {"Name": null, "Type":
+        ["object"], "Default": null, "Description": null, "Enum": null, "enabled_by":
+        "connection", "enabled_by_type": ["CognitiveSearchConnection", "QdrantConnection"],
+        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
+        null, "allow_manual_entry": false, "is_multi_select": false, "generated_by":
+        null, "input_type": "default", "advanced": null, "ui_hints": null}, "search_params":
+        {"Name": null, "Type": ["object"], "Default": null, "Description": null, "Enum":
+        null, "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection",
+        "QdrantConnection"], "enabled_by_value": null, "model_list": null, "Capabilities":
+        null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false, "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "text_field": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection",
+        "QdrantConnection", "WeaviateConnection"], "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false, "generated_by": null, "input_type": "default", "advanced":
+        null, "ui_hints": null}, "top_k": {"Name": null, "Type": ["int"], "Default":
+        "3", "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "vector": {"Name": null, "Type": ["list"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "vector_field": {"Name": null, "Type":
+        ["string"], "Default": null, "Description": null, "Enum": null, "enabled_by":
+        "connection", "enabled_by_type": ["CognitiveSearchConnection"], "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}}, "Outputs": null, "Description": "Search
+        vector based query from existing Vector Database.", "connection_type": null,
+        "Module": "promptflow_vectordb.tool.vector_db_lookup", "class_name": "VectorDBLookup",
+        "Source": null, "LkgCode": null, "Code": null, "Function": "search", "action_type":
+        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
+        null, "Tags": null, "is_builtin": true, "package": "promptflow-vectordb",
+        "package_version": "0.0.1", "default_prompt": null, "enable_kwargs": false,
+        "deprecated_tools": null, "tool_state": "stable"}, {"Name": "Vector Index
+        Lookup", "Type": "python", "Inputs": {"path": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}, "query": {"Name": null, "Type": ["object"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false, "generated_by": null, "input_type": "default",
+        "advanced": null, "ui_hints": null}, "top_k": {"Name": null, "Type": ["int"],
+        "Default": "3", "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false,
+        "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}}, "Outputs": null, "Description": "Search text or vector based query
+        from AzureML Vector Index.", "connection_type": null, "Module": "promptflow_vectordb.tool.vector_index_lookup",
+        "class_name": "VectorIndexLookup", "Source": null, "LkgCode": null, "Code":
+        null, "Function": "search", "action_type": null, "provider_config": null,
+        "function_config": null, "Icon": null, "Category": null, "Tags": null, "is_builtin":
+        true, "package": "promptflow-vectordb", "package_version": "0.0.1", "default_prompt":
+        null, "enable_kwargs": false, "deprecated_tools": null, "tool_state": "stable"},
+        {"Name": "print_input.py", "Type": "python", "Inputs": {"text": {"Name": null,
+        "Type": ["string"], "Default": null, "Description": null, "Enum": null, "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false, "generated_by": null, "input_type": "default", "advanced": null, "ui_hints":
+        null}}, "Outputs": null, "Description": null, "connection_type": null, "Module":
+        null, "class_name": null, "Source": "print_input.py", "LkgCode": null, "Code":
+        null, "Function": "print_inputs", "action_type": null, "provider_config":
+        null, "function_config": null, "Icon": null, "Category": null, "Tags": null,
+        "is_builtin": false, "package": null, "package_version": null, "default_prompt":
+        null, "enable_kwargs": false, "deprecated_tools": null, "tool_state": "stable"}],
+        "Codes": null, "Inputs": {"text": {"name": null, "type": "string", "default":
+        null, "description": null, "is_chat_input": false, "is_chat_history": null}},
+        "Outputs": {"output_text": {"name": null, "type": "string", "description":
+        null, "reference": "${print_input.output}", "evaluation_only": false, "is_chat_output":
+        false}}}, "jobSpecification": null, "systemSettings": null}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '47061'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.067'
+    status:
+      code: 200
+      message: OK
+version: 1

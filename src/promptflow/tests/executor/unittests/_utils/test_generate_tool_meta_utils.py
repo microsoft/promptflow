@@ -13,7 +13,6 @@ from promptflow._core.tool_meta_generator import (
     NoToolDefined,
     PythonLoadError,
     PythonParsingError,
-    ReservedVariableCannotBeUsed,
     generate_prompt_meta,
     generate_python_meta,
     generate_tool_meta_dict_by_file,
@@ -215,13 +214,6 @@ class TestToolMetaUtils:
                 "'endfor' or 'else'. The innermost block that needs to be closed is 'for'.",
                 id="JinjaParsingError_File",
             ),
-            pytest.param(
-                "{{max_tokens}}",
-                ReservedVariableCannotBeUsed,
-                "Generate tool meta failed for llm tool. Jinja parsing failed: "
-                "Variable name 'max_tokens' is a reserved name by llm tools, please change to another name.",
-                id="ReservedVariableCannotBeUsed",
-            ),
         ],
     )
     def test_custom_llm_meta(self, content, error_code, message) -> None:
@@ -251,13 +243,6 @@ class TestToolMetaUtils:
                 "(TemplateSyntaxError) Unexpected end of template. Jinja was looking for the following tags: "
                 "'endfor' or 'else'. The innermost block that needs to be closed is 'for'.",
                 id="JinjaParsingError_File",
-            ),
-            pytest.param(
-                "{{template}}",  # Note that only template is reserved, while llm tool has more reserved variables.
-                ReservedVariableCannotBeUsed,
-                "Generate tool meta failed for prompt tool. Jinja parsing failed: "
-                "Variable name 'template' is a reserved name by prompt tools, please change to another name.",
-                id="ReservedVariableCannotBeUsed",
             ),
         ],
     )

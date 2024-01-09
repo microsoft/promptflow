@@ -1,0 +1,72 @@
+inputs:
+  url:
+    type: string
+    default: https://play.google.com/store/apps/details?id=com.twitter.android
+    is_chat_input: false
+outputs:
+  category:
+    type: string
+    reference: ${convert_to_dict.output.category}
+    evaluation_only: false
+    is_chat_output: false
+  evidence:
+    type: string
+    reference: ${convert_to_dict.output.evidence}
+    evaluation_only: false
+    is_chat_output: false
+nodes:
+- name: fetch_text_content_from_url
+  type: python
+  source:
+    type: code
+    path: fetch_text_content_from_url.py
+  inputs:
+    url: "${inputs.url}"
+  aggregation: false
+- name: prepare_examples
+  type: python
+  source:
+    type: code
+    path: prepare_examples.py
+  inputs: {}
+  aggregation: false
+- name: classify_with_llm
+  type: llm
+  source:
+    type: code
+    path: classify_with_llm.jinja2
+  inputs:
+    deployment_name: "gpt-35-turbo"
+    model: "gpt-3.5-turbo"
+    max_tokens: 128
+    temperature: 0.2
+    url: "${inputs.url}"
+    text_content: "${summarize_text_content.output}"
+    examples: "${prepare_examples.output}"
+  api: chat
+  connection: open_ai_connection
+  aggregation: false
+- name: convert_to_dict
+  type: python
+  source:
+    type: code
+    path: convert_to_dict.py
+  inputs:
+    input_str: "${classify_with_llm.output}"
+  aggregation: false
+- name: summarize_text_content
+  type: llm
+  source:
+    type: code
+    path: summarize_text_content.jinja2
+  inputs:
+    deployment_name: "gpt-35-turbo"
+    model: "gpt-3.5-turbo"
+    max_tokens: 128
+    temperature: 0.2
+    text: "${fetch_text_content_from_url.output}"
+  api: chat
+  connection: open_ai_connection
+  aggregation: false
+environment:
+  python_requirements_txt: requirements.txt

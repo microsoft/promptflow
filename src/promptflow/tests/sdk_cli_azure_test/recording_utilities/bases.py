@@ -26,12 +26,27 @@ from .processors import (
     StorageProcessor,
     UserInfoProcessor,
 )
-from .utils import is_json_payload_request, is_live, is_record, is_replay, sanitize_pfs_body, sanitize_upload_hash
+from .utils import (
+    is_httpx_response,
+    is_json_payload_request,
+    is_live,
+    is_record,
+    is_replay,
+    sanitize_pfs_request_body,
+    sanitize_upload_hash,
+)
 from .variable_recorder import VariableRecorder
 
 
 class PFAzureIntegrationTestRecording:
-    def __init__(self, test_class, test_func_name: str, user_object_id: str, tenant_id: str):
+    def __init__(
+        self,
+        test_class,
+        test_func_name: str,
+        user_object_id: str,
+        tenant_id: str,
+        variable_recorder: VariableRecorder,
+    ):
         self.test_class = test_class
         self.test_func_name = test_func_name
         self.user_object_id = user_object_id
@@ -41,20 +56,26 @@ class PFAzureIntegrationTestRecording:
         self.vcr = self._init_vcr()
         self._cm = None  # context manager from VCR
         self.cassette = None
-        self.variable_recorder = VariableRecorder()
+        self.variable_recorder = variable_recorder
 
     @staticmethod
     def from_test_case(test_class, test_func_name: str, **kwargs) -> "PFAzureIntegrationTestRecording":
         test_class_name = test_class.__name__
-        user_object_id = kwargs.get("user_object_id", "")
-        tenant_id = kwargs.get("tenant_id", "")
         if test_class_name in TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING:
             return PFAzureRunIntegrationTestRecording(
-                test_class, test_func_name, user_object_id=user_object_id, tenant_id=tenant_id
+                test_class=test_class,
+                test_func_name=test_func_name,
+                user_object_id=kwargs["user_object_id"],
+                tenant_id=kwargs["tenant_id"],
+                variable_recorder=kwargs["variable_recorder"],
             )
         else:
             return PFAzureIntegrationTestRecording(
-                test_class, test_func_name, user_object_id=user_object_id, tenant_id=tenant_id
+                test_class=test_class,
+                test_func_name=test_func_name,
+                user_object_id=kwargs["user_object_id"],
+                tenant_id=kwargs["tenant_id"],
+                variable_recorder=kwargs["variable_recorder"],
             )
 
     def _get_recording_file(self) -> Path:
@@ -119,7 +140,17 @@ class PFAzureIntegrationTestRecording:
         if is_live():
             return response
 
-        response["body"]["string"] = response["body"]["string"].decode("utf-8")
+        # httpx and non-httpx responses have different structure
+        # non-httpx has .body.string, while httpx has .content
+        # in our sanitizers (processors) logic, we only handle .body.string
+        # so make httpx align non-httpx for less code change
+        is_httpx = is_httpx_response(response)
+        if is_httpx:
+            body_string = response.pop("content")
+            response["body"] = {"string": body_string}
+        else:
+            response["body"]["string"] = response["body"]["string"].decode("utf-8")
+
         if is_record():
             # lower and filter some headers
             headers = {}
@@ -131,7 +162,21 @@ class PFAzureIntegrationTestRecording:
             for processor in self.recording_processors:
                 response = processor.process_response(response)
 
-        response["body"]["string"] = response["body"]["string"].encode("utf-8")
+        if is_httpx:
+            response["content"] = response["body"]["string"]
+            if not is_replay():
+                response.pop("body")
+                if isinstance(response["content"], bytes):
+                    response["content"] = response["content"].decode("utf-8")
+            else:
+                # vcrpy does not handle well with httpx, so we need some transformations
+                # otherwise, replay tests will break during init VCR response instance
+                response["status"] = {"code": response["status_code"], "message": ""}
+                if isinstance(response["body"]["string"], str):
+                    response["body"]["string"] = response["body"]["string"].encode("utf-8")
+        else:
+            response["body"]["string"] = response["body"]["string"].encode("utf-8")
+
         return response
 
     def _get_recording_processors(self) -> List[RecordingProcessor]:
@@ -147,13 +192,6 @@ class PFAzureIntegrationTestRecording:
             StorageProcessor(),
             UserInfoProcessor(user_object_id=self.user_object_id, tenant_id=self.tenant_id),
         ]
-
-    def get_or_record_variable(self, variable: str, default: str) -> str:
-        if not is_replay():
-            return self.variable_recorder.get_or_record_variable(variable, default)
-        else:
-            # return variable when playback, which is expected to be sanitized
-            return variable
 
     def _postprocess_recording(self) -> None:
         self._apply_replacement_for_recordings()
@@ -230,6 +268,17 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         return
 
     def _custom_request_path_matcher(self, r1: Request, r2: Request) -> bool:
+        # NOTE: orders of below conditions matter, please modify with caution
+        # in run download scenario, observed below wired path: https://<xxx>/https://<yyy>/<remaining>
+        # as we don't have append/replace logic, it might result from Azure blob client,
+        # which is hard to patch; therefore, hack this in matcher (here)
+        # https:// should appear in path, so it's safe to use this as a condition
+        if "https://" in r1.path:
+            _path = str(r1.path)
+            endpoint = ".blob.core.windows.net/"
+            duplicate_path = _path[_path.index(endpoint) + len(endpoint) :]
+            path_for_compare = _path[: _path.index("https://")] + duplicate_path[duplicate_path.index("/") + 1 :]
+            return path_for_compare == r2.path
         # for blob storage request, sanitize the upload hash in path
         if r1.host == r2.host and r1.host == SanitizedValues.BLOB_STORAGE_REQUEST_HOST:
             return sanitize_upload_hash(r1.path) == r2.path
@@ -242,7 +291,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
             # otherwise it will be sanitized multiple times with many zeros
             _r1 = copy.deepcopy(r1)
             body1 = _r1.body.decode("utf-8")
-            body1 = sanitize_pfs_body(body1)
+            body1 = sanitize_pfs_request_body(body1)
             body1 = sanitize_upload_hash(body1)
             _r1.body = body1.encode("utf-8")
             return matchers.body(_r1, r2)
