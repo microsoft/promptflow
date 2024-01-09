@@ -380,7 +380,6 @@ class TestTool:
         def my_tool(input_text: list, input_prefix: str) -> str:
             return f"Hello {input_prefix} {','.join(input_text)}"
 
-
         tool_operation = ToolOperations()
         tool_obj, input_settings, extra_info = tool_operation._parse_tool_from_func(my_tool)
         construct_tool, validate_result = tool_operation._serialize_tool(tool_obj, input_settings, extra_info, my_tool)
