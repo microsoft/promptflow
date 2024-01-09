@@ -119,7 +119,6 @@ class TestRun:
     @pytest.mark.parametrize(
         "source, error_msg",
         [
-            (f"{RUNS_DIR}/illegal/extra_field.yaml", "Unknown field"),
             (f"{RUNS_DIR}/illegal/non_exist_data.yaml", "Can't find directory or file"),
         ],
     )
@@ -217,3 +216,9 @@ class TestRun:
         # assert non english in memory
         outputs = local_storage.load_outputs()
         assert outputs == {"output": ["Hello 123 日本語", "World 123 日本語"]}
+
+    @pytest.mark.usefixtures("enable_logger_propagate")
+    def test_flow_run_with_unknown_field(self, caplog):
+        run_yaml = Path(RUNS_DIR) / "sample_bulk_run.yaml"
+        load_run(source=run_yaml, params_override=[{"unknown_field": "unknown_value"}])
+        assert "Unknown fields found" in caplog.text

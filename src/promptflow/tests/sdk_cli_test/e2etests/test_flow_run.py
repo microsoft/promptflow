@@ -26,7 +26,7 @@ from promptflow._sdk._errors import (
     RunExistsError,
     RunNotFoundError,
 )
-from promptflow._sdk._load_functions import load_flow, load_run
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
@@ -240,6 +240,13 @@ class TestFlowRun:
             params_override=[{"run": run_id}],
         )
         assert local_client.runs.get(eval_run.name).status == "Completed"
+
+    @pytest.mark.usefixtures("enable_logger_propagate")
+    def test_submit_run_with_extra_params(self, pf, caplog):
+        run_id = str(uuid.uuid4())
+        run = create_yaml_run(source=f"{RUNS_DIR}/extra_field.yaml", params_override=[{"name": run_id}])
+        assert pf.runs.get(run.name).status == "Completed"
+        assert "Run schema validation warnings. Unknown fields found" in caplog.text
 
     def test_run_with_connection(self, local_client, local_aoai_connection, pf):
         # remove connection file to test connection resolving
@@ -1145,9 +1152,3 @@ class TestFlowRun:
         assert first_line_run_output["nan"] == "NaN"
         assert isinstance(first_line_run_output["inf"], str)
         assert first_line_run_output["inf"] == "Infinity"
-
-    @pytest.mark.usefixtures("enable_logger_propagate")
-    def test_flow_run_with_unknown_field(self, caplog):
-        run_yaml = Path(RUNS_DIR) / "sample_bulk_run.yaml"
-        load_run(source=run_yaml, params_override=[{"unknown_field": "unknown_value"}])
-        assert "Unknown fields found" in caplog.text
