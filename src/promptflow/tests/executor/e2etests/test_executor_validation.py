@@ -19,6 +19,7 @@ from promptflow.executor._errors import (
     InputNotFound,
     InputReferenceNotFound,
     InputTypeError,
+    InvalidConnectionType,
     InvalidSource,
     NodeCircularDependency,
     NodeInputValidationError,
@@ -37,6 +38,16 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, yml_file, error_class, inner_class, error_msg",
         [
+            (
+                "flow_llm_with_wrong_conn",
+                "flow.dag.yaml",
+                ResolveToolError,
+                InvalidConnectionType,
+                (
+                    "Tool load failed in 'wrong_llm': "
+                    "(InvalidConnectionType) Connection type CustomConnection is not supported for LLM."
+                )
+            ),
             (
                 "nodes_names_duplicated",
                 "flow.dag.yaml",
