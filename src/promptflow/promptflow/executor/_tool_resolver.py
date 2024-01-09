@@ -276,7 +276,13 @@ class ToolResolver():
             if not connection_type_to_api_mapping:
                 raise EmptyLLMApiMapping()
             # If provider is not specified, try to resolve it from connection type
-            node.provider = connection_type_to_api_mapping.get(type(connection).__name__)
+            connection_type = type(connection).__name__
+            if connection_type not in connection_type_to_api_mapping:
+                raise InvalidConnectionType(
+                    message_format="Connection type {conn_type} is not supported for LLM.",
+                    conn_type=connection_type,
+                )
+            node.provider = connection_type_to_api_mapping[connection_type]
         tool: Tool = self._tool_loader.load_tool_for_llm_node(node)
         key, connection = self._resolve_llm_connection_to_inputs(node, tool)
         updated_node = copy.deepcopy(node)

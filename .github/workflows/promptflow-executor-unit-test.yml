@@ -146,7 +146,11 @@ jobs:
     name: "Publish Tests Results"
     needs: executor_unit_tests
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
     if: always()
 
     steps:
