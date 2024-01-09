@@ -14,11 +14,11 @@ from promptflow.executor.flow_executor import FlowExecutor
 
 @dataclass
 class ProcessInfo:
-    index: int = None
-    process_id: str = None
-    process_name: str = None
-    input_queue: Queue = None
-    output_queue: Queue = None
+    index: int
+    process_id: str
+    process_name: str
+    input_queue: Queue
+    output_queue: Queue
 
 
 class ProcessControlSignal(str, Enum):
@@ -143,7 +143,13 @@ class SpawnProcessManager(AbstractProcessManager):
 
         process.start()
         try:
-            self._process_info[i] = ProcessInfo(process_id=process.pid, process_name=process.name)
+            self._process_info[i] = ProcessInfo(
+                index=i,
+                process_id=process.pid,
+                process_name=process.name,
+                input_queue=self._input_queues[i],
+                output_queue=self._output_queues[i]
+            )
         except Exception as e:
             bulk_logger.info(
                 f"Unable to access shared dictionary 'process_info', possibly "
@@ -319,7 +325,13 @@ class SpawnedForkProcessManager(AbstractProcessManager):
         )
         process.start()
         try:
-            self._process_info[i] = ProcessInfo(process_id=process.pid, process_name=process.name)
+            self._process_info[i] = ProcessInfo(
+                index=i,
+                process_id=process.pid,
+                process_name=process.name,
+                input_queue=self._input_queues[i],
+                output_queue=self._output_queues[i]
+            )
         except Exception as e:
             bulk_logger.info(
                 f"Unable to access shared dictionary 'process_info', possibly "
