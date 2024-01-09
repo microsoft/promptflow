@@ -21,22 +21,26 @@ from ...mock_execution_server import _get_line_result_dict
 @pytest.mark.unittest
 class TestAPIBasedExecutorProxy:
     @pytest.mark.asyncio
-    async def test_exec_line_async_no_error(self):
+    @pytest.mark.parametrize(
+        "has_error",
+        [False, True],
+    )
+    async def test_exec_line_async(self, has_error):
         mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
         run_id = "test_run_id"
         index = 1
         inputs = {"question": "test"}
         with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock:
-            line_result_dict = _get_line_result_dict(run_id, index, inputs)
-            mock.return_value = httpx.Response(200, json=line_result_dict)
+            line_result_dict = _get_line_result_dict(run_id, index, inputs, has_error=has_error)
+            status_code = 400 if has_error else 200
+            mock.return_value = httpx.Response(status_code, json=line_result_dict)
             line_result = await mock_executor_proxy.exec_line_async(inputs, index, run_id)
-            assert line_result.output == {"answer": "Hello world!"}
+            assert line_result.output == {} if has_error else {"answer": "Hello world!"}
             assert line_result.run_info.run_id == run_id
             assert line_result.run_info.index == index
-            assert line_result.run_info.status == Status.Completed
+            assert line_result.run_info.status == Status.Failed if has_error else Status.Completed
             assert line_result.run_info.inputs == inputs
-            assert line_result.run_info.output == {"answer": "Hello world!"}
-            assert line_result.run_info.error is None
+            assert (line_result.run_info.error is not None) == has_error
 
     @pytest.mark.asyncio
     async def test_ensure_executor_startup_when_no_error(self):
