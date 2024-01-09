@@ -38,11 +38,14 @@ class ExperimentOrchestrator:
         experiment.last_end_time = None
         self.experiment_operations.create_or_update(experiment)
 
+        # Ensure nodes order
+        resolved_nodes = self._ensure_nodes_order(experiment.nodes)
+
         # Run nodes
         data_dict = {data.get("name", None): data for data in experiment.data}
         run_dict = {}
         try:
-            for node in experiment.nodes:
+            for node in resolved_nodes:
                 logger.debug(f"Running node {node.name}.")
                 run = self._run_node(node, experiment, data_dict, run_dict)
                 # Update node run to experiment
@@ -57,6 +60,40 @@ class ExperimentOrchestrator:
             experiment.status = ExperimentStatus.TERMINATED
             experiment.last_end_time = datetime.utcnow().isoformat()
             return self.experiment_operations.create_or_update(experiment)
+
+    def _ensure_nodes_order(self, nodes):
+        # Perform topological sort to ensure nodes order
+        resolved_nodes = []
+
+        def _prepare_edges(node):
+            node_names = set()
+            for input_value in node.inputs.values():
+                if input_value.startswith("${") and not input_value.startswith("${data."):
+                    referenced_node_name = input_value.split(".")[0].replace("${", "")
+                    node_names.add(referenced_node_name)
+            return node_names
+
+        edges = {node.name: _prepare_edges(node) for node in nodes}
+        logger.debug(f"Experiment nodes edges: {edges!r}")
+
+        while len(resolved_nodes) != len(nodes):
+            action = False
+            for node in nodes:
+                if node.name not in edges:
+                    continue
+                if len(edges[node.name]) != 0:
+                    continue
+                action = True
+                resolved_nodes.append(node)
+                del edges[node.name]
+                for referenced_nodes in edges.values():
+                    referenced_nodes.discard(node.name)
+                break
+            if not action:
+                raise UserErrorException(f"Experiment has circular dependency {edges!r}")
+
+        logger.debug(f"Experiment nodes resolved order: {[node.name for node in resolved_nodes]}")
+        return resolved_nodes
 
     def _run_node(self, node, experiment, data_dict, run_dict) -> Run:
         if node.type == ExperimentNodeType.FLOW:
