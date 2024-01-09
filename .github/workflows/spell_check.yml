@@ -7,7 +7,8 @@ on:
   pull_request:
     branches:
       - main
-
+permissions:
+  contents: read
 jobs:
   Spell_Check:
     runs-on: ubuntu-latest
@@ -28,9 +29,9 @@ jobs:
         run: |-
           cspell lint "**" > cspell_check.log || true
           if [ -s cspell_check.log ]; then
-            echo -e "\e[91mNote: If the detected words are expected, add them into ".cspell.json" which is at the repo root folder.\e[0m" 
+            echo -e "\e[91mNote: If the detected words are expected, add them into ".cspell.json" which is at the repo root folder.\e[0m"
             echo -e "====================== Summary of cspell errors ======================"
-            echo -e "\e[31m$(cat cspell_check.log)\e[0m" 
+            echo -e "\e[31m$(cat cspell_check.log)\e[0m"
             exit 1
           fi
-          
+

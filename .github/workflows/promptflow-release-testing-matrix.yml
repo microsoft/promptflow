@@ -16,6 +16,8 @@ env:
   testWorkingDirectory: src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+permissions:
+  contents: read
 jobs:
   id:
     runs-on: ubuntu-latest

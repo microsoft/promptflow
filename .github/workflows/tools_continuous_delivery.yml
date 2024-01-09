@@ -15,7 +15,8 @@ on:
         required: true
         default: 'main'
         type: string
-
+permissions:
+  contents: read
 jobs:
   main_branch_release:
     if: github.event_name == 'push'
@@ -27,7 +28,7 @@ jobs:
       SourceFolderName: "promptflow-tools"
       ConfigsFolderPath: "scripts/distributing/configs"
     secrets: inherit
-  
+
   non_main_branch_release:
     if: github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/wheel_distributing.yml

@@ -5,6 +5,8 @@ on:
       - src/promptflow-tools/**
       - '**tools_tests.yml'
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   authorize:
     environment:

@@ -26,7 +26,8 @@ on:
       PackageVersion:
         description: 'The version of the package'
         value: ${{ jobs.sdk_release.outputs.PackageVersion }}
-
+permissions:
+  contents: read
 jobs:
   sdk_release:
     runs-on: ubuntu-latest

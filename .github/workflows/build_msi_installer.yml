@@ -20,7 +20,8 @@ on:
         default: ""
         required: false
         description: 'Set the version of the private msi installer'
-
+permissions:
+  contents: read
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: src/promptflow
@@ -29,7 +30,6 @@ jobs:
   build_msi_installer:
     runs-on: windows-latest
     name: Build Windows MSI
-
     steps:
       - name: Check input parameters
         run: |
@@ -81,7 +81,7 @@ jobs:
             if ($version -ne $run_version) {
               throw "Version input does not match the version in promptflow package. Version input: $version, version in promptflow package: $run_version"
             }
-          } 
+          }
           elseif ($env:MSI_PRIVATE_VERSION) {
             $version=$env:MSI_PRIVATE_VERSION
           }
@@ -156,7 +156,7 @@ jobs:
               "promptflow" = $version
             } | ConvertTo-Json -Depth 100
             $jsonContent | Out-File -FilePath latest_version.json -Encoding UTF8
-            
+
             Write-Output "Created latest_version.json with version: $version"
             az storage blob upload --account-name promptflowartifact --container-name msi-installer --file "latest_version.json" --name "latest_version.json" --overwrite
           } else {

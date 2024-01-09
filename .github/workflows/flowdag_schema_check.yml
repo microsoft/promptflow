@@ -8,10 +8,11 @@ on:
       - scripts/readme/schema_checker.py
 env:
   IS_IN_CI_PIPELINE: "true"
+permissions:
+  contents: read
 jobs:
   examples_flowdag_schema_check:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
       - run: env | sort >> $GITHUB_OUTPUT

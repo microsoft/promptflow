@@ -14,7 +14,8 @@ on:
 
 env:
   IS_IN_CI_PIPELINE: "true"
-
+permissions:
+  contents: read
 jobs:
   samples_flows_chat_chat_math_variant:
     runs-on: ubuntu-latest

@@ -2,7 +2,8 @@ name: Update CI runtime
 
 on:
   workflow_dispatch:
-
+permissions:
+  contents: read
 jobs:
   update_runtime:
     runs-on: ubuntu-latest

@@ -14,7 +14,8 @@ on:
 
 env:
   IS_IN_CI_PIPELINE: "true"
-
+permissions:
+  contents: read
 jobs:
   samples_flows_standard_flow_with_additional_includes:
     runs-on: ubuntu-latest

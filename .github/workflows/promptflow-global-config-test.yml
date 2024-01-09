@@ -13,6 +13,8 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+permissions:
+  contents: read
 jobs:
   authorize:
     environment:
@@ -95,7 +97,11 @@ jobs:
     name: "Publish Tests Results"
     needs: sdk_cli_global_config_tests
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
     if: always()
 
     steps:

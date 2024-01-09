@@ -14,7 +14,8 @@ on:
 
 env:
   IS_IN_CI_PIPELINE: "true"
-
+permissions:
+  contents: read
 jobs:
   samples_tutorials_flow_deploy_azure_app_service:
     runs-on: ubuntu-latest

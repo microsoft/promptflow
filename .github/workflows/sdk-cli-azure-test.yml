@@ -22,7 +22,8 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
-
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -134,7 +135,11 @@ jobs:
     name: "Publish Tests Results"
     needs: sdk_cli_azure_test
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
     if: always()
 
     steps:
