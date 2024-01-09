@@ -57,34 +57,15 @@ def recording_injection_decorator_compatible_with_spawn(mock_class):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Store the original Process classes for each context
-            original_process_classes = {}
-            start_methods = ["fork", "spawn", "forkserver"]
-            for method in start_methods:
-                try:
-                    ctx = multiprocessing.get_context(method)
-                    original_process_classes[method] = ctx.Process
-                    ctx.Process = mock_class
-                except ValueError:
-                    pass  # Method not available on this platform
-
-            # Set the Process class in the default context
-            original_default_process_class = multiprocessing.Process
+            original_process_class = multiprocessing.get_context("spawn").Process
+            multiprocessing.get_context("spawn").Process = mock_class
             multiprocessing.Process = mock_class
-
             try:
                 with apply_recording_injection_if_enabled():
                     return func(*args, **kwargs)
             finally:
-                # Restore the original Process classes
-                for method, original_class in original_process_classes.items():
-                    try:
-                        ctx = multiprocessing.get_context(method)
-                        ctx.Process = original_class
-                    except ValueError:
-                        pass
-
-                multiprocessing.Process = original_default_process_class
+                multiprocessing.get_context("spawn").Process = original_process_class
+                multiprocessing.Process = original_process_class
 
         return wrapper
 
