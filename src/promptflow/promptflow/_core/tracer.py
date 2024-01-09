@@ -221,41 +221,43 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
 
         @functools.wraps(func)
         async def wrapped(*args, **kwargs):
-            if Tracer.active_instance() is None:
-                return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-            # Should not extract these codes to a separate function here.
-            # We directly call func instead of calling Tracer.invoke,
-            # because we want to avoid long stack trace when hitting an exception.
-            try:
-                trace = create_trace(func, args, kwargs)
-                Tracer.push(trace)
-                with tracer.start_as_current_span(func.__qualname__) as span:
-                    enrich_span_with_trace(span, trace)
+            trace = create_trace(func, args, kwargs)
+            with tracer.start_as_current_span(func.__qualname__) as span:
+                enrich_span_with_trace(span, trace)
+
+                if Tracer.active_instance() is None:
+                    return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push(trace)
                     output = await func(*args, **kwargs)
-                return Tracer.pop(output)
-            except Exception as e:
-                Tracer.pop(None, e)
-                raise
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
 
     else:
 
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            if Tracer.active_instance() is None:
-                return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
-            # Should not extract these codes to a separate function here.
-            # We directly call func instead of calling Tracer.invoke,
-            # because we want to avoid long stack trace when hitting an exception.
-            try:
-                trace = create_trace(func, args, kwargs)
-                Tracer.push(trace)
-                with tracer.start_as_current_span(func.__qualname__) as span:
-                    enrich_span_with_trace(span, trace)
+            trace = create_trace(func, args, kwargs)
+            with tracer.start_as_current_span(func.__qualname__) as span:
+                enrich_span_with_trace(span, trace)
+
+                if Tracer.active_instance() is None:
+                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
+                # Should not extract these codes to a separate function here.
+                # We directly call func instead of calling Tracer.invoke,
+                # because we want to avoid long stack trace when hitting an exception.
+                try:
+                    Tracer.push(trace)
                     output = func(*args, **kwargs)
-                return Tracer.pop(output)
-            except Exception as e:
-                Tracer.pop(None, e)
-                raise
+                    return Tracer.pop(output)
+                except Exception as e:
+                    Tracer.pop(None, e)
+                    raise
 
     wrapped.__original_function = func
     func.__wrapped_function = wrapped
