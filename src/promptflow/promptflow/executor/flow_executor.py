@@ -27,6 +27,7 @@ from promptflow._core.otel_tracer import get_otel_tracer, memory_exporter
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._core.tracer import _traced
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -646,7 +647,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs = apply_default_value_for_input(self._flow.inputs, inputs)
-        result = self._exec(inputs)
+        result = _traced(self._exec(inputs))
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
         return result.output or {}
@@ -708,17 +709,16 @@ class FlowExecutor:
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
-            with self._tracer.start_as_current_span(self._flow.name):
-                operation_context = OperationContext.get_instance()
-                operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
-                line_result = self._exec(
-                    inputs,
-                    run_id=run_id,
-                    line_number=index,
-                    variant_id=variant_id,
-                    validate_inputs=validate_inputs,
-                    allow_generator_output=allow_generator_output,
-                )
+            operation_context = OperationContext.get_instance()
+            operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
+            line_result = self._exec(
+                inputs,
+                run_id=run_id,
+                line_number=index,
+                variant_id=variant_id,
+                validate_inputs=validate_inputs,
+                allow_generator_output=allow_generator_output,
+            )
             self._run_tracker._trace = memory_exporter.spans()
             print("Traces:")
             print(json.dumps(self._run_tracker._trace, indent=4))
