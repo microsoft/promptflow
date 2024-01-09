@@ -38,6 +38,7 @@ class AsyncNodesScheduler:
         self._node_concurrency = node_concurrency
         self._task_start_time = {}
         self._task_last_log_time = {}
+        self._dag_manager_completed_event = threading.Event()
 
     async def execute(
         self,
@@ -57,7 +58,7 @@ class AsyncNodesScheduler:
         loop = asyncio.get_running_loop()
         monitor = threading.Thread(
             target=monitor_long_running_coroutine,
-            args=(loop, self._task_start_time, self._task_last_log_time),
+            args=(loop, self._task_start_time, self._task_last_log_time, self._dag_manager_completed_event),
             daemon=True,
         )
         monitor.start()
@@ -86,14 +87,13 @@ class AsyncNodesScheduler:
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
         flow_logger.info(f"Start to run {len(nodes)} nodes with the current event loop.")
-        global ASYNC_DAG_MANAGER_COMPLETED
         dag_manager = DAGManager(nodes, inputs)
         task2nodes = self._execute_nodes(dag_manager, context, executor)
         while not dag_manager.completed():
             task2nodes = await self._wait_and_complete_nodes(task2nodes, dag_manager)
             submitted_tasks2nodes = self._execute_nodes(dag_manager, context, executor)
             task2nodes.update(submitted_tasks2nodes)
-        ASYNC_DAG_MANAGER_COMPLETED = True
+        self._dag_manager_completed_event.set()
         for node in dag_manager.bypassed_nodes:
             dag_manager.completed_nodes_outputs[node] = None
         return dag_manager.completed_nodes_outputs, dag_manager.bypassed_nodes
@@ -204,8 +204,12 @@ def log_stack_recursively(task: asyncio.Task, elapse_time: float):
         task_or_coroutine = coroutine.cr_await
 
 
-def monitor_long_running_coroutine(loop: asyncio.AbstractEventLoop, task_start_time: dict, task_last_log_time: dict):
-    global ASYNC_DAG_MANAGER_COMPLETED
+def monitor_long_running_coroutine(
+    loop: asyncio.AbstractEventLoop,
+    task_start_time: dict,
+    task_last_log_time: dict,
+    dag_manager_completed_event: threading.Event,
+):
     logging_interval = DEFAULT_TASK_LOGGING_INTERVAL
     logging_level_in_env = os.environ.get("PF_TASK_PEEKING_INTERVAL")
     if logging_level_in_env:
@@ -224,7 +228,7 @@ def monitor_long_running_coroutine(loop: asyncio.AbstractEventLoop, task_start_t
                 f"is invalid, use default value {DEFAULT_TASK_LOGGING_INTERVAL}"
             )
     flow_logger.info("monitor_long_running_coroutine started")
-    while not ASYNC_DAG_MANAGER_COMPLETED:
+    while not dag_manager_completed_event.is_set():
         running_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
         # get duration of running tasks
         for task in running_tasks:
