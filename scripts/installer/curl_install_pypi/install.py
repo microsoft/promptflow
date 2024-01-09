@@ -25,6 +25,7 @@ from urllib.request import urlopen
 
 
 PF_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
+export PF_INSTALLER=Script
 {install_dir}/bin/python -m promptflow._cli._pf.entry "$@"
 """
 
