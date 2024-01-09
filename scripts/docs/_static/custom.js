@@ -52,19 +52,6 @@ if (window.location.pathname === "/promptflow/" || window.location.pathname === 
     document.body.style.backgroundSize = "100%";
     document.body.style.backgroundPositionY = "bottom";
     document.body.style.backgroundRepeat = "no-repeat"
-    if (dark) {
-      if (window.screen.width <= 1280){
-        document.body.style.backgroundImage = "url('_static/bg_dark_small.png')"
-      } else {
-        document.body.style.backgroundImage = "url('_static/bg_dark_large.png')"
-      }
-    } else {
-      if (window.screen.width <= 1280){
-        document.body.style.backgroundImage = "url('_static/bg_light_small.png')"
-      } else {
-        document.body.style.backgroundImage = "url('_static/bg_light_large.png')"
-      }
-    }
   })
   observer.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
 }

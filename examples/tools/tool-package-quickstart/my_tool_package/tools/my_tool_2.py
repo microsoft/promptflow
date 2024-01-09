@@ -11,7 +11,7 @@ class MyTool(ToolProvider):
         super().__init__()
         self.connection = connection
 
-    @tool
+    @tool(name="My Second Tool", description="This is my second tool")
     def my_tool(self, input_text: str) -> str:
         # Replace with your tool code.
         # Usually connection contains configs to connect to an API.

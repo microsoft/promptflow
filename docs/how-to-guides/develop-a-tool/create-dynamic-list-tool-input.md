@@ -1,4 +1,4 @@
-# Creating a Dynamic List Tool Input
+# Creating a dynamic list tool input
 
 Tool input options can be generated on the fly using a dynamic list. Instead of having predefined static options, the tool author defines a request function that queries backends like APIs to retrieve real-time options. This enables flexible integration with various data sources to populate dynamic options. For instance, the function could call a storage API to list current files. Rather than a hardcoded list, the user sees up-to-date options when running the tool.
 
@@ -60,53 +60,39 @@ def my_list_func(prefix: str = "", size: int = 10, **kwargs) -> List[Dict[str, U
 
 ### Configure a tool input with the list function
 
-In `inputs` section of tool YAML, add following properties to the input that you want to make dynamic:
+In `input_settings` section of tool, add following properties to the input that you want to make dynamic:
 
-- `dynamic_list`:
-  - `func_path`: Path to the list function (module_name.function_name).
-  - `func_kwargs`: Parameters to pass to the function, can reference other input values.
+- `DynamicList`:
+  - `function`: Path to the list function (module_name.function_name).
+  - `input_mapping`: Parameters to pass to the function, can reference other input values.
 - `allow_manual_entry`: Allow user to enter input value manually. Default to false.
 - `is_multi_select`: Allow user to select multiple values. Default to false.
 
-See [tool_with_dynamic_list_input.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_dynamic_list_input.yaml) as an example.
+See [tool_with_dynamic_list_input.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_dynamic_list_input.py) as an example.
 
-```yaml
-my_tool_package.tools.tool_with_dynamic_list_input.my_tool:
-  function: my_tool
-  inputs:
-    input_text:
-      type:
-      - list
-      dynamic_list:
-        func_path: my_tool_package.tools.tool_with_dynamic_list_input.my_list_func
-        func_kwargs: 
-        - name: prefix  # argument name to be passed to the function
-          type: 
-          - string
-          # if optional is not specified, default to false.
-          # this is for UX pre-validaton. If optional is false, but no input. UX can throw error in advanced.
-          optional: true
-          reference: ${inputs.input_prefix}  # dynamic reference to another input parameter
-        - name: size  # another argument name to be passed to the function
-          type: 
-          - int
-          optional: true
-          default: 10
-      # enum and dynamic list may need below setting.
-      # allow user to enter input value manually, default false.
-      allow_manual_entry: true
-      # allow user to select multiple values, default false.
-      is_multi_select: true
-    # used to filter 
-    input_prefix:
-      type:
-      - string
-  module: my_tool_package.tools.tool_with_dynamic_list_input
-  name: My Tool with Dynamic List Input
-  description: This is my tool with dynamic list input
-  type: python
+```python
+from promptflow._core.tool import tool
+from promptflow.entities import InputSetting, DynamicList
+
+
+dynamic_list_setting = DynamicList(function=my_list_func, input_mapping={"prefix": "input_prefix"})
+input_settings = {
+    "input_text": InputSetting(
+        dynamic_list=dynamic_list_setting,
+        allow_manual_entry=True,
+        is_multi_select=True
+    )
+}
+
+
+@tool(
+    name="My Tool with Dynamic List Input",
+    description="This is my tool with dynamic list input",
+    input_settings=input_settings
+)
+def my_tool(input_text: list, input_prefix: str) -> str:
+    return f"Hello {input_prefix} {','.join(input_text)}"
 ```
-
 ## Use the tool in VS Code
 
 Once you package and share your tool, you can use it in VS Code per the [tool package guide](create-and-use-tool-package.md#use-your-tool-from-vscode-extension). You could try `my-tools-package` for a quick test.

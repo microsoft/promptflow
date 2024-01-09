@@ -1,0 +1,8 @@
+- name: {{ step_name }}
+  working-directory: {{ working_dir }}
+  run: |
+    AOAI_API_KEY=${{ '{{' }} secrets.AOAI_GPT_4V_KEY }}
+    AOAI_API_ENDPOINT=${{ '{{' }} secrets.AOAI_GPT_4V_ENDPOINT }}
+    AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
+    cp ../../../connections/azure_openai.yml ./azure_openai.yml
+    sed -i -e "s/<user-input>/$AOAI_API_KEY/g" -e "s/aoai-api-endpoint/$AOAI_API_ENDPOINT/g" azure_openai.yml

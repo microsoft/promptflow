@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import logging
 
 from promptflow.contracts.flow import Flow, FlowInputDefinition, FlowOutputDefinition

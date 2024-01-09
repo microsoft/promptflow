@@ -68,8 +68,6 @@ After registered a flow as a component, they can be referred in a pipeline job l
 ## Directly use a flow in a pipeline job
 
 Besides explicitly registering a flow as a component, customer can also directly use flow in a pipeline job:
-- [CLI example](https://github.com/Azure/azureml-examples/tree/main/cli/jobs/pipelines-with-components/pipeline_job_with_flow_as_component)
-- [SDK example](https://github.com/Azure/azureml-examples/tree/main/sdk/python/jobs/pipelines/1l_flow_in_pipeline)
 
 All connections and flow inputs will be exposed as input parameters of the component. Default value can be provided in flow/run definition; they can also be set/overwrite on job submission:
 
@@ -90,6 +88,7 @@ jobs:
       connections.summarize_text_content.deployment_name: text-davinci-003
 ...
 ```
+Above is part of the pipeline job yaml, see here for [full example](https://github.com/Azure/azureml-examples/tree/main/cli/jobs/pipelines-with-components/pipeline_job_with_flow_as_component).
 
 :::
 
@@ -97,15 +96,18 @@ jobs:
 :sync: SDK
 
 ```python
-from azure.ai.ml import dsl
+from azure.identity import DefaultAzureCredential
+from azure.ai.ml import MLClient, load_component, Input
+from azure.ai.ml.dsl import pipeline
+ 
+credential = DefaultAzureCredential()
+ml_client = MLClient.from_config(credential=credential)
+data_input = Input(path="standard/web-classification/data.jsonl", type='uri_file')
 
-ml_client = MLClient()
-
-# Register flow as a component
+# Load flow as a component
 flow_component = load_component("standard/web-classification/flow.dag.yaml")
-data_input = Input(path="standard/web-classification/data.jsonl", type=AssetTypes.URI_FILE)
 
-@dsl.pipeline
+@pipeline
 def pipeline_func_with_flow(data):
     flow_node = flow_component(
         data=data,
@@ -121,8 +123,11 @@ def pipeline_func_with_flow(data):
 
 pipeline_with_flow = pipeline_func_with_flow(data=data_input)
 
-ml_client.jobs.create_or_update(pipeline_with_flow)
+pipeline_job = ml_client.jobs.create_or_update(pipeline_with_flow)
+ml_client.jobs.stream(pipeline_job.name)
 ```
+
+Above is part of the pipeline job python code, see here for [full example](https://github.com/Azure/azureml-examples/tree/main/sdk/python/jobs/pipelines/1l_flow_in_pipeline).
 
 :::
 

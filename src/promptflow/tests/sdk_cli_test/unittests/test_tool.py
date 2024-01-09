@@ -25,7 +25,7 @@ class TestTool:
         # Load the module's code
         spec.loader.exec_module(tool_module)
         # List meta data of tools
-        tool_meta = self.client._tools.generate_tool_meta(tool_module)
+        tool_meta = self.client.tools._generate_tool_meta(tool_module)
         return tool_meta
 
     def test_python_tool_meta(self):

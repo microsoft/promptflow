@@ -19,16 +19,16 @@ import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from promptflow._sdk._constants import LOGGER_NAME, CLIListOutputFormat
+from promptflow._sdk._constants import CLIListOutputFormat
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
 
-logger = LoggerFactory.get_logger(__name__)
+logger = get_cli_sdk_logger()
 
 
 def _set_workspace_argument_for_subparsers(subparser, required=False):
@@ -456,7 +456,6 @@ def _output_result_list_with_format(result_list: List[Dict], output_format: CLIL
     elif output_format == CLIListOutputFormat.JSON:
         print(json.dumps(result_list, indent=4))
     else:
-        logger = LoggerFactory.get_logger(LOGGER_NAME)
         warning_message = (
             f"Unknown output format {output_format!r}, accepted values are 'json' and 'table';"
             "will print using 'json'."

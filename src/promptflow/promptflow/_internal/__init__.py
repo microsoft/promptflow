@@ -89,6 +89,7 @@ from promptflow._utils.multimedia_utils import (
     convert_multimedia_data_to_base64,
     is_multimedia_dict,
     persist_multimedia_data,
+    resolve_multimedia_data_recursively,
 )
 from promptflow._utils.utils import (
     AttrDict,

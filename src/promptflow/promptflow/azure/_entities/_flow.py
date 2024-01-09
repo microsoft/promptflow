@@ -127,6 +127,7 @@ class Flow(AdditionalIncludesMixin):
             owner=rest_object.owner.as_dict(),
             is_archived=rest_object.is_archived,
             created_date=rest_object.created_date,
+            flow_portal_url=rest_object.studio_portal_endpoint,
         )
 
     @classmethod

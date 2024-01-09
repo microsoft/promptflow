@@ -1,3 +1,4 @@
+import os
 import multiprocessing
 from types import GeneratorType
 
@@ -8,7 +9,7 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 
-from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
+from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -58,10 +59,12 @@ class TestExecutor:
             "connection_as_input",
             "async_tools",
             "async_tools_with_sync_tools",
+            "tool_with_assistant_definition",
         ],
     )
     def test_executor_exec_line(self, flow_folder, dev_connections):
         self.skip_serp(flow_folder, dev_connections)
+        os.chdir(get_flow_folder(flow_folder))
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(self.get_line_inputs())
         assert not executor._run_tracker._flow_runs, "Flow runs in run tracker should be empty."
@@ -69,7 +72,9 @@ class TestExecutor:
         assert isinstance(flow_result.output, dict)
         assert flow_result.run_info.status == Status.Completed
         node_count = len(executor._flow.nodes)
-        assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == node_count
+        assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == 1
+        assert isinstance(flow_result.run_info.api_calls[0]["children"], list) and \
+            len(flow_result.run_info.api_calls[0]["children"]) == node_count
         assert len(flow_result.node_run_infos) == node_count
         for node, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
@@ -252,8 +257,16 @@ def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependenc
             connections=connections,
             raise_ex=raise_ex
         )
-        assert len(result.api_calls) == 1
         # Assert llm single node run contains openai traces
-        assert result.api_calls[0]["children"]
+        # And the traces contains system metrics
+        OPENAI_AGGREGATE_METRICS = ["prompt_tokens", "completion_tokens", "total_tokens"]
+        assert len(result.api_calls) == 1
+        assert len(result.api_calls[0]["children"]) == 1
+        assert isinstance(result.api_calls[0]["children"][0]["system_metrics"], dict)
+        for key in OPENAI_AGGREGATE_METRICS:
+            assert key in result.api_calls[0]["children"][0]["system_metrics"]
+        for key in OPENAI_AGGREGATE_METRICS:
+            assert result.api_calls[0]["system_metrics"][key] == \
+                result.api_calls[0]["children"][0]["system_metrics"][key]
     except Exception as ex:
         queue.put(ex)

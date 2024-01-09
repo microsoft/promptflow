@@ -20,16 +20,15 @@ import sys  # noqa: E402
 
 from promptflow._cli._pf_azure._flow import add_parser_flow, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf_azure._run import add_parser_run, dispatch_run_commands  # noqa: E402
-from promptflow._sdk._constants import LOGGER_NAME  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
     get_promptflow_sdk_version,
     print_pf_version,
     setup_user_agent_to_operation_context,
 )
-from promptflow._utils.logger_utils import LoggerFactory  # noqa: E402
+from promptflow._utils.logger_utils import get_cli_sdk_logger  # noqa: E402
 
-# configure logger for CLI
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+# get logger for CLI
+logger = get_cli_sdk_logger()
 
 
 def run_command(args):
@@ -38,11 +37,11 @@ def run_command(args):
     try:
         # --verbose, enable info logging
         if hasattr(args, "verbose") and args.verbose:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
+            for handler in logger.handlers:
                 handler.setLevel(logging.INFO)
         # --debug, enable debug logging
         if hasattr(args, "debug") and args.debug:
-            for handler in logging.getLogger(LOGGER_NAME).handlers:
+            for handler in logger.handlers:
                 handler.setLevel(logging.DEBUG)
         if args.version:
             print_pf_version()

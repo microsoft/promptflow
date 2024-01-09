@@ -20,3 +20,4 @@ nodes:
     path: print_val.py
   inputs:
     val: ${get_dict_val.output.value}
+    origin_val: ${get_dict_val.output.origin_value}
