@@ -23,6 +23,7 @@ from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands  #
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands  # noqa: E402
 from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  # noqa: E402
 from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
+from promptflow._cli._pf._upgrade import add_upgrade_parser, upgrade_version  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
     get_promptflow_sdk_version,
@@ -60,6 +61,8 @@ def run_command(args):
             dispatch_config_commands(args)
         elif args.action == "tool":
             dispatch_tool_commands(args)
+        elif args.action == "upgrade":
+            upgrade_version(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
         raise ex
@@ -90,8 +93,8 @@ def get_parser_args(argv):
     parser.add_argument(
         "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
     )
-
     subparsers = parser.add_subparsers()
+    add_upgrade_parser(subparsers)
     add_flow_parser(subparsers)
     add_connection_parser(subparsers)
     add_run_parser(subparsers)
