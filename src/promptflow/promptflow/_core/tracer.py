@@ -172,8 +172,12 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     # TODO: put parameters in self to inputs for builtin tools
     all_kwargs.pop("self", None)
 
+    name = f.__qualname__
+    if f.__module__ and f.__module__ != "__pf_main__":
+        name = f.__module__ + "." + f.__qualname__
+
     return Trace(
-        name=f.__qualname__,
+        name=name,
         type=trace_type,
         start_time=datetime.utcnow().timestamp(),
         inputs=all_kwargs,
@@ -216,6 +220,7 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             {
                 "framework": "promptflow",
                 "span_type": f"promptflow.{trace_type}",
+                "function": trace.name,
                 "inputs": json.dumps(trace.inputs),
                 "output": json.dumps(trace.output),
                 "node_name": get_node_name_from_context(),
@@ -228,7 +233,8 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
         @functools.wraps(func)
         async def wrapped(*args, **kwargs):
             trace = create_trace(func, args, kwargs)
-            with tracer.start_as_current_span(func.__qualname__) as span:
+            span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
+            with tracer.start_as_current_span(span_name) as span:
                 enrich_span_with_trace(span, trace)
 
                 if Tracer.active_instance() is None:
@@ -249,7 +255,8 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             trace = create_trace(func, args, kwargs)
-            with tracer.start_as_current_span(func.__qualname__) as span:
+            span_name = get_node_name_from_context() if trace_type == TraceType.TOOL else trace.name
+            with tracer.start_as_current_span(span_name) as span:
                 enrich_span_with_trace(span, trace)
 
                 if Tracer.active_instance() is None:
