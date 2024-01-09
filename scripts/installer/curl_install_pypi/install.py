@@ -12,8 +12,6 @@
 # The latest versions of all promptflow command packages will be installed.
 #
 
-#pylint: disable=line-too-long
-
 import os
 import sys
 import platform
@@ -53,18 +51,6 @@ PFS_EXECUTABLE_NAME = 'pfs'
 
 USER_BASH_RC = os.path.expanduser(os.path.join('~', '.bashrc'))
 USER_BASH_PROFILE = os.path.expanduser(os.path.join('~', '.bash_profile'))
-# COMPLETION_FILENAME = 'az.completion'
-# PYTHON_ARGCOMPLETE_CODE = """
-#
-# _python_argcomplete() {
-#     local IFS='\v'
-#     COMPREPLY=( $(IFS="$IFS"                   COMP_LINE="$COMP_LINE"                   COMP_POINT="$COMP_POINT"                   _ARGCOMPLETE_COMP_WORDBREAKS="$COMP_WORDBREAKS"                   _ARGCOMPLETE=1                   "$1" 8>&1 9>&2 1>/dev/null 2>/dev/null) )
-#     if [[ $? != 0 ]]; then
-#         unset COMPREPLY
-#     fi
-# }
-# complete -o nospace -o default -o bashdefault -F _python_argcomplete "az"
-# """
 
 
 class CLIInstallError(Exception):
@@ -129,7 +115,8 @@ def create_virtualenv(tmp_dir, install_dir):
     download_location = os.path.join(tmp_dir, VIRTUALENV_ARCHIVE)
     print_status('Downloading virtualenv package from {}.'.format(VIRTUALENV_DOWNLOAD_URL))
     response = urlopen(VIRTUALENV_DOWNLOAD_URL)
-    with open(download_location, 'wb') as f: f.write(response.read())
+    with open(download_location, 'wb') as f:
+        f.write(response.read())
     print_status("Downloaded virtualenv package to {}.".format(download_location))
     if is_valid_sha256sum(download_location, VIRTUALENV_ARCHIVE_SHA256):
         print_status("Checksum of {} OK.".format(download_location))
@@ -147,7 +134,8 @@ def create_virtualenv(tmp_dir, install_dir):
 
 def install_cli(install_dir, tmp_dir):
     path_to_pip = os.path.join(install_dir, 'bin', 'pip')
-    cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'promptflow[azure,executable,pfs,azureml-serving]', '--upgrade']
+    cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'promptflow[azure,executable,pfs,azureml-serving]',
+           '--upgrade']
     exec_command(cmd)
     cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'promptflow-tools', '--upgrade']
     exec_command(cmd)
@@ -156,7 +144,9 @@ def install_cli(install_dir, tmp_dir):
 def create_executable(exec_dir, install_dir):
     create_dir(exec_dir)
     exec_filepaths = []
-    for filename, template in [(PF_EXECUTABLE_NAME, PF_DISPATCH_TEMPLATE), (PFAZURE_EXECUTABLE_NAME, PFAZURE_DISPATCH_TEMPLATE), (PFS_EXECUTABLE_NAME, PFS_DISPATCH_TEMPLATE)]:
+    for filename, template in [(PF_EXECUTABLE_NAME, PF_DISPATCH_TEMPLATE),
+                               (PFAZURE_EXECUTABLE_NAME, PFAZURE_DISPATCH_TEMPLATE),
+                               (PFS_EXECUTABLE_NAME, PFS_DISPATCH_TEMPLATE)]:
         exec_filepath = os.path.join(exec_dir, filename)
         with open(exec_filepath, 'w') as exec_file:
             exec_file.write(template.format(install_dir=install_dir))
@@ -195,7 +185,8 @@ def get_install_dir():
 def get_exec_dir():
     exec_dir = None
     while not exec_dir:
-        prompt_message = f"In what directory would you like to place the '{PFS_EXECUTABLE_NAME}/{PFS_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' executable?"
+        prompt_message = (f"In what directory would you like to place the "
+                          f"'{PFS_EXECUTABLE_NAME}/{PFS_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' executable?")
         exec_dir = prompt_input_with_default(prompt_message, DEFAULT_EXEC_DIR)
         exec_dir = os.path.realpath(os.path.expanduser(exec_dir))
         if ' ' in exec_dir:
@@ -226,7 +217,8 @@ def _get_default_rc_file():
 
 def _default_rc_file_creation_step():
     rcfile = USER_BASH_PROFILE if platform.system().lower() == 'darwin' else USER_BASH_RC
-    ans_yes = prompt_y_n('Could not automatically find a suitable file to use. Create {} now?'.format(rcfile), default='y')
+    ans_yes = prompt_y_n('Could not automatically find a suitable file to use. Create {} now?'.format(rcfile),
+                         default='y')
     if ans_yes:
         open(rcfile, 'a').close()
         return rcfile
@@ -248,12 +240,6 @@ def _modify_rc(rc_file_path, line_to_add):
     if not _find_line_in_file(rc_file_path, line_to_add):
         with open(rc_file_path, 'a', encoding="utf-8") as rc_file:
             rc_file.write('\n'+line_to_add+'\n')
-
-
-# def create_tab_completion_file(filename):
-#     with open(filename, 'w') as completion_file:
-#         completion_file.write(PYTHON_ARGCOMPLETE_CODE)
-#     print_status("Created tab completion file at '{}'".format(filename))
 
 
 def get_rc_file_path():
@@ -281,13 +267,13 @@ def warn_other_azs_on_path(exec_dir, exec_filepath):
                     conflicting_paths.append(p_to_pf)
     if conflicting_paths:
         print_status()
-        print_status(f"** WARNING: Other '{PFS_EXECUTABLE_NAME}/{PFS_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' executables are on your $PATH. **")
+        print_status(f"** WARNING: Other '{PFS_EXECUTABLE_NAME}/{PFS_EXECUTABLE_NAME}/{PFAZURE_EXECUTABLE_NAME}' "
+                     f"executables are on your $PATH. **")
         print_status("Conflicting paths: {}".format(', '.join(conflicting_paths)))
         print_status("You can run this installation of the promptflow with '{}'.".format(exec_filepath))
 
 
-def handle_path_and_tab_completion (exec_filepath, exec_dir):
-# def handle_path_and_tab_completion(completion_file_path, exec_filepath, exec_dir):
+def handle_path_and_tab_completion(exec_filepath, exec_dir):
     ans_yes = prompt_y_n('Modify profile to update your $PATH now?', 'y')
     # ans_yes = prompt_y_n('Modify profile to update your $PATH and enable shell/tab completion now?', 'y')
     if ans_yes:
@@ -297,16 +283,11 @@ def handle_path_and_tab_completion (exec_filepath, exec_dir):
         _backup_rc(rc_file_path)
         line_to_add = "export PATH=$PATH:{}".format(exec_dir)
         _modify_rc(rc_file_path, line_to_add)
-        # line_to_add = "source '{}'".format(completion_file_path)
-        # _modify_rc(rc_file_path, line_to_add)
-        # print_status('Tab completion set up complete.')
-        # print_status("If tab completion is not activated, verify that '{}' is sourced by your shell.".format(rc_file_path))
         warn_other_azs_on_path(exec_dir, exec_filepath)
         print_status()
         print_status('** Run `exec -l $SHELL` to restart your shell. **')
         print_status()
     else:
-        # print_status("If you change your mind, add 'source {}' to your rc file and restart your shell to enable tab completion.".format(completion_file_path))
         print_status("You can run the promptflow with '{}'.".format(exec_filepath))
 
 
@@ -342,7 +323,7 @@ def _get_linux_distro():
     try:
         with open('/etc/os-release') as lines:
             tokens = [line.strip() for line in lines]
-    except Exception as e:
+    except Exception:
         return None, None
 
     release_info = {}
@@ -358,7 +339,8 @@ def verify_native_dependencies():
     distname, version = _get_linux_distro()
 
     if not distname:
-        # There's no distribution name so can't determine native dependencies required / or they may not be needed like on OS X
+        # There's no distribution name so can't determine native dependencies required / or they may not be needed
+        # like on OS X
         return
 
     print_status('Verifying native dependencies.')
@@ -372,7 +354,8 @@ def verify_native_dependencies():
         python_dep = 'python3-dev'
         if distname == 'ubuntu' and version in ['12.04', '14.04'] or distname == 'debian' and version.startswith('7'):
             dep_list = ['libssl-dev', 'libffi-dev', python_dep]
-        elif distname == 'ubuntu' and version in ['15.10', '16.04', '18.04']or distname == 'debian' and version.startswith('8'):
+        elif (distname == 'ubuntu' and version in ['15.10', '16.04', '18.04'] or distname == 'debian' and
+              version.startswith('8')):
             dep_list = ['libssl-dev', 'libffi-dev', python_dep, 'build-essential']
     elif any(x in distname for x in ['centos', 'rhel', 'red hat']):
         verify_cmd_args = ['rpm', '-q']
@@ -389,14 +372,17 @@ def verify_native_dependencies():
     if verify_cmd_args and install_cmd_args and dep_list:
         _native_dependencies_for_dist(verify_cmd_args, install_cmd_args, dep_list)
     else:
-        print_status("Unable to verify native dependencies. dist={}, version={}. Continuing...".format(distname, version))
+        print_status("Unable to verify native dependencies. dist={}, version={}. "
+                     "Continuing...".format(distname, version))
 
 
 def verify_install_dir_exec_path_conflict(install_dir, exec_dir):
     for exec_name in [PF_EXECUTABLE_NAME, PFAZURE_EXECUTABLE_NAME, PFS_EXECUTABLE_NAME]:
         exec_path = os.path.join(exec_dir, exec_name)
         if install_dir == exec_path:
-            raise CLIInstallError("The executable file '{}' would clash with the install directory of '{}'. Choose either a different install directory or directory to place the executable.".format(exec_path, install_dir))
+            raise CLIInstallError("The executable file '{}' would clash with the install directory of '{}'. Choose "
+                                  "either a different install directory or directory to place the "
+                                  "executable.".format(exec_path, install_dir))
 
 
 def main():
