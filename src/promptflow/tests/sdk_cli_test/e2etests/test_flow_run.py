@@ -86,7 +86,8 @@ def assert_run_with_invalid_column_mapping(client: PFClient, run: Run) -> None:
 
     exception = local_storage.load_exception()
     assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
-    assert exception["code"] == "BulkRunException"
+    assert exception["code"] == "UserError"
+    assert exception["innerError"]["innerError"]["code"] == "BulkRunException"
 
 
 @pytest.mark.usefixtures(
@@ -240,6 +241,13 @@ class TestFlowRun:
             params_override=[{"run": run_id}],
         )
         assert local_client.runs.get(eval_run.name).status == "Completed"
+
+    @pytest.mark.usefixtures("enable_logger_propagate")
+    def test_submit_run_with_extra_params(self, pf, caplog):
+        run_id = str(uuid.uuid4())
+        run = create_yaml_run(source=f"{RUNS_DIR}/extra_field.yaml", params_override=[{"name": run_id}])
+        assert pf.runs.get(run.name).status == "Completed"
+        assert "Run schema validation warnings. Unknown fields found" in caplog.text
 
     def test_run_with_connection(self, local_client, local_aoai_connection, pf):
         # remove connection file to test connection resolving
@@ -449,7 +457,6 @@ class TestFlowRun:
             assert "Please make sure it exists and not deleted." in str(e.value)
 
     def test_eval_run_data_not_exist(self, pf):
-
         base_run = pf.run(
             flow=f"{FLOWS_DIR}/print_env_var",
             data=f"{DATAS_DIR}/env_var_names.jsonl",
