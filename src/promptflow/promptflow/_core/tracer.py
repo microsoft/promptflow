@@ -210,8 +210,8 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             {
                 "framework": "promptflow",
                 "span_type": f"promptflow.{trace_type}",
-                "inputs": trace.inputs,
-                "output": trace.output,
+                "inputs": str(trace.inputs),
+                "output": str(trace.output),
                 "node_name": "node_name",  # TODO: Check how to pass the node name in
                 "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
             }
