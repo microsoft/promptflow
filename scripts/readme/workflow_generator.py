@@ -67,10 +67,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
             "[ examples/configuration.ipynb, .github/workflows/samples_configuration.yml ]"
         )
     else:
-        path_filter = (
-            f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml, "
-            "'!examples/flows/integrations/**' ]"
-        )
+        path_filter = f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml ]"
 
     # these workflows require config.json to init PF/ML client
     workflows_require_config_json = [
@@ -106,6 +103,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     output_telemetry.workflow_name = workflow_name
     output_telemetry.name = name
     output_telemetry.gh_working_dir = gh_working_dir
+    output_telemetry.path_filter = path_filter
 
 
 def write_workflows(notebooks, output_telemetries=[]):
@@ -152,7 +150,7 @@ def no_readme_generation_filter(item, index, array) -> bool:
         return False  # not generate readme
 
 
-def main(input_glob, output_files=[]):
+def main(input_glob, output_files=[], check=False):
     # get list of workflows
 
     notebooks = _get_paths(
@@ -163,7 +161,8 @@ def main(input_glob, output_files=[]):
     notebooks = local_filter(no_readme_generation_filter, notebooks)
 
     # format code
-    format_ipynb(notebooks)
+    if not check:
+        format_ipynb(notebooks)
 
     # write workflows
     write_workflows(notebooks, output_files)
