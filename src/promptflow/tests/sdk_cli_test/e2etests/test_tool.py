@@ -385,6 +385,6 @@ class TestTool:
         construct_tool, validate_result = tool_operation._serialize_tool(tool_obj, input_settings, extra_info, my_tool)
         assert validate_result.passed
         assert construct_tool["inputs"]["input_text"]["undefined_field1"] == 1
-        assert construct_tool["inputs"]["input_text"]["undefined_field2"] == True
+        assert construct_tool["inputs"]["input_text"]["undefined_field2"] is True
         assert construct_tool["inputs"]["input_text"]["undefined_field3"] == {"key": "value"}
         assert construct_tool["inputs"]["input_text"]["undefined_field4"] == [1, 2, 3]
