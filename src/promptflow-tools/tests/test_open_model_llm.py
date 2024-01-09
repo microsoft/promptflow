@@ -574,10 +574,15 @@ user:
         validate_response(response)
 
     def test_open_model_llm_package(self):
-        target_tool_identifier = "promptflow.tools.open_model_llm.OpenModelLLM.call"
-        found = False
-
         import pkg_resources
+        # Promptflow-tools is not installed in the test pipeline, so we'll skip this test there. Works locally.
+        try:
+            pkg_resources.get_distribution("promptflow-tools")
+        except pkg_resources.DistributionNotFound:
+            pytest.skip("promptflow-tools not installed")
+
+        found = False
+        target_tool_identifier = "promptflow.tools.open_model_llm.OpenModelLLM.call"
         for entry_point in pkg_resources.iter_entry_points(group="package_tools"):
             list_tool_func = entry_point.resolve()
             package_tools = list_tool_func()
