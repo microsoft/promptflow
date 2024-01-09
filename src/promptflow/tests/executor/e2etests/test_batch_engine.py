@@ -89,6 +89,7 @@ def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestBatch:
+    @recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
     def test_batch_storage(self, dev_connections, recording_injection):
         mem_run_storage = MemoryRunStorage()
         run_id = str(uuid.uuid4())
@@ -125,6 +126,7 @@ class TestBatch:
             ),
         ],
     )
+    @recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
     def test_batch_run(self, flow_folder, inputs_mapping, dev_connections, recording_injection):
         batch_result, output_dir = submit_batch_run(
             flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
