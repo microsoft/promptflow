@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
+from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
@@ -95,13 +96,15 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
                 try:
                     return json.load(f)
                 except json.JSONDecodeError:
-                    raise RuntimeError(
-                        f"Failed to fetch meta of tools: {flow_tools_json_path.absolute().as_posix()} "
-                        f"is not a valid json file."
+                    raise MetaFileReadError(
+                        message_format="Failed to fetch meta of tools: {file_path} is not a valid json file.",
+                        file_path=flow_tools_json_path.absolute().as_posix(),
                     )
-        raise FileNotFoundError(
-            f"Failed to fetch meta of tools: cannot find {flow_tools_json_path.absolute().as_posix()}, "
-            f"please build the flow project first."
+        raise MetaFileNotFound(
+            message_format=(
+                "Failed to fetch meta of tools: cannot find {file_path}, " "please build the flow project first."
+            ),
+            file_path=flow_tools_json_path.absolute().as_posix(),
         )
 
     @classmethod

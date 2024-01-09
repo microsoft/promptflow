@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch import CSharpExecutorProxy
 from promptflow.executor._result import AggregationResult
@@ -109,7 +110,7 @@ class TestCSharpExecutorProxy:
 
     def test_get_tool_metadata_failed_with_file_not_found(self):
         working_dir = Path(mkdtemp())
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(MetaFileNotFound):
             CSharpExecutorProxy.get_tool_metadata("", working_dir)
 
     def test_get_tool_metadata_failed_with_content_not_json(self):
@@ -118,7 +119,7 @@ class TestCSharpExecutorProxy:
         tool_meta_file.parent.mkdir(parents=True, exist_ok=True)
         tool_meta_file.touch()
 
-        with pytest.raises(RuntimeError):
+        with pytest.raises(MetaFileReadError):
             CSharpExecutorProxy.get_tool_metadata("", working_dir)
 
     def test_find_available_port(self):
