@@ -10,13 +10,34 @@ import pytest
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.batch._errors import ExecutorServiceUnhealthy
+from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._errors import ConnectionNotFound
 from promptflow.storage._run_storage import AbstractRunStorage
 
+from ...mock_execution_server import _get_line_result_dict
+
 
 @pytest.mark.unittest
 class TestAPIBasedExecutorProxy:
+    @pytest.mark.asyncio
+    async def test_exec_line_async_no_error(self):
+        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
+        run_id = "test_run_id"
+        index = 1
+        inputs = {"question": "test"}
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock:
+            line_result_dict = _get_line_result_dict(run_id, index, inputs)
+            mock.return_value = httpx.Response(200, json=line_result_dict)
+            line_result = await mock_executor_proxy.exec_line_async(inputs, index, run_id)
+            assert line_result.output == {"answer": "Hello world!"}
+            assert line_result.run_info.run_id == run_id
+            assert line_result.run_info.index == index
+            assert line_result.run_info.status == Status.Completed
+            assert line_result.run_info.inputs == inputs
+            assert line_result.run_info.output == {"answer": "Hello world!"}
+            assert line_result.run_info.error is None
+
     @pytest.mark.asyncio
     async def test_ensure_executor_startup_when_no_error(self):
         mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")

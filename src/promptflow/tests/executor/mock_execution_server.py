@@ -39,7 +39,16 @@ def _get_execution_result(request: dict, has_error=False):
 
     if has_error and index == 1:
         # simulate error
-        line_result_dict = {
+        line_result_dict = _get_line_result_dict(run_id, index, inputs, has_error=True)
+        return web.json_response(line_result_dict, status=500)
+
+    line_result_dict = _get_line_result_dict(run_id, index, inputs)
+    return web.json_response(line_result_dict)
+
+
+def _get_line_result_dict(run_id, index, inputs, has_error=False):
+    if has_error:
+        return {
             "error": {
                 "message": "error for tests",
                 "messageFormat": "",
@@ -56,9 +65,7 @@ def _get_execution_result(request: dict, has_error=False):
                 "innerError": {"code": "Exception", "innerError": None},
             },
         }
-        return web.json_response(line_result_dict, status=500)
-
-    line_result_dict = {
+    return {
         "output": {"answer": "Hello world!"},
         "aggregation_inputs": {},
         "run_info": {
@@ -91,4 +98,3 @@ def _get_execution_result(request: dict, has_error=False):
             }
         },
     }
-    return web.json_response(line_result_dict)
