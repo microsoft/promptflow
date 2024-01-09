@@ -38,13 +38,13 @@ from promptflow._cli._pf._init_entry_generators import (
 from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
-from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, ConnectionProvider
+from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 
 
 def add_flow_parser(subparsers):
@@ -175,7 +175,8 @@ pf flow validate --source <path_to_flow>
         epilog=epilog,
         add_params=[
             add_param_source,
-        ],
+        ]
+        + base_params,
         subparsers=subparsers,
         help_message="Validate a flow. Will raise error if the flow is not valid.",
         action_param_name="sub_action",

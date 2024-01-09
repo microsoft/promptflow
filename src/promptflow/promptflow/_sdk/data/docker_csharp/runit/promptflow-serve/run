@@ -2,4 +2,4 @@
 
 echo "start promptflow serving"
 cd /flow
-dotnet Promptflow.DotnetService.dll --port "8080" --yaml_path "flow.dag.yaml" --assembly_folder "." --connection_provider_url "" --log_path "" --serving
+dotnet Promptflow.dll --port "8080" --yaml_path "flow.dag.yaml" --assembly_folder "." --connection_provider_url "" --log_path "" --serving

@@ -167,17 +167,16 @@ def log_progress(
 
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
-    from promptflow._core import tool
+    from promptflow import _core
 
-    tool_file = tool.__file__
-    core_folder = os.path.dirname(tool_file)
+    core_folder = os.path.dirname(_core.__file__)
 
     for i in range(len(frame_summaries) - 1):
         cur_file = frame_summaries[i].filename
         next_file = frame_summaries[i + 1].filename
-        # If the current frame is in tool.py and the next frame is not in _core folder
+        # If the current frame is in _core folder and the next frame is not in _core folder
         # then we can say that the next frame is in user code.
-        if cur_file == tool_file and not next_file.startswith(core_folder):
+        if cur_file.startswith(core_folder) and not next_file.startswith(core_folder):
             return frame_summaries[i + 1 :]
     return frame_summaries
 

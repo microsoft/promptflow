@@ -138,7 +138,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
     def build_connection_dict_from_rest_object(cls, name, obj) -> dict:
         """
         :type name: str
-        :type obj: promptflow.runtime.models.WorkspaceConnectionPropertiesV2BasicResource
+        :type obj: azure.ai.ml._restclient.v2023_06_01_preview.models.WorkspaceConnectionPropertiesV2BasicResource
         """
         # Reference 1: https://msdata.visualstudio.com/Vienna/_git/vienna?path=/src/azureml-api/src/AccountRP/Contracts/WorkspaceConnection/WorkspaceConnectionDtoV2.cs&_a=blame&version=GBmaster  # noqa: E501
         # Reference 2: https://msdata.visualstudio.com/Vienna/_git/vienna?path=%2Fsrc%2Fazureml-api%2Fsrc%2FDesigner%2Fsrc%2FMiddleTier%2FMiddleTier%2FServices%2FPromptFlow%2FConnectionsManagement.cs&version=GBmaster&_a=contents  # noqa: E501
@@ -218,6 +218,18 @@ class ArmConnectionOperations(_ScopeDependentOperations):
             self._operation_scope.workspace_name,
             self._credential,
         )
+
+    @classmethod
+    def _convert_to_connection_dict(cls, conn_name, conn_data):
+        try:
+            rest_obj = WorkspaceConnectionPropertiesV2BasicResource.deserialize(conn_data)
+            conn_dict = cls.build_connection_dict_from_rest_object(conn_name, rest_obj)
+            return conn_dict
+        except Exception as e:
+            raise BuildConnectionError(
+                message_format=f"Build connection dict for connection {{name}} failed with {e}.",
+                name=conn_name,
+            )
 
     @classmethod
     def _build_connection_dict(cls, name, subscription_id, resource_group_name, workspace_name, credential) -> dict:

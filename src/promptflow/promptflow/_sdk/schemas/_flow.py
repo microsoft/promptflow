@@ -2,8 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from marshmallow import fields
+from marshmallow import fields, validate
 
+from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import NestedField
 
@@ -39,3 +40,10 @@ class FlowSchema(YamlFileSchema):
     nodes = fields.List(fields.Dict())
     node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
     environment = fields.Dict()
+
+    # metadata
+    type = fields.Str(validate=validate.OneOf(FlowType.get_all_values()))
+    language = fields.Str()
+    description = fields.Str()
+    display_name = fields.Str()
+    tags = fields.Dict(keys=fields.Str(), values=fields.Str())

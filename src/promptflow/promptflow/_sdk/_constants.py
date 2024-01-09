@@ -1,11 +1,59 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import os
 from enum import Enum
 from pathlib import Path
 
 LOGGER_NAME = "promptflow"
+
+PROMPT_FLOW_HOME_DIR_ENV_VAR = "PF_HOME_DIRECTORY"
+PROMPT_FLOW_DIR_NAME = ".promptflow"
+
+
+def _prepare_home_dir() -> Path:
+    """Prepare prompt flow home directory.
+
+    User can configure it by setting environment variable: `PF_HOME_DIRECTORY`;
+    if not configured, or configured value is not valid, use default value: "~/.promptflow/".
+    """
+    from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+    logger = get_cli_sdk_logger()
+
+    if PROMPT_FLOW_HOME_DIR_ENV_VAR in os.environ:
+        logger.debug(
+            f"environment variable {PROMPT_FLOW_HOME_DIR_ENV_VAR!r} is set, honor it preparing home directory."
+        )
+        try:
+            pf_home_dir = Path(os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)).resolve()
+            pf_home_dir.mkdir(parents=True, exist_ok=True)
+            return pf_home_dir
+        except Exception as e:  # pylint: disable=broad-except
+            _warning_message = (
+                "Invalid configuration for prompt flow home directory: "
+                f"{os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR)!r}: {str(e)!r}.\n"
+                'Fall back to use default value: "~/.promptflow/".'
+            )
+            logger.warning(_warning_message)
+
+    try:
+        logger.debug("preparing home directory with default value.")
+        pf_home_dir = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
+        pf_home_dir.mkdir(parents=True, exist_ok=True)
+        return pf_home_dir
+    except Exception as e:  # pylint: disable=broad-except
+        _error_message = (
+            f"Cannot create prompt flow home directory: {str(e)!r}.\n"
+            "Please check if you have proper permission to operate the directory "
+            f"{HOME_PROMPT_FLOW_DIR.as_posix()!r}; or configure it via "
+            f"environment variable {PROMPT_FLOW_HOME_DIR_ENV_VAR!r}.\n"
+        )
+        logger.error(_error_message)
+        raise Exception(_error_message)
+
+
+HOME_PROMPT_FLOW_DIR = _prepare_home_dir()
 
 DAG_FILE_NAME = "flow.dag.yaml"
 NODE_VARIANTS = "node_variants"
@@ -17,15 +65,10 @@ USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
-PROMPT_FLOW_DIR_NAME = ".promptflow"
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
-HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
 SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
-
-if not HOME_PROMPT_FLOW_DIR.is_dir():
-    HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
 LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock").resolve()
@@ -57,7 +100,7 @@ AZURE_WORKSPACE_REGEX_FORMAT = (
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 LOCAL_SERVICE_PORT = 5000
-BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
+BULK_RUN_ERRORS = "BulkRunErrors"
 RUN_MACRO = "${run}"
 VARIANT_ID_MACRO = "${variant_id}"
 TIMESTAMP_MACRO = "${timestamp}"
@@ -84,6 +127,7 @@ SKIP_FUNC_PARAMS = ["subscription_id", "resource_group_name", "workspace_name"]
 ICON_DARK = "icon_dark"
 ICON_LIGHT = "icon_light"
 ICON = "icon"
+TOOL_SCHEMA = Path(__file__).parent / "data" / "tool.schema.json"
 
 
 class CustomStrongTypeConnectionConfigs:

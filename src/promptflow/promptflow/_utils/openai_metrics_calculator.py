@@ -24,7 +24,7 @@ class OpenAIMetricsCalculator:
             for child in children:
                 child_metrics = self.get_openai_metrics_from_api_call(child)
                 self.merge_metrics_dict(total_metrics, child_metrics)
-
+        api_call["system_metrics"] = total_metrics
         return total_metrics
 
     def _need_collect_metrics(self, api_call: dict):
@@ -70,7 +70,7 @@ class OpenAIMetricsCalculator:
         else:
             raise CalculatingMetricsError(f"Calculating metrics for api {name} is not supported.")
 
-    def _try_get_model(self, inputs):
+    def _try_get_model(self, inputs, output):
         if IS_LEGACY_OPENAI:
             api_type = inputs.get("api_type")
             if not api_type:
@@ -80,7 +80,12 @@ class OpenAIMetricsCalculator:
             else:
                 model = inputs.get("model")
         else:
-            model = inputs.get("model")
+            if isinstance(output, dict):
+                model = output.get("model")
+            else:
+                model = output[0].model if len(output) > 0 and hasattr(output[0], "model") else None
+            if not model:
+                model = inputs.get("model")
         if not model:
             raise CalculatingMetricsError(
                 "Cannot get a valid model to calculate metrics. "
@@ -92,7 +97,7 @@ class OpenAIMetricsCalculator:
         inputs = api_call.get("inputs")
         output = api_call.get("output")
         metrics = {}
-        enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(self._try_get_model(inputs))
+        enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(self._try_get_model(inputs, output))
         metrics["prompt_tokens"] = self._get_prompt_tokens_from_messages(
             inputs["messages"],
             enc,
@@ -154,7 +159,7 @@ class OpenAIMetricsCalculator:
         metrics = {}
         inputs = api_call.get("inputs")
         output = api_call.get("output")
-        enc = self._get_encoding_for_completion_api(self._try_get_model(inputs))
+        enc = self._get_encoding_for_completion_api(self._try_get_model(inputs, output))
         metrics["prompt_tokens"] = 0
         prompt = inputs.get("prompt")
         if isinstance(prompt, str):

@@ -1,0 +1,388 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Tool",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "type": {
+      "$ref": "#/definitions/ToolType"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/InputDefinition"
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/OutputDefinition"
+      }
+    },
+    "description": {
+      "type": "string"
+    },
+    "connection_type": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ConnectionType"
+      }
+    },
+    "module": {
+      "type": "string"
+    },
+    "class_name": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "LkgCode": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string"
+    },
+    "function": {
+      "type": "string"
+    },
+    "action_type": {
+      "type": "string"
+    },
+    "provider_config": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/InputDefinition"
+      }
+    },
+    "function_config": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/InputDefinition"
+      }
+    },
+    "icon": {},
+    "category": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "object",
+      "additionalProperties": {}
+    },
+    "is_builtin": {
+      "type": "boolean"
+    },
+    "package": {
+      "type": "string"
+    },
+    "package_version": {
+      "type": "string"
+    },
+    "default_prompt": {
+      "type": "string"
+    },
+    "enable_kwargs": {
+      "type": "boolean"
+    },
+    "deprecated_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tool_state": {
+      "$ref": "#/definitions/ToolState"
+    }
+  },
+  "definitions": {
+    "ToolType": {
+      "type": "string",
+      "description": "",
+      "x-enumNames": [
+        "Llm",
+        "Python",
+        "Action",
+        "Prompt",
+        "CustomLLM",
+        "CSharp"
+      ],
+      "enum": [
+        "llm",
+        "python",
+        "action",
+        "prompt",
+        "custom_llm",
+        "csharp"
+      ]
+    },
+    "InputDefinition": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ValueType"
+          }
+        },
+        "default": {},
+        "description": {
+          "type": "string"
+        },
+        "enum": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "enabled_by": {
+          "type": "string"
+        },
+        "enabled_by_type": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ValueType"
+          }
+        },
+        "enabled_by_value": {
+          "type": "array",
+          "items": {}
+        },
+        "model_list": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "capabilities": {
+          "$ref": "#/definitions/AzureOpenAIModelCapabilities"
+        },
+        "dynamic_list": {
+          "$ref": "#/definitions/ToolInputDynamicList"
+        },
+        "allow_manual_entry": {
+          "type": "boolean"
+        },
+        "is_multi_select": {
+          "type": "boolean"
+        },
+        "generated_by": {
+          "$ref": "#/definitions/ToolInputGeneratedBy"
+        },
+        "input_type": {
+          "$ref": "#/definitions/InputType"
+        },
+        "advanced": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "ui_hints": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      }
+    },
+    "ValueType": {
+      "type": "string",
+      "description": "",
+      "x-enumNames": [
+        "Int",
+        "Double",
+        "Bool",
+        "String",
+        "Secret",
+        "PromptTemplate",
+        "Object",
+        "List",
+        "BingConnection",
+        "OpenAIConnection",
+        "AzureOpenAIConnection",
+        "AzureContentModeratorConnection",
+        "CustomConnection",
+        "AzureContentSafetyConnection",
+        "SerpConnection",
+        "CognitiveSearchConnection",
+        "SubstrateLLMConnection",
+        "PineconeConnection",
+        "QdrantConnection",
+        "WeaviateConnection",
+        "FunctionList",
+        "FunctionStr",
+        "FormRecognizerConnection",
+        "FilePath",
+        "Image"
+      ],
+      "enum": [
+        "int",
+        "double",
+        "bool",
+        "string",
+        "secret",
+        "prompt_template",
+        "object",
+        "list",
+        "BingConnection",
+        "OpenAIConnection",
+        "AzureOpenAIConnection",
+        "AzureContentModeratorConnection",
+        "CustomConnection",
+        "AzureContentSafetyConnection",
+        "SerpConnection",
+        "CognitiveSearchConnection",
+        "SubstrateLLMConnection",
+        "PineconeConnection",
+        "QdrantConnection",
+        "WeaviateConnection",
+        "function_list",
+        "function_str",
+        "FormRecognizerConnection",
+        "file_path",
+        "image"
+      ]
+    },
+    "AzureOpenAIModelCapabilities": {
+      "type": "object",
+      "properties": {
+        "completion": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "chat_completion": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "embeddings": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "ToolInputDynamicList": {
+      "type": "object",
+      "properties": {
+        "func_path": {
+          "type": "string"
+        },
+        "func_kwargs": {
+          "type": "array",
+          "description": "Sample value in yaml\nfunc_kwargs:\n- name: prefix  # Argument name to be passed to the function\n  type: \n    - string\n  # if optional is not specified, default to false.\n  # this is for UX pre-validaton. If optional is false, but no input. UX can throw error in advanced.\n  optional: true\n  reference: ${inputs.index_prefix}  # Dynamic reference to another input parameter\n- name: size  # Another argument name to be passed to the function\n  type: \n    - int\n  optional: true\n  default: 10",
+          "items": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      }
+    },
+    "ToolInputGeneratedBy": {
+      "type": "object",
+      "properties": {
+        "func_path": {
+          "type": "string"
+        },
+        "func_kwargs": {
+          "type": "array",
+          "description": "Sample value in yaml\nfunc_kwargs:\n- name: index_type  # Argument name to be passed to the function\n  type: \n    - string\n  optional: true\n  reference: ${inputs.index_type}  # Dynamic reference to another input parameter\n- name: index  # Another argument name to be passed to the function\n  type: \n    - string\n  optional: true\n  reference: ${inputs.index}",
+          "items": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "reverse_func_path": {
+          "type": "string"
+        }
+      }
+    },
+    "InputType": {
+      "type": "string",
+      "description": "",
+      "x-enumNames": [
+        "Default",
+        "UIOnly_Hidden"
+      ],
+      "enum": [
+        "default",
+        "uionly_hidden"
+      ]
+    },
+    "OutputDefinition": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ValueType"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "isProperty": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ConnectionType": {
+      "type": "string",
+      "description": "",
+      "x-enumNames": [
+        "OpenAI",
+        "AzureOpenAI",
+        "Serp",
+        "Bing",
+        "AzureContentModerator",
+        "Custom",
+        "AzureContentSafety",
+        "CognitiveSearch",
+        "SubstrateLLM",
+        "Pinecone",
+        "Qdrant",
+        "Weaviate",
+        "FormRecognizer"
+      ],
+      "enum": [
+        "OpenAI",
+        "AzureOpenAI",
+        "Serp",
+        "Bing",
+        "AzureContentModerator",
+        "Custom",
+        "AzureContentSafety",
+        "CognitiveSearch",
+        "SubstrateLLM",
+        "Pinecone",
+        "Qdrant",
+        "Weaviate",
+        "FormRecognizer"
+      ]
+    },
+    "ToolState": {
+      "type": "string",
+      "description": "",
+      "x-enumNames": [
+        "Stable",
+        "Preview",
+        "Deprecated"
+      ],
+      "enum": [
+        "stable",
+        "preview",
+        "deprecated"
+      ]
+    }
+  }
+}

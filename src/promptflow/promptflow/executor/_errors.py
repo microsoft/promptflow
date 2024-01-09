@@ -237,3 +237,7 @@ class ResolveToolError(PromptflowException):
         if self.inner_exception:
             return ExceptionPresenter.create(self.inner_exception).error_codes
         return [infer_error_code_from_class(SystemErrorException), self.__class__.__name__]
+
+
+class UnsupportedAssistantToolType(ValidationException):
+    pass

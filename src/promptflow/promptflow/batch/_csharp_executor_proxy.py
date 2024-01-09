@@ -4,6 +4,7 @@
 import json
 import socket
 import subprocess
+import uuid
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
@@ -26,7 +27,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         return EXECUTOR_SERVICE_DOMAIN + self._port
 
     @classmethod
-    def create(
+    async def create(
         cls,
         flow_file: Path,
         working_dir: Optional[Path] = None,
@@ -38,6 +39,8 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         """Create a new executor"""
         port = cls.find_available_port()
         log_path = kwargs.get("log_path", "")
+        init_error_file = Path(working_dir) / f"init_error_{str(uuid.uuid4())}.json"
+        init_error_file.touch()
         command = [
             "dotnet",
             EXECUTOR_SERVICE_DLL,
@@ -52,11 +55,18 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
             log_path,
             "--log_level",
             "Warning",
+            "--error_file_path",
+            init_error_file,
         ]
         process = subprocess.Popen(command)
-        return cls(process, port)
+        executor_proxy = cls(process, port)
+        try:
+            await executor_proxy.ensure_executor_startup(init_error_file)
+        finally:
+            Path(init_error_file).unlink()
+        return executor_proxy
 
-    def destroy(self):
+    async def destroy(self):
         """Destroy the executor"""
         if self._process and self._process.poll() is None:
             self._process.terminate()
@@ -72,6 +82,13 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         run_id: Optional[str] = None,
     ) -> AggregationResult:
         return AggregationResult({}, {}, {})
+
+    def _is_executor_active(self):
+        """Check if the process is still running and return False if it has exited"""
+        exit_code = self._process.poll()
+        if exit_code and exit_code != 0:
+            return False
+        return True
 
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:

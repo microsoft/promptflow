@@ -21,3 +21,8 @@
 /scripts/installer/ @microsoft/promptflow-sdk
 /scripts/json_schema/ @microsoft/promptflow-sdk
 /scripts/readme/ @microsoft/promptflow-sdk
+
+/docs/how-to-guides/develop-a-tool/ @microsoft/promptflow-tools
+/src/promptflow-tools/ @microsoft/promptflow-tools
+/examples/tools/ @microsoft/promptflow-tools
+/scripts/tool/ @microsoft/promptflow-tools

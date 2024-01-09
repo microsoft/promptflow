@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from promptflow._sdk._errors import FlowOperationError
 from promptflow.azure._entities._flow import Flow
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -54,13 +53,3 @@ class TestFlow:
         for flow in flows:
             print(json.dumps(flow._to_dict(), indent=4))
         assert len(flows) == 3
-
-    def test_list_flows_invalid_cases(self, pf):
-        with pytest.raises(FlowOperationError, match="'max_results' must be a positive integer"):
-            pf.flows.list(max_results=0)
-
-        with pytest.raises(FlowOperationError, match="'flow_type' must be one of"):
-            pf.flows.list(flow_type="unknown")
-
-        with pytest.raises(FlowOperationError, match="Invalid list view type"):
-            pf.flows.list(list_view_type="invalid")

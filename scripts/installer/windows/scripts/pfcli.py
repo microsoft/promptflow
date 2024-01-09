@@ -1,8 +1,10 @@
 import sys
+import multiprocessing
 
 # use this file as the only entry point for the CLI to avoid packaging the same environment repeatedly
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     command = sys.argv[1] if len(sys.argv) > 1 else None
     sys.argv = sys.argv[1:]
     if command == 'pf':
@@ -18,4 +20,4 @@ if __name__ == "__main__":
         from promptflow._sdk._service.pfsvc import init as pfsvc_init
         pfsvc_init()
     else:
-        print("Invalid command. Please use 'pf', 'pfazure', 'pfs' or 'pfsvc'.")
+        print(f"Invalid command {sys.argv}. Please use 'pf', 'pfazure', 'pfs' or 'pfsvc'.")

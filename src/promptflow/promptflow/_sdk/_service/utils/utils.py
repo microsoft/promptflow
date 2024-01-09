@@ -7,9 +7,13 @@ from dataclasses import InitVar, dataclass, field
 from datetime import datetime
 from functools import wraps
 
+import psutil
+import yaml
 from flask import abort, request
 
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
+from promptflow._sdk._utils import read_write_by_user
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 
@@ -25,6 +29,21 @@ def local_user_only(func):
     return wrapper
 
 
+def get_port_from_config(create_if_not_exists=False):
+    (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
+    with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r") as f:
+        service_config = yaml.safe_load(f) or {}
+        port = service_config.get("service", {}).get("port", None)
+    if not port and create_if_not_exists:
+        with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w") as f:
+            # Set random port to ~/.promptflow/pf.yaml
+            port = get_random_port()
+            service_config["service"] = service_config.get("service", {})
+            service_config["service"]["port"] = port
+            yaml.dump(service_config, f)
+    return port
+
+
 def is_port_in_use(port: int):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(("localhost", port)) == 0
@@ -34,6 +53,35 @@ def get_random_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("localhost", 0))
         return s.getsockname()[1]
+
+
+def _get_process_by_port(port):
+    for proc in psutil.process_iter(["pid", "connections", "create_time"]):
+        try:
+            for connection in proc.connections():
+                if connection.laddr.port == port:
+                    return proc
+        except psutil.AccessDenied:
+            pass
+
+
+def kill_exist_service(port):
+    proc = _get_process_by_port(port)
+    if proc:
+        proc.terminate()
+        proc.wait(10)
+
+
+def get_started_service_info(port):
+    service_info = {}
+    proc = _get_process_by_port(port)
+    if proc:
+        create_time = proc.info["create_time"]
+        process_uptime = datetime.now() - datetime.fromtimestamp(create_time)
+        service_info["create_time"] = str(datetime.fromtimestamp(create_time))
+        service_info["uptime"] = str(process_uptime)
+        service_info["port"] = port
+    return service_info
 
 
 @dataclass
