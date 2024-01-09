@@ -104,6 +104,48 @@ class TestAPIBasedExecutorProxy:
                 httpx.Response(200, json={"result": "test"}),
                 {"result": "test"},
             ),
+            (
+                httpx.Response(500, json={"error": "test error"}),
+                "test error",
+            ),
+            (
+                httpx.Response(400, json={"detail": "test"}),
+                {
+                    "message": 'Unexpected error when executing a line, status code: 400, error: {"detail": "test"}',
+                    "messageFormat": (
+                        "Unexpected error when executing a line, " "status code: {status_code}, error: {error}"
+                    ),
+                    "messageParameters": {
+                        "status_code": "400",
+                        "error": '{"detail": "test"}',
+                    },
+                    "referenceCode": "Unknown",
+                    "code": "SystemError",
+                    "innerError": {
+                        "code": "UnexpectedError",
+                        "innerError": None,
+                    },
+                },
+            ),
+            (
+                httpx.Response(502, text="test"),
+                {
+                    "message": "Unexpected error when executing a line, status code: 502, error: test",
+                    "messageFormat": (
+                        "Unexpected error when executing a line, " "status code: {status_code}, error: {error}"
+                    ),
+                    "messageParameters": {
+                        "status_code": "502",
+                        "error": "test",
+                    },
+                    "referenceCode": "Unknown",
+                    "code": "SystemError",
+                    "innerError": {
+                        "code": "UnexpectedError",
+                        "innerError": None,
+                    },
+                },
+            ),
         ],
     )
     async def test_process_http_response(self, response, expected_result):
