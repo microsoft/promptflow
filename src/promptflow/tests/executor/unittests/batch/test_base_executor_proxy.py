@@ -15,7 +15,7 @@ from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._errors import ConnectionNotFound
 from promptflow.storage._run_storage import AbstractRunStorage
 
-from ...mock_execution_server import _get_line_result_dict
+from ...mock_execution_server import _get_aggr_result_dict, _get_line_result_dict
 
 
 @pytest.mark.unittest
@@ -41,6 +41,22 @@ class TestAPIBasedExecutorProxy:
             assert line_result.run_info.status == Status.Failed if has_error else Status.Completed
             assert line_result.run_info.inputs == inputs
             assert (line_result.run_info.error is not None) == has_error
+
+    @pytest.mark.asyncio
+    async def test_exec_aggregation_async(self):
+        mock_executor_proxy = await MockAPIBasedExecutorProxy.create("")
+        run_id = "test_run_id"
+        batch_inputs = {"question": ["test", "error"]}
+        aggregation_inputs = {"${get_answer.output}": ["Incorrect", "Correct"]}
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock:
+            aggr_result_dict = _get_aggr_result_dict(run_id, aggregation_inputs)
+            mock.return_value = httpx.Response(200, json=aggr_result_dict)
+            aggr_result = await mock_executor_proxy.exec_aggregation_async(batch_inputs, aggregation_inputs, run_id)
+            assert aggr_result.metrics == {"accuracy": 0.5}
+            assert len(aggr_result.node_run_infos) == 1
+            assert aggr_result.node_run_infos["aggregation"].flow_run_id == run_id
+            assert aggr_result.node_run_infos["aggregation"].inputs == aggregation_inputs
+            assert aggr_result.node_run_infos["aggregation"].status == Status.Completed
 
     @pytest.mark.asyncio
     async def test_ensure_executor_startup_when_no_error(self):
