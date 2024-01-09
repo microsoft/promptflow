@@ -355,6 +355,8 @@ class ToolOperations:
                 generated_by_inputs = {}
                 for input_name, settings in input_settings.items():
                     tool_inputs[input_name].update(asdict_without_none(settings))
+                    if settings._kwargs:
+                        tool_inputs[input_name].update(settings._kwargs)
                     if settings.generated_by:
                         generated_by_inputs.update(settings.generated_by._input_settings)
                 tool_inputs.update(generated_by_inputs)

@@ -357,3 +357,35 @@ class TestTool:
             'Cannot find the input "invalid_input" for the enabled_by of student_id.'
             in result.error_messages["invalid_input_settings"]
         )
+
+    def test_input_settings_with_undefined_fields(self):
+        from promptflow._sdk.operations._tool_operations import ToolOperations
+
+        input_settings = {
+            "input_text": InputSetting(
+                allow_manual_entry=True,
+                is_multi_select=True,
+                undefined_field1=1,
+                undefined_field2=True,
+                undefined_field3={"key": "value"},
+                undefined_field4=[1, 2, 3],
+            )
+        }
+
+        @tool(
+            name="My Tool with Dynamic List Input",
+            description="This is my tool with dynamic list input",
+            input_settings=input_settings,
+        )
+        def my_tool(input_text: list, input_prefix: str) -> str:
+            return f"Hello {input_prefix} {','.join(input_text)}"
+
+
+        tool_operation = ToolOperations()
+        tool_obj, input_settings, extra_info = tool_operation._parse_tool_from_func(my_tool)
+        construct_tool, validate_result = tool_operation._serialize_tool(tool_obj, input_settings, extra_info, my_tool)
+        assert validate_result.passed
+        assert construct_tool["inputs"]["input_text"]["undefined_field1"] == 1
+        assert construct_tool["inputs"]["input_text"]["undefined_field2"] == True
+        assert construct_tool["inputs"]["input_text"]["undefined_field3"] == {"key": "value"}
+        assert construct_tool["inputs"]["input_text"]["undefined_field4"] == [1, 2, 3]
