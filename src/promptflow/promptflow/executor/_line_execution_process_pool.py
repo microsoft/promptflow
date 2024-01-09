@@ -257,6 +257,10 @@ class LineExecutionProcessPool:
                 return process_info
             except KeyError:
                 continue
+            except Exception as e:
+                bulk_logger.info(
+                    f"Unable to access shared dictionary 'process_info', possibly "
+                    f"because the sub process is down. Exception: {e}")
 
     def _process_output_message(self, message, result_list):
         if isinstance(message, LineResult):
