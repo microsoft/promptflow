@@ -1,7 +1,9 @@
 import logging
+import tempfile
 from pathlib import Path
 from types import GeneratorType
 
+import papermill
 import pytest
 
 from promptflow._sdk._constants import LOGGER_NAME
@@ -198,3 +200,13 @@ class TestFlowTest:
         }
         result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
         assert result.status.value == "Completed"
+
+    def test_pf_test_flow_in_notebook(self):
+        notebook_path = Path(f"{TEST_ROOT}/test_configs/notebooks/dummy.ipynb").absolute()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_notebook_path = Path(temp_dir) / "output.ipynb"
+            papermill.execute_notebook(
+                notebook_path,
+                output_path=output_notebook_path,
+                cwd=notebook_path.parent,
+            )

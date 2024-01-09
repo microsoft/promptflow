@@ -127,8 +127,7 @@ class MockCSharpExecutorProxy(CSharpExecutorProxy):
         )
         process.start()
         executor_proxy = cls(process, port)
-        if init_error_file:
-            await executor_proxy.ensure_executor_startup(init_error_file)
+        await executor_proxy.ensure_executor_startup(init_error_file)
         return executor_proxy
 
     async def destroy(self):
@@ -139,3 +138,6 @@ class MockCSharpExecutorProxy(CSharpExecutorProxy):
                 self._process.join(timeout=5)
             except TimeoutError:
                 self._process.kill()
+
+    def _is_executor_active(self):
+        return self._process and self._process.is_alive()
