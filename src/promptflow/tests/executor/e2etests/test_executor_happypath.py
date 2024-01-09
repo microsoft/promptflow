@@ -1,3 +1,4 @@
+import os
 import multiprocessing
 from types import GeneratorType
 
@@ -9,7 +10,7 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 
-from ..utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
+from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -59,10 +60,12 @@ class TestExecutor:
             "connection_as_input",
             "async_tools",
             "async_tools_with_sync_tools",
+            "tool_with_assistant_definition",
         ],
     )
     def test_executor_exec_line(self, flow_folder, dev_connections, recording_injection):
         self.skip_serp(flow_folder, dev_connections)
+        os.chdir(get_flow_folder(flow_folder))
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(self.get_line_inputs())
         assert not executor._run_tracker._flow_runs, "Flow runs in run tracker should be empty."
