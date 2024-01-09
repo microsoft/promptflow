@@ -5,9 +5,13 @@ on:
     paths:
       - examples/**
       - .github/workflows/flowdag_schema_check.yml
+      - scripts/readme/schema_checker.py
+env:
+  IS_IN_CI_PIPELINE: "true"
 jobs:
   examples_flowdag_schema_check:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
       - run: env | sort >> $GITHUB_OUTPUT
@@ -15,15 +19,17 @@ jobs:
         uses: "./.github/actions/step_create_python_environment"
         with:
           pythonVersion: 3.9
-      - run: pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
+      - run: |
+          pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
+          pip install -r ${{ github.workspace }}/examples/requirements.txt
       - name: Summarize check status
         id: summarize_check_status
         working-directory: ${{ github.workspace }}
         shell: pwsh
         env:
           PYTHONPATH: ${{ github.workspace }}/src/promptflow
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd ${{ github.workspace }}/src/promptflow
-          pip install -e .
+          cd ${{ github.workspace }}/src
+          pip install -e promptflow[azure]
+          pip install -e promptflow-tools
           python ${{ github.workspace }}/scripts/readme/schema_checker.py
