@@ -1,9 +1,13 @@
+import json
 import socket
 import subprocess
+from pathlib import Path
+from tempfile import mkdtemp
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.batch import CSharpExecutorProxy
 from promptflow.executor._result import AggregationResult
 
@@ -92,11 +96,30 @@ class TestCSharpExecutorProxy:
         executor_proxy._process.poll.return_value = exit_code
         assert executor_proxy._is_executor_active() == expected_result
 
-    def test_get_tool_metadata(self):
-        flow_file = get_yaml_file("csharp_flow")
-        working_dir = get_flow_folder("csharp_flow")
+    def test_get_tool_metadata_succeed(self):
+        working_dir = Path(mkdtemp())
+        expected_tool_meta = {"name": "csharp_flow", "version": "0.1.0"}
+        tool_meta_file = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        tool_meta_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(tool_meta_file, "w") as file:
+            json.dump(expected_tool_meta, file, indent=4)
+
+        tool_meta = CSharpExecutorProxy.get_tool_metadata("", working_dir)
+        assert tool_meta == expected_tool_meta
+
+    def test_get_tool_metadata_failed_with_file_not_found(self):
+        working_dir = Path(mkdtemp())
         with pytest.raises(FileNotFoundError):
-            CSharpExecutorProxy.get_tool_metadata(flow_file, working_dir)
+            CSharpExecutorProxy.get_tool_metadata("", working_dir)
+
+    def test_get_tool_metadata_failed_with_content_not_json(self):
+        working_dir = Path(mkdtemp())
+        tool_meta_file = working_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        tool_meta_file.parent.mkdir(parents=True, exist_ok=True)
+        tool_meta_file.touch()
+
+        with pytest.raises(RuntimeError):
+            CSharpExecutorProxy.get_tool_metadata("", working_dir)
 
     def test_find_available_port(self):
         port = CSharpExecutorProxy.find_available_port()
