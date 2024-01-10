@@ -45,6 +45,7 @@ class Configuration(object):
     CONNECTION_PROVIDER = "connection.provider"
     RUN_OUTPUT_PATH = "run.output_path"
     USER_AGENT = "user_agent"
+    ENABLE_PREVIEW_FEATURES = "enable_preview_features"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -221,3 +222,10 @@ class Configuration(object):
         if user_agent:
             return f"PFCustomer_{user_agent}"
         return user_agent
+
+    def preview_features_enabled(self) -> Optional[bool]:
+        """Get enable_preview_features"""
+        result = self.get_config(key=self.ENABLE_PREVIEW_FEATURES)
+        if isinstance(result, str):
+            return result.lower() == "true"
+        return result is True

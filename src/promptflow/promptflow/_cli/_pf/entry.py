@@ -7,6 +7,7 @@ import time
 
 from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
 from promptflow._cli._utils import _get_cli_activity_name
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._telemetry.activity import update_activity_name
 
@@ -100,7 +101,9 @@ def get_parser_args(argv):
     add_run_parser(subparsers)
     add_config_parser(subparsers)
     add_tool_parser(subparsers)
-    add_experiment_parser(subparsers)
+
+    if Configuration.get_instance().preview_features_enabled():
+        add_experiment_parser(subparsers)
 
     return parser.prog, parser.parse_args(argv)
 

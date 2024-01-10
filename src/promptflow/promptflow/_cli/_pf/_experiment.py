@@ -119,9 +119,8 @@ def add_experiment_start(subparsers):
 
 
 def add_experiment_parser(subparsers):
-    # TODO: Update the help after the command is finalized.
     experiment_parser = subparsers.add_parser(
-        "experiment", description="A CLI tool to manage experiment for prompt flow.", help=argparse.SUPPRESS
+        "experiment", description="A CLI tool to manage experiment for prompt flow.", help="pf experiment"
     )
     subparsers = experiment_parser.add_subparsers()
     add_experiment_create(subparsers)
