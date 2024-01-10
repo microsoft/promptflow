@@ -14,14 +14,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
-from ..conftest import (
-    MockForkProcess,
-    MockForkServerProcess,
-    MockSpawnProcess,
-    recording_injection_decorator_compatible_with_fork,
-    recording_injection_decorator_compatible_with_forkserver,
-    recording_injection_decorator_compatible_with_spawn,
-)
+from ..conftest import MockSpawnProcess, recording_injection_decorator_compatible_with_spawn
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -96,7 +89,7 @@ def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestBatch:
-    @recording_injection_decorator_compatible_with_fork(MockForkProcess)
+    @recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
     def test_batch_storage(self, dev_connections, recording_injection):
         mem_run_storage = MemoryRunStorage()
         run_id = str(uuid.uuid4())
@@ -206,7 +199,6 @@ class TestBatch:
             ),
         ],
     )
-    @recording_injection_decorator_compatible_with_forkserver(MockForkServerProcess)
     def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         if "forkserver" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: forkserver")
