@@ -6,7 +6,7 @@ from marshmallow import fields, validate
 
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
-from promptflow._sdk.schemas._fields import NestedField
+from promptflow._sdk.schemas._fields import LocalPathField, NestedField
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -52,3 +52,12 @@ class DAGFlowSchema(BaseFlowSchema):
     outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowOutputSchema))
     nodes = fields.List(fields.Dict())
     node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
+
+
+class EagerFlowSchema(BaseFlowSchema):
+    """Schema for eager flow."""
+
+    # path to flow entry file.
+    path = LocalPathField()
+    # entry function
+    entry = fields.Str()
