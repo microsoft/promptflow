@@ -14,7 +14,7 @@ def get_node_run_infos(node_dict: dict, index=None, api_calls=None, system_metri
         k: NodeRunInfo(
             node=k,
             flow_run_id="flow_run_id",
-            run_id=f"run_id_{k}",
+            run_id=f"{index}_run_id_{k}",
             status=v,
             inputs=[],
             output={},
@@ -35,7 +35,7 @@ def get_flow_run_info(status_dict: dict, index: int):
     status = Status.Failed if any(status == Status.Failed for status in status_dict.values()) else Status.Completed
     error = {"code": "UserError", "message": "test message"} if status == Status.Failed else None
     return FlowRunInfo(
-        run_id="run_id",
+        run_id=f"{index}_run_id",
         status=status,
         error=error,
         inputs={},

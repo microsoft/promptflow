@@ -11,10 +11,12 @@ from promptflow.batch import (
     CSharpExecutorProxy,
     PythonExecutorProxy,
 )
+from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import ConnectionNotFound
 
-from ...utils import get_yaml_file
+from ...utils import MemoryRunStorage, get_yaml_file
+from .test_result import get_line_results
 
 
 @pytest.mark.unittest
@@ -55,6 +57,13 @@ class TestBatchEngine:
         # assert original values
         assert BatchEngine.executor_proxy_classes["python"] == PythonExecutorProxy
         assert BatchEngine.executor_proxy_classes["csharp"] == CSharpExecutorProxy
+
+        class MockPythonExecutorProxy(AbstractExecutorProxy):
+            pass
+
+        class MockJSExecutorProxy(APIBasedExecutorProxy):
+            pass
+
         # register new proxy
         BatchEngine.register_executor("python", MockPythonExecutorProxy)
         BatchEngine.register_executor("js", MockJSExecutorProxy)
@@ -62,10 +71,17 @@ class TestBatchEngine:
         assert BatchEngine.executor_proxy_classes["js"] == MockJSExecutorProxy
         assert len(BatchEngine.executor_proxy_classes) == 3
 
+    def test_persist_run_info(self):
+        line_dict = {
+            0: {"node_0": Status.Completed, "node_1": Status.Completed, "node_2": Status.Completed},
+            1: {"node_0": Status.Completed, "node_1": Status.Failed, "node_2": Status.Completed},
+            2: {"node_0": Status.Completed, "node_1": Status.Completed, "node_2": Status.Bypassed},
+        }
+        line_results = get_line_results(line_dict)
 
-class MockPythonExecutorProxy(AbstractExecutorProxy):
-    pass
+        mem_run_storge = MemoryRunStorage()
+        batch_engine = BatchEngine(get_yaml_file("print_input_flow"), "", storage=mem_run_storge)
+        batch_engine._persist_run_info(line_results)
 
-
-class MockJSExecutorProxy(APIBasedExecutorProxy):
-    pass
+        assert len(mem_run_storge._flow_runs) == 3
+        assert len(mem_run_storge._node_runs) == 9
