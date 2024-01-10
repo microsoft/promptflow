@@ -8,7 +8,6 @@ import re
 from dataclasses import dataclass
 from typing import Dict
 
-from azure.ai.ml._restclient.v2022_10_01.models import DatastoreType
 from azure.core.credentials import AccessToken
 from vcr.request import Request
 
@@ -54,16 +53,21 @@ class MockDatastore:
     account_name: str
     container_name: str
     endpoint: str
-    type: DatastoreType = DatastoreType.AZURE_BLOB
-    credentials: FakeTokenCredential = FakeTokenCredential()
+    # `type` and `credentials` are required in `get_datastore_info`
+    type: str
+    credentials: str
 
 
 def mock_datastore_get(*args, **kwargs) -> MockDatastore:
+    from azure.ai.ml._restclient.v2022_10_01.models import DatastoreType
+
     return MockDatastore(
         name="workspaceblobstore",
         account_name=SanitizedValues.FAKE_ACCOUNT_NAME,
         container_name=SanitizedValues.FAKE_CONTAINER_NAME,
         endpoint="core.windows.net",
+        type=DatastoreType.AZURE_BLOB,
+        credentials=None,
     )
 
 
