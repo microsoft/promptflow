@@ -13,8 +13,6 @@ from promptflow._utils.tool_utils import (
     load_function_from_function_path,
     param_to_definition,
     validate_dynamic_list_func_response_type,
-    get_inputs_for_prompt_template
-
 )
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.tool import ValueType, Tool, ToolType
@@ -375,21 +373,3 @@ class TestToolUtils:
         }
         with pytest.raises(DuplicateToolMappingError, match="secure operation"):
             _find_deprecated_tools(package_tools)
-
-    def test_get_inputs_for_prompt_template(self):
-        prompt_str = '''
-        Please summarize the following text in one paragraph. 50 words.
-        Do not add any information that is not in the text.
-        {{ who }}
-        Text: {{ text }}
-        {{ connection }}
-        {{ api }}
-        Summary:
-        '''
-
-        result_dict = get_inputs_for_prompt_template(prompt_str)
-        assert len(result_dict) == 4
-        assert result_dict["connection"].ui_hints["index"] == 2
-        assert result_dict["api"].ui_hints["index"] == 3
-        assert result_dict["who"].ui_hints["index"] == 0
-        assert result_dict["text"].ui_hints["index"] == 1
