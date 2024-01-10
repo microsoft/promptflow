@@ -30,7 +30,7 @@ class YAMLTranslatableMixin(abc.ABC):
         return schema_cls(context={BASE_PATH_CONTEXT_KEY: "./"}).dump(self)
 
     def _to_yaml(self) -> str:
-        return dump_yaml(self._to_dict(), sort_keys=False)
+        return dump_yaml(self._to_dict())
 
     def __str__(self):
         try:

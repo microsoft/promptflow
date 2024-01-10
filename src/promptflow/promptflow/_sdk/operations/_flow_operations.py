@@ -335,7 +335,7 @@ class FlowOperations(TelemetryMixin):
         }
 
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write(dump_yaml(sorted_connection_dict, sort_keys=False))
+            f.write(dump_yaml(sorted_connection_dict))
         return env_var_names
 
     def _migrate_connections(self, connection_names: List[str], output_dir: Path):

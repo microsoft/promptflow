@@ -5,7 +5,6 @@
 # pylint: disable=unused-argument,no-self-use
 
 import copy
-from collections import OrderedDict
 from pathlib import Path
 from typing import Optional
 
@@ -34,7 +33,7 @@ class PatchedBaseSchema(Schema):
     @post_dump
     def remove_none(self, data, **kwargs):
         """Prevents from dumping attributes that are None, thus making the dump more compact."""
-        return OrderedDict((key, value) for key, value in data.items() if value is not None)
+        return dict((key, value) for key, value in data.items() if value is not None)
 
 
 class PatchedSchemaMeta(SchemaMeta):

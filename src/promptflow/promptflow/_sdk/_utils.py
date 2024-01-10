@@ -136,6 +136,17 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
     return cfg
 
 
+def load_yaml_string(yaml_string: str) -> Dict:
+    """Load a yaml string.
+
+    :param yaml_string: A yaml string.
+    :type yaml_string: str
+    """
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    return yaml.load(yaml_string)
+
+
 # region Encryption
 
 CUSTOMIZED_ENCRYPTION_KEY_IN_KEY_RING = None
