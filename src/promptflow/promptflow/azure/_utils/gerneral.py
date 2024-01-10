@@ -17,10 +17,10 @@ def get_token_by_credential(credential):
     # NOTE: this copied from https://github.com/Azure/azure-sdk-for-python/blob/05f1438ad0a5eb536e5c49d8d9d44b798445044a/sdk/ml/azure-ai-ml/azure/ai/ml/operations/_job_operations.py#L1495C12-L1495C12
     aml_resource_id = _get_aml_resource_id_from_metadata()
     azure_ml_scopes = _resource_to_scopes(aml_resource_id)
-    aml_token = credential.get_token(*azure_ml_scopes).token
+    arm_token = credential.get_token(*azure_ml_scopes).token
     # validate token has aml audience
     decoded_token = jwt.decode(
-        aml_token,
+        arm_token,
         options={"verify_signature": False, "verify_aud": False},
     )
     if decoded_token.get("aud") != aml_resource_id:
@@ -32,7 +32,7 @@ def get_token_by_credential(credential):
             message=msg.format(*azure_ml_scopes),
         )
 
-    return aml_token
+    return arm_token
 
 
 def get_token_by_login():
@@ -40,11 +40,11 @@ def get_token_by_login():
         from azureml.core.authentication import InteractiveLoginAuthentication
 
         auth = InteractiveLoginAuthentication()
-        token = auth._get_arm_token()
+        arm_token = auth._get_arm_token()
     except Exception as e:
         raise e
     else:
-        return token
+        return arm_token
 
 
 def get_arm_token(credential=None):
