@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 from typing import List, Optional
 
-from promptflow._sdk._constants import MAX_RUN_LIST_RESULTS, ListViewType
+from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ListViewType
 from promptflow._sdk._errors import ExperimentExistsError, ExperimentNotFoundError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
@@ -24,13 +24,13 @@ class ExperimentOperations(TelemetryMixin):
     @monitor_operation(activity_name="pf.experiment.list", activity_type=ActivityType.PUBLICAPI)
     def list(
         self,
-        max_results: Optional[int] = MAX_RUN_LIST_RESULTS,
+        max_results: Optional[int] = MAX_LIST_CLI_RESULTS,
         *,
         list_view_type: ListViewType = ListViewType.ACTIVE_ONLY,
     ) -> List[Experiment]:
         """List experiments.
 
-        :param max_results: Max number of results to return. Default: MAX_RUN_LIST_RESULTS.
+        :param max_results: Max number of results to return. Default: 50.
         :type max_results: Optional[int]
         :param list_view_type: View type for including/excluding (for example) archived experiments.
             Default: ACTIVE_ONLY.
@@ -47,11 +47,11 @@ class ExperimentOperations(TelemetryMixin):
 
     @monitor_operation(activity_name="pf.experiment.get", activity_type=ActivityType.PUBLICAPI)
     def get(self, name: str) -> Experiment:
-        """Get a run entity.
+        """Get an experiment entity.
 
-        :param name: Name of the run.
+        :param name: Name of the experiment.
         :type name: str
-        :return: run object retrieved from the database.
+        :return: experiment object retrieved from the database.
         :rtype: ~promptflow.entities.Experiment
         """
         try:

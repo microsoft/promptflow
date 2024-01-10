@@ -9,17 +9,11 @@ from promptflow._sdk.schemas._fields import LocalPathField, NestedField, StringT
 from promptflow._sdk.schemas._run import RunSchema
 
 
-class ToolSourceSchema(metaclass=PatchedSchemaMeta):
-    type = StringTransformedEnum(allowed_values=["code", "package"], required=True)
-    tool = fields.Str()
-    path = LocalPathField()
-
-
 class ScriptNodeSchema(metaclass=PatchedSchemaMeta):
     # TODO: Not finalized now. Need to revisit.
     name = fields.Str(required=True)
     type = StringTransformedEnum(allowed_values=ExperimentNodeType.CODE, required=True)
-    source = NestedField(ToolSourceSchema, required=True)
+    path = UnionField([LocalPathField(required=True), fields.Str(required=True)])
     inputs = fields.Dict(keys=fields.Str)
     # runtime field, only available for cloud run
     runtime = fields.Str()  # TODO: Revisit the required fields
