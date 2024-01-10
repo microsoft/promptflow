@@ -189,16 +189,10 @@ def trigger_prepare(input_paths):
             # Loop through each pipeline in the list of pipelines.
             for key in reverse_checks[key_item]:
                 # Check if the pipeline is in the list of pipelines.
-                if key in pipelines:
-                    if key in special_care:
-                        pipelines[key] = special_care[key]
-                    else:
-                        pipelines[key] = 1
+                if key in special_care:
+                    pipelines[key] = special_care[key]
                 else:
-                    if key in special_care:
-                        pipelines[key] = special_care[key]
-                    else:
-                        pipelines[key] = 1
+                    pipelines[key] = 1
                 # Set the pipeline count to 0.
                 pipelines_count[key] = 0
 
