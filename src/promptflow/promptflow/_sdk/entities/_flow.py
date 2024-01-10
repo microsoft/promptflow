@@ -17,10 +17,10 @@ from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
+    NODES,
     PROMPT_FLOW_DIR_NAME,
 )
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
@@ -95,6 +95,7 @@ class FlowContext:
 class FlowBase(abc.ABC):
     def __init__(self, **kwargs):
         self._context = FlowContext()
+        self._content_hash = kwargs.pop("content_hash", None)
         super().__init__(**kwargs)
 
     @property
@@ -134,7 +135,6 @@ class Flow(FlowBase):
         path = kwargs.pop("path", None)
         self._path = Path(path) if path else None
         self.variant = kwargs.pop("variant", None) or {}
-        self._content_hash = kwargs.pop("content_hash", None)
         self.dag = dag
         super().__init__(**kwargs)
 
@@ -157,9 +157,9 @@ class Flow(FlowBase):
         return flow_file
 
     @classmethod
-    def _is_eager_flow(cls, data: dict):
-        """Check if the flow is an eager flow. Use field 'entry' to determine."""
-        return data.get("entry") is not None
+    def _is_dag_flow(cls, data: dict):
+        """Check if the flow is an DAG flow. Use field 'nodes' to determine."""
+        return data.get(NODES)
 
     @classmethod
     def load(
@@ -167,6 +167,8 @@ class Flow(FlowBase):
         source: Union[str, PathLike],
         **kwargs,
     ):
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
         source_path = Path(source)
         if not source_path.exists():
             raise UserErrorException(f"Source {source_path.absolute().as_posix()} does not exist")
@@ -179,11 +181,11 @@ class Flow(FlowBase):
                 flow_content = f.read()
                 data = yaml.safe_load(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
-            is_eager_flow = cls._is_eager_flow(data)
-            if is_eager_flow:
-                return EagerFlow._load(path=flow_path, entry=data.get("entry"), data=data, **kwargs)
-            else:
+            is_dag_flow = cls._is_dag_flow(data)
+            if is_dag_flow:
                 return ProtectedFlow._load(path=flow_path, dag=data, **kwargs)
+            else:
+                return EagerFlow._load(path=flow_path, entry=data.get("entry"), data=data, **kwargs)
         # if non-YAML file is provided, treat is as eager flow
         return EagerFlow._load(path=flow_path, **kwargs)
 
