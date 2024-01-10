@@ -1,4 +1,5 @@
 import multiprocessing
+import os
 from asyncio import Queue
 from contextlib import contextmanager
 from functools import wraps
@@ -110,9 +111,52 @@ def recording_injection_decorator_compatible_with_forkserver(mock_class):
     return decorator
 
 
-SpawnProcess = multiprocessing.get_context("spawn").Process
-ForkProcess = multiprocessing.get_context("fork").Process
-ForkServerProcess = multiprocessing.get_context("forkserver").Process
+def get_default_start_method():
+    multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
+    sys_start_methods = multiprocessing.get_all_start_methods()
+    if not multiprocessing_start_method or multiprocessing_start_method not in sys_start_methods:
+        multiprocessing_start_method = multiprocessing.get_start_method()
+    return multiprocessing_start_method
+
+
+@pytest.fixture
+def recording_injection_addon():
+    setup_recording_injection()
+
+
+def setup_recording_injection(start_method=None):
+    if not start_method:
+        start_method = get_default_start_method()
+    if start_method == "spawn":
+        mock_class = MockSpawnProcess
+    elif start_method == "fork":
+        mock_class = MockForkProcess
+    elif start_method == "forkserver":
+        mock_class = MockForkServerProcess
+    else:
+        raise Exception(f"Unsupported start method in recording_injection_addon: {start_method}")
+    original_process_class = multiprocessing.get_context(start_method).Process
+    multiprocessing.get_context(start_method).Process = mock_class
+    multiprocessing.Process = mock_class
+    try:
+        with apply_recording_injection_if_enabled():
+            return
+    finally:
+        multiprocessing.get_context(start_method).Process = original_process_class
+        multiprocessing.Process = original_process_class
+
+
+SpawnProcess = multiprocessing.Process
+if "spawn" in multiprocessing.get_all_start_methods():
+    SpawnProcess = multiprocessing.get_context("spawn").Process
+
+ForkProcess = multiprocessing.Process
+if "fork" in multiprocessing.get_all_start_methods():
+    ForkProcess = multiprocessing.get_context("fork").Process
+
+ForkServerProcess = multiprocessing.Process
+if "forkserver" in multiprocessing.get_all_start_methods():
+    ForkServerProcess = multiprocessing.get_context("forkserver").Process
 
 
 class MockSpawnProcess(SpawnProcess):

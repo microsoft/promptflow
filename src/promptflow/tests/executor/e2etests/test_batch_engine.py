@@ -14,14 +14,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
-from ..conftest import (
-    MockForkProcess,
-    MockForkServerProcess,
-    MockSpawnProcess,
-    recording_injection_decorator_compatible_with_fork,
-    recording_injection_decorator_compatible_with_forkserver,
-    recording_injection_decorator_compatible_with_spawn,
-)
+from ..conftest import MockSpawnProcess, recording_injection_decorator_compatible_with_spawn, setup_recording_injection
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -44,8 +37,8 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     return batch_result
 
 
-@recording_injection_decorator_compatible_with_forkserver(MockForkServerProcess)
 def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+    setup_recording_injection(multiprocessing_start_method)
     os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
         flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
@@ -96,8 +89,7 @@ def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestBatch:
-    @recording_injection_decorator_compatible_with_fork(MockForkProcess)
-    def test_batch_storage(self, dev_connections, recording_injection):
+    def test_batch_storage(self, dev_connections, recording_injection, recording_injection_addon):
         mem_run_storage = MemoryRunStorage()
         run_id = str(uuid.uuid4())
         inputs_mapping = {"url": "${data.url}"}
@@ -206,8 +198,7 @@ class TestBatch:
             ),
         ],
     )
-    @recording_injection_decorator_compatible_with_forkserver(MockForkServerProcess)
-    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
+    def test_forkserver_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections, recording_injection_addon):
         if "forkserver" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: forkserver")
         p = multiprocessing.Process(
