@@ -18,6 +18,8 @@ logger = LoggerFactory.get_logger(name=__name__)
 
 
 class ExperimentOrchestrator:
+    """Experiment orchestrator, responsible for experiment running."""
+
     def __init__(self, run_operations: RunOperations, experiment_operations: ExperimentOperations):
         self.run_operations = run_operations
         self.experiment_operations = experiment_operations
@@ -33,7 +35,7 @@ class ExperimentOrchestrator:
         """
         # Start experiment
         logger.info(f"Starting experiment {experiment.name}.")
-        experiment.status = ExperimentStatus.RUNNING
+        experiment.status = ExperimentStatus.IN_PROGRESS
         experiment.last_start_time = datetime.utcnow().isoformat()
         experiment.last_end_time = None
         self.experiment_operations.create_or_update(experiment)
@@ -98,7 +100,7 @@ class ExperimentOrchestrator:
     def _run_node(self, node, experiment, data_dict, run_dict) -> Run:
         if node.type == ExperimentNodeType.FLOW:
             return self._run_flow_node(node, experiment, data_dict, run_dict)
-        elif node.type == ExperimentNodeType.PYTHON:
+        elif node.type == ExperimentNodeType.CODE:
             return self._run_script_node(node, experiment)
         raise UserErrorException(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
@@ -115,6 +117,7 @@ class ExperimentOrchestrator:
             variant=node.variant,
             flow=node.path,
             connections=node.connections,
+            experiment_name=experiment.name,
             environment_variables=node.environment_variables,
             # Config run output path to experiment output folder
             config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),
@@ -127,6 +130,8 @@ class ExperimentOrchestrator:
 
 
 class ExperimentRun(Run):
+    """Experiment run, includes experiment running context, like data, inputs and runs."""
+
     def __init__(self, experiment_data, experiment_runs, **kwargs):
         self.experiment_data = experiment_data
         self.experiment_runs = experiment_runs
@@ -134,6 +139,8 @@ class ExperimentRun(Run):
 
 
 class ExperimentRunSubmitter(RunSubmitter):
+    """Experiment run submitter, override some function from RunSubmitter as experiment run could be different."""
+
     @classmethod
     def _validate_inputs(cls, run: Run):
         # Do not validate run/data field, as we will resolve them in _resolve_input_dirs.

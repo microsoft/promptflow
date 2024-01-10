@@ -14,6 +14,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.schema import CreateTable
 
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     CONNECTION_TABLE_NAME,
     EXPERIMENT_CREATED_ON_INDEX_NAME,
@@ -82,11 +83,12 @@ def mgmt_db_session() -> Session:
         from promptflow._sdk._orm import Connection, Experiment, RunInfo
 
         create_or_update_table(engine, orm_class=RunInfo, tablename=RUN_INFO_TABLENAME)
-        create_or_update_table(engine, orm_class=Experiment, tablename=EXPERIMENT_TABLE_NAME)
         create_table_if_not_exists(engine, CONNECTION_TABLE_NAME, Connection)
 
         create_index_if_not_exists(engine, RUN_INFO_CREATED_ON_INDEX_NAME, RUN_INFO_TABLENAME, "created_on")
-        create_index_if_not_exists(engine, EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, "created_on")
+        if Configuration.get_instance().is_preview_features_enabled():
+            create_or_update_table(engine, orm_class=Experiment, tablename=EXPERIMENT_TABLE_NAME)
+            create_index_if_not_exists(engine, EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, "created_on")
 
         session_maker = sessionmaker(bind=engine)
     except Exception as e:  # pylint: disable=broad-except

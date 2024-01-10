@@ -208,10 +208,10 @@ class PFClient:
         """Operations on the flow that can manage flows."""
         return self._flows
 
-    @property
-    def experiments(self) -> ExperimentOperations:
-        """Operations on the experiment that can manage experiments."""
-        return self._experiments
+    # @property
+    # def experiments(self) -> ExperimentOperations:
+    #     """Operations on the experiment that can manage experiments."""
+    #     return self._experiments
 
     def test(
         self,

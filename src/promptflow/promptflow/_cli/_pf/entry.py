@@ -102,7 +102,7 @@ def get_parser_args(argv):
     add_config_parser(subparsers)
     add_tool_parser(subparsers)
 
-    if Configuration.get_instance().preview_features_enabled():
+    if Configuration.get_instance().is_preview_features_enabled():
         add_experiment_parser(subparsers)
 
     return parser.prog, parser.parse_args(argv)

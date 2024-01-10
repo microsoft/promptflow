@@ -401,10 +401,10 @@ class DownloadedRun:
 
 class ExperimentNodeType(object):
     FLOW = "flow"
-    PYTHON = "python"
+    CODE = "code"
 
 
 class ExperimentStatus(object):
     NOT_STARTED = "NotStarted"
-    RUNNING = "Running"
+    IN_PROGRESS = "InProgress"
     TERMINATED = "Terminated"

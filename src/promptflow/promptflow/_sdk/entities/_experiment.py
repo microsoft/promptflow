@@ -92,7 +92,7 @@ class FlowNode(YAMLTranslatableMixin):
 
 class ScriptNode(YAMLTranslatableMixin):
     def __init__(self, source, inputs, name, display_name=None, runtime=None, environment_variables=None, **kwargs):
-        self.type = ExperimentNodeType.PYTHON
+        self.type = ExperimentNodeType.CODE
         self.display_name = display_name
         self.name = name
         self.source = source
@@ -259,7 +259,7 @@ class Experiment(ExperimentTemplate):
                         node_dict, context={BASE_PATH_CONTEXT_KEY: "./"}, additional_message="Failed to load node."
                     )
                 )
-            elif node_dict["type"] == ExperimentNodeType.PYTHON:
+            elif node_dict["type"] == ExperimentNodeType.CODE:
                 nodes.append(
                     ScriptNode._load_from_dict(
                         node_dict, context={BASE_PATH_CONTEXT_KEY: "./"}, additional_message="Failed to load node."

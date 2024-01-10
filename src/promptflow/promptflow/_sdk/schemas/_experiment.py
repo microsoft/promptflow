@@ -18,7 +18,7 @@ class ToolSourceSchema(metaclass=PatchedSchemaMeta):
 class ScriptNodeSchema(metaclass=PatchedSchemaMeta):
     # TODO: Not finalized now. Need to revisit.
     name = fields.Str(required=True)
-    type = StringTransformedEnum(allowed_values=ExperimentNodeType.PYTHON, required=True)
+    type = StringTransformedEnum(allowed_values=ExperimentNodeType.CODE, required=True)
     source = NestedField(ToolSourceSchema, required=True)
     inputs = fields.Dict(keys=fields.Str)
     # runtime field, only available for cloud run
@@ -68,7 +68,7 @@ class ExperimentTemplateSchema(YamlFileSchema):
             node_type = node.get("type", None)
             if node_type == ExperimentNodeType.FLOW:
                 resolved_nodes.append(FlowNode._load_from_dict(data=node, context=self.context, additional_message=""))
-            elif node_type == ExperimentNodeType.PYTHON:
+            elif node_type == ExperimentNodeType.CODE:
                 resolved_nodes.append(
                     ScriptNode._load_from_dict(data=node, context=self.context, additional_message="")
                 )
