@@ -548,6 +548,8 @@ def create_run(create_func: Callable, args):
         column_mapping = list_of_dict_to_dict(column_mapping)
 
     if file:
+        # for file name items `flow` and `data`, convert them to relative path to the file
+        # data also has a special format `azureml:`, which should not be converted
         for param_key, param in {
             "name": name,
             "flow": os.path.relpath(Path(flow), Path(file).parent) if flow else None,
