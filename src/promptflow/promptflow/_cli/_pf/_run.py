@@ -4,6 +4,8 @@
 
 import argparse
 import json
+import os
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
 from promptflow._cli._params import (
@@ -548,9 +550,9 @@ def create_run(create_func: Callable, args):
     if file:
         for param_key, param in {
             "name": name,
-            "flow": flow,
+            "flow": os.path.relpath(Path(flow), Path(file).parent) if data else None,
             "variant": variant,
-            "data": data,
+            "data": os.path.relpath(Path(data), Path(file).parent) if data else None,
             "column_mapping": column_mapping,
             "run": run,
             "environment_variables": environment_variables,
@@ -559,7 +561,7 @@ def create_run(create_func: Callable, args):
             if not param:
                 continue
             params_override.append({param_key: param})
-
+            print(f"Overriding {param_key} with {param}")
         run = load_run(source=file, params_override=params_override)
     elif flow:
         run_data = {

@@ -72,12 +72,13 @@ class TestCli:
         run_pf_command(
             "run",
             "create",
-            "--flow",
-            f"{FLOWS_DIR}/web_classification",
+            "--file",
+            "./src/promptflow/tests/test_configs/runs/sample_bulk_run.yaml",
             "--data",
-            f"{DATAS_DIR}/webClassification3.jsonl",
+            "./src/promptflow/tests/test_configs/data/webClassification3.jsonl",
             "--name",
             str(uuid.uuid4()),
+            cwd="/home/yigao/promptflow/",
         )
         out, _ = capfd.readouterr()
         assert "Completed" in out
