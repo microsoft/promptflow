@@ -67,18 +67,24 @@ class TestCli:
         out, _ = capfd.readouterr()
         assert "0.0.1\n" in out
 
-    def test_basic_flow_run(self, capfd) -> None:
+    def test_create_file_data_flow_new_relative_path(self, capfd) -> None:
+        new_cwd = Path(os.getcwd()).parent.parent
+        NEW_RUNS_DIR = "./src/promptflow/tests/test_configs/runs"
+        NEW_FLOWS_DIR = "./src/promptflow/tests/test_configs/flows"
+        NEW_DATA_DIR = "./src/promptflow/tests/test_configs/datas"
         # fetch std out
         run_pf_command(
             "run",
             "create",
             "--file",
-            "./src/promptflow/tests/test_configs/runs/sample_bulk_run.yaml",
+            f"{NEW_RUNS_DIR}/sample_bulk_run.yaml",
             "--data",
-            "./src/promptflow/tests/test_configs/data/webClassification3.jsonl",
+            f"{NEW_DATA_DIR}/webClassification3.jsonl",
             "--name",
             str(uuid.uuid4()),
-            cwd="/home/yigao/promptflow/",
+            "--flow",
+            f"{NEW_FLOWS_DIR}/web_classification",
+            cwd=new_cwd,
         )
         out, _ = capfd.readouterr()
         assert "Completed" in out

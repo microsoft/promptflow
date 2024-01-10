@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
 name: flow_run_20230629_101205
 description: sample bulk run
 flow: ../flows/web_classification
