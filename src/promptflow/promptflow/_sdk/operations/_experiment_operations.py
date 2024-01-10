@@ -32,9 +32,10 @@ class ExperimentOperations(TelemetryMixin):
 
         :param max_results: Max number of results to return. Default: MAX_RUN_LIST_RESULTS.
         :type max_results: Optional[int]
-        :param list_view_type: View type for including/excluding (for example) archived runs. Default: ACTIVE_ONLY.
+        :param list_view_type: View type for including/excluding (for example) archived experiments.
+            Default: ACTIVE_ONLY.
         :type list_view_type: Optional[ListViewType]
-        :return: List of run objects.
+        :return: List of experiment objects.
         :rtype: List[~promptflow.entities.Experiment]
         """
         orm_experiments = ORMExperiment.list(max_results=max_results, list_view_type=list_view_type)

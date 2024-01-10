@@ -122,7 +122,7 @@ def add_experiment_parser(subparsers):
     experiment_parser = subparsers.add_parser(
         "experiment",
         description="[Experimental] A CLI tool to manage experiment for prompt flow.",
-        help="[Experimental] pf experiment",
+        help="[Experimental] pf experiment. This is an experimental feature, and may change at any time.",
     )
     subparsers = experiment_parser.add_subparsers()
     add_experiment_create(subparsers)
