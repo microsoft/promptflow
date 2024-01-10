@@ -41,7 +41,7 @@ def run_batch_with_start_method(multiprocessing_start_method, flow_folder, input
     if multiprocessing_start_method == "spawn":
         multiprocessing.Process = MockSpawnProcess
         multiprocessing.get_context("spawn").Process = MockSpawnProcess
-        setup_recording_injection_if_enabled()
+    setup_recording_injection_if_enabled()
 
     os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
