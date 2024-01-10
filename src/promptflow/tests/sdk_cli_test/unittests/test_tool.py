@@ -30,21 +30,24 @@ class TestTool:
             "python_tool.my_python_tool": {
                 "name": "python_tool",
                 "type": "python",
-                "inputs": {"input1": {"type": ["string"]}},
+                "inputs": {"input1": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "module": "python_tool",
                 "function": "my_python_tool",
             },
             "python_tool.my_python_tool_without_name": {
                 "name": "my_python_tool_without_name",
                 "type": "python",
-                "inputs": {"input1": {"type": ["string"]}},
+                "inputs": {"input1": {"type": ["string"], "ui_hints": {"index": 0}}},
                 "module": "python_tool",
                 "function": "my_python_tool_without_name",
             },
             "python_tool.PythonTool.python_tool": {
                 "name": "PythonTool.python_tool",
                 "type": "python",
-                "inputs": {"connection": {"type": ["AzureOpenAIConnection"]}, "input1": {"type": ["string"]}},
+                "inputs": {
+                    "connection": {"type": ["AzureOpenAIConnection"], "ui_hints": {"index": 0}},
+                    "input1": {"type": ["string"], "ui_hints": {"index": 1}}
+                },
                 "module": "python_tool",
                 "class_name": "PythonTool",
                 "function": "python_tool",
@@ -61,7 +64,10 @@ class TestTool:
                 "description": "This is a tool to demonstrate the custom_llm tool type",
                 "enable_kwargs": True,
                 "function": "tool_func",
-                "inputs": {"api": {"type": ["string"]}, "connection": {"type": ["AzureOpenAIConnection"]}},
+                "inputs": {
+                    "api": {"type": ["string"], "ui_hints": {"index": 1}},
+                    "connection": {"type": ["AzureOpenAIConnection"], "ui_hints": {"index": 0}}
+                },
                 "module": "custom_llm_tool",
                 "name": "My Custom LLM Tool",
                 "type": "custom_llm",
@@ -70,7 +76,7 @@ class TestTool:
                 "description": "This is a tool to demonstrate the custom_llm tool type",
                 "enable_kwargs": True,
                 "function": "my_tool",
-                "inputs": {"connection": {"type": ["CustomConnection"]}},
+                "inputs": {"connection": {"type": ["CustomConnection"], "ui_hints": {"index": 0}}},
                 "module": "custom_llm_tool",
                 "name": "My Custom LLM Tool",
                 "type": "custom_llm",
