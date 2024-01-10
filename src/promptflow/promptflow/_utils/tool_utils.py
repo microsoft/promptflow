@@ -210,9 +210,10 @@ def get_inputs_for_prompt_template(template_str):
     """
     env = Environment()
     template = env.parse(template_str)
+    matches = re.finditer(r'\{([^}]*)\}', template_str)
     inputs = sorted(
         meta.find_undeclared_variables(template),
-        key=lambda x: _find_template_variable_index(template_str, x)
+        key=lambda x: _find_template_variable_index(matches, x)
     )
     result_dict = {i: InputDefinition(type=[ValueType.STRING], ui_hints={"index": inputs.index(i)}) for i in inputs}
 
@@ -364,9 +365,7 @@ def _get_function_path(function):
     return func, func_path
 
 
-def _find_template_variable_index(template_str, variable):
-    matches = re.finditer(r'\{([^}]*)\}', template_str)
-
+def _find_template_variable_index(matches, variable):
     for match in matches:
         if variable in match.group(1):
             return match.start(1) + match.group(1).find(variable)
