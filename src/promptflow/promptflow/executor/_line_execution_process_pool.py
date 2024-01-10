@@ -198,18 +198,6 @@ class LineExecutionProcessPool:
                     f"Unable to access shared dictionary 'process_info', possibly "
                     f"because the sub process is down. Exception: {e}")
 
-    def _process_output_message(self, message, result_list):
-        if isinstance(message, LineResult):
-            message = self._process_multimedia(message)
-            result_list.append(message)
-            return True
-        elif isinstance(message, FlowRunInfo):
-            self._storage.persist_flow_run(message)
-        elif isinstance(message, NodeRunInfo):
-            self._storage.persist_node_run(message)
-
-        return False
-
     def handle_line_timeout(self, line_number, timeout_time, inputs, run_id, start_time, result_list):
         bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
         ex = LineExecutionTimeoutError(line_number, timeout_time)
