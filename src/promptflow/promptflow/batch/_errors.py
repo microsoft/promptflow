@@ -16,3 +16,7 @@ class EmptyInputsData(UserErrorException):
 
 class ExecutorServiceUnhealthy(SystemErrorException):
     pass
+
+
+class InvalidMetadataError(UserErrorException):
+    pass
