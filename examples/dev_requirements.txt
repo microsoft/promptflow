@@ -1,6 +1,9 @@
 # required for notebook sample ci
 ipython_genutils
 ipykernel
+jinja2 # for readme generations
+markdown # for readme generator
+nbformat # for readme generator
 papermill
 keyrings.alt
 black==23.7.0
@@ -8,4 +11,3 @@ black-nb
 pypandoc # for markdown reader
 pypandoc_binary # pypandoc pandoc backend
 panflute # for pandoc filters
-jinja2 # for readme generations

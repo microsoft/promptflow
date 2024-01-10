@@ -43,7 +43,10 @@ def to_openai_error_message(e: Exception) -> str:
               "The value associated with the type key should be either 'text' or 'json_object' " \
               "If you are using openai connection, you can only set response_format to { \"type\": \"json_object\" } " \
               "when calling gpt-3.5-turbo-1106 or gpt-4-1106-preview to enable JSON mode. You can refer to " \
-              "https://platform.openai.com/docs/guides/text-generation/json-mode."
+              "https://platform.openai.com/docs/guides/text-generation/json-mode. If you are using azure openai " \
+              "connection, then please first go to your Azure OpenAI resource, deploy model 'gpt-35-turbo-1106' or " \
+              "'gpt-4-1106-preview'. You can refer to " \
+              "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/json-mode?tabs=python."
         return f"OpenAI API hits {ex_type}: {msg}"
     else:
         return f"OpenAI API hits {ex_type}: {str(e)} [{openai_error_code_ref_message}]"

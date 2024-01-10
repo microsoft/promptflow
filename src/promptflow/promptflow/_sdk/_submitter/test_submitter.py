@@ -20,13 +20,18 @@ from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
+from promptflow.executor._result import LineResult
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
-from .utils import (SubmitterHelper, variant_overwrite_context, print_chat_output, resolve_generator,
-                    show_node_log_and_output)
-
+from .utils import (
+    SubmitterHelper,
+    print_chat_output,
+    resolve_generator,
+    show_node_log_and_output,
+    variant_overwrite_context,
+)
 
 logger = get_cli_sdk_logger()
 
@@ -376,15 +381,18 @@ class TestSubmitterViaProxy(TestSubmitter):
         ):
             try:
                 storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-                flow_executor = CSharpExecutorProxy.create(
-                    flow_file=self.flow.path,
-                    working_dir=self.flow.code,
+                flow_executor: CSharpExecutorProxy = async_run_allowing_running_loop(
+                    CSharpExecutorProxy.create,
+                    self.flow.path,
+                    self.flow.code,
                     connections=connections,
                     storage=storage,
                     log_path=log_path,
                 )
 
-                line_result = async_run_allowing_running_loop(flow_executor.exec_line_async, inputs, index=0)
+                line_result: LineResult = async_run_allowing_running_loop(
+                    flow_executor.exec_line_async, inputs, index=0
+                )
                 line_result.output = persist_multimedia_data(
                     line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
                 )
@@ -405,7 +413,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                         logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
                 return line_result
             finally:
-                flow_executor.destroy()
+                async_run_allowing_running_loop(flow_executor.destroy)
 
     def exec_with_inputs(self, inputs):
         from promptflow._constants import LINE_NUMBER_KEY

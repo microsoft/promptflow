@@ -43,7 +43,7 @@ Local path to the flow directory.
 `--set`
 
 Update an object by specifying a property path and value to set.
-- `display-name`: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
+- `display_name`: Flow display name that will be created in remote. Default to be flow folder name + timestamp if not specified.
 - `type`: Flow type. Default to be "standard" if not specified. Available types are: "standard", "evaluation", "chat".
 - `description`: Flow description. e.g. "--set description=\<description\>."
 - `tags`: Flow tags. e.g. "--set tags.key1=value1 tags.key2=value2."
@@ -133,6 +133,7 @@ Manage prompt flow runs.
 | [pfazure run archive](#pfazure-run-archive) | Archive a run. |
 | [pfazure run restore](#pfazure-run-restore) | Restore a run. |
 | [pfazure run update](#pfazure-run-update) | Update a run. |
+| [pfazure run download](#pfazure-run-download) | Download a run. |
 
 ### pfazure run create
 
@@ -504,3 +505,49 @@ Resource group name, required when there is no default value from `az configure`
 
 Workspace name, required when there is no default value from `az configure`.
 
+
+### pfazure run download
+
+Download a run's metadata, such as `input`, `output`, `snapshot` and `artifact`. After the download is finished,  you can use `pf run create --source <run-info-local-folder>` to register this run as a local run record, then you can use commands like `pf run show/visualize` to inspect the run just like a run that was created from local flow.
+
+```bash
+pfazure run download --name
+                    [--output]
+                    [--overwrite]
+                    [--subscription]
+                    [--resource-group]
+                    [--workspace-name]
+```
+
+#### Examples
+
+Download a run data to local:
+```bash
+pfazure run download --name <name> --output <output-folder-path>
+```
+
+#### Parameters
+
+`--name -n`
+
+Name of the run.
+
+`--output -o`
+
+Output folder path to store the downloaded run data. Default to be `~/.promptflow/.runs` if not specified
+
+`--overwrite`
+
+Overwrite the existing run data if the output folder already exists. Default to be `False` if not specified
+
+`--subscription`
+
+Subscription id, required when there is no default value from `az configure`.
+
+`--resource-group -g`
+
+Resource group name, required when there is no default value from `az configure`.
+
+`--workspace-name -w`
+
+Workspace name, required when there is no default value from `az configure`.

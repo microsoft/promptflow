@@ -29,12 +29,12 @@ Parameters with `Connection` type annotation will be treated as connection input
 - Promptflow extension will show a selector to select the connection.
 - During execution time, promptflow will try to find the connection with the name same from parameter value passed in.
 
-Note that `Union[...]` type annotation is supported **ONLY** for connection type, 
+Note that `Union[...]` type annotation is supported **ONLY** for connection type,
 for example, `param: Union[CustomConnection, OpenAIConnection]`.
 
 ## Outputs
 
-The return of the python tool function. 
+The return of the python tool function.
 
 
 ## How to write Python Tool?
@@ -44,7 +44,7 @@ The return of the python tool function.
 1. Python Tool Code should consist of a complete Python code, including any necessary module imports.
 
 2. Python Tool Code must contain a function decorated with @tool (tool function), serving as the entry point for execution. The @tool decorator should be applied only once within the snippet.
-   
+
    _Below sample defines python tool "my_python_tool", decorated with @tool_
 
 3. Python tool function parameters must be assigned in 'Inputs' section
@@ -53,13 +53,13 @@ The return of the python tool function.
 
 4. Python tool function shall have return
 
-    _Below sample returns a concatenated string_ 
+    _Below sample returns a concatenated string_
 
 
 ### Code
 
 The snippet below shows the basic structure of a tool function. Promptflow will read the function and extract inputs
-from function parameters and type annotations. 
+from function parameters and type annotations.
 
 ```python
 from promptflow import tool
@@ -89,3 +89,24 @@ Promptflow will try to find the connection named 'my_conn' during execution time
 ```python
 "hello world"
 ```
+
+
+### Keyword Arguments Support
+Starting from version 1.0.0 of PromptFlow and version 1.4.0 of [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow),
+we have introduced support for keyword arguments (kwargs) in the Python tool.
+
+
+```python
+from promptflow import tool
+
+
+@tool
+def print_test(normal_input: str, **kwargs):
+    for key, value in kwargs.items():
+        print(f"Key {key}'s value is {value}")
+    return len(kwargs)
+
+```
+When you add `kwargs` in your python tool like above code, you can insert variable number of inputs by the `+Add input` button.
+
+![Screenshot of the kwargs On VScode Prompt Flow extension](../../media/reference/tools-reference/python_tool_kwargs.png)

@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Callable, Dict
 from urllib.parse import urlparse
 
-import filetype
 import requests
 
 from promptflow._utils._errors import InvalidImageInput, LoadMultimediaDataError
@@ -17,11 +16,6 @@ from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget
 
 MIME_PATTERN = re.compile(r"^data:image/(.*);(path|base64|url)$")
-
-
-def _get_mime_type_from_path(path: Path):
-    ext = path.suffix[1:]
-    return f"image/{ext}" if ext else "image/*"
 
 
 def _get_extension_from_mime_type(mime_type: str):
@@ -63,28 +57,18 @@ def _is_base64(value: str):
 
 
 def _create_image_from_file(f: Path, mime_type: str = None):
-    if not mime_type:
-        mime_type = _get_mime_type_from_path(f)
     with open(f, "rb") as fin:
         return Image(fin.read(), mime_type=mime_type)
 
 
 def _create_image_from_base64(base64_str: str, mime_type: str = None):
     image_bytes = base64.b64decode(base64_str)
-    if not mime_type:
-        mime_type = filetype.guess_mime(image_bytes)
-        if not mime_type.startswith("image/"):
-            mime_type = "image/*"
     return Image(image_bytes, mime_type=mime_type)
 
 
 def _create_image_from_url(url: str, mime_type: str = None):
     response = requests.get(url)
     if response.status_code == 200:
-        if not mime_type:
-            mime_type = filetype.guess_mime(response.content)
-            if not mime_type.startswith("image/"):
-                mime_type = "image/*"
         return Image(response.content, mime_type=mime_type, source_url=url)
     else:
         raise InvalidImageInput(
