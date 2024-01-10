@@ -44,7 +44,7 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
     return batch_result
 
 
-@recording_injection_decorator_compatible_with_forkserver(MockForkServerProcess)
+@recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
 def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
     os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
