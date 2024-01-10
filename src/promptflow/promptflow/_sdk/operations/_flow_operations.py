@@ -52,6 +52,7 @@ class FlowOperations(TelemetryMixin):
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        detail_prefix: str = "flow",
         **kwargs,
     ) -> dict:
         """Test flow or node.
@@ -88,7 +89,7 @@ class FlowOperations(TelemetryMixin):
                     tuning_node, node_variant = parse_variant(variant)
                     prefix = f"flow-{tuning_node}-{node_variant}"
                 else:
-                    prefix = "flow"
+                    prefix = detail_prefix
                 dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
 
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)

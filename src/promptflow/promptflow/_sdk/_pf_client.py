@@ -214,6 +214,7 @@ class PFClient:
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        detail_prefix: str = "flow",
     ) -> dict:
         """Test flow or node.
 
@@ -235,5 +236,6 @@ class PFClient:
         :rtype: dict
         """
         return self.flows.test(
-            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
+            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node,
+            detail_prefix=detail_prefix,
         )

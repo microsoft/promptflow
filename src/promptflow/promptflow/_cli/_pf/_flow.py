@@ -214,6 +214,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
         "--multi-modal", action="store_true", help=argparse.SUPPRESS
     )
+    add_param_detail = lambda parser: parser.add_argument(
+        "--detail", type=str, default="flow",
+    )
     add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
 
@@ -228,6 +231,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_multi_modal,
         add_param_ui,
         add_param_config,
+        add_param_detail,
     ] + base_params
     activate_action(
         name="test",
@@ -413,6 +417,7 @@ def test_flow(args):
                 allow_generator_output=False,
                 stream_output=False,
                 dump_test_result=True,
+                detail_prefix=args.detail,
             )
             # Print flow/node test result
             if isinstance(result, dict):
