@@ -139,7 +139,8 @@ def setup_recording_injection(start_method=None):
     multiprocessing.get_context(start_method).Process = mock_class
     multiprocessing.Process = mock_class
     try:
-        apply_recording_injection_if_enabled()
+        with apply_recording_injection_if_enabled():
+            return
     finally:
         multiprocessing.get_context(start_method).Process = original_process_class
         multiprocessing.Process = original_process_class
