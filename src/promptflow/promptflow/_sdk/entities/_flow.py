@@ -8,8 +8,8 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
-import yaml
 from marshmallow import Schema
+from ruamel.yaml import YAML
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import (
@@ -19,6 +19,7 @@ from promptflow._sdk._constants import (
     FLOW_TOOLS_JSON,
     PROMPT_FLOW_DIR_NAME,
 )
+from promptflow._sdk._utils import load_yaml
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import resolve_flow_path
@@ -166,9 +167,11 @@ class Flow(FlowBase):
         if flow_path.exists():
             # TODO: for file, we should read the yaml to get code and set path to source_path
             # read flow file to get hash
+            yaml = YAML()
+            yaml.preserve_quotes = True
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
-                flow_dag = yaml.safe_load(flow_content)
+                flow_dag = yaml.load(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
             return cls(code=flow_path.parent.absolute().as_posix(), dag=flow_dag, **kwargs)
 
@@ -273,7 +276,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def _dump_for_validation(self) -> Dict:
         # Flow is read-only in control plane, so we always dump the flow from file
-        data = yaml.safe_load(self.flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+        data = load_yaml(self.flow_dag_path)
         if isinstance(self._params_override, dict):
             data.update(self._params_override)
         return data

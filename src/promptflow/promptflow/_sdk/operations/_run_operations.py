@@ -9,8 +9,6 @@ import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
-import yaml
-
 from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
     MAX_RUN_LIST_RESULTS,
@@ -23,7 +21,7 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
-from promptflow._sdk._utils import incremental_print, print_red_error, safe_parse_object_list
+from promptflow._sdk._utils import incremental_print, load_yaml, print_red_error, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -327,7 +325,7 @@ class RunOperations(TelemetryMixin):
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
             # TODO: add language to run metadata
-            flow_dag = yaml.safe_load(metadata.dag)
+            flow_dag = load_yaml(metadata.dag)
             configs.append(
                 VisualizationConfig(
                     [AvailableIDE.VS_CODE]

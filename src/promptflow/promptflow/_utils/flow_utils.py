@@ -7,9 +7,8 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
-import yaml
-
 from promptflow._sdk._constants import DAG_FILE_NAME, DEFAULT_ENCODING
+from promptflow._sdk._utils import dump_yaml, load_yaml
 from promptflow._utils.logger_utils import LoggerFactory
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -60,7 +59,7 @@ def load_flow_dag(flow_path: Path):
     if not flow_path.exists():
         raise FileNotFoundError(f"Flow file {flow_path} not found")
     with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
-        flow_dag = yaml.safe_load(f)
+        flow_dag = load_yaml(f)
     return flow_path, flow_dag
 
 
@@ -68,5 +67,5 @@ def dump_flow_dag(flow_dag: dict, flow_path: Path):
     """Dump flow dag to given flow path."""
     flow_path = resolve_flow_path(flow_path)
     with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
-        yaml.safe_dump(flow_dag, f, default_flow_style=False)
+        dump_yaml(flow_dag, f)
     return flow_path

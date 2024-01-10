@@ -12,8 +12,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
-import yaml
-
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
@@ -28,6 +26,7 @@ from promptflow._sdk._utils import (
     dump_yaml,
     generate_flow_tools_json,
     generate_random_string,
+    load_yaml,
     parse_variant,
 )
 from promptflow._sdk.entities._flow import ProtectedFlow
@@ -271,7 +270,7 @@ class FlowOperations(TelemetryMixin):
         st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
-        flow_info = yaml.safe_load(flow_dag_path.read_text())
+        flow_info = load_yaml(flow_dag_path)
         # standard env object:
         # environment:
         #   image: xxx

@@ -2,17 +2,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from abc import ABC, abstractmethod
-import os
 import json
-import yaml
+import os
+from abc import ABC, abstractmethod
 from pathlib import Path
+
+from promptflow._constants import DEFAULT_ENCODING
 from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
+from promptflow._sdk._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
+from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
+from promptflow._sdk._utils import load_yaml
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
-from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
-from promptflow._sdk._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
-from promptflow._sdk._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
 
 USER_AGENT = f"promptflow-local-serving/{VERSION}"
 DEFAULT_STATIC_PATH = Path(__file__).parent.parent / "static"
@@ -80,8 +82,8 @@ class AppExtension(ABC):
         # check whether it's mlflow model
         mlflow_metadata_file = os.path.join(project_path, "MLmodel")
         if os.path.exists(mlflow_metadata_file):
-            with open(mlflow_metadata_file, "r", encoding="UTF-8") as fin:
-                mlflow_metadata = yaml.safe_load(fin)
+            with open(mlflow_metadata_file, "r", encoding=DEFAULT_ENCODING) as fin:
+                mlflow_metadata = load_yaml(fin)
             flow_entry = mlflow_metadata.get("flavors", {}).get("promptflow", {}).get("entry")
             if mlflow_metadata:
                 dag_path = os.path.join(project_path, flow_entry)
@@ -106,6 +108,7 @@ class AppExtension(ABC):
 
 class DefaultAppExtension(AppExtension):
     """default app extension for local serve."""
+
     def __init__(self, logger, **kwargs):
         self.logger = logger
         static_folder = kwargs.get("static_folder", None)

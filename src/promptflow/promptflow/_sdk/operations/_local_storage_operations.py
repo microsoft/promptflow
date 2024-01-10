@@ -12,7 +12,6 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
-import yaml
 from filelock import FileLock
 
 from promptflow._sdk._constants import (
@@ -24,7 +23,7 @@ from promptflow._sdk._constants import (
     LocalStorageFilenames,
 )
 from promptflow._sdk._errors import BulkRunException
-from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
+from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json, load_yaml
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
@@ -246,7 +245,7 @@ class LocalStorageOperations(AbstractRunStorage):
     def load_io_spec(self) -> Tuple[Dict[str, Dict[str, str]], Dict[str, Dict[str, str]]]:
         """Load input/output spec from DAG."""
         with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-            flow_dag = yaml.safe_load(f)
+            flow_dag = load_yaml(f)
         return flow_dag["inputs"], flow_dag["outputs"]
 
     def load_inputs(self) -> RunInputs:

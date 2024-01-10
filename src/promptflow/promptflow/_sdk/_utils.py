@@ -22,13 +22,12 @@ from urllib.parse import urlparse
 
 import keyring
 import pydash
-import yaml
 from cryptography.fernet import Fernet
 from filelock import FileLock
 from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, YAMLError
 
 import promptflow
 from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
@@ -116,15 +115,17 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
 
     if must_open_file:  # If supplied a file path, open it.
         try:
-            input = open(source, "r")
+            input = open(source, "r", encoding=DEFAULT_ENCODING)
         except OSError:  # FileNotFoundError introduced in Python 3
             msg = "No such file or directory: {}"
             raise Exception(msg.format(source))
-    # input should now be an readable file or stream. Parse it.
+    # input should now be a readable file or stream. Parse it.
     cfg = {}
     try:
-        cfg = yaml.safe_load(input)
-    except yaml.YAMLError as e:
+        yaml = YAML()
+        yaml.preserve_quotes = True
+        cfg = yaml.load(input)
+    except YAMLError as e:
         msg = f"Error while parsing yaml file: {source} \n\n {str(e)}"
         raise Exception(msg)
     finally:
@@ -230,17 +231,9 @@ def decrypt_secret_value(connection_name, encrypted_secret_value):
 
 
 def dump_yaml(*args, **kwargs):
-    """A thin wrapper over yaml.dump which forces `OrderedDict`s to be serialized as mappings.
-
-    Other behaviors identically to yaml.dump
-    """
-
-    class OrderedDumper(yaml.Dumper):
-        """A modified yaml serializer that forces pyyaml to represent an OrderedDict as a mapping instead of a
-        sequence."""
-
-    OrderedDumper.add_representer(collections.OrderedDict, yaml.representer.SafeRepresenter.represent_dict)
-    return yaml.dump(*args, Dumper=OrderedDumper, **kwargs)
+    yaml = YAML()
+    yaml.default_flow_style = False
+    return yaml.dump(*args, **kwargs)
 
 
 def decorate_validation_error(schema: Any, pretty_error: str, additional_message: str = "") -> str:
@@ -439,8 +432,7 @@ def _sanitize_python_variable_name(name: str):
 
 
 def _get_additional_includes(yaml_path):
-    with open(yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
-        flow_dag = yaml.safe_load(f)
+    flow_dag = load_yaml(yaml_path)
     return flow_dag.get("additional_includes", [])
 
 
@@ -804,8 +796,7 @@ def generate_flow_tools_json(
     """
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
-    with open(flow_directory / DAG_FILE_NAME, "r", encoding=DEFAULT_ENCODING) as f:
-        data = yaml.safe_load(f)
+    data = load_yaml(flow_directory / DAG_FILE_NAME)
 
     tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 

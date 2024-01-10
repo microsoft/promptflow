@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-import yaml
 from azure.ai.ml._scope_dependent_operations import (
     OperationConfig,
     OperationsContainer,
@@ -45,7 +44,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, print_red_error
+from promptflow._sdk._utils import in_jupyter_notebook, incremental_print, is_remote_uri, load_yaml, print_red_error
 from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -808,8 +807,7 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         flow = run.flow
         if os.path.isdir(flow):
             flow = os.path.join(flow, DAG_FILE_NAME)
-        with open(flow, "r") as f:
-            flow_dict = yaml.safe_load(f)
+        flow_dict = load_yaml(flow)
         environment = flow_dict.get("environment", {})
 
         if not isinstance(environment, dict):
