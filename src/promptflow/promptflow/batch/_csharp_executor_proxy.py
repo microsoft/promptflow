@@ -103,7 +103,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
                     )
         raise MetaFileNotFound(
             message_format=(
-                "Failed to fetch meta of tools: cannot find {file_path}, " "please build the flow project first."
+                "Failed to fetch meta of tools: cannot find {file_path}, please build the flow project first."
             ),
             file_path=flow_tools_json_path.absolute().as_posix(),
         )
