@@ -23,6 +23,7 @@ setuptools
 setuptools_rust
 twine==4.0.0
 vcrpy==5.1.0  # record and replay http requests for pfazure tests
+urllib3==2.1.0  # avoid error TypeError('super(type, obj): obj must be an instance or subtype of type')
 wheel
 httpx
 
