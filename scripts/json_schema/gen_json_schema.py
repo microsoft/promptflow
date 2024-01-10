@@ -141,11 +141,11 @@ from promptflow._sdk.schemas._connection import AzureOpenAIConnectionSchema, Ope
 QdrantConnectionSchema, CognitiveSearchConnectionSchema, SerpConnectionSchema, AzureContentSafetyConnectionSchema, \
 FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._sdk.schemas._flow import DAGFlowSchema
+from promptflow._sdk.schemas._flow import FlowSchema
 
 
 if __name__ == "__main__":
-    cls_list = [DAGFlowSchema]
+    cls_list = [FlowSchema]
     for cls in cls_list:
         target_schema = PatchedJSONSchema().dump(cls(context={"base_path": "./"}))
         # print(target_schema)

@@ -45,7 +45,7 @@ class BaseFlowSchema(YamlFileSchema):
     tags = fields.Dict(keys=fields.Str(), values=fields.Str())
 
 
-class DAGFlowSchema(BaseFlowSchema):
+class FlowSchema(BaseFlowSchema):
     """Schema for flow dag."""
 
     inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema))
