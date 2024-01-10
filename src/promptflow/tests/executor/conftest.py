@@ -96,8 +96,13 @@ def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixtur
 
 
 @pytest.fixture
-@recording_injection_decorator
-def recording_injection():
+def recording_injection(mocker: MockerFixture, recording_file_override):
+    original_process_class = multiprocessing.get_context("spawn").Process
+    multiprocessing.get_context("spawn").Process = MockSpawnProcess
+    if "spawn" == multiprocessing.get_start_method():
+        multiprocessing.Process = MockSpawnProcess
+
+    patches = setup_recording_injection_if_enabled()
 
     try:
         yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
@@ -105,6 +110,13 @@ def recording_injection():
         if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
             RecordStorage.get_instance().delete_lock_file()
         recording_array_reset()
+
+        multiprocessing.get_context("spawn").Process = original_process_class
+        if "spawn" == multiprocessing.get_start_method():
+            multiprocessing.Process = original_process_class
+
+        for patcher in patches:
+            patcher.stop()
 
 
 @recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)

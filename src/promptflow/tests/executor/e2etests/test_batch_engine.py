@@ -14,11 +14,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
-from ..conftest import (
-    MockSpawnProcess,
-    recording_injection_decorator_compatible_with_spawn,
-    setup_recording_injection_if_enabled,
-)
+from ..conftest import MockSpawnProcess, setup_recording_injection_if_enabled
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -94,11 +90,10 @@ def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
     return len(inputs)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
+@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestBatch:
-    @recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
-    def test_batch_storage(self, dev_connections, recording_injection):
+    def test_batch_storage(self, dev_connections):
         mem_run_storage = MemoryRunStorage()
         run_id = str(uuid.uuid4())
         inputs_mapping = {"url": "${data.url}"}
@@ -134,8 +129,7 @@ class TestBatch:
             ),
         ],
     )
-    @recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
-    def test_batch_run(self, flow_folder, inputs_mapping, dev_connections, recording_injection):
+    def test_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         batch_result, output_dir = submit_batch_run(
             flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
         )
@@ -175,7 +169,6 @@ class TestBatch:
             ),
         ],
     )
-    @recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
     def test_spawn_mode_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         if "spawn" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: spawn")
@@ -217,7 +210,7 @@ class TestBatch:
         p.join()
         assert p.exitcode == 0
 
-    def test_batch_run_then_eval(self, dev_connections, recording_injection):
+    def test_batch_run_then_eval(self, dev_connections):
         batch_resutls, output_dir = submit_batch_run(
             SAMPLE_FLOW, {"url": "${data.url}"}, connections=dev_connections, return_output_dir=True
         )
@@ -235,7 +228,7 @@ class TestBatch:
         assert len(eval_result.metrics) > 0, "No metrics are returned."
         assert eval_result.metrics["accuracy"] == 0, f"Accuracy should be 0, got {eval_result.metrics}."
 
-    def test_batch_with_metrics(self, dev_connections, recording_injection):
+    def test_batch_with_metrics(self, dev_connections):
         flow_folder = SAMPLE_EVAL_FLOW
         inputs_mapping = {
             "variant_id": "${data.variant_id}",
@@ -249,7 +242,7 @@ class TestBatch:
         assert batch_results.total_lines == batch_results.completed_lines
         assert batch_results.node_status == get_flow_expected_status_summary(flow_folder)
 
-    def test_batch_with_partial_failure(self, dev_connections, recording_injection):
+    def test_batch_with_partial_failure(self, dev_connections):
         flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
         inputs_mapping = {"idx": "${data.idx}", "mod": "${data.mod}", "mod_2": "${data.mod_2}"}
         batch_results = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
@@ -259,7 +252,7 @@ class TestBatch:
         assert batch_results.failed_lines == 5
         assert batch_results.node_status == get_flow_expected_status_summary(flow_folder)
 
-    def test_batch_with_line_number(self, dev_connections, recording_injection):
+    def test_batch_with_line_number(self, dev_connections):
         flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
         input_dirs = {"data": "inputs/data.jsonl", "output": "inputs/output.jsonl"}
         inputs_mapping = {"idx": "${output.idx}", "mod": "${data.mod}", "mod_2": "${data.mod_2}"}
@@ -286,7 +279,7 @@ class TestBatch:
         assert batch_result.system_metrics.prompt_tokens > 0
         assert batch_result.system_metrics.completion_tokens > 0
 
-    def test_batch_with_default_input(self, recording_injection):
+    def test_batch_with_default_input(self):
         mem_run_storage = MemoryRunStorage()
         default_input_value = "input value from default"
         inputs_mapping = {"text": "${data.text}"}
@@ -312,7 +305,7 @@ class TestBatch:
             ("simple_aggregation", [{"text": "3.0"}], str),
         ],
     )
-    def test_batch_run_line_result(self, flow_folder, batch_input, expected_type, recording_injection):
+    def test_batch_run_line_result(self, flow_folder, batch_input, expected_type):
         mem_run_storage = MemoryRunStorage()
         input_file = Path(mkdtemp()) / "inputs.jsonl"
         dump_list_to_jsonl(input_file, batch_input)
@@ -342,19 +335,19 @@ class TestBatch:
             ),
         ],
     )
-    def test_batch_run_failure(self, flow_folder, input_mapping, error_class, error_message, recording_injection):
+    def test_batch_run_failure(self, flow_folder, input_mapping, error_class, error_message):
         with pytest.raises(error_class) as e:
             submit_batch_run(flow_folder, input_mapping, input_file_name="empty_inputs.jsonl")
         assert error_message in e.value.message
 
-    def test_batch_run_in_existing_loop(self, dev_connections, recording_injection):
+    def test_batch_run_in_existing_loop(self, dev_connections):
         flow_folder = "prompt_tools"
         inputs_mapping = {"text": "${data.text}"}
         batch_result = asyncio.run(async_submit_batch_run(flow_folder, inputs_mapping, dev_connections))
         assert isinstance(batch_result, BatchResult)
         assert batch_result.total_lines == batch_result.completed_lines
 
-    def test_batch_run_with_aggregation_failure(self, dev_connections, recording_injection):
+    def test_batch_run_with_aggregation_failure(self, dev_connections):
         flow_folder = "aggregation_node_failed"
         inputs_mapping = {"groundtruth": "${data.groundtruth}", "prediction": "${data.prediction}"}
         batch_result = submit_batch_run(flow_folder, inputs_mapping, connections=dev_connections)
