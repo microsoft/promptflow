@@ -189,7 +189,8 @@ class LineExecutionProcessPool:
                 output_queue = self._process_info[index].output_queue
                 process_info = ProcessInfo(index=index, process_id=process_id, process_name=process_name,
                                            input_queue=input_queue, output_queue=output_queue)
-                return process_info
+                return (process_info.index, process_info.process_id, process_info.process_name,
+                        process_info.input_queue, process_info.output_queue)
             except KeyError:
                 continue
             except Exception as e:
@@ -252,17 +253,9 @@ class LineExecutionProcessPool:
             result_list,
             index,
     ):
-        process_info = self._get_process_info(index)
+        index, process_id, process_name, input_queue, output_queue = self._get_process_info(index)
 
         while True:
-            index, process_id, process_name, input_queue, output_queue = (
-                process_info.index,
-                process_info.process_id,
-                process_info.process_name,
-                process_info.input_queue,
-                process_info.output_queue
-            )
-
             try:
                 # Get task from task_queue
                 args = task_queue.get(timeout=1)
@@ -313,7 +306,7 @@ class LineExecutionProcessPool:
                 # If there are still tasks in task_queue, restart a new process to execute the task.
                 if not task_queue.empty():
                     self._processes_manager.restart_process(index)
-                    process_info = self._get_process_info(index)
+                    index, process_id, process_name, input_queue, output_queue = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)
 
