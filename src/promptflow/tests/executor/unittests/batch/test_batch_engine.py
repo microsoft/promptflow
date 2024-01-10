@@ -1,4 +1,5 @@
 from pathlib import Path
+from tempfile import mkdtemp
 from unittest.mock import Mock, patch
 
 import pytest
@@ -14,9 +15,10 @@ from promptflow.batch import (
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget
 from promptflow.executor._errors import ConnectionNotFound
+from promptflow.executor._result import AggregationResult
 
-from ...utils import MemoryRunStorage, get_yaml_file
-from .test_result import get_line_results
+from ...utils import MemoryRunStorage, get_yaml_file, load_jsonl
+from .test_result import get_line_results, get_node_run_infos
 
 
 @pytest.mark.unittest
@@ -85,3 +87,29 @@ class TestBatchEngine:
 
         assert len(mem_run_storge._flow_runs) == 3
         assert len(mem_run_storge._node_runs) == 9
+
+    def test_persist_outputs(self):
+        outputs = [
+            {"line_number": 0, "output": "Hello World!"},
+            {"line_number": 1, "output": "Hello Microsoft!"},
+            {"line_number": 2, "output": "Hello Promptflow!"},
+        ]
+        output_dir = Path(mkdtemp())
+        batch_engine = BatchEngine(get_yaml_file("print_input_flow"))
+        batch_engine._persist_outputs(outputs, output_dir)
+        actual_outputs = load_jsonl(output_dir / "output.jsonl")
+        assert actual_outputs == outputs
+
+    def test_update_aggr_result(self):
+        output = {"output": "Hello World!"}
+        metrics = {"accuracy": 0.9}
+        node_run_infos = get_node_run_infos({"aggr_1": Status.Completed, "aggr_2": Status.Completed})
+        aggre_result = AggregationResult(output={}, metrics={}, node_run_infos={})
+        aggr_exec_result = AggregationResult(output=output, metrics=metrics, node_run_infos=node_run_infos)
+
+        batch_engine = BatchEngine(get_yaml_file("print_input_flow"))
+        batch_engine._update_aggr_result(aggre_result, aggr_exec_result)
+
+        assert aggre_result.output == output
+        assert aggre_result.metrics == metrics
+        assert aggre_result.node_run_infos == node_run_infos
