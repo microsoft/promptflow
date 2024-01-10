@@ -29,8 +29,7 @@ class AsyncNodesScheduler:
         node_concurrency: int,
     ) -> None:
         self._tools_manager = tools_manager
-        node_concurrency = 2
-        self._semaphore = asyncio.Semaphore(node_concurrency)
+        node_concurrency = 1
         self._node_concurrency = node_concurrency
 
     async def execute(
@@ -42,6 +41,8 @@ class AsyncNodesScheduler:
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
+        loop = asyncio.get_running_loop()
+        self._semaphore = asyncio.Semaphore(self._node_concurrency, loop=loop)
         parent_context = contextvars.copy_context()
         executor = ThreadPoolExecutor(
             max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
@@ -115,14 +116,13 @@ class AsyncNodesScheduler:
     ) -> Task:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
-        print("?????")
         if inspect.iscoroutinefunction(f):
             print("async function")
             # coroutine = context.invoke_tool_async(node, f, kwargs)
             # task = self.run_task_with_semaphore(coroutine)
             # task = context.invoke_tool_async(node, f, **kwargs)
             coroutine = context.invoke_tool_async(node, f, kwargs)
-            return asyncio.create_task(self.run_task_with_semaphore(coroutine), name=node.name)
+            task = self.run_task_with_semaphore(coroutine)
 
         else:
             print("sync function")
