@@ -119,13 +119,13 @@ class FlowOperationError(SDKError):
     pass
 
 
-class ExperimentExistsError(PromptflowException):
+class ExperimentExistsError(SDKError):
     """Exception raised when experiment already exists."""
 
     pass
 
 
-class ExperimentNotFoundError(PromptflowException):
+class ExperimentNotFoundError(SDKError):
     """Exception raised if experiment cannot be found."""
 
     pass
