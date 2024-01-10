@@ -53,21 +53,14 @@ class MockDatastore:
     account_name: str
     container_name: str
     endpoint: str
-    # `type` and `credentials` are required in `get_datastore_info`
-    type: str
-    credentials: str
 
 
-def mock_datastore_get(*args, **kwargs) -> MockDatastore:
-    from azure.ai.ml._restclient.v2022_10_01.models import DatastoreType
-
+def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
     return MockDatastore(
         name="workspaceblobstore",
         account_name=SanitizedValues.FAKE_ACCOUNT_NAME,
         container_name=SanitizedValues.FAKE_CONTAINER_NAME,
         endpoint="core.windows.net",
-        type=DatastoreType.AZURE_BLOB,
-        credentials=None,
     )
 
 
@@ -93,8 +86,7 @@ def get_pf_client_for_replay():
         resource_group_name=SanitizedValues.RESOURCE_GROUP_NAME,
         workspace_name=SanitizedValues.WORKSPACE_NAME,
     )
-    ml_client.datastores.get = mock_datastore_get
-    ml_client.datastores.get_default = mock_datastore_get
+    ml_client.datastores.get_default = mock_datastore_get_default
     ml_client.workspaces.get = mock_workspace_get
     return PFClient(ml_client=ml_client)
 
