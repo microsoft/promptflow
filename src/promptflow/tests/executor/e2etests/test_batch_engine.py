@@ -14,7 +14,11 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
-from ..conftest import MockSpawnProcess, recording_injection_decorator_compatible_with_spawn
+from ..conftest import (
+    MockSpawnProcess,
+    recording_injection_decorator_compatible_with_spawn,
+    setup_recording_injection_if_enabled,
+)
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -38,6 +42,11 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
 
 
 def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+    if multiprocessing_start_method == "spawn":
+        multiprocessing.Process = MockSpawnProcess
+        multiprocessing.get_context("spawn").Process = MockSpawnProcess
+        setup_recording_injection_if_enabled()
+
     os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
         flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True

@@ -20,6 +20,16 @@ def apply_recording_injection_if_enabled():
     # multiprocessing.get_context("spawn").Process = MockSpawnProcess
     # multiprocessing.Process = MockSpawnProcess
 
+    patches = setup_recording_injection_if_enabled()
+
+    try:
+        yield
+    finally:
+        for patcher in patches:
+            patcher.stop()
+
+
+def setup_recording_injection_if_enabled():
     patches = []
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
@@ -34,12 +44,7 @@ def apply_recording_injection_if_enabled():
             patcher = patch(target, mocked_tool)
             patches.append(patcher)
             patcher.start()
-
-    try:
-        yield
-    finally:
-        for patcher in patches:
-            patcher.stop()
+    return patches
 
 
 def recording_injection_decorator(func):
