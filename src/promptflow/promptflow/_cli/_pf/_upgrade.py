@@ -18,8 +18,6 @@ def add_upgrade_parser(subparsers):
 
     # Upgrade prompt flow without prompt and run non-interactively:
     pf upgrade --yes
-    # Upgrade prompt flow only showing errors:
-    pf upgrade --only-show-errors
     """  # noqa: E501
     add_params = [
                      add_param_yes,
