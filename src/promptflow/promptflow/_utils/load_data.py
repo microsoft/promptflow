@@ -12,7 +12,7 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 module_logger = logging.getLogger(__name__)
 
 
-def _pd_read_file(local_path: str, logger: logging.Logger = None) -> "DataFrame":
+def _pd_read_file(local_path: str, logger: logging.Logger = None, max_rows_count: int = None) -> "DataFrame":
     import pandas as pd
 
     local_path = str(local_path)
@@ -30,20 +30,20 @@ def _pd_read_file(local_path: str, logger: logging.Logger = None) -> "DataFrame"
     dtype = object
 
     if local_path.endswith(".csv"):
-        df = pd.read_csv(local_path, dtype=dtype, keep_default_na=False)
+        df = pd.read_csv(local_path, dtype=dtype, keep_default_na=False, nrows=max_rows_count)
     elif local_path.endswith(".json"):
         df = pd.read_json(local_path, dtype=dtype)
     elif local_path.endswith(".jsonl"):
-        df = pd.read_json(local_path, dtype=dtype, lines=True)
+        df = pd.read_json(local_path, dtype=dtype, lines=True, nrows=max_rows_count)
     elif local_path.endswith(".tsv"):
-        df = pd.read_table(local_path, dtype=dtype, keep_default_na=False)
+        df = pd.read_table(local_path, dtype=dtype, keep_default_na=False, nrows=max_rows_count)
     elif local_path.endswith(".parquet"):
         df = pd.read_parquet(local_path)  # read_parquet has no parameter dtype
     else:
         # parse file as jsonl when extension is not known (including unavailable)
         # ignore and logging if failed to load file content.
         try:
-            df = pd.read_json(local_path, dtype=dtype, lines=True)
+            df = pd.read_json(local_path, dtype=dtype, lines=True, nrows=max_rows_count)
         except:  # noqa: E722
             if logger is None:
                 logger = module_logger
@@ -79,13 +79,12 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
     while len(target_dir) > 0:
         files, dirs = _bfs_dir(target_dir)
         for file in files:
-            current_df = _pd_read_file(file, logger=logger)
+            current_df = _pd_read_file(file, logger=logger, max_rows_count=max_rows_count)
             df = pd.concat([df, current_df])
-        length = len(df)
-        if max_rows_count and length > 0:
-            if length > max_rows_count:
+            length = len(df)
+            if max_rows_count and length >= max_rows_count:
                 df = df.head(max_rows_count)
-            break
+                return df
         # no readable data in current level, dive into next level
         target_dir = dirs
     return df
@@ -109,7 +108,7 @@ def load_df(local_path: Union[str, Path], logger: logging.Logger = None, max_row
     lp = local_path if isinstance(local_path, Path) else Path(local_path)
     try:
         if lp.is_file():
-            df = _pd_read_file(local_path, logger=logger)
+            df = _pd_read_file(local_path, logger=logger, max_rows_count=max_rows_count)
             # honor max_rows_count if it is specified
             if max_rows_count and len(df) > max_rows_count:
                 df = df.head(max_rows_count)

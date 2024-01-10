@@ -3,7 +3,9 @@ import shutil
 import tempfile
 import uuid
 from pathlib import Path
+from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 import pytest
 from pytest_mock import MockerFixture
@@ -84,7 +86,8 @@ def assert_run_with_invalid_column_mapping(client: PFClient, run: Run) -> None:
 
     exception = local_storage.load_exception()
     assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
-    assert exception["code"] == "BulkRunException"
+    assert exception["code"] == "UserError"
+    assert exception["innerError"]["innerError"]["code"] == "BulkRunException"
 
 
 @pytest.mark.usefixtures(
@@ -238,6 +241,13 @@ class TestFlowRun:
             params_override=[{"run": run_id}],
         )
         assert local_client.runs.get(eval_run.name).status == "Completed"
+
+    @pytest.mark.usefixtures("enable_logger_propagate")
+    def test_submit_run_with_extra_params(self, pf, caplog):
+        run_id = str(uuid.uuid4())
+        run = create_yaml_run(source=f"{RUNS_DIR}/extra_field.yaml", params_override=[{"name": run_id}])
+        assert pf.runs.get(run.name).status == "Completed"
+        assert "Run schema validation warnings. Unknown fields found" in caplog.text
 
     def test_run_with_connection(self, local_client, local_aoai_connection, pf):
         # remove connection file to test connection resolving
@@ -447,7 +457,6 @@ class TestFlowRun:
             assert "Please make sure it exists and not deleted." in str(e.value)
 
     def test_eval_run_data_not_exist(self, pf):
-
         base_run = pf.run(
             flow=f"{FLOWS_DIR}/print_env_var",
             data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -1081,6 +1090,8 @@ class TestFlowRun:
         assert "error" in run_dict
         assert run_dict["error"] == exception
 
+    # TODO: remove this patch after executor switch to default spawn
+    @patch.dict(os.environ, {"PF_BATCH_METHOD": "spawn"}, clear=True)
     def test_get_details_against_partial_completed_run(self, pf: PFClient) -> None:
         flow_mod2 = f"{FLOWS_DIR}/mod-n/two"
         flow_mod3 = f"{FLOWS_DIR}/mod-n/three"
@@ -1114,3 +1125,30 @@ class TestFlowRun:
         for _, row in details2.iterrows():
             if str(row["outputs.output"]) != "(Failed)":
                 assert int(row["inputs.number"]) == int(row["outputs.output"])
+
+    # TODO: remove this patch after executor switch to default spawn
+    @patch.dict(os.environ, {"PF_BATCH_METHOD": "spawn"}, clear=True)
+    def test_flow_with_nan_inf(self, pf: PFClient) -> None:
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow-with-nan-inf",
+            data=f"{DATAS_DIR}/numbers.jsonl",
+            column_mapping={"number": "${data.value}"},
+        )
+        pf.stream(run)
+        local_storage = LocalStorageOperations(run=run)
+
+        # default behavior: no special logic for nan and inf
+        detail = local_storage.load_detail()
+        first_line_run_output = detail["flow_runs"][0]["output"]["output"]
+        assert isinstance(first_line_run_output["nan"], float)
+        assert np.isnan(first_line_run_output["nan"])
+        assert isinstance(first_line_run_output["inf"], float)
+        assert np.isinf(first_line_run_output["inf"])
+
+        # handles nan and inf, which is real scenario during visualize
+        detail = local_storage.load_detail(parse_const_as_str=True)
+        first_line_run_output = detail["flow_runs"][0]["output"]["output"]
+        assert isinstance(first_line_run_output["nan"], str)
+        assert first_line_run_output["nan"] == "NaN"
+        assert isinstance(first_line_run_output["inf"], str)
+        assert first_line_run_output["inf"] == "Infinity"

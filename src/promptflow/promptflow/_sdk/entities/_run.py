@@ -417,6 +417,8 @@ class Run(YAMLTranslatableMixin):
         params_override: Optional[list] = None,
         **kwargs,
     ):
+        from marshmallow import INCLUDE
+
         data = data or {}
         params_override = params_override or []
         context = {
@@ -427,6 +429,7 @@ class Run(YAMLTranslatableMixin):
             data=data,
             context=context,
             additional_message="Failed to load flow run",
+            unknown=INCLUDE,
             **kwargs,
         )
         if yaml_path:

@@ -4,11 +4,14 @@
 import os.path
 
 from dotenv import dotenv_values
-from marshmallow import fields, post_load
+from marshmallow import fields, post_load, pre_load
 
 from promptflow._sdk._utils import is_remote_uri
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
 from promptflow._sdk.schemas._fields import LocalPathField, NestedField, UnionField
+from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+logger = get_cli_sdk_logger()
 
 
 def _resolve_dot_env_file(data, **kwargs):
@@ -48,6 +51,23 @@ class RemotePathStr(fields.Str):
             )
 
 
+class RemoteFlowStr(fields.Str):
+    default_error_messages = {
+        "invalid_path": "Invalid remote flow path. Currently only azureml:<flow-name> is supported",
+    }
+
+    def _validate(self, value):
+        # inherited validations like required, allow_none, etc.
+        super(RemoteFlowStr, self)._validate(value)
+
+        if value is None:
+            return
+        if not isinstance(value, str) or not value.startswith("azureml:"):
+            raise self.make_error(
+                "invalid_path",
+            )
+
+
 class RunSchema(YamlFileSchema):
     """Base schema for all run schemas."""
 
@@ -60,7 +80,7 @@ class RunSchema(YamlFileSchema):
     properties = fields.Dict(keys=fields.Str(), values=fields.Str(allow_none=True))
     # endregion: common fields
 
-    flow = UnionField([LocalPathField(required=True), fields.Str(required=True)])
+    flow = UnionField([LocalPathField(required=True), RemoteFlowStr(required=True)])
     # inputs field
     data = UnionField([LocalPathField(), RemotePathStr()])
     column_mapping = fields.Dict(keys=fields.Str)
@@ -84,3 +104,12 @@ class RunSchema(YamlFileSchema):
     @post_load
     def resolve_dot_env_file(self, data, **kwargs):
         return _resolve_dot_env_file(data, **kwargs)
+
+    @pre_load
+    def warning_unknown_fields(self, data, **kwargs):
+        # log warnings for unknown schema fields
+        unknown_fields = set(data) - set(self.fields)
+        if unknown_fields:
+            logger.warning("Run schema validation warnings. Unknown fields found: %s", unknown_fields)
+
+        return data

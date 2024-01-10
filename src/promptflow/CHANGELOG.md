@@ -2,9 +2,23 @@
 
 ## 1.4.0 (Upcoming)
 
+### Features Added
+
+- [Executor] Calculate system_metrics recursively in api_calls.
+- [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
+- [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
+
 ### Bugs Fixed
 
 - Fix unaligned inputs & outputs or pandas exception during get details against run in Azure.
+- Fix loose flow path validation for run schema.
+- Fix "Without Import Data" in run visualize page results from invalid JSON value (`-Infinity`, `Infinity` and `NaN`).
+
+### Improvements
+
+- [SDK/CLI] For `pfazure flow create` used by non-msft tenant user, use user name instead of user object id in the remote flow folder path. (e.g. `Users/<user-name>/promptflow`).
+- [SDK/CLI] For `pfazure flow create`, when flow has unknown attribute, log warning instead of raising error.
+- [SDK/CLI] For `pf/pfazure run create`, when run has unknown attribute, log warning instead of raising error.
 
 ## 1.3.0 (2023.12.27)
 
@@ -13,9 +27,6 @@
 - Add support to configure prompt flow home directory via environment variable `PF_HOME_DIRECTORY`.
   - Please set before importing `promptflow`, otherwise it won't take effect.
 - [Executor] Handle KeyboardInterrupt in flow test so that the final state is Canceled.
-- [Executor] Calculate system_metrics recursively in api_calls.
-- [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
-- [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
 
 ### Bugs Fixed
 - [SDK/CLI] Fix single node run doesn't work when consuming sub item of upstream node
