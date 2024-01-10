@@ -55,7 +55,7 @@ class MockDatastore:
     endpoint: str
 
 
-def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
+def mock_datastore_get(*args, **kwargs) -> MockDatastore:
     return MockDatastore(
         name="workspaceblobstore",
         account_name=SanitizedValues.FAKE_ACCOUNT_NAME,
@@ -86,7 +86,8 @@ def get_pf_client_for_replay():
         resource_group_name=SanitizedValues.RESOURCE_GROUP_NAME,
         workspace_name=SanitizedValues.WORKSPACE_NAME,
     )
-    ml_client.datastores.get_default = mock_datastore_get_default
+    ml_client.datastores.get = mock_datastore_get
+    ml_client.datastores.get_default = mock_datastore_get
     ml_client.workspaces.get = mock_workspace_get
     return PFClient(ml_client=ml_client)
 
