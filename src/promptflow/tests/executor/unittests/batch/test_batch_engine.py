@@ -73,6 +73,12 @@ class TestBatchEngine:
         assert BatchEngine.executor_proxy_classes["js"] == MockJSExecutorProxy
         assert len(BatchEngine.executor_proxy_classes) == 3
 
+    def test_cancel(self):
+        batch_engine = BatchEngine(get_yaml_file("print_input_flow"))
+        assert batch_engine._is_canceled is False
+        batch_engine.cancel()
+        assert batch_engine._is_canceled is True
+
     def test_persist_run_info(self):
         line_dict = {
             0: {"node_0": Status.Completed, "node_1": Status.Completed, "node_2": Status.Completed},
