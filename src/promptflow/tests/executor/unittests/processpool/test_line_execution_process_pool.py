@@ -318,7 +318,7 @@ class TestLineExecutionProcessPool:
         test_error_msg = "Test user error"
         mocker.patch(
             "promptflow.executor._line_execution_process_pool.LineExecutionProcessPool."
-            "_monitor_process_and_manage_tasks_and_results",
+            "_monitor_workers_and_process_tasks_in_thread",
             side_effect=UserErrorException(message=test_error_msg, target=ErrorTarget.AZURE_RUN_STORAGE),
         )
         executor = FlowExecutor.create(
