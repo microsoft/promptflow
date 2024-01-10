@@ -110,7 +110,7 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
                 tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
                 # Set default input index to ui_hints
-                if "inputs" in tool:
+                if "inputs" in tool and tool.get("type") == ToolType.CUSTOM_LLM:
                     set_input_index_to_ui_hints(tool)
                 all_package_tools[identifier] = tool
         except Exception as e:
@@ -143,7 +143,7 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                 tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
                 # Set default input index to ui_hints
-                if "inputs" in tool:
+                if "inputs" in tool and tool.get("type") == ToolType.CUSTOM_LLM:
                     set_input_index_to_ui_hints(tool)
                 all_package_tools[identifier] = tool
 

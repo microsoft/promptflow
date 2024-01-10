@@ -198,24 +198,17 @@ def get_inputs_for_prompt_template(template_str):
     >>> get_inputs_for_prompt_template(
         template_str="Prompt with only one string input {{str_input}}"
     )
-    {"str_input": InputDefinition(type=[ValueType.STRING], ui_hints={"index": 0})}
+    {"str_input": InputDefinition(type=[ValueType.STRING])}
 
     >>> get_inputs_for_prompt_template(
         template_str="Prompt with image input ![image]({{image_input}}) and string input {{str_input}}"
     )
-    {
-        "image_input": InputDefinition(type=[ValueType.IMAGE], ui_hints={"index": 0}),
-        "str_input": InputDefinition(type=[ValueType.STRING], ui_hints={"index": 1})
-    }
+    {"image_input": InputDefinition(type=[ValueType.IMAGE]), "str_input": InputDefinition(type=[ValueType.STRING])
     """
     env = Environment()
     template = env.parse(template_str)
-    matches = re.finditer(r'\{([^}]*)\}', template_str)
-    inputs = sorted(
-        meta.find_undeclared_variables(template),
-        key=lambda x: _find_template_variable_index(matches, x)
-    )
-    result_dict = {i: InputDefinition(type=[ValueType.STRING], ui_hints={"index": inputs.index(i)}) for i in inputs}
+    inputs = sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x))
+    result_dict = {i: InputDefinition(type=[ValueType.STRING]) for i in inputs}
 
     # currently we only support image type
     pattern = r"\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)"
@@ -223,10 +216,7 @@ def get_inputs_for_prompt_template(template_str):
 
     for match in matches:
         input_name = match.group(2).strip()
-        result_dict[input_name] = InputDefinition(
-            type=[ValueType(match.group(1).strip())],
-            ui_hints={"index": inputs.index(input_name)}
-        )
+        result_dict[input_name] = InputDefinition([ValueType(match.group(1).strip())])
 
     return result_dict
 
@@ -363,14 +353,6 @@ def _get_function_path(function):
     else:
         raise UserErrorException("Function has invalid type, please provide callable or function name for function.")
     return func, func_path
-
-
-def _find_template_variable_index(matches, variable):
-    for match in matches:
-        if variable in match.group(1):
-            return match.start(1) + match.group(1).find(variable)
-
-    return 0
 
 
 class RetrieveToolFuncResultError(UserErrorException):
