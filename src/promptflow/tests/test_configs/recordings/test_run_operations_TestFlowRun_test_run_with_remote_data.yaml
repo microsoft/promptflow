@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.020'
+      - '0.023'
     status:
       code: 200
       message: OK
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.083'
+      - '0.053'
     status:
       code: 200
       message: OK
@@ -131,14 +131,12 @@ interactions:
       - no-cache
       strict-transport-security:
       - max-age=31536000; includeSubDomains
-      transfer-encoding:
-      - chunked
       vary:
-      - Accept-Encoding,Accept-Encoding
+      - Accept-Encoding
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.057'
+      - '0.046'
     status:
       code: 200
       message: OK
@@ -190,7 +188,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.123'
+      - '0.079'
     status:
       code: 200
       message: OK
@@ -226,10 +224,14 @@ interactions:
       - no-cache
       strict-transport-security:
       - max-age=31536000; includeSubDomains
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.120'
+      - '0.076'
     status:
       code: 200
       message: OK
@@ -245,11 +247,11 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 10 Jan 2024 06:37:45 GMT
+      - Wed, 10 Jan 2024 06:53:30 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/web_classification/.promptflow/flow.log
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/web_classification/classify_with_llm.jinja2
   response:
     body:
       string: ''
@@ -257,13 +259,13 @@ interactions:
       accept-ranges:
       - bytes
       content-length:
-      - '1573'
+      - '853'
       content-md5:
-      - lWDve9ZExEUxTNoSznWo+g==
+      - ylTeNqjvuOvtzEZJ/X5n3A==
       content-type:
       - application/octet-stream
       last-modified:
-      - Wed, 10 Jan 2024 05:55:23 GMT
+      - Thu, 14 Dec 2023 06:10:20 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -271,9 +273,9 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Wed, 10 Jan 2024 05:55:21 GMT
+      - Thu, 14 Dec 2023 06:10:20 GMT
       x-ms-meta-name:
-      - 4f1da8d8-8cea-4768-ab6d-349924342ac0
+      - 0b067b84-235d-4f22-909e-0d4d6728aa38
       x-ms-meta-upload_status:
       - completed
       x-ms-meta-version:
@@ -295,11 +297,11 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 10 Jan 2024 06:37:46 GMT
+      - Wed, 10 Jan 2024 06:53:31 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/web_classification/.promptflow/flow.log
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/web_classification/classify_with_llm.jinja2
   response:
     body:
       string: ''
@@ -357,7 +359,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '8.032'
+      - '6.827'
     status:
       code: 200
       message: OK
@@ -571,7 +573,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"url": "${data.url}"}, "outputDatastoreName": "workspaceblobstore",
         "childRunBasePath": "promptflow/PromptFlowArtifacts/name1/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "71e237f3-44f0-4871-a932-f8982539ddb4",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "c61584e8-e5d2-48e7-b375-140609229240",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name1?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -589,7 +591,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.500'
+      - '0.457'
     status:
       code: 200
       message: OK
@@ -641,7 +643,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.089'
+      - '0.091'
     status:
       code: 200
       message: OK
@@ -684,7 +686,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.111'
+      - '0.086'
     status:
       code: 200
       message: OK
@@ -700,11 +702,11 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 10 Jan 2024 06:38:06 GMT
+      - Wed, 10 Jan 2024 06:53:50 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/web_classification/.promptflow/flow.log
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/web_classification/classify_with_llm.jinja2
   response:
     body:
       string: ''
@@ -712,13 +714,13 @@ interactions:
       accept-ranges:
       - bytes
       content-length:
-      - '1573'
+      - '853'
       content-md5:
-      - lWDve9ZExEUxTNoSznWo+g==
+      - ylTeNqjvuOvtzEZJ/X5n3A==
       content-type:
       - application/octet-stream
       last-modified:
-      - Wed, 10 Jan 2024 05:55:23 GMT
+      - Thu, 14 Dec 2023 06:10:20 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -726,9 +728,9 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Wed, 10 Jan 2024 05:55:21 GMT
+      - Thu, 14 Dec 2023 06:10:20 GMT
       x-ms-meta-name:
-      - 4f1da8d8-8cea-4768-ab6d-349924342ac0
+      - 0b067b84-235d-4f22-909e-0d4d6728aa38
       x-ms-meta-upload_status:
       - completed
       x-ms-meta-version:
@@ -750,11 +752,11 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Wed, 10 Jan 2024 06:38:07 GMT
+      - Wed, 10 Jan 2024 06:53:51 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
-    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/web_classification/.promptflow/flow.log
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/web_classification/classify_with_llm.jinja2
   response:
     body:
       string: ''
@@ -812,7 +814,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '5.506'
+      - '6.671'
     status:
       code: 200
       message: OK
@@ -1025,7 +1027,7 @@ interactions:
         "azureml:webClassification1:1"}, "flowRunType": "FlowRun", "flowType": "Default",
         "runtimeName": "test-runtime-ci", "inputsMapping": {"url": "${data.url}"},
         "outputDatastoreName": "workspaceblobstore", "childRunBasePath": "promptflow/PromptFlowArtifacts/name2/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "a1a25923-1d44-4d71-a6c4-f0497fde556c",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "45eac01b-36ca-4fdc-9f43-7ce6c35de175",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name2?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1043,7 +1045,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.353'
+      - '0.289'
     status:
       code: 200
       message: OK
@@ -1067,21 +1069,21 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1704868673, "rootRunId": "name1", "createdUtc":
-        "2024-01-10T06:37:53.2795597+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+      string: '{"runMetadata": {"runNumber": 1704869617, "rootRunId": "name1", "createdUtc":
+        "2024-01-10T06:53:37.710231+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
         "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
         "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 3,
-        "statusRevision": 1, "runUuid": "d4dfd5f9-87b6-403f-b1cf-c420fa0b0389", "parentRunUuid":
-        null, "rootRunUuid": "d4dfd5f9-87b6-403f-b1cf-c420fa0b0389", "lastStartTimeUtc":
+        "statusRevision": 1, "runUuid": "12367c6f-dcc5-4dfe-9fd7-ac28c7e3f316", "parentRunUuid":
+        null, "rootRunUuid": "12367c6f-dcc5-4dfe-9fd7-ac28c7e3f316", "lastStartTimeUtc":
         null, "currentComputeTime": "00:00:00", "computeDuration": null, "effectiveStartTimeUtc":
         null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "lastModifiedUtc": "2024-01-10T06:37:58.2226223+00:00", "duration":
+        "upn": null}, "lastModifiedUtc": "2024-01-10T06:53:41.5605618+00:00", "duration":
         null, "cancelationReason": null, "currentAttemptId": 1, "runId": "name1",
         "parentRunId": null, "experimentId": "d30efbeb-f81d-4cfa-b5cc-a0570a049009",
         "status": "Preparing", "startTimeUtc": null, "endTimeUtc": null, "scheduleId":
@@ -1094,10 +1096,10 @@ interactions:
         "azureml.promptflow.flow_lineage_id": "af1a6951de9be2ce13d3b58b23dbd8b6a0cd8fd4918ad9cb22b28fb8395fbcb0",
         "azureml.promptflow.node_variant": "${summarize_text_content.variant_0}",
         "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
-        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/ccbf48fd8545b95c926ce2b0542c669d/web_classification/flow.dag.yaml",
+        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/7b5027892a914a3146135f411a162907/web_classification/flow.dag.yaml",
         "azureml.promptflow.input_data": "azureml:/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/data/webClassification1/versions/1",
         "azureml.promptflow.inputs_mapping": "{\"url\":\"${data.url}\"}", "_azureml.evaluation_run":
-        "promptflow.BatchRun", "azureml.promptflow.snapshot_id": "71e237f3-44f0-4871-a932-f8982539ddb4"},
+        "promptflow.BatchRun", "azureml.promptflow.snapshot_id": "c61584e8-e5d2-48e7-b375-140609229240"},
         "parameters": {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
         [], "tags": {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
         [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
@@ -1109,7 +1111,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '4089'
+      - '4088'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -1121,7 +1123,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.091'
+      - '0.069'
     status:
       code: 200
       message: OK
@@ -1145,21 +1147,21 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1704868692, "rootRunId": "name2", "createdUtc":
-        "2024-01-10T06:38:12.958797+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+      string: '{"runMetadata": {"runNumber": 1704869637, "rootRunId": "name2", "createdUtc":
+        "2024-01-10T06:53:57.7775503+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
         "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
         "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 3,
-        "statusRevision": 1, "runUuid": "1ffe82b3-f576-428f-901f-00175440f2ca", "parentRunUuid":
-        null, "rootRunUuid": "1ffe82b3-f576-428f-901f-00175440f2ca", "lastStartTimeUtc":
+        "statusRevision": 1, "runUuid": "f13fa9f3-5412-4c97-95a8-4daf37669448", "parentRunUuid":
+        null, "rootRunUuid": "f13fa9f3-5412-4c97-95a8-4daf37669448", "lastStartTimeUtc":
         null, "currentComputeTime": "00:00:00", "computeDuration": null, "effectiveStartTimeUtc":
         null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "lastModifiedUtc": "2024-01-10T06:38:16.5460864+00:00", "duration":
+        "upn": null}, "lastModifiedUtc": "2024-01-10T06:54:01.6341262+00:00", "duration":
         null, "cancelationReason": null, "currentAttemptId": 1, "runId": "name2",
         "parentRunId": null, "experimentId": "d30efbeb-f81d-4cfa-b5cc-a0570a049009",
         "status": "Preparing", "startTimeUtc": null, "endTimeUtc": null, "scheduleId":
@@ -1172,10 +1174,10 @@ interactions:
         "azureml.promptflow.flow_lineage_id": "af1a6951de9be2ce13d3b58b23dbd8b6a0cd8fd4918ad9cb22b28fb8395fbcb0",
         "azureml.promptflow.node_variant": "${summarize_text_content.variant_0}",
         "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
-        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/ccbf48fd8545b95c926ce2b0542c669d/web_classification/flow.dag.yaml",
+        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/7b5027892a914a3146135f411a162907/web_classification/flow.dag.yaml",
         "azureml.promptflow.input_data": "azureml:webClassification1:1", "azureml.promptflow.inputs_mapping":
         "{\"url\":\"${data.url}\"}", "_azureml.evaluation_run": "promptflow.BatchRun",
-        "azureml.promptflow.snapshot_id": "a1a25923-1d44-4d71-a6c4-f0497fde556c"},
+        "azureml.promptflow.snapshot_id": "45eac01b-36ca-4fdc-9f43-7ce6c35de175"},
         "parameters": {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
         [], "tags": {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
         [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
@@ -1187,7 +1189,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '3923'
+      - '3924'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -1199,7 +1201,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.052'
+      - '0.051'
     status:
       code: 200
       message: OK
