@@ -15,6 +15,7 @@ import tempfile
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
+from io import StringIO
 from os import PathLike
 from pathlib import Path
 from typing import IO, Any, AnyStr, Dict, List, Optional, Set, Tuple, Union
@@ -59,6 +60,7 @@ from promptflow._sdk._errors import (
     GenerateFlowToolsJsonError,
     StoreConnectionEncryptionKeyError,
     UnsecureConnectionError,
+    YamlParseError,
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
@@ -233,7 +235,20 @@ def decrypt_secret_value(connection_name, encrypted_secret_value):
 def dump_yaml(*args, **kwargs):
     yaml = YAML()
     yaml.default_flow_style = False
-    return yaml.dump(*args, **kwargs)
+    # when using with no stream parameter but just the data, dump to yaml string and return
+    if len(args) == 1:
+        string_stream = StringIO()
+        yaml.dump(args[0], string_stream, **kwargs)
+        output_string = string_stream.getvalue()
+        string_stream.close()
+        return output_string
+    # when using with stream parameter, dump to stream. e.g.:
+    # open('test.yaml', 'w', encoding='utf-8') as f:
+    #     dump_yaml(data, f)
+    elif len(args) == 2:
+        return yaml.dump(*args, **kwargs)
+    else:
+        raise YamlParseError("Only 1 or 2 positional arguments are allowed for dump yaml util function.")
 
 
 def decorate_validation_error(schema: Any, pretty_error: str, additional_message: str = "") -> str:

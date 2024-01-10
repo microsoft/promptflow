@@ -12,6 +12,7 @@ from typing import Optional, Union
 import pydash
 
 from promptflow._sdk._constants import (
+    DEFAULT_ENCODING,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     HOME_PROMPT_FLOW_DIR,
     SERVICE_CONFIG_FILE,
@@ -52,8 +53,8 @@ class Configuration(object):
             os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
         if not os.path.exists(self.CONFIG_PATH):
             self.CONFIG_PATH.touch(mode=read_write_by_user(), exist_ok=True)
-            with open(self.CONFIG_PATH, "w") as f:
-                f.write(dump_yaml({}))
+            with open(self.CONFIG_PATH, "w", encoding=DEFAULT_ENCODING) as f:
+                dump_yaml({}, f)
         self._config = load_yaml(self.CONFIG_PATH)
         if not self._config:
             self._config = {}
@@ -78,8 +79,8 @@ class Configuration(object):
         """Store config in file to avoid concurrent write."""
         self._validate(key, value)
         pydash.set_(self._config, key, value)
-        with open(self.CONFIG_PATH, "w") as f:
-            f.write(dump_yaml(self._config))
+        with open(self.CONFIG_PATH, "w", encoding=DEFAULT_ENCODING) as f:
+            dump_yaml(self._config, f)
 
     def get_config(self, key):
         try:
