@@ -86,6 +86,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
 
     def _is_executor_active(self):
         """Check if the process is still running and return False if it has exited"""
+        # get the exit code of the process by poll() and if it is None, it means the process is still running
         return self._process.poll() is None
 
     @classmethod
