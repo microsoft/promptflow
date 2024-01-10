@@ -60,7 +60,7 @@ from promptflow.azure._constants._flow import (
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential, get_authorization
 from promptflow.azure.operations._flow_operations import FlowOperations
 from promptflow.exceptions import UserErrorException
 
@@ -139,9 +139,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return portal_url
 
     def _get_headers(self):
-        token = self._credential.get_token("https://management.azure.com/.default").token
         custom_header = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": get_authorization(credential=self._credential),
             "Content-Type": "application/json",
         }
         return custom_header

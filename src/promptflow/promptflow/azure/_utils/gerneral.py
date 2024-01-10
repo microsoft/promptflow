@@ -3,14 +3,64 @@
 # ---------------------------------------------------------
 
 import jwt
+from promptflow.exceptions import ValidationException
 
 
 def is_arm_id(obj) -> bool:
     return isinstance(obj, str) and obj.startswith("azureml://")
 
 
+def get_token_by_credential(credential):
+    from azure.ai.ml._azure_environments import _get_aml_resource_id_from_metadata
+    from azure.ai.ml._azure_environments import _resource_to_scopes
+
+    # NOTE: this copied from https://github.com/Azure/azure-sdk-for-python/blob/05f1438ad0a5eb536e5c49d8d9d44b798445044a/sdk/ml/azure-ai-ml/azure/ai/ml/operations/_job_operations.py#L1495C12-L1495C12
+    aml_resource_id = _get_aml_resource_id_from_metadata()
+    azure_ml_scopes = _resource_to_scopes(aml_resource_id)
+    aml_token = credential.get_token(*azure_ml_scopes).token
+    # validate token has aml audience
+    decoded_token = jwt.decode(
+        aml_token,
+        options={"verify_signature": False, "verify_aud": False},
+    )
+    if decoded_token.get("aud") != aml_resource_id:
+        msg = """AAD token with aml scope could not be fetched using the credentials being used.
+        Please validate if token with {0} scope can be fetched using credentials provided to MLClient.
+        Token with {0} scope can be fetched using credentials.get_token({0})
+        """
+        raise ValidationException(
+            message=msg.format(*azure_ml_scopes),
+        )
+
+    return aml_token
+
+
+def get_token_by_login():
+    try:
+        from azureml.core.authentication import InteractiveLoginAuthentication
+
+        auth = InteractiveLoginAuthentication()
+        token = auth._get_arm_token()
+    except Exception as e:
+        raise e
+    else:
+        return token
+
+
+def get_arm_token(credential=None):
+    if credential:
+        return get_token_by_credential(credential=credential)
+
+    return get_token_by_login()
+
+
+def get_authorization(credential=None):
+    token = get_arm_token(credential=credential)
+    return ("Bearer " + token,)
+
+
 def get_user_alias_from_credential(credential):
-    token = credential.get_token("https://management.azure.com/.default").token
+    token = get_arm_token(credential=credential)
     decode_json = jwt.decode(token, options={"verify_signature": False, "verify_aud": False})
     try:
         email = decode_json.get("upn", decode_json.get("email", None))
