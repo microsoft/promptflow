@@ -31,14 +31,10 @@ class FlowOutputSchema(metaclass=PatchedSchemaMeta):
     is_chat_output = fields.Bool()
 
 
-class FlowSchema(YamlFileSchema):
-    """Schema for flow dag."""
+class BaseFlowSchema(YamlFileSchema):
+    """Base schema for flow."""
 
     additional_includes = fields.List(fields.Str())
-    inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema))
-    outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowOutputSchema))
-    nodes = fields.List(fields.Dict())
-    node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())
     environment = fields.Dict()
 
     # metadata
@@ -47,3 +43,12 @@ class FlowSchema(YamlFileSchema):
     description = fields.Str()
     display_name = fields.Str()
     tags = fields.Dict(keys=fields.Str(), values=fields.Str())
+
+
+class DAGFlowSchema(BaseFlowSchema):
+    """Schema for flow dag."""
+
+    inputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowInputSchema))
+    outputs = fields.Dict(keys=fields.Str(), values=NestedField(FlowOutputSchema))
+    nodes = fields.List(fields.Dict())
+    node_variants = fields.Dict(keys=fields.Str(), values=fields.Dict())

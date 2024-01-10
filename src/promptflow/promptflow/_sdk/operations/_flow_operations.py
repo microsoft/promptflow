@@ -640,7 +640,7 @@ class FlowOperations(TelemetryMixin):
 
         flow_entity: ProtectedFlow = load_flow(source=flow)
 
-        # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
+        # TODO: put off this if we do path existence check in DAGFlowSchema on fields other than additional_includes
         validation_result = flow_entity._validate()
 
         source_path_mapping = {}

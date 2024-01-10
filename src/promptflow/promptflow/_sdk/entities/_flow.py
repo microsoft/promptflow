@@ -257,9 +257,9 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
     @classmethod
     def _create_schema_for_validation(cls, context) -> Schema:
         # import here to avoid circular import
-        from ..schemas._flow import FlowSchema
+        from ..schemas._flow import DAGFlowSchema
 
-        return FlowSchema(context=context)
+        return DAGFlowSchema(context=context)
 
     def _default_context(self) -> dict:
         return {BASE_PATH_CONTEXT_KEY: self._flow_dir}
