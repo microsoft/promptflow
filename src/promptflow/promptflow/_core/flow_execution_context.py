@@ -67,6 +67,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
         flow_context_info = {"flow-id": self._flow_id, "root-run-id": self._run_id}
         OperationContext.get_instance().update(flow_context_info)
 
+    def cancel_node_runs(self, msg):
+        self._run_tracker.cancel_node_runs(msg, self._run_id)
+
     def invoke_tool(self, node: Node, f: Callable, kwargs):
         run_info = self._prepare_node_run(node, f, kwargs)
         node_run_id = run_info.run_id

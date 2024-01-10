@@ -13,7 +13,7 @@ from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
@@ -36,6 +36,7 @@ from promptflow._utils.multimedia_utils import (
     persist_multimedia_data,
 )
 from promptflow._utils.utils import transpose
+from promptflow._utils.utils import transpose, get_int_env_var
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -91,7 +92,7 @@ class FlowExecutor:
         *,
         raise_ex: bool = False,
         working_dir=None,
-        line_timeout_sec=LINE_TIMEOUT_SEC,
+        line_timeout_sec=None,
         flow_file=None,
     ):
         """Initialize a FlowExecutor object.
@@ -111,7 +112,7 @@ class FlowExecutor:
         :param working_dir: The working directory to use for execution.
         :type working_dir: str or None
         :param line_timeout_sec: The maximum time to wait for a line of output from a node.
-        :type line_timeout_sec: int
+        :type line_timeout_sec: int or None
         :param flow_file: The path to the file containing the Flow definition.
         :type flow_file: str or None
         """
@@ -128,7 +129,7 @@ class FlowExecutor:
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
         self._working_dir = working_dir
-        self._line_timeout_sec = line_timeout_sec
+        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", line_timeout_sec)
         self._flow_file = flow_file
         try:
             self._tools_manager = ToolsManager(loaded_tools)
@@ -165,7 +166,7 @@ class FlowExecutor:
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
-        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+        line_timeout_sec: Optional[int] = None,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -222,7 +223,7 @@ class FlowExecutor:
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
-        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+        line_timeout_sec: Optional[int] = None,
     ):
         logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
@@ -939,7 +940,9 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context).execute()
+        return FlowNodesScheduler(
+            self._tools_manager, inputs, nodes, self._node_concurrency, context,
+        ).execute(self._line_timeout_sec)
 
     @staticmethod
     def apply_inputs_mapping(

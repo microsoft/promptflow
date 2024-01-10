@@ -37,6 +37,11 @@ class InputTypeMismatch(ValidationException):
     pass
 
 
+class ToolCancelledError(UserErrorException):
+    """Exception raised when tool execution is cancelled."""
+    pass
+
+
 class ToolLoadError(UserErrorException):
     """Exception raised when tool load failed."""
 
