@@ -550,9 +550,11 @@ def create_run(create_func: Callable, args):
     if file:
         for param_key, param in {
             "name": name,
-            "flow": os.path.relpath(Path(flow), Path(file).parent) if data else None,
+            "flow": os.path.relpath(Path(flow), Path(file).parent) if flow else None,
             "variant": variant,
-            "data": os.path.relpath(Path(data), Path(file).parent) if data else None,
+            "data": os.path.relpath(Path(data), Path(file).parent)
+            if data is not None and not str(data).startswith("azureml:")
+            else data,
             "column_mapping": column_mapping,
             "run": run,
             "environment_variables": environment_variables,
