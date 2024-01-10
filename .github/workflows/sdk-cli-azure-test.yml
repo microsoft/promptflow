@@ -134,7 +134,11 @@ jobs:
     name: "Publish Tests Results"
     needs: sdk_cli_azure_test
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
     if: always()
 
     steps:
@@ -148,5 +152,4 @@ jobs:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 40
-        token: ${{ secrets.GITHUB_TOKEN }}
         context: test/sdk_cli
