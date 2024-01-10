@@ -245,32 +245,6 @@ class LineExecutionProcessPool:
             pass
         return False
 
-    def _handle_timeout_or_crash(
-            self,
-            completed,
-            crashed,
-            line_number,
-            inputs,
-            run_id,
-            start_time,
-            result_list,
-            timeout_time,
-            process_info,
-            task_queue
-    ):
-        if not completed:
-            if crashed:
-                self.handle_process_crashed(line_number, inputs, run_id, start_time, result_list)
-            else:
-                self.handle_line_timeout(line_number, timeout_time,
-                                         inputs, run_id, start_time, result_list)
-
-            self._completed_idx[line_number] = format_current_process(
-                process_info.process_name, process_info.process_id, line_number, is_failed=True)
-            if not task_queue.empty():
-                self._processes_manager.restart_process(process_info.index)
-                process_info = self._get_process_info(process_info.index)
-
     def _monitor_workers_and_process_tasks_in_thread(
             self,
             task_queue: Queue,
@@ -319,16 +293,27 @@ class LineExecutionProcessPool:
                 if completed:
                     break
 
-            # Handle timeout or process crash.
-            self._handle_timeout_or_crash(
-                completed, crashed, line_number, inputs,
-                run_id, start_time, result_list, timeout_time,
-                process_info, task_queue)
-
             # Handle line execution completed.
             if completed:
                 self._completed_idx[line_number] = format_current_process(
                     process_name, process_id, line_number, is_completed=True)
+            # Handle line execution is not completed.
+            else:
+                # Handle process crashed.
+                if crashed:
+                    self.handle_process_crashed(line_number, inputs, run_id, start_time, result_list)
+                # Handle line execution timeout.
+                else:
+                    self.handle_line_timeout(line_number, timeout_time,
+                                             inputs, run_id, start_time, result_list)
+
+                self._completed_idx[line_number] = format_current_process(
+                    process_name, process_id, line_number, is_failed=True)
+
+                # If there are still tasks in task_queue, restart a new process to execute the task.
+                if not task_queue.empty():
+                    self._processes_manager.restart_process(index)
+                    process_info = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)
 
