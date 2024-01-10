@@ -31,6 +31,7 @@ from promptflow._cli._utils import (
     pretty_print_dataframe_as_table,
 )
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, get_list_view_type
+from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
 from promptflow._sdk.entities import Run
@@ -564,7 +565,7 @@ def create_run(create_func: Callable, args):
             if not param:
                 continue
             params_override.append({param_key: param})
-            print(f"Overriding {param_key} with {param}")
+            run = load_run(source=file, params_override=params_override)
     elif flow:
         run_data = {
             "name": name,
