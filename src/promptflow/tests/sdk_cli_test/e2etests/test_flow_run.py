@@ -242,6 +242,13 @@ class TestFlowRun:
         )
         assert local_client.runs.get(eval_run.name).status == "Completed"
 
+    @pytest.mark.usefixtures("enable_logger_propagate")
+    def test_submit_run_with_extra_params(self, pf, caplog):
+        run_id = str(uuid.uuid4())
+        run = create_yaml_run(source=f"{RUNS_DIR}/extra_field.yaml", params_override=[{"name": run_id}])
+        assert pf.runs.get(run.name).status == "Completed"
+        assert "Run schema validation warnings. Unknown fields found" in caplog.text
+
     def test_run_with_connection(self, local_client, local_aoai_connection, pf):
         # remove connection file to test connection resolving
         os.environ.pop(PROMPTFLOW_CONNECTIONS)

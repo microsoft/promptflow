@@ -1,0 +1,10 @@
+inputs: {}
+outputs: {}
+nodes:
+- name: wrong_llm
+  type: llm
+  source:
+    type: code
+    path: wrong_llm.jinja2
+  inputs: {}
+  connection: custom_connection
