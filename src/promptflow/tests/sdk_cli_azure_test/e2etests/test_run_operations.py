@@ -59,6 +59,7 @@ class TestFlowRun:
         assert isinstance(run, Run)
         assert run.name == name
 
+    @pytest.mark.skip(reason="BUG 2894068: investigate why replay still need to upload flow.")
     def test_run_bulk_from_yaml(self, pf, runtime: str, randstr: Callable[[str], str]):
         run_id = randstr("run_id")
         run = load_run(
