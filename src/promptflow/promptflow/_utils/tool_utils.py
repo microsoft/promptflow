@@ -111,7 +111,7 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
 
 
 def function_to_interface(
-    f: Callable, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False, add_ui_hints=True
+    f: Callable, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False, add_ui_hints=False
 ) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
