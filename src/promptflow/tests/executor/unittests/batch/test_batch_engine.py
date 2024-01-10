@@ -30,7 +30,7 @@ class TestBatchEngine:
                 "Unexpected error occurred while executing the batch run. Error: (Exception) test error.",
             ),
             (
-                ConnectionNotFound(messgae="Connection 'aoai_conn' not found"),
+                ConnectionNotFound(message="Connection 'aoai_conn' not found"),
                 ConnectionNotFound,
                 ErrorTarget.EXECUTOR,
                 ["UserError", "ValidationError", "InvalidRequest", "ConnectionNotFound"],
