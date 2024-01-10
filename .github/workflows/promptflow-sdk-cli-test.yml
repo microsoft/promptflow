@@ -156,8 +156,7 @@ jobs:
           ${{ env.testWorkingDirectory }}/htmlcov/
 
 
-  publish-test-results:
-    name: "Publish Tests Results"
+  publish-test-results-sdk-cli-test:
     needs: sdk_cli_tests
     runs-on: ubuntu-latest
     permissions:
