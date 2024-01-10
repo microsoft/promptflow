@@ -145,3 +145,15 @@ class DuplicateToolMappingError(ValidationException):
     """Exception raised when multiple tools are linked to the same deprecated tool id."""
 
     pass
+
+
+class SingletonAlreadyInitializedError(SystemErrorException):
+    """Exception raised when a singleton is initialized more than once."""
+
+    pass
+
+
+class SingletonNotInitializedError(SystemErrorException):
+    """Exception raised when a singleton is used before initialization."""
+
+    pass

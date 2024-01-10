@@ -7,6 +7,7 @@ from typing import Callable, Dict, Optional
 from promptflow.contracts.flow import InputAssignment, Node, ToolSource
 from promptflow.contracts.tool import ToolType
 from promptflow.exceptions import ErrorTarget
+from promptflow.executor._connection_provider import ConnectionProvider
 from promptflow.executor._docstring_parser import DocstringParser
 from promptflow.executor._errors import UnsupportedAssistantToolType
 from promptflow.executor._tool_resolver import ToolResolver
@@ -47,9 +48,10 @@ class AssistantToolInvoker:
                 )
 
     def _load_tool_as_function(self, tool: dict):
-        tool_resolver = ToolResolver(self._working_dir)
+        connections = ConnectionProvider.get_instance().get_connections()
+        tool_resolver = ToolResolver(self._working_dir, connections=connections)
         node, predefined_inputs = self._generate_node_for_tool(tool)
-        resolved_tool = tool_resolver.resolve_tool_by_node(node, convert_input_types=False)
+        resolved_tool = tool_resolver.resolve_tool_by_node(node, convert_input_types=True)
         func_name = resolved_tool.definition.function
         definition = self._generate_tool_definition(
             func_name, resolved_tool.definition.description, predefined_inputs

@@ -40,6 +40,7 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
+from promptflow.executor._connection_provider import ConnectionProvider
 from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
@@ -214,6 +215,7 @@ class FlowExecutor:
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
+        ConnectionProvider.init(connections)
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
 

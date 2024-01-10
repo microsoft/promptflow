@@ -18,7 +18,7 @@ from .._constants import LANGUAGE_KEY, FlowLanguage
 from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import FailedToImportModule
+from ._errors import FailedToImportModule, InvalidSource
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -648,6 +648,7 @@ class Flow:
         """Load flow from dict."""
         cls._update_working_dir(working_dir)
         flow = Flow.deserialize(flow_dag)
+        flow._set_working_dir(working_dir)
         flow._set_tool_loader(working_dir)
         return flow
 
@@ -672,6 +673,9 @@ class Flow:
             for k, v in environment_variables_overrides.items():
                 environment_variables[k] = v
         return environment_variables
+
+    def _set_working_dir(self, working_dir: Path):
+        self._working_dir = working_dir
 
     def _set_tool_loader(self, working_dir):
         package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
@@ -771,10 +775,45 @@ class Flow:
         """Return the name of the chat output."""
         return next((name for name, o in self.outputs.items() if o.is_chat_output), None)
 
+    def _laod_assistant_definition(self, path: str, input_name: str, node_name: str):
+        if path is None or not (self._working_dir / path).exists():
+            raise InvalidSource(
+                message_format="Input '{input_name}' for node '{node_name}' of value '{source_path}' "
+                "is not a valid path.",
+                input_name=input_name,
+                node_name=node_name,
+                target=ErrorTarget.EXECUTOR,
+            )
+        file = self._working_dir / path
+        with open(file, "r", encoding="utf-8") as fin:
+            return yaml.safe_load(fin)
+
+    def _get_connection_name_from_assistant_tools(self, tools: list):
+        connection_names = {}
+        for tool in tools:
+            if tool["type"] != "function" or tool.get("predefined_inputs") is None:
+                continue
+            predefined_inputs = {}
+            for input_name, value in tool.get("predefined_inputs", {}).items():
+                predefined_inputs[input_name] = InputAssignment.deserialize(value)
+            node = Node(
+                name="assistant_node",
+                tool="assistant_tool",
+                inputs=predefined_inputs,
+                source=ToolSource.deserialize(tool["source"]) if "source" in tool else None,
+                type=ToolType.PYTHON if "tool_type" in tool and tool["tool_type"] == "python" else None,
+            )
+            loaded_tool = self._tool_loader.load_tool_for_node(node)
+            connection_names.update(self._get_connection_name_from_tool(loaded_tool, node))
+        return connection_names
+
     def _get_connection_name_from_tool(self, tool: Tool, node: Node):
         connection_names = {}
         value_types = set({v.value for v in ValueType.__members__.values()})
         for k, v in tool.inputs.items():
+            if v.type[0] is ValueType.ASSISTANT_DEFINITION:
+                assistant_definition = self._laod_assistant_definition(node.inputs.get(k).value, k, node.name)
+                connection_names.update(self._get_connection_name_from_assistant_tools(assistant_definition["tools"]))
             input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
             if all(typ.lower() in value_types for typ in input_type):
                 # All type is value type, the key is not a possible connection key.

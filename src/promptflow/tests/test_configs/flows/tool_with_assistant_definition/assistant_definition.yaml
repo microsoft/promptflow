@@ -6,3 +6,5 @@ tools:
   source:
     type: code
     path: echo.py
+  predefined_inputs:
+    predefined_conn: azure_open_ai_connection

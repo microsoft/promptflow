@@ -4,6 +4,7 @@ from typing import Callable
 
 from promptflow import tool
 from promptflow.executor._assistant_tool_invoker import AssistantToolInvoker
+from promptflow.executor._connection_provider import ConnectionProvider
 from promptflow.executor._errors import UnsupportedAssistantToolType
 
 
@@ -39,6 +40,7 @@ class TestAssistantToolInvoker:
         ]
 
         # Test load tools
+        ConnectionProvider.init(connection={})
         invoker = AssistantToolInvoker.init(tool_definitions, working_dir=Path(__file__).parent)
         for tool_name, assistant_tool in invoker._assistant_tools.items():
             assert tool_name in ("code_interpreter", "retrieval", "sample_tool")
