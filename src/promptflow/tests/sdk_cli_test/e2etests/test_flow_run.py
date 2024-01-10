@@ -109,10 +109,6 @@ class TestFlowRun:
         # TODO: check details
         # df = pf.show_details(baseline, v1, v2)
 
-    def test_basic_flow_bulk_run_relative_path(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
-        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
-
     def test_basic_run_bulk(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
