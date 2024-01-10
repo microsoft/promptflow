@@ -182,6 +182,7 @@ class Flow(FlowBase):
                 data = yaml.safe_load(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
             is_dag_flow = cls._is_dag_flow(data)
+            # TODO: schema validation and warning on unknown fields
             if is_dag_flow:
                 return ProtectedFlow._load(path=flow_path, dag=data, **kwargs)
             else:
