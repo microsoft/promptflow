@@ -35,7 +35,7 @@ def mock_stream_chat(*args, **kwargs):
     return stream_response(kwargs)
 
 
-@pytest.mark.skipif(reason="Skip on Mac and Windows and Linux")
+@pytest.mark.skip(reason="Skip on Mac and Windows and Linux, patch does not work in the spawn process")
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
