@@ -391,6 +391,7 @@ class TestCLIUtils:
 
     def test_calculate_column_widths_edge_case(self) -> None:
         nan = float("nan")
+        # test case comes from examples/flow/evaluation/eval-qna-non-rag
         data = [
             {
                 "inputs.groundtruth": "The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m",
@@ -429,4 +430,5 @@ class TestCLIUtils:
         df = pd.DataFrame(data)
         terminal_width = 74  # GitHub Actions scenario
         res = _calculate_column_widths(df, terminal_width)
+        # the column width should at least 1 to avoid tabulate error
         assert res == [4, 1, 13, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
