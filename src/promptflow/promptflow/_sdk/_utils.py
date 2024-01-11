@@ -88,9 +88,26 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
     # null check - just return an empty dict.
     # Certain CLI commands rely on this behavior to produce a resource
     # via CLI, which is then populated through CLArgs.
-    """Load a local YAML file.
+    """Load a local YAML file or a readable stream object.
 
-    :param source: The relative or absolute path to the local file.
+    .. note::
+
+        1. For a local file yaml
+
+        .. code-block:: python
+
+            yaml_path = "path/to/yaml"
+            content = load_yaml(yaml_path)
+
+        2. For a readable stream object
+
+        .. code-block:: python
+
+            with open("path/to/yaml", "r", encoding="utf-8") as f:
+                content = load_yaml(f)
+
+
+    :param source: The relative or absolute path to the local file, or a readable stream object.
     :type source: str
     :return: A dictionary representation of the local file's contents.
     :rtype: Dict
@@ -136,6 +153,12 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
 
 def load_yaml_string(yaml_string: str) -> Dict:
     """Load a yaml string.
+
+    .. code-block:: python
+
+        yaml_string = "some yaml string"
+        object = load_yaml_string(yaml_string)
+
 
     :param yaml_string: A yaml string.
     :type yaml_string: str
@@ -242,6 +265,25 @@ def decrypt_secret_value(connection_name, encrypted_secret_value):
 
 
 def dump_yaml(*args, **kwargs):
+    """Dump data to a yaml string or stream.
+
+    .. note::
+
+        1. Dump to a yaml string
+
+        .. code-block:: python
+
+            data = {"key": "value"}
+            yaml_string = dump_yaml(data)
+
+        2. Dump to a stream
+
+        .. code-block:: python
+
+            data = {"key": "value"}
+            with open("path/to/yaml", "w", encoding="utf-8") as f:
+                dump_yaml(data, f)
+    """
     yaml = YAML()
     yaml.default_flow_style = False
     # when using with no stream parameter but just the data, dump to yaml string and return
