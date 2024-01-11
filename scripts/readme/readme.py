@@ -166,7 +166,7 @@ def write_readme(workflow_telemetries, readme_telemetries):
                     "description": description,
                 }
             )
-        elif gh_working_dir.startswith("examples/tools/use-cases"):
+        elif gh_working_dir.startswith("examples/tools"):
             toolusecases["notebooks"].append(
                 {
                     "name": notebook_name,
@@ -257,7 +257,7 @@ def write_readme(workflow_telemetries, readme_telemetries):
                     "description": description,
                 }
             )
-        elif readme_folder.startswith("examples/tools/use-cases"):
+        elif readme_folder.startswith("examples/tools"):
             toolusecases["readmes"].append(
                 {
                     "name": notebook_name,
@@ -314,7 +314,7 @@ def main(check):
         "examples/tutorials/e2e-development/*.md",
         "examples/tutorials/flow-fine-tuning-evaluation/*.md",
         "examples/tutorials/**/README.md",
-        "examples/tools/use-cases/**/README.md",
+        "examples/tools/**/README.md",
     ]
     # exclude the readme since this is 3p integration folder, pipeline generation is not included
     input_glob_readme_exclude = ["examples/flows/integrations/**/README.md"]
