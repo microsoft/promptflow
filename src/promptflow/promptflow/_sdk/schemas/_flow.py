@@ -58,6 +58,6 @@ class EagerFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
     # path to flow entry file.
-    path = LocalPathField()
+    path = LocalPathField(required=True)
     # entry function
-    entry = fields.Str()
+    entry = fields.Str(required=True)

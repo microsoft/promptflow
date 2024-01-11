@@ -17,7 +17,6 @@ from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
-    NODES,
     PROMPT_FLOW_DIR_NAME,
 )
 from promptflow._sdk.entities._connection import _Connection
@@ -157,9 +156,10 @@ class Flow(FlowBase):
         return flow_file
 
     @classmethod
-    def _is_dag_flow(cls, data: dict):
-        """Check if the flow is an DAG flow. Use field 'nodes' to determine."""
-        return data.get(NODES)
+    def _is_eager_flow(cls, data: dict):
+        """Check if the flow is an eager flow. Use field 'entry' to determine."""
+        # If entry specified, it's an eager flow.
+        return data.get("entry")
 
     @classmethod
     def load(
@@ -181,12 +181,12 @@ class Flow(FlowBase):
                 flow_content = f.read()
                 data = yaml.safe_load(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
-            is_dag_flow = cls._is_dag_flow(data)
-            # TODO: schema validation and warning on unknown fields
-            if is_dag_flow:
-                return ProtectedFlow._load(path=flow_path, dag=data, **kwargs)
-            else:
+            is_eager_flow = cls._is_eager_flow(data)
+            if is_eager_flow:
                 return EagerFlow._load(path=flow_path, entry=data.get("entry"), data=data, **kwargs)
+            else:
+                # TODO: schema validation and warning on unknown fields
+                return ProtectedFlow._load(path=flow_path, dag=data, **kwargs)
         # if non-YAML file is provided, treat is as eager flow
         return EagerFlow._load(path=flow_path, **kwargs)
 
