@@ -181,22 +181,8 @@ class LineExecutionProcessPool:
             try:
                 process_id = self._process_info[index].process_id
                 process_name = self._process_info[index].process_name
-                input_queue = self._process_info[index].input_queue
-                output_queue = self._process_info[index].output_queue
-                process_info = ProcessInfo(
-                    index=index,
-                    process_id=process_id,
-                    process_name=process_name,
-                    input_queue=input_queue,
-                    output_queue=output_queue,
-                )
-                return (
-                    process_info.index,
-                    process_info.process_id,
-                    process_info.process_name,
-                    process_info.input_queue,
-                    process_info.output_queue,
-                )
+                process_info = ProcessInfo(index=index, process_id=process_id, process_name=process_name)
+                return (process_info.index, process_info.process_id, process_info.process_name)
             except KeyError:
                 continue
             except Exception as e:
@@ -238,13 +224,9 @@ class LineExecutionProcessPool:
         return False
 
     def _monitor_workers_and_process_tasks_in_thread(
-        self,
-        task_queue: Queue,
-        timeout_time,
-        result_list,
-        index,
+        self, task_queue: Queue, timeout_time, result_list, index, input_queue, output_queue
     ):
-        index, process_id, process_name, input_queue, output_queue = self._get_process_info(index)
+        index, process_id, process_name = self._get_process_info(index)
 
         while True:
             try:
@@ -298,7 +280,7 @@ class LineExecutionProcessPool:
                 # If there are still tasks in task_queue, restart a new process to execute the task.
                 if not task_queue.empty():
                     self._processes_manager.restart_process(index)
-                    index, process_id, process_name, input_queue, output_queue = self._get_process_info(index)
+                    index, process_id, process_name = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)
 
@@ -406,6 +388,10 @@ class LineExecutionProcessPool:
                         self._line_timeout_sec,  # Line execution timeout.
                         result_list,  # Bath run result list.
                         i,  # Index of the sub process.
+                        # Specific input queue for sub process, used to send input data to it.
+                        self._input_queues[i],
+                        # Specific output queue for the sub process, used to receive results from it.
+                        self._output_queues[i],
                     )
                     for i in range(self._n_process)
                 ]
