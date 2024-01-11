@@ -775,7 +775,7 @@ class Flow:
         """Return the name of the chat output."""
         return next((name for name, o in self.outputs.items() if o.is_chat_output), None)
 
-    def _laod_assistant_definition(self, path: str, input_name: str, node_name: str):
+    def _load_assistant_definition(self, path: str, input_name: str, node_name: str):
         if path is None or not (self._working_dir / path).exists():
             raise InvalidSource(
                 message_format="Input '{input_name}' for node '{node_name}' of value '{source_path}' "
@@ -812,7 +812,7 @@ class Flow:
         value_types = set({v.value for v in ValueType.__members__.values()})
         for k, v in tool.inputs.items():
             if v.type[0] is ValueType.ASSISTANT_DEFINITION:
-                assistant_definition = self._laod_assistant_definition(node.inputs.get(k).value, k, node.name)
+                assistant_definition = self._load_assistant_definition(node.inputs.get(k).value, k, node.name)
                 connection_names.update(self._get_connection_name_from_assistant_tools(assistant_definition["tools"]))
             input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
             if all(typ.lower() in value_types for typ in input_type):
