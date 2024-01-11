@@ -9,7 +9,7 @@ from promptflow.exceptions import UserErrorException
 
 logger = get_cli_sdk_logger()
 
-UPGRADE_MSG = 'Not able to upgrade automatically. Can use install script to upgrade.'
+UPGRADE_MSG = 'Not able to upgrade automatically'
 
 def add_upgrade_parser(subparsers):
     """Add upgrade parser to the pf subparsers."""
@@ -79,11 +79,8 @@ def upgrade_version(args):
         logger.debug("Update prompt flow with '%s'", " ".join(pip_args))
         exit_code = subprocess.call(pip_args, shell=platform.system() == 'Windows')
     elif installer == 'SCRIPT':
-        command = 'curl https://promptflowartifact.blob.core.windows.net/linux-install-scripts/install | bash'
-        try:
-            subprocess.run(command, check=True)
-        except subprocess.CalledProcessError:
-            logger.warning(UPGRADE_MSG)
+        command = "curl https://promptflowartifact.blob.core.windows.net/linux-install-scripts/install | bash"
+        logger.warning(f"{UPGRADE_MSG}, you can try to run {command} in your terminal directly to upgrade package.")
     else:
         logger.warning(UPGRADE_MSG)
 
@@ -92,7 +89,7 @@ def upgrade_version(args):
         logger.warning(err_msg)
         sys.exit(exit_code)
 
-    # Todo: uncomment this block after pf version can retyrn correct value, shell=True will return old version
+    # Todo: uncomment this block after pf version can return correct value, shell=True will return old version?
     # import importlib
     # import json
     # importlib.reload(subprocess)
