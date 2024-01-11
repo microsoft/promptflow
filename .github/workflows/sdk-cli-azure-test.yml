@@ -130,8 +130,7 @@ jobs:
             ${{ env.testWorkingDirectory }}/*.xml
             ${{ env.testWorkingDirectory }}/htmlcov/
 
-  publish-test-results:
-    name: "Publish Tests Results"
+  publish-test-results-sdk-cli-azure-test:
     needs: sdk_cli_azure_test
     runs-on: ubuntu-latest
     permissions:
