@@ -475,7 +475,7 @@ def mock_vcrpy_stubs_vcr_connection_getresponse() -> None:
             self.cassette.append(self._vcr_request, response)
         return VCRHTTPResponse(response)
 
-    with patch("vcr.stubs.__init__.VCRConnection.getresponse", new=getresponse):
+    with patch("vcr.stubs.VCRConnection.getresponse", new=getresponse):
         yield
 
 
