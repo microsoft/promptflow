@@ -6,13 +6,13 @@ from pathlib import Path
 
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import ExperimentNodeType, ExperimentStatus
+from promptflow._sdk._errors import ExperimentHasCycle, ExperimentValueError
 from promptflow._sdk._submitter import RunSubmitter
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._experiment import Experiment
 from promptflow._sdk.operations import RunOperations
 from promptflow._sdk.operations._experiment_operations import ExperimentOperations
 from promptflow._utils.logger_utils import LoggerFactory
-from promptflow.exceptions import UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -44,12 +44,11 @@ class ExperimentOrchestrator:
         resolved_nodes = self._ensure_nodes_order(experiment.nodes)
 
         # Run nodes
-        data_dict = {data.get("name", None): data for data in experiment.data}
         run_dict = {}
         try:
             for node in resolved_nodes:
-                logger.debug(f"Running node {node.name}.")
-                run = self._run_node(node, experiment, data_dict, run_dict)
+                logger.info(f"Running node {node.name}.")
+                run = self._run_node(node, experiment, run_dict)
                 # Update node run to experiment
                 experiment._append_node_run(node.name, run)
                 self.experiment_operations.create_or_update(experiment)
@@ -92,23 +91,23 @@ class ExperimentOrchestrator:
                     referenced_nodes.discard(node.name)
                 break
             if not action:
-                raise UserErrorException(f"Experiment has circular dependency {edges!r}")
+                raise ExperimentHasCycle(f"Experiment has circular dependency {edges!r}")
 
         logger.debug(f"Experiment nodes resolved order: {[node.name for node in resolved_nodes]}")
         return resolved_nodes
 
-    def _run_node(self, node, experiment, data_dict, run_dict) -> Run:
+    def _run_node(self, node, experiment, run_dict) -> Run:
         if node.type == ExperimentNodeType.FLOW:
-            return self._run_flow_node(node, experiment, data_dict, run_dict)
+            return self._run_flow_node(node, experiment, run_dict)
         elif node.type == ExperimentNodeType.CODE:
             return self._run_script_node(node, experiment)
-        raise UserErrorException(f"Unknown experiment node {node.name!r} type {node.type!r}")
+        raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
-    def _run_flow_node(self, node, experiment, data_dict, run_dict):
+    def _run_flow_node(self, node, experiment, run_dict):
         run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         run = ExperimentRun(
-            experiment_data=data_dict,
+            experiment=experiment,
             experiment_runs=run_dict,
             # Use node name as prefix for run name?
             name=f"{node.name}_attempt{timestamp}",
@@ -132,10 +131,30 @@ class ExperimentOrchestrator:
 class ExperimentRun(Run):
     """Experiment run, includes experiment running context, like data, inputs and runs."""
 
-    def __init__(self, experiment_data, experiment_runs, **kwargs):
-        self.experiment_data = experiment_data
+    def __init__(self, experiment, experiment_runs, **kwargs):
+        self.experiment = experiment
+        self.experiment_data = {data.name: data for data in experiment.data}
+        self.experiment_inputs = {input.name: input for input in experiment.inputs}
         self.experiment_runs = experiment_runs
         super().__init__(**kwargs)
+        self._resolve_column_mapping()
+
+    def _resolve_column_mapping(self):
+        """Resolve column mapping with experiment inputs to constant values."""
+        logger.info(f"Start resolve node {self.display_name!r} column mapping.")
+        resolved_mapping = {}
+        for name, value in self.column_mapping.items():
+            if not value.startswith("${inputs."):
+                resolved_mapping[name] = value
+                continue
+            input_name = value.split(".")[1].replace("}", "")
+            if input_name not in self.experiment_inputs:
+                raise ExperimentValueError(
+                    f"Node {self.display_name!r} inputs {value!r} related experiment input {input_name!r} not found."
+                )
+            resolved_mapping[name] = self.experiment_inputs[input_name].value
+        logger.debug(f"Resolved node {self.display_name!r} column mapping {resolved_mapping}.")
+        self.column_mapping = resolved_mapping
 
 
 class ExperimentRunSubmitter(RunSubmitter):
@@ -155,24 +174,26 @@ class ExperimentRunSubmitter(RunSubmitter):
         for value in inputs_mapping.values():
             referenced_data, referenced_run = None, None
             if value.startswith("${data."):
-                referenced_data = value.split(".")[1]
+                referenced_data = value.split(".")[1].replace("}", "")
             elif value.startswith("${"):
                 referenced_run = value.split(".")[0].replace("${", "")
             if referenced_data:
                 if data_name and data_name != referenced_data:
-                    raise UserErrorException(
+                    raise ExperimentValueError(
                         f"Experiment has multiple data inputs {data_name!r} and {referenced_data!r}"
                     )
                 data_name = referenced_data
             if referenced_run:
                 if run_name and run_name != referenced_run:
-                    raise UserErrorException(f"Experiment has multiple run inputs {run_name!r} and {referenced_run!r}")
+                    raise ExperimentValueError(
+                        f"Experiment has multiple run inputs {run_name!r} and {referenced_run!r}"
+                    )
                 run_name = referenced_run
         logger.debug(f"Resolve node {run.name} referenced data {data_name!r}, run {run_name!r}.")
         # Build inputs from experiment data and run
         result = {}
-        if data_name in run.experiment_data and run.experiment_data[data_name].get("path"):
-            result.update({f"data.{data_name}": run.experiment_data[data_name]["path"]})
+        if data_name in run.experiment_data and run.experiment_data[data_name].path:
+            result.update({f"data.{data_name}": run.experiment_data[data_name].path})
         if run_name in run.experiment_runs:
             result.update(
                 {
