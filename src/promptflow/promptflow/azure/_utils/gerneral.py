@@ -56,7 +56,7 @@ def get_arm_token(credential=None):
 
 def get_authorization(credential=None):
     token = get_arm_token(credential=credential)
-    return ("Bearer " + token,)
+    return "Bearer " + token
 
 
 def get_user_alias_from_credential(credential):
