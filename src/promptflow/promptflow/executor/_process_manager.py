@@ -214,7 +214,7 @@ class ForkProcessManager(AbstractProcessManager):
         """
         Initiates a process with "spawn" method to establish a clean environment.
         """
-        context = multiprocessing.get_context("spawn")
+        context = multiprocessing.get_context("fork")
         process = context.Process(
             target=fork_processes_manager,
             args=(
