@@ -1,12 +1,14 @@
 import multiprocessing
-from multiprocessing import Queue
-from typing import List
 import queue
 import signal
-from functools import partial
 from dataclasses import dataclass
 from enum import Enum
+from functools import partial
+from multiprocessing import Queue
+from typing import List
+
 import psutil
+
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import LogContext, bulk_logger
 from promptflow.executor.flow_executor import FlowExecutor
@@ -28,7 +30,7 @@ class ProcessControlSignal(str, Enum):
 
 
 class AbstractProcessManager:
-    '''
+    """
     AbstractProcessManager is a base class for managing processes.
 
     :param input_queues: Queues for providing input data to the processes.
@@ -44,7 +46,7 @@ class AbstractProcessManager:
 
     :param raise_ex: Flag to determine whether to raise exceptions or not.
     :type raise_ex: bool
-    '''
+    """
 
     def __init__(
         self,
@@ -61,8 +63,7 @@ class AbstractProcessManager:
         self._raise_ex = raise_ex
 
         current_log_context = LogContext.get_current()
-        self._log_context_initialization_func = (
-            current_log_context.get_initializer() if current_log_context else None)
+        self._log_context_initialization_func = current_log_context.get_initializer() if current_log_context else None
         self._current_operation_context = OperationContext.get_instance().get_context_dict()
 
     def new_process(self, i):
@@ -75,12 +76,12 @@ class AbstractProcessManager:
         raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for new_process.")
 
     def restart_process(self, i):
-        '''
+        """
         Restarts a specified process
 
         :param i: Index of the process to restart.
         :type i: int
-        '''
+        """
         raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for restart_process.")
 
     def end_process(self, i):
@@ -94,20 +95,16 @@ class AbstractProcessManager:
 
 
 class SpawnProcessManager(AbstractProcessManager):
-    '''
+    """
     SpawnProcessManager extends AbstractProcessManager to specifically manage processes using the 'spawn' start method.
 
     :param executor_creation_func: Function to create an executor for each process.
 
     :param args: Additional positional arguments for the AbstractProcessManager.
     :param kwargs: Additional keyword arguments for the AbstractProcessManager.
-    '''
+    """
 
-    def __init__(
-            self,
-            executor_creation_func,
-            *args,
-            **kwargs):
+    def __init__(self, executor_creation_func, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._executor_creation_func = executor_creation_func
         self.context = multiprocessing.get_context("spawn")
@@ -133,7 +130,7 @@ class SpawnProcessManager(AbstractProcessManager):
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
-                self._current_operation_context
+                self._current_operation_context,
             ),
             # Set the process as a daemon process to automatically terminated and release system resources
             # when the main process exits.
@@ -147,12 +144,13 @@ class SpawnProcessManager(AbstractProcessManager):
                 process_id=process.pid,
                 process_name=process.name,
                 input_queue=self._input_queues[i],
-                output_queue=self._output_queues[i]
+                output_queue=self._output_queues[i],
             )
         except Exception as e:
             bulk_logger.info(
                 f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}")
+                f"because the main process is down. Exception: {e}"
+            )
         return process
 
     def restart_process(self, i):
@@ -183,7 +181,8 @@ class SpawnProcessManager(AbstractProcessManager):
         except Exception as e:
             bulk_logger.info(
                 f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}")
+                f"because the main process is down. Exception: {e}"
+            )
 
 
 class ForkProcessManager(AbstractProcessManager):
@@ -208,14 +207,7 @@ class ForkProcessManager(AbstractProcessManager):
     """
     '''
 
-    def __init__(
-            self,
-            control_signal_queue: Queue,
-            flow_file,
-            connections,
-            working_dir,
-            *args,
-            **kwargs):
+    def __init__(self, control_signal_queue: Queue, flow_file, connections, working_dir, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._control_signal_queue = control_signal_queue
         self._flow_file = flow_file
@@ -223,9 +215,9 @@ class ForkProcessManager(AbstractProcessManager):
         self._working_dir = working_dir
 
     def start_processes(self):
-        '''
+        """
         Initiates a process with "spawn" method to establish a clean environment.
-        '''
+        """
         context = multiprocessing.get_context("spawn")
         process = context.Process(
             target=fork_processes_manager,
@@ -240,8 +232,8 @@ class ForkProcessManager(AbstractProcessManager):
                 self._working_dir,
                 self._raise_ex,
                 self._process_info,
-                self._process_target_func
-            )
+                self._process_target_func,
+            ),
         )
         process.start()
 
@@ -274,7 +266,7 @@ class ForkProcessManager(AbstractProcessManager):
 
 
 class SpawnedForkProcessManager(AbstractProcessManager):
-    '''
+    """
     SpawnedForkProcessManager extends AbstractProcessManager to manage processes using 'fork' method
     in a spawned process.
 
@@ -286,16 +278,17 @@ class SpawnedForkProcessManager(AbstractProcessManager):
 
     :param args: Additional positional arguments for the AbstractProcessManager.
     :param kwargs: Additional keyword arguments for the AbstractProcessManager.
-    '''
+    """
 
     def __init__(
-            self,
-            log_context_initialization_func,
-            current_operation_context,
-            control_signal_queue,
-            executor_creation_func,
-            *args,
-            **kwargs):
+        self,
+        log_context_initialization_func,
+        current_operation_context,
+        control_signal_queue,
+        executor_creation_func,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
 
         self._log_context_initialization_func = log_context_initialization_func
@@ -318,9 +311,9 @@ class SpawnedForkProcessManager(AbstractProcessManager):
                 self._input_queues[i],
                 self._output_queues[i],
                 self._log_context_initialization_func,
-                self._current_operation_context
+                self._current_operation_context,
             ),
-            daemon=True
+            daemon=True,
         )
         process.start()
         try:
@@ -329,12 +322,13 @@ class SpawnedForkProcessManager(AbstractProcessManager):
                 process_id=process.pid,
                 process_name=process.name,
                 input_queue=self._input_queues[i],
-                output_queue=self._output_queues[i]
+                output_queue=self._output_queues[i],
             )
         except Exception as e:
             bulk_logger.info(
                 f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}")
+                f"because the main process is down. Exception: {e}"
+            )
         return process
 
     def end_process(self, i):
@@ -355,7 +349,8 @@ class SpawnedForkProcessManager(AbstractProcessManager):
         except Exception as e:
             bulk_logger.info(
                 f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}")
+                f"because the main process is down. Exception: {e}"
+            )
 
     def restart_process(self, i):
         """
@@ -387,23 +382,24 @@ class SpawnedForkProcessManager(AbstractProcessManager):
 
 
 def fork_processes_manager(
-        log_context_initialization_func,
-        current_operation_context,
-        input_queues,
-        output_queues,
-        control_signal_queue,
-        flow_file,
-        connections,
-        working_dir,
-        raise_ex,
-        process_info,
-        process_target_func
+    log_context_initialization_func,
+    current_operation_context,
+    input_queues,
+    output_queues,
+    control_signal_queue,
+    flow_file,
+    connections,
+    working_dir,
+    raise_ex,
+    process_info,
+    process_target_func,
 ):
     """
     Manages the creation, termination, and signaling of processes using the 'fork' context.
     """
     # Set up signal handling for process interruption.
-    from promptflow.executor._line_execution_process_pool import signal_handler, create_executor_fork
+    from promptflow.executor._line_execution_process_pool import create_executor_fork, signal_handler
+
     signal.signal(signal.SIGINT, signal_handler)
 
     # Create flow executor.
@@ -443,7 +439,8 @@ def fork_processes_manager(
         except Exception as e:
             bulk_logger.info(
                 f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}")
+                f"because the main process is down. Exception: {e}"
+            )
             break
 
         for _, info in list(process_info_list):
@@ -451,7 +448,7 @@ def fork_processes_manager(
             # Check if at least one process is alive.
             if psutil.pid_exists(pid):
                 process = psutil.Process(pid)
-                if process.status() != 'zombie':
+                if process.status() != "zombie":
                     all_processes_stopped = False
                 else:
                     # If do not call wait(), the child process may become a zombie process,
