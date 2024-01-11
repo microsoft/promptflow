@@ -385,7 +385,7 @@ class RunOperations(TelemetryMixin):
         """Get the outputs file path of the run."""
         local_storage = self._get_local_storage(run)
         # TODO: what if the data is deleted?
-        if not local_storage._data_path or not os.path.exists(local_storage._data_path):
+        if local_storage._data_path and not os.path.exists(local_storage._data_path):
             raise UserErrorException(
                 f"Data path {local_storage._data_path} for run {run.name} does not exist. "
                 "Please make sure it exists and not deleted."
