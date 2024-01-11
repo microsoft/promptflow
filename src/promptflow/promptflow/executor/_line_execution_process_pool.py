@@ -118,7 +118,7 @@ class LineExecutionProcessPool:
         self._storage = flow_executor._run_tracker._storage
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
-        self._line_timeout_sec = flow_executor._line_timeout_sec
+        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", flow_executor._line_timeout_sec)
         self._output_dir = output_dir
 
     def __enter__(self):
