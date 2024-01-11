@@ -3,29 +3,49 @@ import pytest
 from promptflow.contracts.multimedia import Image, PFBytes
 
 
-@pytest.mark.e2etest
+@pytest.mark.unittest
 class TestMultimediaContract:
-    def test_constructors(self):
-        content = b"test"
-        mime_type = "image/*"
-        bs = [
-            PFBytes(content, mime_type),
-            Image(content, mime_type),
-            PFBytes(content, mime_type=mime_type),
-            Image(content, mime_type=mime_type),
-            PFBytes(value=content, mime_type=mime_type),
-            Image(value=content, mime_type=mime_type),
+    @pytest.mark.parametrize(
+        "value, mime_type, source_url",
+        [
+            (b"test", "image/*", None),
+            (b"test", "image/jpg", None),
+            (b"test", "image/png", None),
+            (b"test", None, None),
+            (b"test", "image/*", "mock_url"),
         ]
-        for b in bs:
-            assert b._mime_type == "image/*"
-            assert b._hash == "a94a8fe5"
-            assert b.to_base64() == "dGVzdA=="
-            assert b.to_base64(with_type=True) == "data:image/*;base64,dGVzdA=="
-            assert b.to_base64(with_type=True, dict_type=True) == {"data:image/*;base64": "dGVzdA=="}
-            assert bytes(b) == content
-            assert b.source_url is None
-            if isinstance(b, Image):
-                assert str(b) == "Image(a94a8fe5)"
-                assert repr(b) == "Image(a94a8fe5)"
-                assert b.serialize() == "Image(a94a8fe5)"
-                assert b.serialize(lambda x: x.to_base64()) == "dGVzdA=="
+    )
+    def test_image_contract(self, value, mime_type, source_url):
+        image = Image(value, mime_type, source_url)
+        if mime_type is None:
+            mime_type = "image/*"
+        assert image._mime_type == mime_type
+        assert image._hash == "a94a8fe5"
+        assert image.to_base64() == "dGVzdA=="
+        assert image.to_base64(with_type=True) == f"data:{mime_type};base64,dGVzdA=="
+        assert image.to_base64(with_type=True, dict_type=True) == {f"data:{mime_type};base64": "dGVzdA=="}
+        assert bytes(image) == value
+        assert image.source_url == source_url
+        assert str(image) == "Image(a94a8fe5)"
+        assert repr(image) == "Image(a94a8fe5)"
+        assert image.serialize() == "Image(a94a8fe5)"
+        assert image.serialize(lambda x: x.to_base64()) == "dGVzdA=="
+
+    @pytest.mark.parametrize(
+        "value, mime_type, source_url",
+        [
+            (b"test", "image/*", None),
+            (b"test", "image/jpg", None),
+            (b"test", "image/png", None),
+            (b"test", "image/*", "mock_url"),
+        ]
+    )
+    def test_pfbytes_contract(self, value, mime_type, source_url):
+        pfBytes = PFBytes(value, mime_type, source_url)
+        assert pfBytes._mime_type == mime_type
+        assert pfBytes._hash == "a94a8fe5"
+        assert pfBytes.to_base64() == "dGVzdA=="
+        assert pfBytes.to_base64(with_type=True) == f"data:{mime_type};base64,dGVzdA=="
+        assert pfBytes.to_base64(with_type=True, dict_type=True) == {f"data:{mime_type};base64": "dGVzdA=="}
+        assert bytes(pfBytes) == value
+        assert pfBytes.source_url == source_url

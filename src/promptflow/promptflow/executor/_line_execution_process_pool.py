@@ -4,6 +4,7 @@ import os
 import queue
 import signal
 import sys
+import threading
 from datetime import datetime
 from functools import partial
 from logging import INFO
@@ -504,7 +505,10 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
-    signal.signal(signal.SIGINT, signal_handler)
+    if threading.current_thread() is threading.main_thread():
+        signal.signal(signal.SIGINT, signal_handler)
+    else:
+        bulk_logger.info("Current thread is not main thread, skip signal handler registration in batch process pool.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
     if log_context_initialization_func:
         with log_context_initialization_func():

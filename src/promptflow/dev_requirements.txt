@@ -25,3 +25,7 @@ twine==4.0.0
 vcrpy==5.1.0  # record and replay http requests for pfazure tests
 wheel
 httpx
+
+# test dummy flow run in notebook, give a minimal version for vulnerability issue
+ipykernel>=6.27.1
+papermill>=2.5.0

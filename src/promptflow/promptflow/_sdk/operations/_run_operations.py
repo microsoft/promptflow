@@ -302,7 +302,9 @@ class RunOperations(TelemetryMixin):
             run._check_run_status_is_completed()
 
             local_storage = LocalStorageOperations(run)
-            detail = local_storage.load_detail()
+            # nan, inf and -inf are not JSON serializable, which will lead to JavaScript parse error
+            # so specify `parse_const_as_str` as True to parse them as string
+            detail = local_storage.load_detail(parse_const_as_str=True)
             # ad-hoc step: make logs field empty to avoid too big HTML file
             # we don't provide logs view in visualization page for now
             # when we enable, we will save those big data (e.g. logs) in separate file(s)
@@ -383,7 +385,7 @@ class RunOperations(TelemetryMixin):
         """Get the outputs file path of the run."""
         local_storage = self._get_local_storage(run)
         # TODO: what if the data is deleted?
-        if not local_storage._data_path or not os.path.exists(local_storage._data_path):
+        if local_storage._data_path and not os.path.exists(local_storage._data_path):
             raise UserErrorException(
                 f"Data path {local_storage._data_path} for run {run.name} does not exist. "
                 "Please make sure it exists and not deleted."

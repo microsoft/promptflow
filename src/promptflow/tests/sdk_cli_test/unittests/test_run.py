@@ -94,6 +94,20 @@ class TestRun:
         run = load_run(source=source, params_override=[{"name": run_id}])
         assert run.environment_variables == {"FOO": "BAR"}
 
+    def test_run_invalid_flow_path(self):
+        run_id = str(uuid.uuid4())
+        source = f"{RUNS_DIR}/bulk_run_invalid_flow_path.yaml"
+        with pytest.raises(ValidationError) as e:
+            load_run(source=source, params_override=[{"name": run_id}])
+        assert "Can't find directory or file in resolved absolute path:" in str(e.value)
+
+    def test_run_invalid_remote_flow(self):
+        run_id = str(uuid.uuid4())
+        source = f"{RUNS_DIR}/bulk_run_invalid_remote_flow_str.yaml"
+        with pytest.raises(ValidationError) as e:
+            load_run(source=source, params_override=[{"name": run_id}])
+        assert "Invalid remote flow path. Currently only azureml:<flow-name> is supported" in str(e.value)
+
     def test_data_not_exist_validation_error(self):
         source = f"{RUNS_DIR}/sample_bulk_run.yaml"
         with pytest.raises(ValidationError) as e:
@@ -105,7 +119,6 @@ class TestRun:
     @pytest.mark.parametrize(
         "source, error_msg",
         [
-            (f"{RUNS_DIR}/illegal/extra_field.yaml", "Unknown field"),
             (f"{RUNS_DIR}/illegal/non_exist_data.yaml", "Can't find directory or file"),
         ],
     )
@@ -203,3 +216,9 @@ class TestRun:
         # assert non english in memory
         outputs = local_storage.load_outputs()
         assert outputs == {"output": ["Hello 123 日本語", "World 123 日本語"]}
+
+    @pytest.mark.usefixtures("enable_logger_propagate")
+    def test_flow_run_with_unknown_field(self, caplog):
+        run_yaml = Path(RUNS_DIR) / "sample_bulk_run.yaml"
+        load_run(source=run_yaml, params_override=[{"unknown_field": "unknown_value"}])
+        assert "Unknown fields found" in caplog.text

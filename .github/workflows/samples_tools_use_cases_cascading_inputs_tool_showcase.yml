@@ -16,7 +16,7 @@ env:
   IS_IN_CI_PIPELINE: "true"
 
 jobs:
-  samples_readme_ci:
+  samples_tools_use_cases_cascading_inputs_tool_showcase:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
