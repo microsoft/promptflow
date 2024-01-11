@@ -5,5 +5,8 @@ class FailedToImportModule(UserErrorException):
     pass
 
 
+class FlowDefinitionError(UserErrorException):
+    pass
+
 class InvalidSource(ValidationException):
     pass
