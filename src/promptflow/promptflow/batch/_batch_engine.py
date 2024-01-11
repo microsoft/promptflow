@@ -111,6 +111,7 @@ class BatchEngine:
         run_id: Optional[str] = None,
         max_lines_count: Optional[int] = None,
         raise_on_line_failure: Optional[bool] = False,
+        line_number_set: Optional[set] = None,
     ) -> BatchResult:
         """Run flow in batch mode
 
@@ -159,7 +160,9 @@ class BatchEngine:
                     OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
                     # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
-                    batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    batch_inputs = batch_input_processor.process_batch_inputs(
+                        input_dirs, inputs_mapping, line_number_set
+                    )
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
                     # run flow in batch mode

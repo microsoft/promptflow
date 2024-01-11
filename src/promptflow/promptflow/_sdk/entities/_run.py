@@ -123,6 +123,7 @@ class Run(YAMLTranslatableMixin):
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
         source: Optional[Union[Path, str]] = None,
+        resume_from_run: Optional[Union["Run", str]] = None,
         **kwargs,
     ):
         # TODO: remove when RUN CRUD don't depend on this
@@ -140,6 +141,7 @@ class Run(YAMLTranslatableMixin):
         self.connections = connections or {}
         self._properties = properties or {}
         self.source = source
+        self.resume_from_run = resume_from_run
         self._is_archived = kwargs.get("is_archived", False)
         self._run_source = kwargs.get("run_source", RunInfoSources.LOCAL)
         self._start_time = start_time

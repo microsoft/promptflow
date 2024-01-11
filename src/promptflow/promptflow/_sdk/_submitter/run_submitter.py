@@ -5,6 +5,7 @@
 
 import datetime
 from pathlib import Path
+from typing import Optional
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
@@ -31,11 +32,11 @@ class RunSubmitter:
     def __init__(self, run_operations: RunOperations):
         self.run_operations = run_operations
 
-    def submit(self, run: Run, stream=False, **kwargs):
-        self._run_bulk(run=run, stream=stream, **kwargs)
+    def submit(self, run: Run, resume_from_run: Optional[Run] = None, stream=False, **kwargs):
+        self._run_bulk(run=run, resume_from_run=resume_from_run, stream=stream, **kwargs)
         return self.run_operations.get(name=run.name)
 
-    def _run_bulk(self, run: Run, stream=False, **kwargs):
+    def _run_bulk(self, run: Run, resume_from_run: Optional[Run] = None, stream=False, **kwargs):
         # validate & resolve variant
         if run.variant:
             tuning_node, variant = parse_variant(run.variant)
@@ -60,9 +61,11 @@ class RunSubmitter:
         with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
             local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
             with local_storage.logger:
-                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage, resume_from_run=resume_from_run)
 
-    def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
+    def _submit_bulk_run(
+        self, flow: Flow, run: Run, local_storage: LocalStorageOperations, resume_from_run: Optional[Run] = None
+    ) -> dict:
         run_id = run.name
         if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
             connections = []
@@ -82,6 +85,12 @@ class RunSubmitter:
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
+
+        def _get_failed_line_number_set(resume_from_run: Run) -> set:
+            # Load input and output of the resume_from_run, and calculate failed lines according to the diff
+            return set()
+
+        failed_line_number_set = _get_failed_line_number_set if resume_from_run else None
         try:
             batch_engine = BatchEngine(
                 flow.path,
@@ -95,6 +104,7 @@ class RunSubmitter:
                 inputs_mapping=column_mapping,
                 output_dir=local_storage.outputs_folder,
                 run_id=run_id,
+                line_number_set=failed_line_number_set,
             )
             error_logs = []
             if batch_result.failed_lines > 0:
@@ -113,6 +123,13 @@ class RunSubmitter:
                 )
             if error_logs:
                 logger.warning("\n".join(error_logs))
+
+            def merge_storage_without_override(new_run: Run, resume_from_run: Run):
+                # Merge the storage of new_run with the information into the storage of resume_frome_run
+                # But don't override the information of lines in new_run
+                pass
+
+            merge_storage_without_override(run, resume_from_run)
             # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:

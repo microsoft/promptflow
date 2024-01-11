@@ -28,7 +28,9 @@ class BatchInputsProcessor:
         self._flow_inputs = flow_inputs
         self._default_inputs_mapping = {key: f"${{data.{key}}}" for key in flow_inputs}
 
-    def process_batch_inputs(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
+    def process_batch_inputs(
+        self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str], line_number_set: set = None
+    ):
         input_dicts = self._resolve_input_data(input_dirs)
         no_input_data = all(len(data) == 0 for data in input_dicts.values())
         if no_input_data:
@@ -38,7 +40,7 @@ class BatchInputsProcessor:
                 "and consider resubmitting.\n{input_dirs}"
             )
             raise EmptyInputsData(message_format=message_format, input_dirs=input_dirs_str)
-        return self._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        return self._validate_and_apply_inputs_mapping(input_dicts, inputs_mapping, line_number_set=line_number_set)
 
     def _resolve_input_data(self, input_dirs: Dict[str, str]):
         """Resolve input data from input dirs"""
@@ -52,16 +54,18 @@ class BatchInputsProcessor:
         """Resolve input data from directory"""
         result = []
         if input_path.is_file():
-            result.extend(resolve_multimedia_data_recursively(
-                input_path.parent,
-                load_data(local_path=input_path, max_rows_count=self._max_lines_count))
+            result.extend(
+                resolve_multimedia_data_recursively(
+                    input_path.parent, load_data(local_path=input_path, max_rows_count=self._max_lines_count)
+                )
             )
         else:
             for input_file in input_path.rglob("*"):
                 if input_file.is_file():
-                    result.extend(resolve_multimedia_data_recursively(
-                        input_file.parent,
-                        load_data(local_path=input_file, max_rows_count=self._max_lines_count))
+                    result.extend(
+                        resolve_multimedia_data_recursively(
+                            input_file.parent, load_data(local_path=input_file, max_rows_count=self._max_lines_count)
+                        )
                     )
                     if self._max_lines_count and len(result) >= self._max_lines_count:
                         break
@@ -75,7 +79,9 @@ class BatchInputsProcessor:
             return result[: self._max_lines_count]
         return result
 
-    def _validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
+    def _validate_and_apply_inputs_mapping(
+        self, inputs, inputs_mapping, line_number_set: set = None
+    ) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
 
         :param inputs: The inputs to the flow.
@@ -95,7 +101,11 @@ class BatchInputsProcessor:
 
         inputs_mapping = self._complete_inputs_mapping_by_default_value(inputs_mapping)
         resolved_inputs = self._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
-        return resolved_inputs
+        if line_number_set is None:
+            return resolved_inputs
+        else:
+            selected_inputs = [item for index, item in enumerate(resolved_inputs) if index in line_number_set]
+            return selected_inputs
 
     def _complete_inputs_mapping_by_default_value(self, inputs_mapping):
         inputs_mapping = inputs_mapping or {}
