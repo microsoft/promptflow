@@ -147,12 +147,6 @@ class DuplicateToolMappingError(ValidationException):
     pass
 
 
-class SingletonAlreadyInitializedError(SystemErrorException):
-    """Exception raised when a singleton is initialized more than once."""
-
-    pass
-
-
 class SingletonNotInitializedError(SystemErrorException):
     """Exception raised when a singleton is used before initialization."""
 

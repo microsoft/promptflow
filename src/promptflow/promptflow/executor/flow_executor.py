@@ -211,11 +211,11 @@ class FlowExecutor:
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
     ):
         logger.debug("Start initializing the flow executor.")
+        ConnectionProvider.init(connections)
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
-        ConnectionProvider.init(connections)
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
 
@@ -291,6 +291,8 @@ class FlowExecutor:
         OperationContext.get_instance().run_mode = RunMode.SingleNode.name
         dependency_nodes_outputs = dependency_nodes_outputs or {}
 
+        ConnectionProvider.init(connections)
+
         # Load the node from the flow file
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r") as fin:
@@ -316,6 +318,7 @@ class FlowExecutor:
                 node_name=node_name,
                 flow_file=flow_file,
             )
+
         # Only load the node's referenced flow inputs
         node_referenced_flow_inputs = FlowExecutor._get_node_referenced_flow_inputs(node, flow.inputs)
         inputs_with_default_value = apply_default_value_for_input(node_referenced_flow_inputs, flow_inputs)
@@ -329,7 +332,6 @@ class FlowExecutor:
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
         # Prepare callable and real inputs here
-
         resolved_inputs = {}
         for k, v in resolved_node.node.inputs.items():
             value = _input_assignment_parser.parse_value(v, dependency_nodes_outputs, inputs)

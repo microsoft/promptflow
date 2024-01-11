@@ -1,6 +1,6 @@
 from threading import Lock
 
-from promptflow._core._errors import SingletonAlreadyInitializedError, SingletonNotInitializedError
+from promptflow._core._errors import SingletonNotInitializedError
 from promptflow.exceptions import ErrorTarget
 
 
