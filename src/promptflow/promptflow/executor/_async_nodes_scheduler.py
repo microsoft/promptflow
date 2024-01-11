@@ -118,13 +118,12 @@ class AsyncNodesScheduler:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         if inspect.iscoroutinefunction(f):
-            coroutine = context.invoke_tool_async(node, f, kwargs)
-            task = self.run_task_with_semaphore(coroutine)
+            task = context.invoke_tool_async(node, f, kwargs)
         else:
             task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
         # Set the name of the task to the node name for debugging purpose
         # It does not need to be unique by design.
-        return asyncio.create_task(task, name=node.name)
+        return asyncio.create_task(self.run_task_with_semaphore(task), name=node.name)
 
     @staticmethod
     async def _sync_function_to_async_task(
