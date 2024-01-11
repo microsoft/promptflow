@@ -6,13 +6,13 @@ display_name: docSplit0
 version: 3
 
 inputs:
-  doc_split_0_input:
+  documents_folder:
     type: uri_folder
-  doc_split_0_chunk_size:
+  chunk_size:
     type: integer
 
 outputs:
-  doc_split_0_output:
+  document_node_output:
     type: uri_folder
 
 code: ./document_split_src
@@ -22,4 +22,4 @@ environment:
   image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04
 
 command: >-
-  python split.py --doc_split_0_input ${{inputs.doc_split_0_input}} --doc_split_0_chunk_size ${{inputs.doc_split_0_chunk_size}} --doc_split_0_output ${{outputs.doc_split_0_output}}
+  python split.py --documents_folder ${{inputs.documents_folder}} --chunk_size ${{inputs.chunk_size}} --document_node_output ${{outputs.document_node_output}}

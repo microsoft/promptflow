@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import typing as t
@@ -15,9 +16,9 @@ except ImportError:
     )
 
 
-def split_doc(input_file_path: str, output_file_path: str, chunk_size: int):
+def split_doc(documents_folder: str, output_file_path: str, chunk_size: int):
     # load docs
-    documents = SimpleDirectoryReader(input_file_path).load_data()
+    documents = SimpleDirectoryReader(documents_folder).load_data()
     # Convert documents into nodes
     node_parser = SimpleNodeParser.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
     documents = t.cast(t.List[LlamaindexDocument], documents)
@@ -29,5 +30,19 @@ def split_doc(input_file_path: str, output_file_path: str, chunk_size: int):
         jsonl_str += json.dumps(json_dict) + "\n"
 
     cur_time_str = datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
-    with open(os.path.join(output_file_path, "file-" + cur_time_str + ".jsonl"), "wt") as text_file:
+    with open(os.path.join(output_file_path, "document-nodes-" + cur_time_str + ".jsonl"), "wt") as text_file:
         print(f"{jsonl_str}", file=text_file)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--documents_folder", type=str, required=True)
+    parser.add_argument("--chunk_size", type=int, required=False, default=1024)
+    parser.add_argument("--document_node_output", type=str, required=True)
+    args = parser.parse_args()
+
+    print(f"documents_folder path: {args.documents_folder}")
+    print(f"chunk_size: {type(args.chunk_size)}: {args.chunk_size}")
+    print(f"document_node_output path: {args.document_node_output}")
+
+    split_doc(args.documents_folder, args.document_node_output, args.chunk_size)

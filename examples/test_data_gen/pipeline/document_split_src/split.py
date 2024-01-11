@@ -16,32 +16,30 @@ except ImportError:
     )
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--doc_split_0_input", type=str)
-parser.add_argument("--doc_split_0_chunk_size", type=int)
-parser.add_argument("--doc_split_0_output", type=str)
+parser.add_argument("--documents_folder", type=str)
+parser.add_argument("--chunk_size", type=int)
+parser.add_argument("--document_node_output", type=str)
 
 
 args = parser.parse_args()
 
-print("doc_split_0_input path: %s" % args.doc_split_0_input)
-print(f"doc_split_0_chunk_size: {type(args.doc_split_0_chunk_size)}: {args.doc_split_0_chunk_size}")
-print("doc_split_0_output path: %s" % args.doc_split_0_output)
+print("documents_folder path: %s" % args.documents_folder)
+print(f"chunk_size: {type(args.chunk_size)}: {args.chunk_size}")
+print("document_node_output path: %s" % args.document_node_output)
 
 print("files in input path: ")
-arr = os.listdir(args.doc_split_0_input)
+arr = os.listdir(args.documents_folder)
 print(arr)
 
 for filename in arr:
     print("reading file: %s ..." % filename)
-    with open(os.path.join(args.doc_split_0_input, filename), "r") as handle:
+    with open(os.path.join(args.documents_folder, filename), "r") as handle:
         print(handle.read())
 
 # load docs
-documents = SimpleDirectoryReader(args.doc_split_0_input).load_data()
+documents = SimpleDirectoryReader(args.documents_folder).load_data()
 # Convert documents into nodes
-node_parser = SimpleNodeParser.from_defaults(
-    chunk_size=args.doc_split_0_chunk_size, chunk_overlap=0, include_metadata=True
-)
+node_parser = SimpleNodeParser.from_defaults(chunk_size=args.chunk_size, chunk_overlap=0, include_metadata=True)
 documents = t.cast(t.List[LlamaindexDocument], documents)
 document_nodes: t.List[BaseNode] = node_parser.get_nodes_from_documents(documents=documents)
 
@@ -52,5 +50,5 @@ for doc in document_nodes:
 
 
 cur_time_str = datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
-with open(os.path.join(args.doc_split_0_output, "file-" + cur_time_str + ".jsonl"), "wt") as text_file:
+with open(os.path.join(args.document_node_output, "file-" + cur_time_str + ".jsonl"), "wt") as text_file:
     print(f"{jsonl_str}", file=text_file)
