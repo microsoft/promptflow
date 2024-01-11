@@ -5,10 +5,7 @@
     "x": {
       "type": [
         "string"
-      ],
-      "ui_hints": {
-        "index": 0
-      }
+      ]
     }
   },
   "source": "dummy_utils/main.py",

@@ -54,15 +54,14 @@ def mock_dynamic_list_func8(input1, input2, subscription_id, resource_group_name
 @pytest.mark.unittest
 class TestToolUtils:
     def test_function_to_interface(self):
-        def func(conn: [AzureOpenAIConnection, CustomConnection], input: [str, int], api: str):
+        def func(conn: [AzureOpenAIConnection, CustomConnection], input: [str, int]):
             pass
 
         input_defs, _, connection_types, _ = function_to_interface(func)
-        assert len(input_defs) == 3
+        assert len(input_defs) == 2
         assert input_defs["conn"].type == ["AzureOpenAIConnection", "CustomConnection"]
         assert input_defs["input"].type == [ValueType.OBJECT]
         assert connection_types == [["AzureOpenAIConnection", "CustomConnection"]]
-        assert input_defs["api"].ui_hints["index"] == 2
 
     def test_function_to_interface_with_invalid_initialize_inputs(self):
         def func(input_str: str):

@@ -137,7 +137,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
             initialize_inputs=initialize_inputs,
             gen_custom_type_conn=gen_custom_type_conn,
             skip_prompt_template=skip_prompt_template,
-            add_ui_hints=tool_type==ToolType.CUSTOM_LLM,
+            add_ui_hints=tool_type == ToolType.CUSTOM_LLM,
         )
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
