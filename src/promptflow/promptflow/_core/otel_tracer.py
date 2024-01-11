@@ -63,7 +63,8 @@ def get_otel_tracer(name):
             processor = BatchSpanProcessor(AzureMonitorTraceExporter(connection_string=connection_string))
             provider.add_span_processor(processor)
         else:
-            raise ValueError("connection_string is not set")
+            # raise ValueError("connection_string is not set")
+            pass
 
         _tracer_instance = get_tracer(name, tracer_provider=provider)
 
