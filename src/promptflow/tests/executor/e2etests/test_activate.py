@@ -82,7 +82,7 @@ class TestExecutorActivate:
         with pytest.raises(FlowDefinitionError) as ex:
             FlowExecutor.create(get_yaml_file(flow_folder, root=WRONG_FLOW_ROOT), {})
         assert ex.value.message == (
-            "The definition of activate config for node [divide_num] is incorrect. "
+            "The definition of activate config for node divide_num is incorrect. "
             "Please check your flow yaml and resubmit."
         )
 
