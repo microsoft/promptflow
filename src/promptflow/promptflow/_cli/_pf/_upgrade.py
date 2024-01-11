@@ -42,7 +42,6 @@ def upgrade_version(args):
     from promptflow._version import VERSION as local_version
     from packaging.version import parse
 
-    update_cli = True
     from promptflow._utils.version_hint_utils import get_latest_version_from_pypi
     latest_version = get_latest_version_from_pypi(CLI_PACKAGE_NAME)
     if not latest_version:
@@ -56,6 +55,7 @@ def upgrade_version(args):
     exit_code = 0
     installer = os.getenv(_ENV_PF_INSTALLER) or ''
     installer = installer.upper()
+    print(f"installer: {installer}")
     latest_version_msg = 'It will be updated to {}.'.format(latest_version) if yes \
         else 'Latest version available is {}.'.format(latest_version)
     logger.warning("Your current Azure CLI version is %s. %s", local_version, latest_version_msg)
@@ -73,32 +73,41 @@ def upgrade_version(args):
 
     if installer == 'MSI':
         _upgrade_on_windows()
-    elif installer == 'Script':
-        logger.warning(UPGRADE_MSG)
-    else:
-        pip_args = [sys.executable, '-m', 'pip', 'install', '--upgrade', 'promptflow', '-vv',
+    elif installer == 'PIP':
+        pip_args = [sys.executable, '-m', 'pip', 'install', '--upgrade', 'promptflow[azure,executable,pfs,azureml-serving]', '-vv',
                     '--disable-pip-version-check', '--no-cache-dir']
         logger.debug("Update prompt flow with '%s'", " ".join(pip_args))
         exit_code = subprocess.call(pip_args, shell=platform.system() == 'Windows')
+    elif installer == 'SCRIPT':
+        command = 'curl https://promptflowartifact.blob.core.windows.net/linux-install-scripts/install | bash'
+        try:
+            subprocess.run(command, check=True)
+        except subprocess.CalledProcessError:
+            logger.warning(UPGRADE_MSG)
+    else:
+        logger.warning(UPGRADE_MSG)
 
     if exit_code:
         err_msg = "CLI upgrade failed."
         logger.warning(err_msg)
         sys.exit(exit_code)
 
-    import importlib
-    import json
-    importlib.reload(subprocess)
-    importlib.reload(json)
+    # Todo: uncomment this block after pf version can retyrn correct value, shell=True will return old version
+    # import importlib
+    # import json
+    # importlib.reload(subprocess)
+    # importlib.reload(json)
 
-    version_result = subprocess.check_output(['pf', 'version'], shell=platform.system() == 'Windows')
-    version_json = json.loads(version_result)
-    new_version = version_json['promptflow']
-
-    if update_cli and new_version == local_version:
-        err_msg = "CLI upgrade failed or aborted."
-        logger.warning(err_msg)
-        sys.exit(1)
+    # version_result = subprocess.check_output(['pf', 'version'], shell=platform.system() == 'Windows')
+    # version_json = json.loads(version_result)
+    # new_version = version_json['promptflow']
+    #
+    # if new_version == local_version:
+    #     print(new_version)
+    #     print(local_version)
+    #     err_msg = "CLI upgrade failed or aborted."
+    #     logger.warning(err_msg)
+    #     sys.exit(1)
 
     logger.warning("Upgrade finished.")
 

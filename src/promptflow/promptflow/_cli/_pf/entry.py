@@ -127,7 +127,9 @@ def main():
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
-        return json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        version_dict_string = json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        print(version_dict_string)
+        return
     if len(command_args) == 0:
         # print privacy statement & welcome message like azure-cli
         show_privacy_statement()
@@ -135,7 +137,7 @@ def main():
         command_args.append("-h")
     elif len(command_args) == 1:
         # pf only has "pf --version" with 1 layer
-        if command_args[0] not in ["--version", "-v"]:
+        if command_args[0] not in ["--version", "-v", "upgrade"]:
             command_args.append("-h")
     setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)

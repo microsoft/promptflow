@@ -101,9 +101,12 @@ setup(
         ]
     },
     packages=find_packages(),
+    scripts=[
+        'pf',
+        'pf.bat'
+    ],
     entry_points={
         "console_scripts": [
-            "pf = promptflow._cli._pf.entry:main",
             "pfazure = promptflow._cli._pf_azure.entry:main",
             "pfs = promptflow._sdk._service.entry:main",
         ],
