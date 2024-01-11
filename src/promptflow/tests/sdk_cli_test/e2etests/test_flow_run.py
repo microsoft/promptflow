@@ -1091,6 +1091,7 @@ class TestFlowRun:
         assert run_dict["error"] == exception
 
     # TODO: remove this patch after executor switch to default spawn
+    @pytest.mark.skip(reason="Skip on Mac and Windows and Linux, patch does not work in the spawn process")
     @patch.dict(os.environ, {"PF_BATCH_METHOD": "spawn"}, clear=True)
     def test_get_details_against_partial_completed_run(self, pf: PFClient) -> None:
         flow_mod2 = f"{FLOWS_DIR}/mod-n/two"
@@ -1127,6 +1128,7 @@ class TestFlowRun:
                 assert int(row["inputs.number"]) == int(row["outputs.output"])
 
     # TODO: remove this patch after executor switch to default spawn
+    @pytest.mark.skip(reason="Skip on Mac and Windows and Linux, patch does not work in the spawn process")
     @patch.dict(os.environ, {"PF_BATCH_METHOD": "spawn"}, clear=True)
     def test_flow_with_nan_inf(self, pf: PFClient) -> None:
         run = pf.run(
