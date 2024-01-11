@@ -29,9 +29,9 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError
+from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo, SpawnProcessManager
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
-from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager, ProcessInfo
 from promptflow.storage import AbstractRunStorage
 
 
@@ -63,13 +63,9 @@ class QueueRunStorage(AbstractRunStorage):
 
 def format_current_process(process_name, pid, line_number: int, is_completed=False, is_failed=False):
     if is_completed:
-        bulk_logger.info(
-            f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} completed."
-        )
+        bulk_logger.info(f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} completed.")
     elif is_failed:
-        bulk_logger.info(
-            f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} failed."
-        )
+        bulk_logger.info(f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} failed.")
     else:
         bulk_logger.info(
             f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} start execution."
@@ -95,8 +91,8 @@ class LineExecutionProcessPool:
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
         sys_start_methods = multiprocessing.get_all_start_methods()
-        use_fork = 'fork' in sys_start_methods
-        self.context = get_multiprocessing_context('fork' if use_fork else 'spawn')
+        use_fork = "fork" in sys_start_methods
+        self.context = get_multiprocessing_context("fork" if use_fork else "spawn")
         self._flow_file = flow_executor._flow_file
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
@@ -187,31 +183,38 @@ class LineExecutionProcessPool:
                 process_name = self._process_info[index].process_name
                 input_queue = self._process_info[index].input_queue
                 output_queue = self._process_info[index].output_queue
-                process_info = ProcessInfo(index=index, process_id=process_id, process_name=process_name,
-                                           input_queue=input_queue, output_queue=output_queue)
-                return (process_info.index, process_info.process_id, process_info.process_name,
-                        process_info.input_queue, process_info.output_queue)
+                process_info = ProcessInfo(
+                    index=index,
+                    process_id=process_id,
+                    process_name=process_name,
+                    input_queue=input_queue,
+                    output_queue=output_queue,
+                )
+                return (
+                    process_info.index,
+                    process_info.process_id,
+                    process_info.process_name,
+                    process_info.input_queue,
+                    process_info.output_queue,
+                )
             except KeyError:
                 continue
             except Exception as e:
                 bulk_logger.info(
                     f"Unable to access shared dictionary 'process_info', possibly "
-                    f"because the sub process is down. Exception: {e}")
+                    f"because the sub process is down. Exception: {e}"
+                )
 
     def handle_line_timeout(self, line_number, timeout_time, inputs, run_id, start_time, result_list):
         bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
         ex = LineExecutionTimeoutError(line_number, timeout_time)
-        result = self._generate_line_result_for_exception(
-            inputs, run_id, line_number, self._flow_id, start_time, ex
-        )
+        result = self._generate_line_result_for_exception(inputs, run_id, line_number, self._flow_id, start_time, ex)
         result_list.append(result)
 
     def handle_process_crashed(self, line_number, inputs, run_id, start_time, result_list):
         bulk_logger.warning(f"Process crashed while executing line {line_number},")
         ex = ProcessCrashError(line_number)
-        result = self._generate_line_result_for_exception(
-            inputs, run_id, line_number, self._flow_id, start_time, ex
-        )
+        result = self._generate_line_result_for_exception(inputs, run_id, line_number, self._flow_id, start_time, ex)
         result_list.append(result)
 
     def _monitor_process_alive(self, process_id):
@@ -235,11 +238,11 @@ class LineExecutionProcessPool:
         return False
 
     def _monitor_workers_and_process_tasks_in_thread(
-            self,
-            task_queue: Queue,
-            timeout_time,
-            result_list,
-            index,
+        self,
+        task_queue: Queue,
+        timeout_time,
+        result_list,
+        index,
     ):
         index, process_id, process_name, input_queue, output_queue = self._get_process_info(index)
 
@@ -277,7 +280,8 @@ class LineExecutionProcessPool:
             # Handle line execution completed.
             if completed:
                 self._completed_idx[line_number] = format_current_process(
-                    process_name, process_id, line_number, is_completed=True)
+                    process_name, process_id, line_number, is_completed=True
+                )
             # Handle line execution is not completed.
             else:
                 # Handle process crashed.
@@ -285,11 +289,11 @@ class LineExecutionProcessPool:
                     self.handle_process_crashed(line_number, inputs, run_id, start_time, result_list)
                 # Handle line execution timeout.
                 else:
-                    self.handle_line_timeout(line_number, timeout_time,
-                                             inputs, run_id, start_time, result_list)
+                    self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
 
                 self._completed_idx[line_number] = format_current_process(
-                    process_name, process_id, line_number, is_failed=True)
+                    process_name, process_id, line_number, is_failed=True
+                )
 
                 # If there are still tasks in task_queue, restart a new process to execute the task.
                 if not task_queue.empty():
@@ -398,10 +402,10 @@ class LineExecutionProcessPool:
             try:
                 args_list = [
                     (
-                        self._task_queue,        # Shared task queue for all sub processes to read the input data.
+                        self._task_queue,  # Shared task queue for all sub processes to read the input data.
                         self._line_timeout_sec,  # Line execution timeout.
-                        result_list,             # Bath run result list.
-                        i,                       # Index of the sub process.
+                        result_list,  # Bath run result list.
+                        i,  # Index of the sub process.
                     )
                     for i in range(self._n_process)
                 ]
