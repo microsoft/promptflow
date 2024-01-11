@@ -7,7 +7,7 @@ import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 from unittest.mock import patch
 
 import jwt
@@ -488,28 +488,3 @@ def mock_isinstance_for_mock_datastore() -> None:
 
         with patch("builtins.isinstance", new=mock_isinstance):
             yield
-
-
-@pytest.fixture(autouse=is_replay())
-def mock_upload_and_generate_remote_uri() -> None:
-    from azure.ai.ml._scope_dependent_operations import OperationScope
-    from azure.ai.ml.entities._datastore._constants import WORKSPACE_BLOB_STORE
-    from azure.ai.ml.exceptions import ErrorTarget
-    from azure.ai.ml.operations._datastore_operations import DatastoreOperations
-
-    def _upload_and_generate_remote_uri(
-        operation_scope: OperationScope,
-        datastore_operation: DatastoreOperations,
-        path: Union[str, Path, os.PathLike],
-        artifact_type: str = ErrorTarget.ARTIFACT,
-        datastore_name: str = WORKSPACE_BLOB_STORE,
-        show_progress: bool = True,
-    ) -> str:
-        path = Path(path).resolve()
-        return f"azureml://datastores/{datastore_name}/paths/LocalUpload/00000000000000000000000000000000/{path.name}"
-
-    with patch(
-        "promptflow.azure.operations._run_operations._upload_and_generate_remote_uri",
-        new=_upload_and_generate_remote_uri,
-    ):
-        yield
