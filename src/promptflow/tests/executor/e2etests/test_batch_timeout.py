@@ -35,7 +35,7 @@ class TestBatchTimeout:
             get_yaml_file(flow_folder),
             get_flow_folder(flow_folder),
             connections=dev_connections,
-            line_timeout_sec=1,
+            line_timeout_sec=0,
         )
         # prepare input file and output dir
         input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
@@ -52,7 +52,7 @@ class TestBatchTimeout:
         assert batch_results.error_summary.failed_system_error_lines == 0
         for i, line_error in enumerate(batch_results.error_summary.error_list):
             assert isinstance(line_error, LineError)
-            assert line_error.error["message"] == f"Line {i} execution timeout for exceeding 1 seconds"
+            assert line_error.error["message"] == f"Line {i} execution timeout for exceeding 0 seconds"
             assert line_error.error["code"] == "UserError"
 
     @pytest.mark.parametrize(
