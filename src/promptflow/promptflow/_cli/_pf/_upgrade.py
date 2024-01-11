@@ -126,11 +126,10 @@ def _upgrade_on_windows():
     try:
         import shutil
         shutil.rmtree(msi_dir)
-        return
     except FileNotFoundError:
         # The folder has already been deleted. No further retry is needed.
         # errno: 2, winerror: 3, strerror: 'The system cannot find the path specified'
-        return
+        pass
     except OSError as err:
         logger.warning("Failed to delete '%s': %s. You may try to delete it manually.", msi_dir, err)
 
