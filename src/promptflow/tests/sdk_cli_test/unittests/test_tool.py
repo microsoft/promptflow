@@ -30,24 +30,21 @@ class TestTool:
             "python_tool.my_python_tool": {
                 "name": "python_tool",
                 "type": "python",
-                "inputs": {"input1": {"type": ["string"], "ui_hints": {"index": 0}}},
+                "inputs": {"input1": {"type": ["string"]}},
                 "module": "python_tool",
                 "function": "my_python_tool",
             },
             "python_tool.my_python_tool_without_name": {
                 "name": "my_python_tool_without_name",
                 "type": "python",
-                "inputs": {"input1": {"type": ["string"], "ui_hints": {"index": 0}}},
+                "inputs": {"input1": {"type": ["string"]}},
                 "module": "python_tool",
                 "function": "my_python_tool_without_name",
             },
             "python_tool.PythonTool.python_tool": {
                 "name": "PythonTool.python_tool",
                 "type": "python",
-                "inputs": {
-                    "connection": {"type": ["AzureOpenAIConnection"], "ui_hints": {"index": 0}},
-                    "input1": {"type": ["string"], "ui_hints": {"index": 1}}
-                },
+                "inputs": {"connection": {"type": ["AzureOpenAIConnection"]}, "input1": {"type": ["string"]}},
                 "module": "python_tool",
                 "class_name": "PythonTool",
                 "function": "python_tool",
