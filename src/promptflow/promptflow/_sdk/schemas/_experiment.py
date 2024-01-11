@@ -82,7 +82,13 @@ class ExperimentTemplateSchema(YamlFileSchema):
             for item in items:
                 if not isinstance(item, dict):
                     continue
-                resolved_result.append(cls._load_from_dict(data=item, context=self.context))
+                resolved_result.append(
+                    cls._load_from_dict(
+                        data=item,
+                        context=self.context,
+                        additional_message=f"Failed to load {cls.__name__}",
+                    )
+                )
             return resolved_result
 
         data["data"] = resolve_resource("data", ExperimentData)

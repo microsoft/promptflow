@@ -152,7 +152,7 @@ class ExperimentRun(Run):
                 raise ExperimentValueError(
                     f"Node {self.display_name!r} inputs {value!r} related experiment input {input_name!r} not found."
                 )
-            resolved_mapping[name] = self.experiment_inputs[input_name].value
+            resolved_mapping[name] = self.experiment_inputs[input_name].default
         logger.debug(f"Resolved node {self.display_name!r} column mapping {resolved_mapping}.")
         self.column_mapping = resolved_mapping
 

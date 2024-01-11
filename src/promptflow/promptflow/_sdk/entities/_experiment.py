@@ -52,27 +52,37 @@ class ExperimentData(YAMLTranslatableMixin):
 
 
 class ExperimentInput(YAMLTranslatableMixin):
-    def __init__(self, name, value, type, **kwargs):
+    def __init__(self, name, default, type, **kwargs):
         self.name = name
-        self.type, self.value = self._resolve_type_and_value(type, value)
+        self.type, self.default = self._resolve_type_and_default(type, default)
 
     @classmethod
     def _get_schema_cls(cls):
         return ExperimentInputSchema
 
-    def _resolve_type_and_value(self, typ, value):
+    def _resolve_type_and_default(self, typ, default):
         supported_types = [
-            ValueType.INT.value,
-            ValueType.STRING.value,
-            ValueType.DOUBLE.value,
-            ValueType.LIST.value,
-            ValueType.OBJECT.value,
-            ValueType.BOOL.value,
+            ValueType.INT,
+            ValueType.STRING,
+            ValueType.DOUBLE,
+            ValueType.LIST,
+            ValueType.OBJECT,
+            ValueType.BOOL,
         ]
-        value_type: ValueType = next((i for i in supported_types if typ.lower() == i.lower()), None)
+        value_type: ValueType = next((i for i in supported_types if typ.lower() == i.value.lower()), None)
         if value_type is None:
             raise ExperimentValueError(f"Unknown experiment input type {typ!r}, supported are {supported_types}.")
-        return value_type.value, value_type.parse(value)
+        return value_type.value, value_type.parse(default)
+
+    @classmethod
+    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
+        # Override this to avoid 'type' got pop out
+        schema_cls = cls._get_schema_cls()
+        try:
+            loaded_data = schema_cls(context=context).load(data, **kwargs)
+        except Exception as e:
+            raise Exception(f"Load experiment input failed with {str(e)}. f{(additional_message or '')}.")
+        return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
 
 class FlowNode(YAMLTranslatableMixin):
@@ -335,7 +345,9 @@ class Experiment(ExperimentTemplate):
             for item in json.loads(obj.data)
         ]
         inputs = [
-            ExperimentData._load_from_dict(item, context=context, additional_message="Failed to load experiment inputs")
+            ExperimentInput._load_from_dict(
+                item, context=context, additional_message="Failed to load experiment inputs"
+            )
             for item in json.loads(obj.inputs)
         ]
 
