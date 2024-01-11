@@ -36,7 +36,7 @@ github_workspace = os.path.expanduser("~/promptflow/")
 # Please notice that the key should be the Job Name in the pipeline.
 special_care = {
     "sdk_cli_tests": 4,
-    "sdk_cli_azure_test": 4,
+    "sdk_cli_azure_test": 0,
     # "samples_connections_connection": 0,
 }
 
@@ -135,6 +135,7 @@ def trigger_prepare(input_paths):
     global pipelines
     global pipelines_count
     global failed_reason
+    global special_care
 
     for input_path in input_paths:
         if "samples_connections_connection" in checks:
@@ -188,11 +189,8 @@ def trigger_prepare(input_paths):
             # Loop through each pipeline in the list of pipelines.
             for key in reverse_checks[key_item]:
                 # Check if the pipeline is in the list of pipelines.
-                if key in pipelines:
-                    if key in special_care:
-                        pipelines[key] = special_care[key]
-                    else:
-                        pipelines[key] = 1
+                if key in special_care:
+                    pipelines[key] = special_care[key]
                 else:
                     pipelines[key] = 1
                 # Set the pipeline count to 0.
