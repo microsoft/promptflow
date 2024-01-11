@@ -75,8 +75,8 @@ def hint_for_update():
     ) if LAST_HINT_TIME in cached_versions else None
     if last_hint_time is None or (datetime.datetime.now() >
                                   last_hint_time + datetime.timedelta(days=HINT_INTERVAL_DAY)):
-        from promptflow import __version__ as local_version
-        cached_versions[CURRENT_VERSION] = local_version
+        from promptflow._sdk._utils import get_promptflow_sdk_version
+        cached_versions[CURRENT_VERSION] = get_promptflow_sdk_version()
         if LATEST_VERSION in cached_versions:
             from packaging.version import parse
             if parse(cached_versions[CURRENT_VERSION]) < parse(cached_versions[LATEST_VERSION]):
