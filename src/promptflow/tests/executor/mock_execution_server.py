@@ -39,7 +39,16 @@ def _get_execution_result(request: dict, has_error=False):
 
     if has_error and index == 1:
         # simulate error
-        line_result_dict = {
+        line_result_dict = _get_line_result_dict(run_id, index, inputs, has_error=True)
+        return web.json_response(line_result_dict, status=500)
+
+    line_result_dict = _get_line_result_dict(run_id, index, inputs)
+    return web.json_response(line_result_dict)
+
+
+def _get_line_result_dict(run_id, index, inputs, has_error=False):
+    if has_error:
+        return {
             "error": {
                 "message": "error for tests",
                 "messageFormat": "",
@@ -56,9 +65,7 @@ def _get_execution_result(request: dict, has_error=False):
                 "innerError": {"code": "Exception", "innerError": None},
             },
         }
-        return web.json_response(line_result_dict, status=500)
-
-    line_result_dict = {
+    return {
         "output": {"answer": "Hello world!"},
         "aggregation_inputs": {},
         "run_info": {
@@ -91,4 +98,43 @@ def _get_execution_result(request: dict, has_error=False):
             }
         },
     }
-    return web.json_response(line_result_dict)
+
+
+def _get_aggr_result_dict(run_id, inputs, has_error=False):
+    if has_error:
+        return {
+            "error": {
+                "message": "error for tests",
+                "messageFormat": "",
+                "messageParameters": {},
+                "referenceCode": None,
+                "debugInfo": {
+                    "type": "Exception",
+                    "message": "error for tests",
+                    "stackTrace": "...",
+                    "innerException": None,
+                },
+                "additionalInfo": None,
+                "code": "UserError",
+                "innerError": {"code": "Exception", "innerError": None},
+            },
+        }
+    return {
+        "output": None,
+        "metrics": {"accuracy": 0.5},
+        "node_run_infos": {
+            "aggregation": {
+                "node": "aggregation",
+                "flow_run_id": run_id,
+                "parent_run_id": run_id,
+                "run_id": "dummy_node_run_id",
+                "status": "Completed",
+                "inputs": inputs,
+                "output": "Hello world!",
+                "start_time": "2023-11-24T06:03:20.2688262Z",
+                "end_time": "2023-11-24T06:03:20.268858Z",
+                "system_metrics": {"duration": "00:00:00.0000318", "total_tokens": 0},
+                "result": "Hello world!",
+            }
+        },
+    }

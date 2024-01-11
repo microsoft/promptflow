@@ -5,7 +5,6 @@
 import datetime
 import functools
 import json
-import logging
 import uuid
 from os import PathLike
 from pathlib import Path
@@ -20,7 +19,6 @@ from promptflow._sdk._constants import (
     DEFAULT_VARIANT,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     FLOW_RESOURCE_ID_PREFIX,
-    LOGGER_NAME,
     PARAMS_OVERRIDE_KEY,
     PROMPT_FLOW_DIR_NAME,
     REGISTRY_URI_PREFIX,
@@ -48,6 +46,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
 AZURE_RUN_TYPE_2_RUN_TYPE = {
@@ -61,6 +60,9 @@ REST_RUN_TYPE_2_RUN_TYPE = {
     RestRunTypes.EVALUATION: RunTypes.EVALUATION,
     RestRunTypes.PAIRWISE_EVALUATE: RunTypes.PAIRWISE_EVALUATE,
 }
+
+
+logger = get_cli_sdk_logger()
 
 
 class Run(YAMLTranslatableMixin):
@@ -150,6 +152,7 @@ class Run(YAMLTranslatableMixin):
         # init here to make sure those fields initialized in all branches.
         self.flow = flow
         self._use_remote_flow = is_remote_uri(flow)
+        # What's this?
         self._experiment_name = None
         self._lineage_id = None
         if self._use_remote_flow:
@@ -414,6 +417,8 @@ class Run(YAMLTranslatableMixin):
         params_override: Optional[list] = None,
         **kwargs,
     ):
+        from marshmallow import INCLUDE
+
         data = data or {}
         params_override = params_override or []
         context = {
@@ -424,6 +429,7 @@ class Run(YAMLTranslatableMixin):
             data=data,
             context=context,
             additional_message="Failed to load flow run",
+            unknown=INCLUDE,
             **kwargs,
         )
         if yaml_path:
@@ -652,7 +658,7 @@ class Run(YAMLTranslatableMixin):
                     f"{config.get_run_output_path()!r}; "
                     f"will use default output path: {path!r} instead."
                 )
-                logging.getLogger(LOGGER_NAME).warning(warning_message)
+                logger.warning(warning_message)
         return (path / str(self.name)).resolve()
 
     @classmethod

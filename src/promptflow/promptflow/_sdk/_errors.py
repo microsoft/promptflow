@@ -117,3 +117,15 @@ class FlowOperationError(SDKError):
     """Exception raised when flow operation failed."""
 
     pass
+
+
+class ExperimentExistsError(SDKError):
+    """Exception raised when experiment already exists."""
+
+    pass
+
+
+class ExperimentNotFoundError(SDKError):
+    """Exception raised if experiment cannot be found."""
+
+    pass

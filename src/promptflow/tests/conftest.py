@@ -204,3 +204,15 @@ def runtime_name() -> str:
 @pytest.fixture(scope="session")
 def registry_name() -> str:
     return os.getenv("PROMPT_FLOW_REGISTRY_NAME", DEFAULT_REGISTRY_NAME)
+
+
+@pytest.fixture
+def enable_logger_propagate():
+    """This is for test cases that need to check the log output."""
+    from promptflow._utils.logger_utils import get_cli_sdk_logger
+
+    logger = get_cli_sdk_logger()
+    original_value = logger.propagate
+    logger.propagate = True
+    yield
+    logger.propagate = original_value
