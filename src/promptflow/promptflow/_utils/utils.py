@@ -276,6 +276,7 @@ def get_int_env_var(env_var_name, default_value=None):
     except Exception:
         return default_value
 
+
 def prompt_y_n(msg, default=None):
     if default not in [None, 'y', 'n']:
         raise ValueError("Valid values for default are 'y', 'n' or None")
@@ -289,6 +290,7 @@ def prompt_y_n(msg, default=None):
             return True
         if default and not ans:
             return default == y.lower()
+
 
 def prompt_input(msg):
     return input('\n===> '+msg)

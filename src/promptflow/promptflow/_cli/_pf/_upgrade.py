@@ -11,6 +11,7 @@ logger = get_cli_sdk_logger()
 
 UPGRADE_MSG = 'Not able to upgrade automatically'
 
+
 def add_upgrade_parser(subparsers):
     """Add upgrade parser to the pf subparsers."""
     epilog = """
@@ -60,8 +61,7 @@ def upgrade_version(args):
         else 'Latest version available is {}.'.format(latest_version)
     logger.warning("Your current Azure CLI version is %s. %s", local_version, latest_version_msg)
     if not yes:
-        logger.warning("Please check the release notes first: https://msdata.visualstudio.com/Vienna/_git/"
-                       "PromptFlow?path=%2Fdocs%2Fsdk%2Frelease_schedule.md&version=GBmain&_a=preview")
+        logger.warning("Please check the release notes first")
         if not sys.stdin.isatty():
             logger.debug('No tty available.')
             raise UserErrorException("No tty available. Please run command with --yes.")
@@ -74,7 +74,8 @@ def upgrade_version(args):
     if installer == 'MSI':
         _upgrade_on_windows()
     elif installer == 'PIP':
-        pip_args = [sys.executable, '-m', 'pip', 'install', '--upgrade', 'promptflow[azure,executable,pfs,azureml-serving]', '-vv',
+        pip_args = [sys.executable, '-m', 'pip', 'install', '--upgrade',
+                    'promptflow[azure,executable,pfs,azureml-serving]', '-vv',
                     '--disable-pip-version-check', '--no-cache-dir']
         logger.debug("Update prompt flow with '%s'", " ".join(pip_args))
         exit_code = subprocess.call(pip_args, shell=platform.system() == 'Windows')
@@ -146,7 +147,8 @@ def _download_from_url(url, target_dir):
     if r.status_code != 200:
         raise UserErrorException("Request to {} failed with {}".format(url, r.status_code))
 
-    # r.url is the real path of the msi, like'https://promptflowartifact.blob.core.windows.net/msi-installer/promptflow.msi'
+    # r.url is the real path of the msi, like
+    # 'https://promptflowartifact.blob.core.windows.net/msi-installer/promptflow.msi'
     file_name = r.url.rsplit('/')[-1]
     msi_path = os.path.join(target_dir, file_name)
     logger.warning("Downloading MSI to %s", msi_path)
