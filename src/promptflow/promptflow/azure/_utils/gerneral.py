@@ -14,7 +14,7 @@ def get_token_by_credential(credential):
     from azure.ai.ml._azure_environments import _get_aml_resource_id_from_metadata
     from azure.ai.ml._azure_environments import _resource_to_scopes
 
-    # NOTE: this copied from https://github.com/Azure/azure-sdk-for-python/blob/05f1438ad0a5eb536e5c49d8d9d44b798445044a/sdk/ml/azure-ai-ml/azure/ai/ml/operations/_job_operations.py#L1495C12-L1495C12
+    # these code copied from _set_headers_with_user_aml_token function of azure.ai.ml.operations._job_operations
     aml_resource_id = _get_aml_resource_id_from_metadata()
     azure_ml_scopes = _resource_to_scopes(aml_resource_id)
     arm_token = credential.get_token(*azure_ml_scopes).token
