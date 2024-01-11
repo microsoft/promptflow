@@ -7,12 +7,14 @@ import pytest
 from promptflow._utils.logger_utils import LogContext
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.batch._result import BatchResult
+from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 
 from ..utils import (
+    WRONG_FLOW_ROOT,
     MemoryRunStorage,
     get_flow_expected_result,
     get_flow_expected_status_summary,
@@ -74,6 +76,15 @@ class TestExecutorActivate:
         with open(file_path) as fin:
             content = fin.read()
             assert "The node referenced by output:'third_node' is bypassed, which is not recommended." in content
+
+    def test_invalid_activate_config(self):
+        flow_folder = "invalid_activate_config"
+        with pytest.raises(FlowDefinitionError) as ex:
+            FlowExecutor.create(get_yaml_file(flow_folder, root=WRONG_FLOW_ROOT), {})
+        assert ex.value.message == (
+            "The definition of activate config for node [divide_num] is incorrect. "
+            "Please check your flow yaml and resubmit."
+        )
 
     def test_aggregate_bypassed_nodes(self):
         flow_folder = "conditional_flow_with_aggregate_bypassed"

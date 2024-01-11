@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
 
 from .._constants import LANGUAGE_KEY, FlowLanguage
@@ -213,7 +214,7 @@ class ActivateCondition:
     condition_value: Any
 
     @staticmethod
-    def deserialize(data: dict) -> "ActivateCondition":
+    def deserialize(node_name: str, data: dict) -> "ActivateCondition":
         """Deserialize the activate condition from a dict.
 
         :param data: The dict to be deserialized.
@@ -221,11 +222,19 @@ class ActivateCondition:
         :return: The activate condition constructed from the dict.
         :rtype: ~promptflow.contracts.flow.ActivateCondition
         """
-        result = ActivateCondition(
-            condition=InputAssignment.deserialize(data["when"]),
-            condition_value=data["is"],
-        )
-        return result
+        if "when" in data and "is" in data:
+            return ActivateCondition(
+                condition=InputAssignment.deserialize(data["when"]),
+                condition_value=data["is"],
+            )
+        else:
+            raise FlowDefinitionError(
+                message_format=(
+                    "The definition of activate config for node [{node_name}]"
+                    " is incorrect. Please check your flow yaml and resubmit."
+                ),
+                node_name=node_name,
+            )
 
 
 @dataclass
@@ -320,7 +329,7 @@ class Node:
         if "type" in data:
             node.type = ToolType(data["type"])
         if "activate" in data:
-            node.activate = ActivateCondition.deserialize(data["activate"])
+            node.activate = ActivateCondition.deserialize(node.name, data["activate"])
         return node
 
 
