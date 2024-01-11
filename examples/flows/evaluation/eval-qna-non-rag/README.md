@@ -69,7 +69,7 @@ Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `co
 ## 3. Run and Evaluate your flow with this Q&A evaluation flow
 After you develop your flow, you may want to run and evaluate it with this evaluation flow. 
 
-Here we use the flow [basic_chat](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/basic-chat) as the flow to evaluate. It is a flow demonstrating how to create a chatbot with LLM.  The chatbot can remember previous interactions and use the conversation history to generate next message, given a question. 
+Here we use the flow [basic_chat](../../chat/basic-chat/) as the flow to evaluate. It is a flow demonstrating how to create a chatbot with LLM.  The chatbot can remember previous interactions and use the conversation history to generate next message, given a question. 
 ### 3.1 Create a batch run of your flow
 ```bash
 pf run create --flow ../../chat/basic-chat --data data.jsonl --column-mapping question='${data.question}' --name basic_chat_run --stream 
