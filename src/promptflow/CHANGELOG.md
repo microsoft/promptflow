@@ -13,11 +13,14 @@
 - Fix unaligned inputs & outputs or pandas exception during get details against run in Azure.
 - Fix loose flow path validation for run schema.
 - Fix "Without Import Data" in run visualize page results from invalid JSON value (`-Infinity`, `Infinity` and `NaN`).
+- Fix "ValueError: invalid width -1" when show-details against long column(s) in narrow terminal window.
 
 ### Improvements
 
-- [SDK/CLI] For `pfazure flow create` used by non-msft tenant user, use user name instead of user object id in the remote flow folder path. (e.g. `Users/<user-name>/promptflow`).
-- [SDK/CLI] For `pfazure flow create`, when flow has unknown attribute, log warning instead of raising error.
+- [SDK/CLI] For `pfazure flow create`:
+  - If used by non-msft tenant user, use user name instead of user object id in the remote flow folder path. (e.g. `Users/<user-name>/promptflow`).
+  - When flow has unknown attributes, log warning instead of raising error.
+  - Use local flow folder name and timestamp as the azure flow file share folder name.
 - [SDK/CLI] For `pf/pfazure run create`, when run has unknown attribute, log warning instead of raising error.
 
 ## 1.3.0 (2023.12.27)

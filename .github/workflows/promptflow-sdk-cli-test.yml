@@ -156,8 +156,7 @@ jobs:
           ${{ env.testWorkingDirectory }}/htmlcov/
 
 
-  publish-test-results:
-    name: "Publish Tests Results"
+  publish-test-results-sdk-cli-test:
     needs: sdk_cli_tests
     runs-on: ubuntu-latest
     permissions:
@@ -178,5 +177,4 @@ jobs:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 40
-        token: ${{ secrets.GITHUB_TOKEN }}
         context: test/sdk_cli

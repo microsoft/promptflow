@@ -9,7 +9,7 @@ on:
     paths:
       - src/promptflow/**
       - scripts/building/**
-      - .github/workflows/promptflow-sdk-cli-azure-test.yml
+      - .github/workflows/sdk-cli-azure-test.yml
 
   schedule:
     - cron: "30 20 * * *"  # 4:30 Beijing Time (GMT+8)
@@ -130,8 +130,7 @@ jobs:
             ${{ env.testWorkingDirectory }}/*.xml
             ${{ env.testWorkingDirectory }}/htmlcov/
 
-  publish-test-results:
-    name: "Publish Tests Results"
+  publish-test-results-sdk-cli-azure-test:
     needs: sdk_cli_azure_test
     runs-on: ubuntu-latest
     permissions:
