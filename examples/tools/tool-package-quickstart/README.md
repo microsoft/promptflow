@@ -20,5 +20,5 @@ pf tool list
 Validate tool in a script file.
 ```bash
 pf tool validate --source ./my_tool_package/tools/my_tool_1.py
-pf tool validate --source ./my_tool_package/tools/tool_with_dynamic_list_input.py
+# pf tool validate --source ./my_tool_package/tools/tool_with_dynamic_list_input.py
 ```
