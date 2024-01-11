@@ -3,9 +3,6 @@ import importlib.util
 from promptflow import PFClient
 
 
-package_name = "my_tools_package"
-
-
 def list_package_tools():
     """
     List the meta of all tools in the package.
@@ -17,6 +14,7 @@ def list_package_tools():
     script_files = Path(__file__).parent.glob("**/*.py")
     for file in script_files:
         if not str(file).endswith("__init__.py"):
+            package_name = "my_tool_package.tools"
             module_name = f'{package_name}.{Path(file).stem}'
 
             # Load the module from the file path
@@ -25,5 +23,5 @@ def list_package_tools():
 
             # Load the module's code
             spec.loader.exec_module(module)
-            tools.update(pf_client._tools.generate_tool_meta(module))
+            tools.update(pf_client.tools._generate_tool_meta(module)[0])
     return tools
