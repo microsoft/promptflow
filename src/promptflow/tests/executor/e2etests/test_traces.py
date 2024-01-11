@@ -9,7 +9,7 @@ from promptflow.executor import FlowExecutor
 from ..utils import get_yaml_file
 
 
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutorTraces:
     def validate_openai_apicall(self, apicall: dict):

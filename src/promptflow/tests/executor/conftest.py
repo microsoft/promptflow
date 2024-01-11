@@ -77,10 +77,23 @@ def recording_injection_decorator_compatible_with_spawn(mock_class):
     return decorator
 
 
-SpawnProcess = multiprocessing.get_context("spawn").Process
+SpawnProcess = multiprocessing.Process
+if "spawn" in multiprocessing.get_all_start_methods():
+    SpawnProcess = multiprocessing.get_context("spawn").Process
+
+ForkServerProcess = multiprocessing.Process
+if "forkserver" in multiprocessing.get_all_start_methods():
+    ForkServerProcess = multiprocessing.get_context("forkserver").Process
 
 
 class MockSpawnProcess(SpawnProcess):
+    def __init__(self, group=None, target=None, *args, **kwargs):
+        if target == _process_wrapper:
+            target = _mock_process_wrapper
+        super().__init__(group, target, *args, **kwargs)
+
+
+class MockForkServerProcess(ForkServerProcess):
     def __init__(self, group=None, target=None, *args, **kwargs):
         if target == _process_wrapper:
             target = _mock_process_wrapper

@@ -1,5 +1,5 @@
-import os
 import multiprocessing
+import os
 from types import GeneratorType
 
 import pytest
@@ -15,7 +15,7 @@ from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml
 SAMPLE_FLOW = "web_classification_no_variants"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
+@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutor:
     def get_line_inputs(self, flow_folder=""):
@@ -63,7 +63,7 @@ class TestExecutor:
             "tool_with_assistant_definition",
         ],
     )
-    def test_executor_exec_line(self, flow_folder, dev_connections, recording_injection):
+    def test_executor_exec_line(self, flow_folder, dev_connections):
         self.skip_serp(flow_folder, dev_connections)
         os.chdir(get_flow_folder(flow_folder))
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
@@ -74,8 +74,10 @@ class TestExecutor:
         assert flow_result.run_info.status == Status.Completed
         node_count = len(executor._flow.nodes)
         assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == 1
-        assert isinstance(flow_result.run_info.api_calls[0]["children"], list) and \
-            len(flow_result.run_info.api_calls[0]["children"]) == node_count
+        assert (
+            isinstance(flow_result.run_info.api_calls[0]["children"], list)
+            and len(flow_result.run_info.api_calls[0]["children"]) == node_count
+        )
         assert len(flow_result.node_run_infos) == node_count
         for node, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
@@ -96,9 +98,7 @@ class TestExecutor:
             ("script_with_import", "node1", {"text": "text"}, None),
         ],
     )
-    def test_executor_exec_node(
-        self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections, recording_injection
-    ):
+    def test_executor_exec_node(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections):
         self.skip_serp(flow_folder, dev_connections)
         yaml_file = get_yaml_file(flow_folder)
         run_info = FlowExecutor.load_and_exec_node(
@@ -219,7 +219,7 @@ class TestExecutor:
             "web_classification",
         ],
     )
-    def test_executor_creation_with_default_variants(self, flow_folder, dev_connections, recording_injection):
+    def test_executor_creation_with_default_variants(self, flow_folder, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(self.get_line_inputs())
         assert flow_result.run_info.status == Status.Completed
@@ -272,7 +272,8 @@ def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependenc
         for key in OPENAI_AGGREGATE_METRICS:
             assert key in result.api_calls[0]["children"][0]["system_metrics"]
         for key in OPENAI_AGGREGATE_METRICS:
-            assert result.api_calls[0]["system_metrics"][key] == \
-                result.api_calls[0]["children"][0]["system_metrics"][key]
+            assert (
+                result.api_calls[0]["system_metrics"][key] == result.api_calls[0]["children"][0]["system_metrics"][key]
+            )
     except Exception as ex:
         queue.put(ex)
