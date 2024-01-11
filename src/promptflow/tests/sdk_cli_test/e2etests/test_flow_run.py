@@ -476,20 +476,20 @@ class TestFlowRun:
             },
         )
 
-        with pytest.raises(UserErrorException) as e:
-            pf.run(
-                flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
-                run=eval_run.name,
-                column_mapping={
-                    "prediction": "${run.outputs.output}",
-                    # evaluation reference run.inputs
-                    # NOTE: we need this value to guard behavior when a run reference another run's inputs
-                    "variant_id": "${run.inputs.key}",
-                    # can reference other columns in data which doesn't exist in base run's inputs
-                    "groundtruth": "${run.inputs.extra_key}",
-                },
-            )
-        assert "Please make sure it exists and not deleted" in str(e.value)
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            run=eval_run.name,
+            column_mapping={
+                "prediction": "${run.outputs.output}",
+                # evaluation reference run.inputs
+                # NOTE: we need this value to guard behavior when a run reference another run's inputs
+                "variant_id": "${run.inputs.key}",
+                # can reference other columns in data which doesn't exist in base run's inputs
+                "groundtruth": "${run.inputs.extra_key}",
+            },
+        )
+        # Run failed because run inputs data is None, and error will be in the run output error.json
+        assert result.status == "Failed"
 
     def test_create_run_with_tags(self, pf):
         name = str(uuid.uuid4())
