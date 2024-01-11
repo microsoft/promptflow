@@ -123,3 +123,15 @@ class YamlParseError(SystemErrorException):
     """Exception raised when yaml parse failed."""
 
     pass
+
+
+class ExperimentExistsError(SDKError):
+    """Exception raised when experiment already exists."""
+
+    pass
+
+
+class ExperimentNotFoundError(SDKError):
+    """Exception raised if experiment cannot be found."""
+
+    pass

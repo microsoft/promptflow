@@ -16,13 +16,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import requests
+from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
 from azure.ai.ml._scope_dependent_operations import (
     OperationConfig,
     OperationsContainer,
     OperationScope,
     _ScopeDependentOperations,
 )
-from azure.ai.ml.constants._common import AzureMLResourceType
+from azure.ai.ml.constants._common import AssetTypes, AzureMLResourceType
 from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
@@ -672,9 +673,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return run
 
     def _resolve_data_to_asset_id(self, run: Run):
-        from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
-        from azure.ai.ml.constants._common import AssetTypes
-
         # Skip if no data provided
         if run.data is None:
             return

@@ -95,8 +95,6 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
     :return: A dictionary representation of the local file's contents.
     :rtype: Dict
     """
-    # These imports can't be placed in at top file level because it will cause a circular import in
-    # exceptions.py via _get_mfe_url_override
 
     if source is None:
         return {}
