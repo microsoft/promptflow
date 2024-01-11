@@ -1,3 +1,4 @@
+import multiprocessing
 import importlib
 import importlib.util
 import json
@@ -54,6 +55,37 @@ def run_pf_command(*args, cwd=None):
     finally:
         sys.argv = origin_argv
         os.chdir(origin_cwd)
+
+
+def run_batch(local_client, line_timeout_seconds):
+    os.environ["PF_LINE_TIMEOUT_SEC"] = line_timeout_seconds
+    run_id = str(uuid.uuid4())
+    run_pf_command(
+        "run",
+        "create",
+        "--flow",
+        f"{FLOWS_DIR}/simple_flow_with_ten_inputs",
+        "--data",
+        f"{FLOWS_DIR}/simple_flow_with_ten_inputs/data.jsonl",
+        "--name",
+        run_id,
+    )
+    run = local_client.runs.get(name=run_id)
+    local_storage = LocalStorageOperations(run)
+    detail = local_storage.load_detail()
+    flow_runs_list = detail["flow_runs"]
+    for i, flow_run in enumerate(flow_runs_list):
+        if line_timeout_seconds == "10":
+            if i == 0:
+                assert flow_run['status'] == "Completed"
+            else:
+                assert flow_run['status'] == "Failed"
+                assert flow_run['error']['message'] == f"Line {i} execution timeout for exceeding 10 seconds"
+                assert flow_run['error']['code'] == "UserError"
+                assert flow_run['error']['innerError']['code'] == "LineExecutionTimeoutError"
+        else:
+            assert flow_run['status'] == "Completed"
+    os.environ.pop("PF_LINE_TIMEOUT_SEC")
 
 
 @pytest.mark.usefixtures(
@@ -1762,3 +1794,17 @@ class TestCli:
         )
         context = OperationContext().get_instance()
         context.user_agent = ""
+
+    def test_batch_run_timeout(self, local_client):
+        line_timeout_seconds = "10"
+        p = multiprocessing.Process(target=run_batch, args=(local_client, line_timeout_seconds,))
+        p.start()
+        p.join()
+        assert p.exitcode == 0
+
+    def test_batch_run_completed_within_the_required_time(self, local_client):
+        line_timeout_seconds = "600"
+        p = multiprocessing.Process(target=run_batch, args=(local_client, line_timeout_seconds,))
+        p.start()
+        p.join()
+        assert p.exitcode == 0
