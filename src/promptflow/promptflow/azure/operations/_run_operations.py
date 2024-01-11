@@ -794,8 +794,8 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     def _resolve_automatic_runtime(self):
         logger.warning(
             f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
-            "it may take a while to build runtime and request may fail with timeout error. "
-            "Wait a while and resubmit same flow can successfully start the run."
+            "it may take a while to build runtime and you may see 'NotStarted' status for a while. "
+            "Request may fail with timeout error when streaming."
         )
         runtime_name = AUTOMATIC_RUNTIME_NAME
         return runtime_name
