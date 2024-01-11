@@ -214,7 +214,7 @@ class ActivateCondition:
     condition_value: Any
 
     @staticmethod
-    def deserialize(node_name: str, data: dict) -> "ActivateCondition":
+    def deserialize(data: dict, node_name: str = None) -> "ActivateCondition":
         """Deserialize the activate condition from a dict.
 
         :param data: The dict to be deserialized.
@@ -230,10 +230,10 @@ class ActivateCondition:
         else:
             raise FlowDefinitionError(
                 message_format=(
-                    "The definition of activate config for node [{node_name}]"
+                    "The definition of activate config for node {node_name}"
                     " is incorrect. Please check your flow yaml and resubmit."
                 ),
-                node_name=node_name,
+                node_name=node_name if node_name else "",
             )
 
 
@@ -329,7 +329,7 @@ class Node:
         if "type" in data:
             node.type = ToolType(data["type"])
         if "activate" in data:
-            node.activate = ActivateCondition.deserialize(node.name, data["activate"])
+            node.activate = ActivateCondition.deserialize(data["activate"], node.name)
         return node
 
 

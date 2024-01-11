@@ -6,7 +6,7 @@ from promptflow.executor._dag_manager import DAGManager
 
 def create_test_node(name, input, activate=None):
     input = InputAssignment.deserialize(input)
-    activate = ActivateCondition.deserialize(name, activate) if activate else None
+    activate = ActivateCondition.deserialize(activate, name) if activate else None
     return Node(
         name=name,
         tool="test_tool",
