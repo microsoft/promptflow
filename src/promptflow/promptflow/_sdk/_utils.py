@@ -151,7 +151,7 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
     return cfg
 
 
-def load_yaml_string(yaml_string: str) -> Dict:
+def load_yaml_string(yaml_string: str):
     """Load a yaml string.
 
     .. code-block:: python
