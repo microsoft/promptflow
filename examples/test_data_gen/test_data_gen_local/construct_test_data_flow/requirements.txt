@@ -1,0 +1,5 @@
+promptflow[azure]
+python-dotenv
+bs4
+llama_index
+ragas

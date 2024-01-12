@@ -13,6 +13,10 @@ Interface:
 ?? what if the documents folder is in azure blob folder? Or any other possibility?
 ![Consider](./temp-to-delete/to_consider_doc_split.png)
 
+
+In this sample script, the `SimpleDirectoryReader` of llamaindex is used to split the documents into smaller granularity. For more supported file types, please check [here](https://docs.llamaindex.ai/en/stable/module_guides/loading/simpledirectoryreader.html).
+more file readers: ??
+
 ### portal
 Locally run doc_split script. Then upload the generated doc nodes jsonl file to portal as a data asset.
 -> In this way, we should at least consider how user can do both process in local and cloud.

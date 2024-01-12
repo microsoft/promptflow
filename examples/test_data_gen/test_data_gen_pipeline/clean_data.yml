@@ -18,7 +18,7 @@ outputs:
 code: ./document_split_src
 
 environment:
-  conda_file: ./conda.yml
+  conda_file: ./doc_split_conda.yml
   image: mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04
 
 command: >-

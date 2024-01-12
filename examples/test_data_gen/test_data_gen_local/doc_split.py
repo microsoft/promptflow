@@ -5,9 +5,10 @@ import typing as t
 from datetime import datetime
 
 from llama_index import SimpleDirectoryReader
+from llama_index.readers import BeautifulSoupWebReader
 
 try:
-    from llama_index.node_parser import SimpleNodeParser
+    from llama_index.node_parser import SentenceSplitter
     from llama_index.readers.schema import Document as LlamaindexDocument
     from llama_index.schema import BaseNode
 except ImportError:
@@ -16,11 +17,20 @@ except ImportError:
     )
 
 
-def split_doc(documents_folder: str, output_file_path: str, chunk_size: int):
+def split_doc(documents_folder: str, output_file_path: str, chunk_size: int, urls: list = None):
     # load docs
-    documents = SimpleDirectoryReader(documents_folder).load_data()
+    if urls:
+        documents = BeautifulSoupWebReader().load_data(urls=urls)
+    else:
+        documents = SimpleDirectoryReader(
+            documents_folder, recursive=True, exclude=["index.md", "README.md"], encoding="utf-8"
+        ).load_data()
+
+    doc_info = [doc.metadata["file_name"] for doc in documents]
+    print(f"documents: {doc_info}")
+
     # Convert documents into nodes
-    node_parser = SimpleNodeParser.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
+    node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
     documents = t.cast(t.List[LlamaindexDocument], documents)
     document_nodes: t.List[BaseNode] = node_parser.get_nodes_from_documents(documents=documents)
 

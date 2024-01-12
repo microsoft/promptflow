@@ -1,0 +1,75 @@
+inputs:
+  document_node:
+    type: string
+    default: '"{\"id_\": \"caf64060-1332-4069-b458-23152b2f2093\", \"embedding\":
+      null, \"metadata\": {\"file_path\":
+      \"D:\\\\proj\\\\PromptFlow\\\\src\\\\promptflow-copilot\\\\pfdocs\\\\community\\\\concepts\\\\concept-connections.md\",
+      \"file_name\": \"concept-connections.md\", \"file_type\": null,
+      \"file_size\": 2038, \"creation_date\": \"2024-01-11\",
+      \"last_modified_date\": \"2024-01-11\", \"last_accessed_date\":
+      \"2024-01-11\"}, \"excluded_embed_metadata_keys\": [\"file_name\",
+      \"file_type\", \"file_size\", \"creation_date\", \"last_modified_date\",
+      \"last_accessed_date\"], \"excluded_llm_metadata_keys\": [\"file_name\",
+      \"file_type\", \"file_size\", \"creation_date\", \"last_modified_date\",
+      \"last_accessed_date\"], \"relationships\": {\"1\": {\"node_id\":
+      \"41017365-74a3-41fc-ae0c-ecf997eb768a\", \"node_type\": \"4\",
+      \"metadata\": {\"file_path\":
+      \"D:\\\\proj\\\\PromptFlow\\\\src\\\\promptflow-copilot\\\\pfdocs\\\\community\\\\concepts\\\\concept-connections.md\",
+      \"file_name\": \"concept-connections.md\", \"file_type\": null,
+      \"file_size\": 2038, \"creation_date\": \"2024-01-11\",
+      \"last_modified_date\": \"2024-01-11\", \"last_accessed_date\":
+      \"2024-01-11\"}, \"hash\":
+      \"68b4e587d4fbc41b04e006b2a50568b747ac3c39e381ee3135d4c14245a7f75d\",
+      \"class_name\": \"RelatedNodeInfo\"}, \"3\": {\"node_id\":
+      \"35b870cc-19e8-4f83-937a-4c387f759c01\", \"node_type\": \"1\",
+      \"metadata\": {\"file_path\":
+      \"D:\\\\proj\\\\PromptFlow\\\\src\\\\promptflow-copilot\\\\pfdocs\\\\community\\\\concepts\\\\concept-connections.md\",
+      \"file_name\": \"concept-connections.md\", \"file_type\": null,
+      \"file_size\": 2038, \"creation_date\": \"2024-01-11\",
+      \"last_modified_date\": \"2024-01-11\", \"last_accessed_date\":
+      \"2024-01-11\"}, \"hash\":
+      \"d114af44f58f5858fc28b8a6841f174556dfb07b3e1c6558b00337f34188d961\",
+      \"class_name\": \"RelatedNodeInfo\"}}, \"hash\":
+      \"05a40fabcdd62d0ebada83ce64eb84ce22e5942788f7d761b4028208a4313d4f\",
+      \"text\": \"Connections\\n\\nConnections are for storing information about
+      how to access external services like LLMs: endpoint, api keys etc.\\n\\n-
+      In your local development environment, the connections are persisted in
+      your local machine with keys encrypted.\\n- In Azure AI, connections can
+      be configured to be shared across the entire workspace. Secrets associated
+      with connections are securely persisted in the corresponding Azure Key
+      Vault, adhering to robust security and compliance standards.\\n\\nPrompt
+      flow provides a variety of pre-built connections, including Azure Open AI,
+      Open AI, etc. These pre-built connections enable seamless integration with
+      these resources within the built-in tools. Additionally, you have the
+      flexibility to create custom connection types using key-value pairs,
+      empowering them to tailor the connections to their specific requirements,
+      particularly in Python tools.\\n\\n| Connection
+      type                                              | Built-in
+      tools                  |\\n|
+      ------------------------------------------------------------ |
+      ------------------------------- |\\n| Azure Open AI | LLM or
+      Python                   |\\n| Open AI                               | LLM
+      or Python                   |\\n| Cognitive Search | Vector DB Lookup or
+      Python      |\\n| Serp                                 | Serp API or
+      Python              |\\n|
+      Custom                                                       |
+      Python                          |\\n\\nBy leveraging connections in prompt
+      flow, you can easily establish and manage connections to external APIs and
+      data sources, facilitating efficient data exchange and interaction within
+      their AI applications.\", \"start_char_idx\": null, \"end_char_idx\":
+      null, \"text_template\": \"{metadata_str}\\n\\n{content}\",
+      \"metadata_template\": \"{key}: {value}\", \"metadata_seperator\":
+      \"\\n\", \"class_name\": \"TextNode\"}"'
+outputs:
+  test_data:
+    type: string
+    reference: ${generate_test_data.output}
+nodes:
+- name: generate_test_data
+  type: python
+  source:
+    type: code
+    path: generate_test_data.py
+  inputs:
+    connection: azure_open_ai_connection
+    document_node_str: ${inputs.document_node}
