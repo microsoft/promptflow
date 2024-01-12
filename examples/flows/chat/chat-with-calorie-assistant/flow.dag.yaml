@@ -13,7 +13,7 @@ inputs:
       calories will I burn?
   assistant_id:
     type: string
-    default: asst_yWhdFYoCS1UatnRRQZGY85aL
+    default: ""
   thread_id:
     type: string
     default: ""
