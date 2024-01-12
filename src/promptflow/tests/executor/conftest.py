@@ -1,7 +1,5 @@
 import multiprocessing
 from asyncio import Queue
-from contextlib import contextmanager
-from functools import wraps
 from pathlib import Path
 from unittest.mock import patch
 
@@ -15,21 +13,7 @@ PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 
 
-@contextmanager
-def apply_recording_injection_if_enabled():
-    # multiprocessing.get_context("spawn").Process = MockSpawnProcess
-    # multiprocessing.Process = MockSpawnProcess
-
-    patches = setup_recording_injection_if_enabled()
-
-    try:
-        yield
-    finally:
-        for patcher in patches:
-            patcher.stop()
-
-
-def setup_recording_injection_if_enabled():
+def setup_recording_injection_mocks():
     patches = []
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
@@ -45,36 +29,6 @@ def setup_recording_injection_if_enabled():
             patches.append(patcher)
             patcher.start()
     return patches
-
-
-def recording_injection_decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        multiprocessing.get_context("spawn").Process = MockSpawnProcess
-        multiprocessing.Process = MockSpawnProcess
-        with apply_recording_injection_if_enabled():
-            return func(*args, **kwargs)
-
-    return wrapper
-
-
-def recording_injection_decorator_compatible_with_spawn(mock_class):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            original_process_class = multiprocessing.get_context("spawn").Process
-            multiprocessing.get_context("spawn").Process = mock_class
-            multiprocessing.Process = mock_class
-            try:
-                with apply_recording_injection_if_enabled():
-                    return func(*args, **kwargs)
-            finally:
-                multiprocessing.get_context("spawn").Process = original_process_class
-                multiprocessing.Process = original_process_class
-
-        return wrapper
-
-    return decorator
 
 
 SpawnProcess = multiprocessing.Process
@@ -115,7 +69,7 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
     if "spawn" == multiprocessing.get_start_method():
         multiprocessing.Process = MockSpawnProcess
 
-    patches = setup_recording_injection_if_enabled()
+    patches = setup_recording_injection_mocks()
 
     try:
         yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
@@ -132,7 +86,6 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
             patcher.stop()
 
 
-@recording_injection_decorator_compatible_with_spawn(MockSpawnProcess)
 def _mock_process_wrapper(
     executor_creation_func,
     input_queue: Queue,
@@ -140,6 +93,7 @@ def _mock_process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
+    setup_recording_injection_mocks()
     _process_wrapper(
         executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
     )

@@ -14,7 +14,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
-from ..conftest import MockForkServerProcess, MockSpawnProcess, setup_recording_injection_if_enabled
+from ..conftest import MockForkServerProcess, MockSpawnProcess, setup_recording_injection_mocks
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -45,7 +45,7 @@ def run_batch_with_start_method(multiprocessing_start_method, flow_folder, input
         multiprocessing.Process = MockForkServerProcess
         multiprocessing.get_context("forkserver").Process = MockForkServerProcess
 
-    setup_recording_injection_if_enabled()
+    setup_recording_injection_mocks()
 
     os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
@@ -271,6 +271,7 @@ class TestBatch:
             {"line_number": 6, "output": 7},
         ]
 
+    @pytest.mark.skip(reason="Recording Injection not handle trace well. Fixing on the way.")
     def test_batch_with_openai_metrics(self, dev_connections):
         inputs_mapping = {"url": "${data.url}"}
         batch_result, output_dir = submit_batch_run(
