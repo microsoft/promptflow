@@ -248,6 +248,8 @@ class RunTracker(ThreadLocalSingleton):
             )
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
+            if traces:
+                run_info.api_calls = traces
         elif isinstance(run_info, RunInfo):
             run_info.api_calls = traces
             self._node_run_postprocess(run_info, result, ex)
