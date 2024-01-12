@@ -10,21 +10,22 @@ The script can also be downloaded and run locally. You may have to restart your 
 
 ## Uninstall promptflow
 
-Uninstall the promptflow by directly deleting the files from the location chosen at the time of installation. The default install/executable location is the user's home directory ($HOME).
+Uninstall the promptflow by directly deleting the files from the location chosen at the time of installation.
 
 1. Remove the installed CLI files.
 
    ```bash
-   rm -r <install location>/lib/promptflow
-   rm <executable location>/bin/pf
-   rm <executable location>/bin/pfs
-   rm <executable location>/bin/pfazure
+   # The default install/executable location is the user's home directory ($HOME).
+   rm -r $HOME/lib/promptflow
+   rm $HOME/bin/pf
+   rm $HOME/bin/pfs
+   rm $HOME/bin/pfazure
    ```
 
 2. Modify your `$HOME/.bash_profile` or `$HOME/.bashrc` file to remove the following line:
 
    ```text
-   export PATH=$PATH:<install location>/bin
+   export PATH=$PATH:$HOME/bin
    ```
 
 3. If using `bash` or `zsh`, reload your shell's command cache.

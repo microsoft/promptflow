@@ -337,47 +337,6 @@ def _get_linux_distro():
     return release_info.get('name', None), release_info.get('version_id', None)
 
 
-def verify_native_dependencies():
-    distname, version = _get_linux_distro()
-
-    if not distname:
-        # There's no distribution name so can't determine native dependencies required / or they may not be needed
-        # like on OS X
-        return
-
-    print_status('Verifying native dependencies.')
-    # is_python3 = sys.version_info[0] == 3
-    distname = distname.lower().strip()
-
-    verify_cmd_args, install_cmd_args, dep_list = None, None, None
-    if any(x in distname for x in ['ubuntu', 'debian']):
-        verify_cmd_args = ['dpkg', '-s']
-        install_cmd_args = ['apt-get', 'update', '&&', 'apt-get', 'install', '-y']
-        python_dep = 'python3-dev'
-        if distname == 'ubuntu' and version in ['12.04', '14.04'] or distname == 'debian' and version.startswith('7'):
-            dep_list = ['libssl-dev', 'libffi-dev', python_dep]
-        elif (distname == 'ubuntu' and version in ['15.10', '16.04', '18.04'] or distname == 'debian' and
-              version.startswith('8')):
-            dep_list = ['libssl-dev', 'libffi-dev', python_dep, 'build-essential']
-    elif any(x in distname for x in ['centos', 'rhel', 'red hat']):
-        verify_cmd_args = ['rpm', '-q']
-        install_cmd_args = ['yum', 'check-update', ';', 'yum', 'install', '-y']
-        # python3-devel not available on yum but python3Xu-devel versions available.
-        python_dep = 'python3{}u-devel'.format(sys.version_info[1])
-        dep_list = ['gcc', 'libffi-devel', python_dep, 'openssl-devel']
-    elif any(x in distname for x in ['opensuse', 'suse', 'sles']):
-        verify_cmd_args = ['rpm', '-q']
-        install_cmd_args = ['zypper', 'refresh', '&&', 'zypper', '--non-interactive', 'install']
-        python_dep = 'python3-devel'
-        dep_list = ['gcc', 'libffi-devel', python_dep, 'libopenssl-devel']
-
-    if verify_cmd_args and install_cmd_args and dep_list:
-        _native_dependencies_for_dist(verify_cmd_args, install_cmd_args, dep_list)
-    else:
-        print_status("Unable to verify native dependencies. dist={}, version={}. "
-                     "Continuing...".format(distname, version))
-
-
 def verify_install_dir_exec_path_conflict(install_dir, exec_dir):
     for exec_name in [PF_EXECUTABLE_NAME, PFAZURE_EXECUTABLE_NAME, PFS_EXECUTABLE_NAME]:
         exec_path = os.path.join(exec_dir, exec_name)
@@ -389,7 +348,6 @@ def verify_install_dir_exec_path_conflict(install_dir, exec_dir):
 
 def main():
     verify_python_version()
-    verify_native_dependencies()
     tmp_dir = create_tmp_dir()
     install_dir = get_install_dir()
     exec_dir = get_exec_dir()
