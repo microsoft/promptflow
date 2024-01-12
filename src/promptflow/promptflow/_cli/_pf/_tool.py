@@ -156,7 +156,7 @@ def init_tool(args):
         script_code_path = package_path / package_name
         script_code_path.mkdir(parents=True, exist_ok=True)
         if icon_path:
-            package_icon_path = package_path / "icon"
+            package_icon_path = package_path / "icons"
             package_icon_path.mkdir(exist_ok=True)
             dst = shutil.copy2(icon_path, package_icon_path)
             icon_path = f'Path(__file__).parent.parent / "icon" / "{Path(dst).name}"'
