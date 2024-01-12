@@ -276,7 +276,6 @@ def warn_other_azs_on_path(exec_dir, exec_filepath):
 
 def handle_path_and_tab_completion(exec_filepath, exec_dir):
     ans_yes = prompt_y_n('Modify profile to update your $PATH now?', 'y')
-    # ans_yes = prompt_y_n('Modify profile to update your $PATH and enable shell/tab completion now?', 'y')
     if ans_yes:
         rc_file_path = get_rc_file_path()
         if not rc_file_path:
@@ -396,14 +395,10 @@ def main():
     create_virtualenv(tmp_dir, install_dir)
     install_cli(install_dir, tmp_dir)
     exec_filepath = create_executable(exec_dir, install_dir)
-    # completion_file_path = os.path.join(install_dir, COMPLETION_FILENAME)
-    # create_tab_completion_file(completion_file_path)
     try:
         handle_path_and_tab_completion(exec_filepath, exec_dir)
-        # handle_path_and_tab_completion(completion_file_path, exec_filepath, exec_dir)
     except Exception as e:
         print_status("Unable to set up PATH. ERROR: {}".format(str(e)))
-        # print_status("Unable to set up tab completion. ERROR: {}".format(str(e)))
     shutil.rmtree(tmp_dir)
     print_status("Installation successful.")
     print_status("Run the CLI with {} --help".format(exec_filepath))
