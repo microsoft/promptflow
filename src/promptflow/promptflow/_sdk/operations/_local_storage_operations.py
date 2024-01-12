@@ -179,6 +179,7 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def __init__(self, run: Run, stream=False, run_mode=RunMode.Test):
         self._run = run
+        self._eager_mode = run.eager_mode
         self.path = self._prepare_folder(self._run._output_path)
 
         self.logger = LoggerOperations(
@@ -229,14 +230,20 @@ class LocalStorageOperations(AbstractRunStorage):
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one
-        self._dag_path.unlink()
-        shutil.copy(flow.path, self._dag_path)
+        if not self._eager_mode:
+            self._dag_path.unlink()
+            shutil.copy(flow.path, self._dag_path)
 
     def load_dag_as_string(self) -> str:
+        if self._eager_mode:
+            return ""
         with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             return f.read()
 
     def load_flow_tools_json(self) -> dict:
+        if self._eager_mode:
+            # no tools json for eager mode
+            return {}
         if not self._flow_tools_json_path.is_file():
             return generate_flow_tools_json(self._snapshot_folder_path, dump=False)
         else:

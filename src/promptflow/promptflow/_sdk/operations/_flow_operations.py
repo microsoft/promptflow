@@ -132,7 +132,7 @@ class FlowOperations(TelemetryMixin):
         :param stream_log: Whether streaming the log.
         :param stream_output: Whether streaming the outputs.
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
-        :param entry: Entry function name for eager flow. Required when flow is script.
+        :param entry: The entry function of eager flow, only works when source is a code file.
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow

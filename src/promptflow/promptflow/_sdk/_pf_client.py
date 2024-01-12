@@ -6,12 +6,14 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+from .. import load_flow
 from .._utils.logger_utils import get_cli_sdk_logger
 from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._user_agent import USER_AGENT
 from ._utils import get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
+from .entities._eager_flow import EagerFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
@@ -54,6 +56,7 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
+        entry: str = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -102,6 +105,8 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
+        :param entry: The entry function of eager flow, only works when source is a code file.
+        :type entry: str
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
@@ -111,7 +116,8 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-
+        # load flow object for validation and early failure
+        flow_obj = load_flow(source=flow, entry=entry)
         run = Run(
             name=name,
             display_name=display_name,
@@ -124,6 +130,8 @@ class PFClient:
             connections=connections,
             environment_variables=environment_variables,
             config=Configuration(overrides=self._config),
+            entry=entry,
+            eager_mode=isinstance(flow_obj, EagerFlow),
         )
         return self.runs.create_or_update(run=run, **kwargs)
 

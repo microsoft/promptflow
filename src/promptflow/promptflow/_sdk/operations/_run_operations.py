@@ -323,11 +323,12 @@ class RunOperations(TelemetryMixin):
                 metrics=self.get_metrics(name=run.name),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
+                eager_mode=run.eager_mode,
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
             # TODO: add language to run metadata
-            flow_dag = yaml.safe_load(metadata.dag)
+            flow_dag = yaml.safe_load(metadata.dag) or {}
             configs.append(
                 VisualizationConfig(
                     [AvailableIDE.VS_CODE]

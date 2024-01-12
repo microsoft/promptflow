@@ -66,6 +66,7 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
+    *,
     entry: str = None,
     **kwargs,
 ) -> Flow:

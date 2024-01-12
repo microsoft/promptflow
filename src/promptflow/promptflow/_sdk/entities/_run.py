@@ -100,6 +100,10 @@ class Run(YAMLTranslatableMixin):
     :type connections: Optional[Dict[str, Dict]]
     :param properties: Properties of the run.
     :type properties: Optional[Dict[str, Any]]
+    :param entry: The entry function of eager flow, only works when source is a code file.
+    :type entry: Optional[str]
+    :param eager_mode: Whether the run is an eager flow run.
+    :type eager_mode: bool
     :param kwargs: Additional keyword arguments.
     :type kwargs: Optional[dict]
     """
@@ -125,6 +129,8 @@ class Run(YAMLTranslatableMixin):
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
         source: Optional[Union[Path, str]] = None,
+        entry: Optional[str] = None,
+        eager_mode: bool = False,
         **kwargs,
     ):
         # TODO: remove when RUN CRUD don't depend on this
@@ -152,7 +158,8 @@ class Run(YAMLTranslatableMixin):
         # init here to make sure those fields initialized in all branches.
         self.flow = flow
         self._use_remote_flow = is_remote_uri(flow)
-        # What's this?
+        self.entry = entry
+        self.eager_mode = eager_mode
         self._experiment_name = None
         self._lineage_id = None
         if self._use_remote_flow:
@@ -245,11 +252,13 @@ class Run(YAMLTranslatableMixin):
             properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
             # compatible with old runs, their run_source is empty, treat them as local
             run_source=obj.run_source or RunInfoSources.LOCAL,
+            entry=obj.entry,
         )
 
     @classmethod
     def _from_index_service_entity(cls, run_entity: dict) -> "Run":
         """Convert run entity from index service to run object."""
+        # TODO(2887134): support cloud eager Run CRUD
         start_time = run_entity["properties"].get("startTime", None)
         end_time = run_entity["properties"].get("endTime", None)
         duration = run_entity["properties"].get("duration", None)
@@ -276,6 +285,7 @@ class Run(YAMLTranslatableMixin):
     @classmethod
     def _from_run_history_entity(cls, run_entity: dict) -> "Run":
         """Convert run entity from run history service to run object."""
+        # TODO(2887134): support cloud eager Run CRUD
         flow_name = run_entity["properties"].get("azureml.promptflow.flow_name", None)
         start_time = run_entity.get("startTimeUtc", None)
         end_time = run_entity.get("endTimeUtc", None)
@@ -333,6 +343,8 @@ class Run(YAMLTranslatableMixin):
             properties=json.dumps(self.properties),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
             run_source=self._run_source,
+            entry=self.entry,
+            is_eager_mode=self.eager_mode,
         )
 
     def _dump(self) -> None:
@@ -357,6 +369,7 @@ class Run(YAMLTranslatableMixin):
             "description": self.description,
             "tags": self.tags,
             "properties": properties,
+            "mode": "eager" if self.eager_mode else "DAG",
         }
 
         if self._run_source == RunInfoSources.LOCAL:
