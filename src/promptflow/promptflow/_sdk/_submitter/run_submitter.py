@@ -53,14 +53,18 @@ class RunSubmitter:
             if run.run.status != Status.Completed.value:
                 raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
             run.run.outputs = self.run_operations._get_outputs(run.run)
-        if not run.run and not run.data:
-            raise ValueError("Either run or data must be specified for flow run.")
+        self._validate_inputs(run=run)
 
         # running specified variant
         with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
             local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
             with local_storage.logger:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+
+    @classmethod
+    def _validate_inputs(cls, run: Run):
+        if not run.run and not run.data:
+            raise ValueError("Either run or data must be specified for flow run.")
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
@@ -117,7 +121,7 @@ class RunSubmitter:
             status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
-            logger.warning(f"Run {run.name} failed when executing in executor.")
+            logger.warning(f"Run {run.name} failed when executing in executor with exception {e}.")
             exception = e
             # for user error, swallow stack trace and return failed run since user don't need the stack trace
             if not isinstance(e, UserErrorException):

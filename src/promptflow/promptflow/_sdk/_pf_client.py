@@ -14,6 +14,7 @@ from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_ag
 from .entities import Run
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
+from .operations._experiment_operations import ExperimentOperations
 from .operations._flow_operations import FlowOperations
 from .operations._tool_operations import ToolOperations
 
@@ -40,6 +41,7 @@ class PFClient:
         # add user agent from kwargs if any
         if isinstance(kwargs.get("user_agent"), str):
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
+        self._experiments = ExperimentOperations(self)
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
