@@ -27,7 +27,7 @@ class RunMetadata:
     metrics: Optional[Dict[str, Any]]
     dag: Optional[str]
     flow_tools_json: Optional[dict]
-    eager_mode: Optional[bool] = False
+    mode: Optional[str] = ""
 
 
 @dataclass

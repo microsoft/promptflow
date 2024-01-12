@@ -323,7 +323,7 @@ class RunOperations(TelemetryMixin):
                 metrics=self.get_metrics(name=run.name),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
-                eager_mode=run.eager_mode,
+                mode="eager" if run.eager_mode else "",
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
