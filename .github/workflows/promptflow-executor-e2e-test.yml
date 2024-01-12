@@ -53,10 +53,10 @@ jobs:
         env | sort >> $GITHUB_OUTPUT
       id: display_env
       shell: bash -el {0}
-    - name: Python Setup - ubuntu-latest - Python Version 3.9
+    - name: Python Setup - ubuntu-latest - Python Version 3.11
       uses: "./.github/actions/step_create_python_environment"
       with:
-        pythonVersion: 3.9
+        pythonVersion: 3.11
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
@@ -85,10 +85,10 @@ jobs:
         fetch-depth: 0
     - name: merge main to current branch
       uses: "./.github/actions/step_merge_main"
-    - name: Python Setup - ${{ matrix.os }} - Python Version 3.9
+    - name: Python Setup - ${{ matrix.os }} - Python Version 3.11
       uses: "./.github/actions/step_create_python_environment"
       with:
-        pythonVersion: 3.9
+        pythonVersion: 3.11
     - name: Download Artifacts
       uses: actions/download-artifact@v3
       with:
@@ -135,7 +135,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: Test Results (Python 3.9) (OS ${{ matrix.os }})
+        name: Test Results (Python 3.11) (OS ${{ matrix.os }})
         path: |
           ${{ github.workspace }}/*.xml
           ${{ github.workspace }}/htmlcov/
@@ -163,6 +163,6 @@ jobs:
         testActionFileName: promptflow-executor-e2e-test.yml
         testResultTitle: Executor E2E Test Result
         osVersion: ubuntu-latest
-        pythonVersion: 3.9
+        pythonVersion: 3.11
         coverageThreshold: 70
         context: test/executor_e2e
