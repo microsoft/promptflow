@@ -32,6 +32,8 @@ from .utils import (
     is_live,
     is_record,
     is_replay,
+    sanitize_automatic_runtime_request_path,
+    sanitize_azure_workspace_triad,
     sanitize_file_share_flow_path,
     sanitize_pfs_request_body,
     sanitize_upload_hash,
@@ -286,6 +288,11 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         # for file share request, mainly target pytest fixture "created_flow"
         if r1.host == r2.host and r1.host == SanitizedValues.FILE_SHARE_REQUEST_HOST:
             return sanitize_file_share_flow_path(r1.path) == r2.path
+        # for automatic runtime, sanitize flow session id in path
+        if r1.host == r2.host and ("FlowSessions" in r1.path and "FlowSessions" in r2.path):
+            path1 = sanitize_automatic_runtime_request_path(r1.path)
+            path2 = sanitize_automatic_runtime_request_path(r2.path)
+            return sanitize_azure_workspace_triad(path1) == path2
         return r1.path == r2.path
 
     def _custom_request_body_matcher(self, r1: Request, r2: Request) -> bool:
