@@ -127,6 +127,16 @@ class TestFlowRun:
         # write to user_dir/.promptflow/.runs
         assert ".promptflow" in run.properties["output_path"]
 
+    def test_basic_run_delete(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"url": "${data.url}"},
+        )
+        local_storage = LocalStorageOperations(result)
+        local_storage.delete()
+        assert not os.path.exists(local_storage._outputs_path)
+
     def test_basic_flow_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf) -> None:
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",

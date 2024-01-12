@@ -50,6 +50,7 @@ def add_run_parser(subparsers):
     add_run_visualize(subparsers)
     add_run_archive(subparsers)
     add_run_restore(subparsers)
+    add_run_delete(subparsers)
     add_parser_build(subparsers, "run")
     run_parser.set_defaults(action="run")
 
@@ -330,6 +331,29 @@ pf run visualize --names "<name1>, <name2>"
     )
 
 
+def add_run_delete(subparsers):
+    epilog = """
+Example:
+
+# Delete runs:
+pf run delete --names "<name1>,<name2>..."
+"""
+    add_param_name = lambda parser: parser.add_argument(  # noqa: E731
+        "-n", "--names", type=str, required=True, help="Name of the runs, comma separated."
+    )
+    add_params = [add_param_name] + base_params
+
+    activate_action(
+        name="delete",
+        description=None,
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Delete a run irreversible.",
+        action_param_name="sub_action",
+    )
+
+
 def add_run_archive(subparsers):
     epilog = """
 Example:
@@ -399,6 +423,8 @@ def dispatch_run_commands(args: argparse.Namespace):
         restore_run(name=args.name)
     elif args.sub_action == "export":
         export_run(args)
+    elif args.sub_action == "delete":
+        delete_run(names=args.names)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -590,6 +616,13 @@ def create_run(create_func: Callable, args):
     if stream:
         print("\n")  # change new line to show run info
     print(json.dumps(run._to_dict(), indent=4))
+
+
+@exception_handler("Delete run")
+def delete_run(names: str) -> None:
+    run_names = [name.strip() for name in names.split(",")]
+    pf_client = PFClient()
+    pf_client.runs.delete(names=run_names)
 
 
 def export_run(args):

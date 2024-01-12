@@ -213,6 +213,9 @@ class LocalStorageOperations(AbstractRunStorage):
 
         self._dump_meta_file()
 
+    def delete(self) -> None:
+        shutil.rmtree(self.path)
+
     def _dump_meta_file(self) -> None:
         with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, f, ensure_ascii=False)

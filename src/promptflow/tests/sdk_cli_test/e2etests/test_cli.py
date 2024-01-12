@@ -1760,3 +1760,86 @@ class TestCli:
         )
         context = OperationContext().get_instance()
         context.user_agent = ""
+
+    def test_basic_flow_run_delete(self, local_client, capfd) -> None:
+        run_id = str(uuid.uuid4())
+        run_id_b = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--name",
+            run_id,
+            "--flow",
+            f"{FLOWS_DIR}/print_env_var",
+            "--data",
+            f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+        run_pf_command(
+            "run",
+            "create",
+            "--name",
+            run_id_b,
+            "--flow",
+            f"{FLOWS_DIR}/print_env_var",
+            "--data",
+            f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+        run_a = local_client.runs.get(name=run_id)
+        local_storage = LocalStorageOperations(run_a)
+        path_a = local_storage.path
+        assert os.path.exists(path_a)
+        run_b = local_client.runs.get(name=run_id_b)
+        local_storage = LocalStorageOperations(run_b)
+        path_b = local_storage.path
+        assert os.path.exists(path_b)
+
+        # delete the run
+        run_pf_command(
+            "run",
+            "delete",
+            "--names",
+            f"{run_id},{run_id_b}",
+        )
+        # both runs are deleted and their folders are deleted
+        assert not os.path.exists(path_a)
+        assert not os.path.exists(path_b)
+
+    def test_basic_flow_run_delete_error(self, local_client, capfd) -> None:
+        run_id = str(uuid.uuid4())
+        run_id_b = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--name",
+            run_id,
+            "--flow",
+            f"{FLOWS_DIR}/print_env_var",
+            "--data",
+            f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+        run_a = local_client.runs.get(name=run_id)
+        local_storage = LocalStorageOperations(run_a)
+        path_a = local_storage.path
+        assert os.path.exists(path_a)
+
+        # delete the run
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "run",
+                "delete",
+                "--names",
+                f"{run_id},{run_id_b}",
+            )
+            out, _ = capfd.readouterr()
+
+        # path_a is not deleted since not all run ids are valid
+        assert os.path.exists(path_a)
+        # path_a is not deleted since it doesn't exist
+        path_b = str(path_a).replace(run_id, run_id_b)
+        assert not os.path.exists(path_b)
