@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import contextlib
 import logging
 import os
 import threading
@@ -466,6 +467,7 @@ def mock_vcrpy_force_reset() -> None:
 
     original_force_reset = force_reset
 
+    @contextlib.contextmanager
     def mock_force_reset():
         with threading.Lock():
             original_force_reset()
