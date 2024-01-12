@@ -9,7 +9,6 @@ import pytest
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
 from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
 from promptflow._sdk._load_functions import _load_env_to_connection
-from promptflow._sdk._utils import load_yaml
 from promptflow._sdk.entities._connection import (
     AzureContentSafetyConnection,
     AzureOpenAIConnection,
@@ -22,6 +21,7 @@ from promptflow._sdk.entities._connection import (
     WeaviateConnection,
     _Connection,
 )
+from promptflow._utils.yaml_utils import load_yaml
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"

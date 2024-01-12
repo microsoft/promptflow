@@ -18,11 +18,11 @@ from promptflow._sdk._constants import (
     FLOW_TOOLS_JSON,
     PROMPT_FLOW_DIR_NAME,
 )
-from promptflow._sdk._utils import load_yaml, load_yaml_string
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import load_yaml, load_yaml_string
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()

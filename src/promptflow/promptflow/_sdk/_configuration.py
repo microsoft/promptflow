@@ -18,8 +18,9 @@ from promptflow._sdk._constants import (
     SERVICE_CONFIG_FILE,
     ConnectionProvider,
 )
-from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml, read_write_by_user
+from promptflow._sdk._utils import call_from_extension, read_write_by_user
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = get_cli_sdk_logger()

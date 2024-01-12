@@ -12,7 +12,8 @@ from flask import abort, request
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
-from promptflow._sdk._utils import dump_yaml, load_yaml, read_write_by_user
+from promptflow._sdk._utils import read_write_by_user
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 

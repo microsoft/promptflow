@@ -14,8 +14,8 @@ from marshmallow.schema import Schema, SchemaMeta
 from pydash import objects
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, FILE_PREFIX, PARAMS_OVERRIDE_KEY
-from promptflow._sdk._utils import load_yaml
 from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.yaml_utils import load_yaml
 
 module_logger = LoggerFactory.get_logger(__name__)
 

@@ -23,13 +23,14 @@ from promptflow._sdk._constants import (
     LocalStorageFilenames,
 )
 from promptflow._sdk._errors import BulkRunException
-from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json, load_yaml
+from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import get_file_reference_encoder
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo

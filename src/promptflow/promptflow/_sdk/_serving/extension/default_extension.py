@@ -12,7 +12,7 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._serving.blueprint.monitor_blueprint import construct_monitor_blueprint
 from promptflow._sdk._serving.blueprint.static_web_blueprint import construct_staticweb_blueprint
 from promptflow._sdk._serving.monitor.flow_monitor import FlowMonitor
-from promptflow._sdk._utils import load_yaml
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow._version import VERSION
 from promptflow.contracts.flow import Flow
 

@@ -9,7 +9,7 @@ import mock
 import pytest
 
 from promptflow._sdk._constants import FLOW_TOOLS_JSON, NODE_VARIANTS, PROMPT_FLOW_DIR_NAME, USE_VARIANTS
-from promptflow._sdk._utils import load_yaml
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."

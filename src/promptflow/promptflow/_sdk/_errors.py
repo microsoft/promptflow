@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from promptflow._sdk._constants import BULK_RUN_ERRORS
-from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
 class SDKError(UserErrorException):
@@ -115,12 +115,6 @@ class RunOperationError(SDKError):
 
 class FlowOperationError(SDKError):
     """Exception raised when flow operation failed."""
-
-    pass
-
-
-class YamlParseError(SystemErrorException):
-    """Exception raised when yaml parse failed."""
 
     pass
 

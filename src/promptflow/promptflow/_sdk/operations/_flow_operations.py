@@ -23,15 +23,14 @@ from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
     dump_flow_result,
-    dump_yaml,
     generate_flow_tools_json,
     generate_random_string,
-    load_yaml,
     parse_variant,
 )
 from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
 
