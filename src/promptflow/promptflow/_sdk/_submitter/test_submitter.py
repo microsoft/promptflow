@@ -25,6 +25,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
+from ..entities._eager_flow import EagerFlow
 from .utils import (
     SubmitterHelper,
     print_chat_output,
@@ -56,6 +57,26 @@ class TestSubmitter:
 
     @contextlib.contextmanager
     def init(self):
+        if isinstance(self.flow, EagerFlow):
+            flow_content_manager = self._eager_flow_init
+        else:
+            flow_content_manager = self._dag_flow_init
+        with flow_content_manager() as submitter:
+            yield submitter
+
+    @contextlib.contextmanager
+    def _eager_flow_init(self):
+        # no variant overwrite for eager flow
+        # no connection overwrite for eager flow
+        # TODO(2897147): support additional includes
+        with _change_working_dir(self.flow.code):
+            self._tuning_node = None
+            self._node_variant = None
+            yield self
+            self._dataplane_flow = None
+
+    @contextlib.contextmanager
+    def _dag_flow_init(self):
         if self.flow_context.variant:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
