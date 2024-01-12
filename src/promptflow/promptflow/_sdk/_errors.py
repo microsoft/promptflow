@@ -129,3 +129,21 @@ class ExperimentNotFoundError(SDKError):
     """Exception raised if experiment cannot be found."""
 
     pass
+
+
+class ExperimentValidationError(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass
+
+
+class ExperimentValueError(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass
+
+
+class ExperimentHasCycle(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass

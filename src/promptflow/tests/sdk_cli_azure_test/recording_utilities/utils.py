@@ -221,6 +221,40 @@ def sanitize_email(value: str) -> str:
     return re.sub(r"([\w\.-]+)@(microsoft.com)", r"{}@\2".format(SanitizedValues.EMAIL_USERNAME), value)
 
 
+def sanitize_file_share_flow_path(value: str) -> str:
+    flow_folder_name = "simple_hello_world"
+    if flow_folder_name not in value:
+        return value
+    start_index = value.index(flow_folder_name)
+    flow_name_length = 38  # len("simple_hello_world-01-01-2024-00-00-00")
+    flow_name = value[start_index : start_index + flow_name_length]
+    return value.replace(flow_name, "flow_name")
+
+
+def _sanitize_session_id_creating_automatic_runtime(value: str) -> str:
+    value = re.sub(
+        "/(FlowSessions)/[0-9a-f]{48}",
+        r"/\1/{}".format(SanitizedValues.SESSION_ID),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
+def _sanitize_operation_id_polling_automatic_runtime(value: str) -> str:
+    value = re.sub(
+        "/(operations)/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        r"/\1/{}".format(SanitizedValues.UUID),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
+def sanitize_automatic_runtime_request_path(value: str) -> str:
+    return _sanitize_operation_id_polling_automatic_runtime(_sanitize_session_id_creating_automatic_runtime(value))
+
+
 def _is_json_payload(headers: Dict, key: str) -> bool:
     if not headers:
         return False
@@ -249,3 +283,10 @@ def is_httpx_response(response: Dict) -> bool:
     # this leads to different handle logic to response
     # so we need a utility to check if a response is from httpx
     return "content" in response
+
+
+def get_created_flow_name_from_flow_path(flow_path: str) -> str:
+    # pytest fixture "created_flow" will create flow on file share with timestamp as suffix
+    # we need to extract the flow name from the path
+    # flow name is expected to start with "simple_hello_world" and follow with "/flow.dag.yaml"
+    return flow_path[flow_path.index("simple_hello_world") : flow_path.index("/flow.dag.yaml")]

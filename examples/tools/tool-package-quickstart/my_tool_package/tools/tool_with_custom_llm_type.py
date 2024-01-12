@@ -4,10 +4,7 @@ from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
 
 
-@tool(
-    name="My Custom LLM Tool",
-    description="This is a tool to demonstrate how to customize an LLM tool with a PromptTemplate."
-)
+@tool
 def my_tool(connection: CustomConnection, prompt: PromptTemplate, **kwargs) -> str:
     # Replace with your tool code, customise your own code to handle and use the prompt here.
     # Usually connection contains configs to connect to an API.

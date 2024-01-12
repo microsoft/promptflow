@@ -540,9 +540,7 @@ class TestFlowRun:
             assert body.max_idle_time_seconds is None
             return body
 
-        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
-            RunOperations, "get"
-        ), patch.object(FlowServiceCaller, "create_flow_session"):
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
             mock_submit.side_effect = submit
             # no runtime provided, will use automatic runtime
             pf.run(
@@ -551,9 +549,7 @@ class TestFlowRun:
                 name=randstr("name1"),
             )
 
-        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
-            RunOperations, "get"
-        ), patch.object(FlowServiceCaller, "create_flow_session"):
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
             mock_submit.side_effect = submit
             # automatic is a reserved runtime name, will use automatic runtime if specified.
             pf.run(
@@ -563,26 +559,21 @@ class TestFlowRun:
                 name=randstr("name2"),
             )
 
-    def test_automatic_runtime_with_environment(self, pf, randstr: Callable[[str], str]):
-        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-        from promptflow.azure.operations import RunOperations
+    def test_automatic_runtime_with_resources(self, pf, randstr: Callable[[str], str]):
+        from promptflow.azure._restclient.flow.models import SessionSetupModeEnum
 
-        def submit(*args, **kwargs):
-            body = kwargs.get("body", None)
-            assert body.base_image == "python:3.8-slim"
-            assert body.python_pip_requirements == ["# Add your python packages here", "a", "b", "c"]
-            return body
-
-        with patch.object(FlowServiceCaller, "submit_bulk_run"), patch.object(
-            FlowServiceCaller, "create_flow_session"
-        ) as mock_session_create, patch.object(RunOperations, "get"):
-            mock_session_create.side_effect = submit
-            # no runtime provided, will use automatic runtime
-            pf.run(
-                flow=f"{FLOWS_DIR}/flow_with_environment",
-                data=f"{DATAS_DIR}/env_var_names.jsonl",
-                name=randstr("name"),
-            )
+        source = f"{RUNS_DIR}/sample_bulk_run_with_resources.yaml"
+        run_id = randstr("run_id")
+        run = load_run(
+            source=source,
+            params_override=[{"name": run_id}],
+        )
+        rest_run = run._to_rest_object()
+        assert rest_run.vm_size == "Standard_D2"
+        assert rest_run.max_idle_time_seconds == 3600
+        assert rest_run.session_setup_mode == SessionSetupModeEnum.SYSTEM_WAIT
+        run = pf.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
 
     def test_run_data_not_provided(self, pf, randstr: Callable[[str], str]):
         with pytest.raises(UserErrorException) as e:
@@ -718,21 +709,6 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 name=randstr("name2"),
             )
-
-    @pytest.mark.skip(reason="temporarily disable this for service-side error.")
-    def test_automatic_runtime_creation_failure(self, pf):
-        from promptflow.azure._restclient.flow_service_caller import FlowRequestException
-
-        with pytest.raises(FlowRequestException) as e:
-            pf.runs._resolve_runtime(
-                run=Run(
-                    flow=Path(f"{FLOWS_DIR}/basic-with-connection"),
-                    resources={"instance_type": "not_exist"},
-                ),
-                flow_path=Path(f"{FLOWS_DIR}/basic-with-connection"),
-                runtime=None,
-            )
-        assert "Session creation failed for" in str(e.value)
 
     def test_run_submission_exception(self, pf):
         from azure.core.exceptions import HttpResponseError
@@ -899,47 +875,3 @@ class TestFlowRun:
         for _, row in details2.iterrows():
             if pd.notnull(row["outputs.output"]):
                 assert int(row["inputs.number"]) == int(row["outputs.output"])
-
-
-# separate some tests as they cannot use the fixture that mocks the aml-user-token
-@pytest.mark.skipif(condition=not is_live(), reason="aml-user-token will be mocked")
-@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
-@pytest.mark.e2etest
-class TestFlowRunRelatedToAMLToken:
-    def test_automatic_runtime_creation_user_aml_token(self, pf):
-        from azure.core.pipeline import Pipeline
-
-        def submit(*args, **kwargs):
-            assert "aml-user-token" in args[0].headers
-
-            fake_response = MagicMock()
-            fake_response.http_response.status_code = 200
-            return fake_response
-
-        with patch.object(Pipeline, "run") as mock_session_create:
-            mock_session_create.side_effect = submit
-            pf.runs._resolve_runtime(
-                run=Run(
-                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                    data=f"{DATAS_DIR}/env_var_names.jsonl",
-                ),
-                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                runtime=None,
-            )
-
-    def test_submit_run_user_aml_token(self, pf, runtime):
-        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
-        from promptflow.azure.operations import RunOperations
-
-        def submit(*args, **kwargs):
-            headers = kwargs.get("headers", None)
-            assert "aml-user-token" in headers
-
-        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
-            mock_submit.side_effect = submit
-            pf.run(
-                flow=f"{FLOWS_DIR}/flow_with_dict_input",
-                data=f"{DATAS_DIR}/webClassification3.jsonl",
-                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
-                runtime=runtime,
-            )
