@@ -611,12 +611,18 @@ class FlowOperations(TelemetryMixin):
                 env_var_names=env_var_names,
             )
 
+    @classmethod
     @contextlib.contextmanager
     def _resolve_additional_includes(cls, flow_dag_path: Path) -> Iterable[Path]:
         # TODO: confirm if we need to import this
         from promptflow._sdk._submitter import remove_additional_includes
 
-        if _get_additional_includes(flow_dag_path):
+        # Eager flow may not contain a yaml file, skip resolving additional includes
+        def is_yaml_file(file_path):
+            _, file_extension = os.path.splitext(file_path)
+            return file_extension.lower() in (".yaml", ".yml")
+
+        if is_yaml_file(flow_dag_path) and _get_additional_includes(flow_dag_path):
             # Merge the flow folder and additional includes to temp folder.
             # TODO: support a flow_dag_path with a name different from flow.dag.yaml
             with _merge_local_code_and_additional_includes(code_path=flow_dag_path.parent) as temp_dir:
