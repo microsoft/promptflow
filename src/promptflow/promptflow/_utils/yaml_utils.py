@@ -63,7 +63,7 @@ def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
     # input should now be a readable file or stream. Parse it.
     cfg = {}
     try:
-        yaml = YAML(typ="safe")
+        yaml = YAML()
         yaml.preserve_quotes = True
         cfg = yaml.load(input)
     except YAMLError as e:
@@ -87,7 +87,7 @@ def load_yaml_string(yaml_string: str):
     :param yaml_string: A yaml string.
     :type yaml_string: str
     """
-    yaml = YAML(typ="safe")
+    yaml = YAML()
     yaml.preserve_quotes = True
     return yaml.load(yaml_string)
 
@@ -112,7 +112,7 @@ def dump_yaml(*args, **kwargs):
             with open("path/to/yaml", "w", encoding="utf-8") as f:
                 dump_yaml(data, f)
     """
-    yaml = YAML(typ="safe")
+    yaml = YAML()
     yaml.default_flow_style = False
     # when using with no stream parameter but just the data, dump to yaml string and return
     if len(args) == 1:

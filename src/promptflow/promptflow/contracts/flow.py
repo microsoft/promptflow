@@ -10,8 +10,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ruamel.yaml import YAML
-
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
 from promptflow.exceptions import ErrorTarget
 
@@ -648,10 +647,8 @@ class Flow:
     def from_yaml(cls, flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = cls._parse_working_dir(flow_file, working_dir)
-        yaml = YAML()
-        yaml.preserve_quotes = True
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
-            flow_dag = yaml.load(fin)
+            flow_dag = load_yaml(fin)
         return Flow._from_dict(flow_dag=flow_dag, working_dir=working_dir)
 
     @classmethod
@@ -672,10 +669,8 @@ class Flow:
         Returns the merged environment variables dict.
         """
         working_dir = cls._parse_working_dir(flow_file, working_dir)
-        yaml = YAML()
-        yaml.preserve_quotes = True
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
-            flow_dag = yaml.load(fin)
+            flow_dag = load_yaml(fin)
         flow = Flow.deserialize(flow_dag)
 
         environment_variables = {

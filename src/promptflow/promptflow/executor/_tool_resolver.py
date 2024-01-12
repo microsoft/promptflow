@@ -10,13 +10,12 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
-from ruamel.yaml import YAML
-
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
@@ -106,10 +105,8 @@ class ToolResolver:
                 node_name=node_name,
             )
         file = self._working_dir / assistant_definition_path
-        yaml = YAML()
-        yaml.preserve_quotes = True
         with open(file, "r", encoding="utf-8") as file:
-            assistant_definition = yaml.load(file)
+            assistant_definition = load_yaml(file)
         return AssistantDefinition.deserialize(assistant_definition)
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):

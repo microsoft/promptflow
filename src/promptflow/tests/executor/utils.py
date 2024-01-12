@@ -2,8 +2,7 @@ import json
 from pathlib import Path
 from typing import Union
 
-from ruamel.yaml import YAML
-
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
@@ -27,10 +26,8 @@ def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag
 
 def get_flow_from_folder(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag.yaml"):
     flow_yaml = get_yaml_file(folder_name, root, file_name)
-    yaml = YAML()
-    yaml.preserve_quotes = True
     with open(flow_yaml, "r") as fin:
-        return Flow.deserialize(yaml.load(fin))
+        return Flow.deserialize(load_yaml(fin))
 
 
 def get_flow_inputs_file(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs.jsonl"):

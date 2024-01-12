@@ -12,8 +12,6 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
-from ruamel.yaml import YAML
-
 from promptflow._core._errors import InputTypeMismatch, MissingRequiredInputs, PackageToolNotFoundError, ToolLoadError
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
@@ -36,6 +34,7 @@ from promptflow._utils.tool_utils import (
     validate_dynamic_list_func_response_type,
     validate_tool_func_result,
 )
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
@@ -46,11 +45,9 @@ PACKAGE_TOOLS_ENTRY = "package_tools"
 
 def collect_tools_from_directory(base_dir) -> dict:
     tools = {}
-    yaml = YAML()
-    yaml.preserve_quotes = True
     for f in Path(base_dir).glob("**/*.yaml"):
         with open(f, "r") as f:
-            tools_in_file = yaml.load(f)
+            tools_in_file = load_yaml(f)
             for identifier, tool in tools_in_file.items():
                 tools[identifier] = tool
     return tools
