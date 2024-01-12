@@ -459,25 +459,6 @@ def mock_vcrpy_for_httpx() -> None:
         yield
 
 
-@pytest.fixture(autouse=is_replay())
-def mock_vcrpy_stubs_vcr_connection_getresponse() -> None:
-    from vcr.stubs import CannotOverwriteExistingCassetteException, VCRHTTPResponse, log
-
-    def getresponse(self, _=False, **kwargs):
-        if self.cassette.can_play_response_for(self._vcr_request):
-            log.info(f"Playing response for {self._vcr_request} from cassette")
-            response = self.cassette.play_response(self._vcr_request)
-            return VCRHTTPResponse(response)
-        else:
-            raise CannotOverwriteExistingCassetteException(
-                cassette=self.cassette,
-                failed_request=self._vcr_request,
-            )
-
-    with patch("vcr.stubs.VCRConnection.getresponse", new=getresponse):
-        yield
-
-
 @pytest.fixture(autouse=not is_live())
 def mock_to_thread() -> None:
     # https://docs.python.org/3/library/asyncio-task.html#asyncio.to_thread
