@@ -9,7 +9,7 @@ from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, mo
 from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces, print_red_error
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.azure._utils.gerneral import get_arm_token
+from promptflow.azure._utils.gerneral import get_base_token
 
 logger = get_cli_sdk_logger()
 
@@ -49,7 +49,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
             try:
                 # Try getting token for cli without interactive login
                 credential = DefaultAzureCredential()
-                get_arm_token(credential=credential)
+                get_base_token(credential=credential)
             except Exception:
                 print_red_error(
                     "Please run 'az login' or 'az login --use-device-code' to set up account. "

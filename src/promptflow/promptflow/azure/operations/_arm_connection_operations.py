@@ -15,7 +15,7 @@ from azure.ai.ml._scope_dependent_operations import (
 
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_arm_token
+from promptflow.azure._utils.gerneral import get_base_token
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 GET_CONNECTION_URL = (
@@ -249,7 +249,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         )
         try:
             rest_obj: WorkspaceConnectionPropertiesV2BasicResource = cls.open_url(
-                get_arm_token(credential=credential),
+                get_base_token(credential=credential),
                 url=url,
                 action="listsecrets",
                 method="POST",
