@@ -372,6 +372,9 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder:
     assert result.tags == tags
     assert result.path.endswith("flow.dag.yaml")
 
+    # flow in Azure will have different file share name with timestamp
+    # and this is a client-side behavior, so we need to sanitize this in recording
+    # so extract this during record test
     if is_record():
         flow_name_const = "flow_name"
         flow_name = get_created_flow_name_from_flow_path(result.path)
