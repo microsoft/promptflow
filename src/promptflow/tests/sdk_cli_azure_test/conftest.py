@@ -4,6 +4,7 @@
 
 import logging
 import os
+import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -456,6 +457,20 @@ def mock_vcrpy_for_httpx() -> None:
         return out
 
     with patch("vcr.stubs.httpx_stubs._transform_headers", new=_transform_headers):
+        yield
+
+
+@pytest.fixture(autouse=not is_live())
+def mock_vcrpy_force_reset() -> None:
+    from vcr.patch import force_reset
+
+    original_force_reset = force_reset
+
+    def mock_force_reset():
+        with threading.Lock():
+            original_force_reset()
+
+    with patch("vcr.patch.force_reset", new=mock_force_reset):
         yield
 
 
