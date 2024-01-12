@@ -1,0 +1,14 @@
+my_tool_package.tools.my_tool_2.MyTool.my_tool:
+  class_name: MyTool
+  function: my_tool
+  inputs:
+    connection:
+      type:
+      - CustomConnection
+    input_text:
+      type:
+      - string
+  module: my_tool_package.tools.my_tool_2
+  name: My Second Tool
+  description: This is my second tool
+  type: python

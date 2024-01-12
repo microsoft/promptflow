@@ -163,24 +163,24 @@ def create_experiment(args: argparse.Namespace):
     logger.debug("Creating experiment from template %s", template.name)
     experiment = Experiment.from_template(template)
     logger.debug("Creating experiment %s", experiment.name)
-    exp = _get_pf_client().experiments.create_or_update(experiment)
+    exp = _get_pf_client()._experiments.create_or_update(experiment)
     print(json.dumps(exp._to_dict(), indent=4))
 
 
 @exception_handler("List experiment")
 def list_experiment(args: argparse.Namespace):
     list_view_type = get_list_view_type(archived_only=args.archived_only, include_archived=args.include_archived)
-    results = _get_pf_client().experiments.list(args.max_results, list_view_type=list_view_type)
+    results = _get_pf_client()._experiments.list(args.max_results, list_view_type=list_view_type)
     print(json.dumps([result._to_dict() for result in results], indent=4))
 
 
 @exception_handler("Show experiment")
 def show_experiment(args: argparse.Namespace):
-    result = _get_pf_client().experiments.get(args.name)
+    result = _get_pf_client()._experiments.get(args.name)
     print(json.dumps(result._to_dict(), indent=4))
 
 
 @exception_handler("Start experiment")
 def start_experiment(args: argparse.Namespace):
-    result = _get_pf_client().experiments.start(args.name)
+    result = _get_pf_client()._experiments.start(args.name)
     print(json.dumps(result._to_dict(), indent=4))

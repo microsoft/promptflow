@@ -6,6 +6,11 @@ data:
   - name: my_data
     path: ../../flows/web_classification/data.jsonl
 
+inputs:
+  - name: my_input
+    type: string
+    default: Hello World!
+
 nodes:
   - name: main
     type: flow
