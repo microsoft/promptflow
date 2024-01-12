@@ -622,7 +622,7 @@ def create_run(create_func: Callable, args):
 def delete_run(names: str) -> None:
     run_names = [name.strip() for name in names.split(",")]
     pf_client = PFClient()
-    pf_client.runs.delete(names=run_names)
+    pf_client.runs.delete(runs=run_names)
 
 
 def export_run(args):

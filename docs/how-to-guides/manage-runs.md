@@ -399,7 +399,7 @@ Delete the run permanently. This operation is not reversible.
 Delete will fail if any of the run name is not valid.
 
 ```bash
-pf run delete --name "<run-name1>,<run-name2>"
+pf run delete --name <run-name_a>,<run-name_b>
 ```
 :::
 
