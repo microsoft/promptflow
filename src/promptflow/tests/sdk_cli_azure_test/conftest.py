@@ -502,5 +502,10 @@ def mock_isinstance_for_mock_datastore() -> None:
 
 @pytest.fixture(autouse=True)
 def mock_check_latest_version() -> None:
+    """Mock check latest version.
+
+    As CI uses docker, it will always trigger this check behavior, and we don't have recording for this;
+    and this will hit many unknown issue with vcrpy.
+    """
     with patch("promptflow._utils.version_hint_utils.check_latest_version", new=lambda: None):
         yield
