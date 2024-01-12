@@ -121,6 +121,15 @@ class PFClient:
             raise ValueError("at least one of data or run must be provided")
         # load flow object for validation and early failure
         flow_obj = load_flow(source=flow, entry=entry)
+        # validate param conflicts
+        if isinstance(flow_obj, EagerFlow):
+            if variant or connections:
+                logger.warning("variant and connections are not supported for eager flow, will be ignored")
+                variant, connections = None, None
+        else:
+            if entry:
+                logger.warning("entry is only supported for eager flow, will be ignored")
+                entry = None
         run = Run(
             name=name,
             display_name=display_name,

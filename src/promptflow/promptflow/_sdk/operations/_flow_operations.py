@@ -28,6 +28,7 @@ from promptflow._sdk._utils import (
     dump_yaml,
     generate_flow_tools_json,
     generate_random_string,
+    logger,
     parse_variant,
 )
 from promptflow._sdk.entities._eager_flow import EagerFlow
@@ -139,6 +140,14 @@ class FlowOperations(TelemetryMixin):
 
         inputs = inputs or {}
         flow = load_flow(flow, entry=entry)
+
+        if isinstance(flow, EagerFlow):
+            if variant or node:
+                logger.warning("variant and node are not supported for eager flow, will be ignored")
+                variant, node = None, None
+        else:
+            if entry:
+                logger.warning("entry is only supported for eager flow, will be ignored")
         flow.context.variant = variant
         from promptflow._constants import FlowLanguage
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
