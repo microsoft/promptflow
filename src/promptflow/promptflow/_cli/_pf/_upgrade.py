@@ -57,9 +57,9 @@ def upgrade_version(args):
     installer = os.getenv(_ENV_PF_INSTALLER) or ''
     installer = installer.upper()
     print(f"installer: {installer}")
-    latest_version_msg = 'It will be updated to {}.'.format(latest_version) if yes \
+    latest_version_msg = 'Upgrading prompt flow CLI version to {}.'.format(latest_version) if yes \
         else 'Latest version available is {}.'.format(latest_version)
-    logger.warning("Your current Azure CLI version is %s. %s", local_version, latest_version_msg)
+    logger.warning("Your current prompt flow CLI version is %s. %s", local_version, latest_version_msg)
     if not yes:
         logger.warning("Please check the release notes first")
         if not sys.stdin.isatty():
@@ -72,7 +72,7 @@ def upgrade_version(args):
             return
 
     if installer == 'MSI':
-        _upgrade_on_windows()
+        _upgrade_on_windows(yes)
     elif installer == 'PIP':
         pip_args = [sys.executable, '-m', 'pip', 'install', '--upgrade',
                     'promptflow[azure,executable,pfs,azureml-serving]', '-vv',
@@ -102,15 +102,14 @@ def upgrade_version(args):
     new_version = version_json['promptflow']
 
     if new_version == local_version:
-        logger.warning(f"new_version: {new_version}, local_version: {local_version}")
-        err_msg = "CLI upgrade failed or aborted."
+        err_msg = f"CLI upgrade to version {latest_version} failed or aborted."
         logger.warning(err_msg)
         sys.exit(1)
 
     logger.warning("Upgrade finished.")
 
 
-def _upgrade_on_windows():
+def _upgrade_on_windows(yes):
     """Download MSI to a temp folder and install it with msiexec.exe.
     Directly installing from URL may be blocked by policy: https://github.com/Azure/azure-cli/issues/19171
     This also gives the user a chance to manually install the MSI in case of msiexec.exe failure.
@@ -136,7 +135,10 @@ def _upgrade_on_windows():
 
     os.makedirs(msi_dir, exist_ok=True)
     msi_path = _download_from_url(msi_url, msi_dir)
-    subprocess.Popen(['msiexec.exe', '/i', msi_path])
+    if yes:
+        subprocess.Popen(['msiexec.exe', '/i', msi_path, '/qn'])
+    else:
+        subprocess.call(['msiexec.exe', '/i', msi_path])
     logger.warning("Installation started. Please complete the upgrade in the opened window.")
     sys.exit(0)
 
