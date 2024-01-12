@@ -90,22 +90,21 @@ def upgrade_version(args):
         logger.warning(err_msg)
         sys.exit(exit_code)
 
-    # Todo: uncomment this block after pf version can return correct value, shell=True will return old version?
-    # import importlib
-    # import json
-    # importlib.reload(subprocess)
-    # importlib.reload(json)
+    import importlib
+    import json
+    importlib.reload(subprocess)
+    importlib.reload(json)
 
-    # version_result = subprocess.check_output(['pf', 'version'], shell=platform.system() == 'Windows')
-    # version_json = json.loads(version_result)
-    # new_version = version_json['promptflow']
-    #
-    # if new_version == local_version:
-    #     print(new_version)
-    #     print(local_version)
-    #     err_msg = "CLI upgrade failed or aborted."
-    #     logger.warning(err_msg)
-    #     sys.exit(1)
+    version_result = subprocess.check_output(['pf', 'version'], shell=platform.system() == 'Windows')
+    version_json = json.loads(version_result)
+    new_version = version_json['promptflow']
+
+    if new_version == local_version:
+        print(new_version)
+        print(local_version)
+        err_msg = "CLI upgrade failed or aborted."
+        logger.warning(err_msg)
+        sys.exit(1)
 
     logger.warning("Upgrade finished.")
 
