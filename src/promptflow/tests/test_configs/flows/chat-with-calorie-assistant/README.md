@@ -12,7 +12,7 @@ Tools used in this flow：
 ## Prerequisites
 
 Install promptflow sdk and other dependencies in this folder:
-```bash
+```sh
 pip install -r requirements.txt
 ```
 Note: You need install internal pypi: https://msdata.visualstudio.com/Vienna/_build/results?buildId=115005260&view=artifacts&pathAsName=false&type=publishedArtifacts
