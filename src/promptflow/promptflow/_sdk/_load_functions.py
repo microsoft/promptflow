@@ -76,7 +76,7 @@ def load_flow(
         If the source is a path, it will be open and read.
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
-    :param entry: The entry function of eager flow, only works when source is a code file.
+    :param entry: The entry function, only works when source is a code file.
     :type entry: str
     :return: A Flow object
     :rtype: Flow

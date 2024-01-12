@@ -73,7 +73,7 @@ class FlowOperations(TelemetryMixin):
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
-        :param entry: Entry function name for eager flow. Required when flow is script.
+        :param entry: Entry function. Required when flow is script.
         :type entry: str
         :return: The result of flow or node
         :rtype: dict
@@ -133,7 +133,7 @@ class FlowOperations(TelemetryMixin):
         :param stream_log: Whether streaming the log.
         :param stream_output: Whether streaming the outputs.
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
-        :param entry: The entry function of eager flow, only works when source is a code file.
+        :param entry: The entry function, only works when source is a code file.
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow

@@ -100,7 +100,7 @@ class Run(YAMLTranslatableMixin):
     :type connections: Optional[Dict[str, Dict]]
     :param properties: Properties of the run.
     :type properties: Optional[Dict[str, Any]]
-    :param entry: The entry function of eager flow, only works when source is a code file.
+    :param entry: The entry function, only works when source is a code file.
     :type entry: Optional[str]
     :param eager_mode: Whether the run is an eager flow run.
     :type eager_mode: bool

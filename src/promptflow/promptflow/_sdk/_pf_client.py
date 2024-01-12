@@ -108,7 +108,7 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
-        :param entry: The entry function of eager flow, only works when source is a code file.
+        :param entry: The entry function, only works when source is a code file.
         :type entry: str
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
