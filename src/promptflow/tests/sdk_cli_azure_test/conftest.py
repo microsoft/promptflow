@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import contextlib
 import logging
 import os
 import threading
@@ -462,19 +461,16 @@ def mock_vcrpy_for_httpx() -> None:
 
 
 @pytest.fixture(autouse=not is_live())
-def mock_vcrpy_force_reset() -> None:
-    from vcr.patch import reset_patchers
+def mock_vcr_connection_init() -> None:
+    from vcr.stubs import VCRConnection
 
-    @contextlib.contextmanager
-    def mock_force_reset():
-        lock = threading.Lock()
-        with lock:
-            with contextlib.ExitStack() as exit_stack:
-                for patcher in reset_patchers():
-                    exit_stack.enter_context(patcher)
-                yield
+    original_init = VCRConnection.__init__
 
-    with patch("vcr.patch.force_reset", new=mock_force_reset):
+    def mock_init(self, *args, **kwargs):
+        with threading.Lock():
+            original_init(self, *args, **kwargs)
+
+    with patch.object(VCRConnection, "__init__", new=mock_init):
         yield
 
 
