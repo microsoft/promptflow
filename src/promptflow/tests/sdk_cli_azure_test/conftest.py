@@ -463,14 +463,16 @@ def mock_vcrpy_for_httpx() -> None:
 
 @pytest.fixture(autouse=not is_live())
 def mock_vcrpy_force_reset() -> None:
-    from vcr.patch import force_reset
-
-    original_force_reset = force_reset
+    from vcr.patch import reset_patchers
 
     @contextlib.contextmanager
     def mock_force_reset():
-        with threading.Lock():
-            original_force_reset()
+        lock = threading.Lock()
+        with lock:
+            with contextlib.ExitStack() as exit_stack:
+                for patcher in reset_patchers():
+                    exit_stack.enter_context(patcher)
+                yield
 
     with patch("vcr.patch.force_reset", new=mock_force_reset):
         yield
