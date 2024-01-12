@@ -72,6 +72,30 @@ class ExperimentTemplateSchema(YamlFileSchema):
 
         return data
 
+    @post_load
+    def resolve_data_and_inputs(self, data, **kwargs):
+        from promptflow._sdk.entities._experiment import ExperimentData, ExperimentInput
+
+        def resolve_resource(key, cls):
+            items = data.get(key, [])
+            resolved_result = []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                resolved_result.append(
+                    cls._load_from_dict(
+                        data=item,
+                        context=self.context,
+                        additional_message=f"Failed to load {cls.__name__}",
+                    )
+                )
+            return resolved_result
+
+        data["data"] = resolve_resource("data", ExperimentData)
+        data["inputs"] = resolve_resource("inputs", ExperimentInput)
+
+        return data
+
 
 class ExperimentSchema(ExperimentTemplateSchema):
     node_runs = fields.Dict(keys=fields.Str(), values=fields.Str())  # TODO: Revisit this
