@@ -34,36 +34,31 @@ Here we use an existing flow to demonstrate the experience, open [this flow](htt
 
 ## FAQs
 ### Can I customize text box size for my tool inputs?
-Yes, you can refer [this tool example] and add `ui_hints.text_box_size` field in your tool YAML file as below. There are 4 sizes available, arranged from smallest to largest as `xs`, `sm`, `md`, `lg`.
-```yaml
-my_tool_package.tools.tool_with_custom_llm_type_add_uihints.my_tool:
-  name: Custom LLM Tool with UI Hints
-  description: This is a custom LLM tool with UI hints.
-  type: custom_llm
-  module: my_tool_package.tools.tool_with_custom_llm_type_add_uihints
-  function: my_tool
-  inputs:
-    connection:
-      type:
-        - CustomConnection
-      ui_hints:
-        text_box_size: lg
-    endpoint_name:
-      type:
-      - string
-      ui_hints:
-        text_box_size: md
-    api:
-      type:
-      - string
-      ui_hints:
-        text_box_size: sm
-    temperature:
-      default: 1.0
-      type:
-      - double
-      ui_hints:
-        text_box_size: xs
+Yes, you can refer [this tool example] add `ui_hints={"text_box_size": <size>}` in InputSetting in your tool interface as below. There are 4 sizes available, arranged from smallest to largest as `xs`, `sm`, `md`, `lg`.  
+```python
+input_settings = {
+    "connection": InputSetting(ui_hints={"text_box_size": "lg"}),
+    "endpoint_name": InputSetting(ui_hints={"text_box_size": "md"}),
+    "api": InputSetting(ui_hints={"text_box_size": "sm"}),
+    "temperature": InputSetting(ui_hints={"text_box_size": "xs"})
+}
+
+@tool(
+    name="Custom LLM Tool with UI Hints",
+    description="This is a custom LLM tool with UI hints.",
+    type="custom_llm",
+    input_settings=input_settings
+)
+def my_tool(
+    connection: CustomConnection,
+    endpoint_name: str,
+    api: str,
+    temperature: float,
+    prompt: PromptTemplate,
+    **kwargs
+) -> str:
+    rendered_prompt = Template(prompt, trim_blocks=True, keep_trailing_newline=True).render(**kwargs)
+    return rendered_prompt
 ```
-When you use the tool in [this example flow], you could see the sizes of the input text boxes are displayed as the set values.
+When you use the tool in [this example flow], you could see the sizes of the input text boxes are displayed as the set values.  
 ![use_custom_llm_tool_with_uihints](../../media/how-to-guides/develop-a-tool/use_custom_llm_tool_with_uihints.png)
