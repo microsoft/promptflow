@@ -140,6 +140,8 @@ def install_cli(install_dir, tmp_dir):
     exec_command(cmd)
     cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'promptflow-tools', '--upgrade']
     exec_command(cmd)
+    cmd = [path_to_pip, 'install', '--cache-dir', tmp_dir, 'keyrings.alt', '--upgrade']
+    exec_command(cmd)
 
 
 def create_executable(exec_dir, install_dir):
