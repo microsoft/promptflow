@@ -65,3 +65,32 @@ pf run create --flow . --data ./data.jsonl --column-mapping question='${data.que
 ```
 You can also skip providing `column-mapping` if provided data has same column name as the flow.
 Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
+
+## 3. Run and Evaluate your flow with this Q&A evaluation flow
+After you develop your flow, you may want to run and evaluate it with this evaluation flow. 
+
+Here we use the flow [basic_chat](../../chat/basic-chat/) as the flow to evaluate. It is a flow demonstrating how to create a chatbot with LLM.  The chatbot can remember previous interactions and use the conversation history to generate next message, given a question. 
+### 3.1 Create a batch run of your flow
+```bash
+pf run create --flow ../../chat/basic-chat --data data.jsonl --column-mapping question='${data.question}' --name basic_chat_run --stream 
+```
+Please note that `column-mapping` is a mapping from flow input name to specified values. Please refer to [Use column mapping](https://aka.ms/pf/column-mapping) for more details. 
+
+The flow run is named by specifying `--name basic_chat_run` in the above command. You can view the run details with its run name using the command:
+```bash
+pf run show-details -n basic_chat_run
+```
+
+### 3.2 Evaluate your flow
+You can use this evaluation flow to measure the quality and safety of your flow responses.
+
+After the chat flow run is finished, you can this evaluation flow to the run:
+```bash
+pf run create --flow . --data data.jsonl --column-mapping groundtruth='${data.ground_truth}' answer='${run.outputs.answer}' context='{${data.context}}' question='${data.question}' metrics='gpt_groundedness,f1_score'  --run basic_chat_run --stream --name evaluation_qa
+```
+Please note the flow run to be evaluated is specified with `--run basic_chat_run`. Also same as previous run, the evaluation run is named with `--name evaluation_qa`.
+You can view the evaluation run details with:
+```bash
+# pf run show-details -n evaluation_qa
+pf run show-metrics -n evaluation_qa
+```

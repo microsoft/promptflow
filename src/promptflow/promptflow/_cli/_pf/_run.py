@@ -73,7 +73,10 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
         help="Indicates whether to stream the run's logs to the console.",
     )
     add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
-        "--flow", type=str, help="Local path to the flow directory."
+        "--flow",
+        type=str,
+        help="Local path to the flow directory."
+        "If --file is provided, this path should be relative path to the file.",
     )
     add_param_variant = lambda parser: parser.add_argument(  # noqa: E731
         "--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}."
@@ -119,6 +122,8 @@ Examples:
 
 # Create a run with YAML file:
 pf run create -f <yaml-filename>
+# Create a run with YAML file and replace another data in the YAML file:
+pf run create -f <yaml-filename> --data <path-to-new-data-file-relative-to-yaml-file>
 # Create a run from flow directory and reference a run:
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
 # Create a run from an existing run record folder
@@ -127,7 +132,11 @@ pf run create --source <path-to-run-folder>
 
     # data for pf has different help doc than pfazure
     def add_param_data(parser):
-        parser.add_argument("--data", type=str, help="Local path to the data file.")
+        parser.add_argument(
+            "--data",
+            type=str,
+            help="Local path to the data file." "If --file is provided, this path should be relative path to the file.",
+        )
 
     def add_param_source(parser):
         parser.add_argument("--source", type=str, help="Local path to the existing run record folder.")

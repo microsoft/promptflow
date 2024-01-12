@@ -7,10 +7,13 @@ from typing import IO, AnyStr, Optional, Union
 
 from dotenv import dotenv_values
 
+from .._utils.logger_utils import get_cli_sdk_logger
 from ._utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
-from .entities._flow import Flow, ProtectedFlow
+from .entities._flow import Flow
+
+logger = get_cli_sdk_logger()
 
 
 def load_common(
@@ -46,6 +49,7 @@ def load_common(
     params_override = params_override or []
     yaml_dict = load_yaml(source)
 
+    logger.debug(f"Resolve cls and type with {yaml_dict}, params_override {params_override}.")
     # pylint: disable=protected-access
     cls, type_str = cls._resolve_cls_and_type(data=yaml_dict, params_override=params_override)
 
@@ -62,6 +66,7 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
+    **kwargs,
 ) -> Flow:
     """Load flow from YAML file.
 
@@ -72,7 +77,7 @@ def load_flow(
     :return: A Flow object
     :rtype: Flow
     """
-    return ProtectedFlow.load(source)
+    return Flow.load(source, **kwargs)
 
 
 def load_run(
