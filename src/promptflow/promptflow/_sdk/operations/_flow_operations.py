@@ -718,6 +718,8 @@ class FlowOperations(TelemetryMixin):
         :rtype: Tuple[dict, dict]
         """
         flow: ProtectedFlow = load_flow(source=flow)
+        if not isinstance(flow, ProtectedFlow):
+            raise UserErrorException(f"Not supported flow type {type(flow)}.")
 
         with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(
