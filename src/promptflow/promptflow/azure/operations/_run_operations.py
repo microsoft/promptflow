@@ -16,14 +16,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import requests
-import yaml
+from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
 from azure.ai.ml._scope_dependent_operations import (
     OperationConfig,
     OperationsContainer,
     OperationScope,
     _ScopeDependentOperations,
 )
-from azure.ai.ml.constants._common import AzureMLResourceType
+from azure.ai.ml.constants._common import AssetTypes, AzureMLResourceType
 from azure.ai.ml.entities import Workspace
 from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
@@ -50,15 +50,8 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.azure._constants._flow import (
-    AUTOMATIC_RUNTIME,
-    AUTOMATIC_RUNTIME_NAME,
-    BASE_IMAGE,
-    CLOUD_RUNS_PAGE_SIZE,
-    PYTHON_REQUIREMENTS_TXT,
-)
+from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, AUTOMATIC_RUNTIME_NAME, CLOUD_RUNS_PAGE_SIZE
 from promptflow.azure._load_functions import load_flow
-from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 from promptflow.azure.operations._flow_operations import FlowOperations
@@ -673,9 +666,6 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return run
 
     def _resolve_data_to_asset_id(self, run: Run):
-        from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
-        from azure.ai.ml.constants._common import AssetTypes
-
         # Skip if no data provided
         if run.data is None:
             return
@@ -801,94 +791,22 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         )
         print(f"Web View: {portal_url}")
 
-    def _resolve_environment(self, run):
-        from promptflow._sdk._constants import DAG_FILE_NAME
-        from promptflow.azure._constants._flow import PYTHON_REQUIREMENTS_TXT
-
-        flow = run.flow
-        if os.path.isdir(flow):
-            flow = os.path.join(flow, DAG_FILE_NAME)
-        with open(flow, "r") as f:
-            flow_dict = yaml.safe_load(f)
-        environment = flow_dict.get("environment", {})
-
-        if not isinstance(environment, dict):
-            raise TypeError(f"environment should be a dict, got {type(environment)} for {environment}")
-        if PYTHON_REQUIREMENTS_TXT in environment:
-            req_path = os.path.join(os.path.dirname(flow), environment[PYTHON_REQUIREMENTS_TXT])
-            if not os.path.exists(req_path):
-                raise FileNotFoundError(
-                    f"File {environment[PYTHON_REQUIREMENTS_TXT]} in environment for flow {flow} not found."
-                )
-            with open(req_path, "r") as f:
-                requirements = f.read().splitlines()
-            environment[PYTHON_REQUIREMENTS_TXT] = requirements
-        return environment
-
-    def _resolve_session(self, run, session_id, reset=None):
-        from promptflow.azure._restclient.flow.models import CreateFlowSessionRequest
-
-        if run._resources is not None:
-            if not isinstance(run._resources, dict):
-                raise TypeError(f"resources should be a dict, got {type(run._resources)} for {run._resources}")
-            vm_size = run._resources.get("instance_type", None)
-            max_idle_time_minutes = run._resources.get("idle_time_before_shutdown_minutes", None)
-            # change to seconds
-            max_idle_time_seconds = max_idle_time_minutes * 60 if max_idle_time_minutes else None
-        else:
-            vm_size = None
-            max_idle_time_seconds = None
-        environment = self._resolve_environment(run)
-        if environment is not None:
-            pip_requirements = environment.get(PYTHON_REQUIREMENTS_TXT, None)
-            base_image = environment.get(BASE_IMAGE, None)
-        else:
-            pip_requirements = None
-            base_image = None
-        request = CreateFlowSessionRequest(
-            vm_size=vm_size,
-            max_idle_time_seconds=max_idle_time_seconds,
-            python_pip_requirements=pip_requirements,
-            base_image=base_image,
-        )
-        if reset:
-            # if reset is set, will reset it before creating again.
-            logger.warning(f"Resetting session {session_id} before creating it.")
-            request.action = SetupFlowSessionAction.RESET
-            self._service_caller.create_flow_session(
-                subscription_id=self._operation_scope.subscription_id,
-                resource_group_name=self._operation_scope.resource_group_name,
-                workspace_name=self._operation_scope.workspace_name,
-                session_id=session_id,
-                body=request,
-            )
-        request.action = SetupFlowSessionAction.INSTALL
-        self._service_caller.create_flow_session(
-            subscription_id=self._operation_scope.subscription_id,
-            resource_group_name=self._operation_scope.resource_group_name,
-            workspace_name=self._operation_scope.workspace_name,
-            session_id=session_id,
-            body=request,
-        )
-
-    def _resolve_automatic_runtime(self, run, session_id, reset=None):
+    def _resolve_automatic_runtime(self):
         logger.warning(
             f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
-            "it may take a while to build runtime and request may fail with timeout error. "
-            "Wait a while and resubmit same flow can successfully start the run."
+            "it may take a while to build runtime and you may see 'NotStarted' status for a while. "
         )
         runtime_name = AUTOMATIC_RUNTIME_NAME
-        self._resolve_session(run=run, session_id=session_id, reset=reset)
         return runtime_name
 
-    def _resolve_runtime(self, run, flow_path, runtime, reset=None):
+    def _resolve_runtime(self, run, flow_path, runtime):
         runtime = run._runtime or runtime
         # for remote flow case, use flow name as session id
         # for local flow case, use flow path to calculate session id
         session_id = run._flow_name if run._use_remote_flow else self._get_session_id(flow=flow_path)
 
         if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
-            runtime = self._resolve_automatic_runtime(run=run, session_id=session_id, reset=reset)
+            runtime = self._resolve_automatic_runtime()
         elif not isinstance(runtime, str):
             raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
         return runtime, session_id
@@ -899,18 +817,19 @@ class RunOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
                 pool.submit(self._resolve_flow, run=run),
-                pool.submit(self._resolve_runtime, run=run, flow_path=flow_path, runtime=runtime, reset=reset),
             ]
             concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
             task_results = [task.result() for task in tasks]
 
         run.data = task_results[0]
         run.flow = task_results[1]
-        runtime, session_id = task_results[2]
+        runtime, session_id = self._resolve_runtime(run=run, flow_path=flow_path, runtime=runtime)
 
         rest_obj = run._to_rest_object()
         rest_obj.runtime_name = runtime
         rest_obj.session_id = session_id
+
+        # TODO(2884482): support force reset & force install
 
         if runtime == "None":
             # HARD CODE for office scenario, use workspace default runtime when specified None

@@ -233,6 +233,20 @@ class TestTelemetry:
                 # Perform some activity
                 pass
 
+        PFAzureClient(
+            ml_client=pf._ml_client,
+            subscription_id=pf._ml_client.subscription_id,
+            resource_group_name=pf._ml_client.resource_group_name,
+            workspace_name=pf._ml_client.workspace_name,
+            user_agent="a/1.0.0",
+        )
+        user_agent = ClientUserAgentUtil.get_user_agent()
+        ua_dict = parse_ua_to_dict(user_agent)
+        assert ua_dict.keys() == {"promptflow-sdk", "a"}
+
+        context = OperationContext().get_instance()
+        context.user_agent = ""
+
     def test_inner_function_call(self, pf, runtime: str, randstr: Callable[[str], str]):
         request_ids = set()
         first_sdk_calls = []

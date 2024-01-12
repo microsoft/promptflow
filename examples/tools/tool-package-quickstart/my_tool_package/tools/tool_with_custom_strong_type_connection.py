@@ -15,10 +15,7 @@ class MyCustomConnection(CustomStrongTypeConnection):
     api_base: str = "This is a fake api base."
 
 
-@tool(
-    name="Tool With Custom Strong Type Connection",
-    description="This is my tool with custom strong type connection.",
-)
+@tool
 def my_tool(connection: MyCustomConnection, input_text: str) -> str:
     # Replace with your tool code.
     # Use custom strong type connection like: connection.api_key, connection.api_base
