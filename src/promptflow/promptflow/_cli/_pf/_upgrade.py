@@ -82,8 +82,10 @@ def upgrade_version(args):
     elif installer == 'SCRIPT':
         command = "curl https://promptflowartifact.blob.core.windows.net/linux-install-scripts/install | bash"
         logger.warning(f"{UPGRADE_MSG}, you can try to run {command} in your terminal directly to upgrade package.")
+        return
     else:
         logger.warning(UPGRADE_MSG)
+        return
 
     if exit_code:
         err_msg = "CLI upgrade failed."
@@ -100,8 +102,7 @@ def upgrade_version(args):
     new_version = version_json['promptflow']
 
     if new_version == local_version:
-        print(new_version)
-        print(local_version)
+        print(f"new_version: {new_version}, local_version: {local_version}")
         err_msg = "CLI upgrade failed or aborted."
         logger.warning(err_msg)
         sys.exit(1)
