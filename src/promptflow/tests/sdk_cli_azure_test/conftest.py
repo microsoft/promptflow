@@ -26,8 +26,10 @@ from .recording_utilities import (
     PFAzureIntegrationTestRecording,
     SanitizedValues,
     VariableRecorder,
+    get_created_flow_name_from_flow_path,
     get_pf_client_for_replay,
     is_live,
+    is_record,
     is_replay,
 )
 
@@ -352,7 +354,7 @@ def mock_get_user_identity_info(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
+def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder: VariableRecorder) -> Flow:
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
     flow_source = FLOWS_DIR + "/simple_hello_world/"
@@ -369,6 +371,11 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     assert result.type == FlowType.STANDARD
     assert result.tags == tags
     assert result.path.endswith("flow.dag.yaml")
+
+    if is_record():
+        flow_name_const = "flow_name"
+        flow_name = get_created_flow_name_from_flow_path(result.path)
+        variable_recorder.get_or_record_variable(flow_name_const, flow_name)
 
     yield result
 

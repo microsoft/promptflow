@@ -32,6 +32,7 @@ from .utils import (
     is_live,
     is_record,
     is_replay,
+    sanitize_file_share_flow_path,
     sanitize_pfs_request_body,
     sanitize_upload_hash,
 )
@@ -282,6 +283,9 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         # for blob storage request, sanitize the upload hash in path
         if r1.host == r2.host and r1.host == SanitizedValues.BLOB_STORAGE_REQUEST_HOST:
             return sanitize_upload_hash(r1.path) == r2.path
+        # for file share request, mainly target pytest fixture "created_flow"
+        if r1.host == r2.host and r1.host == SanitizedValues.FILE_SHARE_REQUEST_HOST:
+            return sanitize_file_share_flow_path(r1.path) == r2.path
         return r1.path == r2.path
 
     def _custom_request_body_matcher(self, r1: Request, r2: Request) -> bool:
@@ -294,6 +298,18 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
             body1 = sanitize_pfs_request_body(body1)
             body1 = sanitize_upload_hash(body1)
             _r1.body = body1.encode("utf-8")
-            return matchers.body(_r1, r2)
+            try:
+                return matchers.body(_r1, r2)
+            except AssertionError:
+                # if not match, extra sanitize flow file share path (if exists)
+                # for potential pytest fixture "created_flow" scenario
+                body_dict = json.loads(body1)
+                if "flowDefinitionFilePath" in body_dict:
+                    body_dict["flowDefinitionFilePath"] = "Users/unknown_user/promptflow/flow_name/flow.dag.yaml"
+                    body1 = json.dumps(body_dict)
+                    _r1.body = body1.encode("utf-8")
+                    return matchers.body(_r1, r2)
+                else:
+                    return False
         else:
             return matchers.body(r1, r2)
