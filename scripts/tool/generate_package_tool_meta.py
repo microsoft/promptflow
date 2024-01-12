@@ -107,6 +107,7 @@ if __name__ == "__main__":
     # The generated dict cannot be dumped as yaml directly since yaml cannot handle string enum.
     tools_dict = json.loads(json.dumps(tools_dict))
     yaml = YAML()
+    yaml.preserve_quotes = True
     with open(args.output, "w") as f:
         yaml.dump(tools_dict, f, indent=2)
     print(f"Tools meta generated to '{args.output}'.")

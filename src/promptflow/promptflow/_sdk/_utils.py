@@ -27,7 +27,6 @@ from filelock import FileLock
 from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
-from ruamel.yaml import YAML
 
 import promptflow
 from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
@@ -64,7 +63,7 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow._utils.yaml_utils import load_yaml
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
 from promptflow.exceptions import UserErrorException
 
@@ -925,13 +924,11 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                     json.dump(content, f, indent=2)
 
             # use YAML to dump template file in order to keep the comments
-            yaml = YAML()
-            yaml.preserve_quotes = True
             for connection_name, content in connection_template_yamls.items():
-                yaml_data = yaml.load(content)
+                yaml_data = load_yaml_string(content)
                 file_name = connection_name + ".template.yaml"
                 with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
-                    yaml.dump(yaml_data, f)
+                    dump_yaml(yaml_data, f)
 
 
 def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
