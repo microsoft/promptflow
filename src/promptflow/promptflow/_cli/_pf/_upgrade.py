@@ -102,7 +102,7 @@ def upgrade_version(args):
     new_version = version_json['promptflow']
 
     if new_version == local_version:
-        print(f"new_version: {new_version}, local_version: {local_version}")
+        logger.warning(f"new_version: {new_version}, local_version: {local_version}")
         err_msg = "CLI upgrade failed or aborted."
         logger.warning(err_msg)
         sys.exit(1)
