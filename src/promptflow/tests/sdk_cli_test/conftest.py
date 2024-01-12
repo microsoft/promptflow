@@ -178,8 +178,6 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
         mocker.patch("promptflow.tool", mocked_tool)
     try:
         yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
-    except Exception as e:
-        raise e
     finally:
         if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
             RecordStorage.get_instance().delete_lock_file()

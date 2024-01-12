@@ -127,15 +127,32 @@ class TestFlowRun:
         # write to user_dir/.promptflow/.runs
         assert ".promptflow" in run.properties["output_path"]
 
-    def test_basic_run_delete(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
-        result = pf.run(
-            flow=f"{FLOWS_DIR}/web_classification",
-            data=f"{DATAS_DIR}/webClassification1.jsonl",
-            column_mapping={"url": "${data.url}"},
-        )
+    def test_local_storage_delete(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
+        result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
         local_storage = LocalStorageOperations(result)
         local_storage.delete()
         assert not os.path.exists(local_storage._outputs_path)
+
+    def test_flow_run_delete(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
+        result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
+        local_storage = LocalStorageOperations(result)
+        output_path = local_storage.path
+
+        # delete new created run by name
+        pf.runs.delete(result.name)
+
+        # check folders and dbs are deleted
+        assert not os.path.exists(output_path)
+
+        from promptflow._sdk._orm import RunInfo as ORMRun
+
+        pytest.raises(RunNotFoundError, lambda: ORMRun.get(result.name))
+
+    def test_flow_run_delete_fake_id_raise(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
+        run = "fake_run_id"
+
+        # delete new created run by name
+        pytest.raises(RunNotFoundError, lambda: pf.runs.delete(runs=run))
 
     def test_basic_flow_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf) -> None:
         result = pf.run(

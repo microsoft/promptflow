@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
-This documentation will walk you through how to manage your runs with CLI, SDK and VS Code Extension. 
+This documentation will walk you through how to manage your runs with CLI, SDK and VS Code Extension.
 
 In general:
 - For `CLI`, you can run `pf/pfazure run --help` in terminal to see the help messages.
@@ -22,6 +22,7 @@ Let's take a look at the following topics:
   - [Update a run](#update-a-run)
   - [Archive a run](#archive-a-run)
   - [Restore a run](#restore-a-run)
+  - [Delete a run](#delete-a-run)
 
 ## Create a run
 
@@ -58,7 +59,7 @@ After preparing the yaml file, use the CLI command below to create them:
 
 ```bash
 # create the flow run
-pf run create -f <path-to-flow-run> 
+pf run create -f <path-to-flow-run>
 
 # create the flow run and stream output
 pf run create -f <path-to-flow-run> --stream
@@ -82,9 +83,9 @@ from promptflow.entities import Run
 pf = PFClient()
 
 # Initialize an Run object
-run = Run( 
+run = Run(
     flow="<path-to-local-flow>",
-    # run flow against local data or existing run, only one of data & run can be specified. 
+    # run flow against local data or existing run, only one of data & run can be specified.
     data="<path-to-data>",
     run="<existing-run-name>",
     column_mapping={"url": "${data.url}"},
@@ -225,7 +226,7 @@ print(json.dumps(metrics, indent=4))
 Visualize run in browser.
 
 ```bash
-pf run visualize --name <run-name>
+pf run visualize --names <run-name>
 ```
 
 A browser will open and display run outputs.
@@ -244,7 +245,7 @@ from promptflow import PFClient
 # Get a pf client to manage runs
 pf = PFClient()
 # Visualize the run
-client.runs.visualize(name="<run-name>")
+client.runs.visualize(runs="<run-name>")
 ```
 :::
 
@@ -384,6 +385,37 @@ from promptflow import PFClient
 pf = PFClient()
 # restore a run
 client.runs.restore(name="<run-name>")
+```
+:::
+::::
+
+## Delete a run
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+
+Delete the run permanently. This operation is not reversible.
+Delete will fail if any of the run name is not valid.
+
+```bash
+pf run delete --name "<run-name1>,<run-name2>"
+```
+:::
+
+
+:::{tab-item} SDK
+:sync: SDK
+Delete with `PFClient`
+```python
+from promptflow import PFClient
+
+# Get a pf client to manage runs
+pf = PFClient()
+# delete a run
+client.runs.delete(runs="run-name")
+# delete multiple runs
+client.runs.delete(runs=["<run-name1>", "<run-name2>"])
 ```
 :::
 ::::
