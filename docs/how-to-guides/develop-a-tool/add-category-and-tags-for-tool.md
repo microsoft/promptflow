@@ -49,14 +49,14 @@ def my_tool(self, input_text: str) -> str:
 
 ## Tool with category and tags experience in VS Code extension
 Follow the [steps](create-and-use-tool-package.md#use-your-tool-from-vscode-extension) to use your tool via the VS Code extension.
-- Experience in the tool tree
-![category_and_tags_in_tool_tree](../../media/how-to-guides/develop-a-tool/category_and_tags_in_tool_tree.png)
+- Experience in the tool tree  
+![category_and_tags_in_tool_tree](../../media/how-to-guides/develop-a-tool/category_and_tags_in_tool_tree.png)  
 
-- Experience in the tool list
-By clicking `More` in the visual editor, you can view your tools along with their category and tags:
-![category_and_tags_in_tool_list](../../media/how-to-guides/develop-a-tool/category_and_tags_in_tool_list.png)
-Furthermore, you have the option to search or filter tools based on tags:
-![filter_tools_by_tag](../../media/how-to-guides/develop-a-tool/filter_tools_by_tag.png)
+- Experience in the tool list  
+By clicking `More` in the visual editor, you can view your tools along with their category and tags:  
+![category_and_tags_in_tool_list](../../media/how-to-guides/develop-a-tool/category_and_tags_in_tool_list.png)  
+Furthermore, you have the option to search or filter tools based on tags:  
+![filter_tools_by_tag](../../media/how-to-guides/develop-a-tool/filter_tools_by_tag.png)  
 
 ## FAQ
 ### How to configure category and tags on an existing package tool
