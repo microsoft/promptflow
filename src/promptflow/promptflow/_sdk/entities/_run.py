@@ -493,6 +493,7 @@ class Run(YAMLTranslatableMixin):
         from promptflow.azure._restclient.flow.models import (
             BatchDataInput,
             RunDisplayNameGenerationType,
+            SessionSetupModeEnum,
             SubmitBulkRunRequest,
         )
 
@@ -528,6 +529,18 @@ class Run(YAMLTranslatableMixin):
                         )
                     inputs_mapping[k] = val
 
+        # parse resources
+        if self._resources is not None:
+            if not isinstance(self._resources, dict):
+                raise TypeError(f"resources should be a dict, got {type(self._resources)} for {self._resources}")
+            vm_size = self._resources.get("instance_type", None)
+            max_idle_time_minutes = self._resources.get("idle_time_before_shutdown_minutes", None)
+            # change to seconds
+            max_idle_time_seconds = max_idle_time_minutes * 60 if max_idle_time_minutes else None
+        else:
+            vm_size = None
+            max_idle_time_seconds = None
+
         # use functools.partial to avoid too many arguments that have the same values
         common_submit_bulk_run_request = functools.partial(
             SubmitBulkRunRequest,
@@ -547,6 +560,9 @@ class Run(YAMLTranslatableMixin):
             connections=self.connections,
             flow_lineage_id=self._lineage_id,
             run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
+            vm_size=vm_size,
+            max_idle_time_seconds=max_idle_time_seconds,
+            session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
