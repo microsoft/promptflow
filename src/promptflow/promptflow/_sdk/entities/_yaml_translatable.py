@@ -5,7 +5,8 @@ import abc
 from typing import Dict, Optional
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, CommonYamlFields
-from promptflow._sdk._utils import dump_yaml, load_from_dict
+from promptflow._sdk._utils import load_from_dict
+from promptflow._utils.yaml_utils import dump_yaml
 
 
 class YAMLTranslatableMixin(abc.ABC):

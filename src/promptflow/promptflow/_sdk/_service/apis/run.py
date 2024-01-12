@@ -12,10 +12,10 @@ from flask import Response, jsonify, make_response, request
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._utils import dump_yaml
 from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
+from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.contracts._run_management import RunMetadata
 
 api = Namespace("Runs", description="Runs Management")

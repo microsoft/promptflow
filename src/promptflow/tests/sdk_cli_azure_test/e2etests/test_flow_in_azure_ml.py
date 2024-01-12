@@ -4,7 +4,7 @@ from pathlib import Path
 import pydash
 import pytest
 
-from promptflow._sdk._utils import dump_yaml, load_yaml_string
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml_string
 from promptflow.connections import AzureOpenAIConnection
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
