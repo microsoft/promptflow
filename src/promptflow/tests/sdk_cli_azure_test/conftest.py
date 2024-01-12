@@ -459,9 +459,9 @@ def mock_vcrpy_for_httpx() -> None:
         yield
 
 
-@pytest.fixture(autouse=not is_live())
+@pytest.fixture(autouse=is_replay())
 def mock_vcrpy_stubs_vcr_connection_getresponse() -> None:
-    from vcr.stubs import CannotOverwriteExistingCassetteException, VCRHTTPResponse, log, serialize_headers
+    from vcr.stubs import CannotOverwriteExistingCassetteException, VCRHTTPResponse, log
 
     def getresponse(self, _=False, **kwargs):
         if self.cassette.can_play_response_for(self._vcr_request):
@@ -469,21 +469,10 @@ def mock_vcrpy_stubs_vcr_connection_getresponse() -> None:
             response = self.cassette.play_response(self._vcr_request)
             return VCRHTTPResponse(response)
         else:
-            if self.cassette.write_protected and self.cassette.filter_request(self._vcr_request):
-                raise CannotOverwriteExistingCassetteException(
-                    cassette=self.cassette,
-                    failed_request=self._vcr_request,
-                )
-            log.info(f"{self._vcr_request} not in cassette, sending to real server")
-            response = self.real_connection.getresponse()
-            response_data = response.data if hasattr(response, "data") else response.read()
-            response = {
-                "status": {"code": response.status, "message": response.reason},
-                "headers": serialize_headers(response),
-                "body": {"string": response_data},
-            }
-            self.cassette.append(self._vcr_request, response)
-        return VCRHTTPResponse(response)
+            raise CannotOverwriteExistingCassetteException(
+                cassette=self.cassette,
+                failed_request=self._vcr_request,
+            )
 
     with patch("vcr.stubs.VCRConnection.getresponse", new=getresponse):
         yield
