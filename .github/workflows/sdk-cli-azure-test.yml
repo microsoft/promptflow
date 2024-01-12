@@ -114,11 +114,11 @@ jobs:
         shell: pwsh
         working-directory: ${{ env.testWorkingDirectory }}
         run: |
-          pip install urllib3<1.26.0
           python "../../scripts/building/run_coverage_tests.py" `
             -p promptflow `
             -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test `
             -l eastus `
+            -n 1 `
             -m "unittest or e2etest" `
             --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
 
