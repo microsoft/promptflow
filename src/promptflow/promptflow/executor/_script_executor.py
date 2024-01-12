@@ -3,11 +3,10 @@ import inspect
 import uuid
 
 from pathlib import Path
-from typing import Optional, Mapping, Any
+from typing import Optional, Mapping, Any, Callable
 
 
-from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._core.flow_execution_context import FlowExecutionContext
+from promptflow._utils.logger_utils import logger
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import load_python_module_from_file, PythonLoadError
@@ -31,18 +30,18 @@ class ScriptExecutor(FlowExecutor):
         *,
         storage: Optional[AbstractRunStorage] = None,
     ):
-        logger.debug("Start initializing the executor.")
+        logger.debug("Start initializing the executor with {entry_file}.")
         working_dir = Flow._resolve_working_dir(entry_file, working_dir)
         m = load_python_module_from_file(entry_file)
-        self._func = getattr(m, str(func), None)
-        if not inspect.isfunction(self._func):
+        self._func: Callable = getattr(m, str(func), None)
+        if self._func is None or not inspect.isfunction(self._func):
             raise PythonLoadError(
                 message_format="Failed to load python function '{func}' from file '{entry_file}'.",
                 entry_file=entry_file,
                 func=func,
             )
         self._is_async = inspect.iscoroutinefunction(self._func)
-        #  Add 
+        # If the function is not decorated with trace, add trace for it.
         if not hasattr(self._func, "__original_function"):
             self._func = _traced(self._func)
         self._storage = storage or DefaultRunStorage()
