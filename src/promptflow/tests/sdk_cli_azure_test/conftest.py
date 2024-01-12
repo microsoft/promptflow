@@ -513,3 +513,24 @@ def mock_isinstance_for_mock_datastore() -> None:
 
         with patch("builtins.isinstance", new=mock_isinstance):
             yield
+
+
+@pytest.fixture(autouse=not is_live())
+def mock_resolve_dependencies_in_parallel() -> None:
+    from promptflow.entities import Run
+
+    def resolve_dependencies_in_parallel(self, run: Run, runtime: str, reset=None):
+        flow_path = run.flow
+        run.data = self._resolve_data_to_asset_id(run=run)
+        run.flow = self._resolve_flow(run=run)
+        runtime, session_id = self._resolve_runtime(run=run, flow_path=flow_path, runtime=runtime, reset=reset)
+        rest_obj = run._to_rest_object()
+        rest_obj.runtime_name = runtime
+        rest_obj.session_id = session_id
+        return rest_obj
+
+    with patch(
+        "promptflow.azure.operations._run_operations.RunOperations._resolve_dependencies_in_parallel",
+        new=resolve_dependencies_in_parallel,
+    ):
+        yield
