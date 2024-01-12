@@ -36,15 +36,11 @@ def get_token_by_credential(credential):
 
 
 def get_token_by_login():
-    try:
-        from azureml.core.authentication import InteractiveLoginAuthentication
+    from azureml.core.authentication import InteractiveLoginAuthentication
 
-        auth = InteractiveLoginAuthentication()
-        arm_token = auth._get_arm_token()
-    except Exception as e:
-        raise e
-    else:
-        return arm_token
+    auth = InteractiveLoginAuthentication()
+    arm_token = auth._get_arm_token()
+    return arm_token
 
 
 def get_arm_token(credential=None):
