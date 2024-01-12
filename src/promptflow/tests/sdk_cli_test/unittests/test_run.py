@@ -7,7 +7,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-import yaml
 from marshmallow import ValidationError
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, NODES
@@ -16,6 +15,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
+from promptflow._sdk._utils import load_yaml
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
@@ -33,7 +33,7 @@ class TestRun:
             flow_path=FLOWS_DIR / "web_classification", tuning_node="summarize_text_content", variant="variant_0"
         ) as flow:
             with open(flow.path) as f:
-                flow_dag = yaml.safe_load(f)
+                flow_dag = load_yaml(f)
             node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
             node = node_name_2_node["summarize_text_content"]
             assert node["inputs"]["temperature"] == "0.2"
@@ -44,7 +44,7 @@ class TestRun:
             connections={"classify_with_llm": {"connection": "azure_open_ai", "deployment_name": "gpt-35-turbo"}},
         ) as flow:
             with open(flow.path) as f:
-                flow_dag = yaml.safe_load(f)
+                flow_dag = load_yaml(f)
             node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
             node = node_name_2_node["classify_with_llm"]
             assert node["connection"] == "azure_open_ai"

@@ -5,11 +5,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-import yaml
 
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
 from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
 from promptflow._sdk._load_functions import _load_env_to_connection
+from promptflow._sdk._utils import load_yaml
 from promptflow._sdk.entities._connection import (
     AzureContentSafetyConnection,
     AzureOpenAIConnection,
@@ -172,7 +172,7 @@ class TestConnection:
         ],
     )
     def test_connection_load_dump(self, file_name, class_name, init_param, expected):
-        conn = _Connection._load(data=yaml.safe_load(open(CONNECTION_ROOT / file_name)))
+        conn = _Connection._load(data=load_yaml(CONNECTION_ROOT / file_name))
         expected = {**expected, **init_param}
         assert dict(conn._to_dict()) == expected
         assert class_name(**init_param)._to_dict() == expected

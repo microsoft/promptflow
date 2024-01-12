@@ -15,14 +15,13 @@ from unittest.mock import patch
 
 import mock
 import pytest
-import yaml
 
 from promptflow._cli._pf.entry import main
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
 from promptflow._sdk._errors import RunNotFoundError
-from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
+from promptflow._sdk._utils import ClientUserAgentUtil, dump_yaml, load_yaml, setup_user_agent_to_operation_context
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -316,15 +315,15 @@ class TestCli:
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copytree((Path(FLOWS_DIR) / "web_classification").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
 
-            with open(Path(temp_dir) / "flow.dag.yaml", "r") as f:
-                flow_dict = yaml.safe_load(f)
+            dag = Path(temp_dir) / "flow.dag.yaml"
+            flow_dict = load_yaml(dag)
 
             node_name = "summarize_text_content"
             node = next(filter(lambda item: item["name"] == node_name, flow_dict["nodes"]))
             flow_dict["nodes"].remove(node)
             flow_dict["nodes"].append({"name": node_name, "use_variants": True})
             with open(Path(temp_dir) / "flow.dag.yaml", "w") as f:
-                yaml.safe_dump(flow_dict, f)
+                dump_yaml(flow_dict, f)
 
             run_pf_command(
                 "flow",
@@ -362,7 +361,7 @@ class TestCli:
                 "variants": [{"variant_0": {}}],
             }
             with open(Path(temp_dir) / "flow.dag.yaml", "w") as f:
-                yaml.safe_dump(flow_dict, f)
+                dump_yaml(flow_dict, f)
             with pytest.raises(SystemExit):
                 run_pf_command(
                     "flow",
@@ -598,7 +597,7 @@ class TestCli:
 
     def _validate_requirement(self, flow_path):
         with open(flow_path) as f:
-            flow_dict = yaml.safe_load(f)
+            flow_dict = load_yaml(f)
         assert flow_dict.get("environment", {}).get("python_requirements_txt", None)
         assert (flow_path.parent / flow_dict["environment"]["python_requirements_txt"]).exists()
 
@@ -676,11 +675,11 @@ class TestCli:
 
             # Only azure openai connection in test env
             with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "r") as f:
-                flow_dict = yaml.safe_load(f)
+                flow_dict = load_yaml(f)
             flow_dict["nodes"][0]["provider"] = "AzureOpenAI"
             flow_dict["nodes"][0]["connection"] = "azure_open_ai_connection"
             with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "w") as f:
-                yaml.dump(flow_dict, f)
+                dump_yaml(flow_dict, f)
 
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "question=hi")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
@@ -782,7 +781,7 @@ class TestCli:
             "chat_prompt=user_intent_zero_shot.jinja2",
         )
         with open(Path(flow_path) / "flow.dag.yaml", "r") as f:
-            flow_dict = yaml.safe_load(f)
+            flow_dict = load_yaml(f)
             assert "chat_history" in flow_dict["inputs"]
             assert "customer_info" in flow_dict["inputs"]
             chat_prompt_node = next(filter(lambda item: item["name"] == "chat_prompt", flow_dict["nodes"]))
@@ -792,7 +791,7 @@ class TestCli:
     def test_flow_init_with_connection_and_deployment(self):
         def check_connection_and_deployment(flow_folder, connection, deployment):
             with open(Path(flow_folder) / "flow.dag.yaml", "r") as f:
-                flow_dict = yaml.safe_load(f)
+                flow_dict = load_yaml(f)
                 assert flow_dict["nodes"][0]["inputs"]["deployment_name"] == deployment
                 assert flow_dict["nodes"][0]["connection"] == connection
 
@@ -835,7 +834,7 @@ class TestCli:
             for file in connection_files:
                 assert file.exists()
                 with open(file, "r") as f:
-                    connection_dict = yaml.safe_load(f)
+                    connection_dict = load_yaml(f)
                     assert connection_dict["name"] == connection
 
             shutil.rmtree(flow_folder)
@@ -1110,7 +1109,7 @@ class TestCli:
         output_path = "dist"
 
         def get_node_settings(_flow_dag_path: Path):
-            flow_dag = yaml.safe_load(_flow_dag_path.read_text())
+            flow_dag = load_yaml(_flow_dag_path)
             target_node = next(filter(lambda x: x["name"] == "summarize_text_content", flow_dag["nodes"]))
             target_node.pop("name")
             return target_node
@@ -1130,7 +1129,7 @@ class TestCli:
             )
 
             new_flow_dag_path = Path(output_path, "flow", "flow.dag.yaml")
-            flow_dag = yaml.safe_load(Path(source).read_text())
+            flow_dag = load_yaml(Path(source))
             assert (
                 get_node_settings(new_flow_dag_path)
                 == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
