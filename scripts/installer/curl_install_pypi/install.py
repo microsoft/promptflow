@@ -16,12 +16,10 @@ import os
 import sys
 import platform
 import stat
-import tarfile
 import tempfile
 import shutil
 import subprocess
 import hashlib
-from urllib.request import urlopen
 
 
 PF_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
@@ -36,12 +34,6 @@ PFAZURE_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
 PFS_DISPATCH_TEMPLATE = """#!/usr/bin/env bash
 {install_dir}/bin/python -m promptflow._sdk._service.entry "$@"
 """
-
-
-VIRTUALENV_VERSION = '16.7.11'
-VIRTUALENV_ARCHIVE = 'virtualenv-'+VIRTUALENV_VERSION+'.tar.gz'
-VIRTUALENV_DOWNLOAD_URL = 'https://pypi.python.org/packages/source/v/virtualenv/'+VIRTUALENV_ARCHIVE
-VIRTUALENV_ARCHIVE_SHA256 = '0f73ef551d889bf4b3241f1819aaf5f5c7e27259c1537255b1f63207552919b1'
 
 DEFAULT_INSTALL_DIR = os.path.expanduser(os.path.join('~', 'lib', 'promptflow'))
 DEFAULT_EXEC_DIR = os.path.expanduser(os.path.join('~', 'bin'))
@@ -112,25 +104,9 @@ def is_valid_sha256sum(a_file, expected_sum):
     return expected_sum == computed_hash
 
 
-def create_virtualenv(tmp_dir, install_dir):
-    download_location = os.path.join(tmp_dir, VIRTUALENV_ARCHIVE)
-    print_status('Downloading virtualenv package from {}.'.format(VIRTUALENV_DOWNLOAD_URL))
-    response = urlopen(VIRTUALENV_DOWNLOAD_URL)
-    with open(download_location, 'wb') as f:
-        f.write(response.read())
-    print_status("Downloaded virtualenv package to {}.".format(download_location))
-    if is_valid_sha256sum(download_location, VIRTUALENV_ARCHIVE_SHA256):
-        print_status("Checksum of {} OK.".format(download_location))
-    else:
-        raise CLIInstallError("The checksum of the downloaded virtualenv package does not match.")
-    print_status("Extracting '{}' to '{}'.".format(download_location, tmp_dir))
-    package_tar = tarfile.open(download_location)
-    package_tar.extractall(path=tmp_dir)
-    package_tar.close()
-    virtualenv_dir_name = 'virtualenv-'+VIRTUALENV_VERSION
-    working_dir = os.path.join(tmp_dir, virtualenv_dir_name)
-    cmd = [sys.executable, 'virtualenv.py', '--python', sys.executable, install_dir]
-    exec_command(cmd, cwd=working_dir)
+def create_virtualenv(install_dir):
+    cmd = [sys.executable, '-m', 'venv', install_dir]
+    exec_command(cmd)
 
 
 def install_cli(install_dir, tmp_dir):
@@ -352,7 +328,7 @@ def main():
     install_dir = get_install_dir()
     exec_dir = get_exec_dir()
     verify_install_dir_exec_path_conflict(install_dir, exec_dir)
-    create_virtualenv(tmp_dir, install_dir)
+    create_virtualenv(install_dir)
     install_cli(install_dir, tmp_dir)
     exec_filepath = create_executable(exec_dir, install_dir)
     try:
@@ -373,3 +349,12 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('\n\nExiting...')
         sys.exit(1)
+
+# SIG # Begin signature block
+# Z1F07ShfIJ7kejST2NXwW1QcFPEya4xaO2xZz6vLT847zaMzbc/PaEa1RKFlD881
+# 4J+i6Au2wtbHzOXDisyH6WeLQ3gh0X2gxFRa4EzW7Nzjcvwm4+WogiTcnPVVxlk3
+# qafM/oyVqs3695K7W5XttOiq2guv/yedsf/TW2BKSEKruFQh9IwDfIiBoi9Zv3wa
+# iuzQulRR8KyrCtjEPDV0t4WnZVB/edQea6xJZeTlMG+uLR/miBTbPhUb/VZkVjBf
+# qHBv623oLXICzoTNuaPTln9OWvL2NZpisGYvNzebKO7/Ho6AOWZNs5XOVnjs0Ax2
+# aeXvlwBzIQyfyxd25487/Q==
+# SIG # End signature block

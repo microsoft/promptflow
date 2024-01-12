@@ -9,20 +9,11 @@
 # Bash script to install the prompt flow
 #
 INSTALL_SCRIPT_URL="https://promptflowartifact.blob.core.windows.net/linux-install-scripts/install.py"
-INSTALL_SCRIPT_SHA256=28001c408fab1fe5d265b28b7c40d5b20ab33d66d67ba92ed0eaa5104d0d7638
 _TTY=/dev/tty
 
 install_script=$(mktemp -t promptflow_install_tmp_XXXXXX) || exit
 echo "Downloading prompt flow install script from $INSTALL_SCRIPT_URL to $install_script."
 curl -# $INSTALL_SCRIPT_URL > $install_script || exit
-
-if command -v sha256sum >/dev/null 2>&1
-then
-  echo "$INSTALL_SCRIPT_SHA256  $install_script" | sha256sum -c - || exit
-elif command -v shasum >/dev/null 2>&1
-then
-  echo "$INSTALL_SCRIPT_SHA256  $install_script" | shasum -a 256 -c - || exit
-fi
 
 python_cmd=python3
 if ! command -v python3 >/dev/null 2>&1
