@@ -13,8 +13,8 @@ RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_r
 
 
 @pytest.fixture
-def recording_mocks():
-    patches = setup_recording_mocks()
+def recording_setup():
+    patches = setup_recording()
     try:
         yield
     finally:
@@ -22,8 +22,9 @@ def recording_mocks():
             patcher.stop()
 
 
-def setup_recording_mocks():
+def setup_recording():
     patches = []
+    override_recording_file()
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
         from promptflow._core.tool import tool as original_tool
 
@@ -73,7 +74,7 @@ def override_recording_file():
 
 
 @pytest.fixture
-def recording_injection(recording_file_override, recording_mocks):
+def recording_injection(recording_setup):
     original_process_class = multiprocessing.get_context("spawn").Process
     multiprocessing.get_context("spawn").Process = MockSpawnProcess
     if "spawn" == multiprocessing.get_start_method():
@@ -98,7 +99,7 @@ def _mock_process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
-    setup_recording_mocks()
+    setup_recording()
     _process_wrapper(
         executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
     )

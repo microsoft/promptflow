@@ -14,7 +14,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
-from ..conftest import MockForkServerProcess, MockSpawnProcess, override_recording_file, setup_recording_mocks
+from ..conftest import MockForkServerProcess, MockSpawnProcess, override_recording_file, setup_recording
 from ..utils import (
     MemoryRunStorage,
     get_flow_expected_metrics,
@@ -46,7 +46,7 @@ def run_batch_with_start_method(multiprocessing_start_method, flow_folder, input
         multiprocessing.get_context("forkserver").Process = MockForkServerProcess
 
     override_recording_file()
-    setup_recording_mocks()
+    setup_recording()
 
     os.environ["PF_BATCH_METHOD"] = multiprocessing_start_method
     batch_result, output_dir = submit_batch_run(
