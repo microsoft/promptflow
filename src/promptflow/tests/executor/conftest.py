@@ -4,7 +4,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from pytest_mock import MockerFixture
 from sdk_cli_test.recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
 
 from promptflow.executor._line_execution_process_pool import _process_wrapper
@@ -13,12 +12,19 @@ PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 
 
-def setup_recording_injection_mocks():
+@pytest.fixture
+def recording_mocks():
+    patches = setup_recording_mocks()
+    try:
+        yield
+    finally:
+        for patcher in patches:
+            patcher.stop()
+
+
+def setup_recording_mocks():
     patches = []
     if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
-        RecordStorage.get_instance(file_path)
-
         from promptflow._core.tool import tool as original_tool
 
         mocked_tool = mock_tool(original_tool)
@@ -55,21 +61,23 @@ class MockForkServerProcess(ForkServerProcess):
 
 
 @pytest.fixture
-def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
-    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "executor_node_cache.shelve"
-        RecordStorage.get_instance(file_path)
+def recording_file_override():
+    override_recording_file()
     yield
 
 
+def override_recording_file():
+    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "executor_node_cache.shelve"
+        RecordStorage.get_instance(file_path)
+
+
 @pytest.fixture
-def recording_injection(mocker: MockerFixture, recording_file_override):
+def recording_injection(recording_file_override, recording_mocks):
     original_process_class = multiprocessing.get_context("spawn").Process
     multiprocessing.get_context("spawn").Process = MockSpawnProcess
     if "spawn" == multiprocessing.get_start_method():
         multiprocessing.Process = MockSpawnProcess
-
-    patches = setup_recording_injection_mocks()
 
     try:
         yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
@@ -82,9 +90,6 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
         if "spawn" == multiprocessing.get_start_method():
             multiprocessing.Process = original_process_class
 
-        for patcher in patches:
-            patcher.stop()
-
 
 def _mock_process_wrapper(
     executor_creation_func,
@@ -93,7 +98,7 @@ def _mock_process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
-    setup_recording_injection_mocks()
+    setup_recording_mocks()
     _process_wrapper(
         executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
     )
