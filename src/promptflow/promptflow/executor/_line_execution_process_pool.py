@@ -75,7 +75,7 @@ def format_current_process(process_name, pid, line_number: int, is_completed=Fal
 
 
 class LineExecutionProcessPool:
-    _DEFAULT_WORKER_COUNT = 16
+    _DEFAULT_WORKER_COUNT = 4
 
     def __init__(
         self,

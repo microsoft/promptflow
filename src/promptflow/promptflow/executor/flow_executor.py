@@ -78,8 +78,6 @@ class FlowExecutor:
     :type flow_file: Optional[Path]
     """
 
-    _DEFAULT_WORKER_COUNT = 16
-
     def __init__(
         self,
         flow: Flow,
@@ -882,9 +880,10 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
-        return all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        return (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
