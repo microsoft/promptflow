@@ -234,6 +234,8 @@ class LineExecutionProcessPool:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 self._processes_manager.end_process(index)
+                while psutil.pid_exists(process_id):
+                    continue
                 return
 
             # Put task into input_queue
@@ -280,6 +282,8 @@ class LineExecutionProcessPool:
                 # If there are still tasks in task_queue, restart a new process to execute the task.
                 if not task_queue.empty():
                     self._processes_manager.restart_process(index)
+                    while psutil.pid_exists(process_id):
+                        continue
                     index, process_id, process_name = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)

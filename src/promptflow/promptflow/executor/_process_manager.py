@@ -233,7 +233,7 @@ class ForkProcessManager(AbstractProcessManager):
         )
         process.start()
 
-    def restart_processes(self, i):
+    def restart_process(self, i):
         """
         Sends a signal to restart a specific process.
 
