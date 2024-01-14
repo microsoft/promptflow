@@ -71,7 +71,7 @@ class AbstractProcessManager:
         :param i: Index of the new process to start.
         :type i: int
         """
-        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for new_process.")
+        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for new_process.")
 
     def restart_process(self, i):
         """
@@ -80,7 +80,7 @@ class AbstractProcessManager:
         :param i: Index of the process to restart.
         :type i: int
         """
-        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for restart_process.")
+        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for restart_process.")
 
     def end_process(self, i):
         """
@@ -89,7 +89,7 @@ class AbstractProcessManager:
         :param i: Index of the process to terminate.
         :type i: int
         """
-        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for end_process.")
+        raise NotImplementedError("AbstractProcessManager is an abstract class, no implementation for end_process.")
 
 
 class SpawnProcessManager(AbstractProcessManager):
