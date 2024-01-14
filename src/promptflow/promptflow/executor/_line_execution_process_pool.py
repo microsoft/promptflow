@@ -234,8 +234,6 @@ class LineExecutionProcessPool:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 self._processes_manager.end_process(index)
-                while psutil.pid_exists(process_id):
-                    continue
                 return
 
             # Put task into input_queue

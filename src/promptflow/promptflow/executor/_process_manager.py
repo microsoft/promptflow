@@ -169,8 +169,8 @@ class SpawnProcessManager(AbstractProcessManager):
         try:
             pid = self._process_info[i].process_id
             process = psutil.Process(pid)
-            process.kill()
-            # process.wait()
+            process.terminate()
+            process.wait()
             self._process_info.pop(i)
         except psutil.NoSuchProcess:
             bulk_logger.warning(f"Process {pid} had been terminated")
@@ -335,8 +335,8 @@ class SpawnedForkProcessManager(AbstractProcessManager):
         try:
             pid = self._process_info[i].process_id
             process = psutil.Process(pid)
-            process.kill()
-            # process.wait()
+            process.terminate()
+            process.wait()
             self._process_info.pop(i)
         except psutil.NoSuchProcess:
             bulk_logger.warning(f"Process {pid} had been terminated")
