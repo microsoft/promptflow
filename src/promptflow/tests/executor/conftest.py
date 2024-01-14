@@ -74,22 +74,28 @@ def override_recording_file():
 
 
 @pytest.fixture
-def recording_injection(recording_setup):
+def process_override():
     original_process_class = multiprocessing.get_context("spawn").Process
     multiprocessing.get_context("spawn").Process = MockSpawnProcess
     if "spawn" == multiprocessing.get_start_method():
         multiprocessing.Process = MockSpawnProcess
 
     try:
+        yield
+    finally:
+        multiprocessing.get_context("spawn").Process = original_process_class
+        if "spawn" == multiprocessing.get_start_method():
+            multiprocessing.Process = original_process_class
+
+
+@pytest.fixture
+def recording_injection(recording_setup, process_override):
+    try:
         yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
     finally:
         if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
             RecordStorage.get_instance().delete_lock_file()
         recording_array_reset()
-
-        multiprocessing.get_context("spawn").Process = original_process_class
-        if "spawn" == multiprocessing.get_start_method():
-            multiprocessing.Process = original_process_class
 
 
 def _mock_process_wrapper(
