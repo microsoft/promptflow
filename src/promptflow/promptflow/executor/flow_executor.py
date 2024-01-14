@@ -77,8 +77,6 @@ class FlowExecutor:
     :type flow_file: Optional[Path]
     """
 
-    _DEFAULT_WORKER_COUNT = 16
-
     def __init__(
         self,
         flow: Flow,
