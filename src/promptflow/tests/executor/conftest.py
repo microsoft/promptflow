@@ -74,7 +74,8 @@ def override_recording_file():
 
 
 @pytest.fixture
-def process_override(start_method):
+def process_override():
+    start_method = multiprocessing.get_start_method()
     original_process_class = override_process(start_method)
     try:
         yield
