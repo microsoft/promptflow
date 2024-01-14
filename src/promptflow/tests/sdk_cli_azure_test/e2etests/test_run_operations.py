@@ -836,7 +836,6 @@ class TestFlowRun:
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
-    @pytest.mark.skip(reason="Skip on Mac and Windows and Linux, patch does not work in the spawn process")
     def test_get_details_against_partial_completed_run(
         self, pf: PFClient, runtime: str, randstr: Callable[[str], str]
     ) -> None:
