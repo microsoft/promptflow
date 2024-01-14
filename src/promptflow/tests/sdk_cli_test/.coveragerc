@@ -2,8 +2,7 @@
 source =
     */promptflow/_cli/*
     */promptflow/_sdk/*
+    */promptflow/azure/*
 omit =
     */promptflow/azure/_restclient/*
-    */promptflow/executor/*
-    */promptflow/azure/*
     *__init__.py*
