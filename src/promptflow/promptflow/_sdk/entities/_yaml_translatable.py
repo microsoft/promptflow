@@ -5,7 +5,8 @@ import abc
 from typing import Dict, Optional
 
 from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, CommonYamlFields
-from promptflow._sdk._utils import dump_yaml, load_from_dict
+from promptflow._sdk._utils import load_from_dict
+from promptflow._utils.yaml_utils import dump_yaml
 
 
 class YAMLTranslatableMixin(abc.ABC):
@@ -30,7 +31,7 @@ class YAMLTranslatableMixin(abc.ABC):
         return schema_cls(context={BASE_PATH_CONTEXT_KEY: "./"}).dump(self)
 
     def _to_yaml(self) -> str:
-        return dump_yaml(self._to_dict(), sort_keys=False)
+        return dump_yaml(self._to_dict())
 
     def __str__(self):
         try:

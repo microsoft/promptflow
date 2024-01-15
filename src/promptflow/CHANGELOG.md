@@ -23,6 +23,7 @@
   - When flow has unknown attributes, log warning instead of raising error.
   - Use local flow folder name and timestamp as the azure flow file share folder name.
 - [SDK/CLI] For `pf/pfazure run create`, when run has unknown attribute, log warning instead of raising error.
+- Replace `pyyaml` with `ruamel.yaml` to adopt YAML 1.2 specification.
 
 ## 1.3.0 (2023.12.27)
 
