@@ -199,10 +199,12 @@ class TestLineExecutionProcessPool:
                 None,
             ) as pool:
                 result_list = pool.run(zip(range(nlines), bulk_inputs))
-            assert len(result_list) == nlines
-            for i, line_result in enumerate(result_list):
-                assert isinstance(line_result, LineResult)
-                assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
+                assert len(result_list) == nlines
+                for i, line_result in enumerate(result_list):
+                    assert isinstance(line_result, LineResult)
+                    assert (
+                        line_result.run_info.status == Status.Completed
+                    ), f"{i}th line got {line_result.run_info.status}"
 
     @pytest.mark.parametrize(
         "flow_folder",
