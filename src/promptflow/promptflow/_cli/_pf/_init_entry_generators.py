@@ -38,7 +38,7 @@ class BaseGenerator(ABC):
 
     def generate(self) -> str:
         """Generate content based on given template and actual value of template keys."""
-        with open(self.tpl_file) as f:
+        with open(self.tpl_file, encoding="utf-8") as f:
             entry_template = f.read()
             entry_template = Template(entry_template, trim_blocks=True, lstrip_blocks=True)
 
