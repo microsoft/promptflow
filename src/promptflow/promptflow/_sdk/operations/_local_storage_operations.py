@@ -214,9 +214,13 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
-        flow_obj = load_flow(source=run.flow)
-        # TODO(2898455): refine here, check if there's cases where dag.yaml not exist
-        self._eager_mode = isinstance(flow_obj, EagerFlow)
+        if run.flow:
+            flow_obj = load_flow(source=run.flow)
+            # TODO(2898455): refine here, check if there's cases where dag.yaml not exist
+            self._eager_mode = isinstance(flow_obj, EagerFlow)
+        else:
+            # TODO(2901279): support eager mode for run created from run folder
+            self._eager_mode = False
 
     @property
     def eager_mode(self) -> bool:
