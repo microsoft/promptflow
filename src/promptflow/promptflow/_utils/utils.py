@@ -55,8 +55,10 @@ def is_json_serializable(value: Any) -> bool:
 
 
 def load_json(file_path: Union[str, Path]) -> dict:
-    with open(file_path, "r") as f:
-        return json.load(f)
+    if os.path.getsize(file_path) > 0:
+        with open(file_path, "r") as f:
+            return json.load(f)
+    return {}
 
 
 def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
@@ -259,6 +261,8 @@ def parse_ua_to_dict(ua):
     return ua_dict
 
 
+# TODO: Add "conditions" parameter to pass in a list of lambda functions
+# to check if the environment variable is valid.
 def get_int_env_var(env_var_name, default_value=None):
     """
     The function `get_int_env_var` retrieves an integer environment variable value, with an optional

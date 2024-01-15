@@ -8,7 +8,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
-import yaml
 from marshmallow import Schema
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
@@ -23,24 +22,10 @@ from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import load_yaml, load_yaml_string
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
-
-
-class FlowBase(abc.ABC):
-    @classmethod
-    # pylint: disable=unused-argument
-    def _resolve_cls_and_type(cls, data, params_override):
-        """Resolve the class to use for deserializing the data. Return current class if no override is provided.
-        :param data: Data to deserialize.
-        :type data: dict
-        :param params_override: Parameters to override, defaults to None
-        :type params_override: typing.Optional[list]
-        :return: Class to use for deserializing the data & its "type". Type will be None if no override is provided.
-        :rtype: tuple[class, typing.Optional[str]]
-        """
-        return cls, "flow"
 
 
 class FlowContext:
@@ -106,6 +91,36 @@ class FlowContext:
         return hash(json.dumps(self._to_dict(), sort_keys=True))
 
 
+class FlowBase(abc.ABC):
+    def __init__(self, **kwargs):
+        self._context = FlowContext()
+        self._content_hash = kwargs.pop("content_hash", None)
+        super().__init__(**kwargs)
+
+    @property
+    def context(self) -> FlowContext:
+        return self._context
+
+    @context.setter
+    def context(self, val):
+        if not isinstance(val, FlowContext):
+            raise UserErrorException("context must be a FlowContext object, got {type(val)} instead.")
+        self._context = val
+
+    @classmethod
+    # pylint: disable=unused-argument
+    def _resolve_cls_and_type(cls, data, params_override):
+        """Resolve the class to use for deserializing the data. Return current class if no override is provided.
+        :param data: Data to deserialize.
+        :type data: dict
+        :param params_override: Parameters to override, defaults to None
+        :type params_override: typing.Optional[list]
+        :return: Class to use for deserializing the data & its "type". Type will be None if no override is provided.
+        :rtype: tuple[class, typing.Optional[str]]
+        """
+        return cls, "flow"
+
+
 class Flow(FlowBase):
     """This class is used to represent a flow."""
 
@@ -118,9 +133,7 @@ class Flow(FlowBase):
         self._code = Path(code)
         path = kwargs.pop("path", None)
         self._path = Path(path) if path else None
-        self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
-        self._content_hash = kwargs.pop("content_hash", None)
         self.dag = dag
         super().__init__(**kwargs)
 
@@ -142,15 +155,11 @@ class Flow(FlowBase):
             )
         return flow_file
 
-    @property
-    def context(self) -> FlowContext:
-        return self._context
-
-    @context.setter
-    def context(self, val):
-        if not isinstance(val, FlowContext):
-            raise UserErrorException("context must be a FlowContext object, got {type(val)} instead.")
-        self._context = val
+    @classmethod
+    def _is_eager_flow(cls, data: dict):
+        """Check if the flow is an eager flow. Use field 'entry' to determine."""
+        # If entry specified, it's an eager flow.
+        return data.get("entry")
 
     @classmethod
     def load(
@@ -158,21 +167,28 @@ class Flow(FlowBase):
         source: Union[str, PathLike],
         **kwargs,
     ):
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
         source_path = Path(source)
         if not source_path.exists():
             raise UserErrorException(f"Source {source_path.absolute().as_posix()} does not exist")
-
         flow_path = resolve_flow_path(source_path)
-        if flow_path.exists():
-            # TODO: for file, we should read the yaml to get code and set path to source_path
+        if not flow_path.exists():
+            raise UserErrorException(f"Flow file {flow_path.absolute().as_posix()} does not exist")
+        if flow_path.suffix in [".yaml", ".yml"]:
             # read flow file to get hash
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
-                flow_dag = yaml.safe_load(flow_content)
+                data = load_yaml_string(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
-            return cls(code=flow_path.parent.absolute().as_posix(), dag=flow_dag, **kwargs)
-
-        raise UserErrorException("Source must be a directory or a 'flow.dag.yaml' file")
+            is_eager_flow = cls._is_eager_flow(data)
+            if is_eager_flow:
+                return EagerFlow._load(path=flow_path, entry=data.get("entry"), data=data, **kwargs)
+            else:
+                # TODO: schema validation and warning on unknown fields
+                return ProtectedFlow._load(path=flow_path, dag=data, **kwargs)
+        # if non-YAML file is provided, treat is as eager flow
+        return EagerFlow._load(path=flow_path, **kwargs)
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk._submitter import variant_overwrite_context
@@ -216,6 +232,10 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
         self._executable = None
         self._params_override = params_override
+
+    @classmethod
+    def _load(cls, path: Path, dag: dict, **kwargs):
+        return cls(code=path.parent.absolute().as_posix(), dag=dag, **kwargs)
 
     @property
     def flow_dag_path(self) -> Path:
@@ -273,7 +293,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def _dump_for_validation(self) -> Dict:
         # Flow is read-only in control plane, so we always dump the flow from file
-        data = yaml.safe_load(self.flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+        data = load_yaml(self.flow_dag_path)
         if isinstance(self._params_override, dict):
             data.update(self._params_override)
         return data

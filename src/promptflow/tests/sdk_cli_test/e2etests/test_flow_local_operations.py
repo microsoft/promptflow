@@ -7,9 +7,9 @@ from pathlib import Path
 
 import mock
 import pytest
-import yaml
 
 from promptflow._sdk._constants import FLOW_TOOLS_JSON, NODE_VARIANTS, PROMPT_FLOW_DIR_NAME, USE_VARIANTS
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.connections import AzureOpenAIConnection
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -155,7 +155,7 @@ class TestFlowLocalOperations:
             assert Path(temp_dir, PROMPT_FLOW_DIR_NAME, FLOW_TOOLS_JSON).is_file()
 
             with open(Path(temp_dir, "flow.dag.yaml"), "r", encoding="utf-8") as f:
-                flow_dag_content = yaml.safe_load(f)
+                flow_dag_content = load_yaml(f)
                 assert NODE_VARIANTS not in flow_dag_content
                 assert "additional_includes" not in flow_dag_content
                 assert not any([USE_VARIANTS in node for node in flow_dag_content["nodes"]])
@@ -163,7 +163,7 @@ class TestFlowLocalOperations:
     def test_flow_build_as_docker_with_variant(self, pf) -> None:
         source = f"{FLOWS_DIR}/web_classification_with_additional_include"
         flow_dag_path = Path(source, "flow.dag.yaml")
-        flow_dag = yaml.safe_load(flow_dag_path.read_text())
+        flow_dag = load_yaml(flow_dag_path)
 
         with tempfile.TemporaryDirectory() as temp_dir:
             pf.flows.build(
@@ -174,7 +174,7 @@ class TestFlowLocalOperations:
             )
 
             new_flow_dag_path = Path(temp_dir, "flow", "flow.dag.yaml")
-            new_flow_dag = yaml.safe_load(new_flow_dag_path.read_text())
+            new_flow_dag = load_yaml(new_flow_dag_path)
             target_node = next(filter(lambda x: x["name"] == "summarize_text_content", new_flow_dag["nodes"]))
             target_node.pop("name")
             assert target_node == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
@@ -192,7 +192,7 @@ class TestFlowLocalOperations:
             flow_tools_path = Path(temp_dir) / "flow" / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
             assert flow_tools_path.is_file()
             # package in flow.tools.json is not determined by the flow, so we don't check it here
-            assert yaml.safe_load(flow_tools_path.read_text())["code"] == {
+            assert load_yaml(flow_tools_path)["code"] == {
                 "classify_with_llm.jinja2": {
                     "inputs": {
                         "examples": {"type": ["string"]},
@@ -237,7 +237,7 @@ class TestFlowLocalOperations:
 
         assert flow_tools_path.is_file()
         # package in flow.tools.json is not determined by the flow, so we don't check it here
-        assert yaml.safe_load(flow_tools_path.read_text())["code"] == {
+        assert load_yaml(flow_tools_path)["code"] == {
             "classify_with_llm.jinja2": {
                 "inputs": {
                     "examples": {"type": ["string"]},
@@ -299,7 +299,7 @@ class TestFlowLocalOperations:
         assert "line 22" in repr(validation_result)
 
         assert flow_tools_path.is_file()
-        flow_tools = yaml.safe_load(flow_tools_path.read_text())
+        flow_tools = load_yaml(flow_tools_path)
         assert "code" in flow_tools
         assert flow_tools["code"] == {
             "classify_with_llm.jinja2": {

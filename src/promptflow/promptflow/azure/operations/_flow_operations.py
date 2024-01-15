@@ -114,9 +114,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             flow, display_name, type, **kwargs
         )
         # upload to file share
-        file_share_flow_path = self._resolve_flow_code_and_upload_to_file_share(
-            flow=azure_flow, flow_display_name=flow_display_name
-        )
+        file_share_flow_path = self._resolve_flow_code_and_upload_to_file_share(flow=azure_flow)
         if not file_share_flow_path:
             raise FlowOperationError(f"File share path should not be empty, got {file_share_flow_path!r}.")
 
@@ -188,9 +186,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         flow_dict = flow_entity._dump_for_validation()
         return flow_dict
 
-    def _resolve_flow_code_and_upload_to_file_share(
-        self, flow: Flow, flow_display_name: str, ignore_tools_json=False
-    ) -> str:
+    def _resolve_flow_code_and_upload_to_file_share(self, flow: Flow, ignore_tools_json=False) -> str:
+        remote_file_share_folder_name = f"{Path(flow.code).name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         file_share_flow_path = ""
 
@@ -228,9 +225,9 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
             # check if the file share directory exists
             logger.debug("Checking if the file share directory exists.")
-            if storage_client._check_file_share_directory_exist(flow_display_name):
+            if storage_client._check_file_share_directory_exist(remote_file_share_folder_name):
                 raise FlowOperationError(
-                    f"Remote flow folder {flow_display_name!r} already exists under "
+                    f"Remote flow folder {remote_file_share_folder_name!r} already exists under "
                     f"'{storage_client.file_share_prefix}'. Please change the flow folder name and try again."
                 )
 
@@ -238,7 +235,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 logger.info("Uploading flow directory to file share.")
                 storage_client.upload_dir(
                     source=code.path,
-                    dest=flow_display_name,
+                    dest=remote_file_share_folder_name,
                     msg="test",
                     ignore_file=code._ignore_file,
                     show_progress=False,
@@ -246,7 +243,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             except Exception as e:
                 raise FlowOperationError(f"Failed to upload flow to file share due to: {str(e)}.") from e
 
-            file_share_flow_path = f"{storage_client.file_share_prefix}/{flow_display_name}"
+            file_share_flow_path = f"{storage_client.file_share_prefix}/{remote_file_share_folder_name}"
             logger.info(f"Successfully uploaded flow to file share path {file_share_flow_path!r}.")
         return file_share_flow_path
 

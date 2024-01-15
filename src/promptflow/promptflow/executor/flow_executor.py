@@ -13,8 +13,6 @@ from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-import yaml
-
 from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
@@ -34,6 +32,7 @@ from promptflow._utils.execution_utils import (
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
@@ -160,6 +159,7 @@ class FlowExecutor:
         connections: dict,
         working_dir: Optional[Path] = None,
         *,
+        func: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
@@ -173,6 +173,8 @@ class FlowExecutor:
         :type connections: dict
         :param working_dir: The working directory to be used for the flow. Default is None.
         :type working_dir: Optional[str]
+        :param func: The function to be used for the flow if .py is provided. Default is None.
+        :type func: Optional[str]
         :param storage: The storage to be used for the flow. Default is None.
         :type storage: Optional[~promptflow.storage.AbstractRunStorage]
         :param raise_ex: Whether to raise exceptions or not. Default is True.
@@ -184,6 +186,16 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
+        if Path(flow_file).suffix.lower() == ".py":
+            from ._script_executor import ScriptExecutor
+            return ScriptExecutor(
+                entry_file=flow_file,
+                func=func,
+                working_dir=working_dir,
+                storage=storage,
+            )
+        if Path(flow_file).suffix.lower() != ".yaml":
+            raise ValueError("Only support yaml or py file.")
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
         return cls._create_from_flow(
             flow_file=flow_file,
@@ -292,7 +304,7 @@ class FlowExecutor:
         # Load the node from the flow file
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r") as fin:
-            flow = Flow.deserialize(yaml.safe_load(fin))
+            flow = Flow.deserialize(load_yaml(fin))
         node = flow.get_node(node_name)
         if node is None:
             raise SingleNodeValidationError(
@@ -882,9 +894,10 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
-        return all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        return (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]

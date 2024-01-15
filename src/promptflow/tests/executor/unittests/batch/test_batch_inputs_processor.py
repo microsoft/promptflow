@@ -1,26 +1,103 @@
 import json
 from pathlib import Path
+from tempfile import mkdtemp
 
 import pytest
 
 from promptflow._core._errors import UnexpectedError
+from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor, apply_inputs_mapping
-from promptflow.batch._errors import InputMappingError
+from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.tool import ValueType
 
 
 @pytest.mark.unittest
 class TestBatchInputsProcessor:
+    def test_process_batch_inputs(self):
+        data = [
+            {"question": "What's promptflow?"},
+            {"question": "Do you like promptflow?"},
+        ]
+        data_file = Path(mkdtemp()) / "data.jsonl"
+        dump_list_to_jsonl(data_file, data)
+        input_dirs = {"data": data_file}
+        inputs_mapping = {"question": "${data.question}"}
+        batch_inputs = BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
+        assert batch_inputs == [
+            {"line_number": 0, "question": "What's promptflow?"},
+            {"line_number": 1, "question": "Do you like promptflow?"},
+        ]
+
+    def test_process_batch_inputs_error(self):
+        data_file = Path(mkdtemp()) / "data.jsonl"
+        data_file.touch()
+        input_dirs = {"data": data_file}
+        inputs_mapping = {"question": "${data.question}"}
+        with pytest.raises(EmptyInputsData) as e:
+            BatchInputsProcessor("", {}).process_batch_inputs(input_dirs, inputs_mapping)
+        expected_error_message = (
+            "Couldn't find any inputs data at the given input paths. "
+            "Please review the provided path and consider resubmitting."
+        )
+        assert expected_error_message in e.value.message
+
+    def test_resolve_data_from_input_path(self):
+        inputs_dir = Path(mkdtemp())
+        # data.jsonl
+        data = [
+            {"question": "What's promptflow?"},
+            {"question": "Do you like promptflow?"},
+        ]
+        data_file = inputs_dir / "data.jsonl"
+        dump_list_to_jsonl(data_file, data)
+        # inputs.json
+        inputs_file = inputs_dir / "inputs.json"
+        with open(inputs_file, "w") as file:
+            file.write(json.dumps(data))
+
+        result = BatchInputsProcessor("", {})._resolve_data_from_input_path(inputs_dir)
+        assert result == data + data
+
+        # if has max_lines_count
+        result = BatchInputsProcessor("", {}, max_lines_count=1)._resolve_data_from_input_path(inputs_dir)
+        assert result == [
+            {"question": "What's promptflow?"},
+        ]
+
+    @pytest.mark.parametrize(
+        "data_path",
+        [
+            "./tests/test_configs/datas/load_data_cases/10k.jsonl",
+            "./tests/test_configs/datas/load_data_cases/10k",
+        ],
+    )
+    def test_resolve_data_from_input_path_with_large_data(self, data_path):
+        result = BatchInputsProcessor("", {})._resolve_data_from_input_path(Path(data_path))
+        assert isinstance(result, list)
+        assert len(result) == 10000
+
+        # specify max_rows_count
+        max_rows_count = 5
+        head_results = BatchInputsProcessor(
+            working_dir="",
+            flow_inputs={},
+            max_lines_count=max_rows_count,
+        )._resolve_data_from_input_path(Path(data_path))
+        assert isinstance(head_results, list)
+        assert len(head_results) == max_rows_count
+        assert result[:max_rows_count] == head_results
+
     @pytest.mark.parametrize(
         "inputs, inputs_mapping, expected",
         [
             (
-                {"data.test": {"question": "longer input key has lower priority."}, "line_number": 1},
+                {"data.test": {"question": "longer input key has lower priority."}, "line_number": 0},
                 {
                     "question": "${data.test.question}",  # Question from the data
+                    "value": 1,
                 },
-                {"question": "longer input key has lower priority.", "line_number": 1},
+                {"question": "longer input key has lower priority.", "value": 1, "line_number": 0},
             ),
             (
                 {
@@ -273,26 +350,3 @@ class TestBatchInputsProcessor:
         with pytest.raises(error_code) as e:
             BatchInputsProcessor("", {})._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         assert error_message == str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
-
-    @pytest.mark.parametrize(
-        "data_path",
-        [
-            "./tests/test_configs/datas/load_data_cases/10k.jsonl",
-            "./tests/test_configs/datas/load_data_cases/10k",
-        ],
-    )
-    def test_resolve_data_from_input_path(self, data_path):
-        result = BatchInputsProcessor("", {})._resolve_data_from_input_path(Path(data_path))
-        assert isinstance(result, list)
-        assert len(result) == 10000
-
-        # specify max_rows_count
-        max_rows_count = 5
-        head_results = BatchInputsProcessor(
-            working_dir="",
-            flow_inputs={},
-            max_lines_count=max_rows_count,
-        )._resolve_data_from_input_path(Path(data_path))
-        assert isinstance(head_results, list)
-        assert len(head_results) == max_rows_count
-        assert result[:max_rows_count] == head_results

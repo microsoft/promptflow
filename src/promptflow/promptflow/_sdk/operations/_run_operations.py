@@ -9,8 +9,6 @@ import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
-import yaml
-
 from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
     MAX_RUN_LIST_RESULTS,
@@ -28,6 +26,7 @@ from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization, VisualizationConfig
 from promptflow.exceptions import UserErrorException
 
@@ -228,6 +227,20 @@ class RunOperations(TelemetryMixin):
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
+    @monitor_operation(activity_name="pf.runs.delete", activity_type=ActivityType.PUBLICAPI)
+    def delete(
+        self,
+        name: str,
+    ) -> None:
+        """Delete run permanently.
+
+        :param name: run name to delete
+        :return: None
+        """
+        valid_run = self.get(name)
+        LocalStorageOperations(valid_run).delete()
+        ORMRun.delete(name)
+
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
@@ -327,7 +340,7 @@ class RunOperations(TelemetryMixin):
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
             # TODO: add language to run metadata
-            flow_dag = yaml.safe_load(metadata.dag)
+            flow_dag = load_yaml_string(metadata.dag)
             configs.append(
                 VisualizationConfig(
                     [AvailableIDE.VS_CODE]
@@ -385,7 +398,7 @@ class RunOperations(TelemetryMixin):
         """Get the outputs file path of the run."""
         local_storage = self._get_local_storage(run)
         # TODO: what if the data is deleted?
-        if not local_storage._data_path or not os.path.exists(local_storage._data_path):
+        if local_storage._data_path and not os.path.exists(local_storage._data_path):
             raise UserErrorException(
                 f"Data path {local_storage._data_path} for run {run.name} does not exist. "
                 "Please make sure it exists and not deleted."
