@@ -21,30 +21,46 @@ promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
     connection:
       type:
         - AzureOpenAIConnection
+      ui_hints:
+        index: 0
     deployment_name:
       type:
         - string
+      ui_hints:
+        index: 1
     temperature:
       default: 1
       type:
         - double
+      ui_hints:
+        index: 2
     top_p:
       default: 1
       type:
         - double
+      ui_hints:
+        index: 3
     max_tokens:
       default: 512
       type:
         - int
+      ui_hints:
+        index: 4
     stop:
       default: ""
       type:
         - list
+      ui_hints:
+        index: 5
     presence_penalty:
       default: 0
       type:
         - double
+      ui_hints:
+        index: 6
     frequency_penalty:
       default: 0
       type:
         - double
+      ui_hints:
+        index: 7

@@ -21,33 +21,49 @@ promptflow.tools.openai_gpt4v.OpenAI.chat:
     connection:
       type:
         - OpenAIConnection
+      ui_hints:
+        index: 0
     model:
       enum:
       - gpt-4-vision-preview
       allow_manual_entry: true
       type:
         - string
+      ui_hints:
+        index: 1
     temperature:
       default: 1
       type:
         - double
+      ui_hints:
+        index: 2
     top_p:
       default: 1
       type:
         - double
+      ui_hints:
+        index: 3
     max_tokens:
       default: 512
       type:
         - int
+      ui_hints:
+        index: 4
     stop:
       default: ""
       type:
         - list
+      ui_hints:
+        index: 5
     presence_penalty:
       default: 0
       type:
         - double
+      ui_hints:
+        index: 6
     frequency_penalty:
       default: 0
       type:
         - double
+      ui_hints:
+        index: 7

@@ -14,6 +14,8 @@ promptflow.tools.open_model_llm.OpenModelLLM.call:
         func_path: promptflow.tools.open_model_llm.list_endpoint_names
       allow_manual_entry: true # Allow the user to clear this field
       is_multi_select: false
+      ui_hints:
+        index: 0
     deployment_name:
       default: ''
       type:
@@ -28,27 +30,39 @@ promptflow.tools.open_model_llm.OpenModelLLM.call:
           reference: ${inputs.endpoint} 
       allow_manual_entry: true
       is_multi_select: false
+      ui_hints:
+        index: 1
     api:
       enum:
       - chat
       - completion
       type:
       - string
+      ui_hints:
+        index: 2
     temperature:
       default: 1.0
       type:
       - double
+      ui_hints:
+        index: 3
     max_new_tokens:
       default: 500
       type:
       - int
+      ui_hints:
+        index: 4
     top_p:
       default: 1.0
       advanced: true
       type:
       - double
+      ui_hints:
+        index: 5
     model_kwargs:
       default: "{}"
       advanced: true
       type:
       - object
+      ui_hints:
+        index: 6
