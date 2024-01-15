@@ -134,6 +134,8 @@ Examples:
 pf flow serve --source <path_to_flow>
 # Serve flow as an endpoint with specific port and host:
 pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment-variables key1="`${my_connection.api_key}" key2="value2"
+# Serve flow without open browser:
+pf flow serve --source <path_to_flow> --skip-open-browser
 """  # noqa: E501
     add_param_port = lambda parser: parser.add_argument(  # noqa: E731
         "--port", type=int, default=8080, help="The port on which endpoint to run."
