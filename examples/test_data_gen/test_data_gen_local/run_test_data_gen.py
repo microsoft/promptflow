@@ -1,3 +1,5 @@
+import json
+import os
 from datetime import datetime
 
 import configargparse
@@ -31,7 +33,19 @@ def get_batch_run_output(pf: PFClient, base_run: Run):
     # get run output
     details = pf.get_details(base_run)
 
-    return details.output
+    # TODO: error handling like if the run failed because of rate limit.
+
+    return details["outputs.test_data"].tolist()
+
+
+def get_cleaned_data_and_save(test_data_set: list, test_data_output_path: str):
+    cleaned_data = [test_data for test_data in test_data_set if test_data]
+
+    jsonl_str = "\n".join(map(json.dumps, cleaned_data))
+
+    cur_time_str = datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
+    with open(os.path.join(test_data_output_path, "file-" + cur_time_str + ".jsonl"), "wt") as text_file:
+        print(f"{jsonl_str}", file=text_file)
 
 
 if __name__ == "__main__":
@@ -41,6 +55,7 @@ if __name__ == "__main__":
     parser.add("--document_nodes_output_path", required=False, help="Document nodes output path, default is ./")
     parser.add("--flow_folder", required=True, help="Test data generation flow folder path")
     parser.add("--flow_batch_run_size", required=False, help="Test data generation flow batch run size, default is 16")
+    parser.add("--test_data_output_path", required=True, help="Test data output path.")
     args = parser.parse_args()
 
     pf = PFClient()
@@ -49,8 +64,7 @@ if __name__ == "__main__":
         f"yao-debug: flow_folder: {args.flow_folder}, document_nodes_output_path: {args.document_nodes_output_path}",
         f"flow_batch_run_size: {args.flow_batch_run_size}\n",
     )
-    print(f"batch run start time: {datetime.now()}")
     batch_run = batch_run_flow(pf, args.flow_folder, args.document_nodes_output_path, args.flow_batch_run_size)
-    print(f"batch run end time: {datetime.now()}")
-    test_data_set = pf.get_details(batch_run)
-    print(test_data_set)
+
+    test_data_set = get_batch_run_output(pf, batch_run)
+    get_cleaned_data_and_save(test_data_set, args.test_data_output_path)

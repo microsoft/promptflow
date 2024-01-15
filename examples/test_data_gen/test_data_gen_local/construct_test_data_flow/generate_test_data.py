@@ -1,4 +1,3 @@
-import json
 import os
 
 from langchain.chat_models import AzureChatOpenAI
@@ -44,8 +43,8 @@ def my_python_tool(connection: AzureOpenAIConnection, document_node_str: str) ->
         chat_qa=0,
     )
 
-    json_dict = json.loads(document_node_str)
-    document_node = TextNode.from_json(json_dict)
+    # json_dict = json.dumps(document_node_str)
+    document_node = TextNode.from_json(document_node_str)
 
     test_data = test_generator.generate(document_node=document_node)
 
