@@ -282,6 +282,9 @@ class LineExecutionProcessPool:
                 # If there are still tasks in task_queue, restart a new process to execute the task.
                 if not task_queue.empty():
                     self._processes_manager.restart_process(index)
+                    # We need to ensure the process has been killed before continuing to execute.
+                    # Otherwise the process will receive new task, and during the execution, the process
+                    # is killed, which will result in the 'ProcessCrashError'.
                     while psutil.pid_exists(process_id):
                         continue
                     index, process_id, process_name = self._get_process_info(index)
