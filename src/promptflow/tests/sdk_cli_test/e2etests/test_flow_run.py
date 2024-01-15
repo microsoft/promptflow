@@ -1157,6 +1157,7 @@ class TestFlowRun:
 
     @pytest.mark.skip("Enable this when executor change merges")
     def test_eager_flow_run_without_yaml(self, pf):
+        # TODO(2898455): support this
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
         run = pf.run(
             flow=flow_path,
