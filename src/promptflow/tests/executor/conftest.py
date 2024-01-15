@@ -46,6 +46,10 @@ ForkServerProcess = multiprocessing.Process
 if "forkserver" in multiprocessing.get_all_start_methods():
     ForkServerProcess = multiprocessing.get_context("forkserver").Process
 
+ForkProcess = multiprocessing.Process
+if "fork" in multiprocessing.get_all_start_methods():
+    ForkProcess = multiprocessing.get_context("fork").Process
+
 
 class MockSpawnProcess(SpawnProcess):
     def __init__(self, group=None, target=None, *args, **kwargs):
@@ -55,6 +59,13 @@ class MockSpawnProcess(SpawnProcess):
 
 
 class MockForkServerProcess(ForkServerProcess):
+    def __init__(self, group=None, target=None, *args, **kwargs):
+        if target == _process_wrapper:
+            target = _mock_process_wrapper
+        super().__init__(group, target, *args, **kwargs)
+
+
+class MockForkProcess(ForkProcess):
     def __init__(self, group=None, target=None, *args, **kwargs):
         if target == _process_wrapper:
             target = _mock_process_wrapper
@@ -76,7 +87,7 @@ def override_recording_file():
 @pytest.fixture
 def process_override():
     # This fixture is used to override the Process class to ensure the recording mode works
-    start_methods_mocks = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess}
+    start_methods_mocks = {"spawn": MockSpawnProcess, "forkserver": MockForkServerProcess, "fork": MockForkProcess}
     original_process_class = {}
     for start_method, MockProcessClass in start_methods_mocks.items():
         if start_method in multiprocessing.get_all_start_methods():
