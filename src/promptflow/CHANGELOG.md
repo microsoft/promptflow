@@ -9,6 +9,7 @@
 - [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
 - [SDK/CLI][azure] Switch automatic runtime's session provision to system wait.
 - [SDK/CLI] Add `--skip-open-browser` option to `pf flow serve` to skip opening browser.
+- [SDK/CLI][azure] Support submit flow to sovereign cloud.
 - [SDK/CLI] Support `pf run delete` to delete a run irreversibly.
 
 ### Bugs Fixed
