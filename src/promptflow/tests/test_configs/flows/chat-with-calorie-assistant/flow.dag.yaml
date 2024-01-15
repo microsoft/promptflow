@@ -26,23 +26,23 @@ outputs:
     type: string
     reference: ${get_or_create_thread.output}
 nodes:
-  - name: get_or_create_thread
-    type: python
-    source:
-      type: code
-      path: get_or_create_thread.py
-    inputs:
-      conn: chw-manager-OpenAI
-      thread_id: ${inputs.thread_id}
-  - name: assistant
-    type: python
-    source:
-      type: code
-      path: add_message_and_run.py
-    inputs:
-      conn: chw-manager-OpenAI
-      message: ${inputs.question}
-      assistant_id: ${inputs.assistant_id}
-      thread_id: ${get_or_create_thread.output}
-      download_images: true
-      assistant_definition: assistant_definition.yaml
+- name: get_or_create_thread
+  type: python
+  source:
+    type: code
+    path: get_or_create_thread.py
+  inputs:
+    conn: chw-manager-OpenAI
+    thread_id: ${inputs.thread_id}
+- name: assistant
+  type: python
+  source:
+    type: code
+    path: add_message_and_run.py
+  inputs:
+    conn: chw-manager-OpenAI
+    message: ${inputs.question}
+    assistant_id: ${inputs.assistant_id}
+    thread_id: ${get_or_create_thread.output}
+    download_images: true
+    assistant_definition: assistant_definition.yaml

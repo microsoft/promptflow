@@ -134,7 +134,7 @@ async def submit_tool_calls_outputs(cli: AsyncOpenAI, thread_id: str, run_id: st
 
 
 @trace
-async def require_responses(cli: AsyncOpenAI, thread_id: str, run, invoker: AssistantToolInvoker):
+async def require_actions(cli: AsyncOpenAI, thread_id: str, run, invoker: AssistantToolInvoker):
     tool_outputs = await get_tool_calls_outputs(invoker, run)
     await submit_tool_calls_outputs(cli, thread_id, run.id, tool_outputs)
 
@@ -145,7 +145,7 @@ async def wait_for_run_complete(cli: AsyncOpenAI, thread_id: str, invoker: Assis
         await wait_for_status_check()
         run = await get_run_status(cli, thread_id, run.id)
         if run.status == "requires_action":
-            await require_responses(cli, thread_id, run, invoker)
+            await require_actions(cli, thread_id, run, invoker)
         elif run.status == "in_progress" or run.status == "completed":
             continue
         else:
