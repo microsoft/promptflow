@@ -1,18 +1,16 @@
-# Chat with Calorie Assistant
+# Stock EOD Price Analyzer
 
-This sample demonstrates how to chat with the PromptFlow Assistant tool facilitates calorie calculations by considering your location, the duration of your exercise, and the type of sport. Currently, it supports two types of sports: jogging and swimming.
+This sample demonstrates how the PromptFlow Assistant tool help with time series data (stock EOD price) retrieval, plot and consolidation.
 
 Tools used in this flow：
+- `get_or_create_thread` tool, python tool, used to provide assistant thread information if absent
 - `add_message_and_run` tool, assistant tool, provisioned with below inner functions:
-   - `get_current_location``: get current city
-   - `get_temperature(location)``: get temperature of the city
-   - `get_calorie_by_jogging(duration, temperature)``: calculate calorie for jogging exercise
-   - `get_calorie_by_jogging(duration, temperature)``: calculate calorie for swimming exercise
+   - `get_stock_eod_price``: get the stock eod price based on date and company name
 
 ## Prerequisites
 
 Install promptflow sdk and other dependencies in this folder:
-```sh
+```bash
 pip install -r requirements.txt
 ```
 
@@ -24,13 +22,13 @@ In this flow, you will understand how assistant tools within PromptFlow are trig
 ## Getting started
 
 ### 1. Create assistant connection (openai)
-Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of assistant tool supported connection types and fill in the configurations.
+Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of LLM tool supported connection types and fill in the configurations.
 
 Currently, only "Open AI" connection type are supported for assistant tool. Please refer to [OpenAI](https://platform.openai.com/) for more details.
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file ../../../connections/openai.yml --set api_key=<your_api_key>
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key>
 ```
 
 Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
@@ -50,6 +48,6 @@ Navigate to the OpenAI Assistant page and create an assistant if you haven't alr
 
 ```bash
 # run chat flow with default question in flow.dag.yaml
-pf flow test --flow . --interactive --multi-modal --user-agent "prompt-flow-extension/1.8.0 (win32; x64) VSCode/1.85.1"
+pf flow test --flow .
 
 ```
