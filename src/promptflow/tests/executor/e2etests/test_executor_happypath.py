@@ -3,13 +3,13 @@ import os
 from types import GeneratorType
 
 import pytest
+from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 
-from ...sdk_cli_azure_test.recording_utilities import is_record, is_replay
 from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
