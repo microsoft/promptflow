@@ -345,7 +345,11 @@ def add_run_delete(subparsers):
     epilog = """
 Example:
 
-# Delete a run irreversibly:
+# Caution: pf run delete is irreversible.
+# This operation will delete the run permanently from your local disk.
+# Both run entity and output data will be deleted.
+
+# Delete a run:
 pf run delete -n "<name>"
 """
     add_params = [add_param_run_name] + base_params

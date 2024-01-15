@@ -395,7 +395,8 @@ client.runs.restore(name="<run-name>")
 :::{tab-item} CLI
 :sync: CLI
 
-Delete the run permanently. This operation is not reversible.
+Caution: pf run delete is irreversible. This operation will delete the run permanently from your local disk. Both run entity and output data will be deleted.
+
 Delete will fail if the run name is not valid.
 
 ```bash
