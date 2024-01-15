@@ -328,7 +328,7 @@ def _calculate_column_widths(df: "DataFrame", terminal_width: int) -> List[int]:
         )
 
     max_col_widths = [index_column_width]  # index column
-    max_col_widths += [column_widths[column] - column_margin[column] for column in df.columns]  # sub margin
+    max_col_widths += [max(column_widths[column] - column_margin[column], 1) for column in df.columns]  # sub margin
     return max_col_widths
 
 

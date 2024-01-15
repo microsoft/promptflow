@@ -7,7 +7,7 @@ import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 from unittest.mock import patch
 
 import jwt
@@ -26,8 +26,10 @@ from .recording_utilities import (
     PFAzureIntegrationTestRecording,
     SanitizedValues,
     VariableRecorder,
+    get_created_flow_name_from_flow_path,
     get_pf_client_for_replay,
     is_live,
+    is_record,
     is_replay,
 )
 
@@ -352,7 +354,7 @@ def mock_get_user_identity_info(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
+def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder: VariableRecorder) -> Flow:
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
     flow_source = FLOWS_DIR + "/simple_hello_world/"
@@ -369,6 +371,14 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     assert result.type == FlowType.STANDARD
     assert result.tags == tags
     assert result.path.endswith("flow.dag.yaml")
+
+    # flow in Azure will have different file share name with timestamp
+    # and this is a client-side behavior, so we need to sanitize this in recording
+    # so extract this during record test
+    if is_record():
+        flow_name_const = "flow_name"
+        flow_name = get_created_flow_name_from_flow_path(result.path)
+        variable_recorder.get_or_record_variable(flow_name_const, flow_name)
 
     yield result
 
@@ -490,26 +500,12 @@ def mock_isinstance_for_mock_datastore() -> None:
             yield
 
 
-@pytest.fixture(autouse=is_replay())
-def mock_upload_and_generate_remote_uri() -> None:
-    from azure.ai.ml._scope_dependent_operations import OperationScope
-    from azure.ai.ml.entities._datastore._constants import WORKSPACE_BLOB_STORE
-    from azure.ai.ml.exceptions import ErrorTarget
-    from azure.ai.ml.operations._datastore_operations import DatastoreOperations
+@pytest.fixture(autouse=True)
+def mock_check_latest_version() -> None:
+    """Mock check latest version.
 
-    def _upload_and_generate_remote_uri(
-        operation_scope: OperationScope,
-        datastore_operation: DatastoreOperations,
-        path: Union[str, Path, os.PathLike],
-        artifact_type: str = ErrorTarget.ARTIFACT,
-        datastore_name: str = WORKSPACE_BLOB_STORE,
-        show_progress: bool = True,
-    ) -> str:
-        path = Path(path).resolve()
-        return f"azureml://datastores/{datastore_name}/paths/LocalUpload/00000000000000000000000000000000/{path.name}"
-
-    with patch(
-        "promptflow.azure.operations._run_operations._upload_and_generate_remote_uri",
-        new=_upload_and_generate_remote_uri,
-    ):
+    As CI uses docker, it will always trigger this check behavior, and we don't have recording for this;
+    and this will hit many unknown issue with vcrpy.
+    """
+    with patch("promptflow._utils.version_hint_utils.check_latest_version", new=lambda: None):
         yield

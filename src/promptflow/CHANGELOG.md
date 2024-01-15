@@ -7,12 +7,14 @@
 - [Executor] Calculate system_metrics recursively in api_calls.
 - [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
 - [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
+- [pfazure] Switch automatic runtime's session provision to system wait.
 
 ### Bugs Fixed
 
 - Fix unaligned inputs & outputs or pandas exception during get details against run in Azure.
 - Fix loose flow path validation for run schema.
 - Fix "Without Import Data" in run visualize page results from invalid JSON value (`-Infinity`, `Infinity` and `NaN`).
+- Fix "ValueError: invalid width -1" when show-details against long column(s) in narrow terminal window.
 
 ### Improvements
 
