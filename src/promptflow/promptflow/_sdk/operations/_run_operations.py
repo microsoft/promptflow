@@ -234,12 +234,10 @@ class RunOperations(TelemetryMixin):
     ) -> None:
         """Delete run permanently.
 
-        :param names: run names to delete
-        :param kwargs: other fields to update, fields not supported will be directly dropped.
+        :param name: run name to delete
         :return: None
         """
-        run_name = Run._validate_and_return_run_name(name)
-        valid_run = self.get(run_name)
+        valid_run = self.get(name)
         LocalStorageOperations(valid_run).delete()
         ORMRun.delete(name)
 
