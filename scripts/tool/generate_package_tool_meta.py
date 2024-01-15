@@ -108,6 +108,7 @@ if __name__ == "__main__":
     tools_dict = json.loads(json.dumps(tools_dict))
     yaml = YAML()
     yaml.preserve_quotes = True
+    yaml.indent(mapping=2, sequence=4, offset=2)
     with open(args.output, "w") as f:
-        yaml.dump(tools_dict, f, indent=2)
+        yaml.dump(tools_dict, f)
     print(f"Tools meta generated to '{args.output}'.")
