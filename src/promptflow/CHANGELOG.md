@@ -7,7 +7,8 @@
 - [Executor] Calculate system_metrics recursively in api_calls.
 - [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
 - [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
-- [pfazure] Switch automatic runtime's session provision to system wait.
+- [SDK/CLI][azure] Switch automatic runtime's session provision to system wait.
+- [SDK/CLI] Add `--skip-open-browser` option to `pf flow serve` to skip opening browser.
 
 ### Bugs Fixed
 
