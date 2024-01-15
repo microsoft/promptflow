@@ -133,13 +133,14 @@ class LineExecutionProcessPool:
         self._task_queue = Queue()
         self._n_process = self._determine_worker_count()
 
-        # Queue() uses a synchronization primitive called a “lock” to ensure that only one process can access
-        # the queue at a time
-        # While manager().Queue() uses a manager object to create a queue that can be shared
-        # between multiple processes.
-        # Use Queue() will case an error: "A SemLock created in a fork context is being shared with a process
-        # in a spawn context. This is not supported".
-        # So use the manager.Queue().
+        # When using fork, we first spawn a sub process, the SemLock created in fork context (multiprocessing.Queue()）
+        # can't used in a spawn context. Since spawn does not share memory, synchronization primitives created by
+        # fork cannot be used directly. It will cause an error: "A SemLock created in a fork context is being
+        # shared with a process in a spawn context. This is not supported".
+
+        # So use multiprocessing.Manager().Queue() instead of multiprocessing.Queue().
+        # Manager().Queue() operates through a manager server process, which passes messages between different
+        # processes without directly sharing memory state, which makes it safe to use in a spawn context.
         self._input_queues = [manager.Queue() for _ in range(self._n_process)]
         self._output_queues = [manager.Queue() for _ in range(self._n_process)]
         self._control_signal_queue = manager.Queue()
