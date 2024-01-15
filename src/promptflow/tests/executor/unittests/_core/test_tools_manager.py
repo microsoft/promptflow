@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pytest
 from mock import MagicMock
-from ruamel.yaml import YAML
 
 from promptflow import tool
 from promptflow._core._errors import InputTypeMismatch, PackageToolNotFoundError
@@ -14,6 +13,7 @@ from promptflow._core.tools_manager import (
     collect_package_tools,
     collect_package_tools_and_connections,
 )
+from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
@@ -140,8 +140,6 @@ class TestToolsManager:
         assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
-        yaml = YAML()
-        yaml.preserve_quotes = True
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
         tools, specs, templates = collect_package_tools_and_connections(keys)
         assert len(tools) == 1
@@ -172,7 +170,7 @@ class TestToolsManager:
             "configs": {"api_base": "This is my first connection."},
             "secrets": {"api_key": "to_replace_with_api_key"},
         }
-        loaded_yaml = yaml.load(templates["my_tool_package.connections.MyFirstConnection"])
+        loaded_yaml = load_yaml_string(templates["my_tool_package.connections.MyFirstConnection"])
         assert loaded_yaml == expected_template
 
         keys = ["my_tool_package.tools.my_tool_with_custom_strong_type_connection.my_tool"]

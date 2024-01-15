@@ -1,5 +1,8 @@
+import logging
 import multiprocessing
 import os
+import re
+import sys
 from types import GeneratorType
 
 import pytest
@@ -84,6 +87,27 @@ class TestExecutor:
             assert node_run_info.node == node
             assert isinstance(node_run_info.api_calls, list)  # api calls is set
 
+    def test_long_running_log(self, dev_connections, capsys):
+        # TODO: investigate why flow_logger does not output to stdout in test case
+        from promptflow._utils.logger_utils import flow_logger
+
+        flow_logger.addHandler(logging.StreamHandler(sys.stdout))
+        os.environ["PF_TASK_PEEKING_INTERVAL"] = "1"
+
+        executor = FlowExecutor.create(get_yaml_file("async_tools"), dev_connections)
+        executor.exec_line(self.get_line_inputs())
+        captured = capsys.readouterr()
+        expected_long_running_str_1 = r".*.*Task async_passthrough has been running for 1 seconds, stacktrace:\n.*async_passthrough\.py.*in passthrough_str_and_wait\n.*await asyncio.sleep\(1\).*tasks\.py.*"  # noqa E501
+        assert re.match(
+            expected_long_running_str_1, captured.out, re.DOTALL
+        ), "flow_logger should contain long running async tool log"
+        expected_long_running_str_2 = r".*.*Task async_passthrough has been running for 2 seconds, stacktrace:\n.*async_passthrough\.py.*in passthrough_str_and_wait\n.*await asyncio.sleep\(1\).*tasks\.py.*"  # noqa E501
+        assert re.match(
+            expected_long_running_str_2, captured.out, re.DOTALL
+        ), "flow_logger should contain long running async tool log"
+        flow_logger.handlers.pop()
+        os.environ.pop("PF_TASK_PEEKING_INTERVAL")
+
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
         [
@@ -126,7 +150,8 @@ class TestExecutor:
         process.start()
         process.join()
 
-        assert process.exitcode == 0
+        if not queue.empty():
+            raise queue.get()
 
     @pytest.mark.skipif(is_replay() or is_record(), reason="Tools errors are not supported in recording")
     def test_executor_node_overrides(self, dev_connections):

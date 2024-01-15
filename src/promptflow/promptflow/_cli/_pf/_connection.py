@@ -11,9 +11,9 @@ from promptflow._cli._utils import activate_action, confirm, exception_handler, 
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._utils import load_yaml
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import load_yaml
 
 logger = get_cli_sdk_logger()
 _client = None
