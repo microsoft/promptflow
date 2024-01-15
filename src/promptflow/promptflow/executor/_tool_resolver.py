@@ -20,6 +20,7 @@ from promptflow.contracts.flow import InputAssignment, InputValueType, Node, Too
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
+from promptflow.executor._connection_provider import ConnectionProvider
 from promptflow.executor._errors import (
     ConnectionNotFound,
     EmptyLLMApiMapping,
@@ -144,6 +145,7 @@ class ToolResolver():
             elif value_type == ValueType.ASSISTANT_DEFINITION:
                 try:
                     updated_inputs[k].value = self._convert_to_assistant_definition(v.value, k, node.name)
+                    ConnectionProvider.init(self._connection_manager._connections_dict)
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(

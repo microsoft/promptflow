@@ -40,7 +40,6 @@ from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._async_nodes_scheduler import AsyncNodesScheduler
-from promptflow.executor._connection_provider import ConnectionProvider
 from promptflow.executor._errors import NodeOutputNotFound, OutputReferenceNotExist, SingleNodeValidationError
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
@@ -211,7 +210,6 @@ class FlowExecutor:
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
     ):
         logger.debug("Start initializing the flow executor.")
-        ConnectionProvider.init(connections)
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
@@ -290,8 +288,6 @@ class FlowExecutor:
 
         OperationContext.get_instance().run_mode = RunMode.SingleNode.name
         dependency_nodes_outputs = dependency_nodes_outputs or {}
-
-        ConnectionProvider.init(connections)
 
         # Load the node from the flow file
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
