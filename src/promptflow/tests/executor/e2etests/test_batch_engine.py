@@ -38,6 +38,7 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
 
 
 def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
+    # process override again since this method is running in a new process
     if multiprocessing_start_method == "spawn":
         multiprocessing.Process = MockSpawnProcess
         multiprocessing.get_context("spawn").Process = MockSpawnProcess
@@ -45,6 +46,7 @@ def run_batch_with_start_method(multiprocessing_start_method, flow_folder, input
         multiprocessing.Process = MockForkServerProcess
         multiprocessing.get_context("forkserver").Process = MockForkServerProcess
 
+    # recording injection again since this method is running in a new process
     override_recording_file()
     setup_recording()
 

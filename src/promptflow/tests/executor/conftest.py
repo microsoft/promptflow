@@ -75,6 +75,7 @@ def override_recording_file():
 
 @pytest.fixture
 def process_override():
+    # This fixture is used to override the Process class to MockSpawnProcess
     original_process_class = multiprocessing.get_context("spawn").Process
     multiprocessing.get_context("spawn").Process = MockSpawnProcess
     if "spawn" == multiprocessing.get_start_method():
@@ -90,6 +91,7 @@ def process_override():
 
 @pytest.fixture
 def recording_injection(recording_setup, process_override):
+    # This fixture is used to main entry point to inject recording mode into the test
     try:
         yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
     finally:
