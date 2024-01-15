@@ -227,6 +227,20 @@ class RunOperations(TelemetryMixin):
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
+    @monitor_operation(activity_name="pf.runs.delete", activity_type=ActivityType.PUBLICAPI)
+    def delete(
+        self,
+        name: str,
+    ) -> None:
+        """Delete run permanently.
+
+        :param name: run name to delete
+        :return: None
+        """
+        valid_run = self.get(name)
+        LocalStorageOperations(valid_run).delete()
+        ORMRun.delete(name)
+
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
