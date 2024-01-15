@@ -1,17 +1,15 @@
 import asyncio
 import inspect
 import uuid
-
 from pathlib import Path
-from typing import Optional, Mapping, Any, Callable
+from typing import Any, Callable, Mapping, Optional
 
-
-from promptflow._utils.logger_utils import logger
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tool_meta_generator import load_python_module_from_file, PythonLoadError
+from promptflow._core.tool_meta_generator import PythonLoadError, load_python_module_from_file
 from promptflow._core.tracer import Tracer, _traced
-from promptflow._constants import LINE_NUMBER_KEY
+from promptflow._utils.logger_utils import logger
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor._result import LineResult
@@ -88,3 +86,7 @@ class ScriptExecutor(FlowExecutor):
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
+
+    def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
+        # TODO(2901157): check if eager mode should have streaming
+        return
