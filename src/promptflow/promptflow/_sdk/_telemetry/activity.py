@@ -6,11 +6,11 @@ import functools
 import uuid
 from contextvars import ContextVar
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
+import threading
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
+from promptflow.exceptions import _ErrorInfo
 from promptflow._sdk._utils import ClientUserAgentUtil
-from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
 
 
 class ActivityType(object):
@@ -92,6 +92,12 @@ def log_activity(
     except BaseException as e:  # pylint: disable=broad-except
         exception = e
         completion_status = ActivityCompletionStatus.FAILURE
+        error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(exception)
+        activity_info["error_category"] = error_category
+        activity_info["error_type"] = error_type
+        activity_info["error_target"] = error_target
+        activity_info["error_message"] = error_message
+        activity_info["error_detail"] = error_detail
     finally:
         try:
             if first_call:
@@ -165,6 +171,7 @@ def monitor_operation(
         @functools.wraps(f)
         def wrapper(self, *args, **kwargs):
             from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
+            from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
 
             logger = get_telemetry_logger()
 
@@ -174,9 +181,11 @@ def monitor_operation(
             with log_activity(logger, _activity_name, activity_type, custom_dimensions):
                 if _activity_name in HINT_ACTIVITY_NAME:
                     hint_for_update()
-                    with ThreadPoolExecutor() as pool:
-                        pool.submit(check_latest_version)
+                    # set check_latest_version as deamon thread to avoid blocking main thread
+                    thread = threading.Thread(target=check_latest_version, daemon=True)
+                    thread.start()
                 return f(self, *args, **kwargs)
+
         return wrapper
 
     return monitor

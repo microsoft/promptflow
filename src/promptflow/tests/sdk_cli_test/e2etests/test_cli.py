@@ -15,7 +15,6 @@ from unittest.mock import patch
 
 import mock
 import pytest
-import yaml
 
 from promptflow._cli._pf.entry import main
 from promptflow._constants import PF_USER_AGENT
@@ -27,6 +26,7 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.utils import environment_variable_overwrite, parse_ua_to_dict
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
 FLOWS_DIR = "./tests/test_configs/flows"
@@ -316,15 +316,15 @@ class TestCli:
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copytree((Path(FLOWS_DIR) / "web_classification").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
 
-            with open(Path(temp_dir) / "flow.dag.yaml", "r") as f:
-                flow_dict = yaml.safe_load(f)
+            dag = Path(temp_dir) / "flow.dag.yaml"
+            flow_dict = load_yaml(dag)
 
             node_name = "summarize_text_content"
             node = next(filter(lambda item: item["name"] == node_name, flow_dict["nodes"]))
             flow_dict["nodes"].remove(node)
             flow_dict["nodes"].append({"name": node_name, "use_variants": True})
             with open(Path(temp_dir) / "flow.dag.yaml", "w") as f:
-                yaml.safe_dump(flow_dict, f)
+                dump_yaml(flow_dict, f)
 
             run_pf_command(
                 "flow",
@@ -362,7 +362,7 @@ class TestCli:
                 "variants": [{"variant_0": {}}],
             }
             with open(Path(temp_dir) / "flow.dag.yaml", "w") as f:
-                yaml.safe_dump(flow_dict, f)
+                dump_yaml(flow_dict, f)
             with pytest.raises(SystemExit):
                 run_pf_command(
                     "flow",
@@ -598,7 +598,7 @@ class TestCli:
 
     def _validate_requirement(self, flow_path):
         with open(flow_path) as f:
-            flow_dict = yaml.safe_load(f)
+            flow_dict = load_yaml(f)
         assert flow_dict.get("environment", {}).get("python_requirements_txt", None)
         assert (flow_path.parent / flow_dict["environment"]["python_requirements_txt"]).exists()
 
@@ -676,11 +676,11 @@ class TestCli:
 
             # Only azure openai connection in test env
             with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "r") as f:
-                flow_dict = yaml.safe_load(f)
+                flow_dict = load_yaml(f)
             flow_dict["nodes"][0]["provider"] = "AzureOpenAI"
             flow_dict["nodes"][0]["connection"] = "azure_open_ai_connection"
             with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "w") as f:
-                yaml.dump(flow_dict, f)
+                dump_yaml(flow_dict, f)
 
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "question=hi")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
@@ -782,7 +782,7 @@ class TestCli:
             "chat_prompt=user_intent_zero_shot.jinja2",
         )
         with open(Path(flow_path) / "flow.dag.yaml", "r") as f:
-            flow_dict = yaml.safe_load(f)
+            flow_dict = load_yaml(f)
             assert "chat_history" in flow_dict["inputs"]
             assert "customer_info" in flow_dict["inputs"]
             chat_prompt_node = next(filter(lambda item: item["name"] == "chat_prompt", flow_dict["nodes"]))
@@ -792,7 +792,7 @@ class TestCli:
     def test_flow_init_with_connection_and_deployment(self):
         def check_connection_and_deployment(flow_folder, connection, deployment):
             with open(Path(flow_folder) / "flow.dag.yaml", "r") as f:
-                flow_dict = yaml.safe_load(f)
+                flow_dict = load_yaml(f)
                 assert flow_dict["nodes"][0]["inputs"]["deployment_name"] == deployment
                 assert flow_dict["nodes"][0]["connection"] == connection
 
@@ -835,7 +835,7 @@ class TestCli:
             for file in connection_files:
                 assert file.exists()
                 with open(file, "r") as f:
-                    connection_dict = yaml.safe_load(f)
+                    connection_dict = load_yaml(f)
                     assert connection_dict["name"] == connection
 
             shutil.rmtree(flow_folder)
@@ -1098,9 +1098,7 @@ class TestCli:
 
         with caplog.at_level(level=logging.INFO, logger=LOGGER_NAME):
             run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/web_classification", *extra_args)
-            for (log, expected_input, expected_log_prefix) in zip(
-                caplog.records, expected_inputs, expected_log_prefixes
-            ):
+            for log, expected_input, expected_log_prefix in zip(caplog.records, expected_inputs, expected_log_prefixes):
                 validate_log(
                     prefix=expected_log_prefix,
                     log_msg=log.message,
@@ -1112,7 +1110,7 @@ class TestCli:
         output_path = "dist"
 
         def get_node_settings(_flow_dag_path: Path):
-            flow_dag = yaml.safe_load(_flow_dag_path.read_text())
+            flow_dag = load_yaml(_flow_dag_path)
             target_node = next(filter(lambda x: x["name"] == "summarize_text_content", flow_dag["nodes"]))
             target_node.pop("name")
             return target_node
@@ -1132,7 +1130,7 @@ class TestCli:
             )
 
             new_flow_dag_path = Path(output_path, "flow", "flow.dag.yaml")
-            flow_dag = yaml.safe_load(Path(source).read_text())
+            flow_dag = load_yaml(Path(source))
             assert (
                 get_node_settings(new_flow_dag_path)
                 == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
@@ -1276,7 +1274,6 @@ class TestCli:
             assert keyword not in out
 
     def test_pf_run_no_stream_log(self, capfd):
-
         # without --stream, logs will be in the run's log file
 
         run_pf_command(
@@ -1312,7 +1309,8 @@ class TestCli:
             outerr = capsys.readouterr()
             assert outerr.err
             error_msg = json.loads(outerr.err)
-            assert error_msg["code"] == "ConnectionNotFoundError"
+            assert error_msg["code"] == "UserError"
+            assert error_msg["innerError"]["innerError"]["code"] == "ConnectionNotFoundError"
 
             def mocked_connection_get(*args, **kwargs):
                 raise Exception("mock exception")
@@ -1405,6 +1403,20 @@ class TestCli:
                 f"tags={tags}",
                 cwd=temp_dir,
             )
+            # Add a tool script with icon
+            tool_script_name = "tool_func_with_icon"
+            run_pf_command(
+                "tool",
+                "init",
+                "--tool",
+                tool_script_name,
+                "--set",
+                f"icon={icon_path.absolute()}",
+                f"category={category}",
+                f"tags={tags}",
+                cwd=Path(temp_dir) / package_name / package_name,
+            )
+
             sys.path.append(str(package_folder.absolute()))
             spec = importlib.util.spec_from_file_location(
                 f"{package_name}.utils", package_folder / package_name / "utils.py"
@@ -1418,6 +1430,7 @@ class TestCli:
             assert meta["category"] == category
             assert meta["tags"] == tags
             assert meta["icon"].startswith("data:image")
+            assert tools_meta[f"{package_name}.{tool_script_name}.{tool_script_name}"]["icon"].startswith("data:image")
 
             # icon doesn't exist
             with pytest.raises(SystemExit):
@@ -1762,3 +1775,64 @@ class TestCli:
         )
         context = OperationContext().get_instance()
         context.user_agent = ""
+
+    def test_basic_flow_run_delete(self, monkeypatch, local_client, capfd) -> None:
+        input_list = ["y"]
+
+        def mock_input(*args, **kwargs):
+            if input_list:
+                return input_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+
+        run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--name",
+            run_id,
+            "--flow",
+            f"{FLOWS_DIR}/print_env_var",
+            "--data",
+            f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        run_a = local_client.runs.get(name=run_id)
+        local_storage = LocalStorageOperations(run_a)
+        path_a = local_storage.path
+        assert os.path.exists(path_a)
+
+        # delete the run
+        run_pf_command(
+            "run",
+            "delete",
+            "--name",
+            f"{run_id}",
+        )
+        # both runs are deleted and their folders are deleted
+        assert not os.path.exists(path_a)
+
+    def test_basic_flow_run_delete_error(self, monkeypatch) -> None:
+        input_list = ["y"]
+
+        def mock_input(*args, **kwargs):
+            if input_list:
+                return input_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_id = str(uuid.uuid4())
+
+        # delete the run
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "run",
+                "delete",
+                "--name",
+                f"{run_id}",
+            )

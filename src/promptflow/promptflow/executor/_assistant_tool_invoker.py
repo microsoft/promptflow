@@ -24,7 +24,13 @@ class AssistantToolInvoker:
         self._working_dir = working_dir or Path(os.getcwd())
         self._assistant_tools: Dict[str, AssistantTool] = {}
 
-    def load_tools(self, tools: list):
+    @classmethod
+    def init(cls, tools: list, working_dir: Optional[Path] = None):
+        invoker = cls(working_dir=working_dir)
+        invoker._load_tools(tools)
+        return invoker
+
+    def _load_tools(self, tools: list):
         for tool in tools:
             if tool["type"] in ("code_interpreter", "retrieval"):
                 self._assistant_tools[tool["type"]] = AssistantTool(

@@ -23,6 +23,7 @@ from promptflow._cli._params import (
 from promptflow._cli._utils import (
     _output_result_list_with_format,
     activate_action,
+    confirm,
     exception_handler,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
@@ -50,6 +51,7 @@ def add_run_parser(subparsers):
     add_run_visualize(subparsers)
     add_run_archive(subparsers)
     add_run_restore(subparsers)
+    add_run_delete(subparsers)
     add_parser_build(subparsers, "run")
     run_parser.set_defaults(action="run")
 
@@ -72,7 +74,10 @@ def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = No
         help="Indicates whether to stream the run's logs to the console.",
     )
     add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
-        "--flow", type=str, help="Local path to the flow directory."
+        "--flow",
+        type=str,
+        help="Local path to the flow directory."
+        "If --file is provided, this path should be relative path to the file.",
     )
     add_param_variant = lambda parser: parser.add_argument(  # noqa: E731
         "--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}."
@@ -118,6 +123,8 @@ Examples:
 
 # Create a run with YAML file:
 pf run create -f <yaml-filename>
+# Create a run with YAML file and replace another data in the YAML file:
+pf run create -f <yaml-filename> --data <path-to-new-data-file-relative-to-yaml-file>
 # Create a run from flow directory and reference a run:
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
 # Create a run from an existing run record folder
@@ -126,7 +133,11 @@ pf run create --source <path-to-run-folder>
 
     # data for pf has different help doc than pfazure
     def add_param_data(parser):
-        parser.add_argument("--data", type=str, help="Local path to the data file.")
+        parser.add_argument(
+            "--data",
+            type=str,
+            help="Local path to the data file." "If --file is provided, this path should be relative path to the file.",
+        )
 
     def add_param_source(parser):
         parser.add_argument("--source", type=str, help="Local path to the existing run record folder.")
@@ -330,6 +341,30 @@ pf run visualize --names "<name1>, <name2>"
     )
 
 
+def add_run_delete(subparsers):
+    epilog = """
+Example:
+
+# Caution: pf run delete is irreversible.
+# This operation will delete the run permanently from your local disk.
+# Both run entity and output data will be deleted.
+
+# Delete a run:
+pf run delete -n "<name>"
+"""
+    add_params = [add_param_run_name] + base_params
+
+    activate_action(
+        name="delete",
+        description=None,
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Delete a run irreversible.",
+        action_param_name="sub_action",
+    )
+
+
 def add_run_archive(subparsers):
     epilog = """
 Example:
@@ -399,6 +434,8 @@ def dispatch_run_commands(args: argparse.Namespace):
         restore_run(name=args.name)
     elif args.sub_action == "export":
         export_run(args)
+    elif args.sub_action == "delete":
+        delete_run(name=args.name)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -590,6 +627,15 @@ def create_run(create_func: Callable, args):
     if stream:
         print("\n")  # change new line to show run info
     print(json.dumps(run._to_dict(), indent=4))
+
+
+@exception_handler("Delete run")
+def delete_run(name: str) -> None:
+    if confirm("Are you sure to delete run irreversibly?"):
+        pf_client = PFClient()
+        pf_client.runs.delete(name=name)
+    else:
+        print("The delete operation was canceled.")
 
 
 def export_run(args):
