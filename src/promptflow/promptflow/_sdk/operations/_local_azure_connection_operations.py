@@ -50,7 +50,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
             try:
                 # Try getting token for cli without interactive login
                 cloud_name = _get_default_cloud_name()
-                if cloud_name != AzureEnvironments.ENV_US_GOVERNMENT:
+                if cloud_name != AzureEnvironments.ENV_DEFAULT:
                     cloud = _get_cloud(cloud=cloud_name)
                     authority = cloud.get(EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT)
                     credential = DefaultAzureCredential(authority=authority, exclude_shared_token_cache_credential=True)
