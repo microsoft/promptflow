@@ -189,6 +189,7 @@ class FlowExecutor:
         """
         if Path(flow_file).suffix.lower() == ".py":
             from ._script_executor import ScriptExecutor
+
             return ScriptExecutor(
                 entry_file=flow_file,
                 func=func,
@@ -895,9 +896,10 @@ class FlowExecutor:
         return outputs
 
     def _should_use_async(self):
-        return all(
-            inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values()
-        ) or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        return (
+            all(inspect.iscoroutinefunction(f) for f in self._tools_manager._tools.values())
+            or os.environ.get("PF_USE_ASYNC", "false").lower() == "true"
+        )
 
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
@@ -953,6 +955,9 @@ class FlowExecutor:
 
         :return: None
         """
+        if not hasattr(self, "_flow"):
+            # TODO(2901157): check if eager mode should have streaming
+            return
         for node in self._flow.nodes:
             streaming_option_parameter = self._parse_streaming_option_parameter(node)
             if (
