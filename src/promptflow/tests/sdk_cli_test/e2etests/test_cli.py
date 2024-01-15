@@ -1813,3 +1813,64 @@ class TestCli:
         p.start()
         p.join()
         assert p.exitcode == 0
+
+    def test_basic_flow_run_delete(self, monkeypatch, local_client, capfd) -> None:
+        input_list = ["y"]
+
+        def mock_input(*args, **kwargs):
+            if input_list:
+                return input_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+
+        run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--name",
+            run_id,
+            "--flow",
+            f"{FLOWS_DIR}/print_env_var",
+            "--data",
+            f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        run_a = local_client.runs.get(name=run_id)
+        local_storage = LocalStorageOperations(run_a)
+        path_a = local_storage.path
+        assert os.path.exists(path_a)
+
+        # delete the run
+        run_pf_command(
+            "run",
+            "delete",
+            "--name",
+            f"{run_id}",
+        )
+        # both runs are deleted and their folders are deleted
+        assert not os.path.exists(path_a)
+
+    def test_basic_flow_run_delete_error(self, monkeypatch) -> None:
+        input_list = ["y"]
+
+        def mock_input(*args, **kwargs):
+            if input_list:
+                return input_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_id = str(uuid.uuid4())
+
+        # delete the run
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "run",
+                "delete",
+                "--name",
+                f"{run_id}",
+            )
