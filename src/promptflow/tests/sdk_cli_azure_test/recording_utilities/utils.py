@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict
 
+import jwt
 from azure.core.credentials import AccessToken
 from vcr.request import Request
 
@@ -37,7 +38,8 @@ class FakeTokenCredential:
     """
 
     def __init__(self):
-        self.token = AccessToken("YOU SHALL NOT PASS", 0)
+        token = jwt.encode(payload={"aud": "https://management.azure.com"}, key="")
+        self.token = AccessToken(token, 0)
         self.get_token_count = 0
 
     def get_token(self, *args, **kwargs) -> AccessToken:

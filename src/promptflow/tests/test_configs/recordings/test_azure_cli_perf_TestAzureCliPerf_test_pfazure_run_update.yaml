@@ -16,7 +16,7 @@ interactions:
       User-Agent:
       - python-requests/2.31.0
     method: PATCH
-    uri: https://eastus2euap.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/runs/test_run/modify
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/runs/test_run/modify
   response:
     body:
       string: '{"runNumber": 1705290707, "rootRunId": "test_run", "createdUtc": "2024-01-15T03:51:47.7832069+00:00",
@@ -90,7 +90,7 @@ interactions:
       - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
         Python/3.9.17 (Windows-10-10.0.22621-SP0)
     method: GET
-    uri: https://eastus2euap.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/test_run
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/test_run
   response:
     body:
       string: '{"flowGraph": {"nodes": [{"name": "print_input", "type": "python",
@@ -431,7 +431,7 @@ interactions:
       User-Agent:
       - python-requests/2.31.0
     method: POST
-    uri: https://eastus2euap.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
       string: '{"runMetadata": {"runNumber": 1705290707, "rootRunId": "test_run",
