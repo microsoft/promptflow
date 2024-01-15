@@ -50,6 +50,8 @@ REQUIRES = [
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
     "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
     "docutils",  # used to generate description for tools
+    "uvicorn>=0.25.0", # used to start local executor service
+    "fastapi>=0.109.0", # used to build local web executor server
 ]
 
 setup(
