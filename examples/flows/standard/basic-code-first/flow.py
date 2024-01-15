@@ -18,7 +18,7 @@ def load_prompt(jinja2_template: str, text: str) -> str:
 
 
 @trace
-def flow_entry(text: str) -> str:
+def flow_entry(text: str = "Hello World!") -> str:
     """Flow entry function."""
     prompt = load_prompt("hello.jinja2", text)
     output = my_llm_tool(

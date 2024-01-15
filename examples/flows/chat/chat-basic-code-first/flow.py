@@ -23,7 +23,7 @@ class Result:
 
 
 @trace
-def flow_entry(question: str, chat_history: list) -> Result:
+def flow_entry(question: str='What is ChatGPT?', chat_history: list = []) -> Result:
     """Flow entry function."""
     prompt = load_prompt("chat.jinja2", question, chat_history)
     pf = PFClient()
