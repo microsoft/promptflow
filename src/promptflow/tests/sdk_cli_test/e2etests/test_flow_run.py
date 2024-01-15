@@ -157,8 +157,7 @@ class TestFlowRun:
         # delete new created run by name
         pytest.raises(RunNotFoundError, lambda: pf.runs.delete(name=run))
 
-    pytest.mark.skipif(sys.platform == "win32", reason="Windows doesn't support chmod, just test permission errors")
-
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows doesn't support chmod, just test permission errors")
     def test_flow_run_delete_invalid_permission_raise(self, pf: PFClient):
         result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
         local_storage = LocalStorageOperations(result)
@@ -173,7 +172,7 @@ class TestFlowRun:
         pf.runs.delete(name=result.name)
         assert not os.path.exists(output_path)
 
-    def test_flow_run_delete_eval_run(self, pf: PFClient):
+    def test_visualize_run_with_referenced_run_deleted(self, pf: PFClient):
         run_id = str(uuid.uuid4())
         run = load_run(
             source=f"{RUNS_DIR}/sample_bulk_run.yaml",
