@@ -147,9 +147,8 @@ def init_tool(args):
     print("Creating tool from scratch...")
     extra_info = list_of_dict_to_dict(args.extra_info)
     icon_path = extra_info.pop("icon", None)
-    if icon_path:
-        if not Path(icon_path).exists():
-            raise UserErrorException(f"Cannot find the icon path {icon_path}.")
+    if icon_path and not Path(icon_path).exists():
+        raise UserErrorException(f"Cannot find the icon path {icon_path}.")
     if args.package:
         package_path = Path(args.package)
         package_name = package_path.stem
@@ -169,6 +168,8 @@ def init_tool(args):
         ToolReadmeGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "README.md")
     else:
         script_code_path = Path(".")
+        if icon_path:
+            icon_path = f'r"{icon_path}"'
     # Generate tool script
     ToolPackageGenerator(tool_name=args.tool, icon=icon_path, extra_info=extra_info).generate_to_file(
         script_code_path / f"{args.tool}.py"
