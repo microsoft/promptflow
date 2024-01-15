@@ -5,7 +5,8 @@ import io
 import re
 
 from jinja2 import Template
-from ruamel.yaml import YAML
+
+from .yaml_utils import dump_yaml, load_yaml_string
 
 
 def generate_custom_strong_type_connection_spec(cls, package, package_version):
@@ -83,9 +84,7 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
 
 def render_comments(connection_template, cls, secrets, configs):
     if cls.__doc__ is not None:
-        yaml = YAML()
-        yaml.preserve_quotes = True
-        data = yaml.load(connection_template)
+        data = load_yaml_string(connection_template)
         comments_map = extract_comments_mapping(list(secrets) + list(configs), cls.__doc__)
         # Add comments for secret keys
         for key in secrets:
@@ -99,7 +98,7 @@ def render_comments(connection_template, cls, secrets, configs):
 
         # Dump data object back to string
         buf = io.StringIO()
-        yaml.dump(data, buf)
+        dump_yaml(data, buf)
         connection_template_with_comments = buf.getvalue()
 
         return connection_template_with_comments

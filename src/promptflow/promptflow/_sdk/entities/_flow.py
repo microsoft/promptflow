@@ -8,7 +8,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
-import yaml
 from marshmallow import Schema
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
@@ -23,6 +22,7 @@ from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import load_yaml, load_yaml_string
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -189,7 +189,7 @@ class Flow(FlowBase):
             # read flow file to get hash
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
-                data = yaml.safe_load(flow_content)
+                data = load_yaml_string(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
             if is_eager_flow:
@@ -299,7 +299,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def _dump_for_validation(self) -> Dict:
         # Flow is read-only in control plane, so we always dump the flow from file
-        data = yaml.safe_load(self.flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+        data = load_yaml(self.flow_dag_path)
         if isinstance(self._params_override, dict):
             data.update(self._params_override)
         return data

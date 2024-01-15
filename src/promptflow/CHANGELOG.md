@@ -7,7 +7,8 @@
 - [Executor] Calculate system_metrics recursively in api_calls.
 - [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
 - [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
-- [pfazure] Switch automatic runtime's session provision to system wait.
+- [SDK/CLI][azure] Switch automatic runtime's session provision to system wait.
+- [SDK/CLI] Add `--skip-open-browser` option to `pf flow serve` to skip opening browser.
 
 ### Bugs Fixed
 
@@ -23,6 +24,7 @@
   - When flow has unknown attributes, log warning instead of raising error.
   - Use local flow folder name and timestamp as the azure flow file share folder name.
 - [SDK/CLI] For `pf/pfazure run create`, when run has unknown attribute, log warning instead of raising error.
+- Replace `pyyaml` with `ruamel.yaml` to adopt YAML 1.2 specification.
 
 ## 1.3.0 (2023.12.27)
 

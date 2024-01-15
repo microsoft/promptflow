@@ -8,7 +8,7 @@ from typing import IO, AnyStr, Optional, Union
 from dotenv import dotenv_values
 
 from .._utils.logger_utils import get_cli_sdk_logger
-from ._utils import load_yaml
+from .._utils.yaml_utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
 from .entities._flow import Flow

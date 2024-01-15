@@ -12,8 +12,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
-import yaml
-
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
@@ -25,7 +23,6 @@ from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
     dump_flow_result,
-    dump_yaml,
     generate_flow_tools_json,
     generate_random_string,
     logger,
@@ -35,6 +32,7 @@ from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
 
@@ -296,7 +294,7 @@ class FlowOperations(TelemetryMixin):
         st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
-        flow_info = yaml.safe_load(flow_dag_path.read_text())
+        flow_info = load_yaml(flow_dag_path)
         # standard env object:
         # environment:
         #   image: xxx
@@ -361,7 +359,7 @@ class FlowOperations(TelemetryMixin):
         }
 
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write(dump_yaml(sorted_connection_dict, sort_keys=False))
+            f.write(dump_yaml(sorted_connection_dict))
         return env_var_names
 
     def _migrate_connections(self, connection_names: List[str], output_dir: Path):
