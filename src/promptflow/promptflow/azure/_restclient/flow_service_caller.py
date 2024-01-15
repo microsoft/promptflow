@@ -19,7 +19,7 @@ from promptflow._sdk._telemetry import TelemetryMixin
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
-from promptflow.azure._utils.gerneral import get_authorization, get_base_token, get_aml_token
+from promptflow.azure._utils.gerneral import get_authorization, get_arm_token, get_aml_token
 from promptflow.exceptions import UserErrorException, PromptflowException
 
 logger = LoggerFactory.get_logger(__name__)
@@ -133,7 +133,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
     def _get_user_identity_info(self):
         import jwt
 
-        token = get_base_token(credential=self._credential)
+        token = get_arm_token(credential=self._credential)
         decoded_token = jwt.decode(token.token, options={"verify_signature": False})
         user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
         return user_object_id, user_tenant_id

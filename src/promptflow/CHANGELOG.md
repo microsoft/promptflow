@@ -8,6 +8,7 @@
 - [Executor] Add flow root level api_calls, so that user can overview the aggregated metrics of a flow.
 - [Executor] Add @trace decorator to make it possible to log traces for functions that are called by tools.
 - [pfazure] Switch automatic runtime's session provision to system wait.
+- [pfazure] Support submit flow to sovereign cloud.
 
 ### Bugs Fixed
 
