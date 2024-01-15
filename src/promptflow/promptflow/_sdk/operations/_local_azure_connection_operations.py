@@ -44,11 +44,18 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     @classmethod
     def _get_credential(cls):
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
+        from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
 
         if is_from_cli():
             try:
                 # Try getting token for cli without interactive login
-                credential = DefaultAzureCredential()
+                cloud_name = _get_default_cloud_name()
+                if cloud_name in (AzureEnvironments.ENV_US_GOVERNMENT, AzureEnvironments.ENV_CHINA):
+                    cloud = _get_cloud(cloud=cloud_name)
+                    authority = cloud[EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT]
+                    credential = DefaultAzureCredential(authority=authority, exclude_shared_token_cache_credential=True)
+                else:
+                    credential = DefaultAzureCredential()
                 get_base_token(credential=credential)
             except Exception:
                 print_red_error(
