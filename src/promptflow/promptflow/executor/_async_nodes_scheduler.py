@@ -181,6 +181,7 @@ def log_stack_recursively(task: asyncio.Task, elapse_time: float):
     # "only one stack frame is returned for a suspended coroutine."
     task_or_coroutine = task
     frame_summaries = []
+    # Collect frame_summaries along async call chain
     while True:
         if isinstance(task_or_coroutine, asyncio.Task):
             # For a task, get the coroutine it's running
@@ -188,20 +189,22 @@ def log_stack_recursively(task: asyncio.Task, elapse_time: float):
         elif asyncio.iscoroutine(task_or_coroutine):
             coroutine = task_or_coroutine
         else:
-            user_frame_summaries = extract_user_frame_summaries(frame_summaries)
-            stack_messages = traceback.format_list(user_frame_summaries)
-            all_stack_message = "".join(stack_messages)
-            task_msg = (
-                f"Task {task.get_name()} has been running for {elapse_time:.0f} seconds,"
-                f" stacktrace:\n{all_stack_message}"
-            )
-            flow_logger.warning(task_msg)
-            return
-
+            break
         frame = coroutine.cr_frame
         stack_summary: traceback.StackSummary = traceback.extract_stack(frame)
         frame_summaries.extend(stack_summary)
         task_or_coroutine = coroutine.cr_await
+
+    # Format the frame summaries to warning message
+    if frame_summaries:
+        user_frame_summaries = extract_user_frame_summaries(frame_summaries)
+        stack_messages = traceback.format_list(user_frame_summaries)
+        all_stack_message = "".join(stack_messages)
+        task_msg = (
+            f"Task {task.get_name()} has been running for {elapse_time:.0f} seconds,"
+            f" stacktrace:\n{all_stack_message}"
+        )
+        flow_logger.warning(task_msg)
 
 
 def monitor_long_running_coroutine(
