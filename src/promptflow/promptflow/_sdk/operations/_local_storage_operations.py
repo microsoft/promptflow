@@ -23,7 +23,7 @@ from promptflow._sdk._constants import (
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
 )
-from promptflow._sdk._errors import BulkRunException
+from promptflow._sdk._errors import BulkRunException, InvalidRunError
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._eager_flow import EagerFlow
@@ -225,6 +225,12 @@ class LocalStorageOperations(AbstractRunStorage):
     @property
     def eager_mode(self) -> bool:
         return self._eager_mode
+
+    def delete(self) -> None:
+        def on_rmtree_error(func, path, exc_info):
+            raise InvalidRunError(f"Failed to delete run {self.path} due to {exc_info[1]}.")
+
+        shutil.rmtree(path=self.path, onerror=on_rmtree_error)
 
     def _dump_meta_file(self) -> None:
         with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:
