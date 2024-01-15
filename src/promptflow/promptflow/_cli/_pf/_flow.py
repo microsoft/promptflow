@@ -144,6 +144,9 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
     add_param_static_folder = lambda parser: parser.add_argument(  # noqa: E731
         "--static_folder", type=str, help=argparse.SUPPRESS
     )
+    add_param_skip_browser = lambda parser: parser.add_argument(  # noqa: E731
+        "--skip-open-browser", action="store_true", default=False, help="Skip open browser for flow serving."
+    )
     activate_action(
         name="serve",
         description="Serving a flow as an endpoint.",
@@ -155,6 +158,7 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
             add_param_static_folder,
             add_param_environment_variables,
             add_param_config,
+            add_param_skip_browser,
         ]
         + base_params,
         subparsers=subparsers,
@@ -502,9 +506,10 @@ def serve_flow_python(args, source):
         environment_variables=list_of_dict_to_dict(args.environment_variables),
         config=config,
     )
-    target = f"http://{args.host}:{args.port}"
-    logger.info(f"Opening browser {target}...")
-    webbrowser.open(target)
+    if not args.skip_open_browser:
+        target = f"http://{args.host}:{args.port}"
+        logger.info(f"Opening browser {target}...")
+        webbrowser.open(target)
     # Debug is not supported for now as debug will rerun command, and we changed working directory.
     app.run(port=args.port, host=args.host)
 
