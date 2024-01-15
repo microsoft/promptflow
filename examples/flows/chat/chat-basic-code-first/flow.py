@@ -27,7 +27,7 @@ def flow_entry(question: str='What is ChatGPT?', chat_history: list = []) -> Res
     """Flow entry function."""
     prompt = load_prompt("chat.jinja2", question, chat_history)
     pf = PFClient()
-    connection = pf.connections.get("open_ai_connection")
+    connection = pf.connections.get("open_ai_connection", with_secrets=True) # TODO: add connection to function inputs
     output = chat(
         connection=connection,
         prompt=prompt,
