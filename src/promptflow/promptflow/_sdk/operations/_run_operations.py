@@ -231,8 +231,7 @@ class RunOperations(TelemetryMixin):
     @monitor_operation(activity_name="pf.runs.delete", activity_type=ActivityType.PUBLICAPI)
     def delete(
         self,
-        runs: Union[str, Run, List[str], List[Run]],
-        **kwargs,
+        name: str,
     ) -> None:
         """Delete run permanently.
 
@@ -240,18 +239,10 @@ class RunOperations(TelemetryMixin):
         :param kwargs: other fields to update, fields not supported will be directly dropped.
         :return: None
         """
-        if not isinstance(runs, list):
-            runs = [runs]
-        valid_runs = []
-        for run in runs:
-            run = Run._validate_and_return_run_name(run)
-            valid_runs.append((run, LocalStorageOperations(run=self.get(run))))
-        for run, valid_run in valid_runs:
-            valid_run.delete()
-            try:
-                ORMRun.delete(run)
-            except RunNotFoundError:
-                pass
+        run_name = Run._validate_and_return_run_name(name)
+        valid_run = self.get(run_name)
+        LocalStorageOperations(valid_run).delete()
+        ORMRun.delete(name)
 
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(

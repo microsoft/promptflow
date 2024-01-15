@@ -396,10 +396,10 @@ client.runs.restore(name="<run-name>")
 :sync: CLI
 
 Delete the run permanently. This operation is not reversible.
-Delete will fail if any of the run name is not valid.
+Delete will fail if the run name is not valid.
 
 ```bash
-pf run delete --names <run-name_a>,<run-name_b>
+pf run delete --name <run-name>
 ```
 :::
 
@@ -413,9 +413,7 @@ from promptflow import PFClient
 # Get a pf client to manage runs
 pf = PFClient()
 # delete a run
-client.runs.delete(runs="run-name")
-# delete multiple runs
-client.runs.delete(runs=["<run-name1>", "<run-name2>"])
+client.runs.delete(name="run-name")
 ```
 :::
 ::::

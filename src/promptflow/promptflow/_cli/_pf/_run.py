@@ -23,6 +23,7 @@ from promptflow._cli._params import (
 from promptflow._cli._utils import (
     _output_result_list_with_format,
     activate_action,
+    confirm,
     exception_handler,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
@@ -344,13 +345,10 @@ def add_run_delete(subparsers):
     epilog = """
 Example:
 
-# Delete runs:
-pf run delete --names "<name1>,<name2>..."
+# Delete a run irreversibly:
+pf run delete -n "<name>"
 """
-    add_param_name = lambda parser: parser.add_argument(  # noqa: E731
-        "-n", "--names", type=str, required=True, help="Name of the runs, comma separated."
-    )
-    add_params = [add_param_name] + base_params
+    add_params = [add_param_run_name] + base_params
 
     activate_action(
         name="delete",
@@ -433,7 +431,7 @@ def dispatch_run_commands(args: argparse.Namespace):
     elif args.sub_action == "export":
         export_run(args)
     elif args.sub_action == "delete":
-        delete_run(names=args.names)
+        delete_run(name=args.name)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -628,10 +626,12 @@ def create_run(create_func: Callable, args):
 
 
 @exception_handler("Delete run")
-def delete_run(names: str) -> None:
-    run_names = [name.strip() for name in names.split(",")]
-    pf_client = PFClient()
-    pf_client.runs.delete(runs=run_names)
+def delete_run(name: str) -> None:
+    if confirm("Are you sure to delete run irreversibly?"):
+        pf_client = PFClient()
+        pf_client.runs.delete(name=name)
+    else:
+        print("The delete operation was canceled.")
 
 
 def export_run(args):
