@@ -216,7 +216,7 @@ class ForkProcessManager(AbstractProcessManager):
         """
         context = multiprocessing.get_context("spawn")
         process = context.Process(
-            target=fork_processes_manager,
+            target=create_spawned_fork_process_manager,
             args=(
                 self._log_context_initialization_func,
                 self._current_operation_context,
@@ -375,7 +375,7 @@ class SpawnedForkProcessManager(AbstractProcessManager):
             self.new_process(i)
 
 
-def fork_processes_manager(
+def create_spawned_fork_process_manager(
     log_context_initialization_func,
     current_operation_context,
     input_queues,

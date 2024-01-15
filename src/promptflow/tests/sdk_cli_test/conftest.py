@@ -14,7 +14,7 @@ from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow.executor._line_execution_process_pool import _process_wrapper
-from promptflow.executor._process_manager import fork_processes_manager
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
 from .recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
 
@@ -179,8 +179,8 @@ class MockSpawnProcess(SpawnProcess):
     def __init__(self, group=None, target=None, *args, **kwargs):
         if target == _process_wrapper:
             target = _mock_process_wrapper
-        if target == fork_processes_manager:
-            target = _mock_fork_processes_manager
+        if target == create_spawned_fork_process_manager:
+            target = _mock_create_spawned_fork_process_manager
         super().__init__(group, target, *args, **kwargs)
 
 
@@ -239,7 +239,7 @@ def _mock_process_wrapper(
     )
 
 
-def _mock_fork_processes_manager(
+def _mock_create_spawned_fork_process_manager(
     log_context_initialization_func,
     current_operation_context,
     input_queues,
@@ -253,7 +253,7 @@ def _mock_fork_processes_manager(
     process_target_func,
 ):
     setup_recording_injection_if_enabled()
-    fork_processes_manager(
+    create_spawned_fork_process_manager(
         log_context_initialization_func,
         current_operation_context,
         input_queues,
