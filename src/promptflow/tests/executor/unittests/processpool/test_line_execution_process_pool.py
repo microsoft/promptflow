@@ -153,6 +153,7 @@ def execute_in_spawn_mode_subprocess(
 
 
 @pytest.mark.unittest
+@pytest.mark.usefixtures("recording_injection")
 class TestLineExecutionProcessPool:
     def create_line_execution_process_pool(self, dev_connections):
         executor = FlowExecutor.create(

@@ -9,6 +9,7 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 
+from ...sdk_cli_azure_test.recording_utilities import is_record, is_replay
 from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
@@ -127,6 +128,7 @@ class TestExecutor:
 
         assert process.exitcode == 0
 
+    @pytest.mark.skipif(is_replay() or is_record(), reason="Tools errors are not supported in recording")
     def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
         executor = FlowExecutor.create(
