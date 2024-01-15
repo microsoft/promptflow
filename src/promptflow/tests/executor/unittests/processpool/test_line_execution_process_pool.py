@@ -17,7 +17,7 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
-    format_current_process,
+    format_current_process_info,
     get_available_max_worker_count,
     get_multiprocessing_context,
     log_process_status,
@@ -439,11 +439,11 @@ class TestGetAvailableMaxWorkerCount:
 
 @pytest.mark.unittest
 class TestFormatCurrentProcess:
-    def test_format_current_process(self):
+    def test_format_current_process_info(self):
         process_name = "process_name"
         process_pid = 123
         line_number = 13
-        formatted_message = format_current_process(process_name, process_pid, line_number)
+        formatted_message = format_current_process_info(process_name, process_pid, line_number)
         expected_returned_log_message = (
             f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
         )

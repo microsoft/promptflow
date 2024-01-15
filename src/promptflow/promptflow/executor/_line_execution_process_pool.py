@@ -29,7 +29,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError
-from promptflow.executor._process_manager import ForkProcessManager, ProcessInfo, SpawnProcessManager
+from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
@@ -61,12 +61,12 @@ class QueueRunStorage(AbstractRunStorage):
         self.queue.put(run_info)
 
 
-def format_current_process(process_name, pid, line_number: int):
+def format_current_process_info(process_name, pid, line_number: int):
     return f"Process name({process_name})-Process id({pid})-Line number({line_number})"
 
 
 def log_process_status(process_name, pid, line_number: int, is_completed=False, is_failed=False):
-    process_info = format_current_process(process_name, pid, line_number)
+    process_info = format_current_process_info(process_name, pid, line_number)
     if is_completed:
         bulk_logger.info(f"{process_info} completed.")
     elif is_failed:
@@ -91,6 +91,9 @@ class LineExecutionProcessPool:
         self._run_id = run_id
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
+        user_defined_multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
+        if user_defined_multiprocessing_start_method is not None:
+            bulk_logger.warning("The environment variable 'PF_BATCH_METHOD' has been deprecated.")
         sys_start_methods = multiprocessing.get_all_start_methods()
         use_fork = "fork" in sys_start_methods
         self.context = get_multiprocessing_context("fork" if use_fork else "spawn")
@@ -130,6 +133,13 @@ class LineExecutionProcessPool:
         self._task_queue = Queue()
         self._n_process = self._determine_worker_count()
 
+        # Queue() uses a synchronization primitive called a “lock” to ensure that only one process can access
+        # the queue at a time
+        # While manager().Queue() uses a manager object to create a queue that can be shared
+        # between multiple processes.
+        # Use Queue() will case an error: "A SemLock created in a fork context is being shared with a process
+        # in a spawn context. This is not supported".
+        # So use the manager.Queue().
         self._input_queues = [manager.Queue() for _ in range(self._n_process)]
         self._output_queues = [manager.Queue() for _ in range(self._n_process)]
         self._control_signal_queue = manager.Queue()
@@ -167,23 +177,22 @@ class LineExecutionProcessPool:
 
         self._processes_manager.start_processes()
 
-        pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
-        self._pool = pool
+        monitor_pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
+        self._monitor_pool = monitor_pool
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self._pool is not None:
-            self._pool.close()
-            self._pool.join()
+        if self._monitor_pool is not None:
+            self._monitor_pool.close()
+            self._monitor_pool.join()
 
     def _get_process_info(self, index):
         while True:
             try:
                 process_id = self._process_info[index].process_id
                 process_name = self._process_info[index].process_name
-                process_info = ProcessInfo(index=index, process_id=process_id, process_name=process_name)
-                return (process_info.index, process_info.process_id, process_info.process_name)
+                return (index, process_id, process_name)
             except KeyError:
                 continue
             except Exception as e:
@@ -202,9 +211,7 @@ class LineExecutionProcessPool:
         result_list.append(result)
 
     def _monitor_process_alive(self, process_id):
-        if not psutil.pid_exists(process_id):
-            return True
-        return False
+        return not psutil.pid_exists(process_id)
 
     def _handle_output_queue_messages(self, output_queue, result_list):
         try:
@@ -240,7 +247,7 @@ class LineExecutionProcessPool:
             input_queue.put(args)
             inputs, line_number, run_id = args[:3]
 
-            self._processing_idx[line_number] = format_current_process(process_name, process_id, line_number)
+            self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
             log_process_status(process_name, process_id, line_number)
 
             start_time = datetime.utcnow()
@@ -262,7 +269,7 @@ class LineExecutionProcessPool:
 
             # Handle line execution completed.
             if completed:
-                self._completed_idx[line_number] = format_current_process(process_name, process_id, line_number)
+                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_completed=True)
             # Handle line execution is not completed.
             else:
@@ -273,7 +280,7 @@ class LineExecutionProcessPool:
                 else:
                     self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
 
-                self._completed_idx[line_number] = format_current_process(process_name, process_id, line_number)
+                self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
 
                 # If there are still tasks in task_queue, restart a new process to execute the task.
@@ -381,7 +388,7 @@ class LineExecutionProcessPool:
             level=INFO,
             log_message_function=self._generate_thread_status_messages,
             args=(
-                self._pool,
+                self._monitor_pool,
                 self._nlines,
             ),
         ):
@@ -407,7 +414,9 @@ class LineExecutionProcessPool:
                 # Create _n_process monitoring threads, mainly used to assign tasks and receive line result.
                 # When task_queue is empty, end the process.
                 # When line execution timeout or process crash, restart the process.
-                async_result = self._pool.starmap_async(self._monitor_workers_and_process_tasks_in_thread, args_list)
+                async_result = self._monitor_pool.starmap_async(
+                    self._monitor_workers_and_process_tasks_in_thread, args_list
+                )
 
                 try:
                     # Only log when the number of results changes to avoid duplicate logging.
