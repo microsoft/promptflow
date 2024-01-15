@@ -261,6 +261,8 @@ def parse_ua_to_dict(ua):
     return ua_dict
 
 
+# TODO: Add "conditions" parameter to pass in a list of lambda functions
+# to check if the environment variable is valid.
 def get_int_env_var(env_var_name, default_value=None):
     """
     The function `get_int_env_var` retrieves an integer environment variable value, with an optional
