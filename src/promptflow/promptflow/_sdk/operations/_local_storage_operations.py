@@ -212,9 +212,10 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
-        self.dag_dict = self.load_dag_dict()
+        with open(self._run.flow, mode="r", encoding=DEFAULT_ENCODING) as f:
+            flow_dag = load_yaml(f)
         # TODO(2898455): refine here, check if there's cases where dag.yaml not exist
-        self._eager_mode = "entry" in self.dag_dict
+        self._eager_mode = "entry" in flow_dag
 
     @property
     def eager_mode(self) -> bool:
@@ -256,15 +257,12 @@ class LocalStorageOperations(AbstractRunStorage):
             with open(self._flow_tools_json_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 return json.load(f)
 
-    def load_dag_dict(self):
-        with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-            flow_dag = load_yaml(f)
-        return flow_dag
-
     def load_io_spec(self) -> Tuple[Dict[str, Dict[str, str]], Dict[str, Dict[str, str]]]:
         """Load input/output spec from DAG."""
         # TODO(2898455): support eager mode
-        return self.flow_dag["inputs"], self.flow_dag["outputs"]
+        with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+            flow_dag = load_yaml(f)
+        return flow_dag["inputs"], flow_dag["outputs"]
 
     def load_inputs(self) -> RunInputs:
         import pandas as pd
