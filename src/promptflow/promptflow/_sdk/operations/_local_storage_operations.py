@@ -14,6 +14,7 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
+from promptflow import load_flow
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
@@ -25,6 +26,7 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._errors import BulkRunException
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk.entities import Run
+from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
@@ -212,10 +214,9 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
-        with open(self._run.flow, mode="r", encoding=DEFAULT_ENCODING) as f:
-            flow_dag = load_yaml(f)
+        flow_obj = load_flow(source=run.flow)
         # TODO(2898455): refine here, check if there's cases where dag.yaml not exist
-        self._eager_mode = "entry" in flow_dag
+        self._eager_mode = isinstance(flow_obj, EagerFlow)
 
     @property
     def eager_mode(self) -> bool:
