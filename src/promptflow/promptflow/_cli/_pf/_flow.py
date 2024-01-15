@@ -6,6 +6,7 @@ import argparse
 import importlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -40,6 +41,7 @@ from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inje
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
+from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
 DEFAULT_CONNECTION = "open_ai_connection"
@@ -467,6 +469,23 @@ def serve_flow_csharp(args, source):
         pass
 
 
+def _resolve_python_flow_additional_includes(source) -> Path:
+    # Resolve flow additional includes
+    from promptflow import load_flow
+
+    flow = load_flow(source)
+    with FlowOperations._resolve_additional_includes(flow.path) as resolved_flow_path:
+        if resolved_flow_path == flow.path:
+            return source
+        # Copy resolved flow to temp folder if additional includes exists
+        # Note: DO NOT use resolved flow path directly, as when inner logic raise exception,
+        # temp dir will fail due to file occupied by other process.
+        temp_flow_path = Path(tempfile.TemporaryDirectory().name)
+        shutil.copytree(src=resolved_flow_path.parent, dst=temp_flow_path, dirs_exist_ok=True)
+
+    return temp_flow_path
+
+
 def serve_flow_python(args, source):
     from promptflow._sdk._serving.app import create_app
 
@@ -474,7 +493,8 @@ def serve_flow_python(args, source):
     if static_folder:
         static_folder = Path(static_folder).absolute().as_posix()
     config = list_of_dict_to_dict(args.config)
-    # Change working directory to model dir
+    source = _resolve_python_flow_additional_includes(source)
+    os.environ["PROMPTFLOW_PROJECT_PATH"] = source.absolute().as_posix()
     logger.info(f"Change working directory to model dir {source}")
     os.chdir(source)
     app = create_app(
