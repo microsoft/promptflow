@@ -954,7 +954,9 @@ class FlowExecutor:
 
         :return: None
         """
-        if not hasattr(self, "_flow"):
+        from promptflow.executor._script_executor import ScriptExecutor
+
+        if isinstance(self, ScriptExecutor):
             # TODO(2901157): check if eager mode should have streaming
             return
         for node in self._flow.nodes:

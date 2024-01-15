@@ -278,13 +278,9 @@ class RunTracker(ThreadLocalSingleton):
         }
 
     def _assert_flow_output_serializable(self, output: Any) -> Any:
-        # support primitive outputs in eager mode
-        if not isinstance(output, dict):
-            output = {"output": output}
-        serializable_output = {}
-        for k, v in output.items():
+        def _wrap_serializable_error(value):
             try:
-                serializable_output[k] = self._ensure_serializable_value(v)
+                return self._ensure_serializable_value(value)
             except Exception as e:
                 # If a specific key-value pair is not serializable, raise an exception with the key.
                 error_type_and_message = f"({e.__class__.__name__}) {e}"
@@ -299,6 +295,13 @@ class RunTracker(ThreadLocalSingleton):
                     output_name=k,
                     error_type_and_message=error_type_and_message,
                 ) from e
+
+        # support primitive outputs in eager mode
+        if not isinstance(output, dict):
+            return _wrap_serializable_error(output)
+        serializable_output = {}
+        for k, v in output.items():
+            serializable_output[k] = _wrap_serializable_error(v)
 
         return serializable_output
 
