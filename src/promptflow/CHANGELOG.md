@@ -15,6 +15,7 @@
 - Fix loose flow path validation for run schema.
 - Fix "Without Import Data" in run visualize page results from invalid JSON value (`-Infinity`, `Infinity` and `NaN`).
 - Fix "ValueError: invalid width -1" when show-details against long column(s) in narrow terminal window.
+- Fix invalid tool code generated when initializing the script tool with icon.
 
 ### Improvements
 
