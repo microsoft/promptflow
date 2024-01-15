@@ -14,6 +14,7 @@ from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
+    build_user_agent,
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
@@ -21,7 +22,6 @@ from promptflow._sdk._service.utils.utils import (
 )
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._utils import get_promptflow_sdk_version, print_pf_version
-from promptflow._version import VERSION
 from promptflow.exceptions import UserErrorException
 
 
@@ -80,10 +80,7 @@ def main():
     if len(command_args) == 0:
         command_args.append("-h")
 
-    if "USER_AGENT" in os.environ:
-        user_agent = f"{os.environ['USER_AGENT']} local_pfs/{VERSION}"
-    else:
-        user_agent = f"local_pfs/{VERSION}"
+    user_agent = build_user_agent(os.getenv("USER_AGENT", None))
     os.environ["USER_AGENT"] = user_agent
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     entry(command_args)

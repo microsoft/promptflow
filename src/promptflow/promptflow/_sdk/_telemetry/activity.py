@@ -3,14 +3,14 @@
 # ---------------------------------------------------------
 import contextlib
 import functools
+import threading
 import uuid
 from contextvars import ContextVar
 from datetime import datetime
-import threading
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
-from promptflow.exceptions import _ErrorInfo
 from promptflow._sdk._utils import ClientUserAgentUtil
+from promptflow.exceptions import _ErrorInfo
 
 
 class ActivityType(object):
@@ -32,6 +32,67 @@ class ActivityCompletionStatus(object):
 
 
 request_id_context = ContextVar("request_id_context", default=None)
+
+
+def log_activity_start(activity_info, logger) -> None:
+    """Log activity start.
+    Sample activity_info:
+    {
+        "request_id": "request_id",
+        "first_call": True,
+        "activity_name": "activity_name",
+        "activity_type": "activity_type",
+        "user_agent": "user_agent",
+    }
+    """
+    message = f"{activity_info['activity_name']}.start"
+    logger.info(message, extra={"custom_dimensions": activity_info})
+    pass
+
+
+def log_activity_end(activity_info, logger) -> None:
+    """Log activity end.
+    Sample activity_info for success (start info plus run info):
+    {
+        ...,
+        "duration_ms": 1000
+        "completion_status": "Success",
+    }
+    Sample activity_info for failure (start info plus error info):
+    {
+        ...,
+        "duration_ms": 1000
+        "completion_status": "Failure",
+        "error_category": "error_category",
+        "error_type": "error_type",
+        "error_target": "error_target",
+        "error_message": "error_message",
+        "error_detail": "error_detail"
+    }
+    Error target & error type can be found in the following link:
+    https://github.com/microsoft/promptflow/blob/main/src/promptflow/promptflow/exceptions.py
+
+    :param activity_name: The name of the activity. The name should be unique per the wrapped logical code block.
+    :type activity_name: str
+    :param activity_info: The custom properties of the activity.
+    :type activity_info: dict
+    :param logger: The logger adapter.
+    :type logger: logging.LoggerAdapter
+    """
+    try:
+        # we will fail this log if activity_name/completion_status is not in activity_info, so directly use get()
+        message = f"{activity_info['activity_name']}.complete"
+        if activity_info["completion_status"] == ActivityCompletionStatus.FAILURE:
+            logger.error(message, extra={"custom_dimensions": activity_info})
+        else:
+            logger.info(message, extra={"custom_dimensions": activity_info})
+    except Exception:  # pylint: disable=broad-except
+        # skip if logger failed to log
+        pass  # pylint: disable=lost-exception
+
+
+def generate_request_id():
+    return str(uuid.uuid4())
 
 
 @contextlib.contextmanager
@@ -66,7 +127,7 @@ def log_activity(
     if not request_id:
         # public function call
         first_call = True
-        request_id = str(uuid.uuid4())
+        request_id = generate_request_id()
         request_id_context.set(request_id)
     else:
         first_call = False
@@ -83,8 +144,7 @@ def log_activity(
     start_time = datetime.utcnow()
     completion_status = ActivityCompletionStatus.SUCCESS
 
-    message = f"{activity_name}.start"
-    logger.info(message, extra={"custom_dimensions": activity_info})
+    log_activity_start(activity_info, logger)
     exception = None
 
     try:
@@ -99,23 +159,17 @@ def log_activity(
         activity_info["error_message"] = error_message
         activity_info["error_detail"] = error_detail
     finally:
-        try:
-            if first_call:
-                # recover request id in global storage
-                request_id_context.set(None)
-            end_time = datetime.utcnow()
-            duration_ms = round((end_time - start_time).total_seconds() * 1000, 2)
+        if first_call:
+            # recover request id in global storage
+            request_id_context.set(None)
 
-            activity_info["completion_status"] = completion_status
-            activity_info["duration_ms"] = duration_ms
-            message = f"{activity_name}.complete"
-            if exception:
-                logger.error(message, extra={"custom_dimensions": activity_info})
-            else:
-                logger.info(message, extra={"custom_dimensions": activity_info})
-        except Exception:  # pylint: disable=broad-except
-            # skip if logger failed to log
-            pass  # pylint: disable=lost-exception
+        end_time = datetime.utcnow()
+        duration_ms = round((end_time - start_time).total_seconds() * 1000, 2)
+
+        activity_info["completion_status"] = completion_status
+        activity_info["duration_ms"] = duration_ms
+
+        log_activity_end(activity_info, logger)
         # raise the exception to align with the behavior of the with statement
         if exception:
             raise exception
@@ -171,7 +225,7 @@ def monitor_operation(
         @functools.wraps(f)
         def wrapper(self, *args, **kwargs):
             from promptflow._sdk._telemetry.telemetry import get_telemetry_logger
-            from promptflow._utils.version_hint_utils import hint_for_update, check_latest_version, HINT_ACTIVITY_NAME
+            from promptflow._utils.version_hint_utils import HINT_ACTIVITY_NAME, check_latest_version, hint_for_update
 
             logger = get_telemetry_logger()
 
