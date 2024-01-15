@@ -13,7 +13,7 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 
-from ..conftest import MockSpawnProcess, override_recording_file, setup_recording
+from ..conftest import MockSpawnProcess, setup_recording
 from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
@@ -282,7 +282,6 @@ def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependenc
     multiprocessing.get_context("spawn").Process = MockSpawnProcess
 
     # recording injection again since this method is running in a new process
-    override_recording_file()
     setup_recording()
     try:
         result = FlowExecutor.load_and_exec_node(
