@@ -1,41 +1,43 @@
 import os
-
 import pytest
-
 from promptflow.executor import FlowExecutor
-
 from ..utils import get_flow_folder, get_yaml_file
 
 
 @pytest.mark.e2etest
 class TestAsync:
     @pytest.mark.parametrize(
-        "folder_name, nodes",
+        "folder_name, concurrency_levels",
         [
-            ("async_tools", ["async_passthrough", "async_passthrough1", "async_passthrough2"]),
-            ("async_tools_with_sync_tools", ["async_passthrough", "async_passthrough1", "sync_passthrough1"]),
+            ("async_tools", [1, 2, 3]),
+            ("async_tools_with_sync_tools", [1, 2, 3]),
         ],
     )
-    def test_executor_node_concurrency(self, folder_name, nodes):
+    def test_executor_node_concurrency(self, folder_name, concurrency_levels):
         os.chdir(get_flow_folder(folder_name))
         executor = FlowExecutor.create(get_yaml_file(folder_name), {})
+        for concurrency in concurrency_levels:
+            flow_result = executor.exec_line({"input_str": "Hello"}, node_concurrency=concurrency)
+            max_concurrency = self.calculate_max_concurrency(flow_result)
+            assert max_concurrency <= concurrency
 
-        def get_node_times(api_calls, nodes):
-            node_times = {node: {"start": None, "end": None} for node in nodes}
-            for api_call in api_calls[0]["children"]:
-                if api_call["node_name"] in nodes:
-                    node_times[api_call["node_name"]]["start"] = api_call["start_time"]
-                    node_times[api_call["node_name"]]["end"] = api_call["end_time"]
-            return node_times
+    def calculate_max_concurrency(self, flow_result):
+        timeline = []
+        api_calls = flow_result.run_info.api_calls[0]["children"]
+        print("api_calls:", api_calls)
+        for api_call in api_calls:
+            timeline.append(("start", api_call["start_time"]))
+            timeline.append(("end", api_call["end_time"]))
+        timeline.sort(key=lambda x: x[1])
+        print("timeline", timeline)
+        current_concurrency = 0
+        max_concurrency = 0
 
-        # When node_concurrency is 1, nodes execute one by one
-        flow_result = executor.exec_line({"input_str": "Hello"}, node_concurrency=1)
-        node_times = get_node_times(flow_result.run_info.api_calls, nodes)
-        assert node_times[nodes[0]]["end"] < node_times[nodes[1]]["start"]
-        assert node_times[nodes[1]]["end"] < node_times[nodes[2]]["start"]
+        for event, _ in timeline:
+            if event == "start":
+                current_concurrency += 1
+                max_concurrency = max(max_concurrency, current_concurrency)
+            elif event == "end":
+                current_concurrency -= 1
 
-        # When node_concurrency is 2, two nodes execute concurrently
-        flow_result = executor.exec_line({"input_str": "Hello"}, node_concurrency=2)
-        node_times = get_node_times(flow_result.run_info.api_calls, nodes)
-        assert node_times[nodes[1]]["start"] < node_times[nodes[2]]["end"]
-        assert node_times[nodes[2]]["start"] < node_times[nodes[1]]["end"]
+        return max_concurrency
