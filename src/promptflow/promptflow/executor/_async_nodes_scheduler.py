@@ -214,20 +214,20 @@ def monitor_long_running_coroutine(
     dag_manager_completed_event: threading.Event,
 ):
     logging_interval = DEFAULT_TASK_LOGGING_INTERVAL
-    logging_level_in_env = os.environ.get("PF_TASK_PEEKING_INTERVAL")
-    if logging_level_in_env:
+    logging_interval_in_env = os.environ.get("PF_TASK_PEEKING_INTERVAL")
+    if logging_interval_in_env:
         try:
-            value = int(logging_level_in_env)
+            value = int(logging_interval_in_env)
             if value <= 0:
                 raise ValueError
             logging_interval = value
             flow_logger.info(
                 f"Using value of PF_TASK_PEEKING_INTERVAL in environment variable as "
-                f"logging interval: {logging_level_in_env}"
+                f"logging interval: {logging_interval_in_env}"
             )
         except ValueError:
             flow_logger.warning(
-                f"Value of PF_TASK_PEEKING_INTERVAL in environment variable ('{logging_level_in_env}') "
+                f"Value of PF_TASK_PEEKING_INTERVAL in environment variable ('{logging_interval_in_env}') "
                 f"is invalid, use default value {DEFAULT_TASK_LOGGING_INTERVAL}"
             )
     flow_logger.info("monitor_long_running_coroutine started")
