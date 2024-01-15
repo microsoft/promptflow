@@ -6,7 +6,7 @@
 import datetime
 from pathlib import Path
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
@@ -19,6 +19,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 
+from ... import load_flow
 from ..._utils.logger_utils import LoggerFactory
 from .utils import SubmitterHelper, variant_overwrite_context
 
@@ -55,11 +56,15 @@ class RunSubmitter:
             run.run.outputs = self.run_operations._get_outputs(run.run)
         self._validate_inputs(run=run)
 
-        # running specified variant
-        with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-            local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
-            with local_storage.logger:
-                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+        local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
+        with local_storage.logger:
+            if local_storage.eager_mode:
+                flow_obj = load_flow(source=run.flow)
+                self._submit_bulk_run(flow=flow_obj, run=run, local_storage=local_storage)
+            else:
+                # running specified variant
+                with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
+                    self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     @classmethod
     def _validate_inputs(cls, run: Run):
@@ -68,7 +73,7 @@ class RunSubmitter:
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
-        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+        if flow.language == FlowLanguage.CSharp:
             connections = []
         else:
             with _change_working_dir(flow.code):
