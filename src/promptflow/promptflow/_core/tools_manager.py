@@ -12,14 +12,7 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
-import yaml
-
-from promptflow._core._errors import (
-    InputTypeMismatch,
-    MissingRequiredInputs,
-    PackageToolNotFoundError,
-    ToolLoadError,
-)
+from promptflow._core._errors import InputTypeMismatch, MissingRequiredInputs, PackageToolNotFoundError, ToolLoadError
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
@@ -41,6 +34,7 @@ from promptflow._utils.tool_utils import (
     validate_dynamic_list_func_response_type,
     validate_tool_func_result,
 )
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
@@ -53,7 +47,7 @@ def collect_tools_from_directory(base_dir) -> dict:
     tools = {}
     for f in Path(base_dir).glob("**/*.yaml"):
         with open(f, "r") as f:
-            tools_in_file = yaml.safe_load(f)
+            tools_in_file = load_yaml(f)
             for identifier, tool in tools_in_file.items():
                 tools[identifier] = tool
     return tools
@@ -94,7 +88,7 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
 
                 m = tool["module"]
                 importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.metadata['Name']
+                tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
         except Exception as e:
@@ -124,7 +118,7 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     continue
                 m = tool["module"]
                 module = importlib.import_module(m)  # Import the module to make sure it is valid
-                tool["package"] = entry_point.dist.metadata['Name']
+                tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
 
@@ -141,11 +135,11 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                     for cls in custom_strong_type_connections_classes:
                         identifier = f"{cls.__module__}.{cls.__name__}"
                         connection_spec = generate_custom_strong_type_connection_spec(
-                            cls, entry_point.dist.metadata['Name'], entry_point.dist.version
+                            cls, entry_point.dist.metadata["Name"], entry_point.dist.version
                         )
                         all_package_connection_specs[identifier] = connection_spec
                         all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
-                            cls, connection_spec, entry_point.dist.metadata['Name'], entry_point.dist.version
+                            cls, connection_spec, entry_point.dist.metadata["Name"], entry_point.dist.version
                         )
         except Exception as e:
             msg = (
