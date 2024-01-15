@@ -2,13 +2,12 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
-import sys
 import subprocess
+import sys
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
-import yaml
 from flask import Response, jsonify, make_response, request
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
@@ -16,6 +15,7 @@ from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
+from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.contracts._run_management import RunMetadata
 
 api = Namespace("Runs", description="Runs Management")
@@ -70,7 +70,7 @@ class RunSubmit(Resource):
         with tempfile.TemporaryDirectory() as temp_dir:
             run_file = Path(temp_dir) / "batch_run.yaml"
             with open(run_file, "w", encoding="utf-8") as f:
-                yaml.safe_dump(run_dict, f)
+                dump_yaml(run_dict, f)
             cmd = f"pf run create --file {run_file}"
             if sys.executable.endswith("pfcli.exe"):
                 cmd = f"pfcli {cmd}"

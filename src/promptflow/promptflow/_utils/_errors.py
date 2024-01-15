@@ -1,4 +1,4 @@
-from promptflow.exceptions import UserErrorException, ValidationException
+from promptflow.exceptions import SystemErrorException, UserErrorException, ValidationException
 
 
 class InvalidImageInput(ValidationException):
@@ -6,4 +6,10 @@ class InvalidImageInput(ValidationException):
 
 
 class LoadMultimediaDataError(UserErrorException):
+    pass
+
+
+class YamlParseError(SystemErrorException):
+    """Exception raised when yaml parse failed."""
+
     pass

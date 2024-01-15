@@ -39,7 +39,6 @@ REQUIRES = [
     "filelock>=3.4.0,<4.0.0",  # control plane sdk requirements, to lock for multiprocessing
     # We need to pin the version due to the issue: https://github.com/hwchase17/langchain/issues/5113
     "marshmallow>=3.5,<4.0.0",
-    "pyyaml>=5.1.0,<7.0.0",
     "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
     "tiktoken>=0.4.0",
     "strictyaml>=1.5.0,<2.0.0",  # used to identify exact location of validation error
@@ -98,7 +97,7 @@ setup(
             "azure-monitor-opentelemetry>=1.1.1,<2.0.0",
             # MDC dependencies for monitoring
             "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
-        ]
+        ],
     },
     packages=find_packages(),
     entry_points={
