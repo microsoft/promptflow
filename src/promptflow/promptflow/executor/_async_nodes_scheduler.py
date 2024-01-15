@@ -93,6 +93,8 @@ class AsyncNodesScheduler:
             task2nodes = await self._wait_and_complete_nodes(task2nodes, dag_manager)
             submitted_tasks2nodes = self._execute_nodes(dag_manager, context, executor)
             task2nodes.update(submitted_tasks2nodes)
+        # Set the event to notify the monitor thread to exit
+        # Ref: https://docs.python.org/3/library/threading.html#event-objects
         self._dag_manager_completed_event.set()
         for node in dag_manager.bypassed_nodes:
             dag_manager.completed_nodes_outputs[node] = None
@@ -190,6 +192,7 @@ def log_stack_recursively(task: asyncio.Task, elapse_time: float):
             coroutine = task_or_coroutine
         else:
             break
+
         frame = coroutine.cr_frame
         stack_summary: traceback.StackSummary = traceback.extract_stack(frame)
         frame_summaries.extend(stack_summary)
@@ -213,6 +216,8 @@ def monitor_long_running_coroutine(
     task_last_log_time: dict,
     dag_manager_completed_event: threading.Event,
 ):
+    flow_logger.info("monitor_long_running_coroutine started")
+
     logging_interval = DEFAULT_TASK_LOGGING_INTERVAL
     logging_interval_in_env = os.environ.get("PF_TASK_PEEKING_INTERVAL")
     if logging_interval_in_env:
@@ -230,7 +235,7 @@ def monitor_long_running_coroutine(
                 f"Value of PF_TASK_PEEKING_INTERVAL in environment variable ('{logging_interval_in_env}') "
                 f"is invalid, use default value {DEFAULT_TASK_LOGGING_INTERVAL}"
             )
-    flow_logger.info("monitor_long_running_coroutine started")
+
     while not dag_manager_completed_event.is_set():
         running_tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
         # get duration of running tasks
