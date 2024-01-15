@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.051'
+      - '0.151'
     status:
       code: 200
       message: OK
@@ -143,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.075'
+      - '0.095'
     status:
       code: 200
       message: OK
@@ -186,7 +186,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.138'
+      - '0.224'
     status:
       code: 200
       message: OK
@@ -202,7 +202,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 19 Dec 2023 05:25:23 GMT
+      - Fri, 12 Jan 2024 07:51:37 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -252,7 +252,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 19 Dec 2023 05:25:24 GMT
+      - Fri, 12 Jan 2024 07:51:38 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -322,7 +322,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.104'
+      - '0.070'
     status:
       code: 200
       message: OK
@@ -365,7 +365,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.091'
+      - '0.136'
     status:
       code: 200
       message: OK
@@ -381,7 +381,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 19 Dec 2023 05:25:28 GMT
+      - Fri, 12 Jan 2024 07:51:41 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -393,13 +393,13 @@ interactions:
       accept-ranges:
       - bytes
       content-length:
-      - '250'
+      - '266'
       content-md5:
-      - CT1FTZp5JScB8fq+HjnINw==
+      - UZm3TyOoKWjSR23+Up6qUA==
       content-type:
       - application/octet-stream
       last-modified:
-      - Mon, 18 Dec 2023 11:54:58 GMT
+      - Tue, 19 Dec 2023 06:05:25 GMT
       server:
       - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
       vary:
@@ -407,9 +407,9 @@ interactions:
       x-ms-blob-type:
       - BlockBlob
       x-ms-creation-time:
-      - Mon, 18 Dec 2023 11:54:57 GMT
+      - Tue, 19 Dec 2023 06:05:25 GMT
       x-ms-meta-name:
-      - fd5d5be8-fec1-49ad-9969-bc7ed3350b96
+      - 7b68bf5e-6ef4-4eb3-9f49-28f9a5baad87
       x-ms-meta-upload_status:
       - completed
       x-ms-meta-version:
@@ -431,7 +431,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 19 Dec 2023 05:25:29 GMT
+      - Fri, 12 Jan 2024 07:51:43 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -460,7 +460,7 @@ interactions:
       "runExperimentName": "", "batchDataInput": {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/webClassification3.jsonl"},
       "inputsMapping": {"name": "${data.url}"}, "connections": {}, "environmentVariables":
       {}, "runtimeName": "fake-runtime-name", "sessionId": "000000000000000000000000000000000000000000000000",
-      "flowLineageId": "0000000000000000000000000000000000000000000000000000000000000000",
+      "sessionSetupMode": "SystemWait", "flowLineageId": "0000000000000000000000000000000000000000000000000000000000000000",
       "runDisplayNameGenerationType": "UserProvidedMacro"}'
     headers:
       Accept:
@@ -470,7 +470,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '778'
+      - '812'
       Content-Type:
       - application/json
       User-Agent:
@@ -493,7 +493,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '6.132'
+      - '7.941'
     status:
       code: 200
       message: OK
@@ -664,7 +664,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"name": "${data.url}"}, "outputDatastoreName": "workspaceblobstore",
         "childRunBasePath": "promptflow/PromptFlowArtifacts/batch_run_name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "4aaf8bb7-393f-4552-b498-45ea7509a2ad",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "38053316-7591-4ac8-b718-d76b16b48bbe",
         "studioPortalEndpoint": "https://ml.azure.com/runs/batch_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -682,7 +682,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.371'
+      - '0.407'
     status:
       code: 200
       message: OK
@@ -853,7 +853,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"name": "${data.url}"}, "outputDatastoreName": "workspaceblobstore",
         "childRunBasePath": "promptflow/PromptFlowArtifacts/batch_run_name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "4aaf8bb7-393f-4552-b498-45ea7509a2ad",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "38053316-7591-4ac8-b718-d76b16b48bbe",
         "studioPortalEndpoint": "https://ml.azure.com/runs/batch_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -871,7 +871,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.282'
+      - '0.393'
     status:
       code: 200
       message: OK
@@ -1042,7 +1042,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"name": "${data.url}"}, "outputDatastoreName": "workspaceblobstore",
         "childRunBasePath": "promptflow/PromptFlowArtifacts/batch_run_name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "4aaf8bb7-393f-4552-b498-45ea7509a2ad",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "38053316-7591-4ac8-b718-d76b16b48bbe",
         "studioPortalEndpoint": "https://ml.azure.com/runs/batch_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1060,7 +1060,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.272'
+      - '0.373'
     status:
       code: 200
       message: OK
@@ -1231,7 +1231,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"name": "${data.url}"}, "outputDatastoreName": "workspaceblobstore",
         "childRunBasePath": "promptflow/PromptFlowArtifacts/batch_run_name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "4aaf8bb7-393f-4552-b498-45ea7509a2ad",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "38053316-7591-4ac8-b718-d76b16b48bbe",
         "studioPortalEndpoint": "https://ml.azure.com/runs/batch_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1249,7 +1249,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.366'
+      - '0.523'
     status:
       code: 200
       message: OK
@@ -1301,7 +1301,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.082'
+      - '0.066'
     status:
       code: 200
       message: OK
@@ -1344,7 +1344,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.080'
+      - '0.128'
     status:
       code: 200
       message: OK
@@ -1360,7 +1360,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 19 Dec 2023 05:26:14 GMT
+      - Fri, 12 Jan 2024 07:52:31 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -1410,7 +1410,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 19 Dec 2023 05:26:15 GMT
+      - Fri, 12 Jan 2024 07:52:32 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -1480,7 +1480,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.078'
+      - '0.065'
     status:
       code: 200
       message: OK
@@ -1523,7 +1523,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.083'
+      - '0.113'
     status:
       code: 200
       message: OK
@@ -1539,7 +1539,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 19 Dec 2023 05:26:19 GMT
+      - Fri, 12 Jan 2024 07:52:35 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -1589,7 +1589,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Tue, 19 Dec 2023 05:26:20 GMT
+      - Fri, 12 Jan 2024 07:52:36 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -1619,9 +1619,9 @@ interactions:
       {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/webClassification3.jsonl"},
       "inputsMapping": {"groundtruth": "${data.answer}", "prediction": "${run.outputs.result}"},
       "connections": {}, "environmentVariables": {}, "runtimeName": "fake-runtime-name",
-      "sessionId": "000000000000000000000000000000000000000000000000", "flowLineageId":
-      "0000000000000000000000000000000000000000000000000000000000000000", "runDisplayNameGenerationType":
-      "UserProvidedMacro"}'
+      "sessionId": "000000000000000000000000000000000000000000000000", "sessionSetupMode":
+      "SystemWait", "flowLineageId": "0000000000000000000000000000000000000000000000000000000000000000",
+      "runDisplayNameGenerationType": "UserProvidedMacro"}'
     headers:
       Accept:
       - application/json
@@ -1630,7 +1630,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '916'
+      - '950'
       Content-Type:
       - application/json
       User-Agent:
@@ -1653,7 +1653,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '5.587'
+      - '5.293'
     status:
       code: 200
       message: OK
@@ -1837,7 +1837,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"groundtruth": "${data.answer}", "prediction": "${run.outputs.result}"},
         "outputDatastoreName": "workspaceblobstore", "childRunBasePath": "promptflow/PromptFlowArtifacts/eval_run_name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "a1555be1-1b5b-4e30-93ce-5993881fe797",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "1885cd85-1969-4fca-8c21-d8826ed5d886",
         "studioPortalEndpoint": "https://ml.azure.com/runs/eval_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -1855,7 +1855,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.531'
+      - '0.547'
     status:
       code: 200
       message: OK
@@ -2039,7 +2039,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"groundtruth": "${data.answer}", "prediction": "${run.outputs.result}"},
         "outputDatastoreName": "workspaceblobstore", "childRunBasePath": "promptflow/PromptFlowArtifacts/eval_run_name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "a1555be1-1b5b-4e30-93ce-5993881fe797",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "1885cd85-1969-4fca-8c21-d8826ed5d886",
         "studioPortalEndpoint": "https://ml.azure.com/runs/eval_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -2057,7 +2057,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.373'
+      - '0.526'
     status:
       code: 200
       message: OK
@@ -2241,7 +2241,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"groundtruth": "${data.answer}", "prediction": "${run.outputs.result}"},
         "outputDatastoreName": "workspaceblobstore", "childRunBasePath": "promptflow/PromptFlowArtifacts/eval_run_name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "a1555be1-1b5b-4e30-93ce-5993881fe797",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "1885cd85-1969-4fca-8c21-d8826ed5d886",
         "studioPortalEndpoint": "https://ml.azure.com/runs/eval_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -2259,7 +2259,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.258'
+      - '0.270'
     status:
       code: 200
       message: OK
@@ -2443,7 +2443,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"groundtruth": "${data.answer}", "prediction": "${run.outputs.result}"},
         "outputDatastoreName": "workspaceblobstore", "childRunBasePath": "promptflow/PromptFlowArtifacts/eval_run_name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "a1555be1-1b5b-4e30-93ce-5993881fe797",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "1885cd85-1969-4fca-8c21-d8826ed5d886",
         "studioPortalEndpoint": "https://ml.azure.com/runs/eval_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -2461,7 +2461,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.234'
+      - '0.231'
     status:
       code: 200
       message: OK
@@ -2645,7 +2645,7 @@ interactions:
         "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
         "inputsMapping": {"groundtruth": "${data.answer}", "prediction": "${run.outputs.result}"},
         "outputDatastoreName": "workspaceblobstore", "childRunBasePath": "promptflow/PromptFlowArtifacts/eval_run_name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "a1555be1-1b5b-4e30-93ce-5993881fe797",
+        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "1885cd85-1969-4fca-8c21-d8826ed5d886",
         "studioPortalEndpoint": "https://ml.azure.com/runs/eval_run_name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
@@ -2663,7 +2663,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.366'
+      - '0.534'
     status:
       code: 200
       message: OK
@@ -2687,25 +2687,25 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1702963535, "rootRunId": "batch_run_name",
-        "createdUtc": "2023-12-19T05:25:35.1138127+00:00", "createdBy": {"userObjectId":
+      string: '{"runMetadata": {"runNumber": 1705045909, "rootRunId": "batch_run_name",
+        "createdUtc": "2024-01-12T07:51:49.7910367+00:00", "createdBy": {"userObjectId":
         "00000000-0000-0000-0000-000000000000", "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
         "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
         "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 6,
-        "statusRevision": 3, "runUuid": "33318e47-7791-4157-b3df-46832746b286", "parentRunUuid":
-        null, "rootRunUuid": "33318e47-7791-4157-b3df-46832746b286", "lastStartTimeUtc":
-        null, "currentComputeTime": null, "computeDuration": "00:00:03.5569328", "effectiveStartTimeUtc":
+        "statusRevision": 3, "runUuid": "de4d3748-43e9-499d-bacb-28bacd51d7dd", "parentRunUuid":
+        null, "rootRunUuid": "de4d3748-43e9-499d-bacb-28bacd51d7dd", "lastStartTimeUtc":
+        null, "currentComputeTime": null, "computeDuration": "00:00:04.0496282", "effectiveStartTimeUtc":
         null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "18a66f5f-dbdf-4c17-9dd7-1634712a9cbe",
-        "upn": null}, "lastModifiedUtc": "2023-12-19T05:25:54.5596641+00:00", "duration":
-        "00:00:03.5569328", "cancelationReason": null, "currentAttemptId": 1, "runId":
+        "upn": null}, "lastModifiedUtc": "2024-01-12T07:52:10.1905954+00:00", "duration":
+        "00:00:04.0496282", "cancelationReason": null, "currentAttemptId": 1, "runId":
         "batch_run_name", "parentRunId": null, "experimentId": "b1e733a1-2a5f-4c17-bc34-4d66d2858228",
-        "status": "Completed", "startTimeUtc": "2023-12-19T05:25:51.8507659+00:00",
-        "endTimeUtc": "2023-12-19T05:25:55.4076987+00:00", "scheduleId": null, "displayName":
+        "status": "Completed", "startTimeUtc": "2024-01-12T07:52:07.2312941+00:00",
+        "endTimeUtc": "2024-01-12T07:52:11.2809223+00:00", "scheduleId": null, "displayName":
         "sdk-cli-test-fixture-batch-run-without-llm", "name": null, "dataContainerId":
         "dcid.batch_run_name", "description": null, "hidden": false, "runType": "azureml.promptflow.FlowRun",
         "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
@@ -2714,10 +2714,10 @@ interactions:
         "flow.dag.yaml", "azureml.promptflow.session_id": "bee356189f7e7f18671a79369c78df4cfb1bbd0c99069074",
         "azureml.promptflow.flow_lineage_id": "f7ee724d91e4f4a7501bdc0b66995bc8b57f86b3a526fa2a81c34ebcccbbd912",
         "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
-        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/62e1adc4edf5871506fe758355b78c8c/hello-world/flow.dag.yaml",
+        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/36774154bc3ecde4aa21054b3052221f/hello-world/flow.dag.yaml",
         "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl",
         "azureml.promptflow.inputs_mapping": "{\"name\":\"${data.url}\"}", "_azureml.evaluation_run":
-        "promptflow.BatchRun", "azureml.promptflow.snapshot_id": "4aaf8bb7-393f-4552-b498-45ea7509a2ad",
+        "promptflow.BatchRun", "azureml.promptflow.snapshot_id": "38053316-7591-4ac8-b718-d76b16b48bbe",
         "azureml.promptflow.total_tokens": "0", "_azureml.evaluate_artifacts": "[{\"path\":
         \"instance_results.jsonl\", \"type\": \"table\"}]"}, "parameters": {}, "actionUris":
         {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets": [],
@@ -2746,7 +2746,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.033'
+      - '0.052'
     status:
       code: 200
       message: OK
@@ -2770,25 +2770,25 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1702963586, "rootRunId": "eval_run_name",
-        "createdUtc": "2023-12-19T05:26:26.1400833+00:00", "createdBy": {"userObjectId":
+      string: '{"runMetadata": {"runNumber": 1705045961, "rootRunId": "eval_run_name",
+        "createdUtc": "2024-01-12T07:52:41.9028361+00:00", "createdBy": {"userObjectId":
         "00000000-0000-0000-0000-000000000000", "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
         "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
         "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 6,
-        "statusRevision": 3, "runUuid": "36b9bb96-f44b-4e7e-a622-41a95eb6b69b", "parentRunUuid":
-        null, "rootRunUuid": "36b9bb96-f44b-4e7e-a622-41a95eb6b69b", "lastStartTimeUtc":
-        null, "currentComputeTime": null, "computeDuration": "00:00:04.4829762", "effectiveStartTimeUtc":
+        "statusRevision": 3, "runUuid": "b588472b-0935-433f-9bcb-b728c4f01254", "parentRunUuid":
+        null, "rootRunUuid": "b588472b-0935-433f-9bcb-b728c4f01254", "lastStartTimeUtc":
+        null, "currentComputeTime": null, "computeDuration": "00:00:04.3642942", "effectiveStartTimeUtc":
         null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "18a66f5f-dbdf-4c17-9dd7-1634712a9cbe",
-        "upn": null}, "lastModifiedUtc": "2023-12-19T05:26:46.7859768+00:00", "duration":
-        "00:00:04.4829762", "cancelationReason": null, "currentAttemptId": 1, "runId":
+        "upn": null}, "lastModifiedUtc": "2024-01-12T07:53:02.5591186+00:00", "duration":
+        "00:00:04.3642942", "cancelationReason": null, "currentAttemptId": 1, "runId":
         "eval_run_name", "parentRunId": null, "experimentId": "7bdec279-f99c-4ed3-b0b8-dd75698b8fd0",
-        "status": "Completed", "startTimeUtc": "2023-12-19T05:26:43.0984712+00:00",
-        "endTimeUtc": "2023-12-19T05:26:47.5814474+00:00", "scheduleId": null, "displayName":
+        "status": "Completed", "startTimeUtc": "2024-01-12T07:52:58.9604157+00:00",
+        "endTimeUtc": "2024-01-12T07:53:03.3247099+00:00", "scheduleId": null, "displayName":
         "sdk-cli-test-fixture-eval-run-without-llm", "name": null, "dataContainerId":
         "dcid.eval_run_name", "description": null, "hidden": false, "runType": "azureml.promptflow.FlowRun",
         "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
@@ -2802,7 +2802,7 @@ interactions:
         "azureml.promptflow.input_run_id": "batch_run_name", "azureml.promptflow.inputs_mapping":
         "{\"groundtruth\":\"${data.answer}\",\"prediction\":\"${run.outputs.result}\"}",
         "_azureml.evaluation_run": "promptflow.BatchRun", "azureml.promptflow.snapshot_id":
-        "a1555be1-1b5b-4e30-93ce-5993881fe797", "azureml.promptflow.total_tokens":
+        "1885cd85-1969-4fca-8c21-d8826ed5d886", "azureml.promptflow.total_tokens":
         "0", "_azureml.evaluate_artifacts": "[{\"path\": \"instance_results.jsonl\",
         \"type\": \"table\"}]"}, "parameters": {}, "actionUris": {}, "scriptName":
         null, "target": null, "uniqueChildRunComputeTargets": [], "tags": {}, "settings":
@@ -2830,7 +2830,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.040'
+      - '0.045'
     status:
       code: 200
       message: OK
@@ -2852,105 +2852,105 @@ interactions:
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/batch_run_name/logContent
   response:
     body:
-      string: '"2023-12-19 05:25:39 +0000  128314 promptflow-runtime INFO     [batch_run_name]
-        Receiving v2 bulk run request 2d164d10-4a89-4c8c-ae8b-29bc51ee2b48: {\"flow_id\":
+      string: '"2024-01-12 07:51:54 +0000      49 promptflow-runtime INFO     [batch_run_name]
+        Receiving v2 bulk run request f3011800-5f03-4911-b5a1-b1f3cf942c03: {\"flow_id\":
         \"batch_run_name\", \"flow_run_id\": \"batch_run_name\", \"flow_source\":
-        {\"flow_source_type\": 1, \"flow_source_info\": {\"snapshot_id\": \"4aaf8bb7-393f-4552-b498-45ea7509a2ad\"},
-        \"flow_dag_file\": \"flow.dag.yaml\"}, \"log_path\": \"https://promptfloweast4063704120.blob.core.windows.net/azureml/ExperimentRun/dcid.batch_run_name/logs/azureml/executionlogs.txt?sv=2019-07-07&sr=b&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2023-12-19T04%3A10%3A18Z&ske=2023-12-20T12%3A20%3A18Z&sks=b&skv=2019-07-07&st=2023-12-19T05%3A15%3A38Z&se=2023-12-19T13%3A25%3A38Z&sp=rcw\",
+        {\"flow_source_type\": 1, \"flow_source_info\": {\"snapshot_id\": \"38053316-7591-4ac8-b718-d76b16b48bbe\"},
+        \"flow_dag_file\": \"flow.dag.yaml\"}, \"log_path\": \"https://promptfloweast4063704120.blob.core.windows.net/azureml/ExperimentRun/dcid.batch_run_name/logs/azureml/executionlogs.txt?sv=2019-07-07&sr=b&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2024-01-12T07%3A41%3A49Z&ske=2024-01-13T15%3A51%3A49Z&sks=b&skv=2019-07-07&st=2024-01-12T07%3A41%3A53Z&se=2024-01-12T15%3A51%3A53Z&sp=rcw\",
         \"app_insights_instrumentation_key\": \"InstrumentationKey=**data_scrubbed**;IngestionEndpoint=https://eastus-6.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/\",
         \"data_inputs\": {\"data\": \"azureml://datastores/workspaceblobstore/paths/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl\"},
         \"inputs_mapping\": {\"name\": \"${data.url}\"}, \"azure_storage_setting\":
         {\"azure_storage_mode\": 1, \"storage_account_name\": \"promptfloweast4063704120\",
         \"blob_container_name\": \"azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5\",
         \"flow_artifacts_root_path\": \"promptflow/PromptFlowArtifacts/batch_run_name\",
-        \"blob_container_sas_token\": \"?sv=2019-07-07&sr=c&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2023-12-19T05%3A25%3A38Z&ske=2023-12-26T05%3A25%3A38Z&sks=b&skv=2019-07-07&se=2023-12-26T05%3A25%3A38Z&sp=racwl\",
-        \"output_datastore_name\": \"workspaceblobstore\"}}\n2023-12-19 05:25:39 +0000  128314
+        \"blob_container_sas_token\": \"?sv=2019-07-07&sr=c&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2024-01-12T07%3A51%3A54Z&ske=2024-01-19T07%3A51%3A54Z&sks=b&skv=2019-07-07&se=2024-01-19T07%3A51%3A54Z&sp=racwl\",
+        \"output_datastore_name\": \"workspaceblobstore\"}}\n2024-01-12 07:51:54 +0000      49
         promptflow-runtime INFO     Runtime version: 20231204.v4. PromptFlow version:
-        1.2.0rc1\n2023-12-19 05:25:39 +0000  128314 promptflow-runtime INFO     Updating
-        batch_run_name to Status.Preparing...\n2023-12-19 05:25:39 +0000  128314 promptflow-runtime
-        INFO     Downloading snapshot to /mnt/host/service/app/34945/requests/batch_run_name\n2023-12-19
-        05:25:39 +0000  128314 promptflow-runtime INFO     Get snapshot sas url for
-        4aaf8bb7-393f-4552-b498-45ea7509a2ad...\n2023-12-19 05:25:46 +0000  128314
-        promptflow-runtime INFO     Downloading snapshot 4aaf8bb7-393f-4552-b498-45ea7509a2ad
-        from uri https://promptfloweast4063704120.blob.core.windows.net/snapshotzips/promptflow-eastus:3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:snapshotzip/4aaf8bb7-393f-4552-b498-45ea7509a2ad.zip...\n2023-12-19
-        05:25:46 +0000  128314 promptflow-runtime INFO     Downloaded file /mnt/host/service/app/34945/requests/batch_run_name/4aaf8bb7-393f-4552-b498-45ea7509a2ad.zip
-        with size 488 for snapshot 4aaf8bb7-393f-4552-b498-45ea7509a2ad.\n2023-12-19
-        05:25:46 +0000  128314 promptflow-runtime INFO     Download snapshot 4aaf8bb7-393f-4552-b498-45ea7509a2ad
-        completed.\n2023-12-19 05:25:46 +0000  128314 promptflow-runtime INFO     Successfully
-        download snapshot to /mnt/host/service/app/34945/requests/batch_run_name\n2023-12-19
-        05:25:46 +0000  128314 promptflow-runtime INFO     About to execute a python
-        flow.\n2023-12-19 05:25:46 +0000  128314 promptflow-runtime INFO     Use spawn
-        method to start child process.\n2023-12-19 05:25:46 +0000  128314 promptflow-runtime
-        INFO     Starting to check process 156227 status for run batch_run_name\n2023-12-19
-        05:25:46 +0000  128314 promptflow-runtime INFO     Start checking run status
-        for run batch_run_name\n2023-12-19 05:25:50 +0000  156227 promptflow-runtime
-        INFO     [128314--156227] Start processing flowV2......\n2023-12-19 05:25:50
-        +0000  156227 promptflow-runtime INFO     Runtime version: 20231204.v4. PromptFlow
-        version: 1.2.0rc1\n2023-12-19 05:25:50 +0000  156227 promptflow-runtime INFO     Setting
-        mlflow tracking uri...\n2023-12-19 05:25:50 +0000  156227 promptflow-runtime
-        INFO     Validating ''AzureML Data Scientist'' user authentication...\n2023-12-19
-        05:25:50 +0000  156227 promptflow-runtime INFO     Successfully validated
-        ''AzureML Data Scientist'' user authentication.\n2023-12-19 05:25:50 +0000  156227
-        promptflow-runtime INFO     Using AzureMLRunStorageV2\n2023-12-19 05:25:51
-        +0000  156227 promptflow-runtime INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-12-19
-        05:25:51 +0000  156227 promptflow-runtime INFO     Initialized blob service
-        client for AzureMLRunTracker.\n2023-12-19 05:25:51 +0000  156227 promptflow-runtime
-        INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-12-19
-        05:25:51 +0000  156227 promptflow-runtime INFO     Resolve data from url finished
-        in 0.40129287308081985 seconds\n2023-12-19 05:25:51 +0000  156227 promptflow-runtime
-        INFO     Starting the aml run ''batch_run_name''...\n2023-12-19 05:25:52 +0000  156227
-        execution.bulk     INFO     Using fork, process count: 3\n2023-12-19 05:25:52
-        +0000  156274 execution.bulk     INFO     Process 156274 started.\n2023-12-19
-        05:25:52 +0000  156270 execution.bulk     INFO     Process 156270 started.\n2023-12-19
-        05:25:52 +0000  156279 execution.bulk     INFO     Process 156279 started.\n2023-12-19
-        05:25:52 +0000  156227 execution.bulk     INFO     Process name: ForkProcess-180:3,
-        Process id: 156274, Line number: 0 start execution.\n2023-12-19 05:25:52 +0000  156227
-        execution.bulk     INFO     Process name: ForkProcess-180:2, Process id: 156270,
-        Line number: 1 start execution.\n2023-12-19 05:25:52 +0000  156227 execution.bulk     INFO     Process
-        name: ForkProcess-180:4, Process id: 156279, Line number: 2 start execution.\n2023-12-19
-        05:25:52 +0000  156227 execution.bulk     INFO     Process name: ForkProcess-180:4,
-        Process id: 156279, Line number: 2 completed.\n2023-12-19 05:25:52 +0000  156227
-        execution.bulk     INFO     Process name: ForkProcess-180:3, Process id: 156274,
-        Line number: 0 completed.\n2023-12-19 05:25:52 +0000  156227 execution.bulk     INFO     Finished
-        2 / 3 lines.\n2023-12-19 05:25:52 +0000  156227 execution.bulk     INFO     Finished
-        2 / 3 lines.\n2023-12-19 05:25:52 +0000  156227 execution.bulk     INFO     Process
-        name: ForkProcess-180:2, Process id: 156270, Line number: 1 completed.\n2023-12-19
-        05:25:52 +0000  156227 execution.bulk     INFO     Average execution time
-        for completed lines: 0.13 seconds. Estimated time for incomplete lines: 0.13
-        seconds.\n2023-12-19 05:25:52 +0000  156227 execution.bulk     INFO     Average
-        execution time for completed lines: 0.13 seconds. Estimated time for incomplete
-        lines: 0.13 seconds.\n2023-12-19 05:25:52 +0000  156227 execution.bulk     INFO     Finished
-        3 / 3 lines.\n2023-12-19 05:25:52 +0000  156227 execution.bulk     INFO     Average
-        execution time for completed lines: 0.11 seconds. Estimated time for incomplete
-        lines: 0.0 seconds.\n2023-12-19 05:25:54 +0000  156227 execution.bulk     INFO     Upload
-        status summary metrics for run batch_run_name finished in 0.9921510382555425
-        seconds\n2023-12-19 05:25:54 +0000  156227 promptflow-runtime INFO     Successfully
-        write run properties {\"azureml.promptflow.total_tokens\": 0, \"_azureml.evaluate_artifacts\":
+        1.2.0rc1\n2024-01-12 07:51:54 +0000      49 promptflow-runtime INFO     Updating
+        batch_run_name to Status.Preparing...\n2024-01-12 07:51:55 +0000      49 promptflow-runtime
+        INFO     Downloading snapshot to /mnt/host/service/app/39649/requests/batch_run_name\n2024-01-12
+        07:51:55 +0000      49 promptflow-runtime INFO     Get snapshot sas url for
+        38053316-7591-4ac8-b718-d76b16b48bbe...\n2024-01-12 07:52:01 +0000      49
+        promptflow-runtime INFO     Downloading snapshot 38053316-7591-4ac8-b718-d76b16b48bbe
+        from uri https://promptfloweast4063704120.blob.core.windows.net/snapshotzips/promptflow-eastus:3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:snapshotzip/38053316-7591-4ac8-b718-d76b16b48bbe.zip...\n2024-01-12
+        07:52:01 +0000      49 promptflow-runtime INFO     Downloaded file /mnt/host/service/app/39649/requests/batch_run_name/38053316-7591-4ac8-b718-d76b16b48bbe.zip
+        with size 495 for snapshot 38053316-7591-4ac8-b718-d76b16b48bbe.\n2024-01-12
+        07:52:01 +0000      49 promptflow-runtime INFO     Download snapshot 38053316-7591-4ac8-b718-d76b16b48bbe
+        completed.\n2024-01-12 07:52:01 +0000      49 promptflow-runtime INFO     Successfully
+        download snapshot to /mnt/host/service/app/39649/requests/batch_run_name\n2024-01-12
+        07:52:01 +0000      49 promptflow-runtime INFO     About to execute a python
+        flow.\n2024-01-12 07:52:01 +0000      49 promptflow-runtime INFO     Use spawn
+        method to start child process.\n2024-01-12 07:52:01 +0000      49 promptflow-runtime
+        INFO     Starting to check process 2809 status for run batch_run_name\n2024-01-12
+        07:52:01 +0000      49 promptflow-runtime INFO     Start checking run status
+        for run batch_run_name\n2024-01-12 07:52:05 +0000    2809 promptflow-runtime
+        INFO     [49--2809] Start processing flowV2......\n2024-01-12 07:52:05 +0000    2809
+        promptflow-runtime INFO     Runtime version: 20231204.v4. PromptFlow version:
+        1.2.0rc1\n2024-01-12 07:52:05 +0000    2809 promptflow-runtime INFO     Setting
+        mlflow tracking uri...\n2024-01-12 07:52:05 +0000    2809 promptflow-runtime
+        INFO     Validating ''AzureML Data Scientist'' user authentication...\n2024-01-12
+        07:52:06 +0000    2809 promptflow-runtime INFO     Successfully validated
+        ''AzureML Data Scientist'' user authentication.\n2024-01-12 07:52:06 +0000    2809
+        promptflow-runtime INFO     Using AzureMLRunStorageV2\n2024-01-12 07:52:06
+        +0000    2809 promptflow-runtime INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2024-01-12
+        07:52:06 +0000    2809 promptflow-runtime INFO     Initialized blob service
+        client for AzureMLRunTracker.\n2024-01-12 07:52:06 +0000    2809 promptflow-runtime
+        INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2024-01-12
+        07:52:06 +0000    2809 promptflow-runtime INFO     Resolve data from url finished
+        in 0.4533178601413965 seconds\n2024-01-12 07:52:06 +0000    2809 promptflow-runtime
+        INFO     Starting the aml run ''batch_run_name''...\n2024-01-12 07:52:07 +0000    2809
+        execution.bulk     INFO     Using fork, process count: 3\n2024-01-12 07:52:07
+        +0000    2850 execution.bulk     INFO     Process 2850 started.\n2024-01-12
+        07:52:07 +0000    2856 execution.bulk     INFO     Process 2856 started.\n2024-01-12
+        07:52:07 +0000    2809 execution.bulk     INFO     Process name: ForkProcess-32:2,
+        Process id: 2850, Line number: 0 start execution.\n2024-01-12 07:52:07 +0000    2809
+        execution.bulk     INFO     Process name: ForkProcess-32:3, Process id: 2856,
+        Line number: 1 start execution.\n2024-01-12 07:52:07 +0000    2809 execution.bulk     INFO     Process
+        name: ForkProcess-32:2, Process id: 2850, Line number: 0 completed.\n2024-01-12
+        07:52:07 +0000    2809 execution.bulk     INFO     Finished 1 / 3 lines.\n2024-01-12
+        07:52:07 +0000    2809 execution.bulk     INFO     Average execution time
+        for completed lines: 0.2 seconds. Estimated time for incomplete lines: 0.4
+        seconds.\n2024-01-12 07:52:07 +0000    2861 execution.bulk     INFO     Process
+        2861 started.\n2024-01-12 07:52:07 +0000    2809 execution.bulk     INFO     Process
+        name: ForkProcess-32:2, Process id: 2850, Line number: 2 start execution.\n2024-01-12
+        07:52:07 +0000    2809 execution.bulk     INFO     Process name: ForkProcess-32:3,
+        Process id: 2856, Line number: 1 completed.\n2024-01-12 07:52:07 +0000    2809
+        execution.bulk     INFO     Finished 2 / 3 lines.\n2024-01-12 07:52:07 +0000    2809
+        execution.bulk     INFO     Average execution time for completed lines: 0.14
+        seconds. Estimated time for incomplete lines: 0.14 seconds.\n2024-01-12 07:52:07
+        +0000    2809 execution.bulk     INFO     Process name: ForkProcess-32:2,
+        Process id: 2850, Line number: 2 completed.\n2024-01-12 07:52:07 +0000    2809
+        execution.bulk     INFO     Finished 3 / 3 lines.\n2024-01-12 07:52:07 +0000    2809
+        execution.bulk     INFO     Average execution time for completed lines: 0.11
+        seconds. Estimated time for incomplete lines: 0.0 seconds.\n2024-01-12 07:52:10
+        +0000    2809 execution.bulk     INFO     Upload status summary metrics for
+        run batch_run_name finished in 1.258488142862916 seconds\n2024-01-12 07:52:10
+        +0000    2809 promptflow-runtime INFO     Successfully write run properties
+        {\"azureml.promptflow.total_tokens\": 0, \"_azureml.evaluate_artifacts\":
         \"[{\\\"path\\\": \\\"instance_results.jsonl\\\", \\\"type\\\": \\\"table\\\"}]\"}
-        with run id ''batch_run_name''\n2023-12-19 05:25:54 +0000  156227 execution.bulk     INFO     Upload
-        RH properties for run batch_run_name finished in 0.06327243195846677 seconds\n2023-12-19
-        05:25:54 +0000  156227 promptflow-runtime INFO     Creating unregistered output
-        Asset for Run batch_run_name...\n2023-12-19 05:25:54 +0000  156227 promptflow-runtime
-        INFO     Created debug_info Asset: azureml://locations/eastus/workspaces/00000/data/azureml_batch_run_name_output_data_debug_info/versions/1\n2023-12-19
-        05:25:54 +0000  156227 promptflow-runtime INFO     Creating unregistered output
-        Asset for Run batch_run_name...\n2023-12-19 05:25:55 +0000  156227 promptflow-runtime
-        INFO     Created flow_outputs output Asset: azureml://locations/eastus/workspaces/00000/data/azureml_batch_run_name_output_data_flow_outputs/versions/1\n2023-12-19
-        05:25:55 +0000  156227 promptflow-runtime INFO     Creating Artifact for Run
-        batch_run_name...\n2023-12-19 05:25:55 +0000  156227 promptflow-runtime INFO     Created
-        instance_results.jsonl Artifact.\n2023-12-19 05:25:55 +0000  156227 promptflow-runtime
-        INFO     Patching batch_run_name...\n2023-12-19 05:25:55 +0000  156227 promptflow-runtime
-        INFO     Ending the aml run ''batch_run_name'' with status ''Completed''...\n2023-12-19
-        05:25:56 +0000  128314 promptflow-runtime INFO     Process 156227 finished\n2023-12-19
-        05:25:56 +0000  128314 promptflow-runtime INFO     [128314] Child process
-        finished!\n2023-12-19 05:25:56 +0000  128314 promptflow-runtime INFO     [batch_run_name]
-        End processing bulk run\n2023-12-19 05:25:57 +0000  128314 promptflow-runtime
-        INFO     Cleanup working dir /mnt/host/service/app/34945/requests/batch_run_name
-        for bulk run\n"'
+        with run id ''batch_run_name''\n2024-01-12 07:52:10 +0000    2809 execution.bulk     INFO     Upload
+        RH properties for run batch_run_name finished in 0.0779735017567873 seconds\n2024-01-12
+        07:52:10 +0000    2809 promptflow-runtime INFO     Creating unregistered output
+        Asset for Run batch_run_name...\n2024-01-12 07:52:10 +0000    2809 promptflow-runtime
+        INFO     Created debug_info Asset: azureml://locations/eastus/workspaces/00000/data/azureml_batch_run_name_output_data_debug_info/versions/1\n2024-01-12
+        07:52:10 +0000    2809 promptflow-runtime INFO     Creating unregistered output
+        Asset for Run batch_run_name...\n2024-01-12 07:52:10 +0000    2809 promptflow-runtime
+        INFO     Created flow_outputs output Asset: azureml://locations/eastus/workspaces/00000/data/azureml_batch_run_name_output_data_flow_outputs/versions/1\n2024-01-12
+        07:52:10 +0000    2809 promptflow-runtime INFO     Creating Artifact for Run
+        batch_run_name...\n2024-01-12 07:52:11 +0000    2809 promptflow-runtime INFO     Created
+        instance_results.jsonl Artifact.\n2024-01-12 07:52:11 +0000    2809 promptflow-runtime
+        INFO     Patching batch_run_name...\n2024-01-12 07:52:11 +0000    2809 promptflow-runtime
+        INFO     Ending the aml run ''batch_run_name'' with status ''Completed''...\n2024-01-12
+        07:52:12 +0000      49 promptflow-runtime INFO     Process 2809 finished\n2024-01-12
+        07:52:12 +0000      49 promptflow-runtime INFO     [49] Child process finished!\n2024-01-12
+        07:52:12 +0000      49 promptflow-runtime INFO     [batch_run_name] End processing
+        bulk run\n2024-01-12 07:52:12 +0000      49 promptflow-runtime INFO     Cleanup
+        working dir /mnt/host/service/app/39649/requests/batch_run_name for bulk run\n"'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '9856'
+      - '9813'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -2962,7 +2962,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.556'
+      - '0.829'
     status:
       code: 200
       message: OK
@@ -2984,11 +2984,11 @@ interactions:
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/eval_run_name/logContent
   response:
     body:
-      string: '"2023-12-19 05:26:29 +0000  128314 promptflow-runtime INFO     [eval_run_name]
-        Receiving v2 bulk run request 355ac5f8-0bba-425e-9039-4bc03fa05586: {\"flow_id\":
+      string: '"2024-01-12 07:52:45 +0000      49 promptflow-runtime INFO     [eval_run_name]
+        Receiving v2 bulk run request 9ada5207-1c07-4048-8721-8a87560f52bf: {\"flow_id\":
         \"eval_run_name\", \"flow_run_id\": \"eval_run_name\", \"flow_source\": {\"flow_source_type\":
-        1, \"flow_source_info\": {\"snapshot_id\": \"a1555be1-1b5b-4e30-93ce-5993881fe797\"},
-        \"flow_dag_file\": \"flow.dag.yaml\"}, \"log_path\": \"https://promptfloweast4063704120.blob.core.windows.net/azureml/ExperimentRun/dcid.eval_run_name/logs/azureml/executionlogs.txt?sv=2019-07-07&sr=b&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2023-12-19T05%3A16%3A25Z&ske=2023-12-20T13%3A26%3A25Z&sks=b&skv=2019-07-07&st=2023-12-19T05%3A16%3A29Z&se=2023-12-19T13%3A26%3A29Z&sp=rcw\",
+        1, \"flow_source_info\": {\"snapshot_id\": \"1885cd85-1969-4fca-8c21-d8826ed5d886\"},
+        \"flow_dag_file\": \"flow.dag.yaml\"}, \"log_path\": \"https://promptfloweast4063704120.blob.core.windows.net/azureml/ExperimentRun/dcid.eval_run_name/logs/azureml/executionlogs.txt?sv=2019-07-07&sr=b&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2024-01-12T07%3A41%3A49Z&ske=2024-01-13T15%3A51%3A49Z&sks=b&skv=2019-07-07&st=2024-01-12T07%3A42%3A44Z&se=2024-01-12T15%3A52%3A44Z&sp=rcw\",
         \"app_insights_instrumentation_key\": \"InstrumentationKey=**data_scrubbed**;IngestionEndpoint=https://eastus-6.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/\",
         \"data_inputs\": {\"data\": \"azureml://datastores/workspaceblobstore/paths/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl\",
         \"run.outputs\": \"azureml:/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/data/azureml_batch_run_name_output_data_flow_outputs/versions/1\"},
@@ -2997,100 +2997,99 @@ interactions:
         1, \"storage_account_name\": \"promptfloweast4063704120\", \"blob_container_name\":
         \"azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5\", \"flow_artifacts_root_path\":
         \"promptflow/PromptFlowArtifacts/eval_run_name\", \"blob_container_sas_token\":
-        \"?sv=2019-07-07&sr=c&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2023-12-19T05%3A26%3A29Z&ske=2023-12-26T05%3A26%3A29Z&sks=b&skv=2019-07-07&se=2023-12-26T05%3A26%3A29Z&sp=racwl\",
-        \"output_datastore_name\": \"workspaceblobstore\"}}\n2023-12-19 05:26:29 +0000  128314
+        \"?sv=2019-07-07&sr=c&sig=**data_scrubbed**&skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2024-01-12T07%3A52%3A45Z&ske=2024-01-19T07%3A52%3A45Z&sks=b&skv=2019-07-07&se=2024-01-19T07%3A52%3A45Z&sp=racwl\",
+        \"output_datastore_name\": \"workspaceblobstore\"}}\n2024-01-12 07:52:45 +0000      49
         promptflow-runtime INFO     Runtime version: 20231204.v4. PromptFlow version:
-        1.2.0rc1\n2023-12-19 05:26:29 +0000  128314 promptflow-runtime INFO     Updating
-        eval_run_name to Status.Preparing...\n2023-12-19 05:26:29 +0000  128314 promptflow-runtime
-        INFO     Downloading snapshot to /mnt/host/service/app/34945/requests/eval_run_name\n2023-12-19
-        05:26:29 +0000  128314 promptflow-runtime INFO     Get snapshot sas url for
-        a1555be1-1b5b-4e30-93ce-5993881fe797...\n2023-12-19 05:26:36 +0000  128314
-        promptflow-runtime INFO     Downloading snapshot a1555be1-1b5b-4e30-93ce-5993881fe797
-        from uri https://promptfloweast4063704120.blob.core.windows.net/snapshotzips/promptflow-eastus:3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:snapshotzip/a1555be1-1b5b-4e30-93ce-5993881fe797.zip...\n2023-12-19
-        05:26:36 +0000  128314 promptflow-runtime INFO     Downloaded file /mnt/host/service/app/34945/requests/eval_run_name/a1555be1-1b5b-4e30-93ce-5993881fe797.zip
-        with size 1243 for snapshot a1555be1-1b5b-4e30-93ce-5993881fe797.\n2023-12-19
-        05:26:36 +0000  128314 promptflow-runtime INFO     Download snapshot a1555be1-1b5b-4e30-93ce-5993881fe797
-        completed.\n2023-12-19 05:26:36 +0000  128314 promptflow-runtime INFO     Successfully
-        download snapshot to /mnt/host/service/app/34945/requests/eval_run_name\n2023-12-19
-        05:26:36 +0000  128314 promptflow-runtime INFO     About to execute a python
-        flow.\n2023-12-19 05:26:36 +0000  128314 promptflow-runtime INFO     Use spawn
-        method to start child process.\n2023-12-19 05:26:36 +0000  128314 promptflow-runtime
-        INFO     Starting to check process 156330 status for run eval_run_name\n2023-12-19
-        05:26:36 +0000  128314 promptflow-runtime INFO     Start checking run status
-        for run eval_run_name\n2023-12-19 05:26:40 +0000  156330 promptflow-runtime
-        INFO     [128314--156330] Start processing flowV2......\n2023-12-19 05:26:40
-        +0000  156330 promptflow-runtime INFO     Runtime version: 20231204.v4. PromptFlow
-        version: 1.2.0rc1\n2023-12-19 05:26:40 +0000  156330 promptflow-runtime INFO     Setting
-        mlflow tracking uri...\n2023-12-19 05:26:40 +0000  156330 promptflow-runtime
-        INFO     Validating ''AzureML Data Scientist'' user authentication...\n2023-12-19
-        05:26:41 +0000  156330 promptflow-runtime INFO     Successfully validated
-        ''AzureML Data Scientist'' user authentication.\n2023-12-19 05:26:41 +0000  156330
-        promptflow-runtime INFO     Using AzureMLRunStorageV2\n2023-12-19 05:26:41
-        +0000  156330 promptflow-runtime INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-12-19
-        05:26:41 +0000  156330 promptflow-runtime INFO     Initialized blob service
-        client for AzureMLRunTracker.\n2023-12-19 05:26:41 +0000  156330 promptflow-runtime
-        INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-12-19
-        05:26:41 +0000  156330 promptflow-runtime INFO     Resolve data from url finished
-        in 0.47408556798473 seconds\n2023-12-19 05:26:42 +0000  156330 promptflow-runtime
-        INFO     Resolve data from url finished in 0.8960204031318426 seconds\n2023-12-19
-        05:26:42 +0000  156330 promptflow-runtime INFO     Starting the aml run ''eval_run_name''...\n2023-12-19
-        05:26:43 +0000  156330 execution.bulk     INFO     Using fork, process count:
-        3\n2023-12-19 05:26:43 +0000  156373 execution.bulk     INFO     Process 156373
-        started.\n2023-12-19 05:26:43 +0000  156377 execution.bulk     INFO     Process
-        156377 started.\n2023-12-19 05:26:43 +0000  156382 execution.bulk     INFO     Process
-        156382 started.\n2023-12-19 05:26:43 +0000  156330 execution.bulk     INFO     Process
-        name: ForkProcess-182:3, Process id: 156373, Line number: 0 start execution.\n2023-12-19
-        05:26:43 +0000  156330 execution.bulk     INFO     Process name: ForkProcess-182:2,
-        Process id: 156377, Line number: 1 start execution.\n2023-12-19 05:26:43 +0000  156330
-        execution.bulk     INFO     Process name: ForkProcess-182:4, Process id: 156382,
-        Line number: 2 start execution.\n2023-12-19 05:26:43 +0000  156330 execution.bulk     INFO     Process
-        name: ForkProcess-182:3, Process id: 156373, Line number: 0 completed.\n2023-12-19
-        05:26:43 +0000  156330 execution.bulk     INFO     Finished 1 / 3 lines.\n2023-12-19
-        05:26:43 +0000  156330 execution.bulk     INFO     Process name: ForkProcess-182:2,
-        Process id: 156377, Line number: 1 completed.\n2023-12-19 05:26:43 +0000  156330
-        execution.bulk     INFO     Average execution time for completed lines: 0.25
-        seconds. Estimated time for incomplete lines: 0.5 seconds.\n2023-12-19 05:26:43
-        +0000  156330 execution.bulk     INFO     Process name: ForkProcess-182:4,
-        Process id: 156382, Line number: 2 completed.\n2023-12-19 05:26:43 +0000  156330
-        execution.bulk     INFO     Finished 3 / 3 lines.\n2023-12-19 05:26:43 +0000  156330
-        execution.bulk     INFO     Finished 3 / 3 lines.\n2023-12-19 05:26:43 +0000  156330
-        execution.bulk     INFO     Average execution time for completed lines: 0.1
-        seconds. Estimated time for incomplete lines: 0.0 seconds.\n2023-12-19 05:26:43
-        +0000  156330 execution.bulk     INFO     Average execution time for completed
-        lines: 0.11 seconds. Estimated time for incomplete lines: 0.0 seconds.\n2023-12-19
-        05:26:44 +0000  156330 execution.bulk     INFO     Executing aggregation nodes...\n2023-12-19
-        05:26:44 +0000  156330 execution.bulk     INFO     Finish executing aggregation
-        nodes.\n2023-12-19 05:26:46 +0000  156330 execution.bulk     INFO     Upload
-        status summary metrics for run eval_run_name finished in 1.5202698451466858
-        seconds\n2023-12-19 05:26:46 +0000  156330 execution.bulk     INFO     Upload
-        metrics for run eval_run_name finished in 0.38222882291302085 seconds\n2023-12-19
-        05:26:46 +0000  156330 promptflow-runtime INFO     Successfully write run
+        1.2.0rc1\n2024-01-12 07:52:45 +0000      49 promptflow-runtime INFO     Updating
+        eval_run_name to Status.Preparing...\n2024-01-12 07:52:45 +0000      49 promptflow-runtime
+        INFO     Downloading snapshot to /mnt/host/service/app/39649/requests/eval_run_name\n2024-01-12
+        07:52:45 +0000      49 promptflow-runtime INFO     Get snapshot sas url for
+        1885cd85-1969-4fca-8c21-d8826ed5d886...\n2024-01-12 07:52:52 +0000      49
+        promptflow-runtime INFO     Downloading snapshot 1885cd85-1969-4fca-8c21-d8826ed5d886
+        from uri https://promptfloweast4063704120.blob.core.windows.net/snapshotzips/promptflow-eastus:3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:snapshotzip/1885cd85-1969-4fca-8c21-d8826ed5d886.zip...\n2024-01-12
+        07:52:52 +0000      49 promptflow-runtime INFO     Downloaded file /mnt/host/service/app/39649/requests/eval_run_name/1885cd85-1969-4fca-8c21-d8826ed5d886.zip
+        with size 1243 for snapshot 1885cd85-1969-4fca-8c21-d8826ed5d886.\n2024-01-12
+        07:52:52 +0000      49 promptflow-runtime INFO     Download snapshot 1885cd85-1969-4fca-8c21-d8826ed5d886
+        completed.\n2024-01-12 07:52:52 +0000      49 promptflow-runtime INFO     Successfully
+        download snapshot to /mnt/host/service/app/39649/requests/eval_run_name\n2024-01-12
+        07:52:52 +0000      49 promptflow-runtime INFO     About to execute a python
+        flow.\n2024-01-12 07:52:52 +0000      49 promptflow-runtime INFO     Use spawn
+        method to start child process.\n2024-01-12 07:52:52 +0000      49 promptflow-runtime
+        INFO     Starting to check process 2911 status for run eval_run_name\n2024-01-12
+        07:52:52 +0000      49 promptflow-runtime INFO     Start checking run status
+        for run eval_run_name\n2024-01-12 07:52:56 +0000    2911 promptflow-runtime
+        INFO     [49--2911] Start processing flowV2......\n2024-01-12 07:52:56 +0000    2911
+        promptflow-runtime INFO     Runtime version: 20231204.v4. PromptFlow version:
+        1.2.0rc1\n2024-01-12 07:52:56 +0000    2911 promptflow-runtime INFO     Setting
+        mlflow tracking uri...\n2024-01-12 07:52:56 +0000    2911 promptflow-runtime
+        INFO     Validating ''AzureML Data Scientist'' user authentication...\n2024-01-12
+        07:52:56 +0000    2911 promptflow-runtime INFO     Successfully validated
+        ''AzureML Data Scientist'' user authentication.\n2024-01-12 07:52:56 +0000    2911
+        promptflow-runtime INFO     Using AzureMLRunStorageV2\n2024-01-12 07:52:56
+        +0000    2911 promptflow-runtime INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2024-01-12
+        07:52:56 +0000    2911 promptflow-runtime INFO     Initialized blob service
+        client for AzureMLRunTracker.\n2024-01-12 07:52:57 +0000    2911 promptflow-runtime
+        INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2024-01-12
+        07:52:57 +0000    2911 promptflow-runtime INFO     Resolve data from url finished
+        in 0.5648300694301724 seconds\n2024-01-12 07:52:58 +0000    2911 promptflow-runtime
+        INFO     Resolve data from url finished in 0.6205331217497587 seconds\n2024-01-12
+        07:52:58 +0000    2911 promptflow-runtime INFO     Starting the aml run ''eval_run_name''...\n2024-01-12
+        07:52:59 +0000    2911 execution.bulk     INFO     Using fork, process count:
+        3\n2024-01-12 07:52:59 +0000    2954 execution.bulk     INFO     Process 2954
+        started.\n2024-01-12 07:52:59 +0000    2958 execution.bulk     INFO     Process
+        2958 started.\n2024-01-12 07:52:59 +0000    2911 execution.bulk     INFO     Process
+        name: ForkProcess-34:2, Process id: 2954, Line number: 0 start execution.\n2024-01-12
+        07:52:59 +0000    2911 execution.bulk     INFO     Process name: ForkProcess-34:3,
+        Process id: 2958, Line number: 1 start execution.\n2024-01-12 07:52:59 +0000    2911
+        execution.bulk     INFO     Process name: ForkProcess-34:2, Process id: 2954,
+        Line number: 0 completed.\n2024-01-12 07:52:59 +0000    2911 execution.bulk     INFO     Finished
+        1 / 3 lines.\n2024-01-12 07:52:59 +0000    2911 execution.bulk     INFO     Average
+        execution time for completed lines: 0.21 seconds. Estimated time for incomplete
+        lines: 0.42 seconds.\n2024-01-12 07:52:59 +0000    2911 execution.bulk     INFO     Process
+        name: ForkProcess-34:2, Process id: 2954, Line number: 2 start execution.\n2024-01-12
+        07:52:59 +0000    2911 execution.bulk     INFO     Process name: ForkProcess-34:3,
+        Process id: 2958, Line number: 1 completed.\n2024-01-12 07:52:59 +0000    2911
+        execution.bulk     INFO     Finished 2 / 3 lines.\n2024-01-12 07:52:59 +0000    2961
+        execution.bulk     INFO     Process 2961 started.\n2024-01-12 07:52:59 +0000    2911
+        execution.bulk     INFO     Average execution time for completed lines: 0.13
+        seconds. Estimated time for incomplete lines: 0.13 seconds.\n2024-01-12 07:52:59
+        +0000    2911 execution.bulk     INFO     Process name: ForkProcess-34:2,
+        Process id: 2954, Line number: 2 completed.\n2024-01-12 07:52:59 +0000    2911
+        execution.bulk     INFO     Finished 3 / 3 lines.\n2024-01-12 07:52:59 +0000    2911
+        execution.bulk     INFO     Average execution time for completed lines: 0.12
+        seconds. Estimated time for incomplete lines: 0.0 seconds.\n2024-01-12 07:53:00
+        +0000    2911 execution.bulk     INFO     Executing aggregation nodes...\n2024-01-12
+        07:53:00 +0000    2911 execution.bulk     INFO     Finish executing aggregation
+        nodes.\n2024-01-12 07:53:02 +0000    2911 execution.bulk     INFO     Upload
+        status summary metrics for run eval_run_name finished in 1.4952670317143202
+        seconds\n2024-01-12 07:53:02 +0000    2911 execution.bulk     INFO     Upload
+        metrics for run eval_run_name finished in 0.3417100487276912 seconds\n2024-01-12
+        07:53:02 +0000    2911 promptflow-runtime INFO     Successfully write run
         properties {\"azureml.promptflow.total_tokens\": 0, \"_azureml.evaluate_artifacts\":
         \"[{\\\"path\\\": \\\"instance_results.jsonl\\\", \\\"type\\\": \\\"table\\\"}]\"}
-        with run id ''eval_run_name''\n2023-12-19 05:26:46 +0000  156330 execution.bulk     INFO     Upload
-        RH properties for run eval_run_name finished in 0.07563196495175362 seconds\n2023-12-19
-        05:26:46 +0000  156330 promptflow-runtime INFO     Creating unregistered output
-        Asset for Run eval_run_name...\n2023-12-19 05:26:47 +0000  156330 promptflow-runtime
-        INFO     Created debug_info Asset: azureml://locations/eastus/workspaces/00000/data/azureml_eval_run_name_output_data_debug_info/versions/1\n2023-12-19
-        05:26:47 +0000  156330 promptflow-runtime INFO     Creating unregistered output
-        Asset for Run eval_run_name...\n2023-12-19 05:26:47 +0000  156330 promptflow-runtime
-        INFO     Created flow_outputs output Asset: azureml://locations/eastus/workspaces/00000/data/azureml_eval_run_name_output_data_flow_outputs/versions/1\n2023-12-19
-        05:26:47 +0000  156330 promptflow-runtime INFO     Creating Artifact for Run
-        eval_run_name...\n2023-12-19 05:26:47 +0000  156330 promptflow-runtime INFO     Created
-        instance_results.jsonl Artifact.\n2023-12-19 05:26:47 +0000  156330 promptflow-runtime
-        INFO     Patching eval_run_name...\n2023-12-19 05:26:47 +0000  156330 promptflow-runtime
-        INFO     Ending the aml run ''eval_run_name'' with status ''Completed''...\n2023-12-19
-        05:26:49 +0000  128314 promptflow-runtime INFO     Process 156330 finished\n2023-12-19
-        05:26:49 +0000  128314 promptflow-runtime INFO     [128314] Child process
-        finished!\n2023-12-19 05:26:49 +0000  128314 promptflow-runtime INFO     [eval_run_name]
-        End processing bulk run\n2023-12-19 05:26:49 +0000  128314 promptflow-runtime
-        INFO     Cleanup working dir /mnt/host/service/app/34945/requests/eval_run_name
-        for bulk run\n"'
+        with run id ''eval_run_name''\n2024-01-12 07:53:02 +0000    2911 execution.bulk     INFO     Upload
+        RH properties for run eval_run_name finished in 0.09185165446251631 seconds\n2024-01-12
+        07:53:02 +0000    2911 promptflow-runtime INFO     Creating unregistered output
+        Asset for Run eval_run_name...\n2024-01-12 07:53:02 +0000    2911 promptflow-runtime
+        INFO     Created debug_info Asset: azureml://locations/eastus/workspaces/00000/data/azureml_eval_run_name_output_data_debug_info/versions/1\n2024-01-12
+        07:53:02 +0000    2911 promptflow-runtime INFO     Creating unregistered output
+        Asset for Run eval_run_name...\n2024-01-12 07:53:03 +0000    2911 promptflow-runtime
+        INFO     Created flow_outputs output Asset: azureml://locations/eastus/workspaces/00000/data/azureml_eval_run_name_output_data_flow_outputs/versions/1\n2024-01-12
+        07:53:03 +0000    2911 promptflow-runtime INFO     Creating Artifact for Run
+        eval_run_name...\n2024-01-12 07:53:03 +0000    2911 promptflow-runtime INFO     Created
+        instance_results.jsonl Artifact.\n2024-01-12 07:53:03 +0000    2911 promptflow-runtime
+        INFO     Patching eval_run_name...\n2024-01-12 07:53:03 +0000    2911 promptflow-runtime
+        INFO     Ending the aml run ''eval_run_name'' with status ''Completed''...\n2024-01-12
+        07:53:04 +0000      49 promptflow-runtime INFO     Process 2911 finished\n2024-01-12
+        07:53:04 +0000      49 promptflow-runtime INFO     [49] Child process finished!\n2024-01-12
+        07:53:04 +0000      49 promptflow-runtime INFO     [eval_run_name] End processing
+        bulk run\n2024-01-12 07:53:04 +0000      49 promptflow-runtime INFO     Cleanup
+        working dir /mnt/host/service/app/39649/requests/eval_run_name for bulk run\n"'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '10651'
+      - '10617'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -3102,7 +3101,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.480'
+      - '0.503'
     status:
       code: 200
       message: OK

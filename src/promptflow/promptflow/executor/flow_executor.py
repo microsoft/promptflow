@@ -160,6 +160,7 @@ class FlowExecutor:
         connections: dict,
         working_dir: Optional[Path] = None,
         *,
+        func: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
@@ -173,6 +174,8 @@ class FlowExecutor:
         :type connections: dict
         :param working_dir: The working directory to be used for the flow. Default is None.
         :type working_dir: Optional[str]
+        :param func: The function to be used for the flow if .py is provided. Default is None.
+        :type func: Optional[str]
         :param storage: The storage to be used for the flow. Default is None.
         :type storage: Optional[~promptflow.storage.AbstractRunStorage]
         :param raise_ex: Whether to raise exceptions or not. Default is True.
@@ -184,6 +187,16 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
+        if Path(flow_file).suffix.lower() == ".py":
+            from ._script_executor import ScriptExecutor
+            return ScriptExecutor(
+                entry_file=flow_file,
+                func=func,
+                working_dir=working_dir,
+                storage=storage,
+            )
+        if Path(flow_file).suffix.lower() != ".yaml":
+            raise ValueError("Only support yaml or py file.")
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
         return cls._create_from_flow(
             flow_file=flow_file,
