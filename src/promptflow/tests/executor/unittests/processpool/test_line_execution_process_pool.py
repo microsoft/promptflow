@@ -17,9 +17,10 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
-    get_multiprocessing_context,
+    format_current_process,
     get_available_max_worker_count,
-    format_current_process
+    get_multiprocessing_context,
+    log_process_status,
 )
 from promptflow.executor._result import LineResult
 
@@ -55,11 +56,8 @@ def get_bulk_inputs(nlinee=4, flow_folder="", sample_inputs_file="", return_dict
 
 
 def execute_in_fork_mode_subprocess(
-        dev_connections,
-        flow_folder,
-        is_set_environ_pf_worker_count,
-        pf_worker_count,
-        n_process):
+    dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process
+):
     os.environ["PF_BATCH_METHOD"] = "fork"
     if is_set_environ_pf_worker_count:
         os.environ["PF_WORKER_COUNT"] = pf_worker_count
@@ -83,27 +81,26 @@ def execute_in_fork_mode_subprocess(
             assert pool._n_process == n_process
             if is_set_environ_pf_worker_count:
                 mock_logger.info.assert_any_call(
-                    f"Set process count to {pf_worker_count} with the environment "
-                    f"variable 'PF_WORKER_COUNT'.")
+                    f"Set process count to {pf_worker_count} with the environment " f"variable 'PF_WORKER_COUNT'."
+                )
             else:
                 factors = {
                     "default_worker_count": pool._DEFAULT_WORKER_COUNT,
                     "row_count": pool._nlines,
                 }
                 mock_logger.info.assert_any_call(
-                    f"Set process count to {n_process} by taking the minimum value among the "
-                    f"factors of {factors}."
+                    f"Set process count to {n_process} by taking the minimum value among the " f"factors of {factors}."
                 )
 
 
 def execute_in_spawn_mode_subprocess(
-        dev_connections,
-        flow_folder,
-        is_set_environ_pf_worker_count,
-        is_calculation_smaller_than_set,
-        pf_worker_count,
-        estimated_available_worker_count,
-        n_process
+    dev_connections,
+    flow_folder,
+    is_set_environ_pf_worker_count,
+    is_calculation_smaller_than_set,
+    pf_worker_count,
+    estimated_available_worker_count,
+    n_process,
 ):
     os.environ["PF_BATCH_METHOD"] = "spawn"
     if is_set_environ_pf_worker_count:
@@ -134,20 +131,23 @@ def execute_in_spawn_mode_subprocess(
                     if is_set_environ_pf_worker_count and is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
                             f"Set process count to {pf_worker_count} with the environment "
-                            f"variable 'PF_WORKER_COUNT'.")
+                            f"variable 'PF_WORKER_COUNT'."
+                        )
                         mock_logger.warning.assert_any_call(
                             f"The current process count ({pf_worker_count}) is larger than recommended process count "
                             f"({estimated_available_worker_count}) that estimated by system available memory. This may "
-                            f"cause memory exhaustion")
+                            f"cause memory exhaustion"
+                        )
                     elif is_set_environ_pf_worker_count and not is_calculation_smaller_than_set:
                         mock_logger.info.assert_any_call(
                             f"Set process count to {pf_worker_count} with the environment "
-                            f"variable 'PF_WORKER_COUNT'.")
+                            f"variable 'PF_WORKER_COUNT'."
+                        )
                     elif not is_set_environ_pf_worker_count:
                         factors = {
                             "default_worker_count": pool._DEFAULT_WORKER_COUNT,
                             "row_count": pool._nlines,
-                            "estimated_worker_count_based_on_memory_usage": estimated_available_worker_count
+                            "estimated_worker_count_based_on_memory_usage": estimated_available_worker_count,
                         }
                         mock_logger.info.assert_any_call(
                             f"Set process count to {n_process} by taking the minimum value among the factors "
@@ -343,33 +343,18 @@ class TestLineExecutionProcessPool:
             assert e.value.error_codes[0] == "UserError"
 
     @pytest.mark.parametrize(
-        (
-            "flow_folder",
-            "is_set_environ_pf_worker_count",
-            "pf_worker_count",
-            "n_process"
-        ),
-        [
-            (SAMPLE_FLOW, True, "3", 3),
-            (SAMPLE_FLOW, False, None, 4)
-        ],
+        ("flow_folder", "is_set_environ_pf_worker_count", "pf_worker_count", "n_process"),
+        [(SAMPLE_FLOW, True, "3", 3), (SAMPLE_FLOW, False, None, 4)],
     )
     def test_process_pool_parallelism_in_fork_mode(
-            self,
-            dev_connections,
-            flow_folder,
-            is_set_environ_pf_worker_count,
-            pf_worker_count,
-            n_process):
+        self, dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process
+    ):
         if "fork" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: fork")
         p = multiprocessing.Process(
             target=execute_in_fork_mode_subprocess,
-            args=(dev_connections,
-                  flow_folder,
-                  is_set_environ_pf_worker_count,
-                  pf_worker_count,
-                  n_process))
+            args=(dev_connections, flow_folder, is_set_environ_pf_worker_count, pf_worker_count, n_process),
+        )
         p.start()
         p.join()
         assert p.exitcode == 0
@@ -381,12 +366,12 @@ class TestLineExecutionProcessPool:
             "is_calculation_smaller_than_set",
             "pf_worker_count",
             "estimated_available_worker_count",
-            "n_process"
+            "n_process",
         ),
         [
             (SAMPLE_FLOW, True, False, "2", 4, 2),
             (SAMPLE_FLOW, True, True, "6", 2, 6),
-            (SAMPLE_FLOW, False, True, None, 2, 2)
+            (SAMPLE_FLOW, False, True, None, 2, 2),
         ],
     )
     @pytest.mark.skipif(sys.platform == "darwin" or sys.platform.startswith("linux"), reason="Skip on Mac and Linux")
@@ -398,19 +383,22 @@ class TestLineExecutionProcessPool:
         is_calculation_smaller_than_set,
         pf_worker_count,
         estimated_available_worker_count,
-        n_process
+        n_process,
     ):
         if "spawn" not in multiprocessing.get_all_start_methods():
             pytest.skip("Unsupported start method: spawn")
         p = multiprocessing.Process(
             target=execute_in_spawn_mode_subprocess,
-            args=(dev_connections,
-                  flow_folder,
-                  is_set_environ_pf_worker_count,
-                  is_calculation_smaller_than_set,
-                  pf_worker_count,
-                  estimated_available_worker_count,
-                  n_process))
+            args=(
+                dev_connections,
+                flow_folder,
+                is_set_environ_pf_worker_count,
+                is_calculation_smaller_than_set,
+                pf_worker_count,
+                estimated_available_worker_count,
+                n_process,
+            ),
+        )
         p.start()
         p.join()
         assert p.exitcode == 0
@@ -421,7 +409,7 @@ class TestGetAvailableMaxWorkerCount:
         "available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count",
         [
             (128.0, 64.0, 2, 2),  # available_memory/process_memory > 1
-            (63.0, 64.0, 1, 0),   # available_memory/process_memory < 1
+            (63.0, 64.0, 1, 0),  # available_memory/process_memory < 1
         ],
     )
     def test_get_available_max_worker_count(
@@ -451,47 +439,45 @@ class TestGetAvailableMaxWorkerCount:
 
 @pytest.mark.unittest
 class TestFormatCurrentProcess:
-    @patch('promptflow.executor._line_execution_process_pool.bulk_logger.info', autospec=True)
-    def test_format_current_process(self, mock_logger_info):
+    def test_format_current_process(self):
         process_name = "process_name"
         process_pid = 123
         line_number = 13
         formatted_message = format_current_process(process_name, process_pid, line_number)
-        exexpected_during_execution_log_message = (
-            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution."
-        )
         expected_returned_log_message = (
             f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
         )
-        mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)
         assert formatted_message == expected_returned_log_message
 
-    @patch('promptflow.executor._line_execution_process_pool.bulk_logger.info', autospec=True)
-    def test_format_completed_process(self, mock_logger_info):
+    @patch("promptflow.executor._line_execution_process_pool.bulk_logger.info", autospec=True)
+    def test_log_process_status_start_execution(self, mock_logger_info):
         process_name = "process_name"
         process_pid = 123
         line_number = 13
-        formatted_message = format_current_process(process_name, process_pid, line_number, is_completed=True)
+        log_process_status(process_name, process_pid, line_number)
         exexpected_during_execution_log_message = (
-            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed."
-        )
-        expected_returned_log_message = (
-            f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number}) start execution."
         )
         mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)
-        assert formatted_message == expected_returned_log_message
 
-    @patch('promptflow.executor._line_execution_process_pool.bulk_logger.info', autospec=True)
-    def test_format_failed_process(self, mock_logger_info):
+    @patch("promptflow.executor._line_execution_process_pool.bulk_logger.info", autospec=True)
+    def test_log_process_status_completed(self, mock_logger_info):
         process_name = "process_name"
         process_pid = 123
         line_number = 13
-        formatted_message = format_current_process(process_name, process_pid, line_number, is_failed=True)
+        log_process_status(process_name, process_pid, line_number, is_completed=True)
         exexpected_during_execution_log_message = (
-            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} failed."
-        )
-        expected_returned_log_message = (
-            f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number}) completed."
         )
         mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)
-        assert formatted_message == expected_returned_log_message
+
+    @patch("promptflow.executor._line_execution_process_pool.bulk_logger.info", autospec=True)
+    def test_log_process_status_failed(self, mock_logger_info):
+        process_name = "process_name"
+        process_pid = 123
+        line_number = 13
+        log_process_status(process_name, process_pid, line_number, is_failed=True)
+        exexpected_during_execution_log_message = (
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number}) failed."
+        )
+        mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)

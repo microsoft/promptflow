@@ -61,17 +61,18 @@ class QueueRunStorage(AbstractRunStorage):
         self.queue.put(run_info)
 
 
-def format_current_process(process_name, pid, line_number: int, is_completed=False, is_failed=False):
-    if is_completed:
-        bulk_logger.info(f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} completed.")
-    elif is_failed:
-        bulk_logger.info(f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} failed.")
-    else:
-        bulk_logger.info(
-            f"Process name: {process_name}, Process id: {pid}, Line number: {line_number} start execution."
-        )
-
+def format_current_process(process_name, pid, line_number: int):
     return f"Process name({process_name})-Process id({pid})-Line number({line_number})"
+
+
+def log_process_status(process_name, pid, line_number: int, is_completed=False, is_failed=False):
+    process_info = format_current_process(process_name, pid, line_number)
+    if is_completed:
+        bulk_logger.info(f"{process_info} completed.")
+    elif is_failed:
+        bulk_logger.info(f"{process_info} failed.")
+    else:
+        bulk_logger.info(f"{process_info} start execution.")
 
 
 class LineExecutionProcessPool:
@@ -186,10 +187,7 @@ class LineExecutionProcessPool:
             except KeyError:
                 continue
             except Exception as e:
-                bulk_logger.info(
-                    f"Unable to access shared dictionary 'process_info', possibly "
-                    f"because the sub process is down. Exception: {e}"
-                )
+                bulk_logger.warning(f"Unexpected error occurred while get process info. Exception: {e}")
 
     def handle_line_timeout(self, line_number, timeout_time, inputs, run_id, start_time, result_list):
         bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
@@ -243,6 +241,7 @@ class LineExecutionProcessPool:
             inputs, line_number, run_id = args[:3]
 
             self._processing_idx[line_number] = format_current_process(process_name, process_id, line_number)
+            log_process_status(process_name, process_id, line_number)
 
             start_time = datetime.utcnow()
             completed = False
@@ -263,9 +262,8 @@ class LineExecutionProcessPool:
 
             # Handle line execution completed.
             if completed:
-                self._completed_idx[line_number] = format_current_process(
-                    process_name, process_id, line_number, is_completed=True
-                )
+                self._completed_idx[line_number] = format_current_process(process_name, process_id, line_number)
+                log_process_status(process_name, process_id, line_number, is_completed=True)
             # Handle line execution is not completed.
             else:
                 # Handle process crashed.
@@ -275,9 +273,8 @@ class LineExecutionProcessPool:
                 else:
                     self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
 
-                self._completed_idx[line_number] = format_current_process(
-                    process_name, process_id, line_number, is_failed=True
-                )
+                self._completed_idx[line_number] = format_current_process(process_name, process_id, line_number)
+                log_process_status(process_name, process_id, line_number, is_failed=True)
 
                 # If there are still tasks in task_queue, restart a new process to execute the task.
                 if not task_queue.empty():

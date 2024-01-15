@@ -57,7 +57,7 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
-def run_batch(local_client, line_timeout_seconds):
+def run_batch(local_client, line_timeout_seconds, timeout_index=None):
     os.environ["PF_LINE_TIMEOUT_SEC"] = line_timeout_seconds
     run_id = str(uuid.uuid4())
     run_pf_command(
@@ -75,14 +75,11 @@ def run_batch(local_client, line_timeout_seconds):
     detail = local_storage.load_detail()
     flow_runs_list = detail["flow_runs"]
     for i, flow_run in enumerate(flow_runs_list):
-        if line_timeout_seconds == "54":
-            if i != 9:
-                assert flow_run["status"] == "Completed"
-            else:
-                assert flow_run["status"] == "Failed"
-                assert flow_run["error"]["message"] == f"Line {i} execution timeout for exceeding 54 seconds"
-                assert flow_run["error"]["code"] == "UserError"
-                assert flow_run["error"]["innerError"]["code"] == "LineExecutionTimeoutError"
+        if i == timeout_index:
+            assert flow_run["status"] == "Failed"
+            assert flow_run["error"]["message"] == f"Line {i} execution timeout for exceeding 54 seconds"
+            assert flow_run["error"]["code"] == "UserError"
+            assert flow_run["error"]["innerError"]["code"] == "LineExecutionTimeoutError"
         else:
             assert flow_run["status"] == "Completed"
     os.environ.pop("PF_LINE_TIMEOUT_SEC")
@@ -1856,12 +1853,10 @@ class TestCli:
 
     def test_batch_run_timeout(self, local_client):
         line_timeout_seconds = "54"
+        timout_index = 9
         p = multiprocessing.Process(
             target=run_batch,
-            args=(
-                local_client,
-                line_timeout_seconds,
-            ),
+            args=(local_client, line_timeout_seconds, timout_index),
         )
         p.start()
         p.join()

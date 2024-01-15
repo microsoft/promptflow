@@ -143,9 +143,9 @@ class SpawnProcessManager(AbstractProcessManager):
                 process_name=process.name,
             )
         except Exception as e:
-            bulk_logger.info(
-                f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}"
+            bulk_logger.warning(
+                f"Unexpected error occurred while creating ProcessInfo for index {i} and process id {process.pid}. "
+                f"Exception: {e}"
             )
         return process
 
@@ -175,9 +175,9 @@ class SpawnProcessManager(AbstractProcessManager):
         except psutil.NoSuchProcess:
             bulk_logger.warning(f"Process {pid} had been terminated")
         except Exception as e:
-            bulk_logger.info(
-                f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}"
+            bulk_logger.warning(
+                f"Unexpected error occurred while end process for index {i} and process id {process.pid}. "
+                f"Exception: {e}"
             )
 
 
@@ -319,9 +319,9 @@ class SpawnedForkProcessManager(AbstractProcessManager):
                 process_name=process.name,
             )
         except Exception as e:
-            bulk_logger.info(
-                f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}"
+            bulk_logger.warning(
+                f"Unexpected error occurred while creating ProcessInfo for index {i} and process id {process.pid}. "
+                f"Exception: {e}"
             )
         return process
 
@@ -341,9 +341,9 @@ class SpawnedForkProcessManager(AbstractProcessManager):
         except psutil.NoSuchProcess:
             bulk_logger.warning(f"Process {pid} had been terminated")
         except Exception as e:
-            bulk_logger.info(
-                f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}"
+            bulk_logger.warning(
+                f"Unexpected error occurred while end process for index {i} and process id {process.pid}. "
+                f"Exception: {e}"
             )
 
     def restart_process(self, i):
@@ -431,10 +431,7 @@ def fork_processes_manager(
         try:
             process_info_list = process_info.items()
         except Exception as e:
-            bulk_logger.info(
-                f"Unable to access shared dictionary 'process_info', possibly "
-                f"because the main process is down. Exception: {e}"
-            )
+            bulk_logger.warning(f"Unexpected error occurred while get process info list. Exception: {e}")
             break
 
         for _, info in list(process_info_list):
