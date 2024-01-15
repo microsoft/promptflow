@@ -23,6 +23,7 @@ from promptflow._cli._params import (
 from promptflow._cli._utils import (
     _output_result_list_with_format,
     activate_action,
+    confirm,
     exception_handler,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
@@ -50,6 +51,7 @@ def add_run_parser(subparsers):
     add_run_visualize(subparsers)
     add_run_archive(subparsers)
     add_run_restore(subparsers)
+    add_run_delete(subparsers)
     add_parser_build(subparsers, "run")
     run_parser.set_defaults(action="run")
 
@@ -339,6 +341,30 @@ pf run visualize --names "<name1>, <name2>"
     )
 
 
+def add_run_delete(subparsers):
+    epilog = """
+Example:
+
+# Caution: pf run delete is irreversible.
+# This operation will delete the run permanently from your local disk.
+# Both run entity and output data will be deleted.
+
+# Delete a run:
+pf run delete -n "<name>"
+"""
+    add_params = [add_param_run_name] + base_params
+
+    activate_action(
+        name="delete",
+        description=None,
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Delete a run irreversible.",
+        action_param_name="sub_action",
+    )
+
+
 def add_run_archive(subparsers):
     epilog = """
 Example:
@@ -408,6 +434,8 @@ def dispatch_run_commands(args: argparse.Namespace):
         restore_run(name=args.name)
     elif args.sub_action == "export":
         export_run(args)
+    elif args.sub_action == "delete":
+        delete_run(name=args.name)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -599,6 +627,15 @@ def create_run(create_func: Callable, args):
     if stream:
         print("\n")  # change new line to show run info
     print(json.dumps(run._to_dict(), indent=4))
+
+
+@exception_handler("Delete run")
+def delete_run(name: str) -> None:
+    if confirm("Are you sure to delete run irreversibly?"):
+        pf_client = PFClient()
+        pf_client.runs.delete(name=name)
+    else:
+        print("The delete operation was canceled.")
 
 
 def export_run(args):
