@@ -74,25 +74,18 @@ def override_recording_file():
 
 
 @pytest.fixture
-def process_override(start_method):
-    original_process_class = override_process(start_method)
+def process_override():
+    original_process_class = multiprocessing.get_context("spawn").Process
+    multiprocessing.get_context("spawn").Process = MockSpawnProcess
+    if "spawn" == multiprocessing.get_start_method():
+        multiprocessing.Process = MockSpawnProcess
+
     try:
         yield
     finally:
-        multiprocessing.get_context(start_method).Process = original_process_class
-        if start_method == multiprocessing.get_start_method():
+        multiprocessing.get_context("spawn").Process = original_process_class
+        if "spawn" == multiprocessing.get_start_method():
             multiprocessing.Process = original_process_class
-
-
-def override_process(start_method):
-    original_process_class = multiprocessing.get_context(start_method).Process
-    MockProcessClass = MockForkServerProcess if start_method == "forkserver" else MockSpawnProcess
-
-    multiprocessing.get_context(start_method).Process = MockProcessClass
-    if start_method == multiprocessing.get_start_method():
-        multiprocessing.Process = MockProcessClass
-
-    return original_process_class
 
 
 @pytest.fixture
