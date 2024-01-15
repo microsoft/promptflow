@@ -3,7 +3,6 @@ import os
 from types import GeneratorType
 
 import pytest
-from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
@@ -115,9 +114,6 @@ class TestExecutor:
         assert run_info.node == node_name
         assert run_info.system_metrics["duration"] >= 0
 
-    # @pytest.mark.skipif(
-    #     is_replay() or is_record(), reason="Pickle behaves incorrectly in spawn mode, recording disabled"
-    # )
     def test_executor_exec_node_with_llm_node(self, dev_connections):
         # Run the test in a new process to ensure the openai api is injected correctly for the single node run
         context = multiprocessing.get_context("spawn")
@@ -131,7 +127,6 @@ class TestExecutor:
 
         assert process.exitcode == 0
 
-    @pytest.mark.skipif(is_replay() or is_record(), reason="Resolve tool error cannot record")
     def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
         executor = FlowExecutor.create(
