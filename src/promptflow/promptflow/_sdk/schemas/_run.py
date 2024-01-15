@@ -71,6 +71,7 @@ class RemoteFlowStr(fields.Str):
 class RunSchema(YamlFileSchema):
     """Base schema for all run schemas."""
 
+    # TODO(2898455): support directly write path/flow + entry in run.yaml
     # region: common fields
     name = fields.Str()
     display_name = fields.Str(required=False)

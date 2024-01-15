@@ -8,7 +8,6 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
-import yaml
 from marshmallow import Schema
 
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
@@ -23,6 +22,7 @@ from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._validation import SchemaValidatableMixin
 from promptflow._utils.flow_utils import resolve_flow_path
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import load_yaml, load_yaml_string
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
@@ -107,6 +107,11 @@ class FlowBase(abc.ABC):
             raise UserErrorException("context must be a FlowContext object, got {type(val)} instead.")
         self._context = val
 
+    @property
+    @abc.abstractmethod
+    def language(self) -> str:
+        """Language of the flow."""
+
     @classmethod
     # pylint: disable=unused-argument
     def _resolve_cls_and_type(cls, data, params_override):
@@ -155,6 +160,10 @@ class Flow(FlowBase):
             )
         return flow_file
 
+    @property
+    def language(self) -> str:
+        return self.dag.get(LANGUAGE_KEY, FlowLanguage.Python)
+
     @classmethod
     def _is_eager_flow(cls, data: dict):
         """Check if the flow is an eager flow. Use field 'entry' to determine."""
@@ -165,6 +174,7 @@ class Flow(FlowBase):
     def load(
         cls,
         source: Union[str, PathLike],
+        entry: str = None,
         **kwargs,
     ):
         from promptflow._sdk.entities._eager_flow import EagerFlow
@@ -179,16 +189,16 @@ class Flow(FlowBase):
             # read flow file to get hash
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
-                data = yaml.safe_load(flow_content)
+                data = load_yaml_string(flow_content)
                 kwargs["content_hash"] = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
             if is_eager_flow:
-                return EagerFlow._load(path=flow_path, entry=data.get("entry"), data=data, **kwargs)
+                return EagerFlow._load(path=flow_path, entry=entry, data=data, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
                 return ProtectedFlow._load(path=flow_path, dag=data, **kwargs)
         # if non-YAML file is provided, treat is as eager flow
-        return EagerFlow._load(path=flow_path, **kwargs)
+        return EagerFlow._load(path=flow_path, entry=entry, **kwargs)
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk._submitter import variant_overwrite_context
@@ -250,10 +260,6 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         return self.dag.get("display_name", self.name)
 
     @property
-    def language(self) -> str:
-        return self.dag.get(LANGUAGE_KEY, FlowLanguage.Python)
-
-    @property
     def tools_meta_path(self) -> Path:
         target_path = self._flow_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
         target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -293,7 +299,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def _dump_for_validation(self) -> Dict:
         # Flow is read-only in control plane, so we always dump the flow from file
-        data = yaml.safe_load(self.flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+        data = load_yaml(self.flow_dag_path)
         if isinstance(self._params_override, dict):
             data.update(self._params_override)
         return data

@@ -6,7 +6,7 @@ import contextlib
 import logging
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Mapping
+from typing import Any, Mapping, Union
 
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
@@ -25,6 +25,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..._utils.async_utils import async_run_allowing_running_loop
 from ..._utils.logger_utils import get_cli_sdk_logger
+from ..entities._eager_flow import EagerFlow
 from .utils import (
     SubmitterHelper,
     print_chat_output,
@@ -37,8 +38,9 @@ logger = get_cli_sdk_logger()
 
 
 class TestSubmitter:
-    def __init__(self, flow: ProtectedFlow, flow_context: FlowContext, client=None):
+    def __init__(self, flow: Union[ProtectedFlow, EagerFlow], flow_context: FlowContext, client=None):
         self.flow = flow
+        self.func = flow.entry if isinstance(flow, EagerFlow) else None
         self._origin_flow = flow
         self._dataplane_flow = None
         self.flow_context = flow_context
@@ -56,6 +58,26 @@ class TestSubmitter:
 
     @contextlib.contextmanager
     def init(self):
+        if isinstance(self.flow, EagerFlow):
+            flow_content_manager = self._eager_flow_init
+        else:
+            flow_content_manager = self._dag_flow_init
+        with flow_content_manager() as submitter:
+            yield submitter
+
+    @contextlib.contextmanager
+    def _eager_flow_init(self):
+        # no variant overwrite for eager flow
+        # no connection overwrite for eager flow
+        # TODO(2897147): support additional includes
+        with _change_working_dir(self.flow.code):
+            self._tuning_node = None
+            self._node_variant = None
+            yield self
+            self._dataplane_flow = None
+
+    @contextlib.contextmanager
+    def _dag_flow_init(self):
         if self.flow_context.variant:
             tuning_node, node_variant = parse_variant(self.flow_context.variant)
         else:
@@ -197,7 +219,7 @@ class TestSubmitter:
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             flow_executor = FlowExecutor.create(
-                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
+                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False, func=self.func
             )
             flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)

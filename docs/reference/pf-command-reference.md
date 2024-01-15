@@ -260,6 +260,7 @@ pf flow serve --source
               [--environment-variables]
               [--verbose]
               [--debug]
+              [--skip-open-browser]
 ```
 
 #### Examples
@@ -303,6 +304,10 @@ Show more details for each step during serve.
 `--debug`
 
 Show debug information during serve.
+
+`--skip-open-browser`
+
+Skip opening browser after serve. Store true parameter.
 
 ## pf connection
 
