@@ -19,7 +19,13 @@ def my_custom_connection() -> CustomConnection:
 
 class TestToolWithCustomLLMType:
     def test_tool_with_custom_llm_type(self, my_custom_connection):
-        result = my_tool(my_custom_connection, "Hello {{text}}", text="Microsoft")
+        result = my_tool(
+            my_custom_connection,
+            "my-endpoint-name",
+            "my-api",
+            0,
+            "Hello {{text}}",
+            text="Microsoft")
         assert result == "Hello Microsoft"
 
 
