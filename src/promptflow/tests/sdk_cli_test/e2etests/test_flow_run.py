@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 import tempfile
 import uuid
 from pathlib import Path
@@ -22,11 +23,12 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._errors import (
     ConnectionNotFoundError,
     InvalidFlowError,
+    InvalidRunError,
     InvalidRunStatusError,
     RunExistsError,
     RunNotFoundError,
 )
-from promptflow._sdk._load_functions import load_flow
+from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
@@ -126,6 +128,71 @@ class TestFlowRun:
         assert run.status == "Completed"
         # write to user_dir/.promptflow/.runs
         assert ".promptflow" in run.properties["output_path"]
+
+    def test_local_storage_delete(self, pf):
+        result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
+        local_storage = LocalStorageOperations(result)
+        local_storage.delete()
+        assert not os.path.exists(local_storage._outputs_path)
+
+    def test_flow_run_delete(self, pf):
+        result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
+        local_storage = LocalStorageOperations(result)
+        output_path = local_storage.path
+
+        # delete new created run by name
+        pf.runs.delete(result.name)
+
+        # check folders and dbs are deleted
+        assert not os.path.exists(output_path)
+
+        from promptflow._sdk._orm import RunInfo as ORMRun
+
+        pytest.raises(RunNotFoundError, lambda: ORMRun.get(result.name))
+        pytest.raises(RunNotFoundError, lambda: pf.runs.get(result.name))
+
+    def test_flow_run_delete_fake_id_raise(self, pf: PFClient):
+        run = "fake_run_id"
+
+        # delete new created run by name
+        pytest.raises(RunNotFoundError, lambda: pf.runs.delete(name=run))
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows doesn't support chmod, just test permission errors")
+    def test_flow_run_delete_invalid_permission_raise(self, pf: PFClient):
+        result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
+        local_storage = LocalStorageOperations(result)
+        output_path = local_storage.path
+        os.chmod(output_path, 0o555)
+
+        # delete new created run by name
+        pytest.raises(InvalidRunError, lambda: pf.runs.delete(name=result.name))
+
+        # Change folder permission back
+        os.chmod(output_path, 0o755)
+        pf.runs.delete(name=result.name)
+        assert not os.path.exists(output_path)
+
+    def test_visualize_run_with_referenced_run_deleted(self, pf: PFClient):
+        run_id = str(uuid.uuid4())
+        run = load_run(
+            source=f"{RUNS_DIR}/sample_bulk_run.yaml",
+            params_override=[{"name": run_id}],
+        )
+        run_a = pf.runs.create_or_update(run=run)
+        local_storage_a = LocalStorageOperations(run_a)
+        output_path_a = local_storage_a.path
+
+        run = load_run(source=f"{RUNS_DIR}/sample_eval_run.yaml", params_override=[{"run": run_id}])
+        run_b = pf.runs.create_or_update(run=run)
+        local_storage_b = LocalStorageOperations(run_b)
+        output_path_b = local_storage_b.path
+
+        pf.runs.delete(run_a.name)
+        assert not os.path.exists(output_path_a)
+        assert os.path.exists(output_path_b)
+
+        # visualize doesn't raise error
+        pf.runs.visualize(run_b.name)
 
     def test_basic_flow_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf) -> None:
         result = pf.run(
