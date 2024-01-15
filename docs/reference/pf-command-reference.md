@@ -13,6 +13,7 @@ Manage prompt flow resources with the prompt flow CLI.
 | [pf run](#pf-run)               | Manage runs.                    |
 | [pf tool](#pf-tool)             | Init or list tools.             |
 | [pf config](#pf-config)         | Manage config for current user. |
+| [pf upgrade](#pf-upgrade)       | Upgrade prompt flow CLI.        |
 
 ## pf flow
 
@@ -862,4 +863,20 @@ Show prompt flow for current user.
 
 ```bash
 pf config show
+```
+
+## pf upgrade
+
+Upgrade prompt flow CLI.
+
+| Command                     | Description                 |
+|-----------------------------|-----------------------------|
+| [pf upgrade](#pf-upgrade)   | Upgrade prompt flow CLI.    |
+
+### Examples
+
+Upgrade prompt flow without prompt and run non-interactively.
+
+```bash
+pf upgrade --yes
 ```
