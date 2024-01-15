@@ -58,8 +58,8 @@ class RunSubmitter:
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
         with local_storage.logger:
-            if run.eager_mode:
-                flow_obj = load_flow(source=run.flow, entry=run.entry)
+            if local_storage.eager_mode:
+                flow_obj = load_flow(source=run.flow)
                 self._submit_bulk_run(flow=flow_obj, run=run, local_storage=local_storage)
             else:
                 # running specified variant

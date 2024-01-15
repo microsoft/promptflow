@@ -59,7 +59,6 @@ class PFClient:
         name: str = None,
         display_name: str = None,
         tags: Dict[str, str] = None,
-        entry: str = None,
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
@@ -108,8 +107,6 @@ class PFClient:
         :type display_name: str
         :param tags: Tags of the run.
         :type tags: Dict[str, str]
-        :param entry: The entry function, only works when source is a code file.
-        :type entry: str
         :return: Flow run info.
         :rtype: ~promptflow.entities.Run
         """
@@ -119,17 +116,14 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
+        # TODO(2901096): Support pf run with python file, maybe create a temp flow.dag.yaml in this case
         # load flow object for validation and early failure
-        flow_obj = load_flow(source=flow, entry=entry)
+        flow_obj = load_flow(source=flow)
         # validate param conflicts
         if isinstance(flow_obj, EagerFlow):
             if variant or connections:
                 logger.warning("variant and connections are not supported for eager flow, will be ignored")
                 variant, connections = None, None
-        else:
-            if entry:
-                logger.warning("entry is only supported for eager flow, will be ignored")
-                entry = None
         run = Run(
             name=name,
             display_name=display_name,
@@ -142,8 +136,6 @@ class PFClient:
             connections=connections,
             environment_variables=environment_variables,
             config=Configuration(overrides=self._config),
-            entry=entry,
-            eager_mode=isinstance(flow_obj, EagerFlow),
         )
         return self.runs.create_or_update(run=run, **kwargs)
 
