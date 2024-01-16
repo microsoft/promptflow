@@ -22,7 +22,7 @@ from promptflow._sdk._constants import (
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
-from promptflow._sdk._errors import UnsecureConnectionError
+from promptflow._sdk._errors import UnsecureConnectionError, SDKError
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -47,6 +47,7 @@ from promptflow._sdk.schemas._connection import (
 )
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
+from promptflow.exceptions import ValidationException, UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -153,7 +154,9 @@ class _Connection(YAMLTranslatableMixin):
                 continue
             encrypt_secrets[k] = encrypt_secret_value(v)
         if invalid_secrets:
-            raise ValueError(f"Connection {self.name!r} secrets {invalid_secrets} value invalid, please fill them.")
+            raise ValidationException(
+                f"Connection {self.name!r} secrets {invalid_secrets} value invalid, please fill them."
+            )
         return encrypt_secrets
 
     @classmethod
@@ -162,7 +165,7 @@ class _Connection(YAMLTranslatableMixin):
         try:
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
-            raise Exception(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
+            raise SDKError(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
     def _to_dict(self) -> Dict:
@@ -175,11 +178,11 @@ class _Connection(YAMLTranslatableMixin):
         type_in_override = find_type_in_override(params_override)
         type_str = type_in_override or data.get("type")
         if type_str is None:
-            raise ValueError("type is required for connection.")
+            raise ValidationException("type is required for connection.")
         type_str = cls._casting_type(type_str)
         type_cls = _supported_types.get(type_str)
         if type_cls is None:
-            raise ValueError(
+            raise ValidationException(
                 f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
             )
         return type_cls, type_str
@@ -775,12 +778,16 @@ class CustomStrongTypeConnection(_Connection):
             module = importlib.import_module(m)
             cls = getattr(module, custom_cls)
         except ImportError:
-            raise ValueError(
-                f"Can't find module {m} in current environment. Please check the module is correctly configured."
+            raise UserErrorException(
+                error=ValueError(
+                    f"Can't find module {m} in current environment. Please check the module is correctly configured."
+                )
             )
         except AttributeError:
-            raise ValueError(
-                f"Can't find class {custom_cls} in module {m}. Please check the custom_type is correctly configured."
+            raise UserErrorException(
+                error=ValueError(
+                    f"Can't find class {custom_cls} in module {m}. Please check the custom_type is correctly configured."
+                )
             )
 
         schema_configs = {}
@@ -996,9 +1003,11 @@ class CustomConnection(_Connection):
         elif isinstance(module, types.ModuleType) and isinstance(to_class, str):
             custom_conn_name = to_class
         else:
-            raise ValueError(
-                f"Failed to convert to custom strong type connection because of "
-                f"invalid module or class: {module}, {to_class}"
+            raise UserErrorException(
+                error=ValueError(
+                    f"Failed to convert to custom strong type connection because of "
+                    f"invalid module or class: {module}, {to_class}"
+                )
             )
 
         custom_defined_connection_class = getattr(module, custom_conn_name)

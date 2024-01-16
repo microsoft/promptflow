@@ -233,6 +233,8 @@ class RunOperations(TelemetryMixin):
         name: str,
     ) -> None:
         """Delete run permanently.
+        Caution: This operation will delete the run permanently from your local disk.
+        Both run entity and output data will be deleted.
 
         :param name: run name to delete
         :return: None

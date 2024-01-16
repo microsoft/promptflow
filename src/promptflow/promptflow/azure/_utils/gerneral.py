@@ -22,7 +22,7 @@ def get_token(credential, resource):
     )
     if decoded_token.get("aud") != resource:
         msg = """AAD token with aml scope could not be fetched using the credentials being used.
-            Please validate if token with {0} scope can be fetched using credentials provided to MLClient.
+            Please validate if token with {0} scope can be fetched using credentials provided to PFClient.
             Token with {0} scope can be fetched using credentials.get_token({0})
             """
         raise ValidationException(
