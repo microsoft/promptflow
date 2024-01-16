@@ -5,6 +5,7 @@ import queue
 import signal
 import sys
 import threading
+import time
 from datetime import datetime
 from functools import partial
 from logging import INFO
@@ -28,7 +29,12 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
-from promptflow.executor._errors import LineExecutionTimeoutError, ProcessCrashError
+from promptflow.executor._errors import (
+    LineExecutionTimeoutError,
+    ProcessCrashError,
+    ProcessInfoObtainedTimeout,
+    ProcessTerminatedTimeout,
+)
 from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
@@ -77,6 +83,8 @@ def log_process_status(process_name, pid, line_number: int, is_completed=False, 
 
 class LineExecutionProcessPool:
     _DEFAULT_WORKER_COUNT = 4
+    _PROCESS_TERMINATED_TIMEOUT = 60
+    _PROCESS_INFO_OBTAINED_TIMEOUT = 60
 
     def __init__(
         self,
@@ -178,8 +186,11 @@ class LineExecutionProcessPool:
             self._monitor_pool.join()
 
     def _get_process_info(self, index):
+        start_time = time.time()
         while True:
             try:
+                if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
+                    raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
                 # Try to get process id and name from the process_info
                 process_id = self._process_info[index].process_id
                 process_name = self._process_info[index].process_name
@@ -187,9 +198,17 @@ class LineExecutionProcessPool:
             except KeyError:
                 # If the process_info does not exist for the given index, it means the process have not ready yet,
                 # try again.
+                time.sleep(1)
                 continue
             except Exception as e:
                 bulk_logger.warning(f"Unexpected error occurred while get process info. Exception: {e}")
+
+    def _ensure_process_terminated_within_timeout(self, process_id):
+        start_time = time.time()
+        while psutil.pid_exists(process_id):
+            if time.time() - start_time > self._PROCESS_TERMINATED_TIMEOUT:
+                raise ProcessTerminatedTimeout(self._PROCESS_TERMINATED_TIMEOUT)
+            time.sleep(1)
 
     def handle_line_timeout(self, line_number, timeout_time, inputs, run_id, start_time, result_list):
         bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
@@ -236,8 +255,7 @@ class LineExecutionProcessPool:
                 # We need to ensure the process has been killed before returning. Otherwise, it may cause
                 # the main process have exited but the spawn process is still alive.
                 # At this time, a connection error will be reported.
-                while psutil.pid_exists(process_id):
-                    continue
+                self._ensure_process_terminated_within_timeout(process_id)
                 return
 
             # Put task into input_queue
@@ -290,8 +308,7 @@ class LineExecutionProcessPool:
                     # We need to ensure the process has been killed before continuing to execute.
                     # Otherwise the process will receive new task, and during the execution, the process
                     # is killed, which will result in the 'ProcessCrashError'.
-                    while psutil.pid_exists(process_id):
-                        continue
+                    self._ensure_process_terminated_within_timeout(process_id)
                     index, process_id, process_name = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)
