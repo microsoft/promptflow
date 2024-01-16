@@ -23,7 +23,7 @@ from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
 
-SAMPLE_FLOW = "web_classification"
+SAMPLE_FLOW = "hello-world"
 
 
 def get_line_inputs(flow_folder=""):
@@ -217,7 +217,7 @@ class TestLineExecutionProcessPool:
         executor = FlowExecutor.create(
             get_yaml_file(flow_folder),
             dev_connections,
-            line_timeout_sec=1,
+            line_timeout_sec=0,
         )
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
@@ -235,7 +235,7 @@ class TestLineExecutionProcessPool:
         assert len(result_list) == nlines
         for i, line_result in enumerate(result_list):
             assert isinstance(line_result, LineResult)
-            assert line_result.run_info.error["message"] == f"Line {i} execution timeout for exceeding 1 seconds"
+            assert line_result.run_info.error["message"] == f"Line {i} execution timeout for exceeding 0 seconds"
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
 
