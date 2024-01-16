@@ -186,6 +186,7 @@ class FlowExecutor:
         """
         if Path(flow_file).suffix.lower() == ".py":
             from ._script_executor import ScriptExecutor
+
             return ScriptExecutor(
                 entry_file=flow_file,
                 func=func,
@@ -460,6 +461,12 @@ class FlowExecutor:
 
         result_list = []
 
+        # Just for runtime delete the legacy related code
+        # Will removed later.
+        if self._flow_file is None:
+            raise NotSupported(
+                message_format=("Not support legacy scenarios"),
+            )
         from ._line_execution_process_pool import LineExecutionProcessPool
 
         with LineExecutionProcessPool(
