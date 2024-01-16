@@ -13,7 +13,7 @@ from sdk_cli_azure_test.recording_utilities import is_replay
 from promptflow import PFClient
 from promptflow._sdk.entities import CustomConnection
 
-from ..utils import PFSOperations, check_telemetry
+from ..utils import PFSOperations, check_activity_end_telemetry
 
 
 def create_custom_connection(client: PFClient) -> str:
@@ -27,32 +27,32 @@ def create_custom_connection(client: PFClient) -> str:
 class TestConnectionAPIs:
     def test_list_connections(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         create_custom_connection(pf_client)
-        with check_telemetry(activity_name="pf.connections.list"):
+        with check_activity_end_telemetry(activity_name="pf.connections.list"):
             connections = pfs_op.list_connections().json
 
         assert len(connections) >= 1
 
     def test_get_connection(self, pf_client: PFClient, pfs_op: PFSOperations) -> None:
         name = create_custom_connection(pf_client)
-        with check_telemetry(activity_name="pf.connections.get"):
+        with check_activity_end_telemetry(activity_name="pf.connections.get"):
             conn_from_pfs = pfs_op.get_connection(name=name, status_code=200).json
         assert conn_from_pfs["name"] == name
         assert conn_from_pfs["configs"]["api_base"] == "test"
         assert "api_key" in conn_from_pfs["secrets"]
 
         # get connection with secret
-        with check_telemetry(activity_name="pf.connections.get"):
+        with check_activity_end_telemetry(activity_name="pf.connections.get"):
             conn_from_pfs = pfs_op.get_connection_with_secret(name=name, status_code=200).json
         assert not conn_from_pfs["secrets"]["api_key"].startswith("*")
 
     def test_list_connection_with_invalid_user(self, pfs_op: PFSOperations) -> None:
         # TODO: should we record telemetry for this case?
-        with check_telemetry(expected_activities=[]):
+        with check_activity_end_telemetry(expected_activities=[]):
             conn_from_pfs = pfs_op.connection_operation_with_invalid_user()
         assert conn_from_pfs.status_code == 403
 
     def test_get_connection_specs(self, pfs_op: PFSOperations) -> None:
-        with check_telemetry(expected_activities=[]):
+        with check_activity_end_telemetry(expected_activities=[]):
             specs = pfs_op.get_connection_specs(status_code=200).json
         assert len(specs) > 1
 

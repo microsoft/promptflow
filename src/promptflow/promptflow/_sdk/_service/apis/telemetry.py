@@ -37,7 +37,7 @@ def _dict_camel_to_snake(data):
 def parse_activity_info(telemetry_data, user_agent):
     from promptflow._sdk._telemetry.activity import generate_request_id
 
-    first_call = "requestId" not in telemetry_data
+    first_call = telemetry_data.get("firstCall", True)
     request_id = telemetry_data.get("requestId", generate_request_id())
 
     return {
@@ -81,7 +81,7 @@ def validate_telemetry_payload(payload):
             )
         ):
             missing_fields = {"requestId", "completionStatus", "durationMs"} - set(metadata.keys())
-            raise UserErrorException(f"Missing required fields in telemetry payload: {', '.join(missing_fields)}")
+            raise UserErrorException(f"Missing required fields in telemetry metadata: {', '.join(missing_fields)}")
 
         if metadata.get("completionStatus") not in [
             ActivityCompletionStatus.FAILURE,

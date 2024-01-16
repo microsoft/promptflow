@@ -11,7 +11,7 @@ from flask.testing import FlaskClient
 
 
 @contextlib.contextmanager
-def check_telemetry(
+def check_activity_end_telemetry(
     *,
     expected_activities: List[Dict[str, Any]] = None,
     **kwargs,
@@ -33,7 +33,9 @@ def check_telemetry(
             "user_agent": "promptflow-sdk/0.0.1 local_pfs/0.0.1",
         }
         for i, expected_activity in enumerate(expected_activities):
-            expected_activity = default_expected_call.copy() | expected_activity
+            temp = default_expected_call.copy()
+            temp.update(expected_activity)
+            expected_activity = temp
             for key, expected_value in expected_activity.items():
                 value = actual_activities[i][key]
                 assert (
@@ -45,6 +47,7 @@ class PFSOperations:
 
     CONNECTION_URL_PREFIX = "/v1.0/Connections"
     RUN_URL_PREFIX = "/v1.0/Runs"
+    TELEMETRY_PREFIX = "/v1.0/Telemetries"
 
     def __init__(self, client: FlaskClient):
         self._client = client
@@ -183,6 +186,13 @@ class PFSOperations:
 
     def get_run_metrics(self, name: str, status_code=None):
         response = self._client.get(f"{self.RUN_URL_PREFIX}/{name}/metrics")
+        if status_code:
+            assert status_code == response.status_code, response.text
+        return response
+
+    # telemetry APIs
+    def create_telemetry(self, *, body, status_code=None):
+        response = self._client.post(f"{self.TELEMETRY_PREFIX}/", headers={**self.remote_user_header()}, json=body)
         if status_code:
             assert status_code == response.status_code, response.text
         return response
