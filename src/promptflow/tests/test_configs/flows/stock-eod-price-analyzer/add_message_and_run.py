@@ -38,8 +38,6 @@ async def add_message_and_run(
 
     await wait_for_run_complete(cli, thread_id, invoker, run)
 
-    # await get_run_steps(cli, thread_id, run.id)
-
     messages = await get_message(cli, thread_id)
 
     file_id_references = await get_openai_file_references(messages.data[0].content, download_images, conn)
