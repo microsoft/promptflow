@@ -102,10 +102,10 @@ class SpawnProcessManager(AbstractProcessManager):
     :param kwargs: Additional keyword arguments for the AbstractProcessManager.
     """
 
-    def __init__(self, process_start_method_in_spawn_process_manager, executor_creation_func, *args, **kwargs):
+    def __init__(self, executor_creation_func, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._executor_creation_func = executor_creation_func
-        self.context = multiprocessing.get_context(process_start_method_in_spawn_process_manager)
+        self.context = multiprocessing.get_context("spawn")
 
     def start_processes(self):
         """
