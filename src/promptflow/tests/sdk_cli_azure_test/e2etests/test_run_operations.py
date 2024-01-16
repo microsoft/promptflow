@@ -803,3 +803,18 @@ class TestFlowRun:
         for _, row in details2.iterrows():
             if pd.notnull(row["outputs.output"]):
                 assert int(row["inputs.number"]) == int(row["outputs.output"])
+
+    def test_create_run_with_custom_runtime(self, pf: PFClient, randstr: Callable[[str], str], runtime: str):
+        run = pf.run(
+            # copy test_configs/flows/simple_hello_world to a separate folder
+            # as pf.run will generate .promptflow/flow.tools.json
+            # it will affect Azure file share upload logic and replay test
+            flow=f"{FLOWS_DIR}/hello-world",
+            data=f"{DATAS_DIR}/webClassification3.jsonl",
+            column_mapping={"name": "${data.url}"},
+            name=randstr("name"),
+            runtime=runtime,
+        )
+        run = pf.runs.stream(run=run.name)
+        assert run.status == RunStatus.COMPLETED
+        assert run.properties["azureml.promptflow.runtime_name"] == runtime
