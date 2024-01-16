@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import socket
 import subprocess
 import uuid
 from pathlib import Path
@@ -9,7 +10,6 @@ from typing import Any, Mapping, Optional
 
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._sdk._constants import DEFAULT_ENCODING, FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
-from promptflow._utils.service_utils import find_available_port
 from promptflow.batch._base_executor_proxy import APIBasedExecutorProxy
 from promptflow.executor._result import AggregationResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -111,4 +111,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
     @classmethod
     def find_available_port(cls) -> str:
         """Find an available port on localhost"""
-        return str(find_available_port())
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("localhost", 0))
+            _, port = s.getsockname()
+            return str(port)
