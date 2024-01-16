@@ -2,11 +2,14 @@ import multiprocessing
 import os
 import uuid
 from multiprocessing import Queue
+from pathlib import Path
+from tempfile import mkdtemp
 from unittest.mock import patch
 
 import pytest
 from pytest_mock import MockFixture
 
+from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
@@ -178,25 +181,31 @@ class TestLineExecutionProcessPool:
         ],
     )
     def test_line_execution_process_pool(self, flow_folder, dev_connections, recording_injection):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-        executor._log_interval = 1
-        run_id = str(uuid.uuid4())
-        bulk_inputs = get_bulk_inputs()
-        nlines = len(bulk_inputs)
-        run_id = run_id or str(uuid.uuid4())
-        with LineExecutionProcessPool(
-            executor,
-            nlines,
-            run_id,
-            "",
-            False,
-            None,
-        ) as pool:
-            result_list = pool.run(zip(range(nlines), bulk_inputs))
-            assert len(result_list) == nlines
-            for i, line_result in enumerate(result_list):
-                assert isinstance(line_result, LineResult)
-                assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
+        log_path = str(Path(mkdtemp()) / "test.log")
+        log_context_initializer = LogContext(log_path).get_initializer()
+        log_context = log_context_initializer()
+        with log_context:
+            executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+            executor._log_interval = 1
+            run_id = str(uuid.uuid4())
+            bulk_inputs = get_bulk_inputs()
+            nlines = len(bulk_inputs)
+            run_id = run_id or str(uuid.uuid4())
+            with LineExecutionProcessPool(
+                executor,
+                nlines,
+                run_id,
+                "",
+                False,
+                None,
+            ) as pool:
+                result_list = pool.run(zip(range(nlines), bulk_inputs))
+                assert len(result_list) == nlines
+                for i, line_result in enumerate(result_list):
+                    assert isinstance(line_result, LineResult)
+                    assert (
+                        line_result.run_info.status == Status.Completed
+                    ), f"{i}th line got {line_result.run_info.status}"
 
     @pytest.mark.parametrize(
         "flow_folder",
