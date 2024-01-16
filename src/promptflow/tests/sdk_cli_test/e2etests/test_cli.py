@@ -548,7 +548,24 @@ class TestCli:
             node_name,
         )
 
-    def test_flow_test_with_environment_variable(self, local_client):
+    @pytest.mark.parametrize(
+        "flow_folder_name, env_key, except_value",
+        [
+            pytest.param(
+                "print_env_var",
+                "API_BASE",
+                "${azure_open_ai_connection.api_base}",
+                id="TestFlowWithEnvironmentVariables",
+            ),
+            pytest.param(
+                "flow_with_environment_variables",
+                "env1",
+                "2",
+                id="LoadEnvVariablesWithoutOverridesInYaml",
+            ),
+        ],
+    )
+    def test_flow_test_with_environment_variable(self, flow_folder_name, env_key, except_value, local_client):
         from promptflow._sdk._submitter.utils import SubmitterHelper
 
         def validate_stdout(detail_path):
@@ -556,45 +573,45 @@ class TestCli:
                 details = json.load(f)
                 assert details["node_runs"][0]["logs"]["stdout"]
 
-        env = {"API_BASE": "${azure_open_ai_connection.api_base}"}
+        env = {env_key: except_value}
         SubmitterHelper.resolve_environment_variables(env, local_client)
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/{flow_folder_name}",
             "--inputs",
-            "key=API_BASE",
+            f"key={env_key}",
             "--environment-variables",
             "API_BASE=${azure_open_ai_connection.api_base}",
         )
-        with open(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.output.json", "r") as f:
+        with open(Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow.output.json", "r") as f:
             outputs = json.load(f)
-        assert outputs["output"] == env["API_BASE"]
-        validate_stdout(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.detail.json")
+        assert outputs["output"] == env[env_key]
+        validate_stdout(Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow.detail.json")
 
         # Test log contains user printed outputs
-        log_path = Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.log"
+        log_path = Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow.log"
         with open(log_path, "r") as f:
             log_content = f.read()
-        assert env["API_BASE"] in log_content
+        assert env[env_key] in log_content
 
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/{flow_folder_name}",
             "--inputs",
-            "inputs.key=API_BASE",
+            f"inputs.key={env_key}",
             "--environment-variables",
             "API_BASE=${azure_open_ai_connection.api_base}",
             "--node",
             "print_env",
         )
-        with open(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow-print_env.node.output.json", "r") as f:
+        with open(Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow-print_env.node.output.json", "r") as f:
             outputs = json.load(f)
-        assert outputs["value"] == env["API_BASE"]
-        validate_stdout(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow-print_env.node.detail.json")
+        assert outputs["value"] == env[env_key]
+        validate_stdout(Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow-print_env.node.detail.json")
 
     def _validate_requirement(self, flow_path):
         with open(flow_path) as f:
