@@ -126,14 +126,6 @@ class FlowExecutor:
         self._working_dir = working_dir
         self._line_timeout_sec = line_timeout_sec
         self._flow_file = flow_file
-
-        if self._flow_file is None:
-            error_message = "flow file is missing"
-            raise UnexpectedError(
-                message_format=("Unexpected error occurred while init FlowExecutor. Error details: {error_message}."),
-                error_message=error_message,
-            )
-
         try:
             self._tools_manager = ToolsManager(loaded_tools)
             tool_to_meta = {tool.name: tool for tool in flow.tools}
@@ -468,6 +460,13 @@ class FlowExecutor:
             line_number = [i for i in range(nlines)]
 
         result_list = []
+
+        if self._flow_file is None:
+            error_message = "flow file is missing"
+            raise UnexpectedError(
+                message_format=("Unexpected error occurred while init FlowExecutor. Error details: {error_message}."),
+                error_message=error_message,
+            )
 
         from ._line_execution_process_pool import LineExecutionProcessPool
 
