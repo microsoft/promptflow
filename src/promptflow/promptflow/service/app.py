@@ -1,12 +1,10 @@
 import uvicorn
 from fastapi import FastAPI
 
+from promptflow.service.apis.execution import router as execution_router
+
 app = FastAPI()
-
-
-@app.get("/execution/flow")
-async def flow_test_execution():
-    return {"Hello": "World"}
+app.include_router(execution_router)
 
 
 if __name__ == "__main__":
