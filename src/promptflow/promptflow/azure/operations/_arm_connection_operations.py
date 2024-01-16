@@ -179,6 +179,10 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 "api_type": get_case_insensitive_key(properties.metadata, "ApiType"),
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
+            # Note: Resource id is required in some cloud scenario, which is not exposed on sdk/cli entity.
+            resource_id = get_case_insensitive_key(properties.metadata, "ResourceId")
+            if resource_id:
+                value["resource_id"] = resource_id
         elif properties.category == ConnectionCategory.CognitiveSearch:
             value = {
                 "api_key": properties.credentials.key,
