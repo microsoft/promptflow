@@ -96,7 +96,6 @@ class LineExecutionProcessPool:
             bulk_logger.warning("The environment variable 'PF_BATCH_METHOD' has been deprecated.")
         sys_start_methods = multiprocessing.get_all_start_methods()
         use_fork = "fork" in sys_start_methods
-        self.context = get_multiprocessing_context("fork" if use_fork else "spawn")
         self._flow_file = flow_executor._flow_file
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
@@ -654,12 +653,3 @@ def get_available_max_worker_count():
             f"= {estimated_available_worker_count}"
         )
     return estimated_available_worker_count
-
-
-def get_multiprocessing_context(multiprocessing_start_method=None):
-    if multiprocessing_start_method is not None:
-        context = multiprocessing.get_context(multiprocessing_start_method)
-        return context
-    else:
-        context = multiprocessing.get_context()
-        return context
