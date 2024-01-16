@@ -19,6 +19,7 @@ from promptflow.executor._line_execution_process_pool import (
     _exec_line,
     format_current_process_info,
     get_available_max_worker_count,
+    get_multiprocessing_context,
     log_process_status,
 )
 from promptflow.executor._result import LineResult
@@ -297,6 +298,14 @@ class TestLineExecutionProcessPool:
             assert line_result.run_info.error["message"] == test_error_msg
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
+
+    def test_get_multiprocessing_context(self):
+        # Set default start method to spawn
+        context = get_multiprocessing_context("spawn")
+        assert context.get_start_method() == "spawn"
+        # Not set start method
+        context = get_multiprocessing_context()
+        assert context.get_start_method() == multiprocessing.get_start_method()
 
     @pytest.mark.parametrize(
         "flow_folder",
