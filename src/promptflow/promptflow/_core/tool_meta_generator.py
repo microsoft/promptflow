@@ -137,7 +137,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
             initialize_inputs=initialize_inputs,
             gen_custom_type_conn=gen_custom_type_conn,
             skip_prompt_template=skip_prompt_template,
-            add_ui_hints=tool_type == ToolType.CUSTOM_LLM,
+            should_add_index=_should_add_index(tool_type),
         )
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
@@ -160,6 +160,16 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
         module=f.__module__,
         enable_kwargs=enable_kwargs,
     )
+
+
+def _should_add_index(tool_type):
+    """
+    Currently, we only automatically add input indexes for the custom_llm tool,
+    following the order specified in the tool interface or YAML.
+    This is because, as of now, only the custom_llm tool has such a requirement.
+    To avoid extensive changes, other types of tools will remain as they are.
+    """
+    return tool_type == ToolType.CUSTOM_LLM
 
 
 def generate_python_tools_in_module(module):
