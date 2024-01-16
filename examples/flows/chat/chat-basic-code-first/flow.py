@@ -35,7 +35,8 @@ def flow_entry(question: str='What is ChatGPT?', chat_history: list = []) -> Res
         max_tokens=256,
         temperature=0.7,
     )
-    return Result(answer=output)
+    # TODO: Result(answer=output)
+    return dict(answer=output)
 
 
 if __name__ == "__main__":
