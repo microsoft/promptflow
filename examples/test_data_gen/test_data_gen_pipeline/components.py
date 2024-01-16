@@ -82,7 +82,6 @@ def clean_test_data_set(
 
     print("reading file: %s ..." % test_data_set_path)
     with open(test_data_set_path, "r") as f:
-        print(f.read())
         data = [json.loads(line) for line in f]
 
     # Filter out empty dictionaries
