@@ -384,7 +384,7 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder:
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
+def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str]) -> Run:
     """Create a batch run that does not require LLM."""
     name = randstr("batch_run_name")
     run = pf.run(
@@ -394,7 +394,6 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
         flow=f"{FLOWS_DIR}/hello-world",
         data=f"{DATAS_DIR}/webClassification3.jsonl",
         column_mapping={"name": "${data.url}"},
-        runtime=runtime,
         name=name,
         display_name="sdk-cli-test-fixture-batch-run-without-llm",
     )
@@ -405,7 +404,7 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
 
 @pytest.fixture(scope=package_scope_in_live_mode())
 def created_eval_run_without_llm(
-    pf: PFClient, randstr: Callable[[str], str], runtime: str, created_batch_run_without_llm: Run
+    pf: PFClient, randstr: Callable[[str], str], created_batch_run_without_llm: Run
 ) -> Run:
     """Create a evaluation run against batch run without LLM dependency."""
     name = randstr("eval_run_name")
@@ -414,7 +413,6 @@ def created_eval_run_without_llm(
         data=f"{DATAS_DIR}/webClassification3.jsonl",
         run=created_batch_run_without_llm,
         column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.result}"},
-        runtime=runtime,
         name=name,
         display_name="sdk-cli-test-fixture-eval-run-without-llm",
     )
@@ -424,13 +422,12 @@ def created_eval_run_without_llm(
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def created_failed_run(pf: PFClient, randstr: Callable[[str], str], runtime: str) -> Run:
+def created_failed_run(pf: PFClient, randstr: Callable[[str], str]) -> Run:
     """Create a failed run."""
     name = randstr("failed_run_name")
     run = pf.run(
         flow=f"{FLOWS_DIR}/partial_fail",
         data=f"{DATAS_DIR}/webClassification3.jsonl",
-        runtime=runtime,
         name=name,
         display_name="sdk-cli-test-fixture-failed-run",
     )
