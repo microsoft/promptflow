@@ -180,10 +180,13 @@ class LineExecutionProcessPool:
     def _get_process_info(self, index):
         while True:
             try:
+                # Try to get process id and name from the process_info
                 process_id = self._process_info[index].process_id
                 process_name = self._process_info[index].process_name
                 return (index, process_id, process_name)
             except KeyError:
+                # If the process_info does not exist for the given index, it means the process have not ready yet,
+                # try again.
                 continue
             except Exception as e:
                 bulk_logger.warning(f"Unexpected error occurred while get process info. Exception: {e}")
@@ -200,8 +203,8 @@ class LineExecutionProcessPool:
         result = self._generate_line_result_for_exception(inputs, run_id, line_number, self._flow_id, start_time, ex)
         result_list.append(result)
 
-    def _monitor_process_alive(self, process_id):
-        return not psutil.pid_exists(process_id)
+    def _is_process_alive(self, process_id):
+        return psutil.pid_exists(process_id)
 
     def _handle_output_queue_messages(self, output_queue, result_list):
         try:
@@ -229,6 +232,10 @@ class LineExecutionProcessPool:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 self._processes_manager.end_process(index)
+                # In fork mode, the main process and the sub spawn process communicate through _process_info.
+                # We need to ensure the process has been killed before returning. Otherwise, it may cause
+                # the main process have exited but the spawn process is still alive.
+                # At this time, a connection error will be reported.
                 while psutil.pid_exists(process_id):
                     continue
                 return
@@ -243,12 +250,13 @@ class LineExecutionProcessPool:
             start_time = datetime.utcnow()
             completed = False
             crashed = False
+            timeouted = False
 
             # Responsible for checking the output queue messages and
             # processing them within a specified timeout period.
             while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time:
                 # Monitor process aliveness.
-                crashed = self._monitor_process_alive(process_id)
+                crashed = not self._is_process_alive(process_id)
                 if crashed:
                     break
 
@@ -256,6 +264,9 @@ class LineExecutionProcessPool:
                 completed = self._handle_output_queue_messages(output_queue, result_list)
                 if completed:
                     break
+
+            # Check if the loop ended due to timeout
+            timeouted = not completed and not crashed
 
             # Handle line execution completed.
             if completed:
@@ -267,7 +278,7 @@ class LineExecutionProcessPool:
                 if crashed:
                     self.handle_process_crashed(line_number, inputs, run_id, start_time, result_list)
                 # Handle line execution timeout.
-                else:
+                elif timeouted:
                     self.handle_line_timeout(line_number, timeout_time, inputs, run_id, start_time, result_list)
 
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
