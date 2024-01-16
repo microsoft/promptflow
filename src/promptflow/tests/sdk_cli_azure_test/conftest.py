@@ -139,6 +139,8 @@ def remote_web_classification_data(remote_client):
 
 @pytest.fixture(scope="session")
 def runtime(runtime_name: str) -> str:
+    # be careful to use this fixture, we don't expect too many usage as we don't want to maintain
+    # a compute instance hosted runtime
     return runtime_name
 
 
