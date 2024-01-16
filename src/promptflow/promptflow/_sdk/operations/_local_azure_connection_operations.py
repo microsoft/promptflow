@@ -26,19 +26,30 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         # Lazy init client as ml_client initialization require workspace read permission
         self._pfazure_client = None
         self._credential = self._get_credential()
+        self._user_agent = kwargs.pop("user_agent", None)
 
     @property
     def _client(self):
         if self._pfazure_client is None:
             from promptflow.azure._pf_client import PFClient as PFAzureClient
 
-            self._pfazure_client = PFAzureClient(
-                # TODO: disable interactive credential when starting as a service
-                credential=self._credential,
-                subscription_id=self._subscription_id,
-                resource_group_name=self._resource_group,
-                workspace_name=self._workspace_name,
-            )
+            if self._user_agent is None:
+                self._pfazure_client = PFAzureClient(
+                    # TODO: disable interactive credential when starting as a service
+                    credential=self._credential,
+                    subscription_id=self._subscription_id,
+                    resource_group_name=self._resource_group,
+                    workspace_name=self._workspace_name,
+                )
+            else:
+                self._pfazure_client = PFAzureClient(
+                    # TODO: disable interactive credential when starting as a service
+                    credential=self._credential,
+                    subscription_id=self._subscription_id,
+                    resource_group_name=self._resource_group,
+                    workspace_name=self._workspace_name,
+                    user_agent=self._user_agent,
+                )
         return self._pfazure_client
 
     @classmethod

@@ -1058,7 +1058,11 @@ def parse_remote_flow_pattern(flow: object) -> str:
     return flow_name
 
 
-def get_connection_operation(connection_provider: str):
+def get_connection_operation(connection_provider: str, user_agent: str = None):
+    """
+    Get connection operation based on connection provider.
+    This function will be called by PFClient, so please do not refer to PFClient in this function.
+    """
     if connection_provider == ConnectionProvider.LOCAL.value:
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
@@ -1068,7 +1072,10 @@ def get_connection_operation(connection_provider: str):
         from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 
         logger.debug("PFClient using local azure connection operations.")
-        connection_operation = LocalAzureConnectionOperations(connection_provider)
+        if user_agent is None:
+            connection_operation = LocalAzureConnectionOperations(connection_provider)
+        else:
+            connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
     else:
         error = ValueError(f"Unsupported connection provider: {connection_provider}")
         raise UserErrorException(

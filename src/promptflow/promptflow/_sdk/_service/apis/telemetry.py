@@ -4,7 +4,7 @@
 from flask import jsonify, make_response, request
 
 from promptflow._sdk._service import Namespace, Resource
-from promptflow._sdk._service.utils.utils import build_user_agent, local_user_only
+from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only
 from promptflow._utils.utils import camel_to_snake
 from promptflow.exceptions import UserErrorException
 
@@ -137,7 +137,7 @@ class Telemetry(Resource):
         except UserErrorException as e:
             return make_response(jsonify({"error": f"Invalid telemetry payload: {e}"}), 400)
 
-        activity_info = parse_activity_info(telemetry_data, build_user_agent(request.user_agent.string))
+        activity_info = parse_activity_info(telemetry_data, build_pfs_user_agent())
         if telemetry_data.get("eventType") == EventType.START:
             log_activity_start(activity_info, get_telemetry_logger())
         elif telemetry_data.get("eventType") == EventType.END:

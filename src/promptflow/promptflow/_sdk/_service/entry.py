@@ -14,7 +14,6 @@ from promptflow._constants import PF_NO_INTERACTIVE_LOGIN
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._service.app import create_app
 from promptflow._sdk._service.utils.utils import (
-    build_user_agent,
     get_port_from_config,
     get_started_service_info,
     is_port_in_use,
@@ -80,8 +79,7 @@ def main():
     if len(command_args) == 0:
         command_args.append("-h")
 
-    user_agent = build_user_agent(os.getenv("USER_AGENT", None))
-    os.environ["USER_AGENT"] = user_agent
+    # User Agent will be set based on header in request, so not set globally here.
     os.environ[PF_NO_INTERACTIVE_LOGIN] = "true"
     entry(command_args)
 

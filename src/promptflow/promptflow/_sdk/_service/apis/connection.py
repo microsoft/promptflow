@@ -9,9 +9,8 @@ from flask import jsonify, request
 import promptflow._sdk.schemas._connection as connection
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._service.utils.utils import local_user_only
+from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
 api = Namespace("Connections", description="Connections Management")
 
@@ -52,10 +51,14 @@ connection_spec_model = api.model(
 
 
 def _get_connection_operation(working_directory=None):
-    from promptflow._sdk._utils import get_connection_operation
+    from promptflow._sdk._pf_client import PFClient
 
     connection_provider = Configuration().get_connection_provider(path=working_directory)
-    connection_operation = get_connection_operation(connection_provider)
+    # get_connection_operation is a shared function, so we build user agent based on request first and
+    # then pass it to the function
+    connection_operation = PFClient(
+        connection_provider=connection_provider, user_agent=build_pfs_user_agent()
+    ).connections
     return connection_operation
 
 
@@ -93,7 +96,7 @@ class Connection(Resource):
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def post(self, name: str):
-        connection_op = ConnectionOperations()
+        connection_op = _get_connection_operation()
         connection_data = request.get_json(force=True)
         connection_data["name"] = name
         connection = _Connection._load(data=connection_data)
@@ -104,7 +107,7 @@ class Connection(Resource):
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def put(self, name: str):
-        connection_op = ConnectionOperations()
+        connection_op = _get_connection_operation()
         connection_dict = request.get_json(force=True)
         params_override = [{k: v} for k, v in connection_dict.items()]
         existing_connection = connection_op.get(name)
@@ -116,7 +119,7 @@ class Connection(Resource):
     @api.doc(description="Delete connection")
     @local_user_only
     def delete(self, name: str):
-        connection_op = ConnectionOperations()
+        connection_op = _get_connection_operation()
         connection_op.delete(name=name)
 
 

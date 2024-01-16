@@ -1,10 +1,44 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import contextlib
 import getpass
+import json
+from typing import Any, Dict, List
+from unittest import mock
 
 from flask.testing import FlaskClient
+
+
+@contextlib.contextmanager
+def check_telemetry(
+    *,
+    expected_activities: List[Dict[str, Any]] = None,
+    **kwargs,
+):
+    if expected_activities is None and kwargs:
+        expected_activities = [kwargs]
+    with mock.patch("promptflow._sdk._telemetry.activity.log_activity_end") as mock_telemetry:
+        yield
+        actual_activities = [call.args[0] for call in mock_telemetry.call_args_list]
+        assert mock_telemetry.call_count == len(expected_activities), (
+            f"telemetry should not be called {len(expected_activities)} times but got {mock_telemetry.call_count}:\n"
+            f"{json.dumps(actual_activities, indent=2)}\n"
+        )
+
+        default_expected_call = {
+            "first_call": True,
+            "activity_type": "PublicApi",
+            "completion_status": "Success",
+            "user_agent": "promptflow-sdk/0.0.1 local_pfs/0.0.1",
+        }
+        for i, expected_activity in enumerate(expected_activities):
+            expected_activity = default_expected_call.copy() | expected_activity
+            for key, expected_value in expected_activity.items():
+                value = actual_activities[i][key]
+                assert (
+                    value == expected_value
+                ), f"{key} mismatch in {i+1}th call: expect {expected_value} but got {value}"
 
 
 class PFSOperations:

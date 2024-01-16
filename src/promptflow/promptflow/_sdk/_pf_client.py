@@ -34,7 +34,7 @@ class PFClient:
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
         self._runs = RunOperations()
-        self._connection_provider = None
+        self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
         # Lazy init to avoid azure credential requires too early
         self._connections = None

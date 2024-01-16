@@ -12,9 +12,9 @@ from flask import Response, jsonify, make_response, request
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
 from promptflow._sdk._service import Namespace, Resource, fields
+from promptflow._sdk._service.utils.utils import get_client_from_request
 from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.yaml_utils import dump_yaml
 from promptflow.contracts._run_management import RunMetadata
 
@@ -50,8 +50,7 @@ class RunList(Resource):
             max_results = None
         list_view_type = get_list_view_type(archived_only=archived_only, include_archived=include_archived)
 
-        op = RunOperations()
-        runs = op.list(max_results=max_results, list_view_type=list_view_type)
+        runs = get_client_from_request().runs.list(max_results=max_results, list_view_type=list_view_type)
         runs_dict = [run._to_dict() for run in runs]
         return jsonify(runs_dict)
 
@@ -77,8 +76,7 @@ class RunSubmit(Resource):
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             stdout, _ = process.communicate()
             if process.returncode == 0:
-                run_op = RunOperations()
-                run = run_op.get(name=run_name)
+                run = get_client_from_request().runs.get(name=run_name)
                 return jsonify(run._to_dict())
             else:
                 raise Exception(f"Create batch run failed: {stdout.decode('utf-8')}")
@@ -90,16 +88,16 @@ class Run(Resource):
     @api.doc(parser=update_run_parser, description="Update run")
     def put(self, name: str):
         args = update_run_parser.parse_args()
-        run_op = RunOperations()
         tags = json.loads(args.tags) if args.tags else None
-        run = run_op.update(name=name, display_name=args.display_name, description=args.description, tags=tags)
+        run = get_client_from_request().runs.update(
+            name=name, display_name=args.display_name, description=args.description, tags=tags
+        )
         return jsonify(run._to_dict())
 
     @api.response(code=200, description="Get run info", model=dict_field)
     @api.doc(description="Get run")
     def get(self, name: str):
-        run_op = RunOperations()
-        run = run_op.get(name=name)
+        run = get_client_from_request().runs.get(name=name)
         return jsonify(run._to_dict())
 
 
@@ -108,8 +106,7 @@ class FlowChildRuns(Resource):
     @api.response(code=200, description="Child runs", model=list_field)
     @api.doc(description="Get child runs")
     def get(self, name: str):
-        run_op = RunOperations()
-        run = run_op.get(name=name)
+        run = get_client_from_request().runs.get(name=name)
         local_storage_op = LocalStorageOperations(run=run)
         detail_dict = local_storage_op.load_detail()
         return jsonify(detail_dict["flow_runs"])
@@ -120,8 +117,7 @@ class FlowNodeRuns(Resource):
     @api.response(code=200, description="Node runs", model=list_field)
     @api.doc(description="Get node runs info")
     def get(self, name: str, node_name: str):
-        run_op = RunOperations()
-        run = run_op.get(name=name)
+        run = get_client_from_request().runs.get(name=name)
         local_storage_op = LocalStorageOperations(run=run)
         detail_dict = local_storage_op.load_detail()
         node_runs = [item for item in detail_dict["node_runs"] if item["node"] == node_name]
@@ -133,8 +129,7 @@ class MetaData(Resource):
     @api.doc(description="Get metadata of run")
     @api.response(code=200, description="Run metadata", model=dict_field)
     def get(self, name: str):
-        run_op = RunOperations()
-        run = run_op.get(name=name)
+        run = get_client_from_request().runs.get(name=name)
         local_storage_op = LocalStorageOperations(run=run)
         metadata = RunMetadata(
             name=run.name,
@@ -156,8 +151,7 @@ class LogContent(Resource):
     @api.doc(description="Get run log content")
     @api.response(code=200, description="Log content", model=fields.String)
     def get(self, name: str):
-        run_op = RunOperations()
-        run = run_op.get(name=name)
+        run = get_client_from_request().runs.get(name=name)
         local_storage_op = LocalStorageOperations(run=run)
         log_content = local_storage_op.logger.get_logs()
         return make_response(log_content)
@@ -168,8 +162,7 @@ class Metrics(Resource):
     @api.doc(description="Get run metrics")
     @api.response(code=200, description="Run metrics", model=dict_field)
     def get(self, name: str):
-        run_op = RunOperations()
-        run = run_op.get(name=name)
+        run = get_client_from_request().runs.get(name=name)
         local_storage_op = LocalStorageOperations(run=run)
         metrics = local_storage_op.load_metrics()
         return jsonify(metrics)
@@ -182,7 +175,7 @@ class VisualizeRun(Resource):
     @api.produces(["text/html"])
     def get(self, name: str):
         with tempfile.TemporaryDirectory() as temp_dir:
-            run_op = RunOperations()
+            run_op = get_client_from_request().runs
             run = run_op.get(name=name)
             html_path = Path(temp_dir) / "visualize_run.html"
             run_op.visualize(run, html_path=html_path)
@@ -196,8 +189,7 @@ class ArchiveRun(Resource):
     @api.doc(description="Archive run")
     @api.response(code=200, description="Archived run", model=dict_field)
     def get(self, name: str):
-        run_op = RunOperations()
-        run = run_op.archive(name=name)
+        run = get_client_from_request().runs.archive(name=name)
         return jsonify(run._to_dict())
 
 
@@ -206,6 +198,5 @@ class RestoreRun(Resource):
     @api.doc(description="Restore run")
     @api.response(code=200, description="Restored run", model=dict_field)
     def get(self, name: str):
-        run_op = RunOperations()
-        run = run_op.restore(name=name)
+        run = get_client_from_request().runs.restore(name=name)
         return jsonify(run._to_dict())
