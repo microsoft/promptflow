@@ -14,7 +14,6 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
 from filelock import FileLock
 
-from promptflow import load_flow
 from promptflow._sdk._constants import (
     HOME_PROMPT_FLOW_DIR,
     LINE_NUMBER,
@@ -219,6 +218,8 @@ class LocalStorageOperations(AbstractRunStorage):
 
         self._dump_meta_file()
         if run.flow:
+            from promptflow import load_flow
+
             flow_obj = load_flow(source=run.flow)
             # TODO(2898455): refine here, check if there's cases where dag.yaml not exist
             self._eager_mode = isinstance(flow_obj, EagerFlow)

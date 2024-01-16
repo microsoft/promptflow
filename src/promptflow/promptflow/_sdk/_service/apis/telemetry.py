@@ -109,12 +109,10 @@ class Telemetry(Resource):
     @api.doc(description="Create telemetry record")
     @local_user_only
     def post(self):
-        """Sample request (without payload):
-        curl -X POST "http://localhost:5000/v1.0/telemtry" -H "accept: application/json"
-        -H "User-Agent: VS Extension/1.0.0"
-        -H "Content-Type: application/x-www-form-urlencoded" -d xxx
-
-        Sample payload in json format:
+        """Private API to create telemetry record directly.
+        Telemetry details should be in the request body; will append an extra User-Agent
+        to the original one in the request header.
+        Request body should be in json format, e.g.:
         {
             "eventType": "Start",
             "requestId": "request_id",
@@ -124,6 +122,7 @@ class Telemetry(Resource):
                 "activityType": "activity_type",
             }
         }
+        If requestId is not provided, a new one will be generated and requestId will always be returned in the response.
         """
         from promptflow._sdk._telemetry import get_telemetry_logger, is_telemetry_enabled
         from promptflow._sdk._telemetry.activity import log_activity_end, log_activity_start
@@ -134,8 +133,8 @@ class Telemetry(Resource):
         telemetry_data = request.get_json(force=True)
         try:
             validate_telemetry_payload(telemetry_data)
-        except UserErrorException as e:
-            return make_response(jsonify({"error": f"Invalid telemetry payload: {e}"}), 400)
+        except UserErrorException as exception:
+            return make_response(jsonify({"error": f"Invalid telemetry payload: {exception}"}), 400)
 
         activity_info = parse_activity_info(telemetry_data, build_pfs_user_agent())
         if telemetry_data.get("eventType") == EventType.START:

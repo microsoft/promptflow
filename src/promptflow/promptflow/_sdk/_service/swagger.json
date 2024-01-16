@@ -60,6 +60,31 @@
                     "type": "string"
                 }
             ],
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Create connection",
+                "operationId": "post_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
             "get": {
                 "responses": {
                     "200": {
@@ -86,31 +111,6 @@
                     "Connections"
                 ]
             },
-            "put": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Update connection",
-                "operationId": "put_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
             "delete": {
                 "responses": {
                     "200": {
@@ -123,7 +123,7 @@
                     "Connections"
                 ]
             },
-            "post": {
+            "put": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -132,8 +132,8 @@
                         }
                     }
                 },
-                "description": "Create connection",
-                "operationId": "post_connection",
+                "description": "Update connection",
+                "operationId": "put_connection",
                 "parameters": [
                     {
                         "name": "payload",
@@ -498,6 +498,24 @@
                     "Runs"
                 ]
             }
+        },
+        "/Telemetries/": {
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Create telemetry record",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "summary": "Private API to create telemetry record directly",
+                "description": "Create telemetry record\nTelemetry details should be in the request body; will append an extra User-Agent\nto the original one in the request header.\nRequest body should be in json format, e.g.:\n{\n    \"eventType\": \"Start\",\n    \"requestId\": \"request_id\",\n    \"timestamp\": \"2021-09-29T22:51:00.000Z\",\n    \"metadata\": {\n        \"activityName\": \"activity_name\",\n        \"activityType\": \"activity_type\",\n    }\n}\nIf requestId is not provided, a new one will be generated and requestId will always be returned in the response.",
+                "operationId": "post_telemetry",
+                "tags": [
+                    "Telemetries"
+                ]
+            }
         }
     },
     "info": {
@@ -518,6 +536,10 @@
         {
             "name": "Runs",
             "description": "Runs Management"
+        },
+        {
+            "name": "Telemetries",
+            "description": "Telemetry Management"
         }
     ],
     "definitions": {
@@ -593,6 +615,7 @@
         },
         "MaskError": {
             "description": "When any error occurs on mask"
-        }
+        },
+        "Exception": {}
     }
 }

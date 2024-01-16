@@ -10,7 +10,6 @@ from functools import wraps
 import psutil
 from flask import abort, request
 
-from promptflow import PFClient
 from promptflow._sdk._constants import DEFAULT_ENCODING, HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 from promptflow._sdk._utils import read_write_by_user
@@ -143,5 +142,7 @@ def build_pfs_user_agent():
     return extra_agent
 
 
-def get_client_from_request() -> PFClient:
+def get_client_from_request() -> "PFClient":
+    from promptflow._sdk._pf_client import PFClient
+
     return PFClient(user_agent=build_pfs_user_agent())
