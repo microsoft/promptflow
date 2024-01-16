@@ -23,6 +23,7 @@ from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
     load_python_module_from_file,
+    _should_add_index,
 )
 from promptflow._utils.connection_utils import (
     generate_custom_strong_type_connection_spec,
@@ -59,8 +60,9 @@ def collect_tools_from_directory(base_dir) -> dict:
     return tools
 
 
-def set_default_input_index_for_tool(tool):
-    if _should_add_index_for_tool(tool):
+def try_to_set_input_index_for_tool(tool):
+    tool_type = tool.get("type")
+    if _should_add_index(tool_type) and "inputs" in tool:
         inputs_dict = tool["inputs"]
         input_index = 0
         for input_name, settings in inputs_dict.items():
@@ -89,19 +91,6 @@ def _get_entry_points_by_group(group):
         return entry_points.get(group, [])
 
 
-def _should_add_index_for_tool(tool) -> bool:
-    """
-    Currently, we only automatically add input indexes for the custom_llm tool,
-    following the order specified in the tool interface or YAML.
-    This is because, as of now, only the custom_llm tool has such a requirement.
-    To avoid extensive changes, other types of tools will remain as they are.
-    """
-    if "inputs" in tool and tool.get("type") == ToolType.CUSTOM_LLM:
-        return True
-    else:
-        return False
-
-
 def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools from all installed packages."""
     all_package_tools = {}
@@ -125,7 +114,7 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
                 importlib.import_module(m)  # Import the module to make sure it is valid
                 tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
-                set_default_input_index_for_tool(tool)
+                try_to_set_input_index_for_tool(tool)
                 all_package_tools[identifier] = tool
         except Exception as e:
             msg = (
@@ -156,7 +145,7 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                 module = importlib.import_module(m)  # Import the module to make sure it is valid
                 tool["package"] = entry_point.dist.metadata["Name"]
                 tool["package_version"] = entry_point.dist.version
-                set_default_input_index_for_tool(tool)
+                try_to_set_input_index_for_tool(tool)
                 all_package_tools[identifier] = tool
 
                 # Get custom strong type connection definition
