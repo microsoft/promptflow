@@ -7,9 +7,11 @@ from typing import Any, Callable, Mapping, Optional
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._core.tracer import Tracer
+from promptflow._core.tool_meta_generator import PythonLoadError, load_python_module_from_file
+from promptflow._core.tracer import _traced, Tracer
 from promptflow._utils.logger_utils import logger
-from promptflow.contracts.flow import Flow, EagerFlow
+from promptflow._utils.tool_utils import function_to_interface
+from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
@@ -30,14 +32,29 @@ class ScriptExecutor(FlowExecutor):
     ):
         logger.debug(f"Start initializing the executor with {flow_file}.")
         self._flow_file = flow_file
-        self._flow = EagerFlow.create(flow_file, entry)
+
+        m = load_python_module_from_file(flow_file)
+        func: Callable = getattr(m, entry, None)
+        if func is None or not inspect.isfunction(func):
+            raise PythonLoadError(
+                message_format="Failed to load python function '{entry}' from file '{flow_file}'.",
+                entry=entry,
+                flow_file=flow_file,
+            )
+        # If the function is not decorated with trace, add trace for it.
+        if not hasattr(func, "__original_function"):
+            func = _traced(func)
+        inputs, _, _, _ = function_to_interface(func)
+        self._func = func
+        self._inputs = inputs
+
         self._entry = entry
-        self._is_async = inspect.iscoroutinefunction(self._flow.func)
+        self._is_async = inspect.iscoroutinefunction(self._func)
         self._connections = connections
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        self._storage = storage or DefaultRunStorage()
-        self._run_tracker = RunTracker(storage)
-        self._flow_id = self._flow.id
+        # TODO: Remove run track from executor
+        self._run_tracker = RunTracker(storage or DefaultRunStorage())
+        self._flow_id = None
         self._log_interval = 60
         self._line_timeout_sec = 600
 
@@ -48,7 +65,9 @@ class ScriptExecutor(FlowExecutor):
         run_id: Optional[str] = None,
         **kwargs,
     ) -> LineResult:
-        if "line_number" in inputs:
+        # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
+        # so, we need remove line_number from inputs if it is not included in input of python function.
+        if "line_number" in inputs and "line_number" not in self._inputs:
             inputs.pop("line_number")
         operation_context = OperationContext.get_instance()
         operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
@@ -67,9 +86,9 @@ class ScriptExecutor(FlowExecutor):
         try:
             Tracer.start_tracing(line_run_id)
             if self._is_async:
-                output = asyncio.run(self._flow.func(**inputs))
+                output = asyncio.run(self._func(**inputs))
             else:
-                output = self._flow.func(**inputs)
+                output = self._func(**inputs)
             output = {"output": output}
             traces = Tracer.end_tracing(line_run_id)
             self._run_tracker.end_run(line_run_id, result=output, traces=traces)

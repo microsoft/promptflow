@@ -142,7 +142,7 @@ class LineExecutionProcessPool:
 
     def __init__(
         self,
-        flow_executor: Union[FlowExecutor, ScriptExecutor],
+        flow_executor: FlowExecutor,
         nlines,
         run_id,
         variant_id,
@@ -523,15 +523,24 @@ def _process_wrapper(
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
     run_tracker = RunTracker(run_storage=storage, run_mode=flow_executor._run_tracker._run_mode)
-    return FlowExecutor(
-        flow=flow_executor._flow,
-        connections=flow_executor._connections,
-        run_tracker=run_tracker,
-        cache_manager=flow_executor._cache_manager,
-        loaded_tools=flow_executor._loaded_tools,
-        raise_ex=False,
-        line_timeout_sec=flow_executor._line_timeout_sec,
-    )
+    if isinstance(flow_executor, ScriptExecutor):
+        return ScriptExecutor(
+            flow_file=flow_executor._flow_file,
+            entry=flow_executor._entry,
+            connections=flow_executor._connections,
+            working_dir=flow_executor._working_dir,
+            storage=run_tracker._storage,
+        )
+    else:
+        return FlowExecutor(
+            flow=flow_executor._flow,
+            connections=flow_executor._connections,
+            run_tracker=run_tracker,
+            cache_manager=flow_executor._cache_manager,
+            loaded_tools=flow_executor._loaded_tools,
+            raise_ex=False,
+            line_timeout_sec=flow_executor._line_timeout_sec,
+        )
 
 
 def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
