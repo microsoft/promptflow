@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.037'
+      - '0.033'
     status:
       code: 200
       message: OK
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.085'
+      - '0.091'
     status:
       code: 200
       message: OK
@@ -143,7 +143,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.078'
+      - '0.095'
     status:
       code: 200
       message: OK
@@ -186,7 +186,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.089'
+      - '0.118'
     status:
       code: 200
       message: OK
@@ -202,7 +202,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Fri, 12 Jan 2024 08:21:52 GMT
+      - Tue, 16 Jan 2024 06:36:36 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -252,7 +252,7 @@ interactions:
       User-Agent:
       - azsdk-python-storage-blob/12.19.0 Python/3.10.13 (Windows-10-10.0.22631-SP0)
       x-ms-date:
-      - Fri, 12 Jan 2024 08:21:53 GMT
+      - Tue, 16 Jan 2024 06:36:37 GMT
       x-ms-version:
       - '2023-11-03'
     method: HEAD
@@ -289,7 +289,7 @@ interactions:
       Connection:
       - keep-alive
       Content-Length:
-      - '658'
+      - '652'
       Content-Type:
       - application/json
       User-Agent:
@@ -312,7 +312,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '6.218'
+      - '6.584'
     status:
       code: 200
       message: OK
@@ -332,27 +332,18 @@ interactions:
     uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/name
   response:
     body:
-      string: '{"flowGraph": {"nodes": [{"name": "hello_world", "type": "python",
-        "source": {"type": "code", "path": "hello_world.py"}, "inputs": {"name": "${inputs.name}"},
-        "tool": "hello_world.py", "reduce": false}], "tools": [{"name": "hello_world.py",
-        "type": "python", "inputs": {"name": {"type": ["string"], "allow_manual_entry":
-        false, "is_multi_select": false, "input_type": "default"}}, "source": "hello_world.py",
-        "function": "hello_world", "is_builtin": false, "enable_kwargs": false, "tool_state":
-        "stable"}], "inputs": {"name": {"type": "string", "default": "hod", "is_chat_input":
-        false}}, "outputs": {"result": {"type": "string", "reference": "${hello_world.output}",
-        "evaluation_only": false, "is_chat_output": false}}}, "flowRunResourceId":
-        "azureml://locations/eastus/workspaces/00000/flows/name/flowRuns/name", "flowRunId":
-        "name", "flowRunDisplayName": "name", "batchDataInput": {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/79f088fae0e502653c43146c9682f425/simple_hello_world.jsonl"},
-        "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "test-runtime-ci",
+      string: '{"flowRunResourceId": "azureml://locations/eastus/workspaces/00000/flows/name/flowRuns/name",
+        "flowRunId": "name", "flowRunDisplayName": "name", "batchDataInput": {"dataUri":
+        "azureml://datastores/workspaceblobstore/paths/LocalUpload/79f088fae0e502653c43146c9682f425/simple_hello_world.jsonl"},
+        "flowRunType": "FlowRun", "flowType": "Default", "runtimeName": "automatic",
         "inputsMapping": {"name": "${data.name}"}, "outputDatastoreName": "workspaceblobstore",
         "childRunBasePath": "promptflow/PromptFlowArtifacts/name/flow_artifacts",
-        "flowDagFileRelativePath": "flow.dag.yaml", "flowSnapshotId": "2fc73c2b-511f-4059-8fc5-4fb6ce608f85",
         "studioPortalEndpoint": "https://ml.azure.com/runs/name?wsid=/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000"}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '1711'
+      - '947'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -364,7 +355,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.209'
+      - '0.207'
     status:
       code: 200
       message: OK
@@ -388,46 +379,46 @@ interactions:
     uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
   response:
     body:
-      string: '{"runMetadata": {"runNumber": 1705047718, "rootRunId": "name", "createdUtc":
-        "2024-01-12T08:21:58.5939458+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
+      string: '{"runMetadata": {"runNumber": 1705387003, "rootRunId": "name", "createdUtc":
+        "2024-01-16T06:36:43.1217006+00:00", "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
         "upn": null}, "userId": "00000000-0000-0000-0000-000000000000", "token": null,
-        "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 3,
-        "statusRevision": 1, "runUuid": "4a452fe8-5f0e-48aa-a522-44b67e66a50e", "parentRunUuid":
-        null, "rootRunUuid": "4a452fe8-5f0e-48aa-a522-44b67e66a50e", "lastStartTimeUtc":
+        "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 1,
+        "statusRevision": 0, "runUuid": "e21ad126-a078-4398-8ea0-db399de7bea4", "parentRunUuid":
+        null, "rootRunUuid": "e21ad126-a078-4398-8ea0-db399de7bea4", "lastStartTimeUtc":
         null, "currentComputeTime": "00:00:00", "computeDuration": null, "effectiveStartTimeUtc":
         null, "lastModifiedBy": {"userObjectId": "00000000-0000-0000-0000-000000000000",
         "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
         "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
-        "upn": null}, "lastModifiedUtc": "2024-01-12T08:22:02.0692705+00:00", "duration":
+        "upn": null}, "lastModifiedUtc": "2024-01-16T06:36:43.1217006+00:00", "duration":
         null, "cancelationReason": null, "currentAttemptId": 1, "runId": "name", "parentRunId":
-        null, "experimentId": "8ed8abac-3b31-48a5-9fa1-81b7fe487f46", "status": "Preparing",
+        null, "experimentId": "8ed8abac-3b31-48a5-9fa1-81b7fe487f46", "status": "NotStarted",
         "startTimeUtc": null, "endTimeUtc": null, "scheduleId": null, "displayName":
         "name", "name": null, "dataContainerId": "dcid.name", "description": null,
         "hidden": false, "runType": "azureml.promptflow.FlowRun", "runTypeV2": {"orchestrator":
-        null, "traits": [], "attribution": "PromptFlow", "computeType": "AmlcDsi"},
-        "properties": {"azureml.promptflow.runtime_name": "test-runtime-ci", "azureml.promptflow.runtime_version":
-        "20231204.v4", "azureml.promptflow.definition_file_name": "flow.dag.yaml",
+        null, "traits": [], "attribution": "PromptFlow", "computeType": null}, "properties":
+        {"azureml.promptflow.runtime_name": "automatic", "azureml.promptflow.runtime_version":
+        "20240111.v2", "azureml.promptflow.definition_file_name": "flow.dag.yaml",
         "azureml.promptflow.session_id": "simple_hello_world", "azureml.promptflow.flow_lineage_id":
         "simple_hello_world", "azureml.promptflow.flow_definition_resource_id": "azureml://registries/promptflow-preview/models/simple_hello_world/versions/202311241",
         "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/79f088fae0e502653c43146c9682f425/simple_hello_world.jsonl",
         "azureml.promptflow.inputs_mapping": "{\"name\":\"${data.name}\"}", "_azureml.evaluation_run":
-        "promptflow.BatchRun", "azureml.promptflow.snapshot_id": "2fc73c2b-511f-4059-8fc5-4fb6ce608f85"},
-        "parameters": {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
-        [], "tags": {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
-        [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
-        null, "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
-        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
-        false, "queueingInfo": null, "inputs": null, "outputs": null}, "runDefinition":
-        null, "jobSpecification": null, "systemSettings": null}'
+        "promptflow.BatchRun"}, "parameters": {}, "actionUris": {}, "scriptName":
+        null, "target": null, "uniqueChildRunComputeTargets": [], "tags": {}, "settings":
+        {}, "services": {}, "inputDatasets": [], "outputDatasets": [], "runDefinition":
+        null, "jobSpecification": null, "primaryMetricName": null, "createdFrom":
+        null, "cancelUri": null, "completeUri": null, "diagnosticsUri": null, "computeRequest":
+        null, "compute": null, "retainForLifetimeOfWorkspace": false, "queueingInfo":
+        null, "inputs": null, "outputs": null}, "runDefinition": null, "jobSpecification":
+        null, "systemSettings": null}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '3785'
+      - '3695'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -439,7 +430,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.042'
+      - '0.050'
     status:
       code: 200
       message: OK
