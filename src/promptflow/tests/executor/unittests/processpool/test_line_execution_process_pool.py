@@ -178,12 +178,13 @@ class TestLineExecutionProcessPool:
         ],
     )
     def test_line_execution_process_pool(self, flow_folder, dev_connections, recording_injection):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-        executor._log_interval = 1
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+        )
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
         nlines = len(bulk_inputs)
-        run_id = run_id or str(uuid.uuid4())
         with LineExecutionProcessPool(
             executor,
             nlines,
