@@ -1403,6 +1403,20 @@ class TestCli:
                 f"tags={tags}",
                 cwd=temp_dir,
             )
+            # Add a tool script with icon
+            tool_script_name = "tool_func_with_icon"
+            run_pf_command(
+                "tool",
+                "init",
+                "--tool",
+                tool_script_name,
+                "--set",
+                f"icon={icon_path.absolute()}",
+                f"category={category}",
+                f"tags={tags}",
+                cwd=Path(temp_dir) / package_name / package_name,
+            )
+
             sys.path.append(str(package_folder.absolute()))
             spec = importlib.util.spec_from_file_location(
                 f"{package_name}.utils", package_folder / package_name / "utils.py"
@@ -1416,6 +1430,7 @@ class TestCli:
             assert meta["category"] == category
             assert meta["tags"] == tags
             assert meta["icon"].startswith("data:image")
+            assert tools_meta[f"{package_name}.{tool_script_name}.{tool_script_name}"]["icon"].startswith("data:image")
 
             # icon doesn't exist
             with pytest.raises(SystemExit):
@@ -1760,3 +1775,64 @@ class TestCli:
         )
         context = OperationContext().get_instance()
         context.user_agent = ""
+
+    def test_basic_flow_run_delete(self, monkeypatch, local_client, capfd) -> None:
+        input_list = ["y"]
+
+        def mock_input(*args, **kwargs):
+            if input_list:
+                return input_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+
+        run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--name",
+            run_id,
+            "--flow",
+            f"{FLOWS_DIR}/print_env_var",
+            "--data",
+            f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        run_a = local_client.runs.get(name=run_id)
+        local_storage = LocalStorageOperations(run_a)
+        path_a = local_storage.path
+        assert os.path.exists(path_a)
+
+        # delete the run
+        run_pf_command(
+            "run",
+            "delete",
+            "--name",
+            f"{run_id}",
+        )
+        # both runs are deleted and their folders are deleted
+        assert not os.path.exists(path_a)
+
+    def test_basic_flow_run_delete_error(self, monkeypatch) -> None:
+        input_list = ["y"]
+
+        def mock_input(*args, **kwargs):
+            if input_list:
+                return input_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_id = str(uuid.uuid4())
+
+        # delete the run
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "run",
+                "delete",
+                "--name",
+                f"{run_id}",
+            )

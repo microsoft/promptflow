@@ -227,6 +227,20 @@ class RunOperations(TelemetryMixin):
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
+    @monitor_operation(activity_name="pf.runs.delete", activity_type=ActivityType.PUBLICAPI)
+    def delete(
+        self,
+        name: str,
+    ) -> None:
+        """Delete run permanently.
+
+        :param name: run name to delete
+        :return: None
+        """
+        valid_run = self.get(name)
+        LocalStorageOperations(valid_run).delete()
+        ORMRun.delete(name)
+
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
@@ -322,11 +336,12 @@ class RunOperations(TelemetryMixin):
                 metrics=self.get_metrics(name=run.name),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
+                mode="eager" if local_storage.eager_mode else "",
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
             # TODO: add language to run metadata
-            flow_dag = load_yaml_string(metadata.dag)
+            flow_dag = load_yaml_string(metadata.dag) or {}
             configs.append(
                 VisualizationConfig(
                     [AvailableIDE.VS_CODE]
