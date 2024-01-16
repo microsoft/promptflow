@@ -15,6 +15,7 @@ from azure.ai.ml._scope_dependent_operations import (
 
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+from promptflow.azure._utils.gerneral import get_arm_token
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 GET_CONNECTION_URL = (
@@ -178,6 +179,10 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 "api_type": get_case_insensitive_key(properties.metadata, "ApiType"),
                 "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
+            # Note: Resource id is required in some cloud scenario, which is not exposed on sdk/cli entity.
+            resource_id = get_case_insensitive_key(properties.metadata, "ResourceId")
+            if resource_id:
+                value["resource_id"] = resource_id
         elif properties.category == ConnectionCategory.CognitiveSearch:
             value = {
                 "api_key": properties.credentials.key,
@@ -248,7 +253,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         )
         try:
             rest_obj: WorkspaceConnectionPropertiesV2BasicResource = cls.open_url(
-                credential.get_token("https://management.azure.com/.default").token,
+                get_arm_token(credential=credential),
                 url=url,
                 action="listsecrets",
                 method="POST",

@@ -74,7 +74,7 @@ class RunSubmit(Resource):
             cmd = f"pf run create --file {run_file}"
             if sys.executable.endswith("pfcli.exe"):
                 cmd = f"pfcli {cmd}"
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             stdout, _ = process.communicate()
             if process.returncode == 0:
                 run_op = RunOperations()

@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-def my_flow(input_val: str = "gpt") -> str:
+def my_flow(input_val: str = "gpt"):
     """Simple flow without yaml."""
+    # print(f"Hello world! {input_val}")
     return f"Hello world! {input_val}"
