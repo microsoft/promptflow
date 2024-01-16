@@ -99,24 +99,6 @@ class LineExecutionProcessPool:
         self._flow_file = flow_executor._flow_file
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
-
-        if not use_fork:
-            if flow_executor._flow_file:
-                self._executor_creation_func = partial(
-                    FlowExecutor.create,
-                    flow_file=self._flow_file,
-                    connections=self._connections,
-                    working_dir=self._working_dir,
-                    raise_ex=False,
-                )
-            else:  # Legacy flow executor, will be deprecated with the legacy pf portal.
-                self._executor_creation_func = partial(
-                    create_executor_legacy,
-                    flow=flow_executor._flow,
-                    connections=self._connections,
-                    loaded_tools=flow_executor._loaded_tools,
-                    cache_manager=flow_executor._cache_manager,
-                )
         self._use_fork = use_fork
         self._storage = flow_executor._run_tracker._storage
         self._flow_id = flow_executor._flow_id
@@ -163,11 +145,19 @@ class LineExecutionProcessPool:
                 False,
             )
         else:
+            executor_creation_func = partial(
+                FlowExecutor.create,
+                flow_file=self._flow_file,
+                connections=self._connections,
+                working_dir=self._working_dir,
+                raise_ex=False,
+            )
+
             # 1. Create input_queue, output_queue, and _process_info in the main process.
             # 2. Spawn _n_process sub-process and pass the above queue/dict to these sub-process to transfer information
             # between main process and sub process.
             self._processes_manager = SpawnProcessManager(
-                self._executor_creation_func,
+                executor_creation_func,
                 self._input_queues,
                 self._output_queues,
                 self._process_info,
@@ -605,26 +595,6 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
             # Do nothing until the input_queue have content or process is killed
             # TODO: Exit the process more gracefully.
             pass
-
-
-def create_executor_legacy(*, flow, connections, loaded_tools, cache_manager, storage):
-    """This is a legacy method to create a flow executor, will be deprecated with the legacy pf portal."""
-    from promptflow._core.tool import ToolInvoker
-    from promptflow.executor._tool_invoker import DefaultToolInvoker
-
-    ToolInvoker.activate(DefaultToolInvoker())
-    run_tracker = RunTracker(run_storage=storage)
-    # import these to make sure LLM tool works.
-    from promptflow.tools import aoai, openai  # noqa: F401
-
-    return FlowExecutor(
-        flow=flow,
-        connections=connections,
-        run_tracker=run_tracker,
-        cache_manager=cache_manager,
-        loaded_tools=loaded_tools,
-        raise_ex=False,
-    )
 
 
 def get_available_max_worker_count():
