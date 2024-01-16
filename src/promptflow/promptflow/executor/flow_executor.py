@@ -87,6 +87,7 @@ class FlowExecutor:
         cache_manager: AbstractCacheManager,
         loaded_tools: Mapping[str, Callable],
         *,
+        entry: Optional[str] = None,
         raise_ex: bool = False,
         working_dir=None,
         line_timeout_sec=LINE_TIMEOUT_SEC,
@@ -145,6 +146,7 @@ class FlowExecutor:
             raise ValueError(f"Failed to load custom tools for flow due to exception:\n {e}.") from e
         for node in flow.nodes:
             self._tools_manager.assert_loaded(node.name)
+        self._entry = entry
         self._raise_ex = raise_ex
         self._log_interval = 60
         self._processing_idx = None
@@ -159,7 +161,7 @@ class FlowExecutor:
         connections: dict,
         working_dir: Optional[Path] = None,
         *,
-        func: Optional[str] = None,
+        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
@@ -190,8 +192,9 @@ class FlowExecutor:
             from ._script_executor import ScriptExecutor
 
             return ScriptExecutor(
-                entry_file=flow_file,
-                func=func,
+                flow_file=flow_file,
+                entry=entry,
+                connections=connections,
                 working_dir=working_dir,
                 storage=storage,
             )
@@ -203,6 +206,7 @@ class FlowExecutor:
             flow=flow,
             connections=connections,
             working_dir=working_dir,
+            entry=entry,
             storage=storage,
             raise_ex=raise_ex,
             node_override=node_override,
@@ -217,6 +221,7 @@ class FlowExecutor:
         working_dir: Optional[Path],
         *,
         flow_file: Optional[Path] = None,
+        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
@@ -252,6 +257,7 @@ class FlowExecutor:
             run_tracker=run_tracker,
             cache_manager=cache_manager,
             loaded_tools={r.node.name: r.callable for r in resolved_tools},
+            entry=entry,
             raise_ex=raise_ex,
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
@@ -472,6 +478,7 @@ class FlowExecutor:
             variant_id,
             validate_inputs,
             output_dir,
+            self._entry,
         ) as pool:
             result_list = pool.run(zip(line_number, batch_inputs))
 

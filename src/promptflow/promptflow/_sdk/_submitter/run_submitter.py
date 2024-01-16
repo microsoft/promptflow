@@ -5,11 +5,12 @@
 
 import datetime
 from pathlib import Path
+from typing import Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._utils import parse_variant
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
@@ -21,6 +22,7 @@ from promptflow.exceptions import UserErrorException
 
 from ... import load_flow
 from ..._utils.logger_utils import LoggerFactory
+from ..entities._eager_flow import EagerFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -71,7 +73,9 @@ class RunSubmitter:
         if not run.run and not run.data:
             raise ValueError("Either run or data must be specified for flow run.")
 
-    def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
+    def _submit_bulk_run(
+            self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
+    ) -> dict:
         run_id = run.name
         if flow.language == FlowLanguage.CSharp:
             connections = []
@@ -96,6 +100,7 @@ class RunSubmitter:
                 flow.path,
                 flow.code,
                 connections=connections,
+                entry=flow.entry if isinstance(flow, EagerFlow) else None,
                 storage=local_storage,
                 log_path=local_storage.logger.file_path,
             )

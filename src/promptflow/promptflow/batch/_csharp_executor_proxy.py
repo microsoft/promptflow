@@ -34,6 +34,7 @@ class CSharpExecutorProxy(APIBasedExecutorProxy):
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
+        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ) -> "CSharpExecutorProxy":

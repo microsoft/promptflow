@@ -30,6 +30,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._errors import LineExecutionTimeoutError
 from promptflow.executor._result import LineResult
+from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
@@ -141,12 +142,13 @@ class LineExecutionProcessPool:
 
     def __init__(
         self,
-        flow_executor: FlowExecutor,
+        flow_executor: Union[FlowExecutor, ScriptExecutor],
         nlines,
         run_id,
         variant_id,
         validate_inputs,
         output_dir,
+        entry=None,
     ):
         self._nlines = nlines
         self._run_id = run_id
@@ -172,6 +174,7 @@ class LineExecutionProcessPool:
                 FlowExecutor.create,
                 flow_file=flow_executor._flow_file,
                 connections=flow_executor._connections,
+                entry=entry,
                 working_dir=flow_executor._working_dir,
                 raise_ex=False,
             )

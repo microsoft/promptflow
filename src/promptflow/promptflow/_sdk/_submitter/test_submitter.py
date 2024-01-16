@@ -40,7 +40,7 @@ logger = get_cli_sdk_logger()
 class TestSubmitter:
     def __init__(self, flow: Union[ProtectedFlow, EagerFlow], flow_context: FlowContext, client=None):
         self.flow = flow
-        self.func = flow.entry if isinstance(flow, EagerFlow) else None
+        self.entry = flow.entry if isinstance(flow, EagerFlow) else None
         self._origin_flow = flow
         self._dataplane_flow = None
         self.flow_context = flow_context
@@ -219,7 +219,7 @@ class TestSubmitter:
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             flow_executor = FlowExecutor.create(
-                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False, func=self.func
+                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False, entry=self.entry
             )
             flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)

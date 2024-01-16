@@ -3,15 +3,18 @@
 # ---------------------------------------------------------
 
 import json
+import inspect
 import logging
 import sys
 from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Callable, Any, Dict, List, Optional
 
+from promptflow._utils.tool_utils import function_to_interface
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts._errors import FlowDefinitionError
+from promptflow.contracts.tool import InputDefinition, OutputDefinition
 from promptflow.exceptions import ErrorTarget
 
 from .._constants import LANGUAGE_KEY, FlowLanguage
@@ -838,3 +841,39 @@ class Flow:
                 self.nodes[index] = variant_node
                 break
         self.tools = self.tools + variant_tools
+
+
+@dataclass
+class EagerFlow():
+    id: str
+    name: str
+    inputs: Dict[str, InputDefinition]
+    outputs: Dict[str, OutputDefinition]
+    func: Callable
+    program_language: str = FlowLanguage.Python
+
+    @classmethod
+    def create(cls, flow_file: Path, entry: str):
+        from promptflow._core.tool_meta_generator import PythonLoadError, load_python_module_from_file
+        from promptflow._core.tracer import _traced
+
+        m = load_python_module_from_file(flow_file)
+        func: Callable = getattr(m, entry, None)
+        if func is None or not inspect.isfunction(func):
+            raise PythonLoadError(
+                message_format="Failed to load python function '{entry}' from file '{flow_file}'.",
+                entry=entry,
+                flow_file=flow_file,
+            )
+        # If the function is not decorated with trace, add trace for it.
+        if not hasattr(func, "__original_function"):
+            func = _traced(func)
+        inputs, outputs, _, _ = function_to_interface(func)
+        return cls(
+            id="dummy_eager_flow_id",
+            name="dummy_eager_flow",
+            inputs=inputs,
+            outputs=outputs,
+            func=func,
+            program_language=FlowLanguage.Python,
+        )
