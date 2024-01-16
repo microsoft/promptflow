@@ -23,6 +23,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -710,6 +711,7 @@ class FlowExecutor:
         :return: The result of executing the line.
         :rtype: ~promptflow.executor._result.LineResult
         """
+        # TODO: Call exec_line_async in exec_line when async is mature.
         self._node_concurrency = node_concurrency
         inputs = apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
@@ -803,6 +805,34 @@ class FlowExecutor:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
 
+    def _exec_prepare(self, inputs, run_id, line_number, variant_id):
+        run_id = run_id or str(uuid.uuid4())
+        line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
+        run_tracker = RunTracker(
+            self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager
+        )
+        # We need to copy the allow_generator_types from the original run_tracker.
+        run_tracker.allow_generator_types = self._run_tracker.allow_generator_types
+        run_info: FlowRunInfo = run_tracker.start_flow_run(
+            flow_id=self._flow_id,
+            root_run_id=run_id,
+            run_id=line_run_id,
+            parent_run_id=run_id,
+            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
+            index=line_number,
+            variant_id=variant_id,
+        )
+        context = FlowExecutionContext(
+            name=self._flow.name,
+            run_tracker=run_tracker,
+            cache_manager=self._cache_manager,
+            run_id=run_id,
+            flow_id=self._flow_id,
+            line_number=line_number,
+            variant_id=variant_id,
+        )
+        return run_info, context, run_tracker, line_run_id
+
     def _exec(
         self,
         inputs: Mapping[str, Any],
@@ -829,31 +859,8 @@ class FlowExecutor:
         Returns:
             LineResult: Line run result
         """
-        run_id = run_id or str(uuid.uuid4())
-        line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
-        run_tracker = RunTracker(
-            self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager
-        )
-        # We need to copy the allow_generator_types from the original run_tracker.
-        run_tracker.allow_generator_types = self._run_tracker.allow_generator_types
-        run_info: FlowRunInfo = run_tracker.start_flow_run(
-            flow_id=self._flow_id,
-            root_run_id=run_id,
-            run_id=line_run_id,
-            parent_run_id=run_id,
-            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
-            index=line_number,
-            variant_id=variant_id,
-        )
-        context = FlowExecutionContext(
-            name=self._flow.name,
-            run_tracker=run_tracker,
-            cache_manager=self._cache_manager,
-            run_id=run_id,
-            flow_id=self._flow_id,
-            line_number=line_number,
-            variant_id=variant_id,
-        )
+        # TODO: Call _exec_async in _exec when async is mature.
+        run_info, context, run_tracker, line_run_id = self._exec_prepare(inputs, run_id, line_number, variant_id)
         output = {}
         aggregation_inputs = {}
         try:
@@ -916,31 +923,7 @@ class FlowExecutor:
         Returns:
             LineResult: Line run result
         """
-        run_id = run_id or str(uuid.uuid4())
-        line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
-        run_tracker = RunTracker(
-            self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager
-        )
-        # We need to copy the allow_generator_types from the original run_tracker.
-        run_tracker.allow_generator_types = self._run_tracker.allow_generator_types
-        run_info: FlowRunInfo = run_tracker.start_flow_run(
-            flow_id=self._flow_id,
-            root_run_id=run_id,
-            run_id=line_run_id,
-            parent_run_id=run_id,
-            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
-            index=line_number,
-            variant_id=variant_id,
-        )
-        context = FlowExecutionContext(
-            name=self._flow.name,
-            run_tracker=run_tracker,
-            cache_manager=self._cache_manager,
-            run_id=run_id,
-            flow_id=self._flow_id,
-            line_number=line_number,
-            variant_id=variant_id,
-        )
+        run_info, context, run_tracker, line_run_id = self._exec_prepare(inputs, run_id, line_number, variant_id)
         output = {}
         aggregation_inputs = {}
         try:
@@ -1044,7 +1027,10 @@ class FlowExecutor:
         if self._should_use_async():
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
+            # Use async_run_allow_running_loop to avoid calling asyncio.run from a loop when running a notebook.
+            nodes_outputs, bypassed_nodes = async_run_allowing_running_loop(
+                scheduler.execute, batch_nodes, inputs, context
+            )
         else:
             flow_logger.info("Start executing nodes in thread pool mode.")
             nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
