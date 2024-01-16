@@ -70,7 +70,7 @@ class ScriptExecutor(FlowExecutor):
                 output = asyncio.run(self._flow.func(**inputs))
             else:
                 output = self._flow.func(**inputs)
-            output = {"outputs": output}
+            output = {"output": output}
             traces = Tracer.end_tracing(line_run_id)
             self._run_tracker.end_run(line_run_id, result=output, traces=traces)
         except Exception as e:
