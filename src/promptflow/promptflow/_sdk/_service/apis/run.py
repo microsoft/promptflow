@@ -175,10 +175,12 @@ class VisualizeRun(Resource):
     @api.produces(["text/html"])
     def get(self, name: str):
         with tempfile.TemporaryDirectory() as temp_dir:
-            run_op = get_client_from_request().runs
-            run = run_op.get(name=name)
+            from promptflow._sdk.operations import RunOperations
+
+            run_op: RunOperations = get_client_from_request().runs
             html_path = Path(temp_dir) / "visualize_run.html"
-            run_op.visualize(run, html_path=html_path)
+            # visualize operation may accept name in string
+            run_op.visualize(name, html_path=html_path)
 
             with open(html_path, "r") as f:
                 return Response(f.read(), mimetype="text/html")

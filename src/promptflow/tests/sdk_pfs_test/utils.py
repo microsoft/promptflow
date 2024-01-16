@@ -191,8 +191,15 @@ class PFSOperations:
         return response
 
     # telemetry APIs
-    def create_telemetry(self, *, body, status_code=None):
-        response = self._client.post(f"{self.TELEMETRY_PREFIX}/", headers={**self.remote_user_header()}, json=body)
+    def create_telemetry(self, *, body, headers, status_code=None):
+        response = self._client.post(
+            f"{self.TELEMETRY_PREFIX}/",
+            headers={
+                **self.remote_user_header(),
+                **headers,
+            },
+            json=body,
+        )
         if status_code:
             assert status_code == response.status_code, response.text
         return response

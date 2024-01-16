@@ -137,7 +137,7 @@ class FormattedException:
 
 def build_pfs_user_agent():
     extra_agent = f"local_pfs/{VERSION}"
-    if request.user_agent:
+    if request.user_agent.string:
         return f"{request.user_agent.string} {extra_agent}"
     return extra_agent
 

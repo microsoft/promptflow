@@ -74,8 +74,6 @@ class TestRunAPIs:
     def test_visualize_run(self, pfs_op: PFSOperations) -> None:
         with check_activity_end_telemetry(
             expected_activities=[
-                # TODO: should we mark this as first_call=False?
-                {"activity_name": "pf.runs.get"},
                 {"activity_name": "pf.runs.get", "first_call": False},
                 {"activity_name": "pf.runs.get", "first_call": False},
                 {"activity_name": "pf.runs.get_metrics", "first_call": False},

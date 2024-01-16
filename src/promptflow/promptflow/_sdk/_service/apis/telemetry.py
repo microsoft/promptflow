@@ -5,6 +5,7 @@ from flask import jsonify, make_response, request
 
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only
+from promptflow._sdk._telemetry import ActivityCompletionStatus, ActivityType
 from promptflow._utils.utils import camel_to_snake
 from promptflow.exceptions import UserErrorException
 
@@ -24,6 +25,9 @@ class AllowedActivityName:
     GENERATE_TOOL_META = "pf.flow._generate_tools_meta"
 
 
+REQUEST_ID_KEY = "x-ms-promptflow-request-id"
+
+
 def _dict_camel_to_snake(data):
     if isinstance(data, dict):
         result = {}
@@ -34,11 +38,9 @@ def _dict_camel_to_snake(data):
         return data
 
 
-def parse_activity_info(telemetry_data, user_agent):
-    from promptflow._sdk._telemetry.activity import generate_request_id
-
+def parse_activity_info(telemetry_data, user_agent, request_id):
     first_call = telemetry_data.get("firstCall", True)
-    request_id = telemetry_data.get("requestId", generate_request_id())
+    request_id = request_id
 
     return {
         "request_id": request_id,
@@ -48,8 +50,9 @@ def parse_activity_info(telemetry_data, user_agent):
     }
 
 
-def validate_telemetry_payload(payload):
-    from promptflow._sdk._telemetry import ActivityCompletionStatus, ActivityType
+def validate_telemetry_payload(payload, headers):
+    if REQUEST_ID_KEY not in headers:
+        raise UserErrorException(f"Missing {REQUEST_ID_KEY} in request header.")
 
     if not all(key in payload for key in ("eventType", "timestamp", "metadata")):
         missing_fields = {"eventType", "timestamp", "metadata"} - set(payload.keys())
@@ -75,12 +78,11 @@ def validate_telemetry_payload(payload):
         if not all(
             key in metadata
             for key in (
-                "requestId",  # End event should have requestId returned from start event
                 "completionStatus",  # End event should have completionStatus
                 "durationMs",  # End event should have durationMs
             )
         ):
-            missing_fields = {"requestId", "completionStatus", "durationMs"} - set(metadata.keys())
+            missing_fields = {"completionStatus", "durationMs"} - set(metadata.keys())
             raise UserErrorException(f"Missing required fields in telemetry metadata: {', '.join(missing_fields)}")
 
         if metadata.get("completionStatus") not in [
@@ -112,17 +114,16 @@ class Telemetry(Resource):
         """Private API to create telemetry record directly.
         Telemetry details should be in the request body; will append an extra User-Agent
         to the original one in the request header.
+        Request id must be put in "x-ms-promptflow-request-id" in request header.
         Request body should be in json format, e.g.:
         {
             "eventType": "Start",
-            "requestId": "request_id",
             "timestamp": "2021-09-29T22:51:00.000Z",
             "metadata": {
                 "activityName": "activity_name",
                 "activityType": "activity_type",
             }
         }
-        If requestId is not provided, a new one will be generated and requestId will always be returned in the response.
         """
         from promptflow._sdk._telemetry import get_telemetry_logger, is_telemetry_enabled
         from promptflow._sdk._telemetry.activity import log_activity_end, log_activity_start
@@ -132,17 +133,19 @@ class Telemetry(Resource):
 
         telemetry_data = request.get_json(force=True)
         try:
-            validate_telemetry_payload(telemetry_data)
+            validate_telemetry_payload(telemetry_data, request.headers)
         except UserErrorException as exception:
             return make_response(jsonify({"error": f"Invalid telemetry payload: {exception}"}), 400)
 
-        activity_info = parse_activity_info(telemetry_data, build_pfs_user_agent())
+        activity_info = parse_activity_info(
+            telemetry_data, user_agent=build_pfs_user_agent(), request_id=request.headers.get(REQUEST_ID_KEY)
+        )
         if telemetry_data.get("eventType") == EventType.START:
             log_activity_start(activity_info, get_telemetry_logger())
         elif telemetry_data.get("eventType") == EventType.END:
             log_activity_end(activity_info, get_telemetry_logger())
         return jsonify(
             {
-                "requestId": activity_info["request_id"],
+                "status": ActivityCompletionStatus.SUCCESS,
             }
         )

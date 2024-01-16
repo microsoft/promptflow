@@ -11,7 +11,11 @@ from ..utils import PFSOperations, check_activity_end_telemetry
 @pytest.mark.e2etest
 class TestTelemetryAPIs:
     def test_post_telemetry(self, pfs_op: PFSOperations) -> None:
-        response = pfs_op.create_telemetry(
+        from promptflow._sdk._telemetry.activity import generate_request_id
+
+        request_id = generate_request_id()
+        user_agent = "prompt-flow-extension/1.8.0 (win32; x64) VS/0.0.1"
+        _ = pfs_op.create_telemetry(
             body={
                 "eventType": "Start",
                 "timestamp": "2021-01-01T00:00:00Z",
@@ -21,25 +25,32 @@ class TestTelemetryAPIs:
                 },
             },
             status_code=200,
+            headers={
+                "x-ms-promptflow-request-id": request_id,
+                "User-Agent": user_agent,
+            },
         ).json
 
         with check_activity_end_telemetry(
             activity_name="pf.flow.test",
             activity_type="InternalCall",
-            # TODO: not sure how to set user_agent in request
-            user_agent="local_pfs/0.0.1",
+            user_agent=f"{user_agent} local_pfs/0.0.1",
+            request_id=request_id,
         ):
             response = pfs_op.create_telemetry(
                 body={
                     "eventType": "End",
                     "timestamp": "2021-01-01T00:00:00Z",
                     "metadata": {
-                        "requestId": response["requestId"],
                         "activityName": "pf.flow.test",
                         "activityType": "InternalCall",
                         "completionStatus": "Success",
                         "durationMs": 1000,
                     },
+                },
+                headers={
+                    "x-ms-promptflow-request-id": request_id,
+                    "User-Agent": user_agent,
                 },
                 status_code=200,
             ).json
