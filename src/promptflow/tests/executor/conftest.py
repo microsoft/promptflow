@@ -83,7 +83,7 @@ def process_override():
             original_process_class[start_method] = multiprocessing.get_context(start_method).Process
             multiprocessing.get_context(start_method).Process = MockProcessClass
             if start_method == multiprocessing.get_start_method():
-                multiprocessing.Process = MockSpawnProcess
+                multiprocessing.Process = MockProcessClass
 
     try:
         yield
