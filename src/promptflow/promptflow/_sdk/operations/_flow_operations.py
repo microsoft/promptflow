@@ -25,8 +25,10 @@ from promptflow._sdk._utils import (
     dump_flow_result,
     generate_flow_tools_json,
     generate_random_string,
+    logger,
     parse_variant,
 )
+from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
@@ -50,6 +52,7 @@ class FlowOperations(TelemetryMixin):
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        entry: str = None,
         **kwargs,
     ) -> dict:
         """Test flow or node.
@@ -68,11 +71,19 @@ class FlowOperations(TelemetryMixin):
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
+        :param entry: Entry function. Required when flow is script.
+        :type entry: str
         :return: The result of flow or node
         :rtype: dict
         """
         result = self._test(
-            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables, **kwargs
+            flow=flow,
+            inputs=inputs,
+            variant=variant,
+            node=node,
+            environment_variables=environment_variables,
+            entry=entry,
+            **kwargs,
         )
 
         dump_test_result = kwargs.get("dump_test_result", False)
@@ -103,6 +114,7 @@ class FlowOperations(TelemetryMixin):
         stream_log: bool = True,
         stream_output: bool = True,
         allow_generator_output: bool = True,
+        entry: str = None,
         **kwargs,
     ):
         """Test flow or node.
@@ -119,18 +131,26 @@ class FlowOperations(TelemetryMixin):
         :param stream_log: Whether streaming the log.
         :param stream_output: Whether streaming the outputs.
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
-
+        :param entry: The entry function, only works when source is a code file.
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow
 
         inputs = inputs or {}
-        flow = load_flow(flow)
+        flow = load_flow(flow, entry=entry)
+
+        if isinstance(flow, EagerFlow):
+            if variant or node:
+                logger.warning("variant and node are not supported for eager flow, will be ignored")
+                variant, node = None, None
+        else:
+            if entry:
+                logger.warning("entry is only supported for eager flow, will be ignored")
         flow.context.variant = variant
         from promptflow._constants import FlowLanguage
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
 
-        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+        if flow.language == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
                 is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
                 flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
@@ -155,10 +175,15 @@ class FlowOperations(TelemetryMixin):
                     )
 
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
-            is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
-            flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
-                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
-            )
+            if isinstance(flow, EagerFlow):
+                # TODO(2897153): support chat eager flow
+                is_chat_flow, chat_history_input_name = False, None
+                flow_inputs, dependency_nodes_outputs = inputs, None
+            else:
+                is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
+                flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
+                    node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
+                )
 
             if node:
                 return submitter.node_test(
@@ -706,6 +731,9 @@ class FlowOperations(TelemetryMixin):
         :rtype: Tuple[dict, dict]
         """
         flow: ProtectedFlow = load_flow(source=flow)
+        if not isinstance(flow, ProtectedFlow):
+            # No tools meta for eager flow
+            return {}, {}
 
         with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(

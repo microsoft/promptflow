@@ -1403,6 +1403,20 @@ class TestCli:
                 f"tags={tags}",
                 cwd=temp_dir,
             )
+            # Add a tool script with icon
+            tool_script_name = "tool_func_with_icon"
+            run_pf_command(
+                "tool",
+                "init",
+                "--tool",
+                tool_script_name,
+                "--set",
+                f"icon={icon_path.absolute()}",
+                f"category={category}",
+                f"tags={tags}",
+                cwd=Path(temp_dir) / package_name / package_name,
+            )
+
             sys.path.append(str(package_folder.absolute()))
             spec = importlib.util.spec_from_file_location(
                 f"{package_name}.utils", package_folder / package_name / "utils.py"
@@ -1416,6 +1430,7 @@ class TestCli:
             assert meta["category"] == category
             assert meta["tags"] == tags
             assert meta["icon"].startswith("data:image")
+            assert tools_meta[f"{package_name}.{tool_script_name}.{tool_script_name}"]["icon"].startswith("data:image")
 
             # icon doesn't exist
             with pytest.raises(SystemExit):

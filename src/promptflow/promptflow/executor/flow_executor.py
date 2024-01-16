@@ -188,6 +188,7 @@ class FlowExecutor:
         """
         if Path(flow_file).suffix.lower() == ".py":
             from ._script_executor import ScriptExecutor
+
             return ScriptExecutor(
                 entry_file=flow_file,
                 func=func,
