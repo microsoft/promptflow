@@ -51,9 +51,8 @@ class RunSubmitter:
                 # get the run again to make sure it's status is latest
                 run.run = self.run_operations.get(name=run.run.name)
             if run.run.status != Status.Completed.value:
-                raise UserErrorException(
-                    error=ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
-                )
+                message = f"Referenced run {run.run.name} is not completed, got status {run.run.status}"
+                raise UserErrorException(message=message, error=ValueError(message))
             run.run.outputs = self.run_operations._get_outputs(run.run)
         self._validate_inputs(run=run)
 

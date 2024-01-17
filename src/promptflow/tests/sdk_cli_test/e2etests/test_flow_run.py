@@ -243,7 +243,7 @@ class TestFlowRun:
         assert "Node not_exist not found in flow" in str(e.value)
 
         # invalid variant format
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
@@ -409,7 +409,7 @@ class TestFlowRun:
         )
 
         run_name = str(uuid.uuid4())
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 name=run_name,
                 flow=f"{FLOWS_DIR}/custom_connection_flow",

@@ -209,13 +209,11 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
+        message = f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
         raise UserErrorException(
             target=ErrorTarget.CONTROL_PLANE_SDK,
-            message_format="Invalid variant format: {variant}, variant should be in format of TUNING_NODE.VARIANT",
-            variant=variant,
-            error=ValueError(
-                f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
-            ),
+            message=message,
+            error=ValueError(message),
         )
 
 

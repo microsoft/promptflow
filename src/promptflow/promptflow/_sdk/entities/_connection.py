@@ -1010,12 +1010,13 @@ class CustomConnection(_Connection):
         elif isinstance(module, types.ModuleType) and isinstance(to_class, str):
             custom_conn_name = to_class
         else:
-            raise UserErrorException(
-                error=ValueError(
+            message = (
+                (
                     f"Failed to convert to custom strong type connection because of "
                     f"invalid module or class: {module}, {to_class}"
-                )
+                ),
             )
+            raise UserErrorException(message=message, error=ValueError(message))
 
         custom_defined_connection_class = getattr(module, custom_conn_name)
 
