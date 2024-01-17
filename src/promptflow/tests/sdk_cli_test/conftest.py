@@ -121,14 +121,15 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
     return app.test_client()
 
 
-def create_client_by_model(model_name: str, mocker: MockerFixture, connections: dict = {}, extension_type=None):
+def create_client_by_model(
+    model_name: str, mocker: MockerFixture, connections: dict = {}, extension_type=None, environment_variables={}
+):
     model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     if connections:
         mocker.patch.dict(os.environ, connections)
-    environment_variables = {}
     if extension_type and extension_type == "azureml":
-        environment_variables = {"API_TYPE": "${azure_open_ai_connection.api_type}"}
+        environment_variables["API_TYPE"] = "${azure_open_ai_connection.api_type}"
     app = create_serving_app(environment_variables=environment_variables, extension_type=extension_type)
     app.config.update(
         {
@@ -162,6 +163,15 @@ def serving_client_image_python_flow(mocker: MockerFixture):
 @pytest.fixture
 def serving_client_composite_image_flow(mocker: MockerFixture):
     return create_client_by_model("python_tool_with_composite_image", mocker)
+
+
+@pytest.fixture
+def serving_client_with_environment_variables(mocker: MockerFixture):
+    return create_client_by_model(
+        "flow_with_environment_variables",
+        mocker,
+        environment_variables={"env2": "runtime_env2", "env10": "aaaaa"},
+    )
 
 
 @pytest.fixture
