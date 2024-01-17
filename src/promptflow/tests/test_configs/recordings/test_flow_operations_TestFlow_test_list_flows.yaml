@@ -209,4 +209,446 @@ interactions:
     status:
       code: 200
       message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.17 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus
+  response:
+    body:
+      string: "{\n  \"id\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus\",\n
+        \ \"name\": \"promptflow-eastus\",\n  \"type\": \"Microsoft.MachineLearningServices/workspaces\",\n
+        \ \"location\": \"eastus\",\n  \"tags\": {},\n  \"etag\": null,\n  \"properties\":
+        {\n    \"friendlyName\": \"promptflow-eastus\",\n    \"description\": \"\",\n
+        \   \"storageAccount\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.Storage/storageAccounts/promptfloweast4063704120\",\n
+        \   \"keyVault\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.Keyvault/vaults/promptfloweast1111289317\",\n
+        \   \"applicationInsights\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.insights/components/promptfloweast6116803744\",\n
+        \   \"hbiWorkspace\": false,\n    \"tenantId\": \"72f988bf-86f1-41af-91ab-2d7cd011db47\",\n
+        \   \"imageBuildCompute\": null,\n    \"provisioningState\": \"Succeeded\",\n
+        \   \"managedNetwork\": {\n      \"changeableIsolationModes\": [\n        \"AllowInternetOutbound\",\n
+        \       \"AllowOnlyApprovedOutbound\"\n      ],\n      \"isolationMode\":
+        \"Disabled\"\n    },\n    \"v1LegacyMode\": false,\n    \"softDeleteEnabled\":
+        false,\n    \"containerRegistry\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.ContainerRegistry/registries/promptfloweus\",\n
+        \   \"creationTime\": \"2023-04-08T02:52:45.2632073Z\",\n    \"notebookInfo\":
+        {\n      \"resourceId\": \"d27bca8b0dcc4dcda2e03fceabbc1a1d\",\n      \"fqdn\":
+        \"ml-promptflow-eastu-eastus-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5.eastus.notebooks.azure.net\",\n
+        \     \"isPrivateLinkEnabled\": false,\n      \"notebookPreparationError\":
+        null\n    },\n    \"storageHnsEnabled\": false,\n    \"workspaceId\": \"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5\",\n
+        \   \"linkedModelInventoryArmId\": null,\n    \"privateLinkCount\": 0,\n    \"publicNetworkAccess\":
+        \"Enabled\",\n    \"ipAllowlist\": [],\n    \"discoveryUrl\": \"https://eastus.api.azureml.ms/discovery\",\n
+        \   \"mlFlowTrackingUri\": \"azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus\",\n
+        \   \"serverlessComputeSettings\": null,\n    \"EnableSoftwareBillOfMaterials\":
+        null,\n    \"sdkTelemetryAppInsightsKey\": \"f5784ccd-178d-4ecc-9998-b05841b44ae9\",\n
+        \   \"sasGetterUri\": \"\",\n    \"enableDataIsolation\": false,\n    \"azureOpenAI\":
+        {\n      \"provisioningState\": \"Succeeded\",\n      \"resourceId\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.CognitiveServices/accounts/promptflow-eastus-aoai\",\n
+        \     \"endpoint\": \"https://promptflow-eastus-aoai.openai.azure.com/\",\n
+        \     \"proxyResourceId\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/oaiaccounts/id_877310627f954a0a8993e6facedab0df\",\n
+        \     \"failureReason\": null,\n      \"deployedModels\": []\n    },\n    \"endpointResources\":
+        {}\n  },\n  \"identity\": {\n    \"type\": \"SystemAssigned\",\n    \"principalId\":
+        \"55b92eba-d7c7-4afd-ab76-7bb1cd345283\",\n    \"tenantId\": \"72f988bf-86f1-41af-91ab-2d7cd011db47\"\n
+        \ },\n  \"kind\": \"Default\",\n  \"sku\": {\n    \"name\": \"Basic\",\n    \"tier\":
+        \"Basic\"\n  },\n  \"systemData\": {\n    \"createdAt\": \"2023-04-08T02:52:45.2632073Z\",\n
+        \   \"createdBy\": \"clwan@microsoft.com\",\n    \"createdByType\": \"User\",\n
+        \   \"lastModifiedAt\": \"2023-04-08T02:52:45.2632073Z\",\n    \"lastModifiedBy\":
+        \"clwan@microsoft.com\",\n    \"lastModifiedByType\": \"User\"\n  }\n}"
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 17 Jan 2024 03:37:54 GMT
+      Expires:
+      - '-1'
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding,Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '3630'
+      x-aml-cluster:
+      - vienna-eastus-02
+      x-ms-correlation-request-id:
+      - dd3cd2ce-7aa0-48c1-95c9-0ae8a9b176dd
+      x-ms-ratelimit-remaining-subscription-reads:
+      - '11999'
+      x-ms-request-id:
+      - dd3cd2ce-7aa0-48c1-95c9-0ae8a9b176dd
+      x-ms-response-type:
+      - standard
+      x-ms-routing-request-id:
+      - JAPANEAST:20240117T033755Z:dd3cd2ce-7aa0-48c1-95c9-0ae8a9b176dd
+      x-request-time:
+      - '0.028'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.17 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: "{\n  \"value\": [\n    {\n      \"id\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores/workspaceblobstore\",\n
+        \     \"name\": \"workspaceblobstore\",\n      \"type\": \"Microsoft.MachineLearningServices/workspaces/datastores\",\n
+        \     \"properties\": {\n        \"description\": null,\n        \"tags\":
+        null,\n        \"properties\": null,\n        \"isDefault\": true,\n        \"credentials\":
+        {\n          \"credentialsType\": \"AccountKey\"\n        },\n        \"intellectualProperty\":
+        null,\n        \"subscriptionId\": \"96aede12-2f73-41cb-b983-6d11a904839b\",\n
+        \       \"resourceGroup\": \"promptflow\",\n        \"datastoreType\": \"AzureBlob\",\n
+        \       \"accountName\": \"promptfloweast4063704120\",\n        \"containerName\":
+        \"azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5\",\n        \"endpoint\":
+        \"core.windows.net\",\n        \"protocol\": \"https\",\n        \"serviceDataAccessAuthIdentity\":
+        \"WorkspaceSystemAssignedIdentity\"\n      },\n      \"systemData\": {\n        \"createdAt\":
+        \"2023-04-08T02:53:06.5886442+00:00\",\n        \"createdBy\": \"779301c0-18b2-4cdc-801b-a0a3368fee0a\",\n
+        \       \"createdByType\": \"Application\",\n        \"lastModifiedAt\": \"2023-04-08T02:53:07.521127+00:00\",\n
+        \       \"lastModifiedBy\": \"779301c0-18b2-4cdc-801b-a0a3368fee0a\",\n        \"lastModifiedByType\":
+        \"Application\"\n      }\n    }\n  ]\n}"
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 17 Jan 2024 03:37:58 GMT
+      Expires:
+      - '-1'
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding,Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '1372'
+      x-aml-cluster:
+      - vienna-eastus-01
+      x-ms-correlation-request-id:
+      - a9f5c5d4-874a-4a50-abda-cf491e9795d0
+      x-ms-ratelimit-remaining-subscription-reads:
+      - '11993'
+      x-ms-request-id:
+      - a9f5c5d4-874a-4a50-abda-cf491e9795d0
+      x-ms-response-type:
+      - standard
+      x-ms-routing-request-id:
+      - JAPANEAST:20240117T033758Z:a9f5c5d4-874a-4a50-abda-cf491e9795d0
+      x-request-time:
+      - '0.674'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"filters": [{"field": "type", "operator": "eq", "values": ["flows"]},
+      {"field": "annotations/isArchived", "operator": "eq", "values": ["false"]},
+      {"field": "properties/creationContext/createdBy/userTenantId", "operator": "eq",
+      "values": ["72f988bf-86f1-41af-91ab-2d7cd011db47"]}, {"field": "properties/creationContext/createdBy/userObjectId",
+      "operator": "eq", "values": ["e20ac744-b3f4-4b67-9515-49b91b185035"]}], "freeTextSearch":
+      "", "order": [{"direction": "Desc", "field": "properties/creationContext/createdTime"}],
+      "pageSize": 3, "skip": 0, "includeTotalResultCount": true, "searchBuilder":
+      "AppendPrefix"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '614'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/index/v1.0/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/entities
+  response:
+    body:
+      string: '{"totalCount":1,"value":[{"relevancyScore":1.0,"entityResourceName":"promptflow-eastus","highlights":{},"usage":{"totalCount":0},"schemaId":"37f2e71d-b027-5d1c-a435-7d249ef7f98a","entityId":"azureml://location/eastus/workspaceId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/type/flows/objectId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:99961311-6978-45a4-bc4c-7d98365d74bb","kind":"Unversioned","annotations":{"archived":false,"tags":{},"flowName":"Web
+        Classification","createdDate":"2023-08-02T07:18:58.9012496Z","lastModifiedDate":"2023-08-02T08:14:29.8149506Z","owner":{"userObjectId":"e20ac744-b3f4-4b67-9515-49b91b185035","userTenantId":"72f988bf-86f1-41af-91ab-2d7cd011db47","userName":"Chenyang
+        Zhang"},"isArchived":false,"vmSize":"","maxIdleTimeSeconds":null,"name":null,"description":"Create
+        flows that use large language models to classify URLs into multiple categories."},"properties":{"updatedTime":"0001-01-01T00:00:00+00:00","creationContext":{"createdTime":"2023-08-02T07:18:58.9012496+00:00","createdBy":{"userObjectId":"e20ac744-b3f4-4b67-9515-49b91b185035","userTenantId":"72f988bf-86f1-41af-91ab-2d7cd011db47","userName":"Chenyang
+        Zhang","userPrincipalName":null},"creationSource":null},"flowId":"99961311-6978-45a4-bc4c-7d98365d74bb","experimentId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5","flowType":"Default","flowDefinitionFilePath":null},"internal":{},"updateSequence":638265608698149506,"type":"flows","version":null,"entityContainerId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5","entityObjectId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:99961311-6978-45a4-bc4c-7d98365d74bb","resourceType":"Workspace","relationships":[]}],"nextSkip":null,"continuationToken":null,"entityContainerIdsToEntityContainerMetadata":{"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5":{"resourceId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5","subscriptionId":"96aede12-2f73-41cb-b983-6d11a904839b","resourceGroup":"promptflow","resourceName":"promptflow-eastus","entityContainerType":"Workspace","regions":[{"regionName":"eastus","isPrimaryRegion":true}],"tenantId":"72f988bf-86f1-41af-91ab-2d7cd011db47","immutableResourceId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5","isPublicResource":false}},"resourcesNotQueriedReasons":{},"numberOfEntityContainersNotQueried":0,"fanoutData":{"Multitenant":{"nextSkip":1,"isShardDone":true,"didShardFail":false,"totalCount":1,"resourceIdsOnShardThisPage":["3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"]}},"regionalFanoutState":{"shardFanoutStates":[{"shardId":"Multitenant","nextSkip":1,"isPlanExecutionDone":true,"didPlanExecutionFail":false,"totalCount":1,"resourceIdsOnShardThisPage":["3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"]}],"firstPageStartTime":null},"shardErrors":{},"canSupportSkip":true}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 17 Jan 2024 03:38:02 GMT
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '2689'
+      x-aml-cluster:
+      - vienna-eastus-01
+      x-ms-response-type:
+      - standard
+      x-request-time:
+      - '0.653'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.17 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus
+  response:
+    body:
+      string: "{\n  \"id\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus\",\n
+        \ \"name\": \"promptflow-eastus\",\n  \"type\": \"Microsoft.MachineLearningServices/workspaces\",\n
+        \ \"location\": \"eastus\",\n  \"tags\": {},\n  \"etag\": null,\n  \"properties\":
+        {\n    \"friendlyName\": \"promptflow-eastus\",\n    \"description\": \"\",\n
+        \   \"storageAccount\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.Storage/storageAccounts/promptfloweast4063704120\",\n
+        \   \"keyVault\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.Keyvault/vaults/promptfloweast1111289317\",\n
+        \   \"applicationInsights\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.insights/components/promptfloweast6116803744\",\n
+        \   \"hbiWorkspace\": false,\n    \"tenantId\": \"72f988bf-86f1-41af-91ab-2d7cd011db47\",\n
+        \   \"imageBuildCompute\": null,\n    \"provisioningState\": \"Succeeded\",\n
+        \   \"managedNetwork\": {\n      \"changeableIsolationModes\": [\n        \"AllowInternetOutbound\",\n
+        \       \"AllowOnlyApprovedOutbound\"\n      ],\n      \"isolationMode\":
+        \"Disabled\"\n    },\n    \"v1LegacyMode\": false,\n    \"softDeleteEnabled\":
+        false,\n    \"containerRegistry\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.ContainerRegistry/registries/promptfloweus\",\n
+        \   \"creationTime\": \"2023-04-08T02:52:45.2632073Z\",\n    \"notebookInfo\":
+        {\n      \"resourceId\": \"d27bca8b0dcc4dcda2e03fceabbc1a1d\",\n      \"fqdn\":
+        \"ml-promptflow-eastu-eastus-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5.eastus.notebooks.azure.net\",\n
+        \     \"isPrivateLinkEnabled\": false,\n      \"notebookPreparationError\":
+        null\n    },\n    \"storageHnsEnabled\": false,\n    \"workspaceId\": \"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5\",\n
+        \   \"linkedModelInventoryArmId\": null,\n    \"privateLinkCount\": 0,\n    \"publicNetworkAccess\":
+        \"Enabled\",\n    \"ipAllowlist\": [],\n    \"discoveryUrl\": \"https://eastus.api.azureml.ms/discovery\",\n
+        \   \"mlFlowTrackingUri\": \"azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus\",\n
+        \   \"serverlessComputeSettings\": null,\n    \"EnableSoftwareBillOfMaterials\":
+        null,\n    \"sdkTelemetryAppInsightsKey\": \"f5784ccd-178d-4ecc-9998-b05841b44ae9\",\n
+        \   \"sasGetterUri\": \"\",\n    \"enableDataIsolation\": false,\n    \"azureOpenAI\":
+        {\n      \"provisioningState\": \"Succeeded\",\n      \"resourceId\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.CognitiveServices/accounts/promptflow-eastus-aoai\",\n
+        \     \"endpoint\": \"https://promptflow-eastus-aoai.openai.azure.com/\",\n
+        \     \"proxyResourceId\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/oaiaccounts/id_877310627f954a0a8993e6facedab0df\",\n
+        \     \"failureReason\": null,\n      \"deployedModels\": []\n    },\n    \"endpointResources\":
+        {}\n  },\n  \"identity\": {\n    \"type\": \"SystemAssigned\",\n    \"principalId\":
+        \"55b92eba-d7c7-4afd-ab76-7bb1cd345283\",\n    \"tenantId\": \"72f988bf-86f1-41af-91ab-2d7cd011db47\"\n
+        \ },\n  \"kind\": \"Default\",\n  \"sku\": {\n    \"name\": \"Basic\",\n    \"tier\":
+        \"Basic\"\n  },\n  \"systemData\": {\n    \"createdAt\": \"2023-04-08T02:52:45.2632073Z\",\n
+        \   \"createdBy\": \"clwan@microsoft.com\",\n    \"createdByType\": \"User\",\n
+        \   \"lastModifiedAt\": \"2023-04-08T02:52:45.2632073Z\",\n    \"lastModifiedBy\":
+        \"clwan@microsoft.com\",\n    \"lastModifiedByType\": \"User\"\n  }\n}"
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 17 Jan 2024 03:41:11 GMT
+      Expires:
+      - '-1'
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding,Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '3630'
+      x-aml-cluster:
+      - vienna-eastus-01
+      x-ms-correlation-request-id:
+      - 19ab8622-422a-44c7-9f09-ea7c71f02ed5
+      x-ms-ratelimit-remaining-subscription-reads:
+      - '11999'
+      x-ms-request-id:
+      - 19ab8622-422a-44c7-9f09-ea7c71f02ed5
+      x-ms-response-type:
+      - standard
+      x-ms-routing-request-id:
+      - JAPANEAST:20240117T034112Z:19ab8622-422a-44c7-9f09-ea7c71f02ed5
+      x-request-time:
+      - '0.021'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.9.17 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: "{\n  \"value\": [\n    {\n      \"id\": \"/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/datastores/workspaceblobstore\",\n
+        \     \"name\": \"workspaceblobstore\",\n      \"type\": \"Microsoft.MachineLearningServices/workspaces/datastores\",\n
+        \     \"properties\": {\n        \"description\": null,\n        \"tags\":
+        null,\n        \"properties\": null,\n        \"isDefault\": true,\n        \"credentials\":
+        {\n          \"credentialsType\": \"AccountKey\"\n        },\n        \"intellectualProperty\":
+        null,\n        \"subscriptionId\": \"96aede12-2f73-41cb-b983-6d11a904839b\",\n
+        \       \"resourceGroup\": \"promptflow\",\n        \"datastoreType\": \"AzureBlob\",\n
+        \       \"accountName\": \"promptfloweast4063704120\",\n        \"containerName\":
+        \"azureml-blobstore-3e123da1-f9a5-4c91-9234-8d9ffbb39ff5\",\n        \"endpoint\":
+        \"core.windows.net\",\n        \"protocol\": \"https\",\n        \"serviceDataAccessAuthIdentity\":
+        \"WorkspaceSystemAssignedIdentity\"\n      },\n      \"systemData\": {\n        \"createdAt\":
+        \"2023-04-08T02:53:06.5886442+00:00\",\n        \"createdBy\": \"779301c0-18b2-4cdc-801b-a0a3368fee0a\",\n
+        \       \"createdByType\": \"Application\",\n        \"lastModifiedAt\": \"2023-04-08T02:53:07.521127+00:00\",\n
+        \       \"lastModifiedBy\": \"779301c0-18b2-4cdc-801b-a0a3368fee0a\",\n        \"lastModifiedByType\":
+        \"Application\"\n      }\n    }\n  ]\n}"
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 17 Jan 2024 03:41:15 GMT
+      Expires:
+      - '-1'
+      Pragma:
+      - no-cache
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding,Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '1372'
+      x-aml-cluster:
+      - vienna-eastus-01
+      x-ms-correlation-request-id:
+      - a67cd93f-6e69-4d0d-9718-e6a71f4f7026
+      x-ms-ratelimit-remaining-subscription-reads:
+      - '11999'
+      x-ms-request-id:
+      - a67cd93f-6e69-4d0d-9718-e6a71f4f7026
+      x-ms-response-type:
+      - standard
+      x-ms-routing-request-id:
+      - JAPANEAST:20240117T034116Z:a67cd93f-6e69-4d0d-9718-e6a71f4f7026
+      x-request-time:
+      - '0.642'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"filters": [{"field": "type", "operator": "eq", "values": ["flows"]},
+      {"field": "annotations/isArchived", "operator": "eq", "values": ["false"]},
+      {"field": "properties/creationContext/createdBy/userTenantId", "operator": "eq",
+      "values": ["72f988bf-86f1-41af-91ab-2d7cd011db47"]}, {"field": "properties/creationContext/createdBy/userObjectId",
+      "operator": "eq", "values": ["e20ac744-b3f4-4b67-9515-49b91b185035"]}], "freeTextSearch":
+      "", "order": [{"direction": "Desc", "field": "properties/creationContext/createdTime"}],
+      "pageSize": 3, "skip": 0, "includeTotalResultCount": true, "searchBuilder":
+      "AppendPrefix"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '614'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/index/v1.0/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus/entities
+  response:
+    body:
+      string: '{"totalCount":1,"value":[{"relevancyScore":1.0,"entityResourceName":"promptflow-eastus","highlights":{},"usage":{"totalCount":0},"schemaId":"37f2e71d-b027-5d1c-a435-7d249ef7f98a","entityId":"azureml://location/eastus/workspaceId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/type/flows/objectId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:99961311-6978-45a4-bc4c-7d98365d74bb","kind":"Unversioned","annotations":{"archived":false,"tags":{},"flowName":"Web
+        Classification","createdDate":"2023-08-02T07:18:58.9012496Z","lastModifiedDate":"2023-08-02T08:14:29.8149506Z","owner":{"userObjectId":"e20ac744-b3f4-4b67-9515-49b91b185035","userTenantId":"72f988bf-86f1-41af-91ab-2d7cd011db47","userName":"Chenyang
+        Zhang"},"isArchived":false,"vmSize":"","maxIdleTimeSeconds":null,"name":null,"description":"Create
+        flows that use large language models to classify URLs into multiple categories."},"properties":{"updatedTime":"0001-01-01T00:00:00+00:00","creationContext":{"createdTime":"2023-08-02T07:18:58.9012496+00:00","createdBy":{"userObjectId":"e20ac744-b3f4-4b67-9515-49b91b185035","userTenantId":"72f988bf-86f1-41af-91ab-2d7cd011db47","userName":"Chenyang
+        Zhang","userPrincipalName":null},"creationSource":null},"flowId":"99961311-6978-45a4-bc4c-7d98365d74bb","experimentId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5","flowType":"Default","flowDefinitionFilePath":null},"internal":{},"updateSequence":638265608698149506,"type":"flows","version":null,"entityContainerId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5","entityObjectId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:99961311-6978-45a4-bc4c-7d98365d74bb","resourceType":"Workspace","relationships":[]}],"nextSkip":null,"continuationToken":null,"entityContainerIdsToEntityContainerMetadata":{"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5":{"resourceId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5","subscriptionId":"96aede12-2f73-41cb-b983-6d11a904839b","resourceGroup":"promptflow","resourceName":"promptflow-eastus","entityContainerType":"Workspace","regions":[{"regionName":"eastus","isPrimaryRegion":true}],"tenantId":"72f988bf-86f1-41af-91ab-2d7cd011db47","immutableResourceId":"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5","isPublicResource":false}},"resourcesNotQueriedReasons":{},"numberOfEntityContainersNotQueried":0,"fanoutData":{"Multitenant":{"nextSkip":1,"isShardDone":true,"didShardFail":false,"totalCount":1,"resourceIdsOnShardThisPage":["3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"]}},"regionalFanoutState":{"shardFanoutStates":[{"shardId":"Multitenant","nextSkip":1,"isPlanExecutionDone":true,"didPlanExecutionFail":false,"totalCount":1,"resourceIdsOnShardThisPage":["3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"]}],"firstPageStartTime":null},"shardErrors":{},"canSupportSkip":true}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 17 Jan 2024 03:41:19 GMT
+      Request-Context:
+      - appId=cid-v1:2d2e8e63-272e-4b3c-8598-4ee570a0e70d
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+      content-length:
+      - '2689'
+      x-aml-cluster:
+      - vienna-eastus-02
+      x-ms-response-type:
+      - standard
+      x-request-time:
+      - '0.056'
+    status:
+      code: 200
+      message: OK
 version: 1

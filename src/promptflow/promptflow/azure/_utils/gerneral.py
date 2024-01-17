@@ -10,7 +10,7 @@ def is_arm_id(obj) -> bool:
     return isinstance(obj, str) and obj.startswith("azureml://")
 
 
-def get_token(credential, resource):
+def get_token(credential, resource) -> str:
     from azure.ai.ml._azure_environments import _resource_to_scopes
 
     azure_ml_scopes = _resource_to_scopes(resource)
@@ -32,21 +32,21 @@ def get_token(credential, resource):
     return token
 
 
-def get_aml_token(credential):
+def get_aml_token(credential) -> str:
     from azure.ai.ml._azure_environments import _get_aml_resource_id_from_metadata
 
     resource = _get_aml_resource_id_from_metadata()
     return get_token(credential, resource)
 
 
-def get_arm_token(credential):
+def get_arm_token(credential) -> str:
     from azure.ai.ml._azure_environments import _get_base_url_from_metadata
 
     resource = _get_base_url_from_metadata()
     return get_token(credential, resource)
 
 
-def get_authorization(credential=None):
+def get_authorization(credential=None) -> str:
     token = get_arm_token(credential=credential)
     return "Bearer " + token
 
