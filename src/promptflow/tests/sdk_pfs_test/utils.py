@@ -7,6 +7,7 @@ import json
 from typing import Any, Dict, List
 from unittest import mock
 
+import werkzeug
 from flask.testing import FlaskClient
 
 
@@ -30,7 +31,7 @@ def check_activity_end_telemetry(
             "first_call": True,
             "activity_type": "PublicApi",
             "completion_status": "Success",
-            "user_agent": "promptflow-sdk/0.0.1 local_pfs/0.0.1",
+            "user_agent": f"promptflow-sdk/0.0.1 Werkzeug/{werkzeug.__version__} local_pfs/0.0.1",
         }
         for i, expected_activity in enumerate(expected_activities):
             temp = default_expected_call.copy()

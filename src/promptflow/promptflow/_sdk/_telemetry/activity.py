@@ -7,6 +7,7 @@ import threading
 import uuid
 from contextvars import ContextVar
 from datetime import datetime
+from typing import Any, Dict
 
 from promptflow._sdk._telemetry.telemetry import TelemetryMixin
 from promptflow._sdk._utils import ClientUserAgentUtil
@@ -34,7 +35,7 @@ class ActivityCompletionStatus(object):
 request_id_context = ContextVar("request_id_context", default=None)
 
 
-def log_activity_start(activity_info, logger) -> None:
+def log_activity_start(activity_info: Dict[str, Any], logger) -> None:
     """Log activity start.
     Sample activity_info:
     {
@@ -44,13 +45,18 @@ def log_activity_start(activity_info, logger) -> None:
         "activity_type": "activity_type",
         "user_agent": "user_agent",
     }
+
+    :param activity_info: The custom properties of the activity to record.
+    :type activity_info: dict
+    :param logger: The logger adapter.
+    :type logger: logging.LoggerAdapter
     """
     message = f"{activity_info['activity_name']}.start"
     logger.info(message, extra={"custom_dimensions": activity_info})
     pass
 
 
-def log_activity_end(activity_info, logger) -> None:
+def log_activity_end(activity_info: Dict[str, Any], logger) -> None:
     """Log activity end.
     Sample activity_info for success (start info plus run info):
     {
@@ -72,8 +78,6 @@ def log_activity_end(activity_info, logger) -> None:
     Error target & error type can be found in the following link:
     https://github.com/microsoft/promptflow/blob/main/src/promptflow/promptflow/exceptions.py
 
-    :param activity_name: The name of the activity. The name should be unique per the wrapped logical code block.
-    :type activity_name: str
     :param activity_info: The custom properties of the activity.
     :type activity_info: dict
     :param logger: The logger adapter.

@@ -33,29 +33,20 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         if self._pfazure_client is None:
             from promptflow.azure._pf_client import PFClient as PFAzureClient
 
-            if self._user_agent is None:
-                self._pfazure_client = PFAzureClient(
-                    # TODO: disable interactive credential when starting as a service
-                    credential=self._credential,
-                    subscription_id=self._subscription_id,
-                    resource_group_name=self._resource_group,
-                    workspace_name=self._workspace_name,
-                )
-            else:
-                self._pfazure_client = PFAzureClient(
-                    # TODO: disable interactive credential when starting as a service
-                    credential=self._credential,
-                    subscription_id=self._subscription_id,
-                    resource_group_name=self._resource_group,
-                    workspace_name=self._workspace_name,
-                    user_agent=self._user_agent,
-                )
+            self._pfazure_client = PFAzureClient(
+                # TODO: disable interactive credential when starting as a service
+                credential=self._credential,
+                subscription_id=self._subscription_id,
+                resource_group_name=self._resource_group,
+                workspace_name=self._workspace_name,
+                user_agent=self._user_agent,
+            )
         return self._pfazure_client
 
     @classmethod
     def _get_credential(cls):
+        from azure.ai.ml._azure_environments import AzureEnvironments, EndpointURLS, _get_cloud, _get_default_cloud_name
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
-        from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
 
         if is_from_cli():
             try:

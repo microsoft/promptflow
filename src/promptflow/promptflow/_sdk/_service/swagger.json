@@ -85,6 +85,18 @@
                     "Connections"
                 ]
             },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
             "get": {
                 "responses": {
                     "200": {
@@ -107,18 +119,6 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -510,7 +510,7 @@
                     }
                 },
                 "summary": "Private API to create telemetry record directly",
-                "description": "Create telemetry record\nTelemetry details should be in the request body; will append an extra User-Agent\nto the original one in the request header.\nRequest body should be in json format, e.g.:\n{\n    \"eventType\": \"Start\",\n    \"requestId\": \"request_id\",\n    \"timestamp\": \"2021-09-29T22:51:00.000Z\",\n    \"metadata\": {\n        \"activityName\": \"activity_name\",\n        \"activityType\": \"activity_type\",\n    }\n}\nIf requestId is not provided, a new one will be generated and requestId will always be returned in the response.",
+                "description": "Create telemetry record\nTelemetry details should be in the request body; will append an extra User-Agent\nto the original one in the request header.\nRequest id must be put in \"x-ms-promptflow-request-id\" in request header.\nRequest body should be in json format, e.g.:\n{\n    \"eventType\": \"Start\",\n    \"timestamp\": \"2021-09-29T22:51:00.000Z\",\n    \"metadata\": {\n        \"activityName\": \"activity_name\",\n        \"activityType\": \"activity_type\",\n    }\n}",
                 "operationId": "post_telemetry",
                 "tags": [
                     "Telemetries"
