@@ -18,3 +18,9 @@ class BaseExecutionRequest(BaseModel):
 class FlowExecutionRequest(BaseExecutionRequest):
     inputs: Mapping[str, Any]
     output_dir: str
+
+
+class NodeExecutionRequest(BaseExecutionRequest):
+    node_name: str
+    inputs: Mapping[str, Any]
+    output_dir: str
