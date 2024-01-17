@@ -384,19 +384,6 @@ class ToolPackageGenerator(BaseGenerator):
         return ["tool_name", "extra_info", "icon"]
 
 
-class ManifestGenerator(BaseGenerator):
-    def __init__(self, package_name):
-        self.package_name = package_name
-
-    @property
-    def tpl_file(self):
-        return TOOL_TEMPLATE_PATH / "MANIFEST.in.jinja2"
-
-    @property
-    def entry_template_keys(self):
-        return ["package_name"]
-
-
 class SetupGenerator(BaseGenerator):
     def __init__(self, package_name, tool_name):
         self.package_name = package_name
@@ -428,6 +415,8 @@ class ToolReadmeGenerator(BaseGenerator):
     def __init__(self, package_name, tool_name):
         self.package_name = package_name
         self.tool_name = tool_name
+        self.package_name_place_holder = " " * (24 - len(self.package_name))
+        self.tool_name_place_holder = " " * (17 - len(self.tool_name))
 
     @property
     def tpl_file(self):
@@ -435,7 +424,7 @@ class ToolReadmeGenerator(BaseGenerator):
 
     @property
     def entry_template_keys(self):
-        return ["package_name", "tool_name"]
+        return ["package_name", "tool_name", "package_name_place_holder", "tool_name_place_holder"]
 
 
 class InitGenerator(BaseGenerator):
