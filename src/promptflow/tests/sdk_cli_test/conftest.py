@@ -9,10 +9,11 @@ from unittest.mock import patch
 import pytest
 from mock import mock
 from pytest_mock import MockerFixture
+from sqlalchemy import create_engine
 
 from promptflow import PFClient
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME
+from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
@@ -92,11 +93,10 @@ def setup_experiment_table(local_client, azure_open_ai_connection):
         mock_func.return_value = True
         # Call this session to initialize session maker, then add experiment table
         from promptflow._sdk._orm import Experiment, mgmt_db_session
+        from promptflow._sdk._orm.session import create_index_if_not_exists, create_or_update_table
 
         mgmt_db_session()
-        from promptflow._sdk._orm.session import create_index_if_not_exists, create_or_update_table, session_maker
-
-        engine = session_maker.kw["bind"]
+        engine = create_engine(f"sqlite:///{str(LOCAL_MGMT_DB_PATH)}", future=True)
         if Configuration.get_instance().is_internal_features_enabled():
             create_or_update_table(engine, orm_class=Experiment, tablename=EXPERIMENT_TABLE_NAME)
             create_index_if_not_exists(engine, EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, "created_on")
