@@ -23,7 +23,6 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.azure import PFClient
-from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
@@ -886,7 +885,6 @@ class TestFlowRun:
             name=randstr("name"),
         )
         pf.runs.stream(run)
-
         # # TODO: test snapshot after download can successfully run
         # with TemporaryDirectory() as tmp_dir:
         #     pf.runs.download(run=run.name, output=tmp_dir)
@@ -894,4 +892,4 @@ class TestFlowRun:
         #     assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
 
         local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
-        assert "environment" not in local_flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
+        assert "environment" not in local_flow_dag
