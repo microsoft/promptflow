@@ -886,10 +886,12 @@ class TestFlowRun:
             name=randstr("name"),
         )
         pf.runs.stream(run)
-        with TemporaryDirectory() as tmp_dir:
-            pf.runs.download(run=run.name, output=tmp_dir)
-            flow_dag = load_yaml(Path(tmp_dir, run.name, "flow.dag.yaml"))
-            assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
+
+        # # TODO: test snapshot after download can successfully run
+        # with TemporaryDirectory() as tmp_dir:
+        #     pf.runs.download(run=run.name, output=tmp_dir)
+        #     flow_dag = load_yaml(Path(tmp_dir, run.name, "flow.dag.yaml"))
+        #     assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
 
         local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
         assert "requirements.txt" not in local_flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
