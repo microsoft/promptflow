@@ -11,6 +11,8 @@ from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow import PFClient
+from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
@@ -88,10 +90,16 @@ def setup_local_connection(local_client, azure_open_ai_connection):
 def setup_experiment_table(local_client, azure_open_ai_connection):
     with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
         mock_func.return_value = True
-        # Call this session to initialize experiment table
-        from promptflow._sdk._orm import mgmt_db_session
+        # Call this session to initialize session maker, then add experiment table
+        from promptflow._sdk._orm import Experiment, mgmt_db_session
 
         mgmt_db_session()
+        from promptflow._sdk._orm.session import create_index_if_not_exists, create_or_update_table, session_maker
+
+        engine = session_maker.kw["bind"]
+        if Configuration.get_instance().is_internal_features_enabled():
+            create_or_update_table(engine, orm_class=Experiment, tablename=EXPERIMENT_TABLE_NAME)
+            create_index_if_not_exists(engine, EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, "created_on")
 
 
 @pytest.fixture
