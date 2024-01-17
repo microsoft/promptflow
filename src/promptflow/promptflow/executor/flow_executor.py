@@ -1068,7 +1068,7 @@ def _ensure_node_result_is_serializable(f):
     return wrapper
 
 
-def flow_execution(
+def execute_flow(
     flow_file: Path,
     working_dir: Path,
     output_dir: Path,

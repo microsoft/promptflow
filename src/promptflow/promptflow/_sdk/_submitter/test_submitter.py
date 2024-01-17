@@ -200,7 +200,7 @@ class TestSubmitter:
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
     ):
-        from promptflow.executor.flow_executor import flow_execution
+        from promptflow.executor.flow_executor import execute_flow
 
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
@@ -220,7 +220,7 @@ class TestSubmitter:
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             output_sub_dir = Path(".promptflow/output")
-            line_result = flow_execution(
+            line_result = execute_flow(
                 flow_file=self.flow.path,
                 working_dir=self.flow.code,
                 output_dir=output_sub_dir,
