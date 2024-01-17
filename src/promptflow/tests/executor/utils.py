@@ -11,6 +11,7 @@ from promptflow.storage import AbstractRunStorage
 TEST_ROOT = Path(__file__).parent.parent
 DATA_ROOT = TEST_ROOT / "test_configs/datas"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
+EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 WRONG_FLOW_ROOT = TEST_ROOT / "test_configs/wrong_flows"
 
 
@@ -22,6 +23,11 @@ def get_flow_folder(folder_name, root: str = FLOW_ROOT):
 def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag.yaml"):
     yaml_file = get_flow_folder(folder_name, root) / file_name
     return yaml_file
+
+
+def get_entry_file(folder_name, root: str = EAGER_FLOW_ROOT, file_name: str = "entry.py"):
+    entry_file = get_flow_folder(folder_name, root) / file_name
+    return entry_file
 
 
 def get_flow_from_folder(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag.yaml"):
