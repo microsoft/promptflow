@@ -367,10 +367,10 @@ class Experiment(ExperimentTemplate):
         )
 
     @classmethod
-    def from_template(cls, template: ExperimentTemplate):
+    def from_template(cls, template: ExperimentTemplate, name=None):
         """Create a experiment object from template."""
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        exp_name = f"{template.name}_{timestamp}"
+        exp_name = name or f"{template.name}_{timestamp}"
         experiment = cls(
             name=exp_name,
             description=template.description,

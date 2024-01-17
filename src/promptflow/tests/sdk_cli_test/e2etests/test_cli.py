@@ -19,7 +19,7 @@ import pytest
 from promptflow._cli._pf.entry import main
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
+from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -30,6 +30,7 @@ from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
 FLOWS_DIR = "./tests/test_configs/flows"
+EXPERIMENT_DIR = "./tests/test_configs/experiments"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -1836,3 +1837,31 @@ class TestCli:
                 "--name",
                 f"{run_id}",
             )
+
+    def test_experiment_start(self, monkeypatch, capfd, local_client):
+        exp_name = str(uuid.uuid4())
+        run_pf_command(
+            "experiment",
+            "create",
+            "--template",
+            f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+            "--name",
+            exp_name,
+        )
+        out, _ = capfd.readouterr()
+        assert exp_name in out
+        assert ExperimentStatus.NOT_STARTED in out
+
+        run_pf_command(
+            "experiment",
+            "start",
+            "--name",
+            exp_name,
+        )
+        out, _ = capfd.readouterr()
+        assert ExperimentStatus.TERMINATED in out
+        exp = local_client._experiments.get(name=exp_name)
+        assert len(exp.node_runs["main"]) > 0
+        assert len(exp.node_runs["eval"]) > 0
+        metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
+        assert "accuracy" in metrics
