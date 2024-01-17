@@ -165,7 +165,7 @@ def init_tool(args):
             manifest_contents = []
             if manifest_file.exists():
                 with open(manifest_file, "r") as f:
-                    manifest_contents = f.readlines()
+                    manifest_contents = [line.strip() for line in f.readlines()]
             icon_manifest = f"include {package_name}/icons"
             if icon_manifest not in manifest_contents:
                 manifest_contents.append(icon_manifest)
