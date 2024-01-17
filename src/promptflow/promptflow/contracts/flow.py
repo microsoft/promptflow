@@ -668,6 +668,9 @@ class Flow:
         If environment_variables_overrides exists, override yaml level configuration.
         Returns the merged environment variables dict.
         """
+        if Path(flow_file).suffix.lower() != ".yaml":
+            # The flow_file type of eager flow is .py
+            return environment_variables_overrides or {}
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
