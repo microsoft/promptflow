@@ -200,8 +200,7 @@ class TestSubmitter:
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
     ):
-        from promptflow._constants import LINE_NUMBER_KEY
-        from promptflow.executor import FlowExecutor
+        from promptflow.executor.flow_executor import flow_execution
 
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
@@ -220,24 +219,20 @@ class TestSubmitter:
             credential_list=credential_list,
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            flow_executor = FlowExecutor.create(
-                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False, func=self.func
+            output_sub_dir = Path(".promptflow/output")
+            line_result = flow_execution(
+                flow_file=self.flow.path,
+                working_dir=self.flow.code,
+                output_dir=output_sub_dir,
+                connections=connections,
+                inputs=inputs,
+                func=self.func,
+                storage=storage,
+                raise_ex=False,
+                stream_output=stream_output,
+                allow_generator_output=allow_generator_output,
             )
-            flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
-            line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
-            line_result.output = persist_multimedia_data(
-                line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
-            )
-            if line_result.aggregation_inputs:
-                # Convert inputs of aggregation to list type
-                flow_inputs = {k: [v] for k, v in inputs.items()}
-                aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                aggregation_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
-                line_result.node_run_infos.update(aggregation_results.node_run_infos)
-                line_result.run_info.metrics = aggregation_results.metrics
             if isinstance(line_result.output, dict):
-                # Remove line_number from output
-                line_result.output.pop(LINE_NUMBER_KEY, None)
                 generator_outputs = self._get_generator_outputs(line_result.output)
                 if generator_outputs:
                     logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")

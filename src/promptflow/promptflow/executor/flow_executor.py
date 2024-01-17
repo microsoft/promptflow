@@ -30,7 +30,11 @@ from promptflow._utils.execution_utils import (
     get_aggregation_inputs_properties,
 )
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import (
+    load_multimedia_data,
+    load_multimedia_data_recursively,
+    persist_multimedia_data,
+)
 from promptflow._utils.utils import transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
@@ -1062,3 +1066,36 @@ def _ensure_node_result_is_serializable(f):
         return result
 
     return wrapper
+
+
+def flow_execution(
+    flow_file: Path,
+    working_dir: Path,
+    output_dir: Path,
+    connections: dict,
+    inputs: Mapping[str, Any],
+    *,
+    func: Optional[str] = None,
+    storage: Optional[AbstractRunStorage] = None,
+    raise_ex: bool = True,
+    stream_output: bool = False,
+    allow_generator_output: bool = False,
+):
+    flow_executor = FlowExecutor.create(
+        flow_file, connections, working_dir, storage=storage, raise_ex=raise_ex, func=func
+    )
+    flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
+    # execute nodes in the flow except the aggregation nodes
+    line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+    line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
+    if line_result.aggregation_inputs:
+        # convert inputs of aggregation to list type
+        flow_inputs = {k: [v] for k, v in inputs.items()}
+        aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+        aggregation_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
+        line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
+        line_result.run_info.metrics = aggregation_results.metrics
+    if isinstance(line_result.output, dict):
+        # remove line_number from output
+        line_result.output.pop(LINE_NUMBER_KEY, None)
+    return line_result
