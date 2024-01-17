@@ -77,8 +77,6 @@ class FlowExecutor:
     :type flow_file: Optional[Path]
     """
 
-    _DEFAULT_WORKER_COUNT = 16
-
     def __init__(
         self,
         flow: Flow,
@@ -468,6 +466,13 @@ class FlowExecutor:
             line_number = [i for i in range(nlines)]
 
         result_list = []
+
+        if self._flow_file is None:
+            error_message = "flow file is missing"
+            raise UnexpectedError(
+                message_format=("Unexpected error occurred while init FlowExecutor. Error details: {error_message}."),
+                error_message=error_message,
+            )
 
         from ._line_execution_process_pool import LineExecutionProcessPool
 

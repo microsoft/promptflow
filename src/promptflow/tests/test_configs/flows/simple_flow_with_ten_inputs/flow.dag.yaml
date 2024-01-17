@@ -1,0 +1,24 @@
+id: template_standard_flow
+name: Template Standard Flow
+inputs:
+  input:
+    type: string
+    is_chat_input: false
+  index:
+    type: int
+    is_chat_input: false
+outputs:
+  output:
+    type: string
+    reference: ${python_node.output}
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: python_node.py
+  inputs:
+    index: ${inputs.index}
+    input: ${inputs.input}
+  use_variants: false
+node_variants: {}
