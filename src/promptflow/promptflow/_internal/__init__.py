@@ -84,6 +84,7 @@ from promptflow._utils.logger_utils import (
     logger,
     update_log_path,
 )
+from promptflow._utils.multimedia_format_converter import MultimediaConverter
 from promptflow._utils.multimedia_utils import (
     _create_image_from_file,
     convert_multimedia_data_to_base64,
