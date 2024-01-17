@@ -20,7 +20,11 @@ from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported
 from promptflow._core.tool import ToolProvider
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
-from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
+from promptflow._utils.tool_utils import (
+    function_to_interface,
+    get_inputs_for_prompt_template,
+    should_maintain_order_in_ux,
+)
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -137,7 +141,7 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
             initialize_inputs=initialize_inputs,
             gen_custom_type_conn=gen_custom_type_conn,
             skip_prompt_template=skip_prompt_template,
-            should_add_index=_should_add_index(tool_type),
+            should_add_index=should_maintain_order_in_ux(tool_type),
         )
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
@@ -160,16 +164,6 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
         module=f.__module__,
         enable_kwargs=enable_kwargs,
     )
-
-
-def _should_add_index(tool_type):
-    """
-    Currently, we only automatically add input indexes for the custom_llm tool,
-    following the order specified in the tool interface or YAML.
-    This is because, as of now, only the custom_llm tool has such a requirement.
-    To avoid extensive changes, other types of tools will remain as they are.
-    """
-    return tool_type == ToolType.CUSTOM_LLM
 
 
 def generate_python_tools_in_module(module):
