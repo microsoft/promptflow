@@ -3,19 +3,16 @@
 # ---------------------------------------------------------
 
 import asyncio
-import inspect
 import signal
 import threading
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
-from promptflow._core.tool_meta_generator import PythonLoadError, load_python_module_from_file
-from promptflow._core.tracer import _traced
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -25,7 +22,6 @@ from promptflow._utils.execution_utils import (
     handle_line_failures,
 )
 from promptflow._utils.logger_utils import bulk_logger
-from promptflow._utils.tool_utils import function_to_interface
 from promptflow._utils.utils import (
     dump_list_to_jsonl,
     get_int_env_var,
@@ -36,7 +32,7 @@ from promptflow._utils.utils import (
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
-from promptflow.batch._errors import InvalidFlowFileError, MissingEntryPointError
+from promptflow.batch._errors import InvalidFlowFileError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
@@ -100,29 +96,12 @@ class BatchEngine:
         """
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        # TODO: Refine the logic here
         if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
-            self._inputs = self._flow.inputs
             self._program_language = self._flow.program_language
         elif Path(flow_file).suffix.lower() == ".py":
             self._flow = None
-            if entry is None:
-                raise MissingEntryPointError(message_format="Entry should be provided for eager flow.")
-            m = load_python_module_from_file(flow_file)
-            func: Callable = getattr(m, entry, None)
-            if func is None or not inspect.isfunction(func):
-                raise PythonLoadError(
-                    message_format="Failed to load python function '{entry}' from file '{flow_file}'.",
-                    entry=entry,
-                    flow_file=flow_file,
-                )
-            # If the function is not decorated with trace, add trace for it.
-            if not hasattr(func, "__original_function"):
-                func = _traced(func)
-            inputs, _, _, _ = function_to_interface(func)
-            self._inputs = inputs
             self._program_language = FlowLanguage.Python
         else:
             raise InvalidFlowFileError(
@@ -192,7 +171,8 @@ class BatchEngine:
                     # set batch input source from input mapping
                     OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
                     # resolve input data from input dirs and apply inputs mapping
-                    batch_input_processor = BatchInputsProcessor(self._working_dir, self._inputs, max_lines_count)
+                    inputs = self._flow.inputs if self._flow else self._executor_proxy.get_inputs_definition()
+                    batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
@@ -259,9 +239,10 @@ class BatchEngine:
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
+        # if the flow is None, then there is no aggregation node and we don't need to apply default value for inputs.
         if self._flow is not None:
             batch_inputs = [
-                apply_default_value_for_input(self._inputs, each_line_input) for each_line_input in batch_inputs
+                apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
             ]
         run_id = run_id or str(uuid.uuid4())
 
@@ -348,7 +329,7 @@ class BatchEngine:
             FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
         ]
 
-        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._inputs.keys()))
+        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
 
         aggregation_inputs = transpose(
             [result.aggregation_inputs for result in line_results],

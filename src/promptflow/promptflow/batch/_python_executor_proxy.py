@@ -60,6 +60,9 @@ class PythonExecutorProxy(AbstractExecutorProxy):
             self._flow_executor._add_line_results(line_results)
         return line_results
 
+    def get_inputs_definition(self):
+        return self._flow_executor.get_inputs_definition()
+
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:
         from promptflow._sdk._utils import generate_flow_tools_json

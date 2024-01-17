@@ -33,6 +33,7 @@ class ScriptExecutor(FlowExecutor):
         logger.debug(f"Start initializing the executor with {flow_file}.")
         self._flow_file = flow_file
 
+        # TODO: Refine the logic here
         m = load_python_module_from_file(flow_file)
         func: Callable = getattr(m, entry, None)
         if func is None or not inspect.isfunction(func):
@@ -47,7 +48,6 @@ class ScriptExecutor(FlowExecutor):
         inputs, _, _, _ = function_to_interface(func)
         self._func = func
         self._inputs = inputs
-
         self._entry = entry
         self._is_async = inspect.iscoroutinefunction(self._func)
         self._connections = connections
@@ -108,3 +108,6 @@ class ScriptExecutor(FlowExecutor):
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
         # TODO(2901157): check if eager mode should have streaming
         return
+
+    def get_inputs_definition(self):
+        return self._inputs

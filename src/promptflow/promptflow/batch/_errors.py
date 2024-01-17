@@ -18,9 +18,5 @@ class ExecutorServiceUnhealthy(SystemErrorException):
     pass
 
 
-class MissingEntryPointError(UserErrorException):
-    pass
-
-
 class InvalidFlowFileError(UserErrorException):
     pass

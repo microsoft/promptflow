@@ -1245,7 +1245,7 @@ class TestFlowRun:
         flow_path = Path(f"{EAGER_FLOWS_DIR}/chat-basic-code-first")
         run = pf.run(
             flow=flow_path,
-            data=f"{EAGER_FLOWS_DIR}/chat-basic-code-first/daga.jsonl",
+            data=f"{EAGER_FLOWS_DIR}/chat-basic-code-first/data.jsonl",
         )
         assert run.status == "Completed"
 

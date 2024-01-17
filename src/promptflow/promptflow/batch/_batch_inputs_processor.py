@@ -4,7 +4,7 @@
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import UnexpectedError
@@ -14,13 +14,14 @@ from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursive
 from promptflow._utils.utils import resolve_dir_to_absolute
 from promptflow.batch._errors import EmptyInputsData, InputMappingError
 from promptflow.contracts.flow import FlowInputDefinition
+from promptflow.contracts.tool import InputDefinition
 
 
 class BatchInputsProcessor:
     def __init__(
         self,
         working_dir: Path,
-        flow_inputs: Mapping[str, FlowInputDefinition],
+        flow_inputs: Mapping[str, Union[FlowInputDefinition, InputDefinition]],
         max_lines_count: Optional[int] = None,
     ):
         self._working_dir = working_dir
