@@ -7,7 +7,7 @@ from promptflow._core.tracer import TraceType, _create_trace_from_function_call
 from .record_storage import RecordFileMissingException, RecordItemMissingException, RecordStorage
 
 # recording array is a global variable to store the function names that need to be recorded
-recording_array = []
+recording_array = ["fetch_text_content_from_url", "my_python_tool"]
 
 
 def recording_array_extend(items):
