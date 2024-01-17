@@ -125,7 +125,7 @@ class BatchEngine:
             self._program_language = FlowLanguage.Python
         else:
             raise InvalidFlowFileError(
-                message_format="Unsupported flow file type: {flow_file}.", flow_file=str(flow_file)
+                message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
             )
 
         self._connections = connections
