@@ -19,7 +19,7 @@ from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
-from .recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
+from .recording_utilities import RecordStorage, mock_tool, recording_array_reset
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -222,7 +222,7 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
     patches = setup_recording_injection_if_enabled()
 
     try:
-        yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode(), recording_array_extend)
+        yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode())
     finally:
         if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
             RecordStorage.get_instance().delete_lock_file()

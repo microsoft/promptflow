@@ -6,11 +6,13 @@ import json
 import os
 import shelve
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Iterator
 
 from filelock import FileLock
 
+from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.exceptions import PromptflowException
+
 from .constants import ENVIRON_TEST_MODE, RecordMode
 
 
@@ -184,7 +186,7 @@ class RecordStorage(object):
         if isinstance(item, list):
             return [self._recursive_create_hashable_args(i) for i in item]
         if isinstance(item, dict):
-            return {k: self._recursive_create_hashable_args(v) for k, v in item.items()}
+            return {k: self._recursive_create_hashable_args(v) for k, v in item.items() if k != "extra_headers"}
         elif "module: promptflow.connections" in str(item) or "object at" in str(item):
             return []
         else:
@@ -218,7 +220,8 @@ class RecordStorage(object):
                     output_type = "dict[generator]"
                 else:
                     output_value[k] = v
-        elif type(output).__name__ == "generator":
+        elif isinstance(output, Iterator):
+            output = GeneratorProxy(output)
             output_value = list(output)
 
             def generator():

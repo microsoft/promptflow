@@ -1,6 +1,8 @@
+import asyncio
 import functools
 import inspect
 
+from promptflow._core.openai_injector import inject_function_async, inject_function_sync, inject_operation_headers
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
 from promptflow._core.tracer import TraceType, _create_trace_from_function_call
 
@@ -46,6 +48,18 @@ def _replace_tool_rule(func):
         func_wo_partial = func.func
     else:
         func_wo_partial = func
+
+    if func_wo_partial.__qualname__ in recording_array:
+        return True
+    else:
+        return False
+
+
+def _replace_openai_injector_rule(func):
+    if func.__name__ == "partial":
+        func_wo_partial = func.func
+    else:
+        func_wo_partial = func
     if func_wo_partial.__qualname__.startswith("AzureOpenAI"):
         return True
     elif func_wo_partial.__qualname__.startswith("OpenAI"):
@@ -55,8 +69,6 @@ def _replace_tool_rule(func):
     elif func_wo_partial.__module__ == "promptflow.tools.openai_gpt4v":
         return True
     elif func_wo_partial.__module__ == "promptflow.tools.openai":
-        return True
-    elif func_wo_partial.__qualname__ in recording_array:
         return True
     else:
         return False
@@ -90,6 +102,38 @@ async def call_func_async(func, args, kwargs):
             # recording the item
             obj = RecordStorage.get_instance().set_record(input_dict, await func(*args, **kwargs))
     return obj
+
+
+def inject_recording(f):
+    if asyncio.iscoroutinefunction(f):
+
+        @functools.wraps(f)
+        async def wrapper(*args, **kwargs):
+            return await call_func_async(f, args, kwargs)
+
+    else:
+
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            return call_func(f, args, kwargs)
+
+    return wrapper
+
+
+def inject_async_with_recording(f):
+    wrapper_fun = inject_operation_headers(
+        (inject_function_async(["api_key", "headers", "extra_headers"])(inject_recording(f)))
+    )
+    wrapper_fun._original = f
+    return wrapper_fun
+
+
+def inject_sync_with_recording(f):
+    wrapper_fun = inject_operation_headers(
+        (inject_function_sync(["api_key", "headers", "extra_headers"])(inject_recording(f)))
+    )
+    wrapper_fun._original = f
+    return wrapper_fun
 
 
 def mock_tool(original_tool):
@@ -175,7 +219,9 @@ def mock_tool(original_tool):
 
         # tool replacements.
         if func is not None:
-            if not _replace_tool_rule(func):
+            if _replace_tool_rule(func):
+                return tool_decorator(func)
+            else:
                 return original_tool(
                     func,
                     *args_mock,
@@ -185,7 +231,6 @@ def mock_tool(original_tool):
                     input_settings=input_settings,
                     **kwargs_mock,
                 )
-            return tool_decorator(func)
         return original_tool(  # no recording for @tool(name="func_name")
             func,
             *args_mock,

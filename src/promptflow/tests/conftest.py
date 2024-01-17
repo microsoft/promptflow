@@ -20,7 +20,8 @@ from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 from filelock import FileLock
 from pytest_mock import MockerFixture
-from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_replay
+from sdk_cli_azure_test.recording_utilities import SanitizedValues, is_record, is_replay
+from sdk_cli_test.recording_utilities import RecordStorage, inject_async_with_recording, inject_sync_with_recording
 
 from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -52,12 +53,17 @@ def mock_build_info():
         yield m
 
 
-@pytest.fixture(autouse=True, scope="session")
-def inject_api():
+@pytest.fixture(autouse=True)
+def inject_api(mocker: MockerFixture):
     """Inject OpenAI API during test session.
 
     AOAI call in promptflow should involve trace logging and header injection. Inject
     function to API call in test scenario."""
+    if is_replay() or is_record():
+        file_path = Path(".") / "tests/test_configs/node_recordings" / "node_cache.shelve"
+        RecordStorage.get_instance(file_path)
+        mocker.patch("promptflow._core.openai_injector.inject_sync", inject_sync_with_recording)
+        mocker.patch("promptflow._core.openai_injector.inject_async", inject_async_with_recording)
     inject_openai_api()
 
 
