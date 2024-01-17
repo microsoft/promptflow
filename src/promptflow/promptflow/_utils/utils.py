@@ -250,15 +250,6 @@ def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path
     return path
 
 
-def resolve_dir_to_relative(base_dir: Union[str, Path], sub_dir: Union[str, Path]) -> Path:
-    """Resolve directory to relative path with base_dir as root"""
-    path = sub_dir if isinstance(sub_dir, Path) else Path(sub_dir)
-    if path.is_absolute():
-        base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
-        path = path.relative_to(base_dir)
-    return path
-
-
 def parse_ua_to_dict(ua):
     """Parse string user agent to dict with name as ua name and value as ua version."""
     ua_dict = {}

@@ -35,7 +35,7 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data_recursively,
     persist_multimedia_data,
 )
-from promptflow._utils.utils import resolve_dir_to_relative, transpose
+from promptflow._utils.utils import transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -1087,7 +1087,7 @@ def execute_flow(
     :type flow_file: Path
     :param working_dir: The working directory of the flow.
     :type working_dir: Path
-    :param output_dir: The directory to persist image for the flow.
+    :param output_dir: Relative path relative to working_dir.
     :type output_dir: Path
     :param connections: A dictionary containing connection information.
     :type connections: dict
@@ -1114,7 +1114,6 @@ def execute_flow(
         # execute nodes in the flow except the aggregation nodes
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
         # persist the output to the output directory
-        output_dir = resolve_dir_to_relative(working_dir, output_dir)
         line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
         if line_result.aggregation_inputs:
             # convert inputs of aggregation to list type

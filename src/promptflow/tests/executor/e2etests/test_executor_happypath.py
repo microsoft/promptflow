@@ -2,9 +2,9 @@ import logging
 import multiprocessing
 import os
 import re
+import shutil
 import sys
 from pathlib import Path
-from tempfile import mkdtemp
 from types import GeneratorType
 
 import pytest
@@ -16,7 +16,7 @@ from promptflow.executor._errors import ConnectionNotFound, InputTypeError, Reso
 from promptflow.executor.flow_executor import execute_flow
 from promptflow.storage._run_storage import DefaultRunStorage
 
-from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file
+from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file, is_image_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -277,25 +277,29 @@ class TestExecutor:
         assert flow_result.output["output"] == "Hello World"
 
     def test_execute_flow(self):
-        flow_folder = "eval_flow_with_simple_image"
+        flow_folder = get_flow_folder("eval_flow_with_simple_image")
         # prepare output folder
-        output_base_dir = Path(mkdtemp())
-        output_dir = output_base_dir / "output"
+        output_dir = flow_folder / "output"
+        intermediate_dir = flow_folder / "intermediate"
         output_dir.mkdir(exist_ok=True)
-        intermediate_dir = output_base_dir / "intermediate"
         intermediate_dir.mkdir(exist_ok=True)
 
-        storage = DefaultRunStorage(base_dir=output_base_dir, sub_dir=Path("intermediate"))
+        storage = DefaultRunStorage(base_dir=flow_folder, sub_dir=Path("intermediate"))
         line_result = execute_flow(
             flow_file=get_yaml_file(flow_folder),
-            working_dir=get_flow_folder(flow_folder),
-            output_dir=output_dir,
+            working_dir=flow_folder,
+            output_dir=Path("output"),
             inputs={},
             connections={},
             storage=storage,
         )
         assert line_result.run_info.status == Status.Completed
         assert len(line_result.node_run_infos) == 2
+        assert all(is_image_file(output_file) for output_file in output_dir.iterdir())
+        assert all(is_image_file(output_file) for output_file in intermediate_dir.iterdir())
+        # clean up output folder
+        shutil.rmtree(output_dir)
+        shutil.rmtree(intermediate_dir)
 
 
 def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
