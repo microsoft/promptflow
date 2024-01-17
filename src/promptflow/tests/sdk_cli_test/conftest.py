@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow import PFClient
@@ -81,6 +82,16 @@ def setup_local_connection(local_client, azure_open_ai_connection):
             continue
         local_client.connections.create_or_update(_Connection._from_execution_connection_dict(name=name, data=_dct))
     _connection_setup = True
+
+
+@pytest.fixture
+def setup_experiment_table(local_client, azure_open_ai_connection):
+    with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        mock_func.return_value = True
+        # Call this session to initialize experiment table
+        from promptflow._sdk._orm import mgmt_db_session
+
+        mgmt_db_session()
 
 
 @pytest.fixture

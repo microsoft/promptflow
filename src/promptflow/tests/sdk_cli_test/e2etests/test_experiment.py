@@ -23,6 +23,7 @@ yaml = YAML(typ="safe")
 
 
 @pytest.mark.e2etest
+@pytest.mark.usefixtures("setup_experiment_table")
 class TestExperiment:
     def test_experiment_from_template(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"

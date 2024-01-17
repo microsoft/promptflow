@@ -1884,33 +1884,46 @@ class TestCli:
                 f"{run_id}",
             )
 
-    def test_experiment_start(self, monkeypatch, capfd, local_client):
-        exp_name = str(uuid.uuid4())
-        run_pf_command(
-            "experiment",
-            "create",
-            "--template",
-            f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
-            "--name",
-            exp_name,
-        )
-        out, _ = capfd.readouterr()
-        assert exp_name in out
-        assert ExperimentStatus.NOT_STARTED in out
+    def test_experiment_hide_by_default(self, monkeypatch, capfd):
+        # experiment will be hide if no config set
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "experiment",
+                "create",
+                "--template",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+            )
 
-        run_pf_command(
-            "experiment",
-            "start",
-            "--name",
-            exp_name,
-        )
-        out, _ = capfd.readouterr()
-        assert ExperimentStatus.TERMINATED in out
-        exp = local_client._experiments.get(name=exp_name)
-        assert len(exp.node_runs["main"]) > 0
-        assert len(exp.node_runs["eval"]) > 0
-        metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
-        assert "accuracy" in metrics
+    @pytest.mark.usefixtures("setup_experiment_table")
+    def test_experiment_start(self, monkeypatch, capfd, local_client):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            exp_name = str(uuid.uuid4())
+            run_pf_command(
+                "experiment",
+                "create",
+                "--template",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+                "--name",
+                exp_name,
+            )
+            out, _ = capfd.readouterr()
+            assert exp_name in out
+            assert ExperimentStatus.NOT_STARTED in out
+
+            run_pf_command(
+                "experiment",
+                "start",
+                "--name",
+                exp_name,
+            )
+            out, _ = capfd.readouterr()
+            assert ExperimentStatus.TERMINATED in out
+            exp = local_client._experiments.get(name=exp_name)
+            assert len(exp.node_runs["main"]) > 0
+            assert len(exp.node_runs["eval"]) > 0
+            metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
+            assert "accuracy" in metrics
 
     def test_batch_run_timeout(self, local_client):
         line_timeout_seconds = "54"
