@@ -21,7 +21,11 @@ class AzureOpenAI(ToolProvider):
         super().__init__()
         self.connection = connection
         self._connection_dict = normalize_connection_config(self.connection)
-        self._client = AzureOpenAIClient(**self._connection_dict)
+        self._client = AzureOpenAIClient(
+            # disable OpenAI's built-in retry mechanism by using our own retry
+            # for better debuggability and real-time status updates.
+            max_retries=0,            
+            **self._connection_dict)
 
     def calculate_cache_string_for_completion(
         self,
