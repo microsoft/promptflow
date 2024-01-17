@@ -274,7 +274,7 @@ class TestBatch:
             {"line_number": 6, "output": 7},
         ]
 
-    @pytest.mark.skip(reason="Recording Injection not handle trace well. Fixing on the way.")
+    # @pytest.mark.skip(reason="Recording Injection not handle trace well. Fixing on the way.")
     def test_batch_with_openai_metrics(self, dev_connections):
         inputs_mapping = {"url": "${data.url}"}
         batch_result, output_dir = submit_batch_run(
