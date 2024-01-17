@@ -122,7 +122,9 @@ class _Connection(YAMLTranslatableMixin):
             return self.secrets[item]
         if item in self.configs:
             return self.configs[item]
-        raise UserErrorException(error=KeyError(f"Key {item!r} not found in connection {self.name!r}."))
+        # raise UserErrorException(error=KeyError(f"Key {item!r} not found in connection {self.name!r}."))
+        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
+        raise KeyError(f"Key {item!r} not found in connection {self.name!r}.")
 
     @classmethod
     def _is_scrubbed_value(cls, value):
