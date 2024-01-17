@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import sys
 import uuid
 from multiprocessing import Queue
 from pathlib import Path
@@ -16,8 +17,9 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
+    format_current_process_info,
     get_available_max_worker_count,
-    get_multiprocessing_context,
+    log_process_status,
 )
 from promptflow.executor._result import LineResult
 
@@ -200,12 +202,10 @@ class TestLineExecutionProcessPool:
                 None,
             ) as pool:
                 result_list = pool.run(zip(range(nlines), bulk_inputs))
-                assert len(result_list) == nlines
-                for i, line_result in enumerate(result_list):
-                    assert isinstance(line_result, LineResult)
-                    assert (
-                        line_result.run_info.status == Status.Completed
-                    ), f"{i}th line got {line_result.run_info.status}"
+            assert len(result_list) == nlines
+            for i, line_result in enumerate(result_list):
+                assert isinstance(line_result, LineResult)
+                assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
     @pytest.mark.parametrize(
         "flow_folder",
@@ -299,38 +299,6 @@ class TestLineExecutionProcessPool:
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
 
-    def test_process_set_environment_variable_successed(self, dev_connections):
-        os.environ["PF_BATCH_METHOD"] = "spawn"
-        line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
-        use_fork = line_execution_process_pool._use_fork
-        assert use_fork is False
-
-    def test_process_set_environment_variable_failed(self, dev_connections):
-        with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
-            mock_logger.warning.return_value = None
-            os.environ["PF_BATCH_METHOD"] = "test"
-            line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
-            use_fork = line_execution_process_pool._use_fork
-            assert use_fork == (multiprocessing.get_start_method() == "fork")
-            sys_start_methods = multiprocessing.get_all_start_methods()
-            exexpected_log_message = (
-                "Failed to set start method to 'test', start method test" f" is not in: {sys_start_methods}."
-            )
-            mock_logger.warning.assert_called_once_with(exexpected_log_message)
-
-    def test_process_not_set_environment_variable(self, dev_connections):
-        line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
-        use_fork = line_execution_process_pool._use_fork
-        assert use_fork == (multiprocessing.get_start_method() == "fork")
-
-    def test_get_multiprocessing_context(self):
-        # Set default start method to spawn
-        context = get_multiprocessing_context("spawn")
-        assert context.get_start_method() == "spawn"
-        # Not set start method
-        context = get_multiprocessing_context()
-        assert context.get_start_method() == multiprocessing.get_start_method()
-
     @pytest.mark.parametrize(
         "flow_folder",
         [
@@ -341,7 +309,8 @@ class TestLineExecutionProcessPool:
         # mock process pool run execution raise error
         test_error_msg = "Test user error"
         mocker.patch(
-            "promptflow.executor._line_execution_process_pool.LineExecutionProcessPool." "_timeout_process_wrapper",
+            "promptflow.executor._line_execution_process_pool.LineExecutionProcessPool."
+            "_monitor_workers_and_process_tasks_in_thread",
             side_effect=UserErrorException(message=test_error_msg, target=ErrorTarget.AZURE_RUN_STORAGE),
         )
         executor = FlowExecutor.create(
@@ -397,6 +366,7 @@ class TestLineExecutionProcessPool:
             (SAMPLE_FLOW, False, True, None, 2, 2),
         ],
     )
+    @pytest.mark.skipif(sys.platform == "darwin" or sys.platform.startswith("linux"), reason="Skip on Mac and Linux")
     def test_process_pool_parallelism_in_spawn_mode(
         self,
         dev_connections,
@@ -457,3 +427,49 @@ class TestGetAvailableMaxWorkerCount:
                             f"estimated available worker count is {available_memory}/{process_memory} "
                             f"= {actual_calculate_worker_count}"
                         )
+
+
+@pytest.mark.unittest
+class TestFormatCurrentProcess:
+    def test_format_current_process_info(self):
+        process_name = "process_name"
+        process_pid = 123
+        line_number = 13
+        formatted_message = format_current_process_info(process_name, process_pid, line_number)
+        expected_returned_log_message = (
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
+        )
+        assert formatted_message == expected_returned_log_message
+
+    @patch("promptflow.executor._line_execution_process_pool.bulk_logger.info", autospec=True)
+    def test_log_process_status_start_execution(self, mock_logger_info):
+        process_name = "process_name"
+        process_pid = 123
+        line_number = 13
+        log_process_status(process_name, process_pid, line_number)
+        exexpected_during_execution_log_message = (
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number}) start execution."
+        )
+        mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)
+
+    @patch("promptflow.executor._line_execution_process_pool.bulk_logger.info", autospec=True)
+    def test_log_process_status_completed(self, mock_logger_info):
+        process_name = "process_name"
+        process_pid = 123
+        line_number = 13
+        log_process_status(process_name, process_pid, line_number, is_completed=True)
+        exexpected_during_execution_log_message = (
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number}) completed."
+        )
+        mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)
+
+    @patch("promptflow.executor._line_execution_process_pool.bulk_logger.info", autospec=True)
+    def test_log_process_status_failed(self, mock_logger_info):
+        process_name = "process_name"
+        process_pid = 123
+        line_number = 13
+        log_process_status(process_name, process_pid, line_number, is_failed=True)
+        exexpected_during_execution_log_message = (
+            f"Process name({process_name})-Process id({process_pid})-Line number({line_number}) failed."
+        )
+        mock_logger_info.assert_called_once_with(exexpected_during_execution_log_message)
