@@ -7,6 +7,7 @@ import pytest
 from sdk_cli_test.recording_utilities import RecordStorage, mock_tool, recording_array_extend, recording_array_reset
 
 from promptflow.executor._line_execution_process_pool import _process_wrapper
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
 PROMPTFLOW_ROOT = Path(__file__) / "../../.."
 RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
@@ -42,6 +43,8 @@ class BaseMockProcess:
     def custom_init(self, group=None, target=None, *args, **kwargs):
         if target == _process_wrapper:
             target = _mock_process_wrapper
+        if target == create_spawned_fork_process_manager:
+            target = _mock_create_spawned_fork_process_manager
 
 
 def get_process_class(context_type):
@@ -122,4 +125,33 @@ def _mock_process_wrapper(
     setup_recording()
     _process_wrapper(
         executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
+    )
+
+
+def _mock_create_spawned_fork_process_manager(
+    log_context_initialization_func,
+    current_operation_context,
+    input_queues,
+    output_queues,
+    control_signal_queue,
+    flow_file,
+    connections,
+    working_dir,
+    raise_ex,
+    process_info,
+    process_target_func,
+):
+    setup_recording()
+    create_spawned_fork_process_manager(
+        log_context_initialization_func,
+        current_operation_context,
+        input_queues,
+        output_queues,
+        control_signal_queue,
+        flow_file,
+        connections,
+        working_dir,
+        raise_ex,
+        process_info,
+        process_target_func,
     )
