@@ -790,7 +790,8 @@ class CustomStrongTypeConnection(_Connection):
         except AttributeError:
             raise UserErrorException(
                 error=ValueError(
-                    f"Can't find class {custom_cls} in module {m}. Please check the custom_type is correctly configured."
+                    f"Can't find class {custom_cls} in module {m}. "
+                    f"Please check the custom_type is correctly configured."
                 )
             )
 

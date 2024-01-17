@@ -10,7 +10,7 @@ from promptflow._cli._utils import _get_cli_activity_name
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._telemetry.activity import update_activity_name
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import UserErrorException
 
 # Log the start time
 start_time = time.perf_counter()
