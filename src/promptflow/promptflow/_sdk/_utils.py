@@ -209,11 +209,13 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
-        message = f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+        error = ValueError(
+            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+        )
         raise UserErrorException(
             target=ErrorTarget.CONTROL_PLANE_SDK,
-            message=message,
-            error=ValueError(message),
+            message=str(error),
+            error=error,
         )
 
 
@@ -456,11 +458,11 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 continue
 
             if not src_path.exists():
+                error = (ValueError(f"Unable to find additional include {item}"),)
                 raise UserErrorException(
                     target=ErrorTarget.CONTROL_PLANE_SDK,
-                    message_format="Unable to find additional include {item}",
-                    item=item,
-                    error=ValueError(f"Unable to find additional include {item}"),
+                    message=str(error),
+                    error=error,
                 )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
@@ -1067,10 +1069,10 @@ def get_connection_operation(connection_provider: str):
         logger.debug("PFClient using local azure connection operations.")
         connection_operation = LocalAzureConnectionOperations(connection_provider)
     else:
+        error = ValueError(f"Unsupported connection provider: {connection_provider}")
         raise UserErrorException(
             target=ErrorTarget.CONTROL_PLANE_SDK,
-            message_format="Unsupported connection provider: {connection_provider}",
-            connection_provider=connection_provider,
-            error=ValueError(f"Unsupported connection provider: {connection_provider}"),
+            message=str(error),
+            error=error,
         )
     return connection_operation

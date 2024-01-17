@@ -57,7 +57,7 @@ class Experiment(Base):
                     raise
                 raise ExperimentExistsError(f"Experiment name {self.name!r} already exists.")
             except Exception as e:
-                raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, error=e)
+                raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
 
     @sqlite_retry
     def archive(self) -> None:

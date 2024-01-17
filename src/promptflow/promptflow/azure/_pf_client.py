@@ -64,7 +64,7 @@ class PFClient:
         try:
             workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
         except Exception as e:
-            raise UserErrorException(error=e)
+            raise UserErrorException(message=str(e), error=e)
         self._service_caller = _FlowServiceCallerFactory.get_instance(
             workspace=workspace,
             credential=self._ml_client._credential,

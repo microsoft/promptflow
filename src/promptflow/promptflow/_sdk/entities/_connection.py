@@ -768,9 +768,8 @@ class CustomStrongTypeConnection(_Connection):
                 not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
                 or not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
             ):
-                raise UserErrorException(
-                    error=ValueError("custom_type and module are required for custom strong type connections.")
-                )
+                error = ValueError("custom_type and module are required for custom strong type connections.")
+                raise UserErrorException(message=str(error), error=error)
             else:
                 m = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
                 custom_cls = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
@@ -782,18 +781,16 @@ class CustomStrongTypeConnection(_Connection):
             module = importlib.import_module(m)
             cls = getattr(module, custom_cls)
         except ImportError:
-            raise UserErrorException(
-                error=ValueError(
-                    f"Can't find module {m} in current environment. Please check the module is correctly configured."
-                )
+            error = ValueError(
+                f"Can't find module {m} in current environment. Please check the module is correctly configured."
             )
+            raise UserErrorException(message=str(error), error=error)
         except AttributeError:
-            raise UserErrorException(
-                error=ValueError(
-                    f"Can't find class {custom_cls} in module {m}. "
-                    f"Please check the custom_type is correctly configured."
-                )
+            error = ValueError(
+                f"Can't find class {custom_cls} in module {m}. "
+                f"Please check the custom_type is correctly configured."
             )
+            raise UserErrorException(message=str(error), error=error)
 
         schema_configs = {}
         schema_secrets = {}
@@ -886,13 +883,12 @@ class CustomConnection(_Connection):
     def _to_orm_object(self):
         # Both keys & secrets will be set in custom configs with value type specified for custom connection.
         if not self.secrets:
-            raise UserErrorException(
-                error=ValueError(
-                    "Secrets is required for custom connection, "
-                    "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
-                    "to initialize custom connection."
-                )
+            error = ValueError(
+                "Secrets is required for custom connection, "
+                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
+                "to initialize custom connection."
             )
+            raise UserErrorException(message=str(error), error=error)
         custom_configs = {
             k: {"configValueType": ConfigValueType.STRING.value, "value": v} for k, v in self.configs.items()
         }
@@ -1010,13 +1006,11 @@ class CustomConnection(_Connection):
         elif isinstance(module, types.ModuleType) and isinstance(to_class, str):
             custom_conn_name = to_class
         else:
-            message = (
-                (
-                    f"Failed to convert to custom strong type connection because of "
-                    f"invalid module or class: {module}, {to_class}"
-                ),
+            error = ValueError(
+                f"Failed to convert to custom strong type connection because of "
+                f"invalid module or class: {module}, {to_class}"
             )
-            raise UserErrorException(message=message, error=ValueError(message))
+            raise UserErrorException(message=str(error), error=error)
 
         custom_defined_connection_class = getattr(module, custom_conn_name)
 

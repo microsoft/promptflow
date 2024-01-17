@@ -263,7 +263,7 @@ class ArmConnectionOperations(_ScopeDependentOperations):
             )
             raise OpenURLUserAuthenticationError(message=auth_error_message)
         except Exception as e:
-            raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, error=e)
+            raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
 
         try:
             return cls.build_connection_dict_from_rest_object(name, rest_obj)
