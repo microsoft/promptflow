@@ -228,6 +228,11 @@ class TestFlowTest:
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"
 
+    def test_eager_flow_test_failed(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/basic-code-first/").absolute()
+        result = _client._flows._test(flow=flow_path)
+        assert result.run_info.status.value == "Completed"
+
     def test_eager_flow_test_invalid_cases(self):
         # no entry provided
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
