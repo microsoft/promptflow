@@ -208,7 +208,9 @@ class TestSubmitter:
         credential_list = ConnectionManager(connections).get_secret_list()
 
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
+        environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
+            flow=self.flow, environment_variables=environment_variables, client=self._client
+        )
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
@@ -255,7 +257,9 @@ class TestSubmitter:
         credential_list = ConnectionManager(connections).get_secret_list()
 
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
+        environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
+            flow=self.flow, environment_variables=environment_variables, client=self._client
+        )
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(
@@ -391,7 +395,9 @@ class TestSubmitterViaProxy(TestSubmitter):
         credential_list = ConnectionManager(connections).get_secret_list()
 
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
+        environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
+            flow=self.flow, environment_variables=environment_variables, client=self._client
+        )
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
