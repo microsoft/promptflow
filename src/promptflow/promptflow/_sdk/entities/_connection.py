@@ -122,7 +122,7 @@ class _Connection(YAMLTranslatableMixin):
             return self.secrets[item]
         if item in self.configs:
             return self.configs[item]
-        raise KeyError(f"Key {item!r} not found in connection {self.name!r}.")
+        raise UserErrorException(error=KeyError(f"Key {item!r} not found in connection {self.name!r}."))
 
     @classmethod
     def _is_scrubbed_value(cls, value):
@@ -766,7 +766,9 @@ class CustomStrongTypeConnection(_Connection):
                 not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
                 or not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
             ):
-                raise ValueError("custom_type and module are required for custom strong type connections.")
+                raise UserErrorException(
+                    error=ValueError("custom_type and module are required for custom strong type connections.")
+                )
             else:
                 m = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
                 custom_cls = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
@@ -881,10 +883,12 @@ class CustomConnection(_Connection):
     def _to_orm_object(self):
         # Both keys & secrets will be set in custom configs with value type specified for custom connection.
         if not self.secrets:
-            raise ValueError(
-                "Secrets is required for custom connection, "
-                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
-                "to initialize custom connection."
+            raise UserErrorException(
+                error=ValueError(
+                    "Secrets is required for custom connection, "
+                    "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
+                    "to initialize custom connection."
+                )
             )
         custom_configs = {
             k: {"configValueType": ConfigValueType.STRING.value, "value": v} for k, v in self.configs.items()

@@ -262,6 +262,9 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 "for current workspace, and wait for a few minutes to make sure the new role takes effect. "
             )
             raise OpenURLUserAuthenticationError(message=auth_error_message)
+        except Exception as e:
+            raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, error=e)
+
         try:
             return cls.build_connection_dict_from_rest_object(name, rest_obj)
         except Exception as e:

@@ -20,12 +20,12 @@ from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.azure._utils.gerneral import get_authorization, get_arm_token, get_aml_token
-from promptflow.exceptions import UserErrorException, PromptflowException
+from promptflow.exceptions import UserErrorException, PromptflowException, SystemErrorException
 
 logger = LoggerFactory.get_logger(__name__)
 
 
-class FlowRequestException(PromptflowException):
+class FlowRequestException(SystemErrorException):
     """FlowRequestException."""
 
     def __init__(self, message, **kwargs):

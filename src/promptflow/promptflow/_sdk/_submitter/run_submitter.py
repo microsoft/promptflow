@@ -46,12 +46,14 @@ class RunSubmitter:
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
             elif not isinstance(run.run, Run):
-                raise TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+                raise UserErrorException(error=TypeError(f"Referenced run must be a Run instance, got {type(run.run)}"))
             else:
                 # get the run again to make sure it's status is latest
                 run.run = self.run_operations.get(name=run.run.name)
             if run.run.status != Status.Completed.value:
-                raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
+                raise UserErrorException(
+                    error=ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
+                )
             run.run.outputs = self.run_operations._get_outputs(run.run)
         self._validate_inputs(run=run)
 
@@ -64,7 +66,7 @@ class RunSubmitter:
     @classmethod
     def _validate_inputs(cls, run: Run):
         if not run.run and not run.data:
-            raise ValueError("Either run or data must be specified for flow run.")
+            raise UserErrorException(error=ValueError("Either run or data must be specified for flow run."))
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name

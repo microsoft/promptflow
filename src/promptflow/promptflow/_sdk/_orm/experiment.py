@@ -15,6 +15,7 @@ from promptflow._sdk._errors import ExperimentExistsError, ExperimentNotFoundErr
 
 from .retry import sqlite_retry
 from .session import mgmt_db_session
+from ...exceptions import UserErrorException, ErrorTarget
 
 Base = declarative_base()
 
@@ -55,6 +56,8 @@ class Experiment(Base):
                 if "UNIQUE constraint failed" not in str(e):
                     raise
                 raise ExperimentExistsError(f"Experiment name {self.name!r} already exists.")
+            except Exception as e:
+                raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, error=e)
 
     @sqlite_retry
     def archive(self) -> None:

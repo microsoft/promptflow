@@ -65,7 +65,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ErrorTarget
 
 logger = get_cli_sdk_logger()
 
@@ -209,7 +209,14 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
-        raise ValueError(f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}")
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message_format="Invalid variant format: {variant}, variant should be in format of TUNING_NODE.VARIANT",
+            variant=variant,
+            error=ValueError(
+                f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+            ),
+        )
 
 
 def _match_reference(env_val: str):
@@ -293,7 +300,7 @@ def resolve_connections_environment_variable_reference(connections: Dict[str, di
                 continue
             env_name = _match_env_reference(val)
             if env_name not in os.environ:
-                raise Exception(f"Environment variable {env_name} is not found.")
+                raise UserErrorException(f"Environment variable {env_name} is not found.")
             values[key] = os.environ[env_name]
     return connections
 
@@ -451,7 +458,12 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 continue
 
             if not src_path.exists():
-                raise ValueError(f"Unable to find additional include {item}")
+                raise UserErrorException(
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    message_format="Unable to find additional include {item}",
+                    item=item,
+                    error=ValueError(f"Unable to find additional include {item}"),
+                )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
         yield temp_dir
@@ -483,7 +495,6 @@ def print_pf_version():
 
 
 class PromptflowIgnoreFile(IgnoreFile):
-
     # TODO add more files to this list.
     IGNORE_FILE = [".runs", "__pycache__"]
 
@@ -1058,5 +1069,10 @@ def get_connection_operation(connection_provider: str):
         logger.debug("PFClient using local azure connection operations.")
         connection_operation = LocalAzureConnectionOperations(connection_provider)
     else:
-        raise ValueError(f"Unsupported connection provider: {connection_provider}")
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message_format="Unsupported connection provider: {connection_provider}",
+            connection_provider=connection_provider,
+            error=ValueError(f"Unsupported connection provider: {connection_provider}"),
+        )
     return connection_operation
