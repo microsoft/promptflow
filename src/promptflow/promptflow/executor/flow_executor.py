@@ -35,7 +35,7 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data_recursively,
     persist_multimedia_data,
 )
-from promptflow._utils.utils import resolve_dir_to_absolute, transpose
+from promptflow._utils.utils import resolve_dir_to_relative, transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -1080,7 +1080,32 @@ def execute_flow(
     raise_ex: bool = True,
     stream_output: bool = False,
     allow_generator_output: bool = False,
-):
+) -> LineResult:
+    """Execute the flow, including aggregation nodes.
+
+    :param flow_file: The path to the flow file.
+    :type flow_file: Path
+    :param working_dir: The working directory of the flow.
+    :type working_dir: Path
+    :param output_dir: The directory to persist image for the flow.
+    :type output_dir: Path
+    :param connections: A dictionary containing connection information.
+    :type connections: dict
+    :param inputs: A dictionary containing the input values for the flow.
+    :type inputs: Mapping[str, Any]
+    :param func: The name of the function to be executed for eager flow.
+    :type func: Optional[str]
+    :param storage: The storage to be used for the flow.
+    :type storage: Optional[~promptflow.storage.AbstractRunStorage]
+    :param raise_ex: Whether to raise exceptions that occur during execution. Default is True.
+    :type raise_ex: Optional[bool]
+    :param stream_output: Whether the llm node enables stream output. Default is False.
+    :type stream_output: Optional[bool]
+    :param allow_generator_output: Whether to allow generator output for flow output. Default is False.
+    :type allow_generator_output: Optional[bool]
+    :return: The line result of executing the flow.
+    :rtype: ~promptflow.executor._result.LineResult
+    """
     flow_executor = FlowExecutor.create(
         flow_file, connections, working_dir, storage=storage, raise_ex=raise_ex, func=func
     )
@@ -1088,9 +1113,9 @@ def execute_flow(
     with _change_working_dir(working_dir):
         # execute nodes in the flow except the aggregation nodes
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
-        # persist the output of the flow
-        output_dir = resolve_dir_to_absolute(working_dir, output_dir)
-        line_result.output = persist_multimedia_data(line_result.output, base_dir=output_dir)
+        # persist the output to the output directory
+        output_dir = resolve_dir_to_relative(working_dir, output_dir)
+        line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
         if line_result.aggregation_inputs:
             # convert inputs of aggregation to list type
             flow_inputs = {k: [v] for k, v in inputs.items()}

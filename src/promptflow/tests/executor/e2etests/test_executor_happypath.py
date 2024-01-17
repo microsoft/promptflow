@@ -13,7 +13,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
-from promptflow.executor.flow_executor import flow_execution
+from promptflow.executor.flow_executor import execute_flow
 from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file
@@ -276,7 +276,7 @@ class TestExecutor:
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.output["output"] == "Hello World"
 
-    def test_flow_execution(self):
+    def test_execute_flow(self):
         flow_folder = "eval_flow_with_simple_image"
         # prepare output folder
         output_base_dir = Path(mkdtemp())
@@ -286,7 +286,7 @@ class TestExecutor:
         intermediate_dir.mkdir(exist_ok=True)
 
         storage = DefaultRunStorage(base_dir=output_base_dir, sub_dir=Path("intermediate"))
-        line_result = flow_execution(
+        line_result = execute_flow(
             flow_file=get_yaml_file(flow_folder),
             working_dir=get_flow_folder(flow_folder),
             output_dir=output_dir,

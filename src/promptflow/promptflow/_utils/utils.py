@@ -250,6 +250,15 @@ def resolve_dir_to_absolute(base_dir: Union[str, Path], sub_dir: Union[str, Path
     return path
 
 
+def resolve_dir_to_relative(base_dir: Union[str, Path], sub_dir: Union[str, Path]) -> Path:
+    """Resolve directory to relative path with base_dir as root"""
+    path = sub_dir if isinstance(sub_dir, Path) else Path(sub_dir)
+    if path.is_absolute():
+        base_dir = base_dir if isinstance(base_dir, Path) else Path(base_dir)
+        path = path.relative_to(base_dir)
+    return path
+
+
 def parse_ua_to_dict(ua):
     """Parse string user agent to dict with name as ua name and value as ua version."""
     ua_dict = {}
@@ -280,12 +289,12 @@ def get_int_env_var(env_var_name, default_value=None):
 
 
 def prompt_y_n(msg, default=None):
-    if default not in [None, 'y', 'n']:
+    if default not in [None, "y", "n"]:
         raise ValueError("Valid values for default are 'y', 'n' or None")
-    y = 'Y' if default == 'y' else 'y'
-    n = 'N' if default == 'n' else 'n'
+    y = "Y" if default == "y" else "y"
+    n = "N" if default == "n" else "n"
     while True:
-        ans = prompt_input('{} ({}/{}): '.format(msg, y, n))
+        ans = prompt_input("{} ({}/{}): ".format(msg, y, n))
         if ans.lower() == n.lower():
             return False
         if ans.lower() == y.lower():
@@ -295,4 +304,4 @@ def prompt_y_n(msg, default=None):
 
 
 def prompt_input(msg):
-    return input('\n===> '+msg)
+    return input("\n===> " + msg)
