@@ -38,27 +38,33 @@ def setup_recording():
     return patches
 
 
-SpawnProcess = multiprocessing.Process
-if "spawn" in multiprocessing.get_all_start_methods():
-    SpawnProcess = multiprocessing.get_context("spawn").Process
-
-ForkServerProcess = multiprocessing.Process
-if "forkserver" in multiprocessing.get_all_start_methods():
-    ForkServerProcess = multiprocessing.get_context("forkserver").Process
-
-
-class MockSpawnProcess(SpawnProcess):
-    def __init__(self, group=None, target=None, *args, **kwargs):
+class BaseMockProcess:
+    def custom_init(self, group=None, target=None, *args, **kwargs):
         if target == _process_wrapper:
             target = _mock_process_wrapper
-        super().__init__(group, target, *args, **kwargs)
 
 
-class MockForkServerProcess(ForkServerProcess):
-    def __init__(self, group=None, target=None, *args, **kwargs):
-        if target == _process_wrapper:
-            target = _mock_process_wrapper
-        super().__init__(group, target, *args, **kwargs)
+def get_process_class(context_type):
+    base_class = multiprocessing.Process
+    if context_type in multiprocessing.get_all_start_methods():
+        base_class = multiprocessing.get_context(context_type).Process
+    return base_class
+
+
+class MockSpawnProcess(get_process_class("spawn"), BaseMockProcess):
+    def init(self, *args, **kwargs):
+        # Initialize the multiprocessing process
+        super(MockSpawnProcess, self).init(*args, **kwargs)
+        # Apply shared mock logic
+        BaseMockProcess.custom_init(self, *args, **kwargs)
+
+
+class MockForkServerProcess(get_process_class("forkserver"), BaseMockProcess):
+    def init(self, *args, **kwargs):
+        # Initialize the multiprocessing process
+        super(MockForkServerProcess, self).init(*args, **kwargs)
+        # Apply shared mock logic
+        BaseMockProcess.custom_init(self, *args, **kwargs)
 
 
 @pytest.fixture
