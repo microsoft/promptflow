@@ -458,7 +458,7 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 continue
 
             if not src_path.exists():
-                error = (ValueError(f"Unable to find additional include {item}"),)
+                error = ValueError(f"Unable to find additional include {item}")
                 raise UserErrorException(
                     target=ErrorTarget.CONTROL_PLANE_SDK,
                     message=str(error),
