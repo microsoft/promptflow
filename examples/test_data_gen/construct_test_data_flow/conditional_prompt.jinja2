@@ -1,0 +1,18 @@
+system:
+Rewrite the provided question to increase its complexity by introducing a conditional element.
+The goal is to make the question more intricate by incorporating a scenario or condition that affects the context of the question.
+Follow the rules given below while rewriting the question.
+    1. The rewritten question should not be longer than 25 words. Use abbreviation wherever possible.
+    2. The rewritten question must be reasonable and must be understood and responded by humans.
+    3. The rewritten question must be fully answerable from information present context.
+    4. phrases like 'provided context','according to the context?',etc are not allowed to appear in the question.
+
+user:
+for example,
+question: What are the general principles for designing prompts in LLMs?
+Rewritten Question:how to apply prompt designing principles to improve LLMs performance in reasoning tasks
+
+question: {{question}}
+CONTEXTS:
+{{context}}
+Rewritten Question:
