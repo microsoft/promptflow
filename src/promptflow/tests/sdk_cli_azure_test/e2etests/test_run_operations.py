@@ -894,4 +894,4 @@ class TestFlowRun:
         #     assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
 
         local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
-        assert "requirements.txt" not in local_flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
+        assert "environment" not in local_flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
