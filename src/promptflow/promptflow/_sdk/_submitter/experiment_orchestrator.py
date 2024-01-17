@@ -116,8 +116,6 @@ class ExperimentOrchestrator:
             variant=node.variant,
             flow=node.path,
             connections=node.connections,
-            # Experiment name can't work for now, it is used only for show cloud exp name
-            # experiment_name=experiment.name,
             environment_variables=node.environment_variables,
             # Config run output path to experiment output folder
             config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),
