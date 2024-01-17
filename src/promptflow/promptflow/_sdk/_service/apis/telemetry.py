@@ -108,23 +108,9 @@ def validate_telemetry_payload(payload, headers):
 @api.route("/")
 class Telemetry(Resource):
     @api.response(code=200, description="Create telemetry record", model=dict_field)
-    @api.doc(description="Create telemetry record")
+    @api.doc(description="Create telemetry record; request id and user agent will be got from request header.")
     @local_user_only
     def post(self):
-        """Private API to create telemetry record directly.
-        Telemetry details should be in the request body; will append an extra User-Agent
-        to the original one in the request header.
-        Request id must be put in "x-ms-promptflow-request-id" in request header.
-        Request body should be in json format, e.g.:
-        {
-            "eventType": "Start",
-            "timestamp": "2021-09-29T22:51:00.000Z",
-            "metadata": {
-                "activityName": "activity_name",
-                "activityType": "activity_type",
-            }
-        }
-        """
         from promptflow._sdk._telemetry import get_telemetry_logger, is_telemetry_enabled
         from promptflow._sdk._telemetry.activity import log_activity_end, log_activity_start
 

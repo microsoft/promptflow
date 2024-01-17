@@ -60,43 +60,6 @@
                     "type": "string"
                 }
             ],
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Create connection",
-                "operationId": "post_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
             "get": {
                 "responses": {
                     "200": {
@@ -123,6 +86,31 @@
                     "Connections"
                 ]
             },
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Create connection",
+                "operationId": "post_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -144,6 +132,18 @@
                         }
                     }
                 ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -509,8 +509,7 @@
                         }
                     }
                 },
-                "summary": "Private API to create telemetry record directly",
-                "description": "Create telemetry record\nTelemetry details should be in the request body; will append an extra User-Agent\nto the original one in the request header.\nRequest id must be put in \"x-ms-promptflow-request-id\" in request header.\nRequest body should be in json format, e.g.:\n{\n    \"eventType\": \"Start\",\n    \"timestamp\": \"2021-09-29T22:51:00.000Z\",\n    \"metadata\": {\n        \"activityName\": \"activity_name\",\n        \"activityType\": \"activity_type\",\n    }\n}",
+                "description": "Create telemetry record; request id and user agent will be got from request header.",
                 "operationId": "post_telemetry",
                 "tags": [
                     "Telemetries"
