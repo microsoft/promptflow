@@ -15,11 +15,13 @@ from promptflow._utils.logger_utils import (
     FileHandler,
     FileHandlerConcurrentWrapper,
     LogContext,
+    LoggerFactory,
     bulk_logger,
     scrub_credentials,
     update_log_path,
     update_single_log_path,
 )
+from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.contracts.run_mode import RunMode
 
 from ...utils import load_content
@@ -253,3 +255,42 @@ class TestLogContext:
         with LogContext(logs_path):
             scrubbed_log_content = scrub_credentials(log_content)
             assert scrubbed_log_content == "sig=**data_scrubbed**&key=**data_scrubbed**"
+
+
+@pytest.mark.unittest
+class TestLoggerFactory:
+    def test_get_logger(self):
+        logger = LoggerFactory.get_logger("test_logger")
+        assert logger is not None
+        assert logger.name == "test_logger"
+        assert logger.level == logging.DEBUG
+        assert len(logger.handlers) == 1
+        assert isinstance(logger.handlers[0], logging.StreamHandler)
+
+    def test_find_handler(self):
+        logger = LoggerFactory.get_logger("test_find_handler")
+        handler = LoggerFactory._find_handler(logger, logging.StreamHandler)
+        assert handler is not None
+        assert isinstance(handler, logging.StreamHandler)
+
+    def test_add_handler(self):
+        logger = LoggerFactory.get_logger("test_add_handler")
+        initial_handler_count = len(logger.handlers)
+        LoggerFactory._add_handler(logger, logging.DEBUG)
+        assert len(logger.handlers) == initial_handler_count + 1
+        assert isinstance(logger.handlers[-1], logging.StreamHandler)
+
+    def test_update_logger_level(self):
+        logger = LoggerFactory.get_logger("test_update_logger_level")
+        assert logger.level == logging.DEBUG
+        assert len(logger.handlers) == 1
+        assert logger.handlers[0].level == logging.INFO
+
+        LoggerFactory.update_logger_level(logger, logging.WARNING)
+        assert logger.level == logging.DEBUG
+        assert logger.handlers[0].level == logging.WARNING
+
+        with environment_variable_overwrite("PF_LOGGING_LEVEL", "ERROR"):
+            LoggerFactory.update_logger_level(logger, logging.CRITICAL)
+            assert logger.level == logging.DEBUG
+            assert logger.handlers[0].level == logging.ERROR

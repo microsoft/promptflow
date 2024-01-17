@@ -365,6 +365,15 @@ class LoggerFactory:
         handler.setLevel(verbosity)
         logger.addHandler(handler)
 
+    @staticmethod
+    def update_logger_level(logger: logging.Logger, verbosity: int = logging.INFO, target_stdout: bool = False):
+        verbosity = get_pf_logging_level(default=None) or verbosity
+        stream_handler = LoggerFactory._find_handler(logger, logging.StreamHandler)
+        if not stream_handler:
+            LoggerFactory._add_handler(logger, verbosity, target_stdout)
+        else:
+            stream_handler.setLevel(verbosity)
+
 
 def get_cli_sdk_logger():
     """Get logger used by CLI SDK."""

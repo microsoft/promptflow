@@ -56,6 +56,8 @@ class PromptflowServingApp(Flask):
             os.environ.update(environment_variables)
             default_environment_variables = self.flow.get_environment_variables_with_overrides()
             self.set_default_environment_variables(default_environment_variables)
+            # update logger level after enableing user's environment_variables
+            LoggerFactory.update_logger_level(logger, target_stdout=True)
 
             self.flow_name = self.extension.get_flow_name()
             self.flow.name = self.flow_name
