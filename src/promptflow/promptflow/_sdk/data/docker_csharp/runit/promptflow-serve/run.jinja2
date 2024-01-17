@@ -1,0 +1,5 @@
+#! /bin/bash
+
+echo "start promptflow serving"
+cd /flow
+dotnet Promptflow.dll --port "8080" --yaml_path "flow.dag.yaml" --assembly_folder "." --connection_folder_path  "../connections" --log_path "" --serving
