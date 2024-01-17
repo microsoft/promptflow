@@ -72,7 +72,7 @@ class ExperimentInput(YAMLTranslatableMixin):
         value_type: ValueType = next((i for i in supported_types if typ.lower() == i.value.lower()), None)
         if value_type is None:
             raise ExperimentValueError(f"Unknown experiment input type {typ!r}, supported are {supported_types}.")
-        return value_type.value, value_type.parse(default)
+        return value_type.value, value_type.parse(default) if default is not None else None
 
     @classmethod
     def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
