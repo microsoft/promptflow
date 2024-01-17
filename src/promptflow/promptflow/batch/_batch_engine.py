@@ -100,6 +100,7 @@ class BatchEngine:
         """
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        # TODO: Refine the logic here
         if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)

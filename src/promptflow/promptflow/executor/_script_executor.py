@@ -82,6 +82,7 @@ class ScriptExecutor(FlowExecutor):
             inputs=inputs,
             index=index,
         )
+        output = None
         traces = []
         try:
             Tracer.start_tracing(line_run_id)

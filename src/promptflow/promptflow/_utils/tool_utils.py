@@ -101,7 +101,7 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
     return (
         InputDefinition(
             type=typ,
-            default=value_to_str(default_value),
+            default=default_value,
             description=None,
             enum=enum,
             custom_type=custom_type_conn,
