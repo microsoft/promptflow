@@ -82,6 +82,6 @@ def hint_for_update():
             if parse(cached_versions[CURRENT_VERSION]) < parse(cached_versions[LATEST_VERSION]):
                 cached_versions[LAST_HINT_TIME] = str(datetime.datetime.now())
                 message = (f"New prompt flow version available: promptflow-{cached_versions[LATEST_VERSION]}. Running "
-                           f"'pip install --upgrade promptflow' to update.")
+                           f"'pf upgrade' to update CLI.")
                 logger.debug(message)
         dump_cached_versions(cached_versions)

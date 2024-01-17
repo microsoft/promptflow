@@ -9,6 +9,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
+from marshmallow import ValidationError
 from pytest_mock import MockerFixture
 
 from promptflow import PFClient
@@ -45,6 +46,7 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
@@ -1219,3 +1221,42 @@ class TestFlowRun:
         assert first_line_run_output["nan"] == "NaN"
         assert isinstance(first_line_run_output["inf"], str)
         assert first_line_run_output["inf"] == "Infinity"
+
+    @pytest.mark.skip("Enable this when executor change merges")
+    def test_eager_flow_run_without_yaml(self, pf):
+        # TODO(2898455): support this
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
+        run = pf.run(
+            flow=flow_path,
+            entry="my_flow",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+
+    @pytest.mark.skip("Enable this when executor change merges")
+    def test_eager_flow_run_with_yaml(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+
+    def test_eager_flow_test_invalid_cases(self, pf):
+        # no entry provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            )
+        assert "Entry function is not specified" in str(e.value)
+
+        # no path provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/invalid_no_path/")
+        with pytest.raises(ValidationError) as e:
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            )
+        assert "'path': ['Missing data for required field.']" in str(e.value)
