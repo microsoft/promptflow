@@ -219,11 +219,10 @@ class TestSubmitter:
             credential_list=credential_list,
         ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-            output_sub_dir = Path(".promptflow/output")
             line_result = execute_flow(
                 flow_file=self.flow.path,
                 working_dir=self.flow.code,
-                output_dir=output_sub_dir,
+                output_dir=Path(".promptflow/output"),
                 connections=connections,
                 inputs=inputs,
                 func=self.func,
