@@ -48,7 +48,7 @@ def create_app():
         app.logger.addHandler(handler)
 
         # Basic error handler
-        @api.errorhandler(Exception)
+        @api.errorhandler
         def handle_exception(e):
             from dataclasses import asdict
 

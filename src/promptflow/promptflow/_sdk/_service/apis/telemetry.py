@@ -108,7 +108,7 @@ def validate_telemetry_payload(payload, headers):
 @api.route("/")
 class Telemetry(Resource):
     @api.response(code=200, description="Create telemetry record", model=dict_field)
-    @api.doc(description="Create telemetry record; request id and user agent will be got from request header.")
+    @api.doc(description="Create telemetry record")
     @local_user_only
     def post(self):
         from promptflow._sdk._telemetry import get_telemetry_logger, is_telemetry_enabled
