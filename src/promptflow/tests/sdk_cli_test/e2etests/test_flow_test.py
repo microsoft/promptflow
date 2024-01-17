@@ -231,7 +231,7 @@ class TestFlowTest:
     def test_eager_flow_test_failed(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/basic-code-first/").absolute()
         result = _client._flows._test(flow=flow_path)
-        assert result.run_info.status.value == "Completed"
+        assert result.run_info.status.value == "Failed"
 
     def test_eager_flow_test_invalid_cases(self):
         # no entry provided

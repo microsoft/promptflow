@@ -155,7 +155,12 @@ class TestBatch:
         is_eager_flow = entry is not None
         root = EAGER_FLOW_ROOT if is_eager_flow else FLOW_ROOT
         batch_result, output_dir = submit_batch_run(
-            flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True, entry=entry, is_eager_flow=is_eager_flow
+            flow_folder,
+            inputs_mapping,
+            connections=dev_connections,
+            return_output_dir=True,
+            entry=entry,
+            is_eager_flow=is_eager_flow
         )
 
         assert isinstance(batch_result, BatchResult)
