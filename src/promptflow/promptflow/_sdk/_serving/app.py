@@ -52,11 +52,10 @@ class PromptflowServingApp(Flask):
             self.flow = self.flow_entity._init_executable()
 
             # enable environment_variables
-            self.environment_variables = kwargs.get("environment_variables", {})
-            os.environ.update(self.environment_variables)
+            environment_variables = kwargs.get("environment_variables", {})
+            os.environ.update(environment_variables)
             default_environment_variables = self.flow.get_environment_variables_with_overrides()
             self.set_default_environment_variables(default_environment_variables)
-            logger.info(f"Environment variable keys: {self.environment_variables.keys()}")
 
             self.flow_name = self.extension.get_flow_name()
             self.flow.name = self.flow_name
@@ -116,7 +115,6 @@ class PromptflowServingApp(Flask):
         for key, value in default_environment_variables.items():
             if key not in os.environ:
                 os.environ[key] = value
-                self.environment_variables[key] = value
 
 
 def add_default_routes(app: PromptflowServingApp):
