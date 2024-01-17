@@ -342,13 +342,13 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
     yield
 
 
-@pytest.fixture
-def mock_get_user_identity_info(mocker: MockerFixture) -> None:
+@pytest.fixture(scope=package_scope_in_live_mode())
+def mock_get_user_identity_info(mocker: MockerFixture, user_object_id: str, tenant_id: str) -> None:
     """Mock get user object id and tenant id, currently used in flow list operation."""
     if not is_live():
         mocker.patch(
             "promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._get_user_identity_info",
-            return_value=(SanitizedValues.USER_OBJECT_ID, SanitizedValues.TENANT_ID),
+            return_value=(user_object_id, tenant_id),
         )
     yield
 
