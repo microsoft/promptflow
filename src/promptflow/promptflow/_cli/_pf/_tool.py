@@ -154,23 +154,25 @@ def init_tool(args):
         package_name = package_path.stem
         script_code_path = package_path / package_name
         script_code_path.mkdir(parents=True, exist_ok=True)
+
+        # Generate manifest file
+        manifest_file = package_path / "MANIFEST.in"
+        manifest_file.touch(exist_ok=True)
+        with open(manifest_file, "r") as f:
+            manifest_contents = [line.strip() for line in f.readlines()]
+
         if icon_path:
             package_icon_path = package_path / "icons"
             package_icon_path.mkdir(exist_ok=True)
             dst = shutil.copy2(icon_path, package_icon_path)
             icon_path = f'Path(__file__).parent.parent / "icons" / "{Path(dst).name}"'
 
-            # Generate manifest file
-            manifest_file = package_path / "MANIFEST.in"
-            manifest_contents = []
-            if manifest_file.exists():
-                with open(manifest_file, "r") as f:
-                    manifest_contents = [line.strip() for line in f.readlines()]
             icon_manifest = f"include {package_name}/icons"
             if icon_manifest not in manifest_contents:
                 manifest_contents.append(icon_manifest)
-            with open(manifest_file, "w", encoding=DEFAULT_ENCODING) as f:
-                f.writelines("\n".join(set(manifest_contents)))
+
+        with open(manifest_file, "w", encoding=DEFAULT_ENCODING) as f:
+            f.writelines("\n".join(set(manifest_contents)))
         # Generate package setup.py
         SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
         # Generate utils.py to list meta data of tools.
