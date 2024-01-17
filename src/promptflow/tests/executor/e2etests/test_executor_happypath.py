@@ -3,6 +3,8 @@ import multiprocessing
 import os
 import re
 import sys
+from pathlib import Path
+from tempfile import mkdtemp
 from types import GeneratorType
 
 import pytest
@@ -11,6 +13,8 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
+from promptflow.executor.flow_executor import flow_execution
+from promptflow.storage._run_storage import DefaultRunStorage
 
 from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file
 
@@ -271,6 +275,27 @@ class TestExecutor:
         flow_result = executor.exec_line({"input": "World"})
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.output["output"] == "Hello World"
+
+    def test_flow_execution(self):
+        flow_folder = "eval_flow_with_simple_image"
+        # prepare output folder
+        output_base_dir = Path(mkdtemp())
+        output_dir = output_base_dir / "output"
+        output_dir.mkdir(exist_ok=True)
+        intermediate_dir = output_base_dir / "intermediate"
+        intermediate_dir.mkdir(exist_ok=True)
+
+        storage = DefaultRunStorage(base_dir=output_base_dir, sub_dir=Path("intermediate"))
+        line_result = flow_execution(
+            flow_file=get_yaml_file(flow_folder),
+            working_dir=get_flow_folder(flow_folder),
+            output_dir=output_dir,
+            inputs={},
+            connections={},
+            storage=storage,
+        )
+        assert line_result.run_info.status == Status.Completed
+        assert len(line_result.node_run_infos) == 2
 
 
 def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
