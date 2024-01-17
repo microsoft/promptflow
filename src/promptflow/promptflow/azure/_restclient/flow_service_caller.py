@@ -134,7 +134,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         import jwt
 
         token = get_arm_token(credential=self._credential)
-        decoded_token = jwt.decode(token.token, options={"verify_signature": False})
+        decoded_token = jwt.decode(token, options={"verify_signature": False})
         user_object_id, user_tenant_id = decoded_token["oid"], decoded_token["tid"]
         return user_object_id, user_tenant_id
 

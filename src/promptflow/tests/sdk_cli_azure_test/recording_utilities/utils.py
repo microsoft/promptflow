@@ -38,7 +38,12 @@ class FakeTokenCredential:
     """
 
     def __init__(self):
-        token = jwt.encode(payload={"aud": "https://management.azure.com"}, key="")
+        token = jwt.encode(
+            payload={
+                "aud": "https://management.azure.com",
+            },
+            key="",
+        )
         self.token = AccessToken(token, 0)
         self.get_token_count = 0
 
