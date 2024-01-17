@@ -5,7 +5,7 @@
 import uvicorn
 from fastapi import FastAPI
 
-from promptflow.service.apis.common import router as common_router
+from promptflow.executor.service.apis.common import router as common_router
 
 app = FastAPI()
 app.include_router(common_router)
