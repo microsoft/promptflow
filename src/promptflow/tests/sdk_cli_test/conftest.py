@@ -88,7 +88,7 @@ def setup_local_connection(local_client, azure_open_ai_connection):
 
 
 @pytest.fixture
-def setup_experiment_table(local_client, azure_open_ai_connection):
+def setup_experiment_table():
     with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
         mock_func.return_value = True
         # Call this session to initialize session maker, then add experiment table
