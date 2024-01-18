@@ -1077,6 +1077,7 @@ def execute_flow(
     *,
     run_aggregation: bool = True,
     enable_stream_output: bool = False,
+    allow_generator_output: bool = False,  # TODO: remove this
     **kwargs,
 ) -> LineResult:
     """Execute the flow, including aggregation nodes.
@@ -1102,7 +1103,7 @@ def execute_flow(
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
     with _change_working_dir(working_dir):
         # execute nodes in the flow except the aggregation nodes
-        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=enable_stream_output)
+        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
         # persist the output to the output directory
         line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
         if run_aggregation and line_result.aggregation_inputs:

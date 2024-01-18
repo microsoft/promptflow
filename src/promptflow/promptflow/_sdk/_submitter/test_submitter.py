@@ -226,6 +226,7 @@ class TestSubmitter:
                 connections=connections,
                 inputs=inputs,
                 enable_stream_output=stream_output,
+                allow_generator_output=allow_generator_output,
                 func=self.func,
                 storage=storage,
             )
