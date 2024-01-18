@@ -133,9 +133,11 @@ class Flow(AdditionalIncludesMixin):
                 dag_updated = self._resolve_requirements(flow_dir, flow_dag) or dag_updated
                 if dag_updated:
                     dump_flow_dag(flow_dag, flow_dir)
-            yield code
-            if dag_updated:
-                dump_flow_dag(original_flow_dag, flow_dir)
+            try:
+                yield code
+            finally:
+                if dag_updated:
+                    dump_flow_dag(original_flow_dag, flow_dir)
 
     def _get_base_path_for_code(self) -> Path:
         """Get base path for additional includes."""
