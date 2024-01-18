@@ -881,17 +881,20 @@ class TestFlowRun:
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_auto_resolve_requirements(self, pf: PFClient, randstr: Callable[[str], str]):
         # will add requirements.txt to flow.dag.yaml if exists when submitting run.
-        run = pf.run(
-            flow=f"{FLOWS_DIR}/flow_with_requirements_txt",
-            data=f"{DATAS_DIR}/env_var_names.jsonl",
-            name=randstr("name"),
-        )
-        pf.runs.stream(run)
-        # # TODO: test snapshot after download can successfully run
-        with TemporaryDirectory() as tmp_dir:
-            pf.runs.download(run=run.name, output=tmp_dir)
-            flow_dag = load_yaml(Path(tmp_dir, run.name, "snapshot/flow.dag.yaml"))
+        with TemporaryDirectory() as temp:
+            temp = Path(temp)
+            shutil.copytree(f"{FLOWS_DIR}/flow_with_requirements_txt", temp / "flow_with_requirements_txt")
+
+            run = pf.run(
+                flow=temp / "flow_with_requirements_txt",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name"),
+            )
+            pf.runs.stream(run)
+
+            pf.runs.download(run=run.name, output=temp)
+            flow_dag = load_yaml(Path(temp, run.name, "snapshot/flow.dag.yaml"))
             assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
 
-        local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
-        assert "environment" not in local_flow_dag
+            local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
+            assert "environment" not in local_flow_dag

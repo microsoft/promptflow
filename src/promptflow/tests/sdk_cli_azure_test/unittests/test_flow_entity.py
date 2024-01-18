@@ -183,22 +183,31 @@ class TestFlow:
         assert Flow._resolve_requirements(flow_path=FLOWS_DIR / "flow_with_requirements_txt", flow_dag=flow_dag)
 
     def test_resolve_requirements_for_flow(self):
-        # flow without environment section
-        flow_folder = FLOWS_DIR / "flow_with_requirements_txt"
-        flow = load_flow(source=flow_folder)
-        with flow._build_code():
+        with tempfile.TemporaryDirectory() as temp:
+            temp = Path(temp)
+            # flow without environment section
+            flow_folder = FLOWS_DIR / "flow_with_requirements_txt"
+            shutil.copytree(flow_folder, temp / "flow_with_requirements_txt")
+            flow_folder = temp / "flow_with_requirements_txt"
+            flow = load_flow(source=flow_folder)
+            with flow._build_code():
+                _, flow_dag = load_flow_dag(flow_path=flow_folder)
+                assert flow_dag[ENVIRONMENT] == {"python_requirements_txt": "requirements.txt"}
+
             _, flow_dag = load_flow_dag(flow_path=flow_folder)
-            assert flow_dag[ENVIRONMENT] == {"python_requirements_txt": "requirements.txt"}
+            assert ENVIRONMENT not in flow_dag
 
-        _, flow_dag = load_flow_dag(flow_path=flow_folder)
-        assert ENVIRONMENT not in flow_dag
+            # flow with environment section
+            flow_folder = FLOWS_DIR / "flow_with_requirements_txt_and_env"
+            shutil.copytree(flow_folder, temp / "flow_with_requirements_txt_and_env")
+            flow_folder = temp / "flow_with_requirements_txt_and_env"
+            flow = load_flow(source=flow_folder)
+            with flow._build_code():
+                _, flow_dag = load_flow_dag(flow_path=flow_folder)
+                assert flow_dag[ENVIRONMENT] == {
+                    "image": "python:3.8-slim",
+                    "python_requirements_txt": "requirements.txt",
+                }
 
-        # flow with environment section
-        flow_folder = FLOWS_DIR / "flow_with_requirements_txt_and_env"
-        flow = load_flow(source=flow_folder)
-        with flow._build_code():
             _, flow_dag = load_flow_dag(flow_path=flow_folder)
-            assert flow_dag[ENVIRONMENT] == {"image": "python:3.8-slim", "python_requirements_txt": "requirements.txt"}
-
-        _, flow_dag = load_flow_dag(flow_path=flow_folder)
-        assert flow_dag[ENVIRONMENT] == {"image": "python:3.8-slim"}
+            assert flow_dag[ENVIRONMENT] == {"image": "python:3.8-slim"}
