@@ -878,6 +878,7 @@ class TestFlowRun:
             if pd.notnull(row["outputs.output"]):
                 assert int(row["inputs.number"]) == int(row["outputs.output"])
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_auto_resolve_requirements(self, pf: PFClient, randstr: Callable[[str], str]):
         # will add requirements.txt to flow.dag.yaml if exists when submitting run.
         run = pf.run(
@@ -889,7 +890,7 @@ class TestFlowRun:
         # # TODO: test snapshot after download can successfully run
         with TemporaryDirectory() as tmp_dir:
             pf.runs.download(run=run.name, output=tmp_dir)
-            flow_dag = load_yaml(Path(tmp_dir, run.name, "flow.dag.yaml"))
+            flow_dag = load_yaml(Path(tmp_dir, run.name, "snapshot/flow.dag.yaml"))
             assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
 
         local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
