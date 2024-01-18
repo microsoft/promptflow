@@ -1099,7 +1099,7 @@ def execute_flow(
     :return: The line result of executing the flow.
     :rtype: ~promptflow.executor._result.LineResult
     """
-    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, **kwargs)
+    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
     with _change_working_dir(working_dir):
         # execute nodes in the flow except the aggregation nodes
