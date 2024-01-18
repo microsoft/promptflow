@@ -1075,9 +1075,9 @@ def execute_flow(
     connections: dict,
     inputs: Mapping[str, Any],
     *,
-    func: Optional[str] = None,
-    storage: Optional[AbstractRunStorage] = None,
+    run_aggregation: bool = True,
     enable_stream_output: bool = False,
+    **kwargs,
 ) -> LineResult:
     """Execute the flow, including aggregation nodes.
 
@@ -1091,23 +1091,21 @@ def execute_flow(
     :type connections: dict
     :param inputs: A dictionary containing the input values for the flow.
     :type inputs: Mapping[str, Any]
-    :param func: The name of the function to be executed for eager flow.
-    :type func: Optional[str]
-    :param storage: The storage to be used for the flow.
-    :type storage: Optional[~promptflow.storage.AbstractRunStorage]
     :param enable_stream_output: Whether to allow stream (generator) output for flow output. Default is False.
     :type enable_stream_output: Optional[bool]
+    :param kwargs: Other keyword arguments to create flow executor.
+    :type kwargs: Any
     :return: The line result of executing the flow.
     :rtype: ~promptflow.executor._result.LineResult
     """
-    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, func=func)
+    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, **kwargs)
     flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
     with _change_working_dir(working_dir):
         # execute nodes in the flow except the aggregation nodes
         line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=enable_stream_output)
         # persist the output to the output directory
         line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
-        if line_result.aggregation_inputs:
+        if run_aggregation and line_result.aggregation_inputs:
             # convert inputs of aggregation to list type
             flow_inputs = {k: [v] for k, v in inputs.items()}
             aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}

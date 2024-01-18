@@ -225,9 +225,9 @@ class TestSubmitter:
                 output_dir=Path(".promptflow/output"),
                 connections=connections,
                 inputs=inputs,
+                enable_stream_output=stream_output,
                 func=self.func,
                 storage=storage,
-                enable_stream_output=stream_output,
             )
             if isinstance(line_result.output, dict):
                 generator_outputs = self._get_generator_outputs(line_result.output)
