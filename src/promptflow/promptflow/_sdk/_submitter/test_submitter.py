@@ -196,7 +196,7 @@ class TestSubmitter:
         inputs: Mapping[str, Any],
         environment_variables: dict = None,
         stream_log: bool = True,
-        allow_generator_output: bool = False,
+        allow_generator_output: bool = False,  # TODO: remove this
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
     ):
@@ -227,9 +227,7 @@ class TestSubmitter:
                 inputs=inputs,
                 func=self.func,
                 storage=storage,
-                raise_ex=False,
-                stream_output=stream_output,
-                allow_generator_output=allow_generator_output,
+                enable_stream_output=stream_output,
             )
             if isinstance(line_result.output, dict):
                 generator_outputs = self._get_generator_outputs(line_result.output)

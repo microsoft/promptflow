@@ -1077,9 +1077,7 @@ def execute_flow(
     *,
     func: Optional[str] = None,
     storage: Optional[AbstractRunStorage] = None,
-    raise_ex: bool = True,
-    stream_output: bool = False,
-    allow_generator_output: bool = False,
+    enable_stream_output: bool = False,
 ) -> LineResult:
     """Execute the flow, including aggregation nodes.
 
@@ -1097,22 +1095,16 @@ def execute_flow(
     :type func: Optional[str]
     :param storage: The storage to be used for the flow.
     :type storage: Optional[~promptflow.storage.AbstractRunStorage]
-    :param raise_ex: Whether to raise exceptions that occur during execution. Default is True.
-    :type raise_ex: Optional[bool]
-    :param stream_output: Whether the llm node enables stream output. Default is False.
-    :type stream_output: Optional[bool]
-    :param allow_generator_output: Whether to allow generator output for flow output. Default is False.
-    :type allow_generator_output: Optional[bool]
+    :param enable_stream_output: Whether to allow stream (generator) output for flow output. Default is False.
+    :type enable_stream_output: Optional[bool]
     :return: The line result of executing the flow.
     :rtype: ~promptflow.executor._result.LineResult
     """
-    flow_executor = FlowExecutor.create(
-        flow_file, connections, working_dir, storage=storage, raise_ex=raise_ex, func=func
-    )
-    flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
+    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, func=func)
+    flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
     with _change_working_dir(working_dir):
         # execute nodes in the flow except the aggregation nodes
-        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=enable_stream_output)
         # persist the output to the output directory
         line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
         if line_result.aggregation_inputs:
