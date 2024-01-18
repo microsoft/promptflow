@@ -61,10 +61,7 @@ class TestTool:
                 "description": "This is a tool to demonstrate the custom_llm tool type",
                 "enable_kwargs": True,
                 "function": "tool_func",
-                "inputs": {
-                    "api": {"type": ["string"], "ui_hints": {"index": 1}},
-                    "connection": {"type": ["AzureOpenAIConnection"], "ui_hints": {"index": 0}}
-                },
+                "inputs": {"api": {"type": ["string"]}, "connection": {"type": ["AzureOpenAIConnection"]}},
                 "module": "custom_llm_tool",
                 "name": "My Custom LLM Tool",
                 "type": "custom_llm",
@@ -73,7 +70,7 @@ class TestTool:
                 "description": "This is a tool to demonstrate the custom_llm tool type",
                 "enable_kwargs": True,
                 "function": "my_tool",
-                "inputs": {"connection": {"type": ["CustomConnection"], "ui_hints": {"index": 0}}},
+                "inputs": {"connection": {"type": ["CustomConnection"]}},
                 "module": "custom_llm_tool",
                 "name": "My Custom LLM Tool",
                 "type": "custom_llm",
