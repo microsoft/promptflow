@@ -123,6 +123,21 @@ def install_custom_tool_pkg():
             subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.2"])
 
 
+@pytest.fixture(scope="session")
+def install_custom_llm_tool_pkg():
+    # The tests could be running in parallel. Use a lock to prevent race conditions.
+    lock = FileLock("custom_llm_tool_pkg_installation.lock")
+    with lock:
+        try:
+            import promptflow.tools  # noqa: F401
+
+        except ImportError:
+            import subprocess
+            import sys
+
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "promptflow-tools==1.0.3"])
+
+
 @pytest.fixture
 def mocked_ws_triple() -> AzureMLWorkspaceTriad:
     return AzureMLWorkspaceTriad("mock_subscription_id", "mock_resource_group", "mock_workspace_name")
