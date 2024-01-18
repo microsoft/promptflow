@@ -805,34 +805,6 @@ class FlowExecutor:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
 
-    def _exec_prepare(self, inputs, run_id, line_number, variant_id):
-        run_id = run_id or str(uuid.uuid4())
-        line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
-        run_tracker = RunTracker(
-            self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager
-        )
-        # We need to copy the allow_generator_types from the original run_tracker.
-        run_tracker.allow_generator_types = self._run_tracker.allow_generator_types
-        run_info: FlowRunInfo = run_tracker.start_flow_run(
-            flow_id=self._flow_id,
-            root_run_id=run_id,
-            run_id=line_run_id,
-            parent_run_id=run_id,
-            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
-            index=line_number,
-            variant_id=variant_id,
-        )
-        context = FlowExecutionContext(
-            name=self._flow.name,
-            run_tracker=run_tracker,
-            cache_manager=self._cache_manager,
-            run_id=run_id,
-            flow_id=self._flow_id,
-            line_number=line_number,
-            variant_id=variant_id,
-        )
-        return run_info, context, run_tracker, line_run_id
-
     def _exec(
         self,
         inputs: Mapping[str, Any],
@@ -860,7 +832,31 @@ class FlowExecutor:
             LineResult: Line run result
         """
         # TODO: Call _exec_async in _exec when async is mature.
-        run_info, context, run_tracker, line_run_id = self._exec_prepare(inputs, run_id, line_number, variant_id)
+        run_id = run_id or str(uuid.uuid4())
+        line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
+        run_tracker = RunTracker(
+            self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager
+        )
+        # We need to copy the allow_generator_types from the original run_tracker.
+        run_tracker.allow_generator_types = self._run_tracker.allow_generator_types
+        run_info: FlowRunInfo = run_tracker.start_flow_run(
+            flow_id=self._flow_id,
+            root_run_id=run_id,
+            run_id=line_run_id,
+            parent_run_id=run_id,
+            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
+            index=line_number,
+            variant_id=variant_id,
+        )
+        context = FlowExecutionContext(
+            name=self._flow.name,
+            run_tracker=run_tracker,
+            cache_manager=self._cache_manager,
+            run_id=run_id,
+            flow_id=self._flow_id,
+            line_number=line_number,
+            variant_id=variant_id,
+        )
         output = {}
         aggregation_inputs = {}
         try:
@@ -923,7 +919,31 @@ class FlowExecutor:
         Returns:
             LineResult: Line run result
         """
-        run_info, context, run_tracker, line_run_id = self._exec_prepare(inputs, run_id, line_number, variant_id)
+        run_id = run_id or str(uuid.uuid4())
+        line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
+        run_tracker = RunTracker(
+            self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager
+        )
+        # We need to copy the allow_generator_types from the original run_tracker.
+        run_tracker.allow_generator_types = self._run_tracker.allow_generator_types
+        run_info: FlowRunInfo = run_tracker.start_flow_run(
+            flow_id=self._flow_id,
+            root_run_id=run_id,
+            run_id=line_run_id,
+            parent_run_id=run_id,
+            inputs={k: inputs[k] for k in self._flow.inputs if k in inputs},
+            index=line_number,
+            variant_id=variant_id,
+        )
+        context = FlowExecutionContext(
+            name=self._flow.name,
+            run_tracker=run_tracker,
+            cache_manager=self._cache_manager,
+            run_id=run_id,
+            flow_id=self._flow_id,
+            line_number=line_number,
+            variant_id=variant_id,
+        )
         output = {}
         aggregation_inputs = {}
         try:
