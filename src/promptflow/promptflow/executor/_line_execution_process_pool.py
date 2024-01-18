@@ -19,7 +19,7 @@ from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import ProcessPoolError
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
-from promptflow._utils.dataclass_serializer import convert_to_dict
+from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
@@ -555,7 +555,7 @@ def _exec_line(
         )
         if line_result is not None:
             if not isinstance(line_result.output, dict):
-                line_result.output = convert_to_dict(line_result.output)
+                line_result.output = convert_eager_flow_output_to_dict(line_result.output)
             line_result.output.pop(LINE_NUMBER_KEY, None)
         # TODO: Put serialized line result into queue to catch serialization error beforehand.
         # Otherwise it might cause the process to hang, e.g, line failed because output is not seralizable.

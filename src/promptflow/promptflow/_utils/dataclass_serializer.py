@@ -117,10 +117,11 @@ def assertEqual(a: dict, b: dict, path: str = ""):
         assert a == b, f"{path}: {a} != {b}"
 
 
-def convert_to_dict(result: Any):
-    if isinstance(result, dict):
-        return result
-    elif is_dataclass(result):
-        return {f.name: getattr(result, f.name) for f in fields(result)}
+# Since the output of eager flow may not a dict, we need to convert it to a dict in batch mode.
+def convert_eager_flow_output_to_dict(value: Any):
+    if isinstance(value, dict):
+        return value
+    elif is_dataclass(value):
+        return {f.name: getattr(value, f.name) for f in fields(value)}
     else:
-        return {"output": result}
+        return {"output": value}

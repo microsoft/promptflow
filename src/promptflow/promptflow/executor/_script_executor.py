@@ -9,6 +9,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool_meta_generator import PythonLoadError, load_python_module_from_file
 from promptflow._core.tracer import _traced, Tracer
+from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow.contracts.flow import Flow
@@ -91,11 +92,13 @@ class ScriptExecutor(FlowExecutor):
             else:
                 output = self._func(**inputs)
             traces = Tracer.end_tracing(line_run_id)
-            run_tracker.end_run(line_run_id, result=output, traces=traces, convert_result_to_dict=True)
+            # Should convert output to dict before stroing it to run info, since we wiil add line_number to output.
+            output_dict = convert_eager_flow_output_to_dict(output)
+            run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
         except Exception as e:
             if not traces:
                 traces = Tracer.end_tracing(line_run_id)
-            run_tracker.end_run(line_run_id, ex=e, traces=traces, convert_result_to_dict=True)
+            run_tracker.end_run(line_run_id, ex=e, traces=traces)
         finally:
             run_tracker.persist_flow_run(run_info)
         line_result = LineResult(output, {}, run_info, {})
