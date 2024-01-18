@@ -6,6 +6,7 @@ import pytest
 import time
 import requests
 import platform
+import sys
 
 from .test_cli import run_pf_command
 
@@ -44,7 +45,7 @@ class TestExecutable:
                 app_file = Path(temp_dir, "app.py").as_posix()
                 if not Path(app_file).exists():
                     raise Exception(f"File {app_file} does not exist.")
-                process = subprocess.Popen(["python", app_file], stderr=subprocess.PIPE, shell=platform.system() == 'Windows')
+                process = subprocess.Popen([sys.executable, app_file], stderr=subprocess.PIPE, shell=platform.system() == 'Windows')
                 time.sleep(5)
                 try:
                     error_message = process.stderr.read().decode("utf-8")
