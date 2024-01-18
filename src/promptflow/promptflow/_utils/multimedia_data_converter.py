@@ -5,7 +5,6 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable
 
-from promptflow._core._errors import UnexpectedError
 from promptflow._utils.multimedia_utils import is_multimedia_dict
 
 
@@ -21,15 +20,14 @@ class MultimediaInfo:
     resource_type: ResourceType
     content: str
 
-    def __post_init__(self):
-        if not isinstance(self.resource_type, ResourceType):
-            raise UnexpectedError("Invalid resource_type. It must be an instance of ResourceType Enum.")
-
 
 class AbstractMultimediaFormatAdapter:
     """
     Base class for multimedia format adapter.
     Adapter could be used to extract multimedia info from original data or create multimedia data from info.
+    Multimedia info means a MultimediaInfo object, which contains mime_type, resource_type and content.
+    Multimedia data means an object defined by specific contract version. The object could only be a dict for now.
+    One multimedia data example from 20231201 version: {"data:image/jpg;path": "logo.jpg"}
     """
 
     # Check if the original_data is a multimedia format according to the current contract version.

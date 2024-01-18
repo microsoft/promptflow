@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from promptflow._core._errors import UnexpectedError
 from promptflow._utils.multimedia_data_converter import (
     AbstractMultimediaInfoConverter,
     MultimediaConverter,
@@ -87,22 +86,8 @@ class TestMultimediaFormatAdapter20231201:
         expected_result = {"data:image/jpg;base64": "base64 string"}
         assert adapter.create_data(info) == expected_result
 
-
-@pytest.mark.unittest
-class TestMultimediaInfo:
-    def test_init(self):
-        mime_type = "image/jpg"
-        resource_type = ResourceType.PATH
-        content = "random_path"
-        info = MultimediaInfo(mime_type, resource_type, content)
-        assert info.mime_type == mime_type
-        assert info.resource_type == resource_type
-        assert info.content == content
-
-    def test_invalid_resource_type(self):
-        # When resource type is invalid, will throw UnexpectedError.
-        mime_type = "image/jpg"
-        resource_type = "invalid_type"
-        content = "random_path"
-        with pytest.raises(UnexpectedError):
-            MultimediaInfo(mime_type, resource_type, content)
+        # Bad case when client provides invalid resource type.
+        info = MultimediaInfo("image/jpg", "path", "base64 string")
+        expected_result = {"data:image/jpg;base64": "base64 string"}
+        with pytest.raises(AttributeError):
+            adapter.create_data(info)
