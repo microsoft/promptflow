@@ -106,7 +106,7 @@ class LoggerOperations(LogContext):
             if log_path.exists():
                 # for non batch run, clean up previous log content
                 try:
-                    with _read_open(log_path) as file:
+                    with _write_open(log_path) as file:
                         file.truncate(0)
                 except Exception as e:
                     logger.warning(f"Failed to clean up the previous log content because {e}")
