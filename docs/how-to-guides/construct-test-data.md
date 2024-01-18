@@ -15,10 +15,10 @@ pip install -r requirements.txt
 ```
 
 #### Get started
-- Enter [construct_test_data_flow folder](examples\test_data_gen\construct_test_data_flow) to tune your prompt in order to customize your own test data gen logic.
+- Enter [construct_test_data_flow folder](../../examples/test_data_gen/construct_test_data_flow/) to tune your prompt in order to customize your own test data gen logic.
 > [!Note] This step can be skipped if you just want to have a try.
 
-- Enter [test_data_gen_local folder](examples\test_data_gen\test_data_gen_local)
+- Enter [test_data_gen_local folder](../../examples/test_data_gen/test_data_gen_local)
     - Update configs in `configs.ini`
     - After configuration, run below command to gen test data set.
       ```bash
@@ -35,7 +35,7 @@ pip install -r requirements.txt
 ```
 
 #### Get started
-- Enter [test_data_gen_pipeline folder](examples\test_data_gen\test_data_gen_pipeline)
+- Enter [test_data_gen_pipeline folder](../../examples/test_data_gen/test_data_gen_pipeline)
     - Update configs in `configs.ini`
     - After configuration, run below command to gen test data set.
       ```bash
