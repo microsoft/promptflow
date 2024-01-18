@@ -2,70 +2,84 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from promptflow._sdk._constants import BULK_RUN_ERRORS
-from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
-class RunExistsError(PromptflowException):
+class SDKError(UserErrorException):
+    """SDK base class, target default is CONTROL_PLANE_SDK."""
+
+    def __init__(
+        self,
+        message="",
+        message_format="",
+        target: ErrorTarget = ErrorTarget.CONTROL_PLANE_SDK,
+        module=None,
+        **kwargs,
+    ):
+        super().__init__(message=message, message_format=message_format, target=target, module=module, **kwargs)
+
+
+class RunExistsError(SDKError):
     """Exception raised when run already exists."""
 
     pass
 
 
-class RunNotFoundError(PromptflowException):
+class RunNotFoundError(SDKError):
     """Exception raised if run cannot be found."""
 
     pass
 
 
-class InvalidRunStatusError(PromptflowException):
+class InvalidRunStatusError(SDKError):
     """Exception raised if run status is invalid."""
 
     pass
 
 
-class UnsecureConnectionError(PromptflowException):
+class UnsecureConnectionError(SDKError):
     """Exception raised if connection is not secure."""
 
     pass
 
 
-class DecryptConnectionError(PromptflowException):
+class DecryptConnectionError(SDKError):
     """Exception raised if connection decryption failed."""
 
     pass
 
 
-class StoreConnectionEncryptionKeyError(PromptflowException):
+class StoreConnectionEncryptionKeyError(SDKError):
     """Exception raised if no keyring backend."""
 
     pass
 
 
-class InvalidFlowError(PromptflowException):
+class InvalidFlowError(SDKError):
     """Exception raised if flow definition is not legal."""
 
     pass
 
 
-class ConnectionNotFoundError(PromptflowException):
+class ConnectionNotFoundError(SDKError):
     """Exception raised if connection is not found."""
 
     pass
 
 
-class InvalidRunError(PromptflowException):
+class InvalidRunError(SDKError):
     """Exception raised if run name is not legal."""
 
     pass
 
 
-class GenerateFlowToolsJsonError(PromptflowException):
+class GenerateFlowToolsJsonError(SDKError):
     """Exception raised if flow tools json generation failed."""
 
     pass
 
 
-class BulkRunException(PromptflowException):
+class BulkRunException(SDKError):
     """Exception raised when bulk run failed."""
 
     def __init__(self, *, message="", failed_lines, total_lines, errors, module: str = None, **kwargs):
@@ -87,19 +101,49 @@ class BulkRunException(PromptflowException):
         return self._additional_info
 
 
-class RunOperationParameterError(PromptflowException):
+class RunOperationParameterError(SDKError):
     """Exception raised when list run failed."""
 
     pass
 
 
-class RunOperationError(PromptflowException):
+class RunOperationError(SDKError):
     """Exception raised when run operation failed."""
 
     pass
 
 
-class FlowOperationError(PromptflowException):
+class FlowOperationError(SDKError):
     """Exception raised when flow operation failed."""
+
+    pass
+
+
+class ExperimentExistsError(SDKError):
+    """Exception raised when experiment already exists."""
+
+    pass
+
+
+class ExperimentNotFoundError(SDKError):
+    """Exception raised if experiment cannot be found."""
+
+    pass
+
+
+class ExperimentValidationError(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass
+
+
+class ExperimentValueError(SDKError):
+    """Exception raised if experiment validation failed."""
+
+    pass
+
+
+class ExperimentHasCycle(SDKError):
+    """Exception raised if experiment validation failed."""
 
     pass

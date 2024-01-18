@@ -12,9 +12,9 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
-import yaml
 from filelock import FileLock
 
+from promptflow import load_flow
 from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     HOME_PROMPT_FLOW_DIR,
@@ -23,14 +23,16 @@ from promptflow._sdk._constants import (
     PROMPT_FLOW_DIR_NAME,
     LocalStorageFilenames,
 )
-from promptflow._sdk._errors import BulkRunException
+from promptflow._sdk._errors import BulkRunException, InvalidRunError
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk.entities import Run
+from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, get_cli_sdk_logger
 from promptflow._utils.multimedia_utils import get_file_reference_encoder
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
@@ -212,6 +214,23 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
+        if run.flow:
+            flow_obj = load_flow(source=run.flow)
+            # TODO(2898455): refine here, check if there's cases where dag.yaml not exist
+            self._eager_mode = isinstance(flow_obj, EagerFlow)
+        else:
+            # TODO(2901279): support eager mode for run created from run folder
+            self._eager_mode = False
+
+    @property
+    def eager_mode(self) -> bool:
+        return self._eager_mode
+
+    def delete(self) -> None:
+        def on_rmtree_error(func, path, exc_info):
+            raise InvalidRunError(f"Failed to delete run {self.path} due to {exc_info[1]}.")
+
+        shutil.rmtree(path=self.path, onerror=on_rmtree_error)
 
     def _dump_meta_file(self) -> None:
         with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:
@@ -229,14 +248,20 @@ class LocalStorageOperations(AbstractRunStorage):
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one
-        self._dag_path.unlink()
-        shutil.copy(flow.path, self._dag_path)
+        if not self._eager_mode:
+            self._dag_path.unlink()
+            shutil.copy(flow.path, self._dag_path)
 
     def load_dag_as_string(self) -> str:
+        if self._eager_mode:
+            return ""
         with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             return f.read()
 
     def load_flow_tools_json(self) -> dict:
+        if self._eager_mode:
+            # no tools json for eager mode
+            return {}
         if not self._flow_tools_json_path.is_file():
             return generate_flow_tools_json(self._snapshot_folder_path, dump=False)
         else:
@@ -245,8 +270,9 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def load_io_spec(self) -> Tuple[Dict[str, Dict[str, str]], Dict[str, Dict[str, str]]]:
         """Load input/output spec from DAG."""
+        # TODO(2898455): support eager mode
         with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-            flow_dag = yaml.safe_load(f)
+            flow_dag = load_yaml(f)
         return flow_dag["inputs"], flow_dag["outputs"]
 
     def load_inputs(self) -> RunInputs:
@@ -334,12 +360,17 @@ class LocalStorageOperations(AbstractRunStorage):
         except Exception:
             return {}
 
-    def load_detail(self) -> Dict[str, list]:
+    def load_detail(self, parse_const_as_str: bool = False) -> Dict[str, list]:
         if self._detail_path.is_file():
             # legacy run with local file detail.json, then directly load from the file
             with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 return json.load(f)
         else:
+            # nan, inf and -inf are not JSON serializable
+            # according to https://docs.python.org/3/library/json.html#json.loads
+            # `parse_constant` will be called to handle these values
+            # so if parse_const_as_str is True, we will parse these values as str with a lambda function
+            json_loads = json.loads if not parse_const_as_str else partial(json.loads, parse_constant=lambda x: str(x))
             # collect from local files and concat in the memory
             flow_runs, node_runs = [], []
             for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
@@ -348,14 +379,14 @@ class LocalStorageOperations(AbstractRunStorage):
                 if line_run_record_file.suffix.lower() != ".jsonl":
                     continue
                 with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                    new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                    new_runs = [json_loads(line)["run_info"] for line in list(f)]
                     flow_runs += new_runs
             for node_folder in sorted(self._node_infos_folder.iterdir()):
                 for node_run_record_file in sorted(node_folder.iterdir()):
                     if node_run_record_file.suffix.lower() != ".jsonl":
                         continue
                     with open(node_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
-                        new_runs = [json.loads(line)["run_info"] for line in list(f)]
+                        new_runs = [json_loads(line)["run_info"] for line in list(f)]
                         node_runs += new_runs
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
