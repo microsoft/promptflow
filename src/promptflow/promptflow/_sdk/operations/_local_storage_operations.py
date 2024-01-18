@@ -64,6 +64,13 @@ def _json_dump(obj, file) -> None:
         json.dump(obj, f, ensure_ascii=False)
 
 
+def _pd_read_json(file) -> "DataFrame":
+    import pandas as pd
+
+    with _read_open(file) as f:
+        return pd.read_json(f, orient="records", lines=True)
+
+
 @dataclass
 class LoggerOperations(LogContext):
     stream: bool = False
@@ -286,26 +293,19 @@ class LocalStorageOperations(AbstractRunStorage):
         return flow_dag["inputs"], flow_dag["outputs"]
 
     def load_inputs(self) -> RunInputs:
-        import pandas as pd
-
-        with _read_open(self._inputs_path) as f:
-            df = pd.read_json(f, orient="records", lines=True)
-            return df.to_dict("list")
+        df = _pd_read_json(self._inputs_path)
+        return df.to_dict("list")
 
     def load_outputs(self) -> RunOutputs:
-        import pandas as pd
-
         # for legacy run, simply read the output file and return as list of dict
         if not self._outputs_path.is_file():
-            with _read_open(self._legacy_outputs_path) as f:
-                df = pd.read_json(f, orient="records", lines=True)
-                return df.to_dict("list")
-
-        with _read_open(self._outputs_path) as f:
-            df = pd.read_json(f, orient="records", lines=True)
-            if len(df) > 0:
-                df = df.set_index(LINE_NUMBER)
+            df = _pd_read_json(self._legacy_outputs_path)
             return df.to_dict("list")
+
+        df = _pd_read_json(self._outputs_path)
+        if len(df) > 0:
+            df = df.set_index(LINE_NUMBER)
+        return df.to_dict("list")
 
     def dump_inputs_and_outputs(self) -> None:
         inputs, outputs = self._collect_io_from_debug_info()
@@ -471,20 +471,16 @@ class LocalStorageOperations(AbstractRunStorage):
         return res
 
     def load_inputs_and_outputs(self) -> Tuple["DataFrame", "DataFrame"]:
-        import pandas as pd
-
         if not self._sdk_inputs_path.is_file() or not self._sdk_output_path.is_file():
             inputs, outputs = self._collect_io_from_debug_info()
         else:
-            with _read_open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-                inputs = pd.read_json(f, orient="records", lines=True)
-            with _read_open(self._sdk_output_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-                outputs = pd.read_json(f, orient="records", lines=True)
-                # if all line runs are failed, no need to fill
-                if len(outputs) > 0:
-                    outputs = self._outputs_padding(outputs, inputs[LINE_NUMBER].tolist())
-                    outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
-                    outputs = outputs.set_index(LINE_NUMBER)
+            inputs = _pd_read_json(self._sdk_inputs_path)
+            outputs = _pd_read_json(self._sdk_output_path)
+            # if all line runs are failed, no need to fill
+            if len(outputs) > 0:
+                outputs = self._outputs_padding(outputs, inputs[LINE_NUMBER].tolist())
+                outputs.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
+                outputs = outputs.set_index(LINE_NUMBER)
         return inputs, outputs
 
     def _collect_io_from_debug_info(self) -> Tuple["DataFrame", "DataFrame"]:
