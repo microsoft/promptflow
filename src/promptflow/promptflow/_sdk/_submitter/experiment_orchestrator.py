@@ -116,7 +116,6 @@ class ExperimentOrchestrator:
             variant=node.variant,
             flow=node.path,
             connections=node.connections,
-            experiment_name=experiment.name,
             environment_variables=node.environment_variables,
             # Config run output path to experiment output folder
             config=Configuration(overrides={Configuration.RUN_OUTPUT_PATH: run_output_path}),

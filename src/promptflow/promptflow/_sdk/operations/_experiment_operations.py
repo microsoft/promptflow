@@ -4,7 +4,7 @@
 from typing import List, Optional
 
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, ListViewType
-from promptflow._sdk._errors import ExperimentExistsError, ExperimentNotFoundError
+from promptflow._sdk._errors import ExperimentExistsError, ExperimentNotFoundError, ExperimentValueError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._telemetry import ActivityType, TelemetryMixin, monitor_operation
 from promptflow._sdk._utils import safe_parse_object_list
@@ -95,4 +95,6 @@ class ExperimentOperations(TelemetryMixin):
         """
         from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
 
+        if not isinstance(name, str):
+            raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
         return ExperimentOrchestrator(self._client.runs, self).start(self.get(name), **kwargs)
