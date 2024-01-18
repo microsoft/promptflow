@@ -1,6 +1,4 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
-id: template_standard_flow
-name: Template Standard Flow
 environment:
   python_requirements_txt: requirements.txt
 inputs:
@@ -94,7 +92,7 @@ nodes:
     type: code
     path: validate_and_generate_seed_question.py
   inputs:
-    connection: azure_open_ai_connection
+    connection: azure_openai_connection
     model: gpt-35-turbo
     validate_context_prompt: ${validate_context_prompt.output}
     seed_question_prompt: ${seed_question_prompt.output}
@@ -105,7 +103,7 @@ nodes:
     type: code
     path: validate_and_generate_test_question.py
   inputs:
-    connection: azure_open_ai_connection
+    connection: azure_openai_connection
     conditional_prompt: ${conditional_prompt.output}
     model: gpt-35-turbo
     reasoning_prompt: ${reasoning_prompt.output}
@@ -126,7 +124,7 @@ nodes:
     type: code
     path: validate_and_generate_context.py
   inputs:
-    connection: azure_open_ai_connection
+    connection: azure_openai_connection
     generate_context_prompt: ${generate_context_prompt.output}
     model: gpt-35-turbo
     question_info: ${validate_and_generate_test_question.output}

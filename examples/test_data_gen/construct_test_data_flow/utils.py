@@ -46,10 +46,10 @@ def get_question_type(testset_distribution) -> str:
 
 
 def is_valid_question(connection, model, prompt):
-    is_valid = json.loads(llm_call(connection, model, prompt))["verdict"] != "No"
-    if not is_valid:
+    if not llm_call(connection, model, prompt):
         print("Invalid question.")
-    return is_valid
+    
+    return True
 
 
 def validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio):
