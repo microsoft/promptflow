@@ -1,5 +1,4 @@
-id: template_standard_flow
-name: Template Standard Flow
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 environment:
   python_requirements_txt: requirements.txt
 inputs:
@@ -16,16 +15,16 @@ inputs:
 outputs:
   question:
     type: string
-    reference: ${generate_test_question.output.question}
+    reference: ${validate_and_generate_test_question.output.question}
   answer:
     type: string
     reference: ${generate_answer.output}
   context:
     type: string
-    reference: ${generate_context.output}
+    reference: ${validate_and_generate_context.output}
   question_type:
     type: string
-    reference: ${generate_test_question.output.question_type}
+    reference: ${validate_and_generate_test_question.output.question_type}
 nodes:
 - name: reasoning_prompt
   type: prompt
@@ -34,7 +33,7 @@ nodes:
     path: reasoning_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
-    question: ${generate_seed_question.output}
+    question: ${validate_and_generate_seed_question.output}
   use_variants: false
 - name: conditional_prompt
   type: prompt
@@ -43,23 +42,23 @@ nodes:
     path: conditional_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
-    question: ${generate_seed_question.output}
+    question: ${validate_and_generate_seed_question.output}
   use_variants: false
-- name: score_context_prompt
+- name: validate_context_prompt
   type: prompt
   source:
     type: code
-    path: score_context_prompt.jinja2
+    path: validate_context_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
   use_variants: false
-- name: score_seed_question_prompt
+- name: validate_seed_question_prompt
   type: prompt
   source:
     type: code
-    path: score_question_prompt.jinja2
+    path: validate_question_prompt.jinja2
   inputs:
-    question: ${generate_seed_question.output}
+    question: ${validate_and_generate_seed_question.output}
   use_variants: false
 - name: seed_question_prompt
   type: prompt
@@ -76,7 +75,7 @@ nodes:
     path: generate_context_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
-    question: ${generate_test_question.output.question}
+    question: ${validate_and_generate_test_question.output.question}
   use_variants: false
 - name: generate_answer_prompt
   type: prompt
@@ -84,52 +83,52 @@ nodes:
     type: code
     path: generate_answer_prompt.jinja2
   inputs:
-    context: ${generate_context.output}
-    question: ${generate_test_question.output}
+    context: ${validate_and_generate_context.output}
+    question: ${validate_and_generate_test_question.output}
   use_variants: false
-- name: generate_seed_question
+- name: validate_and_generate_seed_question
   type: python
   source:
     type: code
-    path: generate_seed_question.py
+    path: validate_and_generate_seed_question.py
   inputs:
     connection: azure_openai_connection
     model: gpt-35-turbo
-    score_context_prompt: ${score_context_prompt.output}
+    validate_context_prompt: ${validate_context_prompt.output}
     seed_question_prompt: ${seed_question_prompt.output}
   use_variants: false
-- name: generate_test_question
+- name: validate_and_generate_test_question
   type: python
   source:
     type: code
-    path: generate_test_question.py
+    path: validate_and_generate_test_question.py
   inputs:
     connection: azure_openai_connection
     conditional_prompt: ${conditional_prompt.output}
     model: gpt-35-turbo
     reasoning_prompt: ${reasoning_prompt.output}
-    score_seed_question_prompt: ${score_seed_question_prompt.output}
-    seed_question: ${generate_seed_question.output}
+    validate_seed_question_prompt: ${validate_seed_question_prompt.output}
+    seed_question: ${validate_and_generate_seed_question.output}
   use_variants: false
-- name: score_question_prompt
+- name: validate_question_prompt
   type: prompt
   source:
     type: code
-    path: score_question_prompt.jinja2
+    path: validate_question_prompt.jinja2
   inputs:
-    question: ${generate_test_question.output.question}
+    question: ${validate_and_generate_test_question.output.question}
   use_variants: false
-- name: generate_context
+- name: validate_and_generate_context
   type: python
   source:
     type: code
-    path: generate_context.py
+    path: validate_and_generate_context.py
   inputs:
     connection: azure_openai_connection
     generate_context_prompt: ${generate_context_prompt.output}
     model: gpt-35-turbo
-    question_info: ${generate_test_question.output}
-    score_question_prompt: ${score_question_prompt.output}
+    question_info: ${validate_and_generate_test_question.output}
+    validate_question_prompt: ${validate_question_prompt.output}
   use_variants: false
 - name: generate_answer
   type: python
@@ -138,7 +137,7 @@ nodes:
     path: generate_answer.py
   inputs:
     connection: azure_openai_connection
-    context: ${generate_context.output}
+    context: ${validate_and_generate_context.output}
     generate_answer_prompt: ${generate_answer_prompt.output}
     model: gpt-35-turbo
   use_variants: false

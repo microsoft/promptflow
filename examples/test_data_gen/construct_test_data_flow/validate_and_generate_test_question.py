@@ -7,25 +7,26 @@ from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
 
 
 @tool
-def generate_test_question(
+def validate_and_generate_test_question(
         connection: Union[OpenAIConnection, AzureOpenAIConnection],
         model: str,
         seed_question: str,
         reasoning_prompt: str,
         conditional_prompt: str,
-        score_seed_question_prompt: str,
+        validate_seed_question_prompt: str,
         simple_ratio: float = 0.5,
         reasoning_ratio: float = 0.25,
         conditional_ratio: float = 0.25
 ):
-    """  
-    Generates a test question based on the given prompts and distribution ratios.  
+    """
+    1. Validates the given seed question.  
+    2. Generates a test question based on the given prompts and distribution ratios.  
   
     Returns:  
         dict: The generated test question and its type.  
     """
-    if seed_question is None or not is_valid_question(connection, model, score_seed_question_prompt):
-        return None
+    if seed_question == "" or not is_valid_question(connection, model, validate_seed_question_prompt):
+        return {"question": "", "question_type": ""}
 
     testset_distribution = validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio)
 

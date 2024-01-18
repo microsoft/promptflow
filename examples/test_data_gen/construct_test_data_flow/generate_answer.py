@@ -19,7 +19,7 @@ def generate_answer(
     Returns:  
         str: The generated answer.  
     """
-    if context is None:
-        return None
+    if context == "":
+        return ""
 
     return llm_call(connection, model, generate_answer_prompt)

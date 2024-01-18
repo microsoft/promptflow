@@ -7,23 +7,24 @@ from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
 
 
 @tool
-def generate_context(
+def validate_and_generate_context(
         connection: Union[OpenAIConnection, AzureOpenAIConnection],
         model: str,
         question_info: dict,
         generate_context_prompt: str,
-        score_question_prompt: str
+        validate_question_prompt: str
 ):
-    """  
-    Generates a context based on the given prompts and question information.  
+    """
+    1. Validates the given question.
+    2. Generates a context based on the given prompts and question information.  
 
     Returns:  
         str: The generated context.  
     """
     question = question_info["question"]
     question_type = question_info["question_type"]
-    if question is None or (
-            question_type != "simple" and not is_valid_question(connection, model, score_question_prompt)):
-        return None
+    if question == "" or (
+            question_type != "simple" and not is_valid_question(connection, model, validate_question_prompt)):
+        return ""
 
     return llm_call(connection, model, generate_context_prompt)
