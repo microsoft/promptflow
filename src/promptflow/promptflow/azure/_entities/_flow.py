@@ -86,14 +86,14 @@ class Flow(AdditionalIncludesMixin):
 
     @classmethod
     def _resolve_requirements(cls, flow_path: Union[str, Path], flow_dag: dict):
-        """If requirements.txt exists, add it to the flow snapshot. Return if flow_dag is updated."""
+        """If requirements.txt exists, add it to the flow snapshot. Return True if flow_dag is updated."""
 
         flow_dir = Path(flow_path)
         if not (flow_dir / cls.DEFAULT_REQUIREMENTS_FILE_NAME).exists():
             return False
         if pydash.get(flow_dag, f"{ENVIRONMENT}.{PYTHON_REQUIREMENTS_TXT}"):
             return False
-        logger.warning(
+        logger.debug(
             f"requirements.txt is found in the flow folder: {flow_path.resolve().as_posix()}, "
             "adding it to flow.dag.yaml."
         )
@@ -102,13 +102,11 @@ class Flow(AdditionalIncludesMixin):
 
     @classmethod
     def _remove_additional_includes(cls, flow_dag: dict):
-        """Remove additional includes from flow dag."""
+        """Remove additional includes from flow dag. Return True if removed."""
         if ADDITIONAL_INCLUDES not in flow_dag:
             return False
 
-        logger.warning(
-            "Additional includes are found in the flow dag, removing them from flow.dag.yaml after resolved."
-        )
+        logger.debug("Additional includes are found in the flow dag, removing them from flow.dag.yaml after resolved.")
         flow_dag.pop(ADDITIONAL_INCLUDES, None)
         return True
 
