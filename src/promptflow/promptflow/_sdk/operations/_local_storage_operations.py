@@ -54,6 +54,11 @@ _write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
 
 
 # extract some file operations inside this file
+def _json_load(file) -> str:
+    with _read_open(file) as f:
+        return json.load(f)
+
+
 def _json_dump(obj, file) -> None:
     with _write_open(file) as f:
         json.dump(obj, f, ensure_ascii=False)
@@ -271,8 +276,7 @@ class LocalStorageOperations(AbstractRunStorage):
         if not self._flow_tools_json_path.is_file():
             return generate_flow_tools_json(self._snapshot_folder_path, dump=False)
         else:
-            with _read_open(self._flow_tools_json_path) as f:
-                return json.load(f)
+            return _json_load(self._flow_tools_json_path)
 
     def load_io_spec(self) -> Tuple[Dict[str, Dict[str, str]], Dict[str, Dict[str, str]]]:
         """Load input/output spec from DAG."""
@@ -359,16 +363,14 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def load_exception(self) -> Dict:
         try:
-            with _read_open(self._exception_path) as f:
-                return json.load(f)
+            return _json_load(self._exception_path)
         except Exception:
             return {}
 
     def load_detail(self, parse_const_as_str: bool = False) -> Dict[str, list]:
         if self._detail_path.is_file():
             # legacy run with local file detail.json, then directly load from the file
-            with _read_open(self._detail_path) as f:
-                return json.load(f)
+            return _json_load(self._detail_path)
         else:
             # nan, inf and -inf are not JSON serializable
             # according to https://docs.python.org/3/library/json.html#json.loads
@@ -395,9 +397,7 @@ class LocalStorageOperations(AbstractRunStorage):
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
     def load_metrics(self) -> Dict[str, Union[int, float, str]]:
-        with _read_open(self._metrics_path) as f:
-            metrics = json.load(f)
-        return metrics
+        return _json_load(self._metrics_path)
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""
