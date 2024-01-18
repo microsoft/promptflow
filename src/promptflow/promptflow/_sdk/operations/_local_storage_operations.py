@@ -48,6 +48,10 @@ RunInputs = NewType("RunInputs", Dict[str, List[Any]])
 RunOutputs = NewType("RunOutputs", Dict[str, List[Any]])
 RunMetrics = NewType("RunMetrics", Dict[str, Any])
 
+# extract open read/write as partial to centralize the encoding
+_read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
+_write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
+
 
 @dataclass
 class LoggerOperations(LogContext):
@@ -58,7 +62,7 @@ class LoggerOperations(LogContext):
         return str(self.file_path)
 
     def get_logs(self) -> str:
-        with open(self.file_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+        with _read_open(self.file_path) as f:
             return f.read()
 
     def _get_execute_loggers_list(cls) -> List[logging.Logger]:
@@ -84,7 +88,7 @@ class LoggerOperations(LogContext):
             if log_path.exists():
                 # for non batch run, clean up previous log content
                 try:
-                    with open(log_path, mode="w", encoding=DEFAULT_ENCODING) as file:
+                    with _read_open(log_path) as file:
                         file.truncate(0)
                 except Exception as e:
                     logger.warning(f"Failed to clean up the previous log content because {e}")
@@ -135,13 +139,13 @@ class NodeRunRecord:
             lock = FileLock(file_lock_path)
             lock.acquire()
             try:
-                with open(path, mode="w", encoding=DEFAULT_ENCODING) as f:
+                with _write_open(path) as f:
                     json.dump(asdict(self), f, ensure_ascii=False)
             finally:
                 lock.release()
         else:
             # for normal nodes in other line runs, directly write
-            with open(path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            with _write_open(path) as f:
                 json.dump(asdict(self), f, ensure_ascii=False)
 
 
@@ -170,7 +174,7 @@ class LineRunRecord:
         )
 
     def dump(self, path: Path) -> None:
-        with open(path, mode="w", encoding=DEFAULT_ENCODING) as f:
+        with _write_open(path) as f:
             json.dump(asdict(self), f, ensure_ascii=False)
 
 
@@ -233,7 +237,7 @@ class LocalStorageOperations(AbstractRunStorage):
         shutil.rmtree(path=self.path, onerror=on_rmtree_error)
 
     def _dump_meta_file(self) -> None:
-        with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+        with _write_open(self._meta_path) as f:
             json.dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, f, ensure_ascii=False)
 
     def dump_snapshot(self, flow: Flow) -> None:
@@ -255,7 +259,7 @@ class LocalStorageOperations(AbstractRunStorage):
     def load_dag_as_string(self) -> str:
         if self._eager_mode:
             return ""
-        with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+        with _read_open(self._dag_path) as f:
             return f.read()
 
     def load_flow_tools_json(self) -> dict:
@@ -265,20 +269,20 @@ class LocalStorageOperations(AbstractRunStorage):
         if not self._flow_tools_json_path.is_file():
             return generate_flow_tools_json(self._snapshot_folder_path, dump=False)
         else:
-            with open(self._flow_tools_json_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+            with _read_open(self._flow_tools_json_path) as f:
                 return json.load(f)
 
     def load_io_spec(self) -> Tuple[Dict[str, Dict[str, str]], Dict[str, Dict[str, str]]]:
         """Load input/output spec from DAG."""
         # TODO(2898455): support eager mode
-        with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+        with _read_open(self._dag_path) as f:
             flow_dag = load_yaml(f)
         return flow_dag["inputs"], flow_dag["outputs"]
 
     def load_inputs(self) -> RunInputs:
         import pandas as pd
 
-        with open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+        with _read_open(self._inputs_path) as f:
             df = pd.read_json(f, orient="records", lines=True)
             return df.to_dict("list")
 
@@ -287,11 +291,11 @@ class LocalStorageOperations(AbstractRunStorage):
 
         # for legacy run, simply read the output file and return as list of dict
         if not self._outputs_path.is_file():
-            with open(self._legacy_outputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+            with _read_open(self._legacy_outputs_path) as f:
                 df = pd.read_json(f, orient="records", lines=True)
                 return df.to_dict("list")
 
-        with open(self._outputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+        with _read_open(self._outputs_path) as f:
             df = pd.read_json(f, orient="records", lines=True)
             if len(df) > 0:
                 df = df.set_index(LINE_NUMBER)
@@ -299,14 +303,14 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def dump_inputs_and_outputs(self) -> None:
         inputs, outputs = self._collect_io_from_debug_info()
-        with open(self._sdk_inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+        with _write_open(self._inputs_path) as f:
             inputs.to_json(f, orient="records", lines=True, force_ascii=False)
-        with open(self._sdk_output_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+        with _write_open(self._outputs_path) as f:
             outputs.to_json(f, orient="records", lines=True, force_ascii=False)
 
     def dump_metrics(self, metrics: Optional[RunMetrics]) -> None:
         metrics = metrics or dict()
-        with open(self._metrics_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+        with _write_open(self._metrics_path) as f:
             json.dump(metrics, f, ensure_ascii=False)
 
     def dump_exception(self, exception: Exception, batch_result: BatchResult) -> None:
@@ -348,14 +352,14 @@ class LocalStorageOperations(AbstractRunStorage):
                 total_lines=batch_result.total_lines if batch_result else "unknown",
                 errors={"errors": errors},
             )
-        with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+        with _write_open(self._exception_path) as f:
             json.dump(
                 PromptflowExceptionPresenter.create(exception).to_dict(include_debug_info=True), f, ensure_ascii=False
             )
 
     def load_exception(self) -> Dict:
         try:
-            with open(self._exception_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+            with _read_open(self._exception_path) as f:
                 return json.load(f)
         except Exception:
             return {}
@@ -363,7 +367,7 @@ class LocalStorageOperations(AbstractRunStorage):
     def load_detail(self, parse_const_as_str: bool = False) -> Dict[str, list]:
         if self._detail_path.is_file():
             # legacy run with local file detail.json, then directly load from the file
-            with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+            with _read_open(self._detail_path) as f:
                 return json.load(f)
         else:
             # nan, inf and -inf are not JSON serializable
@@ -378,20 +382,20 @@ class LocalStorageOperations(AbstractRunStorage):
                 # so we should skip them.
                 if line_run_record_file.suffix.lower() != ".jsonl":
                     continue
-                with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
+                with _read_open(line_run_record_file) as f:
                     new_runs = [json_loads(line)["run_info"] for line in list(f)]
                     flow_runs += new_runs
             for node_folder in sorted(self._node_infos_folder.iterdir()):
                 for node_run_record_file in sorted(node_folder.iterdir()):
                     if node_run_record_file.suffix.lower() != ".jsonl":
                         continue
-                    with open(node_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
+                    with _read_open(node_run_record_file) as f:
                         new_runs = [json_loads(line)["run_info"] for line in list(f)]
                         node_runs += new_runs
             return {"flow_runs": flow_runs, "node_runs": node_runs}
 
     def load_metrics(self) -> Dict[str, Union[int, float, str]]:
-        with open(self._metrics_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+        with _read_open(self._metrics_path) as f:
             metrics = json.load(f)
         return metrics
 
@@ -472,9 +476,9 @@ class LocalStorageOperations(AbstractRunStorage):
         if not self._sdk_inputs_path.is_file() or not self._sdk_output_path.is_file():
             inputs, outputs = self._collect_io_from_debug_info()
         else:
-            with open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+            with _read_open(self._sdk_inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 inputs = pd.read_json(f, orient="records", lines=True)
-            with open(self._sdk_output_path, mode="r", encoding=DEFAULT_ENCODING) as f:
+            with _read_open(self._sdk_output_path, mode="r", encoding=DEFAULT_ENCODING) as f:
                 outputs = pd.read_json(f, orient="records", lines=True)
                 # if all line runs are failed, no need to fill
                 if len(outputs) > 0:
@@ -490,7 +494,7 @@ class LocalStorageOperations(AbstractRunStorage):
         for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
             if line_run_record_file.suffix.lower() != ".jsonl":
                 continue
-            with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
+            with _read_open(line_run_record_file) as f:
                 datas = [json.loads(line) for line in list(f)]
                 for data in datas:
                     line_number: int = data[LINE_NUMBER]
