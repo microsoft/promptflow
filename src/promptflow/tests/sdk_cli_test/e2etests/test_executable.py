@@ -1,10 +1,11 @@
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
-
 import mock
 import pytest
+import time
+import requests
+import platform
 
 from .test_cli import run_pf_command
 
@@ -18,10 +19,10 @@ DATAS_DIR = "./tests/test_configs/datas"
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestExecutable:
-    @pytest.mark.skipif(
-        sys.platform == "win32" or sys.platform == "darwin",
-        reason="Raise Exception: Process terminated with exit code 4294967295",
-    )
+    # @pytest.mark.skipif(
+    #     sys.platform == "win32" or sys.platform == "darwin",
+    #     reason="Raise Exception: Process terminated with exit code 4294967295",
+    # )
     def test_flow_build_executable(self):
         source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
         target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
@@ -41,21 +42,27 @@ class TestExecutable:
                 )
                 # Start the Python script as a subprocess
                 app_file = Path(temp_dir, "app.py").as_posix()
-                process = subprocess.Popen(["python", app_file], stderr=subprocess.PIPE)
+                process = subprocess.Popen(["python", app_file], stderr=subprocess.PIPE, shell=platform.system() == 'Windows')
+                time.sleep(5)
                 try:
-                    # Wait for a specified time (in seconds)
-                    wait_time = 5
-                    process.wait(timeout=wait_time)
-                    if process.returncode == 0:
-                        pass
+                    error_message = ""
+                    if process.returncode:
+                        error_message = process.stderr.read().decode("utf-8")
+
+                    if process.poll() is not None:
+                        raise Exception(f"Streamlit server did not start successfully. "
+                                        f"error code: {process.returncode} message:{error_message}")
                     else:
-                        raise Exception(
-                            f"Process terminated with exit code {process.returncode}, "
-                            f"{process.stderr.read().decode('utf-8')}"
-                        )
-                except (subprocess.TimeoutExpired, KeyboardInterrupt):
-                    pass
+                        try:
+                            response = requests.get("http://localhost:8501")
+                            if response.status_code == 200:
+                                print("Streamlit server started successfully.")
+                            else:
+                                raise Exception(f"Streamlit server did not start successfully. "
+                                                f"error code: {process.returncode} message:{error_message}")
+                        except requests.exceptions.ConnectionError:
+                            raise Exception(f"Could not connect to Streamlit server. error code: "
+                                            f"{process.returncode} message:{error_message}")
                 finally:
-                    # Kill the process
                     process.terminate()
-                    process.wait()  # Ensure the process is fully terminated
+                    process.wait()
