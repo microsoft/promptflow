@@ -1,11 +1,5 @@
 # Release History
 
-## 1.5.0 (Upcoming)
-
-### Features Added
-
-- [SDK/CLI][azure] Automatically put requirements.txt to flow.dag.yaml if exists in flow snapshot.
-
 ## 1.4.0 (Upcoming)
 
 ### Features Added
@@ -17,6 +11,7 @@
 - [SDK/CLI] Add `--skip-open-browser` option to `pf flow serve` to skip opening browser.
 - [SDK/CLI][azure] Support submit flow to sovereign cloud.
 - [SDK/CLI] Support `pf run delete` to delete a run irreversibly.
+- [SDK/CLI][azure] Automatically put requirements.txt to flow.dag.yaml if exists in flow snapshot.
 
 ### Bugs Fixed
 
