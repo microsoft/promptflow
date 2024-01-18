@@ -16,11 +16,12 @@ class BaseExecutionRequest(BaseModel):
 
 
 class FlowExecutionRequest(BaseExecutionRequest):
-    inputs: Mapping[str, Any]
     output_dir: str
+    inputs: Mapping[str, Any] = None
 
 
 class NodeExecutionRequest(BaseExecutionRequest):
     node_name: str
-    inputs: Mapping[str, Any]
     output_dir: str
+    flow_inputs: Mapping[str, Any] = None
+    dependency_nodes_outputs: Mapping[str, Any] = None
