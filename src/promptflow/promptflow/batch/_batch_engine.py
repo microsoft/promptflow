@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Mapping, Optional
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
-from promptflow._utils.dataclass_serializer import convert_to_dict
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -258,7 +257,7 @@ class BatchEngine:
 
         # persist outputs to output dir
         outputs = [
-            {LINE_NUMBER_KEY: r.run_info.index, **convert_to_dict(r.output)}
+            {LINE_NUMBER_KEY: r.run_info.index, **r.output}
             for r in line_results
             if r.run_info.status == Status.Completed
         ]

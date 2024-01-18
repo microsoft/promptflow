@@ -15,10 +15,7 @@ from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import InputNotFound
 
 from ..utils import (
-    EAGER_FLOW_ROOT,
-    FLOW_ROOT,
     MemoryRunStorage,
-    get_entry_file,
     get_flow_expected_metrics,
     get_flow_expected_status_summary,
     get_flow_folder,
@@ -70,36 +67,20 @@ def submit_batch_run(
     connections={},
     storage=None,
     return_output_dir=False,
-    entry=None,
-    is_eager_flow=False,
 ):
-    if is_eager_flow:
-        root = EAGER_FLOW_ROOT
-        batch_engine = BatchEngine(
-            get_entry_file(flow_folder, root=root),
-            get_flow_folder(flow_folder, root=root),
-            connections=connections,
-            entry=entry,
-            storage=storage
-        )
-    else:
-        root = FLOW_ROOT
-        batch_engine = BatchEngine(
-            get_yaml_file(flow_folder, root=root),
-            get_flow_folder(flow_folder, root=root),
-            connections=connections,
-            storage=storage
-        )
+    batch_engine = BatchEngine(
+        get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=connections, storage=storage
+    )
     if not input_dirs and inputs_mapping:
-        input_dirs = {"data": get_flow_inputs_file(flow_folder, root=root, file_name=input_file_name)}
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
     output_dir = Path(mkdtemp())
     if return_output_dir:
         return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id), output_dir
     return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
 
 
-def get_batch_inputs_line(flow_folder, root=FLOW_ROOT, sample_inputs_file="samples.json"):
-    inputs = get_flow_sample_inputs(flow_folder, root=root, sample_inputs_file=sample_inputs_file)
+def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
+    inputs = get_flow_sample_inputs(flow_folder, sample_inputs_file=sample_inputs_file)
     return len(inputs)
 
 
@@ -122,49 +103,33 @@ class TestBatch:
         assert all(node_run_info.status == Status.Completed for node_run_info in mem_run_storage._node_runs.values())
 
     @pytest.mark.parametrize(
-        "flow_folder, inputs_mapping, entry",
+        "flow_folder, inputs_mapping",
         [
             (
                 SAMPLE_FLOW,
                 {"url": "${data.url}"},
-                None,
             ),
             (
                 "prompt_tools",
                 {"text": "${data.text}"},
-                None,
             ),
             (
                 "script_with___file__",
                 {"text": "${data.text}"},
-                None,
             ),
             (
                 "sample_flow_with_functions",
                 {"question": "${data.question}"},
-                None,
-            ),
-            (
-                "dummy_flow_with_trace",
-                {"text": "${data.text}", "models": "${data.models}"},
-                "my_flow",
             ),
         ],
     )
-    def test_batch_run(self, flow_folder, inputs_mapping, entry, dev_connections):
-        is_eager_flow = entry is not None
-        root = EAGER_FLOW_ROOT if is_eager_flow else FLOW_ROOT
+    def test_batch_run(self, flow_folder, inputs_mapping, dev_connections):
         batch_result, output_dir = submit_batch_run(
-            flow_folder,
-            inputs_mapping,
-            connections=dev_connections,
-            return_output_dir=True,
-            entry=entry,
-            is_eager_flow=is_eager_flow
+            flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
         )
 
         assert isinstance(batch_result, BatchResult)
-        nlines = get_batch_inputs_line(flow_folder, root=root)
+        nlines = get_batch_inputs_line(flow_folder)
         assert batch_result.total_lines == nlines
         assert batch_result.completed_lines == nlines
         assert batch_result.start_time < batch_result.end_time

@@ -25,7 +25,7 @@ class ScriptExecutor(FlowExecutor):
         self,
         flow_file: Path,
         entry: str,
-        connections: dict,
+        connections: Optional[dict] = None,
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,

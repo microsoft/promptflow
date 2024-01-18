@@ -19,4 +19,4 @@ async def my_flow(text: str, models: list = []):
     for i, model in enumerate(models):
         tasks.append(asyncio.create_task(dummy_llm(text, model, i + 1)))
     await asyncio.wait(tasks)
-    return {"output": "dummy_output"}
+    return "dummy_output"

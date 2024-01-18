@@ -1241,14 +1241,6 @@ class TestFlowRun:
         )
         assert run.status == "Completed"
 
-    def test_eager_flow_run_with_annotation(self, pf):
-        flow_path = Path(f"{EAGER_FLOWS_DIR}/chat-basic-code-first")
-        run = pf.run(
-            flow=flow_path,
-            data=f"{EAGER_FLOWS_DIR}/chat-basic-code-first/data.jsonl",
-        )
-        assert run.status == "Completed"
-
     def test_eager_flow_test_invalid_cases(self, pf):
         # no entry provided
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
