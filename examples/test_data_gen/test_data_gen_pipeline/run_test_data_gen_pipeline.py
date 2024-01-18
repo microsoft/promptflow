@@ -39,9 +39,9 @@ def test_data_gen_pipeline_with_flow(
         data=document_node.outputs.document_node_output,
         text_chunk="${data.text_chunk}",
         connections={
-            "generate_seed_question": {"connection": connection_name},
-            "generate_test_question": {"connection": connection_name},
-            "generate_context": {"connection": connection_name},
+            "validate_and_generate_seed_question": {"connection": connection_name},
+            "validate_and_generate_test_question": {"connection": connection_name},
+            "validate_and_generate_context": {"connection": connection_name},
             "generate_answer": {"connection": connection_name},
         },
     )
@@ -66,19 +66,14 @@ if __name__ == "__main__":
     parser.add_argument("--resource_group", required=True, type=str, help="AzureML workspace resource group name")
     parser.add_argument("--workspace_name", required=True, type=str, help="AzureML workspace name")
     parser.add_argument("--aml_cluster", required=True, type=str, help="AzureML cluster name")
-    parser.add_argument(
-        "--should_skip_doc_split",
-        required=True,
-        type=bool,
-        help="If true, the document split step will be skipped,"
-        + "you will need to provide the document_nodes jsonl file in the config file.",
-    )
+    parser.add_argument("--should_skip_doc_split", action="store_true", help="Skip doc split or not")
     parser.add_argument(
         "--document_nodes_file_path", required=False, type=str, help="Splitted document nodes file path"
     )
     parser.add_argument("--documents_folder", required=False, type=str, help="Documents folder path")
     parser.add_argument("--document_chunk_size", required=False, type=int, help="Document chunk size")
     parser.add_argument("--flow_path", required=True, type=str, help="Test data generation flow path")
+    parser.add_argument("--connection_name", required=True, type=str, help="Promptflow connection name")
     parser.add_argument("--prs_instance_count", required=False, type=int, help="Parallel run step instance count")
     parser.add_argument("--prs_mini_batch_size", required=False, type=str, help="Parallel run step mini batch size")
     parser.add_argument(
@@ -106,7 +101,7 @@ if __name__ == "__main__":
     pipeline_with_flow = test_data_gen_pipeline_with_flow(
         data=data_input,
         flow_yml_path=args.flow_path,
-        connection_name="azure_open_ai_connection",
+        connection_name=args.connection_name,
         chunk_size=args.document_chunk_size,
         **prs_configs,
     )

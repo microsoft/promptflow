@@ -1,16 +1,13 @@
 import json
 import os
-import sys
 from datetime import datetime
 
 import configargparse
+from constants import TEXT_CHUNK
 from doc_split import split_doc
 
 from promptflow import PFClient
 from promptflow.entities import Run
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from contants import TEXT_CHUNK  # noqa: E402
 
 CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "config.ini"))
 
@@ -35,9 +32,9 @@ def batch_run_flow(
         stream=True,  # TODO: understand 'stream'
         environment_variables=environment_variables,
         connections={
-            "generate_seed_question": {"connection": connection_name},
-            "generate_test_question": {"connection": connection_name},
-            "generate_context": {"connection": connection_name},
+            "validate_and_generate_seed_question": {"connection": connection_name},
+            "validate_and_generate_test_question": {"connection": connection_name},
+            "validate_and_generate_context": {"connection": connection_name},
             "generate_answer": {"connection": connection_name},
         },
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
@@ -82,20 +79,21 @@ if __name__ == "__main__":
             f"'{CONFIG_FILE}' does not exist. "
             + "Please check if you are under the wrong directory or the file is missing."
         )
-    parser.add("--should_skip_doc_split", action="store_true", help="Skip doc split or not")
-    parser.add("--documents_folder", required=False, type=str, help="Documents folder path")
-    parser.add("--document_chunk_size", required=False, type=int, help="Document chunk size, default is 1024")
-    parser.add(
+    parser.add_argument("--should_skip_doc_split", action="store_true", help="Skip doc split or not")
+    parser.add_argument("--documents_folder", required=False, type=str, help="Documents folder path")
+    parser.add_argument("--document_chunk_size", required=False, type=int, help="Document chunk size, default is 1024")
+    parser.add_argument(
         "--document_nodes_output_path", required=False, type=str, help="Document nodes output path, default is ./"
     )
-    parser.add("--flow_folder", required=True, type=str, help="Test data generation flow folder path")
-    parser.add(
+    parser.add_argument("--flow_folder", required=True, type=str, help="Test data generation flow folder path")
+    parser.add_argument(
         "--flow_batch_run_size",
         required=False,
         type=int,
         help="Test data generation flow batch run size, default is 16",
     )
-    parser.add("--test_data_output_path", required=True, type=str, help="Test data output path.")
+    parser.add_argument("--connection_name", required=True, type=str, help="Promptflow connection name")
+    parser.add_argument("--test_data_output_path", required=True, type=str, help="Test data output path.")
     args = parser.parse_args()
     if not (args.documents_folder or args.document_nodes_output_path):
         parser.error("Either 'documents_folder' or 'document_nodes_output_path' should be specified.")
@@ -106,7 +104,13 @@ if __name__ == "__main__":
 
     pf = PFClient()
     # TODO: error handling
-    batch_run = batch_run_flow(pf, args.flow_folder, args.document_nodes_output_path, args.flow_batch_run_size)
+    batch_run = batch_run_flow(
+        pf,
+        args.flow_folder,
+        args.document_nodes_output_path,
+        args.flow_batch_run_size,
+        connection_name=args.connection_name,
+    )
 
     test_data_set = get_batch_run_output(pf, batch_run)
     clean_data_and_save(test_data_set, args.test_data_output_path)

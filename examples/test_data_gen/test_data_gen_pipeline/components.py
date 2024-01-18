@@ -3,6 +3,7 @@ import os
 import typing as t
 from pathlib import Path
 
+from constants import DOCUMENT_NODE, TEXT_CHUNK
 from mldesigner import Input, Output, command_component
 
 try:
@@ -14,8 +15,6 @@ except ImportError:
     raise ImportError(
         "llama_index must be installed to use this function. " "Please, install it with `pip install llama_index`."
     )
-
-TEST_DATA_KEY = "test_data"
 
 
 @command_component(
@@ -55,7 +54,7 @@ def document_split(
 
     jsonl_str = ""
     for doc in document_nodes:
-        json_dict = {"document_node": doc.to_json()}
+        json_dict = {TEXT_CHUNK: doc.text, DOCUMENT_NODE: doc.to_json()}
         jsonl_str += json.dumps(json_dict) + "\n"
 
     with open(os.path.join(document_node_output, "document_nodes.jsonl"), "wt") as text_file:
@@ -86,11 +85,15 @@ def clean_test_data_set(
 
     # Filter out empty dictionaries
     # TODO: error handling
-    filtered_data = [d for d in data if d[TEST_DATA_KEY]]
+    filtered_data = [
+        {"question": d["question"], "answer": d["answer"], "context": d["context"], "question_type": d["question_type"]}
+        for d in data
+        if d and all(val for val in d.values())
+    ]
 
     jsonl_str = ""
     for d in filtered_data:
-        jsonl_str += json.dumps(d[TEST_DATA_KEY]) + "\n"
+        jsonl_str += json.dumps(d) + "\n"
 
     with open(os.path.join(test_data_output, "test_data_set.jsonl"), "wt") as text_file:
         print(f"{jsonl_str}", file=text_file)

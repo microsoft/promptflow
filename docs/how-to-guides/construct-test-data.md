@@ -1,5 +1,10 @@
 # How to construct test data based on documents
-
+This guide will help to construct test data based on the provided documents.
+The test data construction process contains three steps:
+- Split documents to smaller trunks.
+- Based on each document trunk generate a test data containing `question`, `answer`, `context` and `question_type`.
+By `question_type`, the given flow sample would evolve the simple question into more diverse question types like reasoning and conditional.
+- Collect all the test data and remove empty values.
 
 ## Data preprocess
 ### Local
@@ -10,8 +15,19 @@ pip install -r requirements.txt
 ```
 
 #### Get started
+- Enter [construct_test_data_flow folder](examples\test_data_gen\construct_test_data_flow) to tune your prompt in order to customize your own test data gen logic.
+> [!Note] This step can be skipped if you just want to have a try.
+
+- Enter [test_data_gen_local folder](examples\test_data_gen\test_data_gen_local)
+    - Update configs in `configs.ini`
+    - After configuration, run below command to gen test data set.
+      ```bash
+      python run_test_data_gen.py
+      ```
+    - The generated test data would be a data jsonl file with path you configured in `config.ini`
 
 ### Cloud
+If you want to deal with large test data, you can leverage PRS to run flow in pipeline.
 #### Prerequisites
 Enter `test_data_gen_pipeline` folder, run below command to install required packages.
 ```bash
@@ -19,44 +35,10 @@ pip install -r requirements.txt
 ```
 
 #### Get started
-- Fill in the config values in `config.in`
-
-## Appendix
-Run doc_split script.
-Interface:
-- documents folder path
-- output file path
-- chunk_size
-- ?? do we need to provide test size? How to combine with the flow? How to instruct users to set their own chunk size?
-
-?? what if the documents folder is in azure blob folder? Or any other possibility?
-![Consider](./temp-to-delete/to_consider_doc_split.png)
-
-
-In this sample script, the `SimpleDirectoryReader` of llamaindex is used to split the documents into smaller granularity. For more supported file types, please check [here](https://docs.llamaindex.ai/en/stable/module_guides/loading/simpledirectoryreader.html).
-more file readers: ??
-
-
-Locally run doc_split script. Then upload the generated doc nodes jsonl file to portal as a data asset.
--> In this way, we should at least consider how user can do both process in local and cloud.
-local: read folder from remote site, then upload to cloud.
-portal: process and split directly in portal.
-
-## Build your test data generation flow
-Interface:
-- question type
-- test distribution
-- document chunk
-- llm connection
-
-
-## Deal with big data
-Use pipeline to run test data gen. Run sample script to submit your pipeline.
-
-## Use generated test data in flow/experiment
-For local extension, we will provide a data.jsonl file.
-For portal, the generated test data needs to be registered as a data asset in order to be used in experiment.
-### Local story in flow
-### Protal story in flow
-### Local story in experiment
-### Protal story in experiment
+- Enter [test_data_gen_pipeline folder](examples\test_data_gen\test_data_gen_pipeline)
+    - Update configs in `configs.ini`
+    - After configuration, run below command to gen test data set.
+      ```bash
+      python run_test_data_gen_pipeline.py
+      ```
+    - The generated test data would be a data asset which you can find by the last node output. You can register that data asset as a registered data asset for later use.

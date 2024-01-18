@@ -1,7 +1,5 @@
 import argparse
 import json
-import os
-import sys
 import typing as t
 
 from llama_index import SimpleDirectoryReader
@@ -16,8 +14,7 @@ except ImportError:
         "llama_index must be installed to use this function. " "Please, install it with `pip install llama_index`."
     )
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from contants import DOCUMENT_NODE, TEXT_CHUNK  # noqa: E402
+from constants import DOCUMENT_NODE, TEXT_CHUNK
 
 
 def split_doc(documents_folder: str, output_file_path: str, chunk_size: int, urls: list = None):
