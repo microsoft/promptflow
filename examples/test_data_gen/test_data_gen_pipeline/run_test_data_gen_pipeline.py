@@ -1,7 +1,11 @@
+import os
+
 import configargparse
 from azure.ai.ml import Input, MLClient, dsl, load_component
 from azure.identity import DefaultAzureCredential
 from components import clean_test_data_set, document_split
+
+CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "config.ini"))
 
 
 def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):
@@ -17,10 +21,9 @@ def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str
 
 
 @dsl.pipeline(
-    # default_compute_target="cpucluster",
     non_pipeline_inputs=["flow_yml_path", "instance_count", "mini_batch_size", "max_concurrency_per_instance"]
 )
-def pipeline_func_with_flow(
+def test_data_gen_pipeline_with_flow(
     data,
     flow_yml_path: str,
     connection_name: str,  # ?? should we override here?
@@ -34,9 +37,12 @@ def pipeline_func_with_flow(
 
     flow_node = flow_component(
         data=document_node.outputs.document_node_output,
-        document_node="${data.document_node}",
+        text_chunk="${data.text_chunk}",
         connections={
-            "generate_test_data": {"connection": "azure_open_ai_connection"},
+            "generate_seed_question": {"connection": connection_name},
+            "generate_test_question": {"connection": connection_name},
+            "generate_context": {"connection": connection_name},
+            "generate_answer": {"connection": connection_name},
         },
     )
 
@@ -48,23 +54,44 @@ def pipeline_func_with_flow(
 
 
 if __name__ == "__main__":
-    # TODO: Add error handling
-    parser = configargparse.ArgParser(default_config_files=["./config.ini"])
-    parser.add_argument("--subscription_id", type=str, help="AzureML workspace subscription id")
-    parser.add_argument("--resource_group", type=str, help="AzureML workspace resource group name")
-    parser.add_argument("--workspace_name", type=str, help="AzureML workspace name")
-    parser.add_argument("--aml_cluster", type=str, help="AzureML cluster name")
-    parser.add_argument("--documents_folder", type=str, help="Documents folder path")
-    parser.add_argument("--doc_split_yml", type=str, help="Document split component yml path")
-    parser.add_argument("--document_chunk_size", type=int, help="Document chunk size")
-    parser.add_argument("--flow_path", type=str, help="Test data generation flow path")
-    parser.add_argument("--prs_instance_count", type=int, help="Parallel run step instance count")
-    parser.add_argument("--prs_mini_batch_size", type=str, help="Parallel run step mini batch size")
+    if os.path.isfile(CONFIG_FILE):
+        parser = configargparse.ArgParser(default_config_files=[CONFIG_FILE])
+    else:
+        raise Exception(
+            f"'{CONFIG_FILE}' does not exist. "
+            + "Please check if you are under the wrong directory or the file is missing."
+        )
+    parser = configargparse.ArgParser(default_config_files=[CONFIG_FILE])
+    parser.add_argument("--subscription_id", required=True, type=str, help="AzureML workspace subscription id")
+    parser.add_argument("--resource_group", required=True, type=str, help="AzureML workspace resource group name")
+    parser.add_argument("--workspace_name", required=True, type=str, help="AzureML workspace name")
+    parser.add_argument("--aml_cluster", required=True, type=str, help="AzureML cluster name")
     parser.add_argument(
-        "--prs_max_concurrency_per_instance", type=int, help="Parallel run step max concurrency per instance"
+        "--should_skip_doc_split",
+        required=True,
+        type=bool,
+        help="If true, the document split step will be skipped,"
+        + "you will need to provide the document_nodes jsonl file in the config file.",
     )
-    parser.add_argument("--clean_data_yml", type=str, help="Clean data component yml path")
+    parser.add_argument(
+        "--document_nodes_file_path", required=False, type=str, help="Splitted document nodes file path"
+    )
+    parser.add_argument("--documents_folder", required=False, type=str, help="Documents folder path")
+    parser.add_argument("--document_chunk_size", required=False, type=int, help="Document chunk size")
+    parser.add_argument("--flow_path", required=True, type=str, help="Test data generation flow path")
+    parser.add_argument("--prs_instance_count", required=False, type=int, help="Parallel run step instance count")
+    parser.add_argument("--prs_mini_batch_size", required=False, type=str, help="Parallel run step mini batch size")
+    parser.add_argument(
+        "--prs_max_concurrency_per_instance",
+        required=False,
+        type=int,
+        help="Parallel run step max concurrency per instance",
+    )
     args = parser.parse_args()
+    if args.should_skip_doc_split and args.document_nodes_file_path is None:
+        parser.error("--document_nodes_file_path is required when --should_skip_doc_split is True")
+    elif not args.should_skip_doc_split and args.documents_folder is None:
+        parser.error("--documents_folder is required when --should_skip_doc_split is False")
 
     ml_client = get_ml_client(args.subscription_id, args.resource_group, args.workspace_name)
 
@@ -76,12 +103,12 @@ if __name__ == "__main__":
         "max_concurrency_per_instance": args.prs_max_concurrency_per_instance,
     }
 
-    pipeline_with_flow = pipeline_func_with_flow(
+    pipeline_with_flow = test_data_gen_pipeline_with_flow(
         data=data_input,
         flow_yml_path=args.flow_path,
         connection_name="azure_open_ai_connection",
         chunk_size=args.document_chunk_size,
-        **prs_configs  # TODO: Need to do error handling for parsing configs
+        **prs_configs,
     )
     pipeline_with_flow.compute = args.aml_cluster
 

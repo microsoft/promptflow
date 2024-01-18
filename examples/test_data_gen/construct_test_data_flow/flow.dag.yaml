@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 id: template_standard_flow
 name: Template Standard Flow
 environment:
@@ -45,19 +46,19 @@ nodes:
     context: ${inputs.text_chunk}
     question: ${generate_seed_question.output}
   use_variants: false
-- name: score_context_prompt
+- name: validate_context_prompt
   type: prompt
   source:
     type: code
-    path: score_context_prompt.jinja2
+    path: validate_context_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
   use_variants: false
-- name: score_seed_question_prompt
+- name: validate_seed_question_prompt
   type: prompt
   source:
     type: code
-    path: score_question_prompt.jinja2
+    path: validate_question_prompt.jinja2
   inputs:
     question: ${generate_seed_question.output}
   use_variants: false
@@ -93,9 +94,9 @@ nodes:
     type: code
     path: generate_seed_question.py
   inputs:
-    connection: azure_openai_connection
+    connection: azure_open_ai_connection
     model: gpt-35-turbo
-    score_context_prompt: ${score_context_prompt.output}
+    validate_context_prompt: ${validate_context_prompt.output}
     seed_question_prompt: ${seed_question_prompt.output}
   use_variants: false
 - name: generate_test_question
@@ -104,18 +105,18 @@ nodes:
     type: code
     path: generate_test_question.py
   inputs:
-    connection: azure_openai_connection
+    connection: azure_open_ai_connection
     conditional_prompt: ${conditional_prompt.output}
     model: gpt-35-turbo
     reasoning_prompt: ${reasoning_prompt.output}
-    score_seed_question_prompt: ${score_seed_question_prompt.output}
+    validate_seed_question_prompt: ${validate_seed_question_prompt.output}
     seed_question: ${generate_seed_question.output}
   use_variants: false
-- name: score_question_prompt
+- name: validate_question_prompt
   type: prompt
   source:
     type: code
-    path: score_question_prompt.jinja2
+    path: validate_question_prompt.jinja2
   inputs:
     question: ${generate_test_question.output.question}
   use_variants: false
@@ -125,11 +126,11 @@ nodes:
     type: code
     path: generate_context.py
   inputs:
-    connection: azure_openai_connection
+    connection: azure_open_ai_connection
     generate_context_prompt: ${generate_context_prompt.output}
     model: gpt-35-turbo
     question_info: ${generate_test_question.output}
-    score_question_prompt: ${score_question_prompt.output}
+    validate_question_prompt: ${validate_question_prompt.output}
   use_variants: false
 - name: generate_answer
   type: python
@@ -137,7 +138,7 @@ nodes:
     type: code
     path: generate_answer.py
   inputs:
-    connection: azure_openai_connection
+    connection: azure_open_ai_connection
     context: ${generate_context.output}
     generate_answer_prompt: ${generate_answer_prompt.output}
     model: gpt-35-turbo
