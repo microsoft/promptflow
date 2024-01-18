@@ -16,11 +16,9 @@ from promptflow._utils.flow_utils import load_flow_dag
 from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._entities._flow import Flow
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-FLOWS_DIR = PROMOTFLOW_ROOT / "tests/test_configs/flows"
-RUNS_DIR = Path("./tests/test_configs/runs")
-
 tests_root_dir = Path(__file__).parent.parent.parent
+FLOWS_DIR = (tests_root_dir / "test_configs/flows").resolve()
+RUNS_DIR = (tests_root_dir / "test_configs/runs").resolve()
 
 
 def load_flow(source):
