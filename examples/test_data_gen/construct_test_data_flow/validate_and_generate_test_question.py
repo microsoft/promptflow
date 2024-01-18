@@ -1,9 +1,9 @@
 from typing import Union
 
-from utils import is_valid_question, validate_distribution, get_question_type, generate_question
+from utils import generate_question, get_question_type, is_valid_question, validate_distribution
 
 from promptflow import tool
-from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 @tool
@@ -25,7 +25,7 @@ def validate_and_generate_test_question(
     Returns:  
         dict: The generated test question and its type.  
     """
-    if seed_question == "" or not is_valid_question(connection, model, validate_seed_question_prompt):
+    if not seed_question or not is_valid_question(connection, model, validate_seed_question_prompt):
         return {"question": "", "question_type": ""}
 
     testset_distribution = validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio)

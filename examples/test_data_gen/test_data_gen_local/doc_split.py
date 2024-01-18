@@ -1,8 +1,8 @@
 import argparse
 import json
 import os
+import sys
 import typing as t
-from datetime import datetime
 
 from llama_index import SimpleDirectoryReader
 from llama_index.readers import BeautifulSoupWebReader
@@ -16,6 +16,9 @@ except ImportError:
         "llama_index must be installed to use this function. " "Please, install it with `pip install llama_index`."
     )
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from contants import DOCUMENT_NODE, TEXT_CHUNK  # noqa: E402
+
 
 def split_doc(documents_folder: str, output_file_path: str, chunk_size: int, urls: list = None):
     # load docs
@@ -26,9 +29,6 @@ def split_doc(documents_folder: str, output_file_path: str, chunk_size: int, url
             documents_folder, recursive=True, exclude=["index.md", "README.md"], encoding="utf-8"
         ).load_data()
 
-    doc_info = [doc.metadata["file_name"] for doc in documents]
-    print(f"documents: {doc_info}")
-
     # Convert documents into nodes
     node_parser = SentenceSplitter.from_defaults(chunk_size=chunk_size, chunk_overlap=0, include_metadata=True)
     documents = t.cast(t.List[LlamaindexDocument], documents)
@@ -36,11 +36,10 @@ def split_doc(documents_folder: str, output_file_path: str, chunk_size: int, url
 
     jsonl_str = ""
     for doc in document_nodes:
-        json_dict = {"document_node": doc.to_json()}
+        json_dict = {TEXT_CHUNK: doc.text, DOCUMENT_NODE: doc.to_json()}
         jsonl_str += json.dumps(json_dict) + "\n"
 
-    cur_time_str = datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
-    with open(os.path.join(output_file_path, "document-nodes-" + cur_time_str + ".jsonl"), "wt") as text_file:
+    with open(output_file_path, "wt") as text_file:
         print(f"{jsonl_str}", file=text_file)
 
 

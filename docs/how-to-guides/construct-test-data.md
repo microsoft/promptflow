@@ -2,7 +2,26 @@
 
 
 ## Data preprocess
-### local
+### Local
+#### Prerequisites
+Enter `test_data_gen_local` folder, run below command to install required packages.
+```bash
+pip install -r requirements.txt
+```
+
+#### Get started
+
+### Cloud
+#### Prerequisites
+Enter `test_data_gen_pipeline` folder, run below command to install required packages.
+```bash
+pip install -r requirements.txt
+```
+
+#### Get started
+- Fill in the config values in `config.in`
+
+## Appendix
 Run doc_split script.
 Interface:
 - documents folder path
@@ -17,7 +36,7 @@ Interface:
 In this sample script, the `SimpleDirectoryReader` of llamaindex is used to split the documents into smaller granularity. For more supported file types, please check [here](https://docs.llamaindex.ai/en/stable/module_guides/loading/simpledirectoryreader.html).
 more file readers: ??
 
-### portal
+
 Locally run doc_split script. Then upload the generated doc nodes jsonl file to portal as a data asset.
 -> In this way, we should at least consider how user can do both process in local and cloud.
 local: read folder from remote site, then upload to cloud.

@@ -3,7 +3,7 @@ from typing import Union
 from utils import llm_call
 
 from promptflow import tool
-from promptflow.connections import OpenAIConnection, AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 @tool
