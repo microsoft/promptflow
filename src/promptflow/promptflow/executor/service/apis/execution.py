@@ -40,6 +40,7 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
             connections,
             flow_request.working_dir,
             storage=storage,
+            raise_ex=False,
         )
         line_result: LineResult = flow_executor.exec_line(
             flow_request.inputs,
