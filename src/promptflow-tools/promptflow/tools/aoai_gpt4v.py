@@ -15,45 +15,82 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
     post_process_chat_api_response
 
 
-def list_versions() -> List[Dict[str, str]]:
-    result = []
-    for i in range(2):
-        random_word = f"version_{i}"
-        cur_item = {
-            "value": random_word,
-        }
-        result.append(cur_item)
-
-    return result
+GPT4V_VERSION = "0314"
 
 
-def list_deployment_names(subscription_id, resource_group_name, workspace_name, version) -> List[Dict[str, str]]:
+def _get_credential():
     from azure.identity import DefaultAzureCredential
-    connection = "azure_open_ai"
-    credential = DefaultAzureCredential()
-    token = credential.get_token("https://management.azure.com/.default")
+    from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
+    cloud_name = _get_default_cloud_name()
+    if cloud_name != AzureEnvironments.ENV_DEFAULT:
+        cloud = _get_cloud(cloud=cloud_name)
+        authority = cloud.get(EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT)
+        credential = DefaultAzureCredential(authority=authority, exclude_shared_token_cache_credential=True)
+    else:
+        credential = DefaultAzureCredential()
 
-    url = (
-        f"https://ml.azure.com/api/eastus2euap/flow/api/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/"
-        f"Microsoft.MachineLearningServices/workspaces/{workspace_name}/Connections/{connection}/AzureOpenAIDeployments"
-    )
-    result = requests.get(url, headers={"Authorization": f"Bearer {token.token}"})
-    import json
-    print(result.text)
-    deployments = json.loads(result.text)
+    return credential
+
+
+def _parse_resource_id(resourceId):
+    split_parts = resourceId.split("/")
+    sub, rg, account = split_parts[2], split_parts[4], split_parts[-1]
+
+    return sub, rg, account
+
+
+class Deployment:
+    def __init__(self,
+                 name: str,
+                 model_name: str,
+                 version: str):
+        self.name = name
+        self.model_name = model_name
+        self.version = version
+
+
+def _build_deployment_dict(item) -> Deployment:
+    model = item.properties.model
+    return Deployment(item.name, model.name, model.version)
+
+
+def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection) -> List[Dict[str, str]]:
+    from azure.identity import DefaultAzureCredential
+    from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
+    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
     
-    deployment_names=[]
-    for deployment in deployments:
-        if(deployment.get("capabilities", {}).get("chat_completion", False)):
-            name = deployment.get('name')
-            cur_item = {
-                "value": name,
-                "display_value": name,
-                "description": f"this is endpoint: {name}",
-            }
-            deployment_names.add(cur_item)
+    credential = _get_credential()
+    conn = ArmConnectionOperations._build_connection_dict(
+            name=connection.name, 
+            subscription_id=subscription_id, 
+            resource_group_name=resource_group_name, 
+            workspace_name=workspace_name, 
+            credential=credential
+            )
+    resource_id = conn.get("value").get('resource_id', "") # 等明天sdk发版 就可以拿了。
+    print(resource_id)
+    conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
 
-    return deployment_names
+    client = CognitiveServicesManagementClient(
+        credential=credential,
+        subscription_id=conn_sub,
+        )
+    deployment_collection = client.deployments.list(
+        resource_group_name=conn_rg,
+        account_name=conn_account,
+    )
+
+    res = []
+    for item in deployment_collection:
+        deployment = _build_deployment_dict(item)
+        if deployment.version == GPT4V_VERSION:
+            cur_item = {
+                "value": deployment.name,
+                "display_value": deployment.name,
+            }
+            res.append(cur_item)
+
+    return res
 
 
 class AzureOpenAI(ToolProvider):
@@ -73,7 +110,6 @@ class AzureOpenAI(ToolProvider):
     def chat(
         self,
         prompt: PromptTemplate,
-        version: str,
         deployment_name: str,
         temperature: float = 1.0,
         top_p: float = 1.0,

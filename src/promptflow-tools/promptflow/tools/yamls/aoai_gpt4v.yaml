@@ -21,25 +21,19 @@ promptflow.tools.aoai_gpt4v.AzureOpenAI.chat:
     connection:
       type:
         - AzureOpenAIConnection
-    version:
-      type:
-        - string
-      enabled_by: connection
-      enabled_by_type: [AzureOpenAIConnection]
-      enum:
-      - version1
-      - version2
-      allow_manual_entry: true
-      is_multi_select: false
     deployment_name:
       type:
         - string
-      enabled_by: version
-      capabilities:
-        completion: true
-        chat_completion: false
-        embeddings: false
-      allow_manual_entry: false
+      enabled_by: connection
+      dynamic_list:
+        func_path: promptflow.tools.aoai_gpt4v.list_deployment_names
+        func_kwargs:
+        - name: connection
+          type: 
+          - AzureOpenAIConnection
+          optional: true
+          reference: ${inputs.connection}
+      allow_manual_entry: true
       is_multi_select: false
     temperature:
       default: 1
