@@ -159,6 +159,7 @@ class Run(YAMLTranslatableMixin):
             self._lineage_id = self._flow_name
         # default run name: flow directory name + timestamp
         self.name = name or self._generate_run_name()
+        experiment_name = kwargs.get("experiment_name", None)
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
             self.flow = Path(flow).resolve().absolute()
             flow_dir = self._get_flow_dir()
@@ -171,7 +172,7 @@ class Run(YAMLTranslatableMixin):
             self._flow_name = flow_dir.name
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
-            self._experiment_name = kwargs.get("experiment_name", None)
+            self._experiment_name = experiment_name
         elif self._run_source == RunInfoSources.RUN_HISTORY:
             self._error = kwargs.get("error", None)
             self._output = kwargs.get("output", None)

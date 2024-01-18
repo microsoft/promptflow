@@ -83,7 +83,8 @@
     "nunit",
     "astext",
     "Likert",
-    "uvicorn"
+    "uvicorn",
+    "pfsvc"
   ],
   "ignoreWords": [
     "openmpi",
@@ -164,7 +165,7 @@
     "WBITS",
     "laddr",
     "nrows",
-    "pfsvc"
+    "Dumpable"
   ],
   "flagWords": [
     "Prompt Flow"
