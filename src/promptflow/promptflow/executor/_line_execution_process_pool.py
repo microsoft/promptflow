@@ -554,6 +554,7 @@ def _exec_line(
             node_concurrency=DEFAULT_CONCURRENCY_BULK,
         )
         if line_result is not None:
+            # For eager flow, the output may be a dataclass which is not picklable, we need to convert it to dict.
             if not isinstance(line_result.output, dict):
                 line_result.output = convert_eager_flow_output_to_dict(line_result.output)
             line_result.output.pop(LINE_NUMBER_KEY, None)

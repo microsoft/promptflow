@@ -92,7 +92,8 @@ class ScriptExecutor(FlowExecutor):
             else:
                 output = self._func(**inputs)
             traces = Tracer.end_tracing(line_run_id)
-            # Should convert output to dict before stroing it to run info, since we wiil add line_number to output.
+            # Should convert output to dict before storing it to run info, since we will add line_number to it,
+            # so it must be a dict.
             output_dict = convert_eager_flow_output_to_dict(output)
             run_tracker.end_run(line_run_id, result=output_dict, traces=traces)
         except Exception as e:
