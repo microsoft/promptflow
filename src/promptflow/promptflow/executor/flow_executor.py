@@ -743,9 +743,10 @@ class FlowExecutor:
             line_result.output[LINE_NUMBER_KEY] = index
         return line_result
 
-    def _add_line_results(self, line_results: List[LineResult]):
-        self._run_tracker._flow_runs.update({result.run_info.run_id: result.run_info for result in line_results})
-        self._run_tracker._node_runs.update(
+    def _add_line_results(self, line_results: List[LineResult], run_tracker: Optional[RunTracker] = None):
+        run_tracker = run_tracker or self._run_tracker
+        run_tracker._flow_runs.update({result.run_info.run_id: result.run_info for result in line_results})
+        run_tracker._node_runs.update(
             {
                 node_run_info.run_id: node_run_info
                 for result in line_results

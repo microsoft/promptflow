@@ -19,6 +19,7 @@ from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import ProcessPoolError
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
+from promptflow._utils.dataclass_serializer import convert_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
@@ -110,7 +111,10 @@ class LineExecutionProcessPool:
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
         self._use_fork = use_fork
-        self._storage = flow_executor._run_tracker._storage
+        if isinstance(flow_executor, ScriptExecutor):
+            self._storage = flow_executor._storage
+        else:
+            self._storage = flow_executor._run_tracker._storage
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
         self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", flow_executor._line_timeout_sec)
@@ -549,7 +553,9 @@ def _exec_line(
             validate_inputs=validate_inputs,
             node_concurrency=DEFAULT_CONCURRENCY_BULK,
         )
-        if line_result is not None and isinstance(line_result.output, dict):
+        if line_result is not None:
+            if not isinstance(line_result.output, dict):
+                line_result.output = convert_to_dict(line_result.output)
             line_result.output.pop(LINE_NUMBER_KEY, None)
         # TODO: Put serialized line result into queue to catch serialization error beforehand.
         # Otherwise it might cause the process to hang, e.g, line failed because output is not seralizable.
@@ -594,16 +600,16 @@ def _process_wrapper(
 
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
-    run_tracker = RunTracker(run_storage=storage, run_mode=flow_executor._run_tracker._run_mode)
     if isinstance(flow_executor, ScriptExecutor):
         return ScriptExecutor(
             flow_file=flow_executor._flow_file,
             entry=flow_executor._entry,
             connections=flow_executor._connections,
             working_dir=flow_executor._working_dir,
-            storage=run_tracker._storage,
+            storage=storage,
         )
     else:
+        run_tracker = RunTracker(run_storage=storage, run_mode=flow_executor._run_tracker._run_mode)
         return FlowExecutor(
             flow=flow_executor._flow,
             connections=flow_executor._connections,

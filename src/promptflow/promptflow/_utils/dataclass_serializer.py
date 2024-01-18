@@ -5,7 +5,7 @@
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, List, Type, TypeVar
+from typing import Any, Callable, Dict, List, Type, TypeVar
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.contracts.tool import ConnectionType
@@ -115,3 +115,12 @@ def assertEqual(a: dict, b: dict, path: str = ""):
             assertEqual(a[i], b[i], path + f"[{i}]")
     else:
         assert a == b, f"{path}: {a} != {b}"
+
+
+def convert_to_dict(result: Any):
+    if isinstance(result, dict):
+        return result
+    elif is_dataclass(result):
+        return {f.name: getattr(result, f.name) for f in fields(result)}
+    else:
+        return {"output": result}

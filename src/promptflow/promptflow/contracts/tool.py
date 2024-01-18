@@ -298,6 +298,14 @@ class InputDefinition:
             data.get("custom_type", []),
         )
 
+    def to_flow_input_definition(self):
+        # Used for eager flow to convert input definition to flow input definition.
+        from .flow import FlowInputDefinition
+
+        return FlowInputDefinition(
+            type=self.type[0], default=self.default, description=self.description, enum=self.enum
+        )
+
 
 @dataclass
 class OutputDefinition:

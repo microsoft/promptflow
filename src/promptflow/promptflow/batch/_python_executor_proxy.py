@@ -6,11 +6,13 @@ from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
 from promptflow._core.operation_context import OperationContext
+from promptflow._core.run_tracker import RunTracker
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 from promptflow.executor._flow_nodes_scheduler import DEFAULT_CONCURRENCY_BULK
 from promptflow.executor._result import AggregationResult, LineResult
+from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.storage._run_storage import AbstractRunStorage
 
 
@@ -51,13 +53,17 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
         self._flow_executor._node_concurrency = DEFAULT_CONCURRENCY_BULK
-        with self._flow_executor._run_tracker.node_log_manager:
+        if isinstance(self._flow_executor, ScriptExecutor):
+            run_tracker = RunTracker(self._flow_executor._storage)
+        else:
+            run_tracker = self._flow_executor._run_tracker
+        with run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
             line_results = self._flow_executor._exec_batch_with_process_pool(
                 batch_inputs, run_id, output_dir, validate_inputs=True
             )
             # For bulk run, currently we need to add line results to run_tracker
-            self._flow_executor._add_line_results(line_results)
+            self._flow_executor._add_line_results(line_results, run_tracker)
         return line_results
 
     def get_inputs_definition(self):

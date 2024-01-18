@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
-from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.dataclass_serializer import convert_to_dict, serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.multimedia_utils import default_json_encoder
@@ -232,9 +232,10 @@ class RunTracker(ThreadLocalSingleton):
         self,
         run_id: str,
         *,
-        result: Optional[dict] = None,
+        result: Optional[Any] = None,
         ex: Optional[Exception] = None,
         traces: Optional[List] = None,
+        convert_result_to_dict: bool = False,
     ):
         run_info = self._flow_runs.get(run_id) or self._node_runs.get(run_id)
         if run_info is None:
@@ -246,6 +247,9 @@ class RunTracker(ThreadLocalSingleton):
                 target=ErrorTarget.RUN_TRACKER,
                 run_id=run_id,
             )
+        if convert_result_to_dict and result is not None:
+            # For eager flow, the result may not a dict, we need to convert it to dict.
+            result = convert_to_dict(result)
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
             if traces:

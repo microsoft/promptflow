@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Mapping, Optional
 from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
+from promptflow._utils.dataclass_serializer import convert_to_dict
 from promptflow._utils.async_utils import async_run_allowing_running_loop
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
@@ -100,6 +101,7 @@ class BatchEngine:
             self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
             FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
             self._program_language = self._flow.program_language
+        # if the flow file is a python file, we need to set the flow to None and set the program language to python
         elif Path(flow_file).suffix.lower() == ".py":
             self._flow = None
             self._program_language = FlowLanguage.Python
@@ -170,8 +172,9 @@ class BatchEngine:
 
                     # set batch input source from input mapping
                     OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
-                    # resolve input data from input dirs and apply inputs mapping
+                    # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
                     inputs = self._flow.inputs if self._flow else self._executor_proxy.get_inputs_definition()
+                    # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     # resolve output dir
@@ -239,7 +242,7 @@ class BatchEngine:
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
-        # if the flow is None, then there is no aggregation node and we don't need to apply default value for inputs.
+        # if the flow is None, we don't need to apply default value for inputs.
         if self._flow is not None:
             batch_inputs = [
                 apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
@@ -255,7 +258,7 @@ class BatchEngine:
 
         # persist outputs to output dir
         outputs = [
-            {LINE_NUMBER_KEY: r.run_info.index, **r.output}
+            {LINE_NUMBER_KEY: r.run_info.index, **convert_to_dict(r.output)}
             for r in line_results
             if r.run_info.status == Status.Completed
         ]
