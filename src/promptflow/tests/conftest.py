@@ -124,9 +124,9 @@ def install_custom_tool_pkg():
 
 
 @pytest.fixture(scope="session")
-def install_custom_llm_tool_pkg():
+def install_promptflow_tools_pkg():
     # The tests could be running in parallel. Use a lock to prevent race conditions.
-    lock = FileLock("custom_llm_tool_pkg_installation.lock")
+    lock = FileLock("promptflow_tools_pkg_installation.lock")
     with lock:
         try:
             import promptflow.tools  # noqa: F401
