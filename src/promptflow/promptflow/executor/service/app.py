@@ -12,4 +12,4 @@ app.include_router(common_router)
 
 
 if __name__ == "__main__":
-    uvicorn.run("promptflow.service.app:app", port=8000)
+    uvicorn.run("promptflow.executor.service.app:app", port=8000)
