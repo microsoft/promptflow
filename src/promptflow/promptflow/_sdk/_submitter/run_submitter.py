@@ -87,10 +87,13 @@ class RunSubmitter:
         run._dump()  # pylint: disable=protected-access
 
         def _get_failed_line_number_set(resume_from_run: Run) -> set:
+            local_storage = LocalStorageOperations(resume_from_run)
+            oringal_inputs = local_storage.load_inputs()
+            oringal_outputs = local_storage.load_outputs()
             # Load input and output of the resume_from_run, and calculate failed lines according to the diff
-            return set()
+            return set(oringal_inputs["line_number"]) - set(oringal_outputs["line_number"])
 
-        failed_line_number_set = _get_failed_line_number_set if resume_from_run else None
+        failed_line_number_set = _get_failed_line_number_set(resume_from_run) if resume_from_run else None
         try:
             batch_engine = BatchEngine(
                 flow.path,
@@ -124,12 +127,6 @@ class RunSubmitter:
             if error_logs:
                 logger.warning("\n".join(error_logs))
 
-            def merge_storage_without_override(new_run: Run, resume_from_run: Run):
-                # Merge the storage of new_run with the information into the storage of resume_frome_run
-                # But don't override the information of lines in new_run
-                pass
-
-            merge_storage_without_override(run, resume_from_run)
             # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:
@@ -147,6 +144,23 @@ class RunSubmitter:
             local_storage.dump_snapshot(flow)
             # persist inputs, outputs and metrics
             local_storage.persist_result(batch_result)
+
+            from pathlib import Path
+
+            # This is just POC code
+            def merge_storage_without_override(new_run: Run, resume_from_run: Run):
+                # Merge the storage of new_run with the information into the storage of resume_frome_run
+                # But don't override the information of lines in new_run
+                original_output_path = Path(resume_from_run.properties["output_path"])
+                new_output_path = Path(new_run.properties["output_path"])
+                with open(new_output_path / "flow_outputs" / "output.jsonl", "a") as dst:
+                    with open(original_output_path / "flow_outputs" / "output.jsonl", "r") as src:
+                        content = src.read()
+                        dst.write(content)
+
+            if resume_from_run:
+                merge_storage_without_override(run, resume_from_run)
+
             # exceptions
             local_storage.dump_exception(exception=exception, batch_result=batch_result)
             # system metrics: token related

@@ -267,8 +267,6 @@ class LocalStorageOperations(AbstractRunStorage):
 
         with open(self._outputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             df = pd.read_json(f, orient="records", lines=True)
-            if len(df) > 0:
-                df = df.set_index(LINE_NUMBER)
             return df.to_dict("list")
 
     def dump_inputs_and_outputs(self) -> None:
