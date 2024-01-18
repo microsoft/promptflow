@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 import httpx
+from azure.core.exceptions import HttpResponseError
 from azure.storage.blob.aio import BlobServiceClient
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, DownloadedRun
@@ -35,17 +36,40 @@ class AsyncRunDownloader:
         self.run_ops = run_ops
         self.datastore = run_ops._workspace_default_datastore
         self.output_folder = Path(output_folder)
-        self.blob_service_client = self._init_blob_service_client()
         self._use_flow_outputs = False  # old runtime does not write debug_info output asset, use flow_outputs instead
 
     def _init_blob_service_client(self):
-        logger.debug("Initializing blob service client.")
+        """Initialize the blob service client."""
         account_url = f"{self.datastore.account_name}.blob.{self.datastore.endpoint}"
         return BlobServiceClient(account_url=account_url, credential=self.run_ops._credential)
+
+    async def _check_container_permission(self):
+        """Check if the user has permission to access the container."""
+        logger.debug("Checking if user has permission to perform download operations on the container.")
+        blob_service_client = self._init_blob_service_client()
+        async with blob_service_client:
+            container_name = self.datastore.container_name
+            container_client = blob_service_client.get_container_client(container_name)
+            async with container_client:
+                try:
+                    async for _ in container_client.list_blobs():
+                        return True
+                except HttpResponseError as e:
+                    if e.status_code == 403:
+                        raise RunOperationError(
+                            f"User does not have permission to perform this operation on storage account "
+                            f"{self.datastore.account_name!r} container {container_name!r}. Original azure blob error: "
+                            f"{str(e)}"
+                        )
+                    else:
+                        raise e
 
     async def download(self) -> str:
         """Download the run results asynchronously."""
         try:
+            await self._check_container_permission()
+            logger.debug("Initializing blob service client.")
+            self.blob_service_client = self._init_blob_service_client()
             # pass verify=False to client to disable SSL verification.
             # Source: https://github.com/encode/httpx/issues/1331
             async with httpx.AsyncClient(verify=False) as client:
