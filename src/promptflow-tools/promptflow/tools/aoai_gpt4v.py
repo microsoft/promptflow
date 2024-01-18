@@ -48,6 +48,11 @@ class Deployment:
         self.version = version
 
 
+class ListDeploymentsError(Exception):
+    def __init__(self, msg):
+        super().__init__(msg)
+
+
 def _build_deployment_dict(item) -> Deployment:
     model = item.properties.model
     return Deployment(item.name, model.name, model.version)
