@@ -42,14 +42,14 @@ class TestExecutable:
                 )
                 # Start the Python script as a subprocess
                 app_file = Path(temp_dir, "app.py").as_posix()
+                if not Path(app_file).exists():
+                    raise Exception(f"File {app_file} does not exist.")
                 process = subprocess.Popen(["python", app_file], stderr=subprocess.PIPE, shell=platform.system() == 'Windows')
                 time.sleep(5)
                 try:
-                    error_message = ""
-                    if process.returncode:
-                        error_message = process.stderr.read().decode("utf-8")
-
+                    error_message = process.stderr.read().decode("utf-8")
                     if process.poll() is not None:
+                        print(f"Error output from child process: {error_message}")
                         raise Exception(f"Streamlit server did not start successfully. "
                                         f"error code: {process.returncode} message:{error_message}")
                     else:
