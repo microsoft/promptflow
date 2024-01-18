@@ -159,6 +159,17 @@ class TestToolsManager:
         package_tools = collect_package_tools(legacy_node_source_tools)
         assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
 
+    def test_collect_package_tools_set_defaut_input_index(self, install_custom_llm_tool_pkg):
+        tool = "promptflow.tools.open_model_llm.OpenModelLLM.call"
+        package_tools = collect_package_tools([tool])
+        assert package_tools[tool]['inputs']['endpoint_name']['ui_hints']['index'] == 0
+        assert package_tools[tool]['inputs']['deployment_name']['ui_hints']['index'] == 1
+        assert package_tools[tool]['inputs']['api']['ui_hints']['index'] == 2
+        assert package_tools[tool]['inputs']['temperature']['ui_hints']['index'] == 3
+        assert package_tools[tool]['inputs']['max_new_tokens']['ui_hints']['index'] == 4
+        assert package_tools[tool]['inputs']['top_p']['ui_hints']['index'] == 5
+        assert package_tools[tool]['inputs']['model_kwargs']['ui_hints']['index'] == 6
+
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
         tools, specs, templates = collect_package_tools_and_connections(keys)
