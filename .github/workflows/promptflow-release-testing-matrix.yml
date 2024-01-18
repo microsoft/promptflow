@@ -106,13 +106,13 @@ jobs:
 #          -m "unittest or e2etest" `
 #          -o "${{ github.workspace }}/test-results-sdk-cli.xml" `
 #          --ignore-glob ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/e2etests/test_executable.py
-#    - name: Install pf executable
-#      shell: pwsh
-#      working-directory: artifacts
-#      run: |
-#        Set-PSDebug -Trace 1
-#        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executable]"}}
-#        pip freeze
+    - name: Install pf executable
+      shell: pwsh
+      working-directory: artifacts
+      run: |
+        Set-PSDebug -Trace 1
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[executable]"}}
+        pip freeze
     - name: Run SDK CLI Executable Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
