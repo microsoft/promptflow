@@ -309,9 +309,9 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def dump_inputs_and_outputs(self) -> None:
         inputs, outputs = self._collect_io_from_debug_info()
-        with _write_open(self._inputs_path) as f:
+        with _write_open(self._sdk_inputs_path) as f:
             inputs.to_json(f, orient="records", lines=True, force_ascii=False)
-        with _write_open(self._outputs_path) as f:
+        with _write_open(self._sdk_output_path) as f:
             outputs.to_json(f, orient="records", lines=True, force_ascii=False)
 
     def dump_metrics(self, metrics: Optional[RunMetrics]) -> None:
