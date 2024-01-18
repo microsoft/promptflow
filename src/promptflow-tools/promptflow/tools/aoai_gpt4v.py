@@ -54,8 +54,7 @@ def _build_deployment_dict(item) -> Deployment:
     return Deployment(item.name, model.name, model.version)
 
 
-def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection) -> List[Dict[str, str]]:
-    from azure.identity import DefaultAzureCredential
+def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection: AzureOpenAIConnection = None) -> List[Dict[str, str]]:
     from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
     
