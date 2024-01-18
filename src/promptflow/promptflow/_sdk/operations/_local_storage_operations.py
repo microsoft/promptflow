@@ -53,6 +53,12 @@ _read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
 _write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
 
 
+# extract some file operations inside this file
+def _json_dump(obj, file) -> None:
+    with _write_open(file) as f:
+        json.dump(obj, f, ensure_ascii=False)
+
+
 @dataclass
 class LoggerOperations(LogContext):
     stream: bool = False
@@ -139,14 +145,12 @@ class NodeRunRecord:
             lock = FileLock(file_lock_path)
             lock.acquire()
             try:
-                with _write_open(path) as f:
-                    json.dump(asdict(self), f, ensure_ascii=False)
+                _json_dump(asdict(self), path)
             finally:
                 lock.release()
         else:
             # for normal nodes in other line runs, directly write
-            with _write_open(path) as f:
-                json.dump(asdict(self), f, ensure_ascii=False)
+            _json_dump(asdict(self), path)
 
 
 @dataclass
@@ -174,8 +178,7 @@ class LineRunRecord:
         )
 
     def dump(self, path: Path) -> None:
-        with _write_open(path) as f:
-            json.dump(asdict(self), f, ensure_ascii=False)
+        _json_dump(asdict(self), path)
 
 
 class LocalStorageOperations(AbstractRunStorage):
@@ -237,8 +240,7 @@ class LocalStorageOperations(AbstractRunStorage):
         shutil.rmtree(path=self.path, onerror=on_rmtree_error)
 
     def _dump_meta_file(self) -> None:
-        with _write_open(self._meta_path) as f:
-            json.dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, f, ensure_ascii=False)
+        _json_dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, self._meta_path)
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
@@ -310,8 +312,7 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def dump_metrics(self, metrics: Optional[RunMetrics]) -> None:
         metrics = metrics or dict()
-        with _write_open(self._metrics_path) as f:
-            json.dump(metrics, f, ensure_ascii=False)
+        _json_dump(metrics, self._metrics_path)
 
     def dump_exception(self, exception: Exception, batch_result: BatchResult) -> None:
         """Dump exception to local storage.
@@ -352,10 +353,9 @@ class LocalStorageOperations(AbstractRunStorage):
                 total_lines=batch_result.total_lines if batch_result else "unknown",
                 errors={"errors": errors},
             )
-        with _write_open(self._exception_path) as f:
-            json.dump(
-                PromptflowExceptionPresenter.create(exception).to_dict(include_debug_info=True), f, ensure_ascii=False
-            )
+        _json_dump(
+            PromptflowExceptionPresenter.create(exception).to_dict(include_debug_info=True), self._exception_path
+        )
 
     def load_exception(self) -> Dict:
         try:
