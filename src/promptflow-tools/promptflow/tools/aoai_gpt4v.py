@@ -8,7 +8,6 @@ from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 from typing import List, Dict
-import requests
 
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
     preprocess_template_string, find_referenced_image_set, convert_to_chat_list, normalize_connection_config, \
@@ -60,7 +59,7 @@ def list_deployment_names(subscription_id, resource_group_name, workspace_name, 
     
     credential = _get_credential()
     conn = ArmConnectionOperations._build_connection_dict(
-            name=connection.name, 
+            name=connection, 
             subscription_id=subscription_id, 
             resource_group_name=resource_group_name, 
             workspace_name=workspace_name, 
