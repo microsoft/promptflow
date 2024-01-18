@@ -9,6 +9,11 @@ from promptflow._utils.multimedia_utils import is_multimedia_dict
 
 
 class ResourceType(Enum):
+    """
+    Enumeration of different types of multimedia resources.
+    We support path, URL, and base64 data.
+    """
+
     PATH = "path"
     URL = "url"
     BASE64 = "base64"
@@ -16,17 +21,27 @@ class ResourceType(Enum):
 
 @dataclass
 class MultimediaInfo:
-    mime_type: str
-    resource_type: ResourceType
-    content: str
+    """
+    Data class that holds information about a multimedia resource.
+    """
+
+    mime_type: str  # The MIME type of the multimedia resource.
+    resource_type: ResourceType  # The type of the resource as defined in ResourceType.
+    content: str  # The content of the multimedia resource (path, URL, or base64 string).
 
 
 class AbstractMultimediaFormatAdapter:
     """
-    Base class for multimedia format adapter.
-    Adapter could be used to extract multimedia info from original data or create multimedia data from info.
-    Multimedia info means a MultimediaInfo object, which contains mime_type, resource_type and content.
-    Multimedia data means an object defined by specific contract version. The object could only be a dict for now.
+    Abstract base class for adapting multimedia formats.
+    This class provides an interface for extracting multimedia information
+    from various data formats or constructing data formats from multimedia information.
+
+    Subclasses should implement methods for specific contract version.
+
+    A MultimediaInfo object contains the mime_type, resource_type, and the actual content
+    of the multimedia resource.
+    The multimedia data is typically represented as a dictionary
+    with keys and values conforming to a specific multimedia data contract.
     One multimedia data example from 20231201 version: {"data:image/jpg;path": "logo.jpg"}
     """
 
