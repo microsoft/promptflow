@@ -113,15 +113,20 @@ class AsyncRunDownloader:
             "selectJobSpecification": True,
         }
 
-        response = await client.post(url, headers=headers, json=payload)
-        if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 404:
-            raise RunNotFoundError(f"Run {self.run!r} not found.")
+        error_msg_prefix = "Failed to get run data from run history"
+        try:
+            response = await client.post(url, headers=headers, json=payload)
+        except Exception as e:
+            raise RunOperationError(f"{error_msg_prefix}. Error: {e}") from e
         else:
-            raise RunOperationError(
-                f"Failed to get run from service. Code: {response.status_code}, text: {response.text}"
-            )
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 404:
+                raise RunNotFoundError(f"{error_msg_prefix}. Run {self.run!r} not found.")
+            else:
+                raise RunOperationError(
+                    f"{error_msg_prefix}. Code: {response.status_code}. Reason: {response.reason_phrase}"
+                )
 
     def _download_run_metrics(
         self,
@@ -201,16 +206,23 @@ class AsyncRunDownloader:
             "snapshotOrAssetId": snapshot_id,
         }
 
-        response = await httpx_client.post(url, headers=headers, json=payload)
-        if response.status_code == 200:
-            return self._parse_snapshot_response(response.json())
-        elif response.status_code == 404:
-            raise UserErrorException(f"Snapshot {snapshot_id!r} not found.")
+        error_msg_prefix = (
+            f"Failed to download flow snapshots with snapshot id {snapshot_id}, "
+            f"because the client failed to retrieve data from content service"
+        )
+        try:
+            response = await httpx_client.post(url, headers=headers, json=payload)
+        except Exception as e:
+            raise RunOperationError(f"{error_msg_prefix}. Error: {e}") from e
         else:
-            raise RunOperationError(
-                f"Failed to get snapshot {snapshot_id!r} from content service. "
-                f"Code: {response.status_code}, text: {response.text}"
-            )
+            if response.status_code == 200:
+                return self._parse_snapshot_response(response.json())
+            elif response.status_code == 404:
+                raise RunOperationError(f"{error_msg_prefix}. Error: Snapshot id not found.")
+            else:
+                raise RunOperationError(
+                    f"{error_msg_prefix}. Code: {response.status_code}. Reason: {response.reason_phrase}"
+                )
 
     async def _get_asset_path(self, client: httpx.AsyncClient, asset_id):
         """Get the asset path from asset id."""
@@ -222,7 +234,16 @@ class AsyncRunDownloader:
             "value": asset_id,
         }
 
-        response = await client.post(url, headers=headers, json=payload)
+        error_msg_prefix = "Failed to download flow artifacts due to failed to retrieve data from data service"
+        try:
+            response = await client.post(url, headers=headers, json=payload)
+        except Exception as e:
+            raise RunOperationError(f"{error_msg_prefix}. Error: {e}") from e
+
+        if response.status_code != 200:
+            raise RunOperationError(
+                f"{error_msg_prefix}. Code: {response.status_code}. Reason: {response.reason_phrase}"
+            )
         response_data = response.json()
         data_path = response_data["dataVersion"]["dataUri"].split("/paths/")[-1]
         if self._use_flow_outputs:
