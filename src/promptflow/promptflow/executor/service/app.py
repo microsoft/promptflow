@@ -6,10 +6,12 @@ import uvicorn
 from fastapi import FastAPI
 
 from promptflow.executor.service.apis.common import router as common_router
+from promptflow.executor.service.apis.execution import router as execution_router
 
 app = FastAPI()
 app.include_router(common_router)
+app.include_router(execution_router)
 
 
 if __name__ == "__main__":
-    uvicorn.run("promptflow.executor.service.app:app", port=8000)
+    uvicorn.run("promptflow.executor.service.app:app", port=8000, reload=True)

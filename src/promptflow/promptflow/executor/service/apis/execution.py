@@ -17,7 +17,7 @@ from promptflow.storage._run_storage import DefaultRunStorage
 router = APIRouter()
 
 
-@router.get("/execution/flow")
+@router.post("/execution/flow")
 async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
     # Operation context???
     # headers = dict(request.headers)
@@ -61,7 +61,7 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
         return line_result
 
 
-@router.get("/execution/node")
+@router.post("/execution/node")
 async def node_execution(request: Request, node_request: NodeExecutionRequest):
     # Operation context???
     # headers = dict(request.headers)
