@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -40,33 +40,3 @@ class TestUtils:
         with pytest.raises(UserErrorException) as e:
             FlowServiceCaller(MagicMock(), MagicMock(), MagicMock())
         assert "_FlowServiceCallerFactory" in str(e.value)
-
-    def test_get_user_identity_info(self):
-        import jwt
-
-        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-
-        mock_oid, mock_tid = "mock_oid", "mock_tid"
-
-        def mock_init(*args, **kwargs) -> str:
-            self = args[0]
-            self._credential = None
-
-        def mock_get_arm_token(*args, **kwargs) -> str:
-            return jwt.encode(
-                payload={
-                    "oid": mock_oid,
-                    "tid": mock_tid,
-                },
-                key="",
-            )
-
-        with patch(
-            "promptflow.azure._restclient.flow_service_caller.get_arm_token",
-            new=mock_get_arm_token,
-        ):
-            with patch.object(FlowServiceCaller, "__init__", new=mock_init):
-                service_caller = FlowServiceCaller(workspace=None, credential=None, operation_scope=None)
-                user_object_id, user_tenant_id = service_caller._get_user_identity_info()
-                assert user_object_id == mock_oid
-                assert user_tenant_id == mock_tid

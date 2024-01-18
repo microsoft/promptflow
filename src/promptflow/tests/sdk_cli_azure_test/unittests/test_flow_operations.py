@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -47,3 +48,33 @@ class TestFlowOperations:
 
         with pytest.raises(FlowOperationError, match="Invalid list view type"):
             pf.flows.list(list_view_type="invalid")
+
+    def test_get_user_identity_info(self):
+        import jwt
+
+        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+
+        mock_oid, mock_tid = "mock_oid", "mock_tid"
+
+        def mock_init(*args, **kwargs) -> str:
+            self = args[0]
+            self._credential = None
+
+        def mock_get_arm_token(*args, **kwargs) -> str:
+            return jwt.encode(
+                payload={
+                    "oid": mock_oid,
+                    "tid": mock_tid,
+                },
+                key="",
+            )
+
+        with patch(
+            "promptflow.azure._restclient.flow_service_caller.get_arm_token",
+            new=mock_get_arm_token,
+        ):
+            with patch.object(FlowServiceCaller, "__init__", new=mock_init):
+                service_caller = FlowServiceCaller(workspace=None, credential=None, operation_scope=None)
+                user_object_id, user_tenant_id = service_caller._get_user_identity_info()
+                assert user_object_id == mock_oid
+                assert user_tenant_id == mock_tid
