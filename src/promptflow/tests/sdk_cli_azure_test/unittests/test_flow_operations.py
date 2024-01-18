@@ -50,6 +50,9 @@ class TestFlowOperations:
             pf.flows.list(list_view_type="invalid")
 
     def test_get_user_identity_info(self):
+        # we have a fixture "mock_get_user_identity_info" to mock this function during record and replay
+        # as we don't want to deal with token in these modes; meanwhile, considering coverage, add this
+        # unit test to try to cover this code path.
         import jwt
 
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
