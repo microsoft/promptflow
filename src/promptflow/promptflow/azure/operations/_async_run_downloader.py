@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import Optional, Union
 
 import httpx
+from azure.core.exceptions import HttpResponseError
 from azure.storage.blob.aio import BlobServiceClient
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, DownloadedRun
-from promptflow._sdk._errors import RunNotFoundError, RunOperationError
+from promptflow._sdk._errors import DownloadInternalError, RunNotFoundError, RunOperationError
 from promptflow._sdk.entities import Run
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
@@ -45,6 +46,7 @@ class AsyncRunDownloader:
 
     async def download(self) -> str:
         """Download the run results asynchronously."""
+        error_msg_prefix = f"Failed to download run {self.run!r}"
         try:
             # pass verify=False to client to disable SSL verification.
             # Source: https://github.com/encode/httpx/issues/1331
@@ -59,8 +61,19 @@ class AsyncRunDownloader:
                     to_thread(self._download_run_logs),
                 ]
                 await asyncio.gather(*tasks)
+        except RunNotFoundError as e:
+            raise RunOperationError(f"{error_msg_prefix}. Error: {e}") from e
+        except HttpResponseError as e:
+            if e.status_code == 403:
+                raise RunOperationError(
+                    f"{error_msg_prefix}. User does not have permission to perform this operation on storage account "
+                    f"{self.datastore.account_name!r} container {self.datastore.container_name!r}. "
+                    f"Original azure blob error: {str(e)}"
+                )
+            else:
+                raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
         except Exception as e:
-            raise RunOperationError(f"Failed to download run {self.run!r}. Error: {e}") from e
+            raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
 
         return self.output_folder.resolve().as_posix()
 
@@ -117,14 +130,14 @@ class AsyncRunDownloader:
         try:
             response = await client.post(url, headers=headers, json=payload)
         except Exception as e:
-            raise RunOperationError(f"{error_msg_prefix}. Error: {e}") from e
+            raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
         else:
             if response.status_code == 200:
                 return response.json()
             elif response.status_code == 404:
                 raise RunNotFoundError(f"{error_msg_prefix}. Run {self.run!r} not found.")
             else:
-                raise RunOperationError(
+                raise DownloadInternalError(
                     f"{error_msg_prefix}. Code: {response.status_code}. Reason: {response.reason_phrase}"
                 )
 
@@ -213,14 +226,14 @@ class AsyncRunDownloader:
         try:
             response = await httpx_client.post(url, headers=headers, json=payload)
         except Exception as e:
-            raise RunOperationError(f"{error_msg_prefix}. Error: {e}") from e
+            raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
         else:
             if response.status_code == 200:
                 return self._parse_snapshot_response(response.json())
             elif response.status_code == 404:
-                raise RunOperationError(f"{error_msg_prefix}. Error: Snapshot id not found.")
+                raise DownloadInternalError(f"{error_msg_prefix}. Error: Snapshot id not found.")
             else:
-                raise RunOperationError(
+                raise DownloadInternalError(
                     f"{error_msg_prefix}. Code: {response.status_code}. Reason: {response.reason_phrase}"
                 )
 
@@ -238,10 +251,10 @@ class AsyncRunDownloader:
         try:
             response = await client.post(url, headers=headers, json=payload)
         except Exception as e:
-            raise RunOperationError(f"{error_msg_prefix}. Error: {e}") from e
+            raise DownloadInternalError(f"{error_msg_prefix}. Error: {e}") from e
 
         if response.status_code != 200:
-            raise RunOperationError(
+            raise DownloadInternalError(
                 f"{error_msg_prefix}. Code: {response.status_code}. Reason: {response.reason_phrase}"
             )
         response_data = response.json()
