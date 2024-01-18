@@ -1,18 +1,13 @@
-import subprocess
 import tempfile
 from pathlib import Path
 import mock
 import pytest
-import time
-import requests
-import platform
 import sys
 import os
 import ast
 import importlib
 
 from .test_cli import run_pf_command
-from promptflow._utils.context_utils import _change_working_dir
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
@@ -41,32 +36,34 @@ class TestExecutable:
                     "--format",
                     "executable",
                 )
-                with _change_working_dir(temp_dir):
-                    for filename in os.listdir(temp_dir):
-                        file_path = Path(temp_dir, filename)
-                        if os.path.isfile(file_path) and filename.endswith('.py'):
-                            with open(file_path, 'r') as file:
-                                try:
-                                    tree = ast.parse(file.read())
-                                except SyntaxError as e:
-                                    raise SyntaxError(f"Syntax error in file {file_path}: {e}")
+                sys.path.append(temp_dir)
+                for filename in os.listdir(temp_dir):
+                    file_path = Path(temp_dir, filename)
+                    if os.path.isfile(file_path) and filename.endswith('.py'):
+                        with open(file_path, 'r') as file:
+                            try:
+                                tree = ast.parse(file.read())
+                            except SyntaxError as e:
+                                raise SyntaxError(f"Syntax error in file {file_path}: {e}")
 
-                                for node in ast.walk(tree):
-                                    if isinstance(node, (ast.Import, ast.ImportFrom)):
-                                        for alias in node.names:
-                                            module_name = alias.name
+                            for node in ast.walk(tree):
+                                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                                    for alias in node.names:
+                                        module_name = alias.name
+                                        if isinstance(node, ast.ImportFrom):
+                                            module_name = node.module
+                                        try:
+                                            module = importlib.import_module(module_name)
                                             if isinstance(node, ast.ImportFrom):
-                                                module_name = node.module
+                                                getattr(module, alias.name)
+                                        except ImportError:
+                                            raise ImportError(f"Module {module_name} in file {file_path} "
+                                                              f"does not exist")
+                                        except AttributeError:
+                                            module_name = f"{node.module}.{alias.name}"
                                             try:
-                                                module = importlib.import_module(module_name)
-                                                if isinstance(node, ast.ImportFrom):
-                                                    getattr(module, alias.name)
+                                                importlib.import_module(module_name)
                                             except ImportError:
-                                                raise ImportError(f"Module {module_name} in file {file_path} does not exist")
-                                            except AttributeError:
-                                                module_name = f"{node.module}.{alias.name}"
-                                                try:
-                                                    importlib.import_module(module_name)
-                                                except ImportError:
-                                                    raise ImportError(
-                                                        f"Cannot import {alias.name} from module {node.module} in file {file_path}")
+                                                raise ImportError(
+                                                    f"Cannot import {alias.name} from module {node.module} in "
+                                                    f"file {file_path}")
