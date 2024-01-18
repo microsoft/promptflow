@@ -44,7 +44,7 @@ def add_experiment_create(subparsers):
     # Create an experiment from a template:
     pf experiment create --template flow.exp.yaml
     """
-    add_params = [add_param_template] + base_params
+    add_params = [add_param_template, add_param_name] + base_params
 
     create_parser = activate_action(
         name="create",
@@ -161,7 +161,7 @@ def create_experiment(args: argparse.Namespace):
     logger.debug("Loading experiment template from %s", template_path)
     template = load_common(ExperimentTemplate, source=template_path)
     logger.debug("Creating experiment from template %s", template.name)
-    experiment = Experiment.from_template(template)
+    experiment = Experiment.from_template(template, name=args.name)
     logger.debug("Creating experiment %s", experiment.name)
     exp = _get_pf_client()._experiments.create_or_update(experiment)
     print(json.dumps(exp._to_dict(), indent=4))

@@ -72,7 +72,7 @@ class ExperimentInput(YAMLTranslatableMixin):
         value_type: ValueType = next((i for i in supported_types if typ.lower() == i.value.lower()), None)
         if value_type is None:
             raise ExperimentValueError(f"Unknown experiment input type {typ!r}, supported are {supported_types}.")
-        return value_type.value, value_type.parse(default)
+        return value_type.value, value_type.parse(default) if default is not None else None
 
     @classmethod
     def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
@@ -367,10 +367,10 @@ class Experiment(ExperimentTemplate):
         )
 
     @classmethod
-    def from_template(cls, template: ExperimentTemplate):
+    def from_template(cls, template: ExperimentTemplate, name=None):
         """Create a experiment object from template."""
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        exp_name = f"{template.name}_{timestamp}"
+        exp_name = name or f"{template.name}_{timestamp}"
         experiment = cls(
             name=exp_name,
             description=template.description,
