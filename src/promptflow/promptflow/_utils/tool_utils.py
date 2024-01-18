@@ -112,7 +112,7 @@ def param_to_definition(param, gen_custom_type_conn=False) -> (InputDefinition, 
 
 
 def function_to_interface(
-    f: Callable, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False, should_add_index=False
+    f: Callable, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False
 ) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
@@ -132,23 +132,13 @@ def function_to_interface(
         }
     )
     # Resolve inputs to definitions.
-    input_index = 0
     for k, v in all_inputs.items():
         # Get value type from annotation
         value_type = resolve_annotation(v.annotation)
         if skip_prompt_template and value_type is PromptTemplate:
             # custom llm tool has prompt template as input, skip it
             continue
-
         input_def, is_connection = param_to_definition(v, gen_custom_type_conn=gen_custom_type_conn)
-        # Set ui_hints and index to ensure that the UI displays the tool inputs
-        # in the same order as defined in the tool's YAML or interface.
-        if should_add_index:
-            if input_def.ui_hints is None:
-                input_def.ui_hints = {}
-            input_def.ui_hints['index'] = input_index
-
-        input_index += 1
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
@@ -318,7 +308,7 @@ def load_function_from_function_path(func_path: str):
 
 def assign_tool_input_index_for_ux_order_if_needed(tool):
     tool_type = tool.get("type")
-    if should_maintain_order_in_ux(tool_type) and "inputs" in tool:
+    if should_preserve_tool_inputs_order(tool_type) and "inputs" in tool:
         inputs_dict = tool["inputs"]
         input_index = 0
         for input_name, settings in inputs_dict.items():
@@ -332,7 +322,7 @@ def assign_tool_input_index_for_ux_order_if_needed(tool):
             input_index += 1
 
 
-def should_maintain_order_in_ux(tool_type):
+def should_preserve_tool_inputs_order(tool_type):
     """
     Currently, we only automatically add input indexes for the custom_llm tool,
     following the order specified in the tool interface or YAML.

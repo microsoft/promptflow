@@ -69,7 +69,7 @@ class TestTool:
             "test_tool.custom_llm_tool.my_tool": {
                 "name": "My Custom LLM Tool",
                 "type": "custom_llm",
-                "inputs": {"connection": {"type": ["CustomConnection"], "ui_hints": {"index": 0}}},
+                "inputs": {"connection": {"type": ["CustomConnection"]}},
                 "description": "This is a tool to demonstrate the custom_llm tool type",
                 "module": "test_tool.custom_llm_tool",
                 "function": "my_tool",
@@ -78,10 +78,7 @@ class TestTool:
             "test_tool.custom_llm_tool.TestCustomLLMTool.tool_func": {
                 "name": "My Custom LLM Tool",
                 "type": "custom_llm",
-                "inputs": {
-                    "connection": {"type": ["AzureOpenAIConnection"], "ui_hints": {"index": 0}},
-                    "api": {"type": ["string"], "ui_hints": {"index": 1}}
-                },
+                "inputs": {"connection": {"type": ["AzureOpenAIConnection"]}, "api": {"type": ["string"]}},
                 "description": "This is a tool to demonstrate the custom_llm tool type",
                 "module": "test_tool.custom_llm_tool",
                 "class_name": "TestCustomLLMTool",
