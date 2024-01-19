@@ -39,6 +39,7 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
             flow_request.output_dir,
             connections,
             flow_request.inputs,
+            run_id=flow_request.run_id,
             storage=storage,
         )
 
