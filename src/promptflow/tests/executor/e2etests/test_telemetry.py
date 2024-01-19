@@ -1,5 +1,6 @@
 import json
 import uuid
+from asyncio import Queue
 from collections import namedtuple
 from importlib.metadata import version
 from pathlib import Path
@@ -12,7 +13,9 @@ from promptflow._core.operation_context import OperationContext
 from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
+from promptflow.executor._line_execution_process_pool import _process_wrapper
 
+from ..conftest import set_mock_process_wrapper_strategy
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -31,12 +34,34 @@ def stream_response(kwargs):
         yield Completion(choices=[Choice(delta=delta)])
 
 
+def setup_extra_mocks():
+    patch_targets = ["openai.ChatCompletion.create", "openai.resources.chat.Completions.create"]
+    patches = []
+    for target in patch_targets:
+        patcher = patch(target, mock_stream_chat)
+        patches.append(patcher)
+        patcher.start()
+    return patches
+
+
+def _customized_mock_process_wrapper(
+    executor_creation_func,
+    input_queue: Queue,
+    output_queue: Queue,
+    log_context_initialization_func,
+    operation_contexts_dict: dict,
+):
+    setup_extra_mocks()
+    _process_wrapper(
+        executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
+    )
+
+
 def mock_stream_chat(*args, **kwargs):
     return stream_response(kwargs)
 
 
-@pytest.mark.skip(reason="Skip on Mac and Windows and Linux, patch does not work in the spawn process")
-@pytest.mark.usefixtures("dev_connections")
+@pytest.mark.usefixtures("dev_connections", "recording_injection")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
     def test_executor_openai_telemetry(self, dev_connections):
@@ -69,6 +94,8 @@ class TestExecutorTelemetry:
             assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Test.name
 
             # batch run case
+            # override the _process_wrapper with a customized one to mock the chat api
+            set_mock_process_wrapper_strategy(_customized_mock_process_wrapper)
             run_id = str(uuid.uuid4())
             batch_engine = BatchEngine(
                 get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections

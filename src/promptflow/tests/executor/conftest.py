@@ -39,6 +39,61 @@ def setup_recording():
     return patches
 
 
+def _default_mock_process_wrapper(
+    executor_creation_func,
+    input_queue: Queue,
+    output_queue: Queue,
+    log_context_initialization_func,
+    operation_contexts_dict: dict,
+):
+    setup_recording()
+    _process_wrapper(
+        executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
+    )
+
+
+def _default_mock_create_spawned_fork_process_manager(
+    log_context_initialization_func,
+    current_operation_context,
+    input_queues,
+    output_queues,
+    control_signal_queue,
+    flow_file,
+    connections,
+    working_dir,
+    raise_ex,
+    process_info,
+    process_target_func,
+):
+    setup_recording()
+    create_spawned_fork_process_manager(
+        log_context_initialization_func,
+        current_operation_context,
+        input_queues,
+        output_queues,
+        control_signal_queue,
+        flow_file,
+        connections,
+        working_dir,
+        raise_ex,
+        process_info,
+        process_target_func,
+    )
+
+
+# Placeholder for the current strategy
+current_mock_process_wrapper_strategy = _default_mock_process_wrapper
+
+
+def get_mock_process_wrapper_strategy():
+    return current_mock_process_wrapper_strategy
+
+
+def set_mock_process_wrapper_strategy(strategy_func):
+    global current_mock_process_wrapper_strategy
+    current_mock_process_wrapper_strategy = strategy_func
+
+
 SpawnProcess = multiprocessing.Process
 if "spawn" in multiprocessing.get_all_start_methods():
     SpawnProcess = multiprocessing.get_context("spawn").Process
@@ -51,9 +106,10 @@ if "forkserver" in multiprocessing.get_all_start_methods():
 class BaseMockProcess:
     def modify_target(self, target):
         if target == _process_wrapper:
-            return _mock_process_wrapper
+            # allow dynamic strategy change for _process_wrapper override
+            return get_mock_process_wrapper_strategy()
         if target == create_spawned_fork_process_manager:
-            return _mock_create_spawned_fork_process_manager
+            return _default_mock_create_spawned_fork_process_manager
         return target
 
 
@@ -112,45 +168,3 @@ def recording_injection(recording_setup, process_override):
         if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
             RecordStorage.get_instance().delete_lock_file()
         recording_array_reset()
-
-
-def _mock_process_wrapper(
-    executor_creation_func,
-    input_queue: Queue,
-    output_queue: Queue,
-    log_context_initialization_func,
-    operation_contexts_dict: dict,
-):
-    setup_recording()
-    _process_wrapper(
-        executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
-    )
-
-
-def _mock_create_spawned_fork_process_manager(
-    log_context_initialization_func,
-    current_operation_context,
-    input_queues,
-    output_queues,
-    control_signal_queue,
-    flow_file,
-    connections,
-    working_dir,
-    raise_ex,
-    process_info,
-    process_target_func,
-):
-    setup_recording()
-    create_spawned_fork_process_manager(
-        log_context_initialization_func,
-        current_operation_context,
-        input_queues,
-        output_queues,
-        control_signal_queue,
-        flow_file,
-        connections,
-        working_dir,
-        raise_ex,
-        process_info,
-        process_target_func,
-    )
