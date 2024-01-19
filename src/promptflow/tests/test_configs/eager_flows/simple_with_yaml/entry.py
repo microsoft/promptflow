@@ -7,18 +7,24 @@ import time
 
 
 @trace
-def query():
-    """Query for input."""
-    time.sleep(1)
-    return "gpt"
+def hello(name):
+    return f"Hello {name}"
 
 
 @trace
+def query():
+    """Query for input."""
+    time.sleep(1)
+    #1/0
+    return "gpt"
+
+
 def my_flow(input_val: str = "gpt") -> str:
     """Simple flow without yaml."""
     print("calling query")
-    for i in range(3):
-        query()
+    hello("world")
+    #for i in range(3):
+    #    query()
     return f"Hello world! {input_val}"
 
 
