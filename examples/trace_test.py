@@ -66,7 +66,13 @@ class TreeConsoleSpanExporter:
 
         for span in self.span_tree[parent_id]:
             indent = "  " * level
-            print(f"{indent}- {span.name}")
+            sections_to_print = [
+                span.name,
+                span.context.trace_id,
+                span.context.span_id,
+                span.end_time - span.start_time,
+            ]
+            print(f"{indent}- {' '.join(str(section) for section in sections_to_print)}")
             self._print_tree(span.context.span_id, level + 1)
 
     def shutdown(self):
