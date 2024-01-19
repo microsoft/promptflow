@@ -23,6 +23,9 @@ class TestBatchTimeout:
     def setup_method(self):
         BatchEngine.register_executor(FlowLanguage.Python, MockPythonExecutorProxy)
 
+    def teardown_method(self):
+        BatchEngine.register_executor(FlowLanguage.Python, PythonExecutorProxy)
+
     @pytest.mark.parametrize(
         "flow_folder",
         [
