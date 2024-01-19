@@ -66,21 +66,28 @@ def list_deployment_names(
         workspace_name,
         connection: AzureOpenAIConnection = None
     ) -> List[Dict[str, str]]:
-    from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
-    from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    try:
+        # Local does not support dynamic list.
+        from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
+        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+    except ImportError:
+        return {"value": ""}
 
     try:
         credential = _get_credential()
-        conn = ArmConnectionOperations._build_connection_dict(
-            name=connection,
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            credential=credential
-        )
-        resource_id = conn.get("value").get('resource_id', "")
-        print(f"Connection {connection} resource id: {resource_id}")
-        conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
+        try:
+            conn = ArmConnectionOperations._build_connection_dict(
+                name=connection,
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                credential=credential
+            )
+            resource_id = conn.get("value").get('resource_id', "")
+            print(f"Connection {connection} resource id: {resource_id}")
+            conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
+        except Exception as e:
+            raise Exception(f"Failed to get connection resource id with error: {e}")
 
         client = CognitiveServicesManagementClient(
             credential=credential,
