@@ -14,6 +14,11 @@ promptflow-tools:
 executor:
 - src/promptflow/promptflow/batch/**
 - src/promptflow/promptflow/executor/**
+- src/promptflow/promptflow/_core/**
+- src/promptflow/promptflow/_internal/**
+- src/promptflow/promptflow/integrations/**
+- src/promptflow/promptflow/storage/**
+- src/promptflow/tests/executor/**
 fundamental:
 - scripts/**
 - .github/**
