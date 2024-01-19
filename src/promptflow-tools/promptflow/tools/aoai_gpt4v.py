@@ -14,7 +14,7 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
     post_process_chat_api_response
 
 
-GPT4V_VERSION = "0314"
+GPT4V_VERSION = "0301"
 
 
 def _get_credential():
@@ -61,37 +61,54 @@ def _build_deployment_dict(item) -> Deployment:
 def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection: AzureOpenAIConnection = None) -> List[Dict[str, str]]:
     from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
-    
-    credential = _get_credential()
-    conn = ArmConnectionOperations._build_connection_dict(
-            name=connection, 
-            subscription_id=subscription_id, 
-            resource_group_name=resource_group_name, 
-            workspace_name=workspace_name, 
-            credential=credential
+
+    try:
+        credential = _get_credential()
+        conn = ArmConnectionOperations._build_connection_dict(
+                name=connection, 
+                subscription_id=subscription_id, 
+                resource_group_name=resource_group_name, 
+                workspace_name=workspace_name, 
+                credential=credential
+                )
+        resource_id = conn.get("value").get('resource_id', "") # 等明天sdk发版 就可以拿了。
+        print(resource_id)
+        conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
+
+        client = CognitiveServicesManagementClient(
+            credential=credential,
+            subscription_id=conn_sub,
             )
-    resource_id = conn.get("value").get('resource_id', "") # 等明天sdk发版 就可以拿了。
-    print(resource_id)
-    conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
-
-    client = CognitiveServicesManagementClient(
-        credential=credential,
-        subscription_id=conn_sub,
+        deployment_collection = client.deployments.list(
+            resource_group_name=conn_rg,
+            account_name=conn_account,
         )
-    deployment_collection = client.deployments.list(
-        resource_group_name=conn_rg,
-        account_name=conn_account,
-    )
 
-    res = []
-    for item in deployment_collection:
-        deployment = _build_deployment_dict(item)
-        if deployment.version == GPT4V_VERSION:
-            cur_item = {
-                "value": deployment.name,
-                "display_value": deployment.name,
-            }
-            res.append(cur_item)
+        res = []
+        for item in deployment_collection:
+            deployment = _build_deployment_dict(item)
+            print(f"{deployment.name}:{deployment.version}")
+            if deployment.version == GPT4V_VERSION:
+                print(f"Selected version {deployment.name}:{deployment.version}")
+                cur_item = {
+                    "value": deployment.name,
+                    "display_value": deployment.name,
+                }
+                res.append(cur_item)
+
+        if not res:
+            message = (
+                f"No deployments support gpt4v in current connection, please create "
+                f"gpt4v deployments or use other connections."
+            )
+            raise ListDeploymentsError(message)
+    except ListDeploymentsError:
+        print("raise ListDeploymentsError error")
+        raise
+    except Exception as e:
+        print("raise Exception error")
+        message = f"Failed to list deployments with error: {e}"
+        raise ListDeploymentsError(message)
 
     return res
 
