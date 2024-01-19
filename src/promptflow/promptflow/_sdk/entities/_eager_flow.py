@@ -27,7 +27,8 @@ class EagerFlow(FlowBase):
         self.code = self.path.parent
         # entry function name
         self.entry = entry
-        super().__init__(data=data, **kwargs)
+        # TODO(2910062): support eager flow execution cache
+        super().__init__(data=data, content_hash=None, **kwargs)
 
     @property
     def language(self) -> str:

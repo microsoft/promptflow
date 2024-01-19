@@ -92,9 +92,10 @@ class FlowContext:
 
 
 class FlowBase(abc.ABC):
-    def __init__(self, data: dict, **kwargs):
+    def __init__(self, data: dict, content_hash: Optional[int], **kwargs):
         self._context = FlowContext()
-        self._content_hash = kwargs.pop("content_hash", None)
+        # hash of flow's entry file, used to skip invoke if entry file is not changed
+        self._content_hash = content_hash
         # flow.dag.yaml's content if provided
         self._data = data
         super().__init__(**kwargs)
@@ -146,9 +147,8 @@ class Flow(FlowBase):
         path = kwargs.pop("path", None)
         self._path = Path(path) if path else None
         self.variant = kwargs.pop("variant", None) or {}
-        # TODO: not sure if should private this
-        self._data = dag
-        super().__init__(**kwargs)
+        content_hash = hash(dag)
+        super().__init__(data=dag, content_hash=content_hash, **kwargs)
 
     @property
     def code(self) -> Path:
@@ -202,7 +202,6 @@ class Flow(FlowBase):
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
                 data = load_yaml_string(flow_content)
-                kwargs["content_hash"] = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
             if is_eager_flow:
                 return EagerFlow._load(path=flow_path, entry=entry, data=data, **kwargs)
