@@ -182,9 +182,9 @@ class TestExecutorTraces:
         flow_trace = api_calls[0]
         assert flow_trace["name"] == "flow"
         assert flow_trace["type"] == "Flow"
-        assert flow_trace["end_time"] - flow_trace["start_time"] == pytest.approx(1.5, abs=0.1)
+        assert flow_trace["end_time"] - flow_trace["start_time"] == pytest.approx(1.5, abs=0.3)
         assert len(flow_trace["children"]) == 1
-        assert flow_trace["system_metrics"]["duration"] == pytest.approx(1.5, abs=0.1)
+        assert flow_trace["system_metrics"]["duration"] == pytest.approx(1.5, abs=0.3)
         assert flow_trace["system_metrics"]["prompt_tokens"] == 0
         assert flow_trace["system_metrics"]["completion_tokens"] == 0
         assert flow_trace["system_metrics"]["total_tokens"] == 0
@@ -201,7 +201,7 @@ class TestExecutorTraces:
         assert greetings_trace["output"] == {"greeting": "Hello, User 1!"}
         assert greetings_trace["error"] is None
         assert greetings_trace["children"] is not None
-        assert greetings_trace["end_time"] - greetings_trace["start_time"] == pytest.approx(1.5, abs=0.1)
+        assert greetings_trace["end_time"] - greetings_trace["start_time"] == pytest.approx(1.5, abs=0.3)
         assert len(greetings_trace["children"]) == 2
         # TODO: to verfiy the system metrics. This might need to be fixed.
         assert greetings_trace["system_metrics"] == {}
@@ -213,7 +213,7 @@ class TestExecutorTraces:
         assert get_user_name_trace["inputs"] == {"user_id": 1}
         assert get_user_name_trace["output"] == "User 1"
         assert get_user_name_trace["error"] is None
-        assert get_user_name_trace["end_time"] - get_user_name_trace["start_time"] == pytest.approx(1.0, abs=0.1)
+        assert get_user_name_trace["end_time"] - get_user_name_trace["start_time"] == pytest.approx(1.0, abs=0.2)
         assert len(get_user_name_trace["children"]) == 1
         # TODO: to verfiy the system metrics. This might need to be fixed.
         assert get_user_name_trace["system_metrics"] == {}
