@@ -6,6 +6,7 @@ import functools
 import inspect
 import json
 import logging
+import traceback
 import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
@@ -123,7 +124,7 @@ class Tracer(ThreadLocalSingleton):
     @classmethod
     def pop(cls, output=None, error: Optional[Exception] = None):
         obj = cls.active_instance()
-        return obj._pop(output, error)
+        return obj._pop(output, error) if obj else output
 
     def _pop(self, output=None, error: Optional[Exception] = None):
         last_trace = self._get_current_trace()
@@ -188,6 +189,22 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
 tracer = get_otel_tracer("promptflow")
 
 
+def print_call_stack():
+    # Extract the stack trace up to the point of this function call
+    stack = traceback.extract_stack()
+
+    # Remove the last entry for the current function call (print_call_stack)
+    stack = stack[:-1]
+
+    # Format the stack trace into a readable string
+    formatted_stack = traceback.format_list(stack)
+
+    # Print the formatted stack trace
+    print("Stack trace of the calling function:")
+    for line in formatted_stack:
+        print(line.strip())
+
+
 def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
     """A wrapper to add trace to a function.
 
@@ -205,6 +222,10 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
     :return: The wrapped function with trace enabled.
     :rtype: Callable
     """
+
+    print("---------------------------------------------------")
+    print(tracer)
+    # print_call_stack()
 
     def create_trace(func, args, kwargs):
         return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
@@ -237,8 +258,6 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             with tracer.start_as_current_span(span_name) as span:
                 enrich_span_with_trace(span, trace)
 
-                if Tracer.active_instance() is None:
-                    return await func(*args, **kwargs)  # Do nothing if no tracing is enabled.
                 # Should not extract these codes to a separate function here.
                 # We directly call func instead of calling Tracer.invoke,
                 # because we want to avoid long stack trace when hitting an exception.
@@ -259,8 +278,6 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
             with tracer.start_as_current_span(span_name) as span:
                 enrich_span_with_trace(span, trace)
 
-                if Tracer.active_instance() is None:
-                    return func(*args, **kwargs)  # Do nothing if no tracing is enabled.
                 # Should not extract these codes to a separate function here.
                 # We directly call func instead of calling Tracer.invoke,
                 # because we want to avoid long stack trace when hitting an exception.
@@ -270,6 +287,7 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                     return Tracer.pop(output)
                 except Exception as e:
                     Tracer.pop(None, e)
+                    span.record_exception(e)
                     raise
 
     wrapped.__original_function = func
