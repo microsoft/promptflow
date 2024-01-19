@@ -48,6 +48,13 @@ class TestBatchTimeout:
         inputs_mapping = {"idx": "${data.idx}"}
         batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
         assert isinstance(batch_results, BatchResult)
+        assert batch_results.completed_lines == 0
+        assert batch_results.failed_lines == 2
+        assert batch_results.total_lines == 2
+        assert batch_results.node_status == {
+            "my_python_tool_with_failed_line.canceled": 2,
+            "my_python_tool.completed": 2,
+        }
 
         # assert mem_run_storage persists run infos correctly
         assert len(mem_run_storage._flow_runs) == 2, "Flow runs are persisted in memory storage."
@@ -98,6 +105,11 @@ class TestBatchTimeout:
         assert batch_results.total_lines == 3
         assert batch_results.completed_lines == 2
         assert batch_results.failed_lines == 1
+        assert batch_results.node_status == {
+            "my_python_tool_with_failed_line.completed": 2,
+            "my_python_tool_with_failed_line.canceled": 1,
+            "my_python_tool.completed": 3,
+        }
 
         # assert the error summary in batch result
         assert batch_results.error_summary.failed_user_error_lines == 1
