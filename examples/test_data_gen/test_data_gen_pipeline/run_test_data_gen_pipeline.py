@@ -21,22 +21,33 @@ def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str
 
 
 @dsl.pipeline(
-    non_pipeline_inputs=["flow_yml_path", "instance_count", "mini_batch_size", "max_concurrency_per_instance"]
+    non_pipeline_inputs=[
+        "flow_yml_path",
+        "should_skip_doc_split",
+        "instance_count",
+        "mini_batch_size",
+        "max_concurrency_per_instance",
+    ]
 )
 def test_data_gen_pipeline_with_flow(
-    data,
+    data_input,
     flow_yml_path: str,
     connection_name: str,  # ?? should we override here?
+    should_skip_doc_split: bool,
     chunk_size=1024,
     instance_count=1,
     mini_batch_size="10kb",
     max_concurrency_per_instance=2,
 ):
-    document_node = document_split(documents_folder=data, chunk_size=chunk_size)
-    flow_component = load_component(flow_yml_path)
+    if should_skip_doc_split:
+        data = data_input
+    else:
+        document_node = document_split(documents_folder=data_input, chunk_size=chunk_size)
+        data = document_node.outputs.document_node_output
 
+    flow_component = load_component(flow_yml_path)
     flow_node = flow_component(
-        data=document_node.outputs.document_node_output,
+        data=data,
         text_chunk="${data.text_chunk}",
         connections={
             "validate_and_generate_seed_question": {"connection": connection_name},
@@ -90,7 +101,10 @@ if __name__ == "__main__":
 
     ml_client = get_ml_client(args.subscription_id, args.resource_group, args.workspace_name)
 
-    data_input = Input(path=args.documents_folder, type="uri_folder")
+    if args.should_skip_doc_split:
+        data_input = Input(path=args.document_nodes_file_path, type="uri_file")
+    else:
+        data_input = Input(path=args.documents_folder, type="uri_folder")
 
     prs_configs = {
         "instance_count": args.prs_instance_count,
@@ -99,9 +113,10 @@ if __name__ == "__main__":
     }
 
     pipeline_with_flow = test_data_gen_pipeline_with_flow(
-        data=data_input,
+        data_input=data_input,
         flow_yml_path=args.flow_path,
         connection_name=args.connection_name,
+        should_skip_doc_split=args.should_skip_doc_split,
         chunk_size=args.document_chunk_size,
         **prs_configs,
     )
