@@ -7,7 +7,7 @@ from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor, SpanExporter, SpanExportResult
 
 # from opentelemetry.exporter.jaeger.thrift import JaegerExporter
 # from opentelemetry.exporter.zipkin.json import ZipkinExporter
@@ -20,8 +20,29 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 # it's good to set service name anyways.
 resource = Resource(attributes={SERVICE_NAME: "your-service-name"})
 
-traceProvider = TracerProvider(resource=resource)
-trace.set_tracer_provider(traceProvider)
+
+class FileExporter(SpanExporter):
+    def __init__(self, file_name="traces.json"):
+        self.file_name = file_name
+        # Open the file in append mode
+        self.file = open(file_name, "a")
+
+    def export(self, spans):
+        # Convert spans to a format suitable for JSON serialization
+        span_data = [span.to_json() for span in spans]
+        # Write the JSON serialized span data to the file
+        for span_json in span_data:
+            self.file.write(span_json + "\n")
+        self.file.flush()
+        return SpanExportResult.SUCCESS
+
+    def shutdown(self):
+        # Close the file when shutting down the exporter
+        self.file.close()
+
+
+tracer_provider = TracerProvider(resource=resource)
+trace.set_tracer_provider(tracer_provider)
 # traceProvider = get_tracer_provider()
 # processor = BatchSpanProcessor(ConsoleSpanExporter())
 # traceProvider.add_span_processor(processor)
@@ -29,9 +50,13 @@ connection_string = os.environ.get("APPINSIGHTS_CONNECTION_STRING")
 if connection_string:
     # raise ValueError("No connection string provided")
     processor = BatchSpanProcessor(AzureMonitorTraceExporter(connection_string=connection_string))
-    traceProvider.add_span_processor(processor)
+    tracer_provider.add_span_processor(processor)
 # processor = BatchSpanProcessor(jaeger_exporter)
 # traceProvider.add_span_processor(processor)
+
+file_exporter = FileExporter("traces.json")
+tracer_provider.add_span_processor(SimpleSpanProcessor(file_exporter))
+
 
 # zipkin_exporter = ZipkinExporter(
 # Optional: configure the endpoint
@@ -69,7 +94,7 @@ async def main():
         await wait_task("task3", 1)
         span.add_event("End Await", {"name": "value", "my_key": "my_value"})
 
-    tracer.get_current_span()
+    # tracer.get_current_span()
     first_span_context = span.get_span_context()
     link_to_first_span = trace.Link(first_span_context)
 
