@@ -19,7 +19,13 @@ from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
-from .recording_utilities import RecordStorage, mock_tool, recording_array_reset
+from .recording_utilities import (
+    RecordStorage,
+    inject_async_with_recording,
+    inject_sync_with_recording,
+    mock_tool,
+    recording_array_reset,
+)
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -192,13 +198,10 @@ def serving_client_with_environment_variables(mocker: MockerFixture):
     )
 
 
-@pytest.fixture
-def recording_file_override(request: pytest.FixtureRequest, mocker: MockerFixture):
-    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-        file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
-        RecordStorage.get_instance(file_path)
-    yield
-
+# ==================== Recording injection ====================
+# To inject patches in subprocesses, add new mock method in setup_recording_injection_if_enabled
+# in fork mode, this is automatically enabled.
+# in spawn mode, we need to decalre recording in each process separately.
 
 SpawnProcess = multiprocessing.get_context("spawn").Process
 
@@ -213,7 +216,7 @@ class MockSpawnProcess(SpawnProcess):
 
 
 @pytest.fixture
-def recording_injection(mocker: MockerFixture, recording_file_override):
+def recording_injection(mocker: MockerFixture):
     original_process_class = multiprocessing.get_context("spawn").Process
     multiprocessing.get_context("spawn").Process = MockSpawnProcess
     if "spawn" == multiprocessing.get_start_method():
@@ -222,7 +225,7 @@ def recording_injection(mocker: MockerFixture, recording_file_override):
     patches = setup_recording_injection_if_enabled()
 
     try:
-        yield (RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode())
+        yield
     finally:
         if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
             RecordStorage.get_instance().delete_lock_file()
@@ -251,6 +254,13 @@ def setup_recording_injection_if_enabled():
             patcher = patch(target, mocked_tool)
             patches.append(patcher)
             patcher.start()
+        patcher = patch("promptflow._core.openai_injector.inject_sync", inject_sync_with_recording)
+        patches.append(patcher)
+        patcher.start()
+
+        patcher = patch("promptflow._core.openai_injector.inject_async", inject_async_with_recording)
+        patches.append(patcher)
+        patcher.start()
     return patches
 
 
