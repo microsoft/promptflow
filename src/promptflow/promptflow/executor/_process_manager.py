@@ -382,6 +382,7 @@ def create_spawned_fork_process_manager(
     Manages the creation, termination, and signaling of processes using the 'fork' context.
     """
     # Set up signal handling for process interruption.
+
     from promptflow.executor._line_execution_process_pool import create_executor_fork, signal_handler
 
     signal.signal(signal.SIGINT, signal_handler)
