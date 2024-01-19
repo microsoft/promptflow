@@ -13,7 +13,14 @@ def query():
     return "gpt"
 
 
+@trace
 def my_flow(input_val: str = "gpt") -> str:
     """Simple flow without yaml."""
-    query()
+    print("calling query")
+    for i in range(3):
+        query()
     return f"Hello world! {input_val}"
+
+
+if __name__ == "__main__":
+    my_flow()
