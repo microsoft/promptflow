@@ -13,12 +13,12 @@ from mock.mock import Mock
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._vendor import get_upload_files_from_folder
 from promptflow._utils.flow_utils import load_flow_dag
-
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
-FLOWS_DIR = PROMOTFLOW_ROOT / "tests/test_configs/flows"
-RUNS_DIR = Path("./tests/test_configs/runs")
+from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
+from promptflow.azure._entities._flow import Flow
 
 tests_root_dir = Path(__file__).parent.parent.parent
+FLOWS_DIR = (tests_root_dir / "test_configs/flows").resolve()
+RUNS_DIR = (tests_root_dir / "test_configs/runs").resolve()
 
 
 def load_flow(source):
@@ -165,3 +165,47 @@ class TestFlow:
             # assert all ignored files are ignored
             for file in target_ignored_files:
                 assert file not in flow_files
+
+    def test_resolve_requirements(self):
+        flow_dag = {}
+
+        # Test when requirements.txt does not exist
+        assert not Flow._resolve_requirements(flow_path=FLOWS_DIR / "flow_with_ignore_file", flow_dag=flow_dag)
+
+        # Test when requirements.txt exists but already added to flow_dag
+        flow_dag[ENVIRONMENT] = {PYTHON_REQUIREMENTS_TXT: "another_requirements.txt"}
+        assert not Flow._resolve_requirements(flow_path=FLOWS_DIR / "flow_with_requirements_txt", flow_dag=flow_dag)
+
+        # Test when requirements.txt exists and not added to flow_dag
+        flow_dag = {}
+        assert Flow._resolve_requirements(flow_path=FLOWS_DIR / "flow_with_requirements_txt", flow_dag=flow_dag)
+
+    def test_resolve_requirements_for_flow(self):
+        with tempfile.TemporaryDirectory() as temp:
+            temp = Path(temp)
+            # flow without environment section
+            flow_folder = FLOWS_DIR / "flow_with_requirements_txt"
+            shutil.copytree(flow_folder, temp / "flow_with_requirements_txt")
+            flow_folder = temp / "flow_with_requirements_txt"
+            flow = load_flow(source=flow_folder)
+            with flow._build_code():
+                _, flow_dag = load_flow_dag(flow_path=flow_folder)
+                assert flow_dag[ENVIRONMENT] == {"python_requirements_txt": "requirements.txt"}
+
+            _, flow_dag = load_flow_dag(flow_path=flow_folder)
+            assert ENVIRONMENT not in flow_dag
+
+            # flow with environment section
+            flow_folder = FLOWS_DIR / "flow_with_requirements_txt_and_env"
+            shutil.copytree(flow_folder, temp / "flow_with_requirements_txt_and_env")
+            flow_folder = temp / "flow_with_requirements_txt_and_env"
+            flow = load_flow(source=flow_folder)
+            with flow._build_code():
+                _, flow_dag = load_flow_dag(flow_path=flow_folder)
+                assert flow_dag[ENVIRONMENT] == {
+                    "image": "python:3.8-slim",
+                    "python_requirements_txt": "requirements.txt",
+                }
+
+            _, flow_dag = load_flow_dag(flow_path=flow_folder)
+            assert flow_dag[ENVIRONMENT] == {"image": "python:3.8-slim"}
