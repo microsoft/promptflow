@@ -43,6 +43,7 @@ from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.exceptions import UserErrorException, ErrorTarget
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
@@ -287,7 +288,8 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     python_tool_inputs = [arg.name for arg in python_tool.tool_arg_list]
     for tool_input in tools.prompt_params.keys():
         if tool_input not in python_tool_inputs:
-            raise ValueError(f"Template parameter {tool_input} doesn't find in python function arguments.")
+            error = ValueError(f"Template parameter {tool_input} doesn't find in python function arguments.")
+            raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(error), error=error)
 
     python_tool.generate_to_file(tool_py)
     # Create .promptflow and flow.tools.json
@@ -381,7 +383,12 @@ def test_flow(args):
         from promptflow._utils.load_data import load_data
 
         if args.input and not args.input.endswith(".jsonl"):
-            raise ValueError("Only support jsonl file as input.")
+            error = ValueError("Only support jsonl file as input.")
+            raise UserErrorException(
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+                message=str(error),
+                error=error,
+            )
         inputs = load_data(local_path=args.input)[0]
     if args.inputs:
         inputs.update(list_of_dict_to_dict(args.inputs))
