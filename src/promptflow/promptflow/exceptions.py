@@ -276,7 +276,20 @@ class _ErrorInfo:
 
     @classmethod
     def _error_type(cls, e: Exception):
-        return type(e).__name__
+        """Return exception type.
+        Note:
+        For PromptflowException(error=ValueError(message="xxx")) or
+        UserErrorException(error=ValueError(message="xxx")) or
+        SystemErrorException(error=ValueError(message="xxx")),
+        the desired return type is ValueError,
+        not PromptflowException, UserErrorException and SystemErrorException.
+        """
+
+        error_type = type(e).__name__
+        if type(e) in (PromptflowException, UserErrorException, SystemErrorException):
+            if e.inner_exception:
+                error_type = type(e.inner_exception).__name__
+        return error_type
 
     @classmethod
     def _error_target(cls, e: Exception):

@@ -668,13 +668,22 @@ class Flow:
         If environment_variables_overrides exists, override yaml level configuration.
         Returns the merged environment variables dict.
         """
+        if Path(flow_file).suffix.lower() != ".yaml":
+            # The flow_file type of eager flow is .py
+            return environment_variables_overrides or {}
         working_dir = cls._parse_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow_dag = load_yaml(fin)
         flow = Flow.deserialize(flow_dag)
+        return flow.get_environment_variables_with_overrides(
+            environment_variables_overrides=environment_variables_overrides
+        )
 
+    def get_environment_variables_with_overrides(
+        self, environment_variables_overrides: Dict[str, str] = None
+    ) -> Dict[str, str]:
         environment_variables = {
-            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in flow.environment_variables.items()
+            k: (json.dumps(v) if isinstance(v, (dict, list)) else str(v)) for k, v in self.environment_variables.items()
         }
         if environment_variables_overrides is not None:
             for k, v in environment_variables_overrides.items():

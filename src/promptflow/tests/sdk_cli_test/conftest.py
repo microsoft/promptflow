@@ -7,9 +7,13 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from mock import mock
 from pytest_mock import MockerFixture
+from sqlalchemy import create_engine
 
 from promptflow import PFClient
+from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._constants import EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
@@ -84,6 +88,21 @@ def setup_local_connection(local_client, azure_open_ai_connection):
 
 
 @pytest.fixture
+def setup_experiment_table():
+    with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+        mock_func.return_value = True
+        # Call this session to initialize session maker, then add experiment table
+        from promptflow._sdk._orm import Experiment, mgmt_db_session
+        from promptflow._sdk._orm.session import create_index_if_not_exists, create_or_update_table
+
+        mgmt_db_session()
+        engine = create_engine(f"sqlite:///{str(LOCAL_MGMT_DB_PATH)}", future=True)
+        if Configuration.get_instance().is_internal_features_enabled():
+            create_or_update_table(engine, orm_class=Experiment, tablename=EXPERIMENT_TABLE_NAME)
+            create_index_if_not_exists(engine, EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, "created_on")
+
+
+@pytest.fixture
 def flow_serving_client(mocker: MockerFixture):
     model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
@@ -121,14 +140,15 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
     return app.test_client()
 
 
-def create_client_by_model(model_name: str, mocker: MockerFixture, connections: dict = {}, extension_type=None):
+def create_client_by_model(
+    model_name: str, mocker: MockerFixture, connections: dict = {}, extension_type=None, environment_variables={}
+):
     model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     if connections:
         mocker.patch.dict(os.environ, connections)
-    environment_variables = {}
     if extension_type and extension_type == "azureml":
-        environment_variables = {"API_TYPE": "${azure_open_ai_connection.api_type}"}
+        environment_variables["API_TYPE"] = "${azure_open_ai_connection.api_type}"
     app = create_serving_app(environment_variables=environment_variables, extension_type=extension_type)
     app.config.update(
         {
@@ -162,6 +182,15 @@ def serving_client_image_python_flow(mocker: MockerFixture):
 @pytest.fixture
 def serving_client_composite_image_flow(mocker: MockerFixture):
     return create_client_by_model("python_tool_with_composite_image", mocker)
+
+
+@pytest.fixture
+def serving_client_with_environment_variables(mocker: MockerFixture):
+    return create_client_by_model(
+        "flow_with_environment_variables",
+        mocker,
+        environment_variables={"env2": "runtime_env2", "env10": "aaaaa"},
+    )
 
 
 @pytest.fixture

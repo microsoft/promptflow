@@ -21,7 +21,9 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunN
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.azure import PFClient
+from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
@@ -875,3 +877,37 @@ class TestFlowRun:
         for _, row in details2.iterrows():
             if pd.notnull(row["outputs.output"]):
                 assert int(row["inputs.number"]) == int(row["outputs.output"])
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_auto_resolve_requirements(self, pf: PFClient, randstr: Callable[[str], str]):
+        # will add requirements.txt to flow.dag.yaml if exists when submitting run.
+        with TemporaryDirectory() as temp:
+            temp = Path(temp)
+            shutil.copytree(f"{FLOWS_DIR}/flow_with_requirements_txt", temp / "flow_with_requirements_txt")
+
+            run = pf.run(
+                flow=temp / "flow_with_requirements_txt",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name"),
+            )
+            pf.runs.stream(run)
+
+            pf.runs.download(run=run.name, output=temp)
+            flow_dag = load_yaml(Path(temp, run.name, "snapshot/flow.dag.yaml"))
+            assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
+
+            local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
+            assert "environment" not in local_flow_dag
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_requirements_in_additional_includes(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_additional_include_req",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name"),
+        )
+        run = pf.runs.stream(run)
+        assert run._error is None
+        with TemporaryDirectory() as temp:
+            pf.runs.download(run=run.name, output=temp)
+            assert Path(temp, run.name, "snapshot/requirements").exists()
