@@ -12,7 +12,8 @@ promptflow:
 promptflow-tools:
 - src/promptflow-tools/**
 executor:
-- src/promptflow/**
+- src/promptflow/promptflow/batch/**
+- src/promptflow/promptflow/executor/**
 fundamental:
 - scripts/**
 - .github/**
