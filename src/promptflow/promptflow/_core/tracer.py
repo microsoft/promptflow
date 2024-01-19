@@ -14,6 +14,7 @@ from datetime import datetime
 from typing import Callable, Dict, Optional
 
 from opentelemetry.trace import Tracer as OTelTracer
+from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.otel_tracer import get_otel_tracer
@@ -264,6 +265,7 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                 try:
                     Tracer.push(trace)
                     output = await func(*args, **kwargs)
+                    span.set_status(StatusCode.OK)
                     return Tracer.pop(output)
                 except Exception as e:
                     Tracer.pop(None, e)
@@ -284,10 +286,10 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                 try:
                     Tracer.push(trace)
                     output = func(*args, **kwargs)
+                    span.set_status(StatusCode.OK)
                     return Tracer.pop(output)
                 except Exception as e:
                     Tracer.pop(None, e)
-                    span.record_exception(e)
                     raise
 
     wrapped.__original_function = func
