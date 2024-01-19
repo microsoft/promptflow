@@ -87,7 +87,7 @@ def list_deployment_names(
             print(f"Connection {connection} resource id: {resource_id}")
             conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
         except Exception as e:
-            raise Exception(f"Failed to get connection resource id with error: {e}")
+            raise Exception(f"Failed to get connection resource id.")
 
         client = CognitiveServicesManagementClient(
             credential=credential,
