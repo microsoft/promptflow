@@ -36,6 +36,7 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
         return execute_flow(
             flow_request.flow_file,
             flow_request.working_dir,
+            flow_request.output_dir,
             connections,
             flow_request.inputs,
             storage=storage,
