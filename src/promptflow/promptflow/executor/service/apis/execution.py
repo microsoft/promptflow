@@ -32,9 +32,7 @@ async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
         os.environ.update(flow_request.environment_variables)
 
     with LogContext(file_path=flow_request.log_path, credential_list=credential_list):
-        # init storage for persisting intermediate image datas
         storage = DefaultRunStorage(base_dir=flow_request.working_dir, sub_dir=flow_request.output_dir)
-        # init flow executor
         return execute_flow(
             flow_request.flow_file,
             flow_request.working_dir,
