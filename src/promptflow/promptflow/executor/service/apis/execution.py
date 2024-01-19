@@ -7,6 +7,9 @@ import os
 from fastapi import APIRouter, Request
 
 from promptflow._constants import LINE_NUMBER_KEY
+
+# from promptflow.contracts.flow import Flow
+from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import LogContext
 from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.executor import FlowExecutor
@@ -19,11 +22,15 @@ router = APIRouter()
 
 @router.post("/execution/flow")
 async def flow_execution(request: Request, flow_request: FlowExecutionRequest):
-    # Operation context???
-    # headers = dict(request.headers)
+    # set operation context
+    OperationContext.get_instance().update(dict(request.headers))
     # get connection endpoints
     connections = {}
     credential_list = []
+    """
+    flow = Flow.from_yaml(flow_request.flow_file)
+    connections_set = flow.get_connection_names()
+    """
     # resolve environment variables
     if isinstance(flow_request.environment_variables, dict):
         os.environ.update(flow_request.environment_variables)
