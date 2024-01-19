@@ -61,11 +61,11 @@ def _build_deployment_dict(item) -> Deployment:
 
 
 def list_deployment_names(
-        subscription_id,
-        resource_group_name,
-        workspace_name,
-        connection: AzureOpenAIConnection = None
-    ) -> List[Dict[str, str]]:
+    subscription_id,
+    resource_group_name,
+    workspace_name,
+    connection: AzureOpenAIConnection = None
+) -> List[Dict[str, str]]:
     try:
         # Local does not support dynamic list.
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
@@ -86,8 +86,8 @@ def list_deployment_names(
             resource_id = conn.get("value").get('resource_id', "")
             print(f"Connection {connection} resource id: {resource_id}")
             conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
-        except Exception as e:
-            raise Exception(f"Failed to get connection resource id.")
+        except Exception:
+            raise Exception("Failed to get connection resource id.")
 
         client = CognitiveServicesManagementClient(
             credential=credential,
@@ -103,7 +103,9 @@ def list_deployment_names(
             deployment = _build_deployment_dict(item)
             print(f"Connection {connection} deployments:")
             print(
-                f"deployment_name: {deployment.name}, model_name: {deployment.model_name}, version: {deployment.version}")
+                f"deployment_name: {deployment.name}, model_name: "
+                f"{deployment.model_name}, version: {deployment.version}."
+            )
             if deployment.version == GPT4V_VERSION:
                 print(f"{deployment.name}:{deployment.version} selected.")
                 cur_item = {

@@ -46,7 +46,7 @@ setup(
     python_requires="<4.0,>=3.8",
     install_requires=parse_requirements('requirements.txt'),
     extras_require={
-        "azure":[
+        "azure": [
             "azure-mgmt-cognitiveservices"
         ]
     },
