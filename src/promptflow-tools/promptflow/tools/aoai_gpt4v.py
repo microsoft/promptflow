@@ -116,8 +116,8 @@ def list_deployment_names(
 
         if not res:
             message = (
-                f"No deployments support gpt4v in current connection, please create "
-                f"gpt4v deployments or use other connections."
+                "No deployments support gpt4v in current connection, please create "
+                "gpt4v deployments or use other connections."
             )
             raise ListDeploymentsError(message)
     except ListDeploymentsError:
