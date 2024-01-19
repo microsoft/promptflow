@@ -45,6 +45,11 @@ setup(
     ],
     python_requires="<4.0,>=3.8",
     install_requires=parse_requirements('requirements.txt'),
+    extras_require={
+        "azure":[
+            "azure-mgmt-cognitiveservices"
+        ]
+    }
     packages=find_namespace_packages(include=[f"{PACKAGE_FOLDER_PATH}.*"]),
     entry_points={
         "package_tools": ["builtins = promptflow.tools.list:list_package_tools"],
