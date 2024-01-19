@@ -127,7 +127,7 @@ class TestFlowTest:
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
         # Test additional includes don't exist
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             _client.test(flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include")
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
