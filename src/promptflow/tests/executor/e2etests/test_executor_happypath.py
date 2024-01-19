@@ -2,7 +2,9 @@ import logging
 import multiprocessing
 import os
 import re
+import shutil
 import sys
+from pathlib import Path
 from types import GeneratorType
 
 import pytest
@@ -11,8 +13,10 @@ from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
+from promptflow.executor.flow_executor import execute_flow
+from promptflow.storage._run_storage import DefaultRunStorage
 
-from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file
+from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file, is_image_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -271,6 +275,41 @@ class TestExecutor:
         flow_result = executor.exec_line({"input": "World"})
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.output["output"] == "Hello World"
+
+    @pytest.mark.parametrize(
+        "output_dir_name, intermediate_dir_name, run_aggregation, expected_node_counts",
+        [
+            ("output", "intermediate", True, 2),
+            ("output_1", "intermediate_1", False, 1),
+        ],
+    )
+    def test_execute_flow(
+        self, output_dir_name: str, intermediate_dir_name: str, run_aggregation: bool, expected_node_counts: int
+    ):
+        flow_folder = get_flow_folder("eval_flow_with_simple_image")
+        # prepare output folder
+        output_dir = flow_folder / output_dir_name
+        intermediate_dir = flow_folder / intermediate_dir_name
+        output_dir.mkdir(exist_ok=True)
+        intermediate_dir.mkdir(exist_ok=True)
+
+        storage = DefaultRunStorage(base_dir=flow_folder, sub_dir=Path(intermediate_dir_name))
+        line_result = execute_flow(
+            flow_file=get_yaml_file(flow_folder),
+            working_dir=flow_folder,
+            output_dir=Path(output_dir_name),
+            inputs={},
+            connections={},
+            run_aggregation=run_aggregation,
+            storage=storage,
+        )
+        assert line_result.run_info.status == Status.Completed
+        assert len(line_result.node_run_infos) == expected_node_counts
+        assert all(is_image_file(output_file) for output_file in output_dir.iterdir())
+        assert all(is_image_file(output_file) for output_file in intermediate_dir.iterdir())
+        # clean up output folder
+        shutil.rmtree(output_dir)
+        shutil.rmtree(intermediate_dir)
 
 
 def exec_node_within_process(queue, flow_file, node_name, flow_inputs, dependency_nodes_outputs, connections, raise_ex):
