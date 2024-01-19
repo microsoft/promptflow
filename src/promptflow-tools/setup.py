@@ -49,7 +49,7 @@ setup(
         "azure":[
             "azure-mgmt-cognitiveservices"
         ]
-    }
+    },
     packages=find_namespace_packages(include=[f"{PACKAGE_FOLDER_PATH}.*"]),
     entry_points={
         "package_tools": ["builtins = promptflow.tools.list:list_package_tools"],
