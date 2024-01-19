@@ -14,7 +14,7 @@ from promptflow.tools.common import render_jinja_template, handle_openai_error, 
     post_process_chat_api_response
 
 
-GPT4V_VERSION = "0301"
+GPT4V_VERSION = "vision-preview"
 
 
 def _get_credential():
@@ -39,10 +39,12 @@ def _parse_resource_id(resourceId):
 
 
 class Deployment:
-    def __init__(self,
-                 name: str,
-                 model_name: str,
-                 version: str):
+    def __init__(
+        self,
+        name: str,
+        model_name: str,
+        version: str
+    ):
         self.name = name
         self.model_name = model_name
         self.version = version
@@ -58,27 +60,32 @@ def _build_deployment_dict(item) -> Deployment:
     return Deployment(item.name, model.name, model.version)
 
 
-def list_deployment_names(subscription_id, resource_group_name, workspace_name, connection: AzureOpenAIConnection = None) -> List[Dict[str, str]]:
+def list_deployment_names(
+        subscription_id,
+        resource_group_name,
+        workspace_name,
+        connection: AzureOpenAIConnection = None
+    ) -> List[Dict[str, str]]:
     from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
     from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
     try:
         credential = _get_credential()
         conn = ArmConnectionOperations._build_connection_dict(
-                name=connection, 
-                subscription_id=subscription_id, 
-                resource_group_name=resource_group_name, 
-                workspace_name=workspace_name, 
-                credential=credential
-                )
-        resource_id = conn.get("value").get('resource_id', "") # 等明天sdk发版 就可以拿了。
-        print(resource_id)
+            name=connection,
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            credential=credential
+        )
+        resource_id = conn.get("value").get('resource_id', "")
+        print(f"Connection {connection} resource id: {resource_id}")
         conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
 
         client = CognitiveServicesManagementClient(
             credential=credential,
             subscription_id=conn_sub,
-            )
+        )
         deployment_collection = client.deployments.list(
             resource_group_name=conn_rg,
             account_name=conn_account,
@@ -87,9 +94,11 @@ def list_deployment_names(subscription_id, resource_group_name, workspace_name, 
         res = []
         for item in deployment_collection:
             deployment = _build_deployment_dict(item)
-            print(f"{deployment.name}:{deployment.version}")
+            print(f"Connection {connection} deployments:")
+            print(
+                f"deployment_name: {deployment.name}, model_name: {deployment.model_name}, version: {deployment.version}")
             if deployment.version == GPT4V_VERSION:
-                print(f"Selected version {deployment.name}:{deployment.version}")
+                print(f"{deployment.name}:{deployment.version} selected.")
                 cur_item = {
                     "value": deployment.name,
                     "display_value": deployment.name,
@@ -123,7 +132,7 @@ class AzureOpenAI(ToolProvider):
         api_version = self._connection_dict.get("api_version")
         api_key = self._connection_dict.get("api_key")
 
-        self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)    
+        self._client = AzureOpenAIClient(azure_endpoint=azure_endpoint, api_version=api_version, api_key=api_key)
 
     @tool(streaming_option_parameter="stream")
     @handle_openai_error()
