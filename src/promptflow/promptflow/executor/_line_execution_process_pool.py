@@ -569,8 +569,12 @@ def _exec_line(
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         # If line execution failed before start, there is no flow information in the run_tracker.
         # So we call start_flow_run before handling exception to make sure the run_tracker has flow info.
-        executor._run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
-        run_info = executor._run_tracker.end_run(f"{run_id}_{index}", ex=e)
+        if isinstance(executor, ScriptExecutor):
+            run_tracker = RunTracker(executor._storage)
+        else:
+            run_tracker = executor._run_tracker
+        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
+        run_info = run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
         result = LineResult(
             output={},

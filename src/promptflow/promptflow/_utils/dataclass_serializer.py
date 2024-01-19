@@ -117,7 +117,7 @@ def assertEqual(a: dict, b: dict, path: str = ""):
         assert a == b, f"{path}: {a} != {b}"
 
 
-# Since the output of eager flow may not a dict, we need to convert it to a dict in batch mode.
+# Since the output of eager flow may not be a dict, we need to convert it to a dict in batch mode.
 def convert_eager_flow_output_to_dict(value: Any):
     if isinstance(value, dict):
         return value

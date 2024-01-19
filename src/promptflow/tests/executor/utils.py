@@ -46,6 +46,11 @@ def get_flow_inputs(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs
     return inputs[0] if isinstance(inputs, list) else inputs
 
 
+def get_bulk_inputs_from_jsonl(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs.jsonl"):
+    inputs = load_jsonl(get_flow_inputs_file(folder_name, root, file_name))
+    return inputs
+
+
 def get_bulk_inputs(folder_name, root: str = FLOW_ROOT, file_name: str = "inputs.json"):
     inputs = load_json(get_flow_inputs_file(folder_name, root=root, file_name=file_name))
     return [inputs] if isinstance(inputs, dict) else inputs
