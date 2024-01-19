@@ -34,7 +34,6 @@ class AsyncNodesScheduler:
         node_concurrency: int,
     ) -> None:
         self._tools_manager = tools_manager
-        # TODO: Add concurrency control in execution
         self._node_concurrency = node_concurrency
         self._task_start_time = {}
         self._task_last_log_time = {}
@@ -55,7 +54,9 @@ class AsyncNodesScheduler:
                 "Current thread is not main thread, skip signal handler registration in AsyncNodesScheduler."
             )
 
+        # Semaphore should be created in the loop, otherwise it will not work.
         loop = asyncio.get_running_loop()
+        self._semaphore = asyncio.Semaphore(self._node_concurrency, loop=loop)
         monitor = threading.Thread(
             target=monitor_long_running_coroutine,
             args=(loop, self._task_start_time, self._task_last_log_time, self._dag_manager_completed_event),
@@ -129,6 +130,10 @@ class AsyncNodesScheduler:
             self._create_node_task(node, dag_manager, context, executor): node for node in dag_manager.pop_ready_nodes()
         }
 
+    async def run_task_with_semaphore(self, coroutine):
+        async with self._semaphore:
+            return await coroutine
+
     def _create_node_task(
         self,
         node: Node,
@@ -139,12 +144,17 @@ class AsyncNodesScheduler:
         f = self._tools_manager.get_tool(node.name)
         kwargs = dag_manager.get_node_valid_inputs(node, f)
         if inspect.iscoroutinefunction(f):
+            # For async task, it will not be executed before calling create_task.
             task = context.invoke_tool_async(node, f, kwargs)
         else:
+            # For sync task, convert it to async task and run it in executor thread.
+            # Even though the task is put to the thread pool, thread.start will only be triggered after create_task.
             task = self._sync_function_to_async_task(executor, context, node, f, kwargs)
         # Set the name of the task to the node name for debugging purpose
         # It does not need to be unique by design.
-        return asyncio.create_task(task, name=node.name)
+        # Wrap the coroutine in a task with asyncio.create_task to schedule it for event loop execution
+        # The task is created and added to the event loop, but the exact execution depends on loop's scheduling
+        return asyncio.create_task(self.run_task_with_semaphore(task), name=node.name)
 
     @staticmethod
     async def _sync_function_to_async_task(
@@ -154,6 +164,7 @@ class AsyncNodesScheduler:
         f,
         kwargs,
     ):
+        # The task will not be executed before calling create_task.
         return await asyncio.get_running_loop().run_in_executor(executor, context.invoke_tool, node, f, kwargs)
 
 

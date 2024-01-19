@@ -137,7 +137,22 @@ class TestExceptions:
             ex = e
         error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
         assert error_category == ErrorCategory.USER_ERROR
-        assert error_type == "UserErrorException"
+        assert error_type == "InvalidAggregationInput"
+        assert error_target == ErrorTarget.UNKNOWN
+        assert error_message == ""
+        assert error_detail == ""
+
+        ex = None
+        try:
+            try:
+                FlowValidator._validate_aggregation_inputs({}, {"input1": "value1"})
+            except Exception as e:
+                raise UserErrorException(message=str(e), error=e)
+        except Exception as e:
+            ex = e
+        error_category, error_type, error_target, error_message, error_detail = _ErrorInfo.get_error_info(ex)
+        assert error_category == ErrorCategory.USER_ERROR
+        assert error_type == "InvalidAggregationInput"
         assert error_target == ErrorTarget.UNKNOWN
         assert error_message == ""
         assert error_detail == ""
