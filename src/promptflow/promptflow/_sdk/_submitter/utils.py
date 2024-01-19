@@ -215,7 +215,7 @@ class SubmitterHelper:
         from .._pf_client import PFClient
 
         client = client or PFClient()
-        connection_names = SubmitterHelper.get_used_connection_names(tools_meta=tools_meta, flow_dag=flow.dag)
+        connection_names = SubmitterHelper.get_used_connection_names(tools_meta=tools_meta, flow_dag=flow._data)
         connections_to_ignore = connections_to_ignore or []
         result = {}
         for n in connection_names:

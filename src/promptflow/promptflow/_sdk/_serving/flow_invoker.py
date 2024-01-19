@@ -61,7 +61,7 @@ class FlowInvoker:
         self.logger = kwargs.get("logger", LoggerFactory.get_logger("flowinvoker"))
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
         self._executable_flow = ExecutableFlow._from_dict(
-            flow_dag=self.flow_entity.dag, working_dir=self.flow_entity.code
+            flow_dag=self.flow_entity._data, working_dir=self.flow_entity.code
         )
         self.connections = connections or {}
         self.connections_name_overrides = connections_name_overrides or {}

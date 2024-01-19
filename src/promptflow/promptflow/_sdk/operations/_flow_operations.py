@@ -12,7 +12,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
@@ -409,7 +409,7 @@ class FlowOperations(TelemetryMixin):
                             flow_file=flow.flow_dag_path,
                             working_dir=flow.code,
                         ),
-                        flow_dag=flow.dag,
+                        flow_dag=flow._data,
                     ),
                     output_dir=output_dir,
                 )
@@ -584,7 +584,7 @@ class FlowOperations(TelemetryMixin):
         output_dir.mkdir(parents=True, exist_ok=True)
 
         flow: ProtectedFlow = load_flow(flow)
-        is_csharp_flow = flow.dag.get(LANGUAGE_KEY, "") == FlowLanguage.CSharp
+        is_csharp_flow = flow.language == FlowLanguage.CSharp
 
         if format not in ["docker", "executable"]:
             raise ValueError(f"Unsupported export format: {format}")

@@ -92,9 +92,11 @@ class FlowContext:
 
 
 class FlowBase(abc.ABC):
-    def __init__(self, **kwargs):
+    def __init__(self, data: dict, **kwargs):
         self._context = FlowContext()
         self._content_hash = kwargs.pop("content_hash", None)
+        # flow.dag.yaml's content if provided
+        self._data = data
         super().__init__(**kwargs)
 
     @property
@@ -111,6 +113,11 @@ class FlowBase(abc.ABC):
     @abc.abstractmethod
     def language(self) -> str:
         """Language of the flow."""
+
+    @property
+    @abc.abstractmethod
+    def additional_includes(self) -> list:
+        """Additional includes of the flow."""
 
     @classmethod
     # pylint: disable=unused-argument
@@ -139,7 +146,8 @@ class Flow(FlowBase):
         path = kwargs.pop("path", None)
         self._path = Path(path) if path else None
         self.variant = kwargs.pop("variant", None) or {}
-        self.dag = dag
+        # TODO: not sure if should private this
+        self._data = dag
         super().__init__(**kwargs)
 
     @property
@@ -162,7 +170,11 @@ class Flow(FlowBase):
 
     @property
     def language(self) -> str:
-        return self.dag.get(LANGUAGE_KEY, FlowLanguage.Python)
+        return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+    @property
+    def additional_includes(self) -> list:
+        return self._data.get("additional_includes", [])
 
     @classmethod
     def _is_eager_flow(cls, data: dict):
@@ -257,7 +269,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     @property
     def display_name(self) -> str:
-        return self.dag.get("display_name", self.name)
+        return self._data.get("display_name", self.name)
 
     @property
     def tools_meta_path(self) -> Path:
@@ -345,7 +357,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
         from promptflow._sdk.operations._flow_context_resolver import FlowContextResolver
 
-        if self.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+        if self.language == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
                 result = submitter.exec_with_inputs(
                     inputs=inputs,

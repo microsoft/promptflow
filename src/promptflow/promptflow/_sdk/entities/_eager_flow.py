@@ -21,15 +21,21 @@ class EagerFlow(FlowBase):
         data: dict,
         **kwargs,
     ):
+        # flow.dag.yaml file path or entry.py file path
         self.path = Path(path)
+        # flow.dag.yaml file's folder or entry.py's folder
         self.code = self.path.parent
+        # entry function name
         self.entry = entry
-        self._data = data
-        super().__init__(**kwargs)
+        super().__init__(data=data, **kwargs)
 
     @property
     def language(self) -> str:
         return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+    @property
+    def additional_includes(self) -> list:
+        return self._data.get("additional_includes", [])
 
     @classmethod
     def _create_schema_for_validation(cls, context):
