@@ -1,16 +1,5 @@
 # Release History
 
-## 1.5.0 (Upcoming)
-
-### Features Added
-TODO
-
-### Bugs Fixed
-TODO
-
-### Improvements
-TODO
-
 ## 1.4.0 (2024.01.19)
 
 ### Features Added
