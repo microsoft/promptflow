@@ -67,5 +67,4 @@ async def node_execution(request: Request, node_request: NodeExecutionRequest):
             working_dir=node_request.working_dir,
             storage=storage,
         )
-        # TODO: need serialize node run info to json
         return result
