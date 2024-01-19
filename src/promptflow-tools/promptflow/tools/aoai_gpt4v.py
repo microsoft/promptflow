@@ -71,7 +71,7 @@ def list_deployment_names(
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
     except ImportError:
-        return {"value": ""}
+        return [{"value": ""}]
 
     try:
         credential = _get_credential()
