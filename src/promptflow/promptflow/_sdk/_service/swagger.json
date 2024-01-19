@@ -17,17 +17,6 @@
                 },
                 "description": "List all connection",
                 "operationId": "get_connection_list",
-                "parameters": [
-                    {
-                        "name": "working_directory",
-                        "in": "formData",
-                        "type": "string"
-                    }
-                ],
-                "consumes": [
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data"
-                ],
                 "tags": [
                     "Connections"
                 ]
@@ -60,7 +49,7 @@
                     "type": "string"
                 }
             ],
-            "post": {
+            "get": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -69,18 +58,20 @@
                         }
                     }
                 },
-                "description": "Create connection",
-                "operationId": "post_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
                     }
-                ],
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -110,19 +101,7 @@
                     "Connections"
                 ]
             },
-            "delete": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "get": {
+            "post": {
                 "responses": {
                     "200": {
                         "description": "Connection details",
@@ -131,18 +110,17 @@
                         }
                     }
                 },
-                "description": "Get connection",
-                "operationId": "get_connection",
+                "description": "Create connection",
+                "operationId": "post_connection",
                 "parameters": [
                     {
-                        "name": "working_directory",
-                        "in": "formData",
-                        "type": "string"
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
                     }
-                ],
-                "consumes": [
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data"
                 ],
                 "tags": [
                     "Connections"
@@ -169,17 +147,6 @@
                 },
                 "description": "Get connection with secret",
                 "operationId": "get_connection_with_secret",
-                "parameters": [
-                    {
-                        "name": "working_directory",
-                        "in": "formData",
-                        "type": "string"
-                    }
-                ],
-                "consumes": [
-                    "application/x-www-form-urlencoded",
-                    "multipart/form-data"
-                ],
                 "tags": [
                     "Connections"
                 ]
@@ -238,6 +205,21 @@
                     "type": "string"
                 }
             ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -270,21 +252,6 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]

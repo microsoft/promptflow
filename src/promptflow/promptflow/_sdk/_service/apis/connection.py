@@ -64,7 +64,7 @@ def _get_connection_operation(working_directory=None):
 
 @api.route("/")
 class ConnectionList(Resource):
-    @api.doc(parser=working_directory_parser, description="List all connection")
+    @api.doc(description="List all connection")
     @api.marshal_with(list_connection_field, skip_none=True, as_list=True)
     @local_user_only
     def get(self):
@@ -82,7 +82,7 @@ class ConnectionList(Resource):
 @api.route("/<string:name>")
 @api.param("name", "The connection name.")
 class Connection(Resource):
-    @api.doc(parser=working_directory_parser, description="Get connection")
+    @api.doc(description="Get connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
     def get(self, name: str):
@@ -125,7 +125,7 @@ class Connection(Resource):
 
 @api.route("/<string:name>/listsecrets")
 class ConnectionWithSecret(Resource):
-    @api.doc(parser=working_directory_parser, description="Get connection with secret")
+    @api.doc(description="Get connection with secret")
     @api.response(code=200, description="Connection details with secret", model=dict_field)
     @local_user_only
     def get(self, name: str):
