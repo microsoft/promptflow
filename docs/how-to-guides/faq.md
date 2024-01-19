@@ -82,27 +82,16 @@ Currently, promptflow supports the following environment variables:
 
 **PF_WORKER_COUNT** 
 
-Valid for batch run only. The number of workers determine the degree of parallelism of the batch run execution.
+Effective for batch run only, count of parallel workers in batch run execution.
 
-The default value is 4. For large number data rows of batch run, if you want to improve the efficiency, consider increasing the PF_WORKER_COUNT to improve the concurrency.
+The default value has been updated from 16 to 4.
 
-But there are two points to note:
+Please take the following points into consideration when changing it:
 
-1. The concurrency should not exceed the total data rows count of your batch run. If not, the execution may slow down due to additional time spend on process startup and shutdown.
+1. The concurrency should not exceed the total data rows count. Otherwise, the execution may slow down due to additional time spent on process startup and shutdown.
 
-2. Your batch run may fail if it reaches the rate limit of your LLM endpoint. In such cases, reduce the PF_WORKER_COUNT. Take Azure OpenAI endpoint as example, you can go to Azure OpenAI Studio, navigate to Deployment tab, check out the capacity of your endpoints. Then you can refer to the bellow expression to set up the concurrency.
+2. High parallelism may cause the underlying API call to reach the rate limit of your LLM endpoint. In which case you can decrease the `PF_WORKER_COUNT` or increase the rate limit. Please refer to [this doc](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/quota) on quota management. 
 
-```
-PF_WORKER_COUNT <= TPM * duration_seconds / token_count / 60
-```
-TPM: token per minute, capacity rate limit of your LLM endpoint
-
-duration_seconds: single flow run duration in seconds
-
-token_count: single flow run token count
-
-
-For example, if your endpoint TPM (token per minute) is 50K, the single flow run takes 10k tokens and runs for 30s, pls do not set up PF_WORKER_COUNT bigger than 2. This is a rough estimation. Please also consider collboaration (teammates use the same endpoint at the same time) and tokens consumed in deployed inference endpoints, playground and other cases which might send request to your LLM endpoints.
 
 **PF_BATCH_METHOD**
 
