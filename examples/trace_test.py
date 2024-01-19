@@ -41,6 +41,39 @@ class FileExporter(SpanExporter):
         self.file.close()
 
 
+class TreeConsoleSpanExporter:
+    def __init__(self):
+        # Dictionary to keep track of parent-child relationships
+        self.span_tree = {}
+        # Dictionary to keep track of span start times
+        self.span_start_times = {}
+
+    def export(self, spans):
+        for span in spans:
+            parent_id = span.parent.span_id if span.parent else None
+            # Store the start time of the span for later use
+            self.span_start_times[span.context.span_id] = span.start_time
+
+            if parent_id not in self.span_tree:
+                self.span_tree[parent_id] = []
+            self.span_tree[parent_id].append(span)
+
+        self._print_tree()
+
+    def _print_tree(self, parent_id=None, level=0):
+        if parent_id not in self.span_tree:
+            return
+
+        for span in self.span_tree[parent_id]:
+            indent = "  " * level
+            print(f"{indent}- {span.name}")
+            self._print_tree(span.context.span_id, level + 1)
+
+    def shutdown(self):
+        # Perform any cleanup if necessary
+        pass
+
+
 tracer_provider = TracerProvider(resource=resource)
 trace.set_tracer_provider(tracer_provider)
 # traceProvider = get_tracer_provider()
@@ -57,6 +90,7 @@ if connection_string:
 file_exporter = FileExporter("traces.json")
 tracer_provider.add_span_processor(SimpleSpanProcessor(file_exporter))
 
+tracer_provider.add_span_processor(SimpleSpanProcessor(TreeConsoleSpanExporter()))
 
 # zipkin_exporter = ZipkinExporter(
 # Optional: configure the endpoint
