@@ -53,11 +53,9 @@ nodes:
     deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    stop: ""
     max_tokens: 1
     presence_penalty: 0
     frequency_penalty: 0
-    logit_bias: ""
     question: ${inputs.question}
     answer: ${inputs.answer}
   provider: AzureOpenAI
@@ -91,11 +89,9 @@ nodes:
     deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    stop: ""
     max_tokens: 1
     presence_penalty: 0
     frequency_penalty: 0
-    logit_bias: ""
     answer: ${inputs.answer}
     ground_truth: ${inputs.ground_truth}
     question: ${inputs.question}
@@ -116,11 +112,9 @@ nodes:
     deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    stop: ""
     max_tokens: 1
     presence_penalty: 0
     frequency_penalty: 0
-    logit_bias: ""
     answer: ${inputs.answer}
     context: ${inputs.context}
     question: ${inputs.question}
@@ -141,11 +135,9 @@ nodes:
     deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    stop: ""
     max_tokens: 1
     presence_penalty: 0
     frequency_penalty: 0
-    logit_bias: ""
     answer: ${inputs.answer}
     question: ${inputs.question}
   provider: AzureOpenAI
@@ -177,11 +169,9 @@ nodes:
     deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    stop: ""
     max_tokens: 1
     presence_penalty: 0
     frequency_penalty: 0
-    logit_bias: ""
     answer: ${inputs.answer}
     context: ${inputs.context}
   provider: AzureOpenAI

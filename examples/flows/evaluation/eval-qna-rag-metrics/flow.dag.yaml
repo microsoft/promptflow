@@ -423,11 +423,9 @@ nodes:
     deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    stop: ""
     max_tokens: 1000
     presence_penalty: 0
     frequency_penalty: 0
-    logit_bias: ""
     FullBody: ${inputs.documents}
     answer: ${inputs.answer}
     question: ${inputs.question}
@@ -448,11 +446,9 @@ nodes:
     deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    stop: ""
     max_tokens: 1000
     presence_penalty: 0
     frequency_penalty: 0
-    logit_bias: ""
     FullBody: ${inputs.documents}
     question: ${inputs.question}
   provider: AzureOpenAI
@@ -472,11 +468,9 @@ nodes:
     deployment_name: gpt-4
     temperature: 0
     top_p: 1
-    stop: ""
     max_tokens: 1000
     presence_penalty: 0
     frequency_penalty: 0
-    logit_bias: ""
     FullBody: ${inputs.documents}
     answer: ${inputs.answer}
     question: ${inputs.question}
