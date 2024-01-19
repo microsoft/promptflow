@@ -17,7 +17,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 from ..._utils.logger_utils import LoggerFactory
 from .utils import SubmitterHelper, variant_overwrite_context
@@ -66,7 +66,7 @@ class RunSubmitter:
     @classmethod
     def _validate_inputs(cls, run: Run):
         if not run.run and not run.data:
-            error = ValueError("Either run or data must be specified for flow run.")
+            error = ValidationException("Either run or data must be specified for flow run.")
             raise UserErrorException(message=str(error), error=error)
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
@@ -166,14 +166,14 @@ class RunSubmitter:
         if not column_mapping:
             return
         if not isinstance(column_mapping, dict):
-            raise UserErrorException(f"Column mapping must be a dict, got {type(column_mapping)}.")
+            raise ValidationException(f"Column mapping must be a dict, got {type(column_mapping)}.")
         all_static = True
         for v in column_mapping.values():
             if isinstance(v, str) and v.startswith("$"):
                 all_static = False
                 break
         if all_static:
-            raise UserErrorException(
+            raise ValidationException(
                 "Column mapping must contain at least one mapping binding, "
                 f"current column mapping contains all static values: {column_mapping}"
             )

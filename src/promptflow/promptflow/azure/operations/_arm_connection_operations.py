@@ -12,6 +12,7 @@ from azure.ai.ml._scope_dependent_operations import (
     OperationScope,
     _ScopeDependentOperations,
 )
+from azure.core.exceptions import ClientAuthenticationError
 
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -262,8 +263,10 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 "for current workspace, and wait for a few minutes to make sure the new role takes effect. "
             )
             raise OpenURLUserAuthenticationError(message=auth_error_message)
-        except Exception as e:
+        except ClientAuthenticationError as e:
             raise UserErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
+        except Exception as e:
+            raise SystemErrorException(target=ErrorTarget.CONTROL_PLANE_SDK, message=str(e), error=e)
 
         try:
             return cls.build_connection_dict_from_rest_object(name, rest_obj)
