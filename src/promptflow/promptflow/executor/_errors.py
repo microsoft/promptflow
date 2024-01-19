@@ -175,6 +175,27 @@ class LineExecutionTimeoutError(UserErrorException):
         )
 
 
+class ProcessCrashError(UserErrorException):
+    """Exception raised when process crashed."""
+
+    def __init__(self, line_number):
+        super().__init__(message=f"Process crashed while executing line {line_number},", target=ErrorTarget.EXECUTOR)
+
+
+class ProcessTerminatedTimeout(SystemErrorException):
+    """Exception raised when process not terminated within a period of time."""
+
+    def __init__(self, timeout):
+        super().__init__(message=f"Process has not terminated after {timeout} seconds", target=ErrorTarget.EXECUTOR)
+
+
+class ProcessInfoObtainedTimeout(SystemErrorException):
+    """Exception raised when process info not obtained within a period of time."""
+
+    def __init__(self, timeout):
+        super().__init__(message=f"Failed to get process info after {timeout} seconds", target=ErrorTarget.EXECUTOR)
+
+
 class EmptyLLMApiMapping(UserErrorException):
     """Exception raised when connection_type_to_api_mapping is empty and llm node provider can't be inferred"""
 

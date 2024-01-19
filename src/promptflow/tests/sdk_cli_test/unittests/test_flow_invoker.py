@@ -7,6 +7,7 @@ import pytest
 
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
+from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__).parent.parent.parent.parent
 FLOWS_DIR = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
@@ -21,7 +22,7 @@ class TestFlowInvoker:
         with pytest.raises(UnsupportedConnectionProvider):
             FlowInvoker(flow=EXAMPLE_FLOW, connection_provider=[])
 
-        with pytest.raises(ValueError):
+        with pytest.raises(UserErrorException):
             FlowInvoker(flow=EXAMPLE_FLOW, connection_provider="unsupported")
 
     def test_flow_invoker_custom_connection_provider(self):

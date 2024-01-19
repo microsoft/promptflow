@@ -7,15 +7,15 @@ import contextlib
 import os
 import re
 import tempfile
+import time
 from collections import defaultdict
 from os import PathLike
 from pathlib import Path
-import time
+from types import GeneratorType
 
 import pydash
 from dotenv import load_dotenv
 from pydash import objects
-from types import GeneratorType
 
 from promptflow._sdk._constants import (
     ALL_CONNECTION_TYPES,
@@ -193,7 +193,13 @@ class SubmitterHelper:
     @staticmethod
     def resolve_connections(flow: Flow, client=None, connections_to_ignore=None) -> dict:
         # TODO 2856400: use resolve_used_connections instead of this function to avoid using executable in control-plane
+        from promptflow._sdk.entities._eager_flow import EagerFlow
+
         from .._pf_client import PFClient
+
+        if isinstance(flow, EagerFlow):
+            # TODO(2898247): support prompt flow management connection for eager flow
+            return {}
 
         client = client or PFClient()
         with _change_working_dir(flow.code):
@@ -240,6 +246,14 @@ class SubmitterHelper:
                     if connection_name and not re.match(r"\${.*}", connection_name):
                         connection_names.add(connection_name)
         return list(connection_names)
+
+    @classmethod
+    def load_and_resolve_environment_variables(cls, flow: Flow, environment_variables: dict, client=None):
+        environment_variables = ExecutableFlow.load_env_variables(
+            flow_file=flow.path, working_dir=flow.code, environment_variables_overrides=environment_variables
+        )
+        cls.resolve_environment_variables(environment_variables, client)
+        return environment_variables
 
     @classmethod
     def resolve_environment_variables(cls, environment_variables: dict, client=None):

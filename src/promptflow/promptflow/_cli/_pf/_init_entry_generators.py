@@ -12,6 +12,7 @@ from pathlib import Path
 
 from jinja2 import Environment, Template, meta
 
+from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -38,7 +39,7 @@ class BaseGenerator(ABC):
 
     def generate(self) -> str:
         """Generate content based on given template and actual value of template keys."""
-        with open(self.tpl_file) as f:
+        with open(self.tpl_file, encoding=DEFAULT_ENCODING) as f:
             entry_template = f.read()
             entry_template = Template(entry_template, trim_blocks=True, lstrip_blocks=True)
 
@@ -49,7 +50,7 @@ class BaseGenerator(ABC):
         target = Path(target).resolve()
         action = "Overwriting" if target.exists() else "Creating"
         print(f"{action} {target.resolve()}...")
-        with open(target, "w", encoding="utf-8") as f:
+        with open(target, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(self.generate())
 
 
@@ -288,7 +289,7 @@ class StreamlitFileReplicator:
             "flow_inputs",
             "label",
             "chat_output_name",
-            "is_streaming"
+            "is_streaming",
         ]
 
     def generate_to_file(self, target):

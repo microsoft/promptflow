@@ -1,5 +1,4 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
-name: QnA RAG Evaluation
 inputs:
   metrics:
     type: string

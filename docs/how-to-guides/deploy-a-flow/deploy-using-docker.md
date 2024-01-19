@@ -21,6 +21,8 @@ pf flow build --source <path-to-your-flow-folder> --output <your-output-dir> --f
 :::{tab-item} VS Code Extension
 :sync: VSC
 
+In visual editor, choose:
+![img](../../media/how-to-guides/vscode_export.png)
 Click the button below to build a flow as docker format:
 ![img](../../media/how-to-guides/vscode_export_as_docker.png)
 :::
