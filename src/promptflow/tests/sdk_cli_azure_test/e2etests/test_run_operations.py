@@ -427,7 +427,7 @@ class TestFlowRun:
         assert run.status == RunStatus.COMPLETED
 
         # Test additional includes don't exist
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include",
                 data=f"{DATAS_DIR}/webClassification1.jsonl",
