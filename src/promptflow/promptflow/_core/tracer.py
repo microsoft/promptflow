@@ -244,11 +244,13 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                 "span_type": f"promptflow.{trace_type}",
                 "function": trace.name,
                 "inputs": json.dumps(trace.inputs),
-                "output": json.dumps(trace.output),
                 "node_name": get_node_name_from_context(),
                 "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
             }
         )
+
+    def enrich_span_with_output(span, output):
+        span.set_attribute("output", json.dumps(output))
 
     if inspect.iscoroutinefunction(func):
 
@@ -286,6 +288,7 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                 try:
                     Tracer.push(trace)
                     output = func(*args, **kwargs)
+                    enrich_span_with_output(span, output)
                     span.set_status(StatusCode.OK)
                     return Tracer.pop(output)
                 except Exception as e:
