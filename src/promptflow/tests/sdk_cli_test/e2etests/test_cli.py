@@ -2,6 +2,7 @@ import importlib
 import importlib.util
 import json
 import logging
+import multiprocessing
 import os
 import os.path
 import shutil
@@ -19,7 +20,7 @@ import pytest
 from promptflow._cli._pf.entry import main
 from promptflow._constants import PF_USER_AGENT
 from promptflow._core.operation_context import OperationContext
-from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
+from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE, ExperimentStatus
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._utils import ClientUserAgentUtil, setup_user_agent_to_operation_context
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
@@ -30,6 +31,7 @@ from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
 FLOWS_DIR = "./tests/test_configs/flows"
+EXPERIMENT_DIR = "./tests/test_configs/experiments"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -54,6 +56,34 @@ def run_pf_command(*args, cwd=None):
     finally:
         sys.argv = origin_argv
         os.chdir(origin_cwd)
+
+
+def run_batch(local_client, line_timeout_seconds, timeout_index=None):
+    os.environ["PF_LINE_TIMEOUT_SEC"] = line_timeout_seconds
+    run_id = str(uuid.uuid4())
+    run_pf_command(
+        "run",
+        "create",
+        "--flow",
+        f"{FLOWS_DIR}/simple_flow_with_ten_inputs",
+        "--data",
+        f"{FLOWS_DIR}/simple_flow_with_ten_inputs/data.jsonl",
+        "--name",
+        run_id,
+    )
+    run = local_client.runs.get(name=run_id)
+    local_storage = LocalStorageOperations(run)
+    detail = local_storage.load_detail()
+    flow_runs_list = detail["flow_runs"]
+    for i, flow_run in enumerate(flow_runs_list):
+        if i == timeout_index:
+            assert flow_run["status"] == "Failed"
+            assert flow_run["error"]["message"] == f"Line {i} execution timeout for exceeding 54 seconds"
+            assert flow_run["error"]["code"] == "UserError"
+            assert flow_run["error"]["innerError"]["code"] == "LineExecutionTimeoutError"
+        else:
+            assert flow_run["status"] == "Completed"
+    os.environ.pop("PF_LINE_TIMEOUT_SEC")
 
 
 @pytest.mark.usefixtures(
@@ -548,7 +578,24 @@ class TestCli:
             node_name,
         )
 
-    def test_flow_test_with_environment_variable(self, local_client):
+    @pytest.mark.parametrize(
+        "flow_folder_name, env_key, except_value",
+        [
+            pytest.param(
+                "print_env_var",
+                "API_BASE",
+                "${azure_open_ai_connection.api_base}",
+                id="TestFlowWithEnvironmentVariables",
+            ),
+            pytest.param(
+                "flow_with_environment_variables",
+                "env1",
+                "2",
+                id="LoadEnvVariablesWithoutOverridesInYaml",
+            ),
+        ],
+    )
+    def test_flow_test_with_environment_variable(self, flow_folder_name, env_key, except_value, local_client):
         from promptflow._sdk._submitter.utils import SubmitterHelper
 
         def validate_stdout(detail_path):
@@ -556,45 +603,45 @@ class TestCli:
                 details = json.load(f)
                 assert details["node_runs"][0]["logs"]["stdout"]
 
-        env = {"API_BASE": "${azure_open_ai_connection.api_base}"}
+        env = {env_key: except_value}
         SubmitterHelper.resolve_environment_variables(env, local_client)
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/{flow_folder_name}",
             "--inputs",
-            "key=API_BASE",
+            f"key={env_key}",
             "--environment-variables",
             "API_BASE=${azure_open_ai_connection.api_base}",
         )
-        with open(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.output.json", "r") as f:
+        with open(Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow.output.json", "r") as f:
             outputs = json.load(f)
-        assert outputs["output"] == env["API_BASE"]
-        validate_stdout(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.detail.json")
+        assert outputs["output"] == env[env_key]
+        validate_stdout(Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow.detail.json")
 
         # Test log contains user printed outputs
-        log_path = Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.log"
+        log_path = Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow.log"
         with open(log_path, "r") as f:
             log_content = f.read()
-        assert env["API_BASE"] in log_content
+        assert env[env_key] in log_content
 
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/print_env_var",
+            f"{FLOWS_DIR}/{flow_folder_name}",
             "--inputs",
-            "inputs.key=API_BASE",
+            f"inputs.key={env_key}",
             "--environment-variables",
             "API_BASE=${azure_open_ai_connection.api_base}",
             "--node",
             "print_env",
         )
-        with open(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow-print_env.node.output.json", "r") as f:
+        with open(Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow-print_env.node.output.json", "r") as f:
             outputs = json.load(f)
-        assert outputs["value"] == env["API_BASE"]
-        validate_stdout(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow-print_env.node.detail.json")
+        assert outputs["value"] == env[env_key]
+        validate_stdout(Path(FLOWS_DIR) / flow_folder_name / ".promptflow" / "flow-print_env.node.detail.json")
 
     def _validate_requirement(self, flow_path):
         with open(flow_path) as f:
@@ -747,7 +794,7 @@ class TestCli:
 
             # Test template name doesn't exist in python function
             jinja_name = "mock_jinja"
-            with pytest.raises(ValueError) as ex:
+            with pytest.raises(UserErrorException) as ex:
                 run_pf_command(
                     "flow",
                     "init",
@@ -1836,3 +1883,68 @@ class TestCli:
                 "--name",
                 f"{run_id}",
             )
+
+    def test_experiment_hide_by_default(self, monkeypatch, capfd):
+        # experiment will be hide if no config set
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "experiment",
+                "create",
+                "--template",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+            )
+
+    @pytest.mark.usefixtures("setup_experiment_table")
+    def test_experiment_start(self, monkeypatch, capfd, local_client):
+        with mock.patch("promptflow._sdk._configuration.Configuration.is_internal_features_enabled") as mock_func:
+            mock_func.return_value = True
+            exp_name = str(uuid.uuid4())
+            run_pf_command(
+                "experiment",
+                "create",
+                "--template",
+                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+                "--name",
+                exp_name,
+            )
+            out, _ = capfd.readouterr()
+            assert exp_name in out
+            assert ExperimentStatus.NOT_STARTED in out
+
+            run_pf_command(
+                "experiment",
+                "start",
+                "--name",
+                exp_name,
+            )
+            out, _ = capfd.readouterr()
+            assert ExperimentStatus.TERMINATED in out
+            exp = local_client._experiments.get(name=exp_name)
+            assert len(exp.node_runs["main"]) > 0
+            assert len(exp.node_runs["eval"]) > 0
+            metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
+            assert "accuracy" in metrics
+
+    def test_batch_run_timeout(self, local_client):
+        line_timeout_seconds = "54"
+        timout_index = 9
+        p = multiprocessing.Process(
+            target=run_batch,
+            args=(local_client, line_timeout_seconds, timout_index),
+        )
+        p.start()
+        p.join()
+        assert p.exitcode == 0
+
+    def test_batch_run_completed_within_the_required_time(self, local_client):
+        line_timeout_seconds = "600"
+        p = multiprocessing.Process(
+            target=run_batch,
+            args=(
+                local_client,
+                line_timeout_seconds,
+            ),
+        )
+        p.start()
+        p.join()
+        assert p.exitcode == 0

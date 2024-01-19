@@ -30,6 +30,7 @@ def test_build_azure_openai_connection_from_rest_object():
                 "azureml.flow.module": "promptflow.connections",
                 "apiType": "azure",
                 "ApiVersion": "2023-07-01-preview",
+                "ResourceId": "mock_id",
             },
         },
     }
@@ -41,6 +42,7 @@ def test_build_azure_openai_connection_from_rest_object():
             "api_key": "***",
             "api_type": "azure",
             "api_version": "2023-07-01-preview",
+            "resource_id": "mock_id",
         },
     }
     build_from_data_and_assert(data, expected)

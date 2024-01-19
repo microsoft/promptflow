@@ -30,7 +30,11 @@ from promptflow._utils.execution_utils import (
     get_aggregation_inputs_properties,
 )
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
+from promptflow._utils.multimedia_utils import (
+    load_multimedia_data,
+    load_multimedia_data_recursively,
+    persist_multimedia_data,
+)
 from promptflow._utils.utils import transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
@@ -76,8 +80,6 @@ class FlowExecutor:
     :param flow_file: The flow file to be used for the flow. Default is None.
     :type flow_file: Optional[Path]
     """
-
-    _DEFAULT_WORKER_COUNT = 16
 
     def __init__(
         self,
@@ -188,6 +190,7 @@ class FlowExecutor:
         """
         if Path(flow_file).suffix.lower() == ".py":
             from ._script_executor import ScriptExecutor
+
             return ScriptExecutor(
                 entry_file=flow_file,
                 func=func,
@@ -461,6 +464,13 @@ class FlowExecutor:
             line_number = [i for i in range(nlines)]
 
         result_list = []
+
+        if self._flow_file is None:
+            error_message = "flow file is missing"
+            raise UnexpectedError(
+                message_format=("Unexpected error occurred while init FlowExecutor. Error details: {error_message}."),
+                error_message=error_message,
+            )
 
         from ._line_execution_process_pool import LineExecutionProcessPool
 
@@ -1056,3 +1066,56 @@ def _ensure_node_result_is_serializable(f):
         return result
 
     return wrapper
+
+
+def execute_flow(
+    flow_file: Path,
+    working_dir: Path,
+    output_dir: Path,
+    connections: dict,
+    inputs: Mapping[str, Any],
+    *,
+    run_aggregation: bool = True,
+    enable_stream_output: bool = False,
+    allow_generator_output: bool = False,  # TODO: remove this
+    **kwargs,
+) -> LineResult:
+    """Execute the flow, including aggregation nodes.
+
+    :param flow_file: The path to the flow file.
+    :type flow_file: Path
+    :param working_dir: The working directory of the flow.
+    :type working_dir: Path
+    :param output_dir: Relative path relative to working_dir.
+    :type output_dir: Path
+    :param connections: A dictionary containing connection information.
+    :type connections: dict
+    :param inputs: A dictionary containing the input values for the flow.
+    :type inputs: Mapping[str, Any]
+    :param enable_stream_output: Whether to allow stream (generator) output for flow output. Default is False.
+    :type enable_stream_output: Optional[bool]
+    :param kwargs: Other keyword arguments to create flow executor.
+    :type kwargs: Any
+    :return: The line result of executing the flow.
+    :rtype: ~promptflow.executor._result.LineResult
+    """
+    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
+    flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
+    with _change_working_dir(working_dir):
+        # execute nodes in the flow except the aggregation nodes
+        # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
+        # (run_id_index, eg. xxx_0) for displaying the interface
+        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+        # persist the output to the output directory
+        line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
+        if run_aggregation and line_result.aggregation_inputs:
+            # convert inputs of aggregation to list type
+            flow_inputs = {k: [v] for k, v in inputs.items()}
+            aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+            aggregation_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
+            line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
+            line_result.run_info.metrics = aggregation_results.metrics
+        if isinstance(line_result.output, dict):
+            # remove line_number from output
+            line_result.output.pop(LINE_NUMBER_KEY, None)
+        return line_result

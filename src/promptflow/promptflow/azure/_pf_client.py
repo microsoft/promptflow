@@ -18,6 +18,7 @@ from promptflow.azure.operations import RunOperations
 from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
 from promptflow.azure.operations._flow_operations import FlowOperations
+from promptflow.exceptions import UserErrorException
 
 
 class PFClient:
@@ -60,7 +61,10 @@ class PFClient:
             workspace_name=workspace_name,
             **kwargs,
         )
-        workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
+        try:
+            workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
+        except Exception as e:
+            raise UserErrorException(message=str(e), error=e)
         self._service_caller = _FlowServiceCallerFactory.get_instance(
             workspace=workspace,
             credential=self._ml_client._credential,
@@ -240,6 +244,7 @@ class PFClient:
         :return: flow run info.
         :rtype: ~promptflow.entities.Run
         """
+        # TODO(2887134): support cloud eager Run CRUD
         run = Run(
             name=name,
             display_name=display_name,

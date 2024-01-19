@@ -342,15 +342,17 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
     yield
 
 
-@pytest.fixture
-def mock_get_user_identity_info(mocker: MockerFixture) -> None:
+@pytest.fixture(scope=package_scope_in_live_mode())
+def mock_get_user_identity_info(user_object_id: str, tenant_id: str) -> None:
     """Mock get user object id and tenant id, currently used in flow list operation."""
     if not is_live():
-        mocker.patch(
+        with patch(
             "promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._get_user_identity_info",
-            return_value=(SanitizedValues.USER_OBJECT_ID, SanitizedValues.TENANT_ID),
-        )
-    yield
+            return_value=(user_object_id, tenant_id),
+        ):
+            yield
+    else:
+        yield
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
@@ -394,7 +396,6 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
         flow=f"{FLOWS_DIR}/hello-world",
         data=f"{DATAS_DIR}/webClassification3.jsonl",
         column_mapping={"name": "${data.url}"},
-        runtime=runtime,
         name=name,
         display_name="sdk-cli-test-fixture-batch-run-without-llm",
     )

@@ -107,6 +107,11 @@ class FlowBase(abc.ABC):
             raise UserErrorException("context must be a FlowContext object, got {type(val)} instead.")
         self._context = val
 
+    @property
+    @abc.abstractmethod
+    def language(self) -> str:
+        """Language of the flow."""
+
     @classmethod
     # pylint: disable=unused-argument
     def _resolve_cls_and_type(cls, data, params_override):
@@ -155,6 +160,10 @@ class Flow(FlowBase):
             )
         return flow_file
 
+    @property
+    def language(self) -> str:
+        return self.dag.get(LANGUAGE_KEY, FlowLanguage.Python)
+
     @classmethod
     def _is_eager_flow(cls, data: dict):
         """Check if the flow is an eager flow. Use field 'entry' to determine."""
@@ -165,6 +174,7 @@ class Flow(FlowBase):
     def load(
         cls,
         source: Union[str, PathLike],
+        entry: str = None,
         **kwargs,
     ):
         from promptflow._sdk.entities._eager_flow import EagerFlow
@@ -183,12 +193,12 @@ class Flow(FlowBase):
                 kwargs["content_hash"] = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
             if is_eager_flow:
-                return EagerFlow._load(path=flow_path, entry=data.get("entry"), data=data, **kwargs)
+                return EagerFlow._load(path=flow_path, entry=entry, data=data, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
                 return ProtectedFlow._load(path=flow_path, dag=data, **kwargs)
         # if non-YAML file is provided, treat is as eager flow
-        return EagerFlow._load(path=flow_path, **kwargs)
+        return EagerFlow._load(path=flow_path, entry=entry, **kwargs)
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk._submitter import variant_overwrite_context
@@ -248,10 +258,6 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
     @property
     def display_name(self) -> str:
         return self.dag.get("display_name", self.name)
-
-    @property
-    def language(self) -> str:
-        return self.dag.get(LANGUAGE_KEY, FlowLanguage.Python)
 
     @property
     def tools_meta_path(self) -> Path:
