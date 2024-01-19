@@ -35,7 +35,6 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data_recursively,
     persist_multimedia_data,
 )
-from promptflow._utils.utils import transpose
 from promptflow._utils.utils import transpose, get_int_env_var
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node

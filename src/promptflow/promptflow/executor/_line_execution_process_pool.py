@@ -11,7 +11,7 @@ from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
-from typing import Union
+from typing import Union, List
 
 import psutil
 
@@ -226,7 +226,7 @@ class LineExecutionProcessPool:
         return None
 
     def _monitor_workers_and_process_tasks_in_thread(
-        self, task_queue: Queue, timeout_time, result_list: list[FlowRunInfo], index, input_queue, output_queue
+        self, task_queue: Queue, timeout_time, result_list: List[FlowRunInfo], index, input_queue, output_queue
     ):
         index, process_id, process_name = self._get_process_info(index)
 
@@ -274,7 +274,6 @@ class LineExecutionProcessPool:
                     break
                 if isinstance(message, NodeRunInfo):
                     returned_node_run_infos[message.node] = message
-
 
             # Check if the loop ended due to timeout
             timeouted = not completed and not crashed
@@ -366,9 +365,9 @@ class LineExecutionProcessPool:
         return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
 
     def _generate_line_result_for_exception(
-            self, inputs, run_id, line_number, flow_id, start_time, ex,
-            node_run_infos={},
-        ) -> LineResult:
+        self, inputs, run_id, line_number, flow_id, start_time, ex,
+        node_run_infos={},
+    ) -> LineResult:
         bulk_logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
         run_info = FlowRunInfo(
             run_id=f"{run_id}_{line_number}",
