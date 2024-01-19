@@ -794,7 +794,7 @@ class TestCli:
 
             # Test template name doesn't exist in python function
             jinja_name = "mock_jinja"
-            with pytest.raises(ValueError) as ex:
+            with pytest.raises(UserErrorException) as ex:
                 run_pf_command(
                     "flow",
                     "init",
