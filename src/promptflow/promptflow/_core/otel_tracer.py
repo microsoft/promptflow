@@ -2,7 +2,7 @@ import json
 import os
 from typing import Sequence
 
-from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
+# from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (
