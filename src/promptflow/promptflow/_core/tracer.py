@@ -14,7 +14,9 @@ from datetime import datetime
 from typing import Callable, Dict, Optional
 
 from opentelemetry.trace import Tracer as OTelTracer
+from opentelemetry.trace import Link
 from opentelemetry.trace.status import StatusCode
+from opentelemetry.trace.propagation import get_current_span
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.otel_tracer import get_otel_tracer
@@ -225,7 +227,24 @@ def enrich_span_with_trace(span, trace):
     )
 
 def enrich_span_with_output(span, output):
-    span.set_attribute("output", json.dumps(output))
+    if isinstance(output, Iterator):
+        output = traced_generator(output, span)
+    print("------------------------------")
+    serializable = Tracer.to_serializable(output)
+    print(serializable)
+    print(type(serializable))
+    serialized_output = serialize(serializable)
+    print(serialized_output)
+    print(type(serialized_output))
+    span.set_attribute("output", json.dumps(serialized_output))
+    return output
+
+
+def traced_generator(generator, span):
+    context = span.get_span_context()
+    link = Link(context)
+    with tracer.start_as_current_span(f"{span.name}.streamed_data", links=[link]) as span:
+        yield from generator
 
 
 def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
@@ -285,7 +304,7 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                 try:
                     Tracer.push(trace)
                     output = func(*args, **kwargs)
-                    enrich_span_with_output(span, output)
+                    output = enrich_span_with_output(span, output)
                     span.set_status(StatusCode.OK)
                     return Tracer.pop(output)
                 except Exception as e:
