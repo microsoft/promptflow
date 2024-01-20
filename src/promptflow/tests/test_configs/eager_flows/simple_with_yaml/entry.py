@@ -12,6 +12,12 @@ def hello(name):
 
 
 @trace
+def stream():
+    for i in range(3):
+        yield i
+
+
+@trace
 def query():
     """Query for input."""
     time.sleep(1)
@@ -19,12 +25,14 @@ def query():
     return "gpt"
 
 
+@trace
 def my_flow(input_val: str = "gpt") -> str:
     """Simple flow without yaml."""
     print("calling query")
     hello("world")
     #for i in range(3):
     #    query()
+    stream()
     return f"Hello world! {input_val}"
 
 
