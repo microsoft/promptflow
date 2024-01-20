@@ -206,6 +206,28 @@ def print_call_stack():
         print(line.strip())
 
 
+def get_node_name_from_context():
+    tracer = Tracer.active_instance()
+    if tracer is not None:
+        return tracer._node_name
+    return None
+
+def enrich_span_with_trace(span, trace):
+    span.set_attributes(
+        {
+            "framework": "promptflow",
+            "span_type": f"promptflow.{trace_type}",
+            "function": trace.name,
+            "inputs": json.dumps(trace.inputs),
+            "node_name": get_node_name_from_context(),
+            "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
+        }
+    )
+
+def enrich_span_with_output(span, output):
+    span.set_attribute("output", json.dumps(output))
+
+
 def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
     """A wrapper to add trace to a function.
 
@@ -230,27 +252,6 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
 
     def create_trace(func, args, kwargs):
         return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
-
-    def get_node_name_from_context():
-        tracer = Tracer.active_instance()
-        if tracer is not None:
-            return tracer._node_name
-        return None
-
-    def enrich_span_with_trace(span, trace):
-        span.set_attributes(
-            {
-                "framework": "promptflow",
-                "span_type": f"promptflow.{trace_type}",
-                "function": trace.name,
-                "inputs": json.dumps(trace.inputs),
-                "node_name": get_node_name_from_context(),
-                "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
-            }
-        )
-
-    def enrich_span_with_output(span, output):
-        span.set_attribute("output", json.dumps(output))
 
     if inspect.iscoroutinefunction(func):
 
