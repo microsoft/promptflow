@@ -246,10 +246,6 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
     :rtype: Callable
     """
 
-    print("---------------------------------------------------")
-    print(tracer)
-    # print_call_stack()
-
     def create_trace(func, args, kwargs):
         return _create_trace_from_function_call(func, args=args, kwargs=kwargs, trace_type=trace_type)
 
