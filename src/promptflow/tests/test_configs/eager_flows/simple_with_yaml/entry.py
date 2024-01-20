@@ -14,7 +14,7 @@ def hello(name):
 @trace
 def stream():
     for i in range(3):
-        yield i
+        yield str(i)
 
 
 @trace
@@ -32,8 +32,10 @@ def my_flow(input_val: str = "gpt") -> str:
     hello("world")
     #for i in range(3):
     #    query()
-    stream()
-    return f"Hello world! {input_val}"
+    stream_output = stream()
+    print("type of stream_output:", type(stream_output))
+    result = ", ".join(stream_output)
+    return f"Hello world! {result} {input_val}"
 
 
 if __name__ == "__main__":
