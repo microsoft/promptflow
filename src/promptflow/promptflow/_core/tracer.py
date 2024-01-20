@@ -214,6 +214,7 @@ def get_node_name_from_context():
         return tracer._node_name
     return None
 
+
 def enrich_span_with_trace(span, trace):
     span.set_attributes(
         {
@@ -226,9 +227,19 @@ def enrich_span_with_trace(span, trace):
         }
     )
 
+
 def enrich_span_with_output(span, output):
     if isinstance(output, Iterator):
         output = traced_generator(output, span)
+        span.set_attribute("output", "<streamed data, to be read later>")
+    else:
+        serialized_output = serialize_output(output)
+        span.set_attribute("output", serialized_output)
+
+    return output
+
+
+def serialize_output(output):
     print("------------------------------")
     serializable = Tracer.to_serializable(output)
     print(serializable)
@@ -236,15 +247,18 @@ def enrich_span_with_output(span, output):
     serialized_output = serialize(serializable)
     print(serialized_output)
     print(type(serialized_output))
-    span.set_attribute("output", json.dumps(serialized_output))
-    return output
+    return json.dumps(serialized_output, indent=2)
 
 
-def traced_generator(generator, span):
-    context = span.get_span_context()
+def traced_generator(generator, parent_span):
+    context = parent_span.get_span_context()
     link = Link(context)
-    with tracer.start_as_current_span(f"{span.name}.streamed_data", links=[link]) as span:
-        yield from generator
+    with tracer.start_as_current_span(f"{parent_span.name}.streamed_data", links=[link]) as span:
+        span.set_attributes(parent_span.attributes)
+        generator_proxy = GeneratorProxy(generator)
+        yield from generator_proxy
+        serialized_output = serialize_output(generator_proxy.items)
+        span.set_attribute("output", serialized_output)
 
 
 def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
@@ -312,7 +326,8 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                     raise
 
     wrapped.__original_function = func
-    func.__wrapped_function = wrapped
+    # TODO: Do we need this line? It raises error for built-in functions.
+    # func.__wrapped_function = wrapped
 
     return wrapped
 
