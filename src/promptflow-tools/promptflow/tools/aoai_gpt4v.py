@@ -103,7 +103,7 @@ def list_deployment_names(
             conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
         except Exception as e:
             msg = f"Parsing connection with exception: {e}"
-            raise ListDeploymentsError(message_format=msg) from e
+            raise ListDeploymentsError(msg=msg) from e
 
         client = CognitiveServicesManagementClient(
             credential=credential,
@@ -127,7 +127,7 @@ def list_deployment_names(
 
     except Exception as e:
         msg = f"Failed to list deployments with exception: {e}"
-        raise ListDeploymentsError(message_format=msg) from e
+        raise ListDeploymentsError(msg=msg) from e
 
     return res
 
