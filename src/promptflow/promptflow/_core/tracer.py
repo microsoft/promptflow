@@ -221,7 +221,7 @@ def enrich_span_with_trace(span, trace):
             "framework": "promptflow",
             "span_type": f"promptflow.{trace.type}",
             "function": trace.name,
-            "inputs": json.dumps(trace.inputs),
+            "inputs": serialize_attribute(trace.inputs),
             "node_name": get_node_name_from_context(),
             "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
         }
@@ -233,21 +233,17 @@ def enrich_span_with_output(span, output):
         output = traced_generator(output, span)
         span.set_attribute("output", "<streamed data, to be read later>")
     else:
-        serialized_output = serialize_output(output)
+        serialized_output = serialize_attribute(output)
         span.set_attribute("output", serialized_output)
 
     return output
 
 
-def serialize_output(output):
-    print("------------------------------")
-    serializable = Tracer.to_serializable(output)
-    print(serializable)
-    print(type(serializable))
-    serialized_output = serialize(serializable)
-    print(serialized_output)
-    print(type(serialized_output))
-    return json.dumps(serialized_output, indent=2)
+def serialize_attribute(value):
+    """Serialize values that can be used as attributes in span."""
+    serializable = Tracer.to_serializable(value)
+    serialized_value = serialize(serializable)
+    return json.dumps(serialized_value, indent=2)
 
 
 def traced_generator(generator, parent_span):
@@ -257,7 +253,7 @@ def traced_generator(generator, parent_span):
         span.set_attributes(parent_span.attributes)
         generator_proxy = GeneratorProxy(generator)
         yield from generator_proxy
-        serialized_output = serialize_output(generator_proxy.items)
+        serialized_output = serialize_attribute(generator_proxy.items)
         span.set_attribute("output", serialized_output)
 
 
