@@ -2,6 +2,7 @@ import json
 import os
 from typing import Sequence
 
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -12,7 +13,7 @@ from opentelemetry.sdk.trace.export import (
     SpanExporter,
     SpanExportResult,
 )
-from opentelemetry.trace import ProxyTracerProvider, get_tracer, get_tracer_provider
+from opentelemetry.trace import get_tracer, get_tracer_provider
 
 
 class MemoryExporter(SpanExporter):
@@ -106,14 +107,9 @@ _tracer_instance = None
 def get_otel_tracer(name):
     global _tracer_instance
     if _tracer_instance is None:
-        provider = get_tracer_provider()
-        if isinstance(provider, ProxyTracerProvider):
-            # Usually the tracer provider is set by the user in the SDK side.
-            # If the user did not set the tracer provider, it will return a ProxyTracerProvider.
-            # It can't be used to do span operations.
-            # For this case, we create a default provider and set it as the global tracer provider.
-            provider = TracerProvider()
-            trace.set_tracer_provider(provider)
+        resource = Resource(attributes={SERVICE_NAME: "promptflow"})
+        provider = TracerProvider(resource=resource)
+
         processor = SimpleSpanProcessor(memory_exporter)
         provider.add_span_processor(processor)
 
@@ -128,6 +124,8 @@ def get_otel_tracer(name):
         provider.add_span_processor(SimpleSpanProcessor(FileExporter("traces.json")))
 
         provider.add_span_processor(SimpleSpanProcessor(TreeConsoleSpanExporter()))
+
+        trace.set_tracer_provider(provider)
 
         _tracer_instance = get_tracer(name, tracer_provider=provider)
 
