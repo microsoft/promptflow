@@ -25,7 +25,7 @@ from promptflow._core.otel_tracer import get_otel_tracer, memory_exporter
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._core.tracer import _traced
+from promptflow._core.tracer import trace
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.execution_utils import (
     apply_default_value_for_input,
@@ -742,8 +742,6 @@ class FlowExecutor:
                 allow_generator_output=allow_generator_output,
             )
             self._run_tracker._trace = memory_exporter.spans()
-            print("Traces:")
-            print(json.dumps(self._run_tracker._trace, indent=4))
 
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
@@ -772,7 +770,7 @@ class FlowExecutor:
                 node_referenced_flow_inputs[value.value] = flow_inputs[value.value]
         return node_referenced_flow_inputs
 
-    @_traced
+    @trace
     def _exec(
         self,
         inputs: Mapping[str, Any],
