@@ -41,11 +41,9 @@ def _parse_resource_id(resource_id):
     # "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}"
     
     split_parts = resource_id.split("/")
-    if(len(split_parts) != 8):
+    if(len(split_parts) != 9):
         raise Exception(
-            f"Connection resourceId format invalid, cur resouceId is {resource_id}, "
-            "expected format is /subscriptions/{sub}/resourceGroups/{rg}/providers/"
-            "Microsoft.CognitiveServices/accounts/{account}"
+            f"Connection resourceId format invalid, cur resouceId is {resource_id}."
         )
     sub, rg, account = split_parts[2], split_parts[4], split_parts[-1]
 
