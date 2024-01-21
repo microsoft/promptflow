@@ -47,7 +47,7 @@ setup(
     install_requires=parse_requirements('requirements.txt'),
     extras_require={
         "azure": [
-            "azure-mgmt-cognitiveservices"
+            "azure-mgmt-cognitiveservices==13.5.0"
         ]
     },
     packages=find_namespace_packages(include=[f"{PACKAGE_FOLDER_PATH}.*"]),

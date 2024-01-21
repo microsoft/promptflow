@@ -225,10 +225,7 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
         - display_value: for UI display. Optional.
         - hyperlink: external link. Optional.
         - description: information icon tip. Optional.
-    The response can not be empty.
     """
-    if not response:
-        raise ListFunctionResponseError(f"{f} response can not be empty.")
     if not isinstance(response, List):
         raise ListFunctionResponseError(f"{f} response must be a list.")
     for item in response:

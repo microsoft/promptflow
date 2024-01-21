@@ -7,6 +7,7 @@ except Exception:
 from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
+from promptflow.exceptions import ErrorTarget, UserErrorException
 from typing import List, Dict
 
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, \
@@ -18,8 +19,12 @@ GPT4V_VERSION = "vision-preview"
 
 
 def _get_credential():
-    from azure.identity import DefaultAzureCredential
-    from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
+    try:
+        from azure.identity import DefaultAzureCredential
+        from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
+    except ImportError:
+        return DefaultAzureCredential()
+    # Here is for sovereign cloud cases, like mooncake, fairfax.
     cloud_name = _get_default_cloud_name()
     if cloud_name != AzureEnvironments.ENV_DEFAULT:
         cloud = _get_cloud(cloud=cloud_name)
@@ -31,8 +36,17 @@ def _get_credential():
     return credential
 
 
-def _parse_resource_id(resourceId):
-    split_parts = resourceId.split("/")
+def _parse_resource_id(resource_id):
+    # Resource id is connection's id in following format:
+    # "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}"
+    
+    split_parts = resource_id.split("/")
+    if(len(split_parts) != 8):
+        raise Exception(
+            f"Connection resourceId format invalid, cur resouceId is {resource_id}, "
+            "expected format is /subscriptions/{sub}/resourceGroups/{rg}/providers/"
+            "Microsoft.CognitiveServices/accounts/{account}"
+        )
     sub, rg, account = split_parts[2], split_parts[4], split_parts[-1]
 
     return sub, rg, account
@@ -50,9 +64,9 @@ class Deployment:
         self.version = version
 
 
-class ListDeploymentsError(Exception):
-    def __init__(self, msg):
-        super().__init__(msg)
+class ListDeploymentsError(UserErrorException):
+    def __init__(self, msg, **kwargs):
+        super().__init__(msg, target=ErrorTarget.TOOL, **kwargs)
 
 
 def _build_deployment_dict(item) -> Deployment:
@@ -71,8 +85,9 @@ def list_deployment_names(
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
     except ImportError:
-        return [{"value": ""}]
+        return []
 
+    print(f"sub: {subscription_id}")
     try:
         credential = _get_credential()
         try:
@@ -86,8 +101,9 @@ def list_deployment_names(
             resource_id = conn.get("value").get('resource_id', "")
             print(f"Connection {connection} resource id: {resource_id}")
             conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
-        except Exception:
-            raise Exception("Failed to get connection resource id.")
+        except Exception as e:
+            msg = f"Parsing connection with exception: {e}"
+            raise ListDeploymentsError(message_format=msg) from e
 
         client = CognitiveServicesManagementClient(
             credential=credential,
@@ -101,11 +117,6 @@ def list_deployment_names(
         res = []
         for item in deployment_collection:
             deployment = _build_deployment_dict(item)
-            print(f"Connection {connection} deployments:")
-            print(
-                f"deployment_name: {deployment.name}, model_name: "
-                f"{deployment.model_name}, version: {deployment.version}."
-            )
             if deployment.version == GPT4V_VERSION:
                 print(f"{deployment.name}:{deployment.version} selected.")
                 cur_item = {
@@ -114,19 +125,9 @@ def list_deployment_names(
                 }
                 res.append(cur_item)
 
-        if not res:
-            message = (
-                "No deployments support gpt4v in current connection, please create "
-                "gpt4v deployments or use other connections."
-            )
-            raise ListDeploymentsError(message)
-    except ListDeploymentsError:
-        print("raise ListDeploymentsError error")
-        raise
     except Exception as e:
-        print("raise Exception error")
-        message = f"Failed to list deployments with error: {e}"
-        raise ListDeploymentsError(message)
+        msg = f"Failed to list deployments with exception: {e}"
+        raise ListDeploymentsError(message_format=msg) from e
 
     return res
 
