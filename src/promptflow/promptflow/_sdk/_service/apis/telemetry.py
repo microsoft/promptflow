@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from flask import jsonify, make_response, request
+from flask import jsonify, make_response
 
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only
@@ -38,43 +38,37 @@ def _dict_camel_to_snake(data):
         return data
 
 
-def parse_activity_info(telemetry_data, user_agent, request_id):
-    first_call = telemetry_data.get("firstCall", True)
+def parse_activity_info(metadata, first_call, user_agent, request_id):
     request_id = request_id
 
     return {
         "request_id": request_id,
         "first_call": first_call,
         "user_agent": user_agent,
-        **_dict_camel_to_snake(telemetry_data.get("metadata", {})),
+        **_dict_camel_to_snake(metadata),
     }
 
 
-def validate_telemetry_payload(payload, headers):
-    if REQUEST_ID_KEY not in headers:
-        raise UserErrorException(f"Missing {REQUEST_ID_KEY} in request header.")
-
-    if not all(key in payload for key in ("eventType", "timestamp", "metadata")):
-        missing_fields = {"eventType", "timestamp", "metadata"} - set(payload.keys())
-        raise UserErrorException(f"Missing required fields in telemetry payload: {', '.join(missing_fields)}")
-    if payload.get("eventType") not in (EventType.START, EventType.END):
-        raise UserErrorException(f"Invalid eventType: {payload.get('eventType')}")
-    metadata = payload.get("metadata")
-    if not isinstance(metadata, dict):
-        raise UserErrorException(f"Invalid metadata: {metadata}")
-    if metadata.get("activityName") not in [
+def validate_metadata(value: dict) -> dict:
+    allowed_activity_names = [
         AllowedActivityName.FLOW_TEST,
         AllowedActivityName.FLOW_NODE_TEST,
         AllowedActivityName.GENERATE_TOOL_META,
-    ]:
-        raise UserErrorException(f"Invalid activityName: {metadata.get('activityName')}")
-    if metadata.get("activityType") not in [
+    ]
+    if value.get("activityName", None) not in allowed_activity_names:
+        raise UserErrorException(f"metadata.activityName must be one of {', '.join(allowed_activity_names)}.")
+
+    allowed_activity_types = [
         ActivityType.INTERNALCALL,
         ActivityType.PUBLICAPI,
-    ]:
-        raise UserErrorException(f"Invalid activityType: {metadata.get('activityType')}")
+    ]
+    if value.get("activityType") not in allowed_activity_types:
+        raise UserErrorException(f"metadata.activityType must be one of {', '.join(allowed_activity_types)}")
+    return value
 
-    if payload.get("eventType") == EventType.END:
+
+def validate_metadata_based_on_event_type(metadata: dict, event_type: str):
+    if event_type == EventType.END:
         if not all(
             key in metadata
             for key in (
@@ -105,30 +99,73 @@ def validate_telemetry_payload(payload, headers):
                 raise UserErrorException(f"Missing required fields in telemetry payload: {', '.join(missing_fields)}")
 
 
+def validate_event_type(value) -> str:
+    if value not in (EventType.START, EventType.END):
+        raise ValueError(f"Event type must be one of {EventType.START} and {EventType.END}.")
+    return value
+
+
+telemetry_parser = api.parser()
+telemetry_parser.add_argument(
+    REQUEST_ID_KEY,
+    type=str,
+    location="headers",
+    required=True,
+    help="The request id of the telemetry; all telemetries during one public operation should share one request id.",
+)
+telemetry_parser.add_argument(
+    "eventType",
+    type=validate_event_type,
+    location="json",
+    required=True,
+    help=f"The event type of the telemetry, should be either {EventType.START} or {EventType.END}.",
+)
+telemetry_parser.add_argument(
+    "timestamp", type=str, location="json", required=True, help="The timestamp of the telemetry."
+)
+telemetry_parser.add_argument(
+    "metadata", type=dict, location="json", required=True, help="The activity info of the telemetry."
+)
+telemetry_parser.add_argument(
+    "firstCall",
+    type=bool,
+    location="json",
+    required=False,
+    default=True,
+    help="Whether current activity is the first activity in the call chain.",
+)
+
+
 @api.route("/")
 class Telemetry(Resource):
     @api.response(code=200, description="Create telemetry record", model=dict_field)
-    @api.doc(description="Create telemetry record")
+    @api.doc(parser=telemetry_parser, description="Create telemetry record")
     @local_user_only
     def post(self):
         from promptflow._sdk._telemetry import get_telemetry_logger, is_telemetry_enabled
         from promptflow._sdk._telemetry.activity import log_activity_end, log_activity_start
 
         if not is_telemetry_enabled():
-            return make_response(jsonify({"error": "Telemetry is disabled."}), 400)
+            return make_response(jsonify({"message": "Telemetry is disabled."}), 400)
 
-        telemetry_data = request.get_json(force=True)
+        args = telemetry_parser.parse_args()
+
         try:
-            validate_telemetry_payload(telemetry_data, request.headers)
+            validate_metadata_based_on_event_type(args.metadata, args.eventType)
         except UserErrorException as exception:
-            return make_response(jsonify({"error": f"Invalid telemetry payload: {exception}"}), 400)
+            return make_response(
+                jsonify({"errors": {"metadata": str(exception)}, "message": "Input payload validation failed"}), 400
+            )
 
         activity_info = parse_activity_info(
-            telemetry_data, user_agent=build_pfs_user_agent(), request_id=request.headers.get(REQUEST_ID_KEY)
+            metadata=args.metadata,
+            first_call=args.firstCall,
+            user_agent=build_pfs_user_agent(),
+            request_id=args[REQUEST_ID_KEY],
         )
-        if telemetry_data.get("eventType") == EventType.START:
+        if args.eventType == EventType.START:
             log_activity_start(activity_info, get_telemetry_logger())
-        elif telemetry_data.get("eventType") == EventType.END:
+        elif args.eventType == EventType.END:
             log_activity_end(activity_info, get_telemetry_logger())
         return jsonify(
             {

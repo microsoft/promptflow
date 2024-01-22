@@ -81,6 +81,18 @@
                     "Connections"
                 ]
             },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -102,18 +114,6 @@
                         }
                     }
                 ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -499,6 +499,37 @@
                 },
                 "description": "Create telemetry record",
                 "operationId": "post_telemetry",
+                "parameters": [
+                    {
+                        "name": "x-ms-promptflow-request-id",
+                        "in": "header",
+                        "type": "string",
+                        "required": true,
+                        "description": "The request id of the telemetry; all telemetries during one public operation should share one request id."
+                    },
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "eventType": {
+                                    "type": "string"
+                                },
+                                "timestamp": {
+                                    "type": "string"
+                                },
+                                "metadata": {
+                                    "type": "string"
+                                },
+                                "firstCall": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    }
+                ],
                 "tags": [
                     "Telemetries"
                 ]
