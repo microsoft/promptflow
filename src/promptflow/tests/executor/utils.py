@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Union
+from typing import Union, Dict
 
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow
@@ -13,6 +13,7 @@ DATA_ROOT = TEST_ROOT / "test_configs/datas"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
 EAGER_FLOW_ROOT = TEST_ROOT / "test_configs/eager_flows"
 WRONG_FLOW_ROOT = TEST_ROOT / "test_configs/wrong_flows"
+EAGER_FLOWS_ROOT = TEST_ROOT / "test_configs/eager_flows"
 
 
 def get_flow_folder(folder_name, root: str = FLOW_ROOT):
@@ -111,8 +112,8 @@ def is_image_file(file_path: Path):
 
 class MemoryRunStorage(AbstractRunStorage):
     def __init__(self):
-        self._node_runs = {}
-        self._flow_runs = {}
+        self._node_runs: Dict[str, NodeRunInfo] = {}
+        self._flow_runs: Dict[str, FlowRunInfo] = {}
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         self._flow_runs[run_info.run_id] = run_info

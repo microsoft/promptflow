@@ -2,11 +2,25 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 from promptflow._sdk._constants import BULK_RUN_ERRORS
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 
 class SDKError(UserErrorException):
     """SDK base class, target default is CONTROL_PLANE_SDK."""
+
+    def __init__(
+        self,
+        message="",
+        message_format="",
+        target: ErrorTarget = ErrorTarget.CONTROL_PLANE_SDK,
+        module=None,
+        **kwargs,
+    ):
+        super().__init__(message=message, message_format=message_format, target=target, module=module, **kwargs)
+
+
+class SDKInternalError(SystemErrorException):
+    """SDK internal error."""
 
     def __init__(
         self,
@@ -145,5 +159,11 @@ class ExperimentValueError(SDKError):
 
 class ExperimentHasCycle(SDKError):
     """Exception raised if experiment validation failed."""
+
+    pass
+
+
+class DownloadInternalError(SDKInternalError):
+    """Exception raised if download internal error."""
 
     pass

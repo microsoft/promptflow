@@ -4,7 +4,6 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
-from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -245,7 +244,7 @@ class TestFlowRun:
         assert "Node not_exist not found in flow" in str(e.value)
 
         # invalid variant format
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
@@ -411,7 +410,7 @@ class TestFlowRun:
         )
 
         run_name = str(uuid.uuid4())
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 name=run_name,
                 flow=f"{FLOWS_DIR}/custom_connection_flow",
@@ -1159,9 +1158,10 @@ class TestFlowRun:
         assert "error" in run_dict
         assert run_dict["error"] == exception
 
-    # TODO: remove this patch after executor switch to default spawn
-    @patch.dict(os.environ, {"PF_BATCH_METHOD": "spawn"}, clear=True)
-    def test_get_details_against_partial_completed_run(self, pf: PFClient) -> None:
+    def test_get_details_against_partial_completed_run(self, pf: PFClient, monkeypatch) -> None:
+        # TODO: remove this patch after executor switch to default spawn
+        monkeypatch.setenv("PF_BATCH_METHOD", "spawn")
+
         flow_mod2 = f"{FLOWS_DIR}/mod-n/two"
         flow_mod3 = f"{FLOWS_DIR}/mod-n/three"
         data_path = f"{DATAS_DIR}/numbers.jsonl"
@@ -1195,9 +1195,12 @@ class TestFlowRun:
             if str(row["outputs.output"]) != "(Failed)":
                 assert int(row["inputs.number"]) == int(row["outputs.output"])
 
-    # TODO: remove this patch after executor switch to default spawn
-    @patch.dict(os.environ, {"PF_BATCH_METHOD": "spawn"}, clear=True)
-    def test_flow_with_nan_inf(self, pf: PFClient) -> None:
+        monkeypatch.delenv("PF_BATCH_METHOD")
+
+    def test_flow_with_nan_inf(self, pf: PFClient, monkeypatch) -> None:
+        # TODO: remove this patch after executor switch to default spawn
+        monkeypatch.setenv("PF_BATCH_METHOD", "spawn")
+
         run = pf.run(
             flow=f"{FLOWS_DIR}/flow-with-nan-inf",
             data=f"{DATAS_DIR}/numbers.jsonl",
@@ -1221,6 +1224,8 @@ class TestFlowRun:
         assert first_line_run_output["nan"] == "NaN"
         assert isinstance(first_line_run_output["inf"], str)
         assert first_line_run_output["inf"] == "Infinity"
+
+        monkeypatch.delenv("PF_BATCH_METHOD")
 
     @pytest.mark.skip("Enable this when executor change merges")
     def test_eager_flow_run_without_yaml(self, pf):

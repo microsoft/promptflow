@@ -18,7 +18,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 from ... import load_flow
 from ..._utils.logger_utils import LoggerFactory
@@ -49,12 +49,14 @@ class RunSubmitter:
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
             elif not isinstance(run.run, Run):
-                raise TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+                error = TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+                raise UserErrorException(message=str(error), error=error)
             else:
                 # get the run again to make sure it's status is latest
                 run.run = self.run_operations.get(name=run.run.name)
             if run.run.status != Status.Completed.value:
-                raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
+                error = ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
+                raise UserErrorException(message=str(error), error=error)
             run.run.outputs = self.run_operations._get_outputs(run.run)
         self._validate_inputs(run=run)
 
@@ -71,7 +73,8 @@ class RunSubmitter:
     @classmethod
     def _validate_inputs(cls, run: Run):
         if not run.run and not run.data:
-            raise ValueError("Either run or data must be specified for flow run.")
+            error = ValidationException("Either run or data must be specified for flow run.")
+            raise UserErrorException(message=str(error), error=error)
 
     def _submit_bulk_run(
             self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
@@ -84,7 +87,9 @@ class RunSubmitter:
                 connections = SubmitterHelper.resolve_connections(flow=flow)
         column_mapping = run.column_mapping
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
+        run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
+            flow=flow, environment_variables=run.environment_variables
+        )
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
         # prepare data
@@ -173,14 +178,14 @@ class RunSubmitter:
         if not column_mapping:
             return
         if not isinstance(column_mapping, dict):
-            raise UserErrorException(f"Column mapping must be a dict, got {type(column_mapping)}.")
+            raise ValidationException(f"Column mapping must be a dict, got {type(column_mapping)}.")
         all_static = True
         for v in column_mapping.values():
             if isinstance(v, str) and v.startswith("$"):
                 all_static = False
                 break
         if all_static:
-            raise UserErrorException(
+            raise ValidationException(
                 "Column mapping must contain at least one mapping binding, "
                 f"current column mapping contains all static values: {column_mapping}"
             )
