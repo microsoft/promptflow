@@ -200,6 +200,17 @@ class FlowExecutor:
                 working_dir=working_dir,
                 storage=storage,
             )
+        entry, path = FlowExecutor._try_parse_eager_flow_yaml(flow_file, working_dir)
+        if entry:
+            from ._script_executor import ScriptExecutor
+
+            return ScriptExecutor(
+                flow_file=path,
+                entry=entry,
+                connections=connections,
+                working_dir=working_dir,
+                storage=storage,
+            )
         if Path(flow_file).suffix.lower() != ".yaml":
             raise ValueError("Only support yaml or py file.")
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
@@ -267,6 +278,15 @@ class FlowExecutor:
         )
         logger.debug("The flow executor is initialized successfully.")
         return executor
+
+    @classmethod
+    def _try_parse_eager_flow_yaml(cls, flow_file: Path, working_dir):
+        flow_file = working_dir / flow_file if working_dir else flow_file
+        with open(flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        if "entry" in flow_dag and "path" in flow_dag:
+            return flow_dag["entry"], flow_dag["path"]
+        return None, None
 
     @classmethod
     def load_and_exec_node(

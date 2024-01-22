@@ -29,6 +29,7 @@ from promptflow._utils.utils import (
     resolve_dir_to_absolute,
     transpose,
 )
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
@@ -97,10 +98,16 @@ class BatchEngine:
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
-            self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
-            FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
-            self._is_dag_yaml_flow = True
-            self._program_language = self._flow.program_language
+            entry, path = self._try_parse_eager_flow_yaml()
+            if entry:
+                self._flow_file = path
+                self._is_dag_yaml_flow = False
+                self._program_language = FlowLanguage.Python
+            else:
+                self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
+                FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
+                self._is_dag_yaml_flow = True
+                self._program_language = self._flow.program_language
         # if the flow file is a python file, we need to set the _is_dag_yaml_flow to false
         # and set the program language to python
         elif Path(flow_file).suffix.lower() == ".py":
@@ -382,3 +389,10 @@ class BatchEngine:
         aggr_result.metrics = aggr_exec_result.metrics
         aggr_result.node_run_infos = aggr_exec_result.node_run_infos
         aggr_result.output = aggr_exec_result.output
+
+    def _try_parse_eager_flow_yaml(self):
+        with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        if "entry" in flow_dag and "path" in flow_dag:
+            return flow_dag["entry"], flow_dag["path"]
+        return None, None
