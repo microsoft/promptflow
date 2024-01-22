@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
+from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
@@ -228,6 +228,21 @@ class RunTracker(ThreadLocalSingleton):
             run_info.system_metrics = run_info.system_metrics or {}
             run_info.system_metrics["duration"] = duration
 
+    def cancel_node_runs(self, msg: str, flow_run_id):
+        node_runs = self.collect_node_runs(flow_run_id)
+        for node_run_info in node_runs:
+            if node_run_info.status != Status.Running:
+                continue
+            msg = msg.rstrip(".")  # Avoid duplicated "." in the end of the message.
+            err = ToolCanceledError(
+                message_format="Tool execution is canceled because of the error: {msg}.",
+                msg=msg,
+                target=ErrorTarget.EXECUTOR,
+            )
+            self.end_run(node_run_info.run_id, ex=err)
+            node_run_info.status = Status.Canceled
+            self.persist_node_run(node_run_info)
+
     def end_run(
         self,
         run_id: str,
@@ -246,6 +261,9 @@ class RunTracker(ThreadLocalSingleton):
                 target=ErrorTarget.RUN_TRACKER,
                 run_id=run_id,
             )
+        # If the run is already canceled, do nothing.
+        if run_info.status == Status.Canceled:
+            return run_info
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
             if traces:

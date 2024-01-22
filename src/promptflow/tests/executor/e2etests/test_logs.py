@@ -5,17 +5,17 @@ import pytest
 
 from promptflow._utils.logger_utils import LogContext
 from promptflow.batch import BatchEngine
+from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.batch._result import BatchResult
 from promptflow.executor import FlowExecutor
 
 from ..utils import (
     get_flow_folder,
     get_flow_inputs_file,
+    get_flow_sample_inputs,
     get_yaml_file,
     load_content,
-    get_flow_sample_inputs,
     load_jsonl,
 )
 
@@ -211,3 +211,25 @@ class TestExecutorLogs:
                 assert isinstance(output, dict)
                 assert "line_number" in output, f"line_number is not in {i}th output {output}"
                 assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+
+    def test_activate_config_log(self):
+        logs_directory = Path(mkdtemp())
+        log_path = str(logs_directory / "flow.log")
+
+        # flow run: test exec_line
+        with LogContext(log_path, run_mode=RunMode.Test):
+            executor = FlowExecutor.create(get_yaml_file("activate_flow"), {})
+            # use default inputs
+            executor.exec_line({})
+            log_content = load_content(log_path)
+            logs_list = [
+                "execution.flow",
+                "The node 'nodeA' will be bypassed because the activate condition is not met, "
+                "i.e. '${flow.text}' is not equal to 'hello'.",
+                "The node 'nodeB' will be bypassed because it depends on the node 'nodeA' "
+                "which has already been bypassed in the activate config.",
+                "The node 'nodeC' will be bypassed because all nodes ['nodeB'] it depends on are bypassed.",
+                "The node 'nodeD' will be executed because the activate condition is met, "
+                "i.e. '${flow.text}' is equal to 'world'.",
+            ]
+            assert all(log in log_content for log in logs_list)
