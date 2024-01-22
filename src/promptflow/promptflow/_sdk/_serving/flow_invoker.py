@@ -70,7 +70,7 @@ class FlowInvoker:
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         # Pass dump_to path to dump flow result for extension.
         self._dump_to = kwargs.get("dump_to", None)
-        # The credential is used as an optional to override
+        # The credential is used as an option to override
         # DefaultAzureCredential when using workspace connection provider
         self._credential = kwargs.get("credential", None)
 
