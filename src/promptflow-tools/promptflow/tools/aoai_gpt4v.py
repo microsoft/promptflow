@@ -74,15 +74,16 @@ def list_deployment_names(
     workspace_name,
     connection: AzureOpenAIConnection = None
 ) -> List[Dict[str, str]]:
+    res = []
     try:
         # Does not support dynamic list for local.
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
+        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations, OpenURLFailedUserError
     except ImportError:
-        return []
+        return res
     # For local, subscription_id is None. Does not suppot dynamic list for local.
     if not subscription_id:
-        return []
+        return res
 
     try:
         credential = _get_credential()
@@ -95,14 +96,14 @@ def list_deployment_names(
                 credential=credential
             )
             resource_id = conn.get("value").get('resource_id', "")
+            if not resource_id:
+                return res
             conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
+        except OpenURLFailedUserError as e:
+            return res
         except Exception as e:
-            # If local has .azure config, may 404 here.
-            if hasattr(e, 'status_code') and e.status_code == 404:
-                return []
-            else:
-                msg = f"Parsing connection with exception: {e}"
-                raise ListDeploymentsError(msg=msg) from e
+            msg = f"Parsing connection with exception: {e}"
+            raise ListDeploymentsError(msg=msg) from e
 
         client = CognitiveServicesManagementClient(
             credential=credential,
@@ -113,7 +114,6 @@ def list_deployment_names(
             account_name=conn_account,
         )
 
-        res = []
         for item in deployment_collection:
             deployment = _build_deployment_dict(item)
             if deployment.version == GPT4V_VERSION:
