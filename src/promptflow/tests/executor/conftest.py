@@ -47,6 +47,7 @@ def _default_mock_process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
+    # Default mock implementation of _process_wrapper in recording mode
     setup_recording()
     _process_wrapper(
         executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
@@ -63,6 +64,7 @@ def _default_mock_create_spawned_fork_process_manager(
     process_info,
     process_target_func,
 ):
+    # Default mock implementation of create_spawned_fork_process_manager in recording mode
     setup_recording()
     create_spawned_fork_process_manager(
         log_context_initialization_func,
@@ -76,13 +78,14 @@ def _default_mock_create_spawned_fork_process_manager(
     )
 
 
-# Placeholder for the current strategy
+# Placeholder for the targets of new process; One for the spawned process, one for the forked process
 current_process_wrapper = _default_mock_process_wrapper
 current_process_manager = _default_mock_create_spawned_fork_process_manager
 
 
 @contextlib.contextmanager
 def override_process_target(process_wrapper=None, process_manager=None):
+    # Method to override the targets of new process instead of the predefined default ones
     global current_process_wrapper, current_process_manager
 
     # Set to the customized ones if provided
@@ -109,7 +112,10 @@ if "forkserver" in multiprocessing.get_all_start_methods():
 
 
 class BaseMockProcess:
+    # Base class for the mock process
     def modify_target(self, target):
+        # Method to modify the target of the mock process
+        # This shall be the place to hold the target mocking logic
         if target == _process_wrapper:
             return current_process_wrapper
         if target == create_spawned_fork_process_manager:
