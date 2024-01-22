@@ -92,18 +92,16 @@ class FlowContext:
 
 
 class FlowBase(abc.ABC):
-    def __init__(
-        self, *, data: dict, code: Path, path: Optional[Path] = None, content_hash: Optional[int] = None, **kwargs
-    ):
+    def __init__(self, *, data: dict, code: Path, path: Path, **kwargs):
         self._context = FlowContext()
         # flow.dag.yaml's content if provided
         self._data = data
         # working directory of the flow
         self._code = Path(code).resolve()
         # flow file path, can be script file or flow definition YAML file
-        self._path = Path(path) if path else None
+        self._path = Path(path)
         # hash of flow's entry file, used to skip invoke if entry file is not changed
-        self._content_hash = content_hash
+        self._content_hash = kwargs.pop("content_hash", None)
         super().__init__(**kwargs)
 
     @property
@@ -124,13 +122,7 @@ class FlowBase(abc.ABC):
     @property
     def path(self) -> Path:
         """Flow file path. Can be script file or flow definition YAML file."""
-        flow_file = self._path or self.code / DAG_FILE_NAME
-        if not flow_file.is_file():
-            raise UserErrorException(
-                "The directory does not contain a valid flow.",
-                target=ErrorTarget.CONTROL_PLANE_SDK,
-            )
-        return flow_file
+        return self._path
 
     @property
     def language(self) -> str:
@@ -169,8 +161,7 @@ class Flow(FlowBase):
         path = kwargs.pop("path", None)
         path = Path(path) if path else None
         self.variant = kwargs.pop("variant", None) or {}
-        content_hash = hash(dag)
-        super().__init__(data=dag, code=code, path=path, content_hash=content_hash, **kwargs)
+        super().__init__(data=dag, code=code, path=path, **kwargs)
 
     @classmethod
     def _is_eager_flow(cls, data: dict):
@@ -198,12 +189,13 @@ class Flow(FlowBase):
             with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
                 flow_content = f.read()
                 data = load_yaml_string(flow_content)
+                content_hash = hash(flow_content)
             is_eager_flow = cls._is_eager_flow(data)
             if is_eager_flow:
                 return EagerFlow._load(path=flow_path, entry=entry, data=data, **kwargs)
             else:
                 # TODO: schema validation and warning on unknown fields
-                return ProtectedFlow._load(path=flow_path, dag=data, **kwargs)
+                return ProtectedFlow._load(path=flow_path, dag=data, content_hash=content_hash, **kwargs)
         # if non-YAML file is provided, treat is as eager flow
         return EagerFlow._load(path=flow_path, entry=entry, **kwargs)
 
@@ -240,12 +232,13 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def __init__(
         self,
+        path: Path,
         code: Path,
         dag: dict,
         params_override: Optional[Dict] = None,
         **kwargs,
     ):
-        super().__init__(code=code, dag=dag, **kwargs)
+        super().__init__(path=path, code=code, dag=dag, **kwargs)
 
         self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
         self._executable = None
@@ -253,7 +246,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     @classmethod
     def _load(cls, path: Path, dag: dict, **kwargs):
-        return cls(code=path, dag=dag, **kwargs)
+        return cls(path=path, code=path.parent, dag=dag, **kwargs)
 
     @property
     def flow_dag_path(self) -> Path:
