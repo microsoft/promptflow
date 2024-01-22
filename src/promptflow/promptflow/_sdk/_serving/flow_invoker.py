@@ -70,6 +70,7 @@ class FlowInvoker:
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         # Pass dump_to path to dump flow result for extension.
         self._dump_to = kwargs.get("dump_to", None)
+        self._credential = kwargs.get("credential", None)
 
         self._init_connections(connection_provider)
         self._init_executor()
@@ -84,9 +85,10 @@ class FlowInvoker:
             connections_to_ignore = list(self.connections.keys())
             connections_to_ignore.extend(self.connections_name_overrides.keys())
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
+            client = PFClient(config={"connection.provider": connection_provider})
             connections = get_local_connections_from_executable(
                 executable=self._executable_flow,
-                client=PFClient(config={"connection.provider": connection_provider}),
+                client=client,
                 connections_to_ignore=connections_to_ignore,
                 # fetch connections with name override
                 connections_to_add=list(self.connections_name_overrides.values()),

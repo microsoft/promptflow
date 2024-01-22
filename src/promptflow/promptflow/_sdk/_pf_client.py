@@ -36,6 +36,7 @@ class PFClient:
         self._runs = RunOperations()
         self._connection_provider = None
         self._config = kwargs.get("config", None) or {}
+        self._credential = kwargs.get("credential", None)
         # Lazy init to avoid azure credential requires too early
         self._connections = None
         self._flows = FlowOperations(client=self)
@@ -212,7 +213,7 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             self._ensure_connection_provider()
-            self._connections = get_connection_operation(self._connection_provider)
+            self._connections = get_connection_operation(self._connection_provider, self._credential)
         return self._connections
 
     @property

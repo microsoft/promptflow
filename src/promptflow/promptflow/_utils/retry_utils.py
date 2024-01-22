@@ -4,10 +4,14 @@
 
 import time
 from functools import wraps
-from typing import Tuple, Union
+from typing import Tuple, Type, Union
+
+from requests import Response
 
 
-def retry(exception_to_check: Union[Exception, Tuple[Exception]], tries=4, delay=3, backoff=2, logger=None):
+def retry(
+    exception_to_check: Union[Type[Exception], Tuple[Type[Exception], ...]], tries=4, delay=3, backoff=2, logger=None
+):
     """
     From https://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
 
@@ -50,3 +54,43 @@ def retry(exception_to_check: Union[Exception, Tuple[Exception]], tries=4, delay
         return f_retry  # true decorator
 
     return deco_retry
+
+
+HTTP_SAFE_CODES = set(range(506)) - {408, 429, 500, 502, 503, 504}
+HTTP_RETRY_CODES = set(range(999)) - HTTP_SAFE_CODES
+
+
+def http_retry_wrapper(f, tries=4, delay=3, backoff=2, logger=None):
+    """
+    :param f: function to be retried, should return a Response object.
+    :type f: Callable
+    :param tries: number of times to try (not retry) before giving up
+    :type tries: int
+    :param delay: initial delay between retries in seconds
+    :type delay: int
+    :param backoff: backoff multiplier e.g. value of 2 will double the delay
+        each retry
+    :type backoff: int
+    """
+
+    @wraps(f)
+    def f_retry(*args, **kwargs):
+        retry_times, delay_seconds = tries, delay
+        while retry_times > 1:
+            result = f(*args, **kwargs)
+            if not isinstance(result, Response):
+                if logger:
+                    logger.debug(f"Not a retryable function, expected return type {Response}, got {type(result)}.")
+                return result
+            if result.status_code in HTTP_RETRY_CODES:
+                if logger:
+                    logger.warning(
+                        f"Retryable error code {result.status_code} returned, retrying in {delay_seconds} seconds. "
+                        f"Function {f.__name__}, Reason: {result.reason}"
+                    )
+                time.sleep(delay_seconds)
+                retry_times -= 1
+                delay_seconds *= backoff
+        return f(*args, **kwargs)
+
+    return f_retry

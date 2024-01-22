@@ -25,7 +25,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         )
         # Lazy init client as ml_client initialization require workspace read permission
         self._pfazure_client = None
-        self._credential = self._get_credential()
+        self._credential = kwargs.get("credential", None) or self._get_credential()
 
     @property
     def _client(self):
@@ -43,8 +43,8 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
 
     @classmethod
     def _get_credential(cls):
+        from azure.ai.ml._azure_environments import AzureEnvironments, EndpointURLS, _get_cloud, _get_default_cloud_name
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
-        from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
 
         if is_from_cli():
             try:
