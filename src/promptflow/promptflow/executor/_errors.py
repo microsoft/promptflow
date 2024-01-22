@@ -76,10 +76,6 @@ class InvalidFlowRequest(ValidationException):
         )
 
 
-class InvalidSource(ValidationException):
-    pass
-
-
 class NodeInputValidationError(InvalidFlowRequest):
     pass
 
