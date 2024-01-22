@@ -14,8 +14,9 @@ from promptflow.batch._batch_engine import OUTPUT_FILE_NAME, BatchEngine
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import _process_wrapper
+from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
-from ..conftest import set_mock_process_wrapper_strategy
+from ..conftest import set_current_process_manager, set_current_process_wrapper
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -57,6 +58,35 @@ def _customized_mock_process_wrapper(
     )
 
 
+def _customized_mock_create_spawned_fork_process_manager(
+    log_context_initialization_func,
+    current_operation_context,
+    input_queues,
+    output_queues,
+    control_signal_queue,
+    flow_file,
+    connections,
+    working_dir,
+    raise_ex,
+    process_info,
+    process_target_func,
+):
+    setup_extra_mocks()
+    create_spawned_fork_process_manager(
+        log_context_initialization_func,
+        current_operation_context,
+        input_queues,
+        output_queues,
+        control_signal_queue,
+        flow_file,
+        connections,
+        working_dir,
+        raise_ex,
+        process_info,
+        process_target_func,
+    )
+
+
 def mock_stream_chat(*args, **kwargs):
     return stream_response(kwargs)
 
@@ -95,7 +125,8 @@ class TestExecutorTelemetry:
 
             # batch run case
             # override the _process_wrapper with a customized one to mock the chat api
-            set_mock_process_wrapper_strategy(_customized_mock_process_wrapper)
+            set_current_process_wrapper(_customized_mock_process_wrapper)
+            set_current_process_manager(_customized_mock_create_spawned_fork_process_manager)
             run_id = str(uuid.uuid4())
             batch_engine = BatchEngine(
                 get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections

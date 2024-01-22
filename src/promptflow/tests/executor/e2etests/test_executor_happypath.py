@@ -8,6 +8,7 @@ from pathlib import Path
 from types import GeneratorType
 
 import pytest
+from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
@@ -16,7 +17,6 @@ from promptflow.executor._errors import ConnectionNotFound, InputTypeError, Reso
 from promptflow.executor.flow_executor import execute_flow
 from promptflow.storage._run_storage import DefaultRunStorage
 
-from ...sdk_cli_azure_test.recording_utilities import is_record, is_replay
 from ..conftest import MockSpawnProcess, setup_recording
 from ..utils import FLOW_ROOT, get_flow_folder, get_flow_sample_inputs, get_yaml_file, is_image_file
 

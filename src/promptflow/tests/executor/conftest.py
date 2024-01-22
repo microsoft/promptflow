@@ -82,16 +82,26 @@ def _default_mock_create_spawned_fork_process_manager(
 
 
 # Placeholder for the current strategy
-current_mock_process_wrapper_strategy = _default_mock_process_wrapper
+current_process_wrapper = _default_mock_process_wrapper
+current_process_manager = _default_mock_create_spawned_fork_process_manager
 
 
-def get_mock_process_wrapper_strategy():
-    return current_mock_process_wrapper_strategy
+def get_current_process_wrapper():
+    return current_process_wrapper
 
 
-def set_mock_process_wrapper_strategy(strategy_func):
-    global current_mock_process_wrapper_strategy
-    current_mock_process_wrapper_strategy = strategy_func
+def set_current_process_wrapper(strategy_func):
+    global current_process_wrapper
+    current_process_wrapper = strategy_func
+
+
+def get_current_process_manager():
+    return current_process_manager
+
+
+def set_current_process_manager(strategy_func):
+    global current_process_manager
+    current_process_manager = strategy_func
 
 
 SpawnProcess = multiprocessing.Process
@@ -106,10 +116,9 @@ if "forkserver" in multiprocessing.get_all_start_methods():
 class BaseMockProcess:
     def modify_target(self, target):
         if target == _process_wrapper:
-            # allow dynamic strategy change for _process_wrapper override
-            return get_mock_process_wrapper_strategy()
+            return get_current_process_wrapper()
         if target == create_spawned_fork_process_manager:
-            return _default_mock_create_spawned_fork_process_manager
+            return get_current_process_manager()
         return target
 
 
