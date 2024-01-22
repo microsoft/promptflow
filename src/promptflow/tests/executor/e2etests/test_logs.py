@@ -222,5 +222,14 @@ class TestExecutorLogs:
             # use default inputs
             executor.exec_line({})
             log_content = load_content(log_path)
-            node_logs_list = ["print_input in line", "stdout> STDOUT:", "stderr> STDERR:"]
+            node_logs_list = [
+                "execution.flow",
+                "The node 'nodeA' will be bypassed because the activate condition is not met, "
+                "i.e. '${flow.text}' is not equal to 'hello'.",
+                "The node 'nodeB' will be bypassed because it depends on the node 'nodeA' "
+                "which has already been bypassed in the activate config.",
+                "The node 'nodeC' will be bypassed because all nodes ['nodeB'] it depends on are bypassed.",
+                "The node 'nodeD' will be executed because the activate condition is met, "
+                "i.e. '${flow.text}' is equal to 'world'.",
+            ]
             assert all(node_log in log_content for node_log in node_logs_list)
