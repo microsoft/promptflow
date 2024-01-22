@@ -39,7 +39,6 @@ def _get_credential():
 def _parse_resource_id(resource_id):
     # Resource id is connection's id in following format:
     # "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}"
-    
     split_parts = resource_id.split("/")
     if(len(split_parts) != 9):
         raise Exception(
@@ -84,8 +83,10 @@ def list_deployment_names(
         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
     except ImportError:
         return []
+    # For local, subscription_id is None
+    if not subscription_id:
+        return []
 
-    print(f"sub: {subscription_id}")
     try:
         credential = _get_credential()
         try:
@@ -97,7 +98,6 @@ def list_deployment_names(
                 credential=credential
             )
             resource_id = conn.get("value").get('resource_id', "")
-            print(f"Connection {connection} resource id: {resource_id}")
             conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
         except Exception as e:
             msg = f"Parsing connection with exception: {e}"
@@ -116,7 +116,6 @@ def list_deployment_names(
         for item in deployment_collection:
             deployment = _build_deployment_dict(item)
             if deployment.version == GPT4V_VERSION:
-                print(f"{deployment.name}:{deployment.version} selected.")
                 cur_item = {
                     "value": deployment.name,
                     "display_value": deployment.name,
@@ -124,8 +123,12 @@ def list_deployment_names(
                 res.append(cur_item)
 
     except Exception as e:
-        msg = f"Failed to list deployments with exception: {e}"
-        raise ListDeploymentsError(msg=msg) from e
+        if hasattr(e, 'status_code') and e.status_code == 403:
+            msg = f"Failed to list deployments due to permission issue: {e}"
+            raise ListDeploymentsError(msg=msg) from e
+        else:
+            msg = f"Failed to list deployments with exception: {e}"
+            raise ListDeploymentsError(msg=msg) from e
 
     return res
 
