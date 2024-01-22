@@ -17,6 +17,7 @@ class EagerFlow(FlowBase):
     def __init__(
         self,
         path: Union[str, PathLike],
+        code: Union[str, PathLike],
         entry: str,
         data: dict,
         **kwargs,
@@ -24,7 +25,7 @@ class EagerFlow(FlowBase):
         # flow.dag.yaml file path or entry.py file path
         path = Path(path)
         # flow.dag.yaml file's folder or entry.py's folder
-        code = path.parent
+        code = Path(code)
         # entry function name
         self.entry = entry
         # TODO(2910062): support eager flow execution cache
@@ -48,6 +49,7 @@ class EagerFlow(FlowBase):
     @classmethod
     def _load(cls, path: Path, entry: str = None, data: dict = None, **kwargs):
         data = data or {}
+        code = path.parent
         # schema validation on unknown fields
         if path.suffix in [".yaml", ".yml"]:
             data = cls._create_schema_for_validation(context={BASE_PATH_CONTEXT_KEY: path.parent}).load(data)
@@ -59,4 +61,4 @@ class EagerFlow(FlowBase):
 
         if entry is None:
             raise UserErrorException(f"Entry function is not specified for flow {path}")
-        return cls(path=path, entry=entry, data=data, **kwargs)
+        return cls(path=path, code=code, entry=entry, data=data, **kwargs)

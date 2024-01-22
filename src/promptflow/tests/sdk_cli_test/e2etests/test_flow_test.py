@@ -250,6 +250,8 @@ class TestFlowTest:
         # required inputs not provided
 
     def test_eager_flow_test_with_additional_includes(self):
+        # in this case, flow's entry will be {EAGER_FLOWS_DIR}/flow_with_additional_includes
+        # but working dir will be temp dir which includes additional included files
         flow_path = Path(f"{EAGER_FLOWS_DIR}/flow_with_additional_includes/").absolute()
         result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
         assert result.run_info.status.value == "Completed"

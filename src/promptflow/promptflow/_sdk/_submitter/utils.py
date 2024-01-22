@@ -161,10 +161,11 @@ def variant_overwrite_context(
     if flow.additional_includes:
         # Merge the flow folder and additional includes to temp folder for both eager flow & dag flow.
         with _merge_local_code_and_additional_includes(code_path=flow_dir_path) as temp_dir:
-            # always overwrite variant since we need to overwrite default variant if not specified.
-            overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
-            overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
-            overwrite_flow(flow_dag, overrides)
+            if not isinstance(flow, EagerFlow):
+                # always overwrite variant since we need to overwrite default variant if not specified.
+                overwrite_variant(flow_dag, tuning_node, variant, drop_node_variants=drop_node_variants)
+                overwrite_connections(flow_dag, connections, working_dir=flow_dir_path)
+                overwrite_flow(flow_dag, overrides)
             flow_dag.pop("additional_includes", None)
             dump_flow_dag(flow_dag, Path(temp_dir))
             flow = load_flow(temp_dir)
