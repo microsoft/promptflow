@@ -36,6 +36,8 @@ class PFClient:
         self._runs = RunOperations()
         self._connection_provider = None
         self._config = kwargs.get("config", None) or {}
+        # The credential is used as an optional to override
+        # DefaultAzureCredential when using workspace connection provider
         self._credential = kwargs.get("credential", None)
         # Lazy init to avoid azure credential requires too early
         self._connections = None
