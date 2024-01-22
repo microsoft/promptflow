@@ -64,10 +64,7 @@ def _customized_mock_create_spawned_fork_process_manager(
     input_queues,
     output_queues,
     control_signal_queue,
-    flow_file,
-    connections,
-    working_dir,
-    raise_ex,
+    flow_create_kwargs,
     process_info,
     process_target_func,
 ):
@@ -78,10 +75,7 @@ def _customized_mock_create_spawned_fork_process_manager(
         input_queues,
         output_queues,
         control_signal_queue,
-        flow_file,
-        connections,
-        working_dir,
-        raise_ex,
+        flow_create_kwargs,
         process_info,
         process_target_func,
     )
