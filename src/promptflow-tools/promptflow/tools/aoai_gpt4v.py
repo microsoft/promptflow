@@ -78,7 +78,8 @@ def list_deployment_names(
     try:
         # Does not support dynamic list for local.
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
-        from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations, OpenURLFailedUserError
+        from promptflow.azure.operations._arm_connection_operations import \
+            ArmConnectionOperations, OpenURLFailedUserError
     except ImportError:
         return res
     # For local, subscription_id is None. Does not suppot dynamic list for local.
@@ -99,7 +100,7 @@ def list_deployment_names(
             if not resource_id:
                 return res
             conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
-        except OpenURLFailedUserError as e:
+        except OpenURLFailedUserError:
             return res
         except Exception as e:
             msg = f"Parsing connection with exception: {e}"
