@@ -219,9 +219,12 @@ class LocalStorageOperations(AbstractRunStorage):
 
         self._dump_meta_file()
         if run.flow:
-            flow_obj = load_flow(source=run.flow)
-            # TODO(2898455): refine here, check if there's cases where dag.yaml not exist
-            self._eager_mode = isinstance(flow_obj, EagerFlow)
+            try:
+                flow_obj = load_flow(source=run.flow)
+                self._eager_mode = isinstance(flow_obj, EagerFlow)
+            except Exception:
+                # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
+                self._eager_mode = False
         else:
             # TODO(2901279): support eager mode for run created from run folder
             self._eager_mode = False

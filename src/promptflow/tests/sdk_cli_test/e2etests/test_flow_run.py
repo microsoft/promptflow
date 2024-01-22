@@ -1278,5 +1278,8 @@ class TestFlowRun:
             # remove run dag
             shutil.rmtree(f"{temp_dir}/print_env_var")
 
-            # can still get run
-            pf.runs.get(run.name)
+            # can still get run operations
+            LocalStorageOperations(run=run)
+
+            # can to_dict
+            run._to_dict()
