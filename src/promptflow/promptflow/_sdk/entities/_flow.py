@@ -92,12 +92,18 @@ class FlowContext:
 
 
 class FlowBase(abc.ABC):
-    def __init__(self, data: dict, content_hash: Optional[int], **kwargs):
+    def __init__(
+        self, *, data: dict, code: Path, path: Optional[Path] = None, content_hash: Optional[int] = None, **kwargs
+    ):
         self._context = FlowContext()
-        # hash of flow's entry file, used to skip invoke if entry file is not changed
-        self._content_hash = content_hash
         # flow.dag.yaml's content if provided
         self._data = data
+        # working directory of the flow
+        self._code = Path(code).resolve()
+        # flow file path, can be script file or flow definition YAML file
+        self._path = Path(path) if path else None
+        # hash of flow's entry file, used to skip invoke if entry file is not changed
+        self._content_hash = content_hash
         super().__init__(**kwargs)
 
     @property
@@ -111,14 +117,30 @@ class FlowBase(abc.ABC):
         self._context = val
 
     @property
-    @abc.abstractmethod
-    def language(self) -> str:
-        """Language of the flow."""
+    def code(self) -> Path:
+        """Working directory of the flow."""
+        return self._code
 
     @property
-    @abc.abstractmethod
+    def path(self) -> Path:
+        """Flow file path. Can be script file or flow definition YAML file."""
+        flow_file = self._path or self.code / DAG_FILE_NAME
+        if not flow_file.is_file():
+            raise UserErrorException(
+                "The directory does not contain a valid flow.",
+                target=ErrorTarget.CONTROL_PLANE_SDK,
+            )
+        return flow_file
+
+    @property
+    def language(self) -> str:
+        """Language of the flow."""
+        return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
+
+    @property
     def additional_includes(self) -> list:
         """Additional includes of the flow."""
+        return self._data.get("additional_includes", [])
 
     @classmethod
     # pylint: disable=unused-argument
@@ -143,38 +165,12 @@ class Flow(FlowBase):
         dag: dict,
         **kwargs,
     ):
-        self._code = Path(code)
+        code = Path(code)
         path = kwargs.pop("path", None)
-        self._path = Path(path) if path else None
+        path = Path(path) if path else None
         self.variant = kwargs.pop("variant", None) or {}
         content_hash = hash(dag)
-        super().__init__(data=dag, content_hash=content_hash, **kwargs)
-
-    @property
-    def code(self) -> Path:
-        return self._code
-
-    @code.setter
-    def code(self, value: Union[str, PathLike, Path]):
-        self._code = value
-
-    @property
-    def path(self) -> Path:
-        flow_file = self._path or self.code / DAG_FILE_NAME
-        if not flow_file.is_file():
-            raise UserErrorException(
-                "The directory does not contain a valid flow.",
-                target=ErrorTarget.CONTROL_PLANE_SDK,
-            )
-        return flow_file
-
-    @property
-    def language(self) -> str:
-        return self._data.get(LANGUAGE_KEY, FlowLanguage.Python)
-
-    @property
-    def additional_includes(self) -> list:
-        return self._data.get("additional_includes", [])
+        super().__init__(data=dag, code=code, path=path, content_hash=content_hash, **kwargs)
 
     @classmethod
     def _is_eager_flow(cls, data: dict):
@@ -218,7 +214,7 @@ class Flow(FlowBase):
         # this is a little wired:
         # 1. the executable is created from a temp folder when there is additional includes
         # 2. after the executable is returned, the temp folder is deleted
-        with variant_overwrite_context(self.code, tuning_node, variant) as flow:
+        with variant_overwrite_context(self, tuning_node, variant) as flow:
             from promptflow.contracts.flow import Flow as ExecutableFlow
 
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
@@ -244,11 +240,12 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     def __init__(
         self,
-        code: str,
+        code: Path,
+        dag: dict,
         params_override: Optional[Dict] = None,
         **kwargs,
     ):
-        super().__init__(code=code, **kwargs)
+        super().__init__(code=code, dag=dag, **kwargs)
 
         self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
         self._executable = None
@@ -256,7 +253,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
 
     @classmethod
     def _load(cls, path: Path, dag: dict, **kwargs):
-        return cls(code=path.parent.absolute().as_posix(), dag=dag, **kwargs)
+        return cls(code=path, dag=dag, **kwargs)
 
     @property
     def flow_dag_path(self) -> Path:

@@ -29,7 +29,7 @@ from promptflow._sdk._utils import (
     parse_variant,
 )
 from promptflow._sdk.entities._eager_flow import EagerFlow
-from promptflow._sdk.entities._flow import ProtectedFlow
+from promptflow._sdk.entities._flow import Flow, ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
@@ -425,7 +425,7 @@ class FlowOperations(TelemetryMixin):
 
     def _build_flow(
         self,
-        flow_dag_path: Path,
+        flow: Flow,
         *,
         output: Union[str, PathLike],
         tuning_node: str = None,
@@ -441,7 +441,7 @@ class FlowOperations(TelemetryMixin):
         # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
         # TODO: shall we pop "node_variants" unless keep-variants is specified?
         with variant_overwrite_context(
-            flow_dag_path,
+            flow=flow,
             tuning_node=tuning_node,
             variant=node_variant,
             drop_node_variants=True,
@@ -450,7 +450,7 @@ class FlowOperations(TelemetryMixin):
             copy_tree_respect_template_and_ignore_file(temp_flow.code, flow_copy_target)
         if update_flow_tools_json:
             generate_flow_tools_json(flow_copy_target)
-        return flow_copy_target / flow_dag_path.name
+        return flow_copy_target / flow.path.name
 
     def _export_to_docker(
         self,
@@ -601,7 +601,7 @@ class FlowOperations(TelemetryMixin):
             output_flow_dir = output_dir / "flow"
 
         new_flow_dag_path = self._build_flow(
-            flow_dag_path=flow.flow_dag_path,
+            flow=flow,
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,

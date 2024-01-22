@@ -22,13 +22,13 @@ class EagerFlow(FlowBase):
         **kwargs,
     ):
         # flow.dag.yaml file path or entry.py file path
-        self.path = Path(path)
+        path = Path(path)
         # flow.dag.yaml file's folder or entry.py's folder
-        self.code = self.path.parent
+        code = path.parent
         # entry function name
         self.entry = entry
         # TODO(2910062): support eager flow execution cache
-        super().__init__(data=data, content_hash=None, **kwargs)
+        super().__init__(data=data, path=path, code=code, content_hash=None, **kwargs)
 
     @property
     def language(self) -> str:
