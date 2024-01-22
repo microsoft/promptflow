@@ -312,6 +312,7 @@ class TestToolUtils:
     @pytest.mark.parametrize(
         "res, err_msg",
         [
+            (None, "mock_func response can not be None."),
             (["a", "b"], "mock_func response must be a list of dict. a is not a dict."),
             ({"a": "b"}, "mock_func response must be a list."),
             ([{"a": "b"}], "mock_func response dict must have 'value' key."),
