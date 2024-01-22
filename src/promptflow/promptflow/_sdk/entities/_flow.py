@@ -99,7 +99,7 @@ class FlowBase(abc.ABC):
         # working directory of the flow
         self._code = Path(code).resolve()
         # flow file path, can be script file or flow definition YAML file
-        self._path = Path(path)
+        self._path = Path(path).resolve()
         # hash of flow's entry file, used to skip invoke if entry file is not changed
         self._content_hash = kwargs.pop("content_hash", None)
         super().__init__(**kwargs)
