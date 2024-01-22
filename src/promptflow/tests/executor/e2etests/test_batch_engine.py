@@ -38,7 +38,10 @@ async def async_submit_batch_run(flow_folder, inputs_mapping, connections):
 
 
 def run_batch_with_start_method(multiprocessing_start_method, flow_folder, inputs_mapping, dev_connections):
-    # process override again since this method is running in a new process
+    # The method is used as start method to construct new process in tests.
+    # We need to make sure the necessary setup in place to get pass along in new process, including:
+    # 1. Mocked process override
+    # 2. Recording injection
     if multiprocessing_start_method == "spawn":
         multiprocessing.Process = MockSpawnProcess
         multiprocessing.get_context("spawn").Process = MockSpawnProcess
