@@ -162,14 +162,10 @@ class TestToolsManager:
     def test_collect_package_tools_set_defaut_input_index(self, install_promptflow_tools_pkg):
         tool = "promptflow.tools.aoai_gpt4v.AzureOpenAI.chat"
         package_tools = collect_package_tools([tool])
-        assert package_tools[tool]['inputs']['connection']['ui_hints']['index'] == 0
-        assert package_tools[tool]['inputs']['deployment_name']['ui_hints']['index'] == 1
-        assert package_tools[tool]['inputs']['temperature']['ui_hints']['index'] == 2
-        assert package_tools[tool]['inputs']['top_p']['ui_hints']['index'] == 3
-        assert package_tools[tool]['inputs']['max_tokens']['ui_hints']['index'] == 4
-        assert package_tools[tool]['inputs']['stop']['ui_hints']['index'] == 5
-        assert package_tools[tool]['inputs']['presence_penalty']['ui_hints']['index'] == 6
-        assert package_tools[tool]['inputs']['frequency_penalty']['ui_hints']['index'] == 7
+        inputs_order = ["connection", "deployment_name", "temperature", "top_p", "max_tokens", "stop",
+                        "presence_penalty", "frequency_penalty"]
+        for index, input_name in enumerate(inputs_order):
+            assert package_tools[tool]['inputs'][input_name]['ui_hints']['index'] == index
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
