@@ -11,7 +11,7 @@ from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
-from typing import Union, List
+from typing import List, Union
 
 import psutil
 
@@ -289,7 +289,6 @@ class LineExecutionProcessPool:
                 if crashed:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
                     ex = ProcessCrashError(line_number)
-                    self.handle_process_crashed(line_number, inputs, run_id, start_time, result_list)
                 # Handle line execution timeout.
                 elif timeouted:
                     bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
@@ -300,7 +299,12 @@ class LineExecutionProcessPool:
                     bulk_logger.warning(msg)
                     ex = UnexpectedError(msg)
                 result = self._generate_line_result_for_exception(
-                    inputs, run_id, line_number, self._flow_id, start_time, ex,
+                    inputs,
+                    run_id,
+                    line_number,
+                    self._flow_id,
+                    start_time,
+                    ex,
                     returned_node_run_infos,
                 )
                 result_list.append(result)
@@ -365,7 +369,13 @@ class LineExecutionProcessPool:
         return _process_recursively(value, process_funcs=serialization_funcs, inplace=inplace)
 
     def _generate_line_result_for_exception(
-        self, inputs, run_id, line_number, flow_id, start_time, ex,
+        self,
+        inputs,
+        run_id,
+        line_number,
+        flow_id,
+        start_time,
+        ex,
         node_run_infos={},
     ) -> LineResult:
         bulk_logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")

@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCancelledError
+from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
@@ -234,8 +234,8 @@ class RunTracker(ThreadLocalSingleton):
             if node_run_info.status != Status.Running:
                 continue
             msg = msg.rstrip(".")  # Avoid duplicated "." in the end of the message.
-            err = ToolCancelledError(
-                message_format="Tool execution is cancelled because of the error: {msg}.",
+            err = ToolCanceledError(
+                message_format="Tool execution is canceled because of the error: {msg}.",
                 msg=msg,
                 target=ErrorTarget.EXECUTOR,
             )
