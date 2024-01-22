@@ -224,7 +224,6 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                 raise
 
     wrapped.__original_function = func
-    func.__wrapped_function = wrapped
 
     return wrapped
 
