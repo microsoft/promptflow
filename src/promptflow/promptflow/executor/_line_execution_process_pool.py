@@ -99,11 +99,16 @@ class LineExecutionProcessPool:
         self._run_id = run_id
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
-        user_defined_multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
-        if user_defined_multiprocessing_start_method is not None:
-            bulk_logger.warning("The environment variable 'PF_BATCH_METHOD' has been deprecated.")
+        multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
         sys_start_methods = multiprocessing.get_all_start_methods()
-        use_fork = "fork" in sys_start_methods
+        if multiprocessing_start_method not in sys_start_methods:
+            bulk_logger.warning(
+                f"Failed to set start method to '{multiprocessing_start_method}', "
+                f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
+            )
+            bulk_logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
+            multiprocessing_start_method = multiprocessing.get_start_method()
+        use_fork = multiprocessing_start_method in ["fork", "forkserver"]
         self._flow_file = flow_executor._flow_file
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
