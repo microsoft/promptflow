@@ -35,7 +35,7 @@ def batch_run_flow(
             "validate_and_generate_seed_question": {"connection": connection_name},
             "validate_and_generate_test_question": {"connection": connection_name},
             "validate_and_generate_context": {"connection": connection_name},
-            "generate_answer": {"connection": connection_name},
+            "generate_ground_truth": {"connection": connection_name},
         },
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
         debug=True,
@@ -47,18 +47,14 @@ def batch_run_flow(
 def get_batch_run_output(pf: PFClient, base_run: Run):
     print(f"Start to get batch run {base_run} details.")
     # get run output
-    details = pf.get_details(base_run)
+    details = pf.get_details(base_run, all_results=True)
 
     # TODO: error handling like if the run failed because of rate limit.
 
     question = details["outputs.question"].tolist()
-    answer = details["outputs.answer"].tolist()
-    context = details["outputs.context"].tolist()
-    question_type = details["outputs.question_type"].tolist()
-    return [
-        {"question": q, "answer": a, "context": c, "question_type": qt}
-        for q, a, c, qt in zip(question, answer, context, question_type)
-    ]
+    ground_truth = details["outputs.ground_truth"].tolist()
+    debug_info = details["outputs.debug_info"].tolist()
+    return [{"question": q, "ground_truth": g, "debug_info": d} for q, g, d in zip(question, ground_truth, debug_info)]
 
 
 def clean_data_and_save(test_data_set: list, test_data_output_path: str):

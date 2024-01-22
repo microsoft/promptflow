@@ -86,7 +86,7 @@ def clean_test_data_set(
     # Filter out empty dictionaries
     # TODO: error handling
     filtered_data = [
-        {"question": d["question"], "answer": d["answer"], "context": d["context"], "question_type": d["question_type"]}
+        {"question": d["question"], "ground_truth": d["ground_truth"], "debug_info": d["debug_info"]}
         for d in data
         if d and all(val for val in d.values())
     ]

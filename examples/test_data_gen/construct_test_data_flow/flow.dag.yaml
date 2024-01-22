@@ -16,15 +16,12 @@ outputs:
   question:
     type: string
     reference: ${validate_and_generate_test_question.output.question}
-  answer:
+  ground_truth:
     type: string
-    reference: ${generate_answer.output}
-  context:
+    reference: ${generate_ground_truth.output}
+  debug_info:
     type: string
-    reference: ${validate_and_generate_context.output}
-  question_type:
-    type: string
-    reference: ${validate_and_generate_test_question.output.question_type}
+    reference: ${generate_debug_info.output}
 nodes:
 - name: reasoning_prompt
   type: prompt
@@ -77,11 +74,11 @@ nodes:
     context: ${inputs.text_chunk}
     question: ${validate_and_generate_test_question.output.question}
   use_variants: false
-- name: generate_answer_prompt
+- name: generate_ground_truth_prompt
   type: prompt
   source:
     type: code
-    path: generate_answer_prompt.jinja2
+    path: generate_ground_truth_prompt.jinja2
   inputs:
     context: ${validate_and_generate_context.output}
     question: ${validate_and_generate_test_question.output}
@@ -130,14 +127,23 @@ nodes:
     question_info: ${validate_and_generate_test_question.output}
     validate_question_prompt: ${validate_question_prompt.output}
   use_variants: false
-- name: generate_answer
+- name: generate_ground_truth
   type: python
   source:
     type: code
-    path: generate_answer.py
+    path: generate_ground_truth.py
   inputs:
     connection: azure_openai_connection
     context: ${validate_and_generate_context.output}
-    generate_answer_prompt: ${generate_answer_prompt.output}
+    generate_ground_truth_prompt: ${generate_ground_truth_prompt.output}
     model: gpt-35-turbo
   use_variants: false
+- name: generate_debug_info
+  type: python
+  source:
+    type: code
+    path: generate_debug_info.py
+  inputs:
+    question_type: ${validate_and_generate_test_question.output.question_type}
+    context: ${validate_and_generate_context.output}
+    text_trunk: ${inputs.text_chunk}

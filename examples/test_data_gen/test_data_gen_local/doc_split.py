@@ -47,8 +47,4 @@ if __name__ == "__main__":
     parser.add_argument("--document_node_output", type=str, required=True)
     args = parser.parse_args()
 
-    print(f"documents_folder path: {args.documents_folder}")
-    print(f"chunk_size: {type(args.chunk_size)}: {args.chunk_size}")
-    print(f"document_node_output path: {args.document_node_output}")
-
     split_doc(args.documents_folder, args.document_node_output, args.chunk_size)

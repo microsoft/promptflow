@@ -8,7 +8,10 @@ from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 @tool
 def generate_answer(
-    connection: Union[OpenAIConnection, AzureOpenAIConnection], model: str, context: str, generate_answer_prompt: str
+    connection: Union[OpenAIConnection, AzureOpenAIConnection],
+    model: str,
+    context: str,
+    generate_ground_truth_prompt: str,
 ):
     """
     Generates a answer based on the given prompts and context information.
@@ -19,4 +22,4 @@ def generate_answer(
     if not context:
         return ""
 
-    return llm_call(connection, model, generate_answer_prompt)
+    return llm_call(connection, model, generate_ground_truth_prompt)
