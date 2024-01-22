@@ -6,10 +6,10 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .. import load_flow
 from .._utils.logger_utils import get_cli_sdk_logger
 from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
+from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
 from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run

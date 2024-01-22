@@ -19,8 +19,8 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
 
-from ... import load_flow
 from ..._utils.logger_utils import LoggerFactory
+from .._load_functions import load_flow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
