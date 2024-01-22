@@ -110,8 +110,8 @@ class DAGManager:
             # If the node referenced by activate condition is bypassed, the current node should be bypassed
             if self._is_node_dependency_bypassed(node.activate.condition):
                 flow_logger.info(
-                    f"The node {node.name} will be bypassed because it depends on the node "
-                    f"{node.activate.condition.value} which has already been bypassed in the activate config."
+                    f"The node '{node.name}' will be bypassed because it depends on the node "
+                    f"'{node.activate.condition.value}' which has already been bypassed in the activate config."
                 )
                 return True
             # If a node has activate config, we will always use this config
@@ -120,13 +120,13 @@ class DAGManager:
             if not self._is_condition_met(node.activate.condition, node.activate.condition_value):
                 flow_logger.info(
                     f"The node {node.name} will be bypassed because the activate condition is not met, "
-                    f"i.e. {activate_condition} is not equal to {node.activate.condition_value}."
+                    f"i.e. '{activate_condition}' is not equal to '{node.activate.condition_value}'."
                 )
                 return True
             else:
                 flow_logger.info(
                     f"The node {node.name} will be executed because the activate condition is met, "
-                    f"i.e. {activate_condition} is equal to {node.activate.condition_value}."
+                    f"i.e. '{activate_condition}' is equal to '{node.activate.condition_value}'."
                 )
                 return False
 
@@ -138,7 +138,7 @@ class DAGManager:
         if all_dependencies_bypassed:
             node_dependencies_list = [dependency.value for dependency in node_dependencies]
             flow_logger.info(
-                f"The node {node.name} will be bypassed because all nodes "
+                f"The node '{node.name}' will be bypassed because all nodes "
                 f"{node_dependencies_list} it depends on are bypassed."
             )
         return all_dependencies_bypassed
