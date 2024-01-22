@@ -15,6 +15,7 @@ import tempfile
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
+from functools import partial
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -1076,3 +1077,26 @@ def get_connection_operation(connection_provider: str):
             error=error,
         )
     return connection_operation
+
+
+# extract open read/write as partial to centralize the encoding
+read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
+write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
+
+
+# extract some file operations inside this file
+def json_load(file) -> str:
+    with read_open(file) as f:
+        return json.load(f)
+
+
+def json_dump(obj, file) -> None:
+    with write_open(file) as f:
+        json.dump(obj, f, ensure_ascii=False)
+
+
+def pd_read_json(file) -> "DataFrame":
+    import pandas as pd
+
+    with read_open(file) as f:
+        return pd.read_json(f, orient="records", lines=True)
