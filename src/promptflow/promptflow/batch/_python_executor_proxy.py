@@ -53,6 +53,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         run_id: Optional[str] = None,
     ) -> List[LineResult]:
         self._flow_executor._node_concurrency = DEFAULT_CONCURRENCY_BULK
+        # TODO: Refine the logic here since the script executor actually doesn't have the 'node' concept
         if isinstance(self._flow_executor, ScriptExecutor):
             run_tracker = RunTracker(self._flow_executor._storage)
         else:

@@ -119,6 +119,17 @@ def assertEqual(a: dict, b: dict, path: str = ""):
 
 # Since the output of eager flow may not be a dict, we need to convert it to a dict in batch mode.
 def convert_eager_flow_output_to_dict(value: Any):
+    """Convert the output of eager flow to a dict.
+    
+    Examples:
+    1. If the output is a dict, return it directly:
+        value = {"output": 1} -> {"output": 1}
+    2. If the output is a dataclass, convert it to a dict:
+        value = DataClass(output=1) -> {"output": 1}
+    3. If the output is not a dict or dataclass, convert it to a dict by adding a key "output":
+        value = 1 -> {"output": 1}
+    """
+
     if isinstance(value, dict):
         return value
     elif is_dataclass(value):
