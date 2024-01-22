@@ -1,6 +1,7 @@
 import contextlib
 import os
 import sys
+from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock, patch
 
@@ -9,6 +10,10 @@ import pytest
 from pytest_mock import MockFixture
 
 from promptflow._sdk._constants import VIS_PORTAL_URL_TMPL
+
+tests_root_dir = Path(__file__).parent.parent.parent
+flow_test_dir = tests_root_dir / "test_configs/flows"
+data_dir = tests_root_dir / "test_configs/datas"
 
 
 def run_pf_command(*args, cwd=None):
@@ -238,19 +243,43 @@ class TestAzureCli:
 
         mocked = mocker.patch.object(FlowOperations, "create_or_update")
         mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        flow_dir = Path(flow_test_dir, "web_classification").resolve().as_posix()
         run_pf_command(
             "flow",
             "create",
             "--flow",
-            ".",
+            flow_dir,
             "--set",
-            "name=test_flow",
+            "display_name=test_flow",
             "type=standard",
             "description='test_description'",
             "tags.key1=value1",
             *operation_scope_args,
         )
-        mocked.assert_called_once()
+        mocked.assert_called_with(
+            flow=flow_dir,
+            display_name="test_flow",
+            type="standard",
+            description="test_description",
+            tags={"key1": "value1"},
+        )
+
+    def test_flow_create_with_unknown_field(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._flow_operations import FlowOperations
+
+        mocked = mocker.patch.object(FlowOperations, "create_or_update")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        flow_dir = Path(flow_test_dir, "web_classification").resolve().as_posix()
+        run_pf_command(
+            "flow",
+            "create",
+            "--flow",
+            flow_dir,
+            "--set",
+            "random_key=random_value",
+            *operation_scope_args,
+        )
+        mocked.assert_called_with(flow=flow_dir, random_key="random_value")
 
     def test_flow_list(
         self,
@@ -310,7 +339,7 @@ class TestAzureCli:
                 assert kwargs["custom_dimensions"]["subscription_id"] == subscription_id
             yield None
 
-        with patch("promptflow._telemetry.activity.log_activity") as mock_log_activity:
+        with patch("promptflow._sdk._telemetry.activity.log_activity") as mock_log_activity:
             mock_log_activity.side_effect = check_workspace_info
             run_pf_command(
                 "run",
@@ -320,3 +349,33 @@ class TestAzureCli:
                 "--include-archived",
                 *operation_scope_args,
             )
+
+    def test_run_download(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
+        mocked = mocker.patch.object(RunOperations, "download")
+        mocked.return_value = "fake_output_run_dir"
+        run_pf_command(
+            "run",
+            "download",
+            "--name",
+            "test_run",
+            "--output",
+            "fake_output_dir",
+            "--overwrite",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_run_cancel(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._run_operations import RunOperations
+
+        mocked = mocker.patch.object(RunOperations, "cancel")
+        run_pf_command(
+            "run",
+            "cancel",
+            "--name",
+            "test_run",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()

@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import asyncio
 import functools
 import inspect
 import logging
@@ -37,7 +38,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self,
         name,
         run_tracker: RunTracker,
-        cache_manager: AbstractCacheManager,
+        cache_manager: AbstractCacheManager = None,
         run_id=None,
         flow_id=None,
         line_number=None,
@@ -45,7 +46,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
     ):
         self._name = name
         self._run_tracker = run_tracker
-        self._cache_manager = cache_manager
+        self._cache_manager = cache_manager or AbstractCacheManager.init_from_env()
         self._run_id = run_id or str(uuid.uuid4())
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
@@ -65,6 +66,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
     def _update_operation_context(self):
         flow_context_info = {"flow-id": self._flow_id, "root-run-id": self._run_id}
         OperationContext.get_instance().update(flow_context_info)
+
+    def cancel_node_runs(self, msg):
+        self._run_tracker.cancel_node_runs(msg, self._run_id)
 
     def invoke_tool(self, node: Node, f: Callable, kwargs):
         run_info = self._prepare_node_run(node, f, kwargs)
@@ -141,6 +145,14 @@ class FlowExecutionContext(ThreadLocalSingleton):
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
             flow_logger.info(f"Node {node.name} completes.")
             return result
+        # User tool should reraise the CancelledError after its own handling logic,
+        # so that the error can propagate to the scheduler for handling.
+        # Otherwise, the node would end with Completed status.
+        except asyncio.CancelledError as e:
+            logger.info(f"Node {node.name} in line {self._line_number} is canceled.")
+            traces = Tracer.end_tracing(node_run_id)
+            self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
+            raise
         except Exception as e:
             logger.exception(f"Node {node.name} in line {self._line_number} failed. Exception: {e}.")
             traces = Tracer.end_tracing(node_run_id)

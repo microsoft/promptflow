@@ -1,3 +1,7 @@
+---
+resources: examples/connections/azure_openai.yml, examples/flows/standard/web-classification
+---
+
 # Deploy flow using Azure App Service
 
 This example demos how to deploy a flow using Azure App Service.
@@ -44,7 +48,7 @@ Note that the `name` will produce a unique FQDN as AppName.azurewebsites.net.
 See the full parameters by `bash deploy.sh -h` or `.\deploy.ps1 -h`.
 
 ## View and test the web app
-The web app can be found via [azure portal](https://portal.azure.com/) 
+The web app can be found via [azure portal](https://portal.azure.com/)
 
 ![img](assets/azure_portal_img.png)
 

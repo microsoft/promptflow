@@ -59,6 +59,7 @@ class BaseTest(unittest.TestCase):
         connections=None,
         runtime=None,
         display_name="chat_run",
+        stream=True,
     ):
         if column_mapping is None:
             column_mapping = {
@@ -77,7 +78,7 @@ class BaseTest(unittest.TestCase):
             runtime=runtime,
             display_name=display_name,
             tags={"unittest": "true"},
-            stream=True,
+            stream=stream,
         )
         self.all_runs_generated.append(run)
         self.check_run_basics(run, display_name)

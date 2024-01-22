@@ -12,13 +12,13 @@ from pathlib import Path
 
 from jinja2 import Environment, Template, meta
 
-from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._constants import DEFAULT_ENCODING
 from promptflow._sdk.operations._flow_operations import FlowOperations
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.exceptions import UserErrorException
 
-logger = LoggerFactory.get_logger(LOGGER_NAME)
+logger = get_cli_sdk_logger()
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
 CHAT_FLOW_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "chat_flow" / "template"
 TOOL_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "package_tool"
@@ -39,7 +39,7 @@ class BaseGenerator(ABC):
 
     def generate(self) -> str:
         """Generate content based on given template and actual value of template keys."""
-        with open(self.tpl_file) as f:
+        with open(self.tpl_file, encoding=DEFAULT_ENCODING) as f:
             entry_template = f.read()
             entry_template = Template(entry_template, trim_blocks=True, lstrip_blocks=True)
 
@@ -50,7 +50,7 @@ class BaseGenerator(ABC):
         target = Path(target).resolve()
         action = "Overwriting" if target.exists() else "Creating"
         print(f"{action} {target.resolve()}...")
-        with open(target, "w", encoding="utf-8") as f:
+        with open(target, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(self.generate())
 
 
@@ -263,6 +263,23 @@ class StreamlitFileReplicator:
         return self.flow_dag_path.as_posix()
 
     @property
+    def chat_output_name(self):
+        try:
+            output_name = next(
+                filter(
+                    lambda key: self.executable.outputs[key].is_chat_output,
+                    self.executable.outputs.keys(),
+                )
+            )
+        except StopIteration:
+            output_name = None
+        return output_name
+
+    @property
+    def is_streaming(self):
+        return True if self.is_chat_flow else False
+
+    @property
     def entry_template_keys(self):
         return [
             "flow_name",
@@ -271,6 +288,8 @@ class StreamlitFileReplicator:
             "chat_history_input_name",
             "flow_inputs",
             "label",
+            "chat_output_name",
+            "is_streaming",
         ]
 
     def generate_to_file(self, target):

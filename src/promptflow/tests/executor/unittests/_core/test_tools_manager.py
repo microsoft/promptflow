@@ -4,18 +4,16 @@ from unittest.mock import patch
 
 import pytest
 from mock import MagicMock
-from ruamel.yaml import YAML
 
 from promptflow import tool
-from promptflow._core._errors import InputTypeMismatch, NotSupported, PackageToolNotFoundError
+from promptflow._core._errors import InputTypeMismatch, PackageToolNotFoundError
 from promptflow._core.tools_manager import (
     BuiltinsManager,
-    NodeSourcePathEmpty,
     ToolLoader,
     collect_package_tools,
     collect_package_tools_and_connections,
-    gen_tool_by_source,
 )
+from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
@@ -135,56 +133,12 @@ def sample_tool(input: str):
 
 @pytest.mark.unittest
 class TestToolsManager:
-    @pytest.mark.parametrize(
-        "tool_source, tool_type, error_code, error_message",
-        [
-            (
-                ToolSource(type=ToolSourceType.Package, tool="fake_name", path="fake_path"),
-                None,
-                PackageToolNotFoundError,
-                "Package tool 'fake_name' is not found in the current environment. "
-                f"Available package tools include: '{','.join(collect_package_tools().keys())}'. "
-                "Please ensure that the required tool package is installed in current environment.",
-            ),
-            (
-                ToolSource(tool="fake_name", path=None),
-                ToolType.PYTHON,
-                NodeSourcePathEmpty,
-                "Invalid node definitions found in the flow graph. The node 'fake_name' is missing its source path. "
-                "Please kindly add the source path for the node 'fake_name' in the YAML file "
-                "and try the operation again.",
-            ),
-            (
-                ToolSource(tool="fake_name", path=Path("test_tools_manager.py")),
-                ToolType.CUSTOM_LLM,
-                NotSupported,
-                "The tool type custom_llm is currently not supported for generating tools using source code. "
-                "Please choose from the available types: python,prompt,llm. "
-                "If you need further assistance, kindly contact support.",
-            ),
-        ],
-    )
-    def test_gen_tool_by_source_error(self, tool_source, tool_type, error_code, error_message):
-        working_dir = Path(__file__).parent
-        with pytest.raises(error_code) as ex:
-            gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
-        assert str(ex.value) == error_message
-
     def test_collect_package_tools_if_node_source_tool_is_legacy(self):
         legacy_node_source_tools = ["content_safety_text.tools.content_safety_text_tool.analyze_text"]
         package_tools = collect_package_tools(legacy_node_source_tools)
         assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
-        yaml = YAML()
-        yaml.preserve_quotes = True
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
         tools, specs, templates = collect_package_tools_and_connections(keys)
         assert len(tools) == 1
@@ -215,7 +169,7 @@ class TestToolsManager:
             "configs": {"api_base": "This is my first connection."},
             "secrets": {"api_key": "to_replace_with_api_key"},
         }
-        loaded_yaml = yaml.load(templates["my_tool_package.connections.MyFirstConnection"])
+        loaded_yaml = load_yaml_string(templates["my_tool_package.connections.MyFirstConnection"])
         assert loaded_yaml == expected_template
 
         keys = ["my_tool_package.tools.my_tool_with_custom_strong_type_connection.my_tool"]

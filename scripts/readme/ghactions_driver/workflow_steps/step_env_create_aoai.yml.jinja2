@@ -3,6 +3,8 @@
   run: |
     if [[ -e .env ]]; then
       pf connection create --file .env --name {{ connection_name }}
-      pf connection list
     fi
-    
+    if [[ -e azure_openai.yml ]]; then
+      pf connection create --file azure_openai.yml --name {{ connection_name }}
+    fi
+    pf connection list

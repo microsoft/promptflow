@@ -149,17 +149,22 @@ In this case, the `grades` value would be `["Correct", "Incorrect"]` and the acc
 
 
 ## How to log metrics
-
+:::{admonition} Limitation
+You can only log metrics in an `aggregation node`, otherwise the metric will be ignored.
+:::
 Promptflow supports logging and tracking experiments using `log_metric` function. A metric is a key-value pair that records a single float measure. In a python node, you can log a metric with below code: 
 
+
 ```python
+from typing import List
 from promptflow import log_metric, tool
 
 @tool
-def example_log_metrics():
-  metric_key = "accuracy"
-  metric_value = 1.0
-  log_metric(metric_key, metric_value)
+def example_log_metrics(grades: List[str]):
+    # this node is an aggregation node so it accepts a list of grades
+    metric_key = "accuracy"
+    metric_value = round((grades.count("Correct") / len(result)), 2)
+    log_metric(metric_key, metric_value)
 ```
 
 After the run is completed, you can run `pf run show-metrics -n <run_name>` to see the metrics.

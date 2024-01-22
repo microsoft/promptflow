@@ -4,7 +4,7 @@
 
 from jinja2 import TemplateSyntaxError
 
-from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class
+from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class, remove_suffix
 from promptflow.exceptions import (
     ErrorTarget,
     PromptflowException,
@@ -170,9 +170,31 @@ class LineExecutionTimeoutError(UserErrorException):
     """Exception raised when single line execution timeout"""
 
     def __init__(self, line_number, timeout):
+        self.timeout_sec = timeout
         super().__init__(
             message=f"Line {line_number} execution timeout for exceeding {timeout} seconds", target=ErrorTarget.EXECUTOR
         )
+
+
+class ProcessCrashError(UserErrorException):
+    """Exception raised when process crashed."""
+
+    def __init__(self, line_number):
+        super().__init__(message=f"Process crashed while executing line {line_number},", target=ErrorTarget.EXECUTOR)
+
+
+class ProcessTerminatedTimeout(SystemErrorException):
+    """Exception raised when process not terminated within a period of time."""
+
+    def __init__(self, timeout):
+        super().__init__(message=f"Process has not terminated after {timeout} seconds", target=ErrorTarget.EXECUTOR)
+
+
+class ProcessInfoObtainedTimeout(SystemErrorException):
+    """Exception raised when process info not obtained within a period of time."""
+
+    def __init__(self, timeout):
+        super().__init__(message=f"Failed to get process info after {timeout} seconds", target=ErrorTarget.EXECUTOR)
 
 
 class EmptyLLMApiMapping(UserErrorException):
@@ -198,26 +220,23 @@ class ResolveToolError(PromptflowException):
         super().__init__(target=target, module=module)
 
     @property
-    def message_format(self):
-        if self.inner_exception:
-            return "Tool load failed in '{node_name}': {error_type_and_message}"
-        else:
-            return "Tool load failed in '{node_name}'."
-
-    @property
-    def message_parameters(self):
-        error_type_and_message = None
+    def message(self):
         if self.inner_exception:
             error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
             if isinstance(self.inner_exception, TemplateSyntaxError):
                 error_type_and_message = (
                     f"Jinja parsing failed at line {self.inner_exception.lineno}: {error_type_and_message}"
                 )
+            return remove_suffix(self._message, ".") + f": {error_type_and_message}"
+        return self._message
 
-        return {
-            "node_name": self._node_name,
-            "error_type_and_message": error_type_and_message,
-        }
+    @property
+    def message_format(self):
+        return "Tool load failed in '{node_name}'."
+
+    @property
+    def message_parameters(self):
+        return {"node_name": self._node_name}
 
     @property
     def additional_info(self):
@@ -240,3 +259,7 @@ class ResolveToolError(PromptflowException):
         if self.inner_exception:
             return ExceptionPresenter.create(self.inner_exception).error_codes
         return [infer_error_code_from_class(SystemErrorException), self.__class__.__name__]
+
+
+class UnsupportedAssistantToolType(ValidationException):
+    pass

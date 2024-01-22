@@ -15,9 +15,9 @@ import pydash
 import strictyaml
 from marshmallow import ValidationError
 
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 
-module_logger = LoggerFactory.get_logger(__name__)
+logger = get_cli_sdk_logger()
 
 
 class _ValidationStatus:
@@ -36,7 +36,7 @@ class _ValidationStatus:
 class Diagnostic(object):
     """Represents a diagnostic of an asset validation error with the location info."""
 
-    def __init__(self, yaml_path: str, message: str, error_code: str) -> None:
+    def __init__(self, yaml_path: str, message: str, error_code: str, **kwargs) -> None:
         """Init Diagnostic.
 
         :keyword yaml_path: A dash path from root to the target element of the diagnostic.
@@ -50,6 +50,11 @@ class Diagnostic(object):
         self.message = message
         self.error_code = error_code
         self.local_path, self.value = None, None
+        self._key = kwargs.pop("key", "yaml_path")
+        # Set extra info to attribute
+        for k, v in kwargs.items():
+            if not k.startswith("_"):
+                setattr(self, k, v)
 
     def __repr__(self) -> str:
         """The asset friendly name and error message.
@@ -57,7 +62,7 @@ class Diagnostic(object):
         :return: The formatted diagnostic
         :rtype: str
         """
-        return "{}: {}".format(self.yaml_path, self.message)
+        return "{}: {}".format(getattr(self, self._key), self.message)
 
     @classmethod
     def create_instance(
@@ -65,6 +70,7 @@ class Diagnostic(object):
         yaml_path: str,
         message: Optional[str] = None,
         error_code: Optional[str] = None,
+        **kwargs,
     ):
         """Create a diagnostic instance.
 
@@ -81,6 +87,7 @@ class Diagnostic(object):
             yaml_path=yaml_path,
             message=message,
             error_code=error_code,
+            **kwargs,
         )
 
 
@@ -95,6 +102,13 @@ class ValidationResult(object):
         self._target_obj = None
         self._errors = []
         self._warnings = []
+        self._kwargs = {}
+
+    def _set_extra_info(self, key, value):
+        self._kwargs[key] = value
+
+    def _get_extra_info(self, key, default=None):
+        return self._kwargs.get(key, default)
 
     @property
     def error_messages(self) -> Dict:
@@ -107,10 +121,11 @@ class ValidationResult(object):
         """
         messages = {}
         for diagnostic in self._errors:
-            if diagnostic.yaml_path not in messages:
-                messages[diagnostic.yaml_path] = diagnostic.message
+            message_key = getattr(diagnostic, diagnostic._key)
+            if message_key not in messages:
+                messages[message_key] = diagnostic.message
             else:
-                messages[diagnostic.yaml_path] += "; " + diagnostic.message
+                messages[message_key] += "; " + diagnostic.message
         return messages
 
     @property
@@ -126,6 +141,7 @@ class ValidationResult(object):
         result = {
             "result": _ValidationStatus.SUCCEEDED if self.passed else _ValidationStatus.FAILED,
         }
+        result.update(self._kwargs)
         for diagnostic_type, diagnostics in [
             ("errors", self._errors),
             ("warnings", self._warnings),
@@ -139,6 +155,10 @@ class ValidationResult(object):
                 }
                 if diagnostic.local_path:
                     message["location"] = str(diagnostic.local_path)
+                for attr in dir(diagnostic):
+                    if attr not in message and not attr.startswith("_") and not callable(getattr(diagnostic, attr)):
+                        message[attr] = getattr(diagnostic, attr)
+                message = {k: v for k, v in message.items() if v is not None}
                 messages.append(message)
             if messages:
                 result[diagnostic_type] = messages
@@ -234,7 +254,7 @@ class MutableValidationResult(ValidationResult):
             return self
 
         if self._warnings:
-            module_logger.warning("Warnings: %s" % str(self._warnings))
+            logger.warning("Schema validation warnings: %s" % str(self._warnings))
 
         if not self.passed:
             if error_func is None:
@@ -244,7 +264,7 @@ class MutableValidationResult(ValidationResult):
 
             raise error_func(
                 self.__repr__(),
-                "validation failed on the following fields: " + ", ".join(self.error_messages),
+                f"Schema validation failed: {self.error_messages}",
             )
         return self
 
@@ -253,6 +273,7 @@ class MutableValidationResult(ValidationResult):
         yaml_path: str = "*",
         message: Optional[str] = None,
         error_code: Optional[str] = None,
+        **kwargs,
     ):
         """Append an error to the validation result.
 
@@ -270,6 +291,7 @@ class MutableValidationResult(ValidationResult):
                 yaml_path=yaml_path,
                 message=message,
                 error_code=error_code,
+                **kwargs,
             )
         )
         return self
@@ -298,6 +320,7 @@ class MutableValidationResult(ValidationResult):
         yaml_path: str = "*",
         message: Optional[str] = None,
         error_code: Optional[str] = None,
+        **kwargs,
     ):
         """Append a warning to the validation result.
 
@@ -315,6 +338,7 @@ class MutableValidationResult(ValidationResult):
                 yaml_path=yaml_path,
                 message=message,
                 error_code=error_code,
+                **kwargs,
             )
         )
         return self
@@ -486,7 +510,7 @@ class _YamlLocationResolver:
                 loaded_yaml = strictyaml.load(f.read())
             except Exception as e:  # pylint: disable=broad-except
                 msg = "Can't load source file %s as a strict yaml:\n%s" % (source_path, str(e))
-                module_logger.debug(msg)
+                logger.debug(msg)
                 return None, None
 
         while attrs:

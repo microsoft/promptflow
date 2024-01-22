@@ -13,6 +13,7 @@ Manage prompt flow resources with the prompt flow CLI.
 | [pf run](#pf-run)               | Manage runs.                    |
 | [pf tool](#pf-tool)             | Init or list tools.             |
 | [pf config](#pf-config)         | Manage config for current user. |
+| [pf upgrade](#pf-upgrade)       | Upgrade prompt flow CLI.        |
 
 ## pf flow
 
@@ -260,6 +261,7 @@ pf flow serve --source
               [--environment-variables]
               [--verbose]
               [--debug]
+              [--skip-open-browser]
 ```
 
 #### Examples
@@ -303,6 +305,10 @@ Show more details for each step during serve.
 `--debug`
 
 Show debug information during serve.
+
+`--skip-open-browser`
+
+Skip opening browser after serve. Store true parameter.
 
 ## pf connection
 
@@ -459,6 +465,7 @@ pf run create [--file]
               [--environment-variables]
               [--connections]
               [--set]
+              [--source]
 ```
 
 #### Examples
@@ -469,10 +476,22 @@ Create a run with YAML file.
 pf run create -f <yaml-filename>
 ```
 
+Create a run with YAML file and replace another data in the YAML file.
+
+```bash
+pf run create -f <yaml-filename> --data <path-to-new-data-file-relative-to-yaml-file>
+```
+
 Create a run from flow directory and reference a run.
 
 ```bash
 pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant '${summarize_text_content.variant_0}' --stream
+```
+
+Create a run from an existing run record folder.
+
+```bash
+pf run create --source <path-to-run-folder>
 ```
 
 #### Optional Parameters
@@ -483,11 +502,11 @@ Local path to the YAML file containing the prompt flow run specification; can be
 
 `--flow`
 
-Local path to the flow directory.
+Local path to the flow directory. If --file is provided, this path should be relative path to the file.
 
 `--data`
 
-Local path to the data file.
+Local path to the data file. If --file is provided, this path should be relative path to the file.
 
 `--column-mapping`
 
@@ -522,6 +541,10 @@ Example: `--connections node1.connection=test_llm_connection node1.deployment_na
 
 Update an object by specifying a property path and value to set.
 Example: `--set property1.property2=<value>`.
+
+`--source`
+
+Local path to the existing run record folder.
 
 ### pf run update
 
@@ -691,6 +714,7 @@ Manage promptflow tools.
 | --- | --- |
 | [pf tool init](#pf-tool-init) | Initialize a tool directory. |
 | [pf tool list](#pf-tool-list) | List all tools in the environment. |
+| [pf tool validate](#pf-tool-validate) | Validate tools. |
 
 ### pf tool init
 
@@ -770,6 +794,39 @@ pf tool list --flow <path-to-flow-direcotry>
 
 The flow directory.
 
+### pf tool validate
+
+Validate tool.
+
+```bash
+pf tool validate --source
+```
+
+#### Examples
+
+Validate single function tool.
+
+```bash
+pf tool validate -–source <package-name>.<module-name>.<tool-function>
+```
+
+Validate all tool in a package tool.
+
+```bash
+pf tool validate -–source <package-name>
+```
+
+Validate tools in a python script.
+
+```bash
+pf tool validate --source <path-to-tool-script>
+```
+
+#### Required Parameter
+
+`--source`
+
+The tool source to be used.
 
 
 ## pf config
@@ -811,4 +868,20 @@ Show prompt flow for current user.
 
 ```bash
 pf config show
+```
+
+## pf upgrade
+
+Upgrade prompt flow CLI.
+
+| Command                     | Description                 |
+|-----------------------------|-----------------------------|
+| [pf upgrade](#pf-upgrade)   | Upgrade prompt flow CLI.    |
+
+### Examples
+
+Upgrade prompt flow without prompt and run non-interactively.
+
+```bash
+pf upgrade --yes
 ```

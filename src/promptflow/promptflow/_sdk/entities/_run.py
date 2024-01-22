@@ -5,7 +5,6 @@
 import datetime
 import functools
 import json
-import logging
 import uuid
 from os import PathLike
 from pathlib import Path
@@ -16,10 +15,10 @@ from dateutil import parser as date_parser
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    DEFAULT_ENCODING,
     DEFAULT_VARIANT,
     FLOW_DIRECTORY_MACRO_IN_CONFIG,
     FLOW_RESOURCE_ID_PREFIX,
-    LOGGER_NAME,
     PARAMS_OVERRIDE_KEY,
     PROMPT_FLOW_DIR_NAME,
     REGISTRY_URI_PREFIX,
@@ -28,6 +27,7 @@ from promptflow._sdk._constants import (
     TIMESTAMP_MACRO,
     VARIANT_ID_MACRO,
     AzureRunTypes,
+    DownloadedRun,
     FlowRunProperties,
     RestRunTypes,
     RunDataKeys,
@@ -46,6 +46,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.exceptions import UserErrorException
 
 AZURE_RUN_TYPE_2_RUN_TYPE = {
@@ -59,6 +60,9 @@ REST_RUN_TYPE_2_RUN_TYPE = {
     RestRunTypes.EVALUATION: RunTypes.EVALUATION,
     RestRunTypes.PAIRWISE_EVALUATE: RunTypes.PAIRWISE_EVALUATE,
 }
+
+
+logger = get_cli_sdk_logger()
 
 
 class Run(YAMLTranslatableMixin):
@@ -102,7 +106,7 @@ class Run(YAMLTranslatableMixin):
 
     def __init__(
         self,
-        flow: Union[Path, str],
+        flow: Optional[Union[Path, str]] = None,
         name: Optional[str] = None,
         # input fields are optional since it's not stored in DB
         data: Optional[str] = None,
@@ -120,6 +124,7 @@ class Run(YAMLTranslatableMixin):
         environment_variables: Optional[Dict[str, str]] = None,
         connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
+        source: Optional[Union[Path, str]] = None,
         **kwargs,
     ):
         # TODO: remove when RUN CRUD don't depend on this
@@ -136,6 +141,7 @@ class Run(YAMLTranslatableMixin):
         self.environment_variables = environment_variables or {}
         self.connections = connections or {}
         self._properties = properties or {}
+        self.source = source
         self._is_archived = kwargs.get("is_archived", False)
         self._run_source = kwargs.get("run_source", RunInfoSources.LOCAL)
         self._start_time = start_time
@@ -150,10 +156,10 @@ class Run(YAMLTranslatableMixin):
         self._lineage_id = None
         if self._use_remote_flow:
             self._flow_name = parse_remote_flow_pattern(flow)
-            self._experiment_name = self._flow_name
             self._lineage_id = self._flow_name
         # default run name: flow directory name + timestamp
         self.name = name or self._generate_run_name()
+        experiment_name = kwargs.get("experiment_name", None)
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
             self.flow = Path(flow).resolve().absolute()
             flow_dir = self._get_flow_dir()
@@ -166,13 +172,13 @@ class Run(YAMLTranslatableMixin):
             self._flow_name = flow_dir.name
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
-            self._experiment_name = kwargs.get("experiment_name", None)
+            self._experiment_name = experiment_name
         elif self._run_source == RunInfoSources.RUN_HISTORY:
             self._error = kwargs.get("error", None)
-            self._data_portal_url = kwargs.get("data_portal_url", None)
-            self._input_run_portal_url = kwargs.get("input_run_portal_url", None)
             self._output = kwargs.get("output", None)
-            self._output_portal_url = kwargs.get("output_portal_url", None)
+        elif self._run_source == RunInfoSources.EXISTING_RUN:
+            # when the run is created from an existing run folder, the output path is also the source path
+            self._output_path = Path(source)
         self._runtime = kwargs.get("runtime", None)
         self._resources = kwargs.get("resources", None)
 
@@ -186,6 +192,7 @@ class Run(YAMLTranslatableMixin):
 
     @property
     def properties(self) -> Dict[str, str]:
+        result = {}
         if self._run_source == RunInfoSources.LOCAL:
             # show posix path to avoid windows path escaping
             result = {
@@ -197,18 +204,32 @@ class Run(YAMLTranslatableMixin):
                 result[FlowRunProperties.RUN] = run_name
             if self.variant:
                 result[FlowRunProperties.NODE_VARIANT] = self.variant
-            return {
-                **result,
-                **self._properties,
+        elif self._run_source == RunInfoSources.EXISTING_RUN:
+            result = {
+                FlowRunProperties.OUTPUT_PATH: Path(self.source).resolve().as_posix(),
             }
-        return self._properties
+
+        return {
+            **result,
+            **self._properties,
+        }
 
     @classmethod
     def _from_orm_object(cls, obj: ORMRun) -> "Run":
         properties_json = json.loads(str(obj.properties))
+        flow = properties_json.get(FlowRunProperties.FLOW_PATH, None)
+
+        # there can be two sources for orm run object:
+        # 1. LOCAL: Created when run is created from local flow
+        # 2. EXISTING_RUN: Created when run is created from existing run folder
+        source = None
+        if getattr(obj, "run_source", None) == RunInfoSources.EXISTING_RUN:
+            source = properties_json[FlowRunProperties.OUTPUT_PATH]
+
         return Run(
             name=str(obj.name),
-            flow=Path(properties_json[FlowRunProperties.FLOW_PATH]),
+            flow=Path(flow) if flow else None,
+            source=Path(source) if source else None,
             output_path=properties_json[FlowRunProperties.OUTPUT_PATH],
             run=properties_json.get(FlowRunProperties.RUN, None),
             variant=properties_json.get(FlowRunProperties.NODE_VARIANT, None),
@@ -222,11 +243,14 @@ class Run(YAMLTranslatableMixin):
             status=str(obj.status),
             data=Path(obj.data).resolve().absolute().as_posix() if obj.data else None,
             properties={FlowRunProperties.SYSTEM_METRICS: properties_json.get(FlowRunProperties.SYSTEM_METRICS, {})},
+            # compatible with old runs, their run_source is empty, treat them as local
+            run_source=obj.run_source or RunInfoSources.LOCAL,
         )
 
     @classmethod
     def _from_index_service_entity(cls, run_entity: dict) -> "Run":
         """Convert run entity from index service to run object."""
+        # TODO(2887134): support cloud eager Run CRUD
         start_time = run_entity["properties"].get("startTime", None)
         end_time = run_entity["properties"].get("endTime", None)
         duration = run_entity["properties"].get("duration", None)
@@ -246,7 +270,6 @@ class Run(YAMLTranslatableMixin):
             start_time=date_parser.parse(start_time) if start_time else None,
             end_time=date_parser.parse(end_time) if end_time else None,
             duration=duration,
-            portal_url=run_entity[RunDataKeys.PORTAL_URL],
             creation_context=run_entity["properties"]["creationContext"],
             experiment_name=run_entity["properties"]["experimentName"],
         )
@@ -254,6 +277,7 @@ class Run(YAMLTranslatableMixin):
     @classmethod
     def _from_run_history_entity(cls, run_entity: dict) -> "Run":
         """Convert run entity from run history service to run object."""
+        # TODO(2887134): support cloud eager Run CRUD
         flow_name = run_entity["properties"].get("azureml.promptflow.flow_name", None)
         start_time = run_entity.get("startTimeUtc", None)
         end_time = run_entity.get("endTimeUtc", None)
@@ -277,11 +301,8 @@ class Run(YAMLTranslatableMixin):
             portal_url=run_entity[RunDataKeys.PORTAL_URL],
             creation_context=run_entity["createdBy"],
             data=run_entity[RunDataKeys.DATA],
-            data_portal_url=run_entity[RunDataKeys.DATA_PORTAL_URL],
             run=run_entity[RunDataKeys.RUN],
-            input_run_portal_url=run_entity[RunDataKeys.INPUT_RUN_PORTAL_URL],
             output=run_entity[RunDataKeys.OUTPUT],
-            output_portal_url=run_entity[RunDataKeys.OUTPUT_PORTAL_URL],
         )
 
     @classmethod
@@ -313,13 +334,20 @@ class Run(YAMLTranslatableMixin):
             tags=json.dumps(self.tags) if self.tags else None,
             properties=json.dumps(self.properties),
             data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
+            run_source=self._run_source,
         )
 
     def _dump(self) -> None:
         """Dump current run entity to local DB."""
         self._to_orm_object().dump()
 
-    def _to_dict(self):
+    def _to_dict(
+        self,
+        *,
+        exclude_additional_info: bool = False,
+        exclude_debug_info: bool = False,
+        exclude_properties: bool = False,
+    ):
         from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
         properties = self.properties
@@ -348,6 +376,10 @@ class Run(YAMLTranslatableMixin):
             # add exception part if any
             exception_dict = local_storage.load_exception()
             if exception_dict:
+                if exclude_additional_info:
+                    exception_dict.pop("additionalInfo", None)
+                if exclude_debug_info:
+                    exception_dict.pop("debugInfo", None)
                 result["error"] = exception_dict
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             result["creation_context"] = self._creation_context
@@ -363,14 +395,20 @@ class Run(YAMLTranslatableMixin):
             result["duration"] = self._duration
             result[RunDataKeys.PORTAL_URL] = self._portal_url
             result[RunDataKeys.DATA] = self.data
-            result[RunDataKeys.DATA_PORTAL_URL] = self._data_portal_url
             result[RunDataKeys.OUTPUT] = self._output
-            result[RunDataKeys.OUTPUT_PORTAL_URL] = self._output_portal_url
             if self.run:
                 result[RunDataKeys.RUN] = self.run
-                result[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._input_run_portal_url
             if self._error:
                 result["error"] = self._error
+                if exclude_additional_info:
+                    result["error"]["error"].pop("additionalInfo", None)
+                if exclude_debug_info:
+                    result["error"]["error"].pop("debugInfo", None)
+
+        # hide properties when needed (e.g. list remote runs)
+        if exclude_properties is True:
+            result.pop("properties", None)
+
         return result
 
     @classmethod
@@ -381,6 +419,8 @@ class Run(YAMLTranslatableMixin):
         params_override: Optional[list] = None,
         **kwargs,
     ):
+        from marshmallow import INCLUDE
+
         data = data or {}
         params_override = params_override or []
         context = {
@@ -391,6 +431,7 @@ class Run(YAMLTranslatableMixin):
             data=data,
             context=context,
             additional_message="Failed to load flow run",
+            unknown=INCLUDE,
             **kwargs,
         )
         if yaml_path:
@@ -454,6 +495,7 @@ class Run(YAMLTranslatableMixin):
         from promptflow.azure._restclient.flow.models import (
             BatchDataInput,
             RunDisplayNameGenerationType,
+            SessionSetupModeEnum,
             SubmitBulkRunRequest,
         )
 
@@ -489,6 +531,18 @@ class Run(YAMLTranslatableMixin):
                         )
                     inputs_mapping[k] = val
 
+        # parse resources
+        if self._resources is not None:
+            if not isinstance(self._resources, dict):
+                raise TypeError(f"resources should be a dict, got {type(self._resources)} for {self._resources}")
+            vm_size = self._resources.get("instance_type", None)
+            max_idle_time_minutes = self._resources.get("idle_time_before_shutdown_minutes", None)
+            # change to seconds
+            max_idle_time_seconds = max_idle_time_minutes * 60 if max_idle_time_minutes else None
+        else:
+            vm_size = None
+            max_idle_time_seconds = None
+
         # use functools.partial to avoid too many arguments that have the same values
         common_submit_bulk_run_request = functools.partial(
             SubmitBulkRunRequest,
@@ -508,6 +562,9 @@ class Run(YAMLTranslatableMixin):
             connections=self.connections,
             flow_lineage_id=self._lineage_id,
             run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
+            vm_size=vm_size,
+            max_idle_time_seconds=max_idle_time_seconds,
+            session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):
@@ -603,5 +660,35 @@ class Run(YAMLTranslatableMixin):
                     f"{config.get_run_output_path()!r}; "
                     f"will use default output path: {path!r} instead."
                 )
-                logging.getLogger(LOGGER_NAME).warning(warning_message)
+                logger.warning(warning_message)
         return (path / str(self.name)).resolve()
+
+    @classmethod
+    def _load_from_source(cls, source: Union[str, Path], params_override: Optional[Dict] = None, **kwargs) -> "Run":
+        """Load run from run record source folder."""
+        source = Path(source)
+        params_override = params_override or {}
+
+        run_metadata_file = source / DownloadedRun.RUN_METADATA_FILE_NAME
+        if not run_metadata_file.exists():
+            raise UserErrorException(
+                f"Invalid run source: {source!r}. Expecting a valid run source folder with {run_metadata_file!r}. "
+                f"Please make sure the run source is downloaded by 'pfazure run download' command."
+            )
+        # extract run info from source folder
+        with open(source / DownloadedRun.RUN_METADATA_FILE_NAME, encoding=DEFAULT_ENCODING) as f:
+            run_info = json.load(f)
+
+        return cls(
+            name=run_info["name"],
+            source=source,
+            run_source=RunInfoSources.EXISTING_RUN,
+            status=run_info["status"],  # currently only support completed run
+            display_name=params_override.get("display_name", run_info.get("display_name", source.name)),
+            description=params_override.get("description", run_info.get("description", "")),
+            tags=params_override.get("tags", run_info.get("tags", {})),
+            created_on=datetime.datetime.fromisoformat(run_info["created_on"]),
+            start_time=datetime.datetime.fromisoformat(run_info["start_time"]),
+            end_time=datetime.datetime.fromisoformat(run_info["end_time"]),
+            **kwargs,
+        )

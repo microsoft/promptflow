@@ -1,25 +1,26 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import logging
 import os
 from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
-from .._utils.logger_utils import LoggerFactory
+from .. import load_flow
+from .._utils.logger_utils import get_cli_sdk_logger
 from ._configuration import Configuration
-from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
+from ._constants import MAX_SHOW_DETAILS_RESULTS
 from ._user_agent import USER_AGENT
-from ._utils import setup_user_agent_to_operation_context
+from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
+from .entities._eager_flow import EagerFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
+from .operations._experiment_operations import ExperimentOperations
 from .operations._flow_operations import FlowOperations
-from .operations._local_azure_connection_operations import LocalAzureConnectionOperations
 from .operations._tool_operations import ToolOperations
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
+logger = get_cli_sdk_logger()
 
 
 def _create_run(run: Run, **kwargs):
@@ -39,6 +40,10 @@ class PFClient:
         self._connections = None
         self._flows = FlowOperations(client=self)
         self._tools = ToolOperations()
+        # add user agent from kwargs if any
+        if isinstance(kwargs.get("user_agent"), str):
+            ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
+        self._experiments = ExperimentOperations(self)
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
@@ -111,7 +116,14 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-
+        # TODO(2901096): Support pf run with python file, maybe create a temp flow.dag.yaml in this case
+        # load flow object for validation and early failure
+        flow_obj = load_flow(source=flow)
+        # validate param conflicts
+        if isinstance(flow_obj, EagerFlow):
+            if variant or connections:
+                logger.warning("variant and connections are not supported for eager flow, will be ignored")
+                variant, connections = None, None
         run = Run(
             name=name,
             display_name=display_name,
@@ -183,6 +195,11 @@ class PFClient:
         """Run operations that can manage runs."""
         return self._runs
 
+    @property
+    def tools(self) -> ToolOperations:
+        """Tool operations that can manage tools."""
+        return self._tools
+
     def _ensure_connection_provider(self) -> str:
         if not self._connection_provider:
             # Get a copy with config override instead of the config instance
@@ -195,14 +212,7 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             self._ensure_connection_provider()
-            if self._connection_provider == ConnectionProvider.LOCAL.value:
-                logger.debug("PFClient using local connection operations.")
-                self._connections = ConnectionOperations()
-            elif self._connection_provider.startswith(ConnectionProvider.AZUREML.value):
-                logger.debug("PFClient using local azure connection operations.")
-                self._connections = LocalAzureConnectionOperations(self._connection_provider)
-            else:
-                raise ValueError(f"Unsupported connection provider: {self._connection_provider}")
+            self._connections = get_connection_operation(self._connection_provider)
         return self._connections
 
     @property

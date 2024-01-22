@@ -3,11 +3,15 @@
 # ---------------------------------------------------------
 
 import argparse
+import datetime
+import importlib
+import json
 import os
 import shutil
 import sys
 import tempfile
 import threading
+import time
 from pathlib import Path
 from unittest.mock import patch
 
@@ -21,8 +25,10 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
+from promptflow._constants import LAST_CHECK_TIME, PF_VERSION_CHECK
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PROMPT_FLOW_HOME_DIR_ENV_VAR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
+from promptflow._sdk._telemetry.logging_handler import get_scrubbed_cloud_role
 from promptflow._sdk._utils import (
     _generate_connections_dir,
     decrypt_secret_value,
@@ -34,6 +40,7 @@ from promptflow._sdk._utils import (
     snake_to_camel,
 )
 from promptflow._utils.load_data import load_data
+from promptflow._utils.version_hint_utils import check_latest_version
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -197,6 +204,33 @@ class TestUtils:
         for thread in threads:
             thread.join()
 
+    def test_concurrent_hint_for_update(self):
+        def mock_check_latest_version():
+            time.sleep(5)
+            check_latest_version()
+
+        with patch("promptflow._utils.version_hint_utils.datetime") as mock_datetime, patch(
+            "promptflow._utils.version_hint_utils.check_latest_version", side_effect=mock_check_latest_version
+        ):
+            from promptflow._sdk._telemetry import monitor_operation
+
+            class HintForUpdate:
+                @monitor_operation(activity_name="pf.flows.test")
+                def hint_func(self):
+                    return
+
+            current_time = datetime.datetime.now()
+            mock_datetime.datetime.now.return_value = current_time
+            mock_datetime.datetime.strptime.return_value = current_time - datetime.timedelta(days=8)
+            mock_datetime.timedelta.return_value = datetime.timedelta(days=7)
+            HintForUpdate().hint_func()
+            assert Path(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK).exists()
+            with open(HOME_PROMPT_FLOW_DIR / PF_VERSION_CHECK, "r") as f:
+                cached_versions = json.load(f)
+            # since mock_check_latest_version is a demon thread, it will exit when main thread complete, so
+            # LAST_CHECK_TIME won't be updated since sleep 5s
+            assert LAST_CHECK_TIME not in cached_versions or cached_versions[LAST_CHECK_TIME] != str(current_time)
+
     @pytest.mark.parametrize(
         "data_path",
         [
@@ -238,8 +272,59 @@ class TestUtils:
         df = load_data(data_path)
         assert len(df) == 10000
         # specify max_rows_count
-        df = load_data(data_path, max_rows_count=5000)
-        assert len(df) == 5000
+        max_rows_count = 5000
+        head_rows = load_data(data_path, max_rows_count=max_rows_count)
+        assert len(head_rows) == max_rows_count
+        assert head_rows == df[:max_rows_count]
+
+    @pytest.mark.parametrize(
+        "script_name, expected_result",
+        [
+            ("pfs", "pfs"),
+            ("pfutil.py", "pfutil.py"),
+            ("pf", "pf"),
+            ("pfazure", "pfazure"),
+            ("pf.exe", "pf.exe"),
+            ("pfazure.exe", "pfazure.exe"),
+            ("app.py", "app.py"),
+            ("python -m unittest", "python -m unittest"),
+            ("pytest", "pytest"),
+            ("gunicorn", "gunicorn"),
+            ("ipykernel_launcher.py", "ipykernel_launcher.py"),
+            ("jupyter-notebook", "jupyter-notebook"),
+            ("jupyter-lab", "jupyter-lab"),
+            ("python", "python"),
+            ("Unknown Application", "Unknown Application"),
+            ("unknown_script.py", "***.py"),
+            ("path/to/unknown_script.py", "***.py"),
+            (r"path\to\unknown_script.py", "***.py"),
+            ('invalid_chars_\\/:*?"<>|', "***"),
+        ],
+    )
+    def test_get_scrubbed_cloud_role(self, script_name, expected_result):
+        with mock.patch("sys.argv", [script_name]):
+            assert get_scrubbed_cloud_role() == expected_result
+
+    def test_configure_pf_home_dir(self, tmpdir) -> None:
+        from promptflow._sdk import _constants
+
+        custom_pf_home_dir_path = Path(tmpdir / ".promptflow").resolve()
+        assert not custom_pf_home_dir_path.exists()
+        with patch.dict(os.environ, {PROMPT_FLOW_HOME_DIR_ENV_VAR: custom_pf_home_dir_path.as_posix()}):
+            importlib.reload(_constants)
+            assert _constants.HOME_PROMPT_FLOW_DIR.as_posix() == custom_pf_home_dir_path.as_posix()
+            assert _constants.HOME_PROMPT_FLOW_DIR.is_dir()
+        importlib.reload(_constants)
+
+    def test_configure_pf_home_dir_with_invalid_path(self) -> None:
+        from promptflow._sdk import _constants
+
+        invalid_path = "/invalid:path"
+        with patch.dict(os.environ, {PROMPT_FLOW_HOME_DIR_ENV_VAR: invalid_path}):
+            assert os.getenv(PROMPT_FLOW_HOME_DIR_ENV_VAR) == invalid_path
+            importlib.reload(_constants)
+            assert _constants.HOME_PROMPT_FLOW_DIR.as_posix() == (Path.home() / ".promptflow").resolve().as_posix()
+        importlib.reload(_constants)
 
 
 @pytest.mark.unittest
@@ -303,3 +388,47 @@ class TestCLIUtils:
         terminal_width = 120
         res = _calculate_column_widths(df, terminal_width)
         assert res == [4, 23, 13, 15, 15, 15]
+
+    def test_calculate_column_widths_edge_case(self) -> None:
+        nan = float("nan")
+        # test case comes from examples/flow/evaluation/eval-qna-non-rag
+        data = [
+            {
+                "inputs.groundtruth": "The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m",
+                "inputs.answer": "There are various tents available in the market that offer different levels of waterproofing. However, one tent that is often highly regarded for its waterproofing capabilities is the MSR Hubba Hubba NX tent. It features a durable rainfly and a bathtub-style floor construction, both of which contribute to its excellent water resistance. It is always recommended to read product specifications and customer reviews to ensure you find a tent that meets your specific waterproofing requirements.",  # noqa: E501
+                "inputs.context": "{${data.context}}",
+                "inputs.question": "Which tent is the most waterproof?",
+                "inputs.metrics": "gpt_groundedness,f1_score",
+                "inputs.line_number": 0,
+                "inputs.ground_truth": "The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m",
+                "outputs.line_number": 0,
+                "outputs.ada_similarity": nan,
+                "outputs.f1_score": 0.049999999999999996,
+                "outputs.gpt_coherence": nan,
+                "outputs.gpt_fluency": nan,
+                "outputs.gpt_groundedness": 3.0,
+                "outputs.gpt_relevance": nan,
+                "outputs.gpt_similarity": nan,
+            },
+            {
+                "inputs.groundtruth": "The Adventure Dining Table has a higher weight capacity than all of the other camping tables mentioned",  # noqa: E501
+                "inputs.answer": "There are various camping tables available that can hold different amounts of weight. Some heavy-duty camping tables can hold up to 300 pounds or more, while others may have lower weight capacities. It's important to check the specifications of each table before purchasing to ensure it can support the weight you require.",  # noqa: E501
+                "inputs.context": "{${data.context}}",
+                "inputs.question": "Which tent is the most waterproof?",
+                "inputs.metrics": "gpt_groundedness,f1_score",
+                "inputs.ground_truth": "The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m",
+                "outputs.line_number": 1,
+                "outputs.ada_similarity": nan,
+                "outputs.f1_score": 0.0,
+                "outputs.gpt_coherence": nan,
+                "outputs.gpt_fluency": nan,
+                "outputs.gpt_groundedness": 3.0,
+                "outputs.gpt_relevance": nan,
+                "outputs.gpt_similarity": nan,
+            },
+        ]
+        df = pd.DataFrame(data)
+        terminal_width = 74  # GitHub Actions scenario
+        res = _calculate_column_widths(df, terminal_width)
+        # the column width should at least 1 to avoid tabulate error
+        assert res == [4, 1, 13, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]

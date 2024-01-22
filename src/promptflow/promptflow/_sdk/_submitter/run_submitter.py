@@ -6,7 +6,7 @@
 import datetime
 from pathlib import Path
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
@@ -17,8 +17,9 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
+from ... import load_flow
 from ..._utils.logger_utils import LoggerFactory
 from .utils import SubmitterHelper, variant_overwrite_context
 
@@ -46,41 +47,47 @@ class RunSubmitter:
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
             elif not isinstance(run.run, Run):
-                raise TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+                error = TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+                raise UserErrorException(message=str(error), error=error)
             else:
                 # get the run again to make sure it's status is latest
                 run.run = self.run_operations.get(name=run.run.name)
             if run.run.status != Status.Completed.value:
-                raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
+                error = ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
+                raise UserErrorException(message=str(error), error=error)
             run.run.outputs = self.run_operations._get_outputs(run.run)
-        if not run.run and not run.data:
-            raise ValueError("Either run or data must be specified for flow run.")
+        self._validate_inputs(run=run)
 
-        # running specified variant
-        with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-            local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
-            with local_storage.logger:
-                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+        local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
+        with local_storage.logger:
+            if local_storage.eager_mode:
+                flow_obj = load_flow(source=run.flow)
+                self._submit_bulk_run(flow=flow_obj, run=run, local_storage=local_storage)
+            else:
+                # running specified variant
+                with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
+                    self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+
+    @classmethod
+    def _validate_inputs(cls, run: Run):
+        if not run.run and not run.data:
+            error = ValidationException("Either run or data must be specified for flow run.")
+            raise UserErrorException(message=str(error), error=error)
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
-        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+        if flow.language == FlowLanguage.CSharp:
             connections = []
         else:
             with _change_working_dir(flow.code):
                 connections = SubmitterHelper.resolve_connections(flow=flow)
         column_mapping = run.column_mapping
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
+        run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
+            flow=flow, environment_variables=run.environment_variables
+        )
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
-        batch_engine = BatchEngine(
-            flow.path,
-            flow.code,
-            connections=connections,
-            storage=local_storage,
-            log_path=local_storage.logger.file_path,
-        )
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
@@ -90,27 +97,41 @@ class RunSubmitter:
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
+            batch_engine = BatchEngine(
+                flow.path,
+                flow.code,
+                connections=connections,
+                storage=local_storage,
+                log_path=local_storage.logger.file_path,
+            )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
                 output_dir=local_storage.outputs_folder,
                 run_id=run_id,
             )
-
+            error_logs = []
             if batch_result.failed_lines > 0:
                 # Log warning message when there are failed line run in bulk run.
-                error_log = f"{batch_result.failed_lines} out of {batch_result.total_lines} runs failed in batch run."
-                if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
-                    error_log = (
-                        error_log
-                        + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
-                    )
-                logger.warning(error_log)
+                error_logs.append(
+                    f"{batch_result.failed_lines} out of {batch_result.total_lines} runs failed in batch run."
+                )
+            if batch_result.error_summary.aggr_error_dict:
+                # log warning message when there are failed aggregation nodes in bulk run.
+                aggregation_nodes = list(batch_result.error_summary.aggr_error_dict.keys())
+                error_logs.append(f"aggregation nodes {aggregation_nodes} failed in batch run.")
+            # update error log
+            if error_logs and run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
+                error_logs.append(
+                    f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                )
+            if error_logs:
+                logger.warning("\n".join(error_logs))
             # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
-            logger.warning(f"Run {run.name} failed when executing in executor.")
+            logger.warning(f"Run {run.name} failed when executing in executor with exception {e}.")
             exception = e
             # for user error, swallow stack trace and return failed run since user don't need the stack trace
             if not isinstance(e, UserErrorException):
@@ -152,14 +173,14 @@ class RunSubmitter:
         if not column_mapping:
             return
         if not isinstance(column_mapping, dict):
-            raise UserErrorException(f"Column mapping must be a dict, got {type(column_mapping)}.")
+            raise ValidationException(f"Column mapping must be a dict, got {type(column_mapping)}.")
         all_static = True
         for v in column_mapping.values():
             if isinstance(v, str) and v.startswith("$"):
                 all_static = False
                 break
         if all_static:
-            raise UserErrorException(
+            raise ValidationException(
                 "Column mapping must contain at least one mapping binding, "
                 f"current column mapping contains all static values: {column_mapping}"
             )

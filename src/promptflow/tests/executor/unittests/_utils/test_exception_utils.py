@@ -13,6 +13,7 @@ from promptflow._utils.exception_utils import (
     get_tb_next,
     infer_error_code_from_class,
     last_frame_info,
+    remove_suffix,
 )
 from promptflow.exceptions import (
     ErrorTarget,
@@ -301,11 +302,8 @@ class TestExceptionPresenter:
         assert dct == {
             "code": "UserError",
             "message": "Execution failure in 'MyTool': (ZeroDivisionError) division by zero",
-            "messageFormat": "Execution failure in '{node_name}': {error_type_and_message}",
-            "messageParameters": {
-                "error_type_and_message": "(ZeroDivisionError) division by zero",
-                "node_name": "MyTool",
-            },
+            "messageFormat": "Execution failure in '{node_name}'.",
+            "messageParameters": {"node_name": "MyTool"},
             "referenceCode": "Tool",
             "innerError": {
                 "code": "ToolExecutionError",
@@ -624,10 +622,10 @@ class TestExceptions:
             raise_tool_execution_error()
 
         e = e.value
-        assert e.reference_code == ErrorTarget.TOOL
+        assert e.reference_code == ErrorTarget.TOOL.value
         module = "promptflow_vectordb.tool.faiss_index_loopup"
         e.module = module
-        assert e.reference_code == f"{ErrorTarget.TOOL}/{module}"
+        assert e.reference_code == f"{ErrorTarget.TOOL.value}/{module}"
 
     @pytest.mark.parametrize(
         "func_that_raises_exception",
@@ -760,11 +758,8 @@ class TestExceptions:
 
         assert result == {
             "message": "Execution failure in 'MyTool': (ZeroDivisionError) division by zero",
-            "messageFormat": "Execution failure in '{node_name}': {error_type_and_message}",
-            "messageParameters": {
-                "error_type_and_message": "(ZeroDivisionError) division by zero",
-                "node_name": "MyTool",
-            },
+            "messageFormat": "Execution failure in '{node_name}'.",
+            "messageParameters": {"node_name": "MyTool"},
             "referenceCode": "Tool",
             "code": "UserError",
             "innerError": {
@@ -815,14 +810,21 @@ class TestExceptions:
         assert error_dict == {
             "code": "UserError",
             "message": "Execution failure in 'MyTool': (ZeroDivisionError) division by zero",
-            "messageFormat": "Execution failure in '{node_name}': {error_type_and_message}",
-            "messageParameters": {
-                "node_name": "MyTool",
-                "error_type_and_message": "(ZeroDivisionError) division by zero",
-            },
+            "messageFormat": "Execution failure in '{node_name}'.",
+            "messageParameters": {"node_name": "MyTool"},
             "referenceCode": "Tool",
             "innerError": {
                 "code": "ToolExecutionError",
                 "innerError": None,
             },
         }
+
+    def test_remove_suffix(self):
+        assert remove_suffix('PackageToolNotFoundError.', '.') == 'PackageToolNotFoundError'
+        assert remove_suffix('PackageToolNotFoundError', 'Error') == 'PackageToolNotFound'
+        assert remove_suffix('PackageToolNotFoundError', 'PackageToolNotFoundError') == ''
+        assert remove_suffix('PackageToolNotFoundError', 'NonExistedSuffix') == 'PackageToolNotFoundError'
+        assert remove_suffix('PackageToolNotFoundError', '') == 'PackageToolNotFoundError'
+        assert remove_suffix('PackageToolNotFoundError', None) == 'PackageToolNotFoundError'
+        assert remove_suffix('', 'NonExistedSuffix') == ''
+        assert remove_suffix(None, 'NonExistedSuffix') is None

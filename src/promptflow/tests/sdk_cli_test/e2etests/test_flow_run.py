@@ -1,11 +1,14 @@
 import os
 import shutil
+import sys
 import tempfile
 import uuid
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
+from marshmallow import ValidationError
 from pytest_mock import MockerFixture
 
 from promptflow import PFClient
@@ -20,11 +23,12 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._errors import (
     ConnectionNotFoundError,
     InvalidFlowError,
+    InvalidRunError,
     InvalidRunStatusError,
     RunExistsError,
     RunNotFoundError,
 )
-from promptflow._sdk._load_functions import load_flow
+from promptflow._sdk._load_functions import load_flow, load_run
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk._utils import _get_additional_includes
@@ -41,6 +45,7 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
@@ -84,7 +89,8 @@ def assert_run_with_invalid_column_mapping(client: PFClient, run: Run) -> None:
 
     exception = local_storage.load_exception()
     assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
-    assert exception["code"] == "BulkRunException"
+    assert exception["code"] == "UserError"
+    assert exception["innerError"]["innerError"]["code"] == "BulkRunException"
 
 
 @pytest.mark.usefixtures(
@@ -123,6 +129,71 @@ class TestFlowRun:
         assert run.status == "Completed"
         # write to user_dir/.promptflow/.runs
         assert ".promptflow" in run.properties["output_path"]
+
+    def test_local_storage_delete(self, pf):
+        result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
+        local_storage = LocalStorageOperations(result)
+        local_storage.delete()
+        assert not os.path.exists(local_storage._outputs_path)
+
+    def test_flow_run_delete(self, pf):
+        result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
+        local_storage = LocalStorageOperations(result)
+        output_path = local_storage.path
+
+        # delete new created run by name
+        pf.runs.delete(result.name)
+
+        # check folders and dbs are deleted
+        assert not os.path.exists(output_path)
+
+        from promptflow._sdk._orm import RunInfo as ORMRun
+
+        pytest.raises(RunNotFoundError, lambda: ORMRun.get(result.name))
+        pytest.raises(RunNotFoundError, lambda: pf.runs.get(result.name))
+
+    def test_flow_run_delete_fake_id_raise(self, pf: PFClient):
+        run = "fake_run_id"
+
+        # delete new created run by name
+        pytest.raises(RunNotFoundError, lambda: pf.runs.delete(name=run))
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows doesn't support chmod, just test permission errors")
+    def test_flow_run_delete_invalid_permission_raise(self, pf: PFClient):
+        result = pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl")
+        local_storage = LocalStorageOperations(result)
+        output_path = local_storage.path
+        os.chmod(output_path, 0o555)
+
+        # delete new created run by name
+        pytest.raises(InvalidRunError, lambda: pf.runs.delete(name=result.name))
+
+        # Change folder permission back
+        os.chmod(output_path, 0o755)
+        pf.runs.delete(name=result.name)
+        assert not os.path.exists(output_path)
+
+    def test_visualize_run_with_referenced_run_deleted(self, pf: PFClient):
+        run_id = str(uuid.uuid4())
+        run = load_run(
+            source=f"{RUNS_DIR}/sample_bulk_run.yaml",
+            params_override=[{"name": run_id}],
+        )
+        run_a = pf.runs.create_or_update(run=run)
+        local_storage_a = LocalStorageOperations(run_a)
+        output_path_a = local_storage_a.path
+
+        run = load_run(source=f"{RUNS_DIR}/sample_eval_run.yaml", params_override=[{"run": run_id}])
+        run_b = pf.runs.create_or_update(run=run)
+        local_storage_b = LocalStorageOperations(run_b)
+        output_path_b = local_storage_b.path
+
+        pf.runs.delete(run_a.name)
+        assert not os.path.exists(output_path_a)
+        assert os.path.exists(output_path_b)
+
+        # visualize doesn't raise error
+        pf.runs.visualize(run_b.name)
 
     def test_basic_flow_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf) -> None:
         result = pf.run(
@@ -173,7 +244,7 @@ class TestFlowRun:
         assert "Node not_exist not found in flow" in str(e.value)
 
         # invalid variant format
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
@@ -239,6 +310,13 @@ class TestFlowRun:
         )
         assert local_client.runs.get(eval_run.name).status == "Completed"
 
+    @pytest.mark.usefixtures("enable_logger_propagate")
+    def test_submit_run_with_extra_params(self, pf, caplog):
+        run_id = str(uuid.uuid4())
+        run = create_yaml_run(source=f"{RUNS_DIR}/extra_field.yaml", params_override=[{"name": run_id}])
+        assert pf.runs.get(run.name).status == "Completed"
+        assert "Run schema validation warnings. Unknown fields found" in caplog.text
+
     def test_run_with_connection(self, local_client, local_aoai_connection, pf):
         # remove connection file to test connection resolving
         os.environ.pop(PROMPTFLOW_CONNECTIONS)
@@ -286,13 +364,6 @@ class TestFlowRun:
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
     ):
-        # Need to reload pkg_resources to get the latest installed tools
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         result = pf.run(
             flow=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection",
             data=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection/data.jsonl",
@@ -339,7 +410,7 @@ class TestFlowRun:
         )
 
         run_name = str(uuid.uuid4())
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             pf.run(
                 name=run_name,
                 flow=f"{FLOWS_DIR}/custom_connection_flow",
@@ -454,7 +525,6 @@ class TestFlowRun:
             assert "Please make sure it exists and not deleted." in str(e.value)
 
     def test_eval_run_data_not_exist(self, pf):
-
         base_run = pf.run(
             flow=f"{FLOWS_DIR}/print_env_var",
             data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -474,20 +544,20 @@ class TestFlowRun:
             },
         )
 
-        with pytest.raises(UserErrorException) as e:
-            pf.run(
-                flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
-                run=eval_run.name,
-                column_mapping={
-                    "prediction": "${run.outputs.output}",
-                    # evaluation reference run.inputs
-                    # NOTE: we need this value to guard behavior when a run reference another run's inputs
-                    "variant_id": "${run.inputs.key}",
-                    # can reference other columns in data which doesn't exist in base run's inputs
-                    "groundtruth": "${run.inputs.extra_key}",
-                },
-            )
-        assert "Please make sure it exists and not deleted" in str(e.value)
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            run=eval_run.name,
+            column_mapping={
+                "prediction": "${run.outputs.output}",
+                # evaluation reference run.inputs
+                # NOTE: we need this value to guard behavior when a run reference another run's inputs
+                "variant_id": "${run.inputs.key}",
+                # can reference other columns in data which doesn't exist in base run's inputs
+                "groundtruth": "${run.inputs.extra_key}",
+            },
+        )
+        # Run failed because run inputs data is None, and error will be in the run output error.json
+        assert result.status == "Failed"
 
     def test_create_run_with_tags(self, pf):
         name = str(uuid.uuid4())
@@ -1025,3 +1095,173 @@ class TestFlowRun:
             local_storage = LocalStorageOperations(run=run)
             expected_output_path_prefix = (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / run.name).resolve().as_posix()
             assert local_storage.outputs_folder.as_posix().startswith(expected_output_path_prefix)
+
+    def test_failed_run_to_dict_exclude(self, pf):
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/failed_flow",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"text": "${data.url}"},
+        )
+        default = failed_run._to_dict()
+        # CLI will exclude additional info and debug info
+        exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
+        assert "additionalInfo" in default["error"] and "additionalInfo" not in exclude["error"]
+        assert "debugInfo" in default["error"] and "debugInfo" not in exclude["error"]
+
+    def test_create_run_with_existing_run_folder(self, pf):
+        # TODO: Should use fixture to create an run and download it to be used here.
+        run_name = "web_classification_variant_0_20231205_120253_104100"
+
+        # clean the run if exists
+        from promptflow._cli._utils import _try_delete_existing_run_record
+
+        _try_delete_existing_run_record(run_name)
+
+        # assert the run doesn't exist
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(run_name)
+
+        # create the run with run folder
+        run_folder = f"{RUNS_DIR}/{run_name}"
+        run = Run._load_from_source(source=run_folder)
+        pf.runs.create_or_update(run)
+
+        # test with other local run operations
+        run = pf.runs.get(run_name)
+        assert run.name == run_name
+        details = pf.get_details(run_name)
+        assert details.shape == (3, 5)
+        metrics = pf.runs.get_metrics(run_name)
+        assert metrics == {}
+        pf.stream(run_name)
+        pf.visualize([run_name])
+
+    def test_aggregation_node_failed(self, pf):
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/aggregation_node_failed",
+            data=f"{FLOWS_DIR}/aggregation_node_failed/data.jsonl",
+        )
+        # even if all lines failed, the bulk run's status is completed.
+        assert failed_run.status == "Completed"
+        # error messages will store in local
+        local_storage = LocalStorageOperations(failed_run)
+
+        assert os.path.exists(local_storage._exception_path)
+        exception = local_storage.load_exception()
+        assert "First error message is" in exception["message"]
+        # line run failures will be stored in additionalInfo
+        assert len(exception["additionalInfo"][0]["info"]["errors"]) == 1
+
+        # show run will get error message
+        run = pf.runs.get(name=failed_run.name)
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert run_dict["error"] == exception
+
+    def test_get_details_against_partial_completed_run(self, pf: PFClient, monkeypatch) -> None:
+        # TODO: remove this patch after executor switch to default spawn
+        monkeypatch.setenv("PF_BATCH_METHOD", "spawn")
+
+        flow_mod2 = f"{FLOWS_DIR}/mod-n/two"
+        flow_mod3 = f"{FLOWS_DIR}/mod-n/three"
+        data_path = f"{DATAS_DIR}/numbers.jsonl"
+        # batch run against data
+        run1 = pf.run(
+            flow=flow_mod2,
+            data=data_path,
+            column_mapping={"number": "${data.value}"},
+        )
+        pf.runs.stream(run1)
+        details1 = pf.get_details(run1)
+        assert len(details1) == 20
+        assert len(details1.loc[details1["outputs.output"] != "(Failed)"]) == 10
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details1.iterrows():
+            if str(row["outputs.output"]) != "(Failed)":
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
+
+        # batch run against previous run
+        run2 = pf.run(
+            flow=flow_mod3,
+            run=run1,
+            column_mapping={"number": "${run.outputs.output}"},
+        )
+        pf.runs.stream(run2)
+        details2 = pf.get_details(run2)
+        assert len(details2) == 10
+        assert len(details2.loc[details2["outputs.output"] != "(Failed)"]) == 4
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details2.iterrows():
+            if str(row["outputs.output"]) != "(Failed)":
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
+
+        monkeypatch.delenv("PF_BATCH_METHOD")
+
+    def test_flow_with_nan_inf(self, pf: PFClient, monkeypatch) -> None:
+        # TODO: remove this patch after executor switch to default spawn
+        monkeypatch.setenv("PF_BATCH_METHOD", "spawn")
+
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow-with-nan-inf",
+            data=f"{DATAS_DIR}/numbers.jsonl",
+            column_mapping={"number": "${data.value}"},
+        )
+        pf.stream(run)
+        local_storage = LocalStorageOperations(run=run)
+
+        # default behavior: no special logic for nan and inf
+        detail = local_storage.load_detail()
+        first_line_run_output = detail["flow_runs"][0]["output"]["output"]
+        assert isinstance(first_line_run_output["nan"], float)
+        assert np.isnan(first_line_run_output["nan"])
+        assert isinstance(first_line_run_output["inf"], float)
+        assert np.isinf(first_line_run_output["inf"])
+
+        # handles nan and inf, which is real scenario during visualize
+        detail = local_storage.load_detail(parse_const_as_str=True)
+        first_line_run_output = detail["flow_runs"][0]["output"]["output"]
+        assert isinstance(first_line_run_output["nan"], str)
+        assert first_line_run_output["nan"] == "NaN"
+        assert isinstance(first_line_run_output["inf"], str)
+        assert first_line_run_output["inf"] == "Infinity"
+
+        monkeypatch.delenv("PF_BATCH_METHOD")
+
+    @pytest.mark.skip("Enable this when executor change merges")
+    def test_eager_flow_run_without_yaml(self, pf):
+        # TODO(2898455): support this
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
+        run = pf.run(
+            flow=flow_path,
+            entry="my_flow",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+
+    @pytest.mark.skip("Enable this when executor change merges")
+    def test_eager_flow_run_with_yaml(self, pf):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml")
+        run = pf.run(
+            flow=flow_path,
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+        )
+        assert run.status == "Completed"
+
+    def test_eager_flow_test_invalid_cases(self, pf):
+        # no entry provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py")
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            )
+        assert "Entry function is not specified" in str(e.value)
+
+        # no path provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/invalid_no_path/")
+        with pytest.raises(ValidationError) as e:
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            )
+        assert "'path': ['Missing data for required field.']" in str(e.value)

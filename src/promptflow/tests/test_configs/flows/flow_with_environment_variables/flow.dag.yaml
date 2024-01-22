@@ -1,0 +1,27 @@
+environment_variables:
+  env1: 2
+  env2: spawn
+  env3:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  env4:
+    a: 1
+    b: "2"
+inputs:
+  key:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${print_env.output.value}
+nodes:
+- name: print_env
+  type: python
+  source:
+    type: code
+    path: print_env.py
+  inputs:
+    key: ${inputs.key}

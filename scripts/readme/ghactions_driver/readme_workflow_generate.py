@@ -22,16 +22,25 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
     workflow_name = "samples_" + workflow_name
 
     ReadmeSteps.setup_target(
-        workflow_path,
-        "basic_workflow_replace.yml.jinja2",
-        f"{workflow_name}.yml",
-        relative_path.as_posix(),
+        working_dir=workflow_path,
+        template="basic_workflow_replace_config_json.yml.jinja2"
+        if "e2e_development_chat_with_pdf" in workflow_name
+        else "basic_workflow_replace.yml.jinja2",
+        target=f"{workflow_name}.yml",
+        readme_name=relative_path.as_posix(),
     )
     ReadmeSteps.install_dependencies()
     ReadmeSteps.install_dev_dependencies()
-    ReadmeSteps.create_env()
-    if workflow_name.endswith("pdf"):
-        ReadmeSteps.env_create_aoai("chat_with_pdf_custom_connection")
+    if (
+        workflow_name.endswith("flows_chat_chat_with_image")
+        or workflow_name.endswith("flows_standard_describe_image")
+    ):
+        ReadmeSteps.create_env_gpt4()
+        ReadmeSteps.env_create_aoai("aoai_gpt4v_connection")
+    else:
+        ReadmeSteps.create_env()
+        if workflow_name.endswith("pdf"):
+            ReadmeSteps.env_create_aoai("chat_with_pdf_custom_connection")
     ReadmeSteps.create_run_yaml()
     if (
         workflow_name.endswith("flows_standard_basic_with_builtin_llm")
@@ -41,7 +50,10 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
     ):
         ReadmeSteps.yml_create_aoai("examples/connections/azure_openai.yml")
     ReadmeSteps.azure_login()
-    if workflow_name.endswith("flows_standard_summarizing_film_with_autogpt"):
+    if (
+        workflow_name.endswith("flows_chat_chat_with_image")
+        or workflow_name.endswith("flows_standard_describe_image")
+    ):
         ReadmeSteps.extract_steps_and_run_gpt_four()
     else:
         ReadmeSteps.extract_steps_and_run()

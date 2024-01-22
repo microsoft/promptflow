@@ -2,6 +2,7 @@ import pytest
 import json
 
 from promptflow.tools.openai import chat, completion, OpenAI
+from promptflow.tools.exception import WrappedOpenAIError
 
 
 @pytest.fixture
@@ -81,3 +82,91 @@ class TestOpenAI:
             prev_question="Where is Boston?"
         )
         assert result["function_call"]["name"] == "get_current_weather"
+
+    def test_openai_chat_with_response_format(self, open_ai_connection, example_prompt_template, chat_history):
+        result = chat(
+            connection=open_ai_connection,
+            prompt=example_prompt_template,
+            model="gpt-4-1106-preview",
+            temperature=0,
+            user_input="Write a slogan for product X, please reponse with json.",
+            chat_history=chat_history,
+            response_format={"type": "json_object"}
+        )
+        assert "Product X".lower() in result.lower()
+
+    @pytest.mark.parametrize(
+        "response_format, user_input, error_message, error_codes, exception",
+        [
+            ({"type": "json"}, "Write a slogan for product X, please reponse with json.",
+             "\'json\' is not one of [\'json_object\', \'text\']", "UserError/OpenAIError/BadRequestError",
+             WrappedOpenAIError),
+            ({"type": "json_object"}, "Write a slogan for product X",
+             "\'messages\' must contain the word \'json\' in some form", "UserError/OpenAIError/BadRequestError",
+             WrappedOpenAIError),
+            ({"types": "json_object"}, "Write a slogan for product X",
+             "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}",
+             "UserError/OpenAIError/BadRequestError",
+             WrappedOpenAIError)
+        ]
+    )
+    def test_openai_chat_with_invalid_response_format(
+            self,
+            open_ai_connection,
+            example_prompt_template,
+            chat_history,
+            response_format,
+            user_input,
+            error_message,
+            error_codes,
+            exception
+    ):
+        with pytest.raises(exception) as exc_info:
+            chat(
+                connection=open_ai_connection,
+                prompt=example_prompt_template,
+                model="gpt-4-1106-preview",
+                temperature=0,
+                user_input=user_input,
+                chat_history=chat_history,
+                response_format=response_format
+            )
+        assert error_message in exc_info.value.message
+        assert exc_info.value.error_codes == error_codes.split("/")
+
+    def test_openai_chat_with_not_support_response_format_json_mode_model(
+            self,
+            open_ai_connection,
+            example_prompt_template,
+            chat_history
+    ):
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            chat(
+                connection=open_ai_connection,
+                prompt=example_prompt_template,
+                model="gpt-3.5-turbo",
+                temperature=0,
+                user_input="Write a slogan for product X, please reponse with json.",
+                chat_history=chat_history,
+                response_format={"type": "json_object"}
+            )
+        error_message = "The response_format parameter needs to be a dictionary such as {\"type\": \"text\"}."
+        assert error_message in exc_info.value.message
+        assert exc_info.value.error_codes == "UserError/OpenAIError/BadRequestError".split("/")
+
+    def test_openai_chat_with_response_format_text_mode(
+            self,
+            open_ai_connection,
+            example_prompt_template,
+            chat_history
+    ):
+        result = chat(
+            connection=open_ai_connection,
+            prompt=example_prompt_template,
+            model="gpt-3.5-turbo",
+            temperature=0,
+            user_input="Write a slogan for product X.",
+            chat_history=chat_history,
+            response_format={"type": "text"}
+        )
+        assert "Product X".lower() in result.lower()

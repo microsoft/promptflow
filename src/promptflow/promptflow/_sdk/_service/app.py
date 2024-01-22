@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+from logging.handlers import RotatingFileHandler
 
 from flask import Blueprint, Flask, jsonify
 from werkzeug.exceptions import HTTPException
@@ -10,12 +11,12 @@ from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.connection import api as connection_api
 from promptflow._sdk._service.apis.run import api as run_api
+from promptflow._sdk._service.utils.utils import FormattedException
 from promptflow._sdk._utils import get_promptflow_sdk_version, read_write_by_user
-from promptflow.exceptions import UserErrorException
 
 
 def heartbeat():
-    response = {"sdk_version": get_promptflow_sdk_version()}
+    response = {"promptflow": get_promptflow_sdk_version()}
     return jsonify(response)
 
 
@@ -38,19 +39,24 @@ def create_app():
         app.logger.setLevel(logging.INFO)
         log_file = HOME_PROMPT_FLOW_DIR / PF_SERVICE_LOG_FILE
         log_file.touch(mode=read_write_by_user(), exist_ok=True)
-        handler = logging.FileHandler(filename=log_file)
+        # Create a rotating file handler with a max size of 1 MB and keeping up to 1 backup files
+        handler = RotatingFileHandler(filename=log_file, maxBytes=1_000_000, backupCount=1)
+        formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
+        handler.setFormatter(formatter)
         app.logger.addHandler(handler)
 
         # Basic error handler
-        @app.errorhandler(Exception)
+        @api.errorhandler(Exception)
         def handle_exception(e):
+            from dataclasses import asdict
+
             if isinstance(e, HTTPException):
-                return e
+                return asdict(FormattedException(e), dict_factory=lambda x: {k: v for (k, v) in x if v}), e.code
             app.logger.error(e, exc_info=True, stack_info=True)
-            if isinstance(e, UserErrorException):
-                error_info = e.message
-            else:
-                error_info = str(e)
-            return jsonify({"error_message": f"Internal Server Error, {error_info}"}), 500
+            formatted_exception = FormattedException(e)
+            return (
+                asdict(formatted_exception, dict_factory=lambda x: {k: v for (k, v) in x if v}),
+                formatted_exception.status_code,
+            )
 
     return app, api

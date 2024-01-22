@@ -15,20 +15,19 @@ import tempfile
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
+from functools import partial
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, AnyStr, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import keyring
 import pydash
-import yaml
 from cryptography.fernet import Fernet
 from filelock import FileLock
 from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
-from ruamel.yaml import YAML
 
 import promptflow
 from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
@@ -43,7 +42,6 @@ from promptflow._sdk._constants import (
     KEYRING_ENCRYPTION_KEY_NAME,
     KEYRING_ENCRYPTION_LOCK_PATH,
     KEYRING_SYSTEM,
-    LOGGER_NAME,
     NODE,
     NODE_VARIANTS,
     NODES,
@@ -54,6 +52,7 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
+    ConnectionProvider,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -64,9 +63,12 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.logger_utils import LoggerFactory
+from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ErrorTarget
+
+logger = get_cli_sdk_logger()
 
 
 def snake_to_camel(name):
@@ -79,56 +81,6 @@ def find_type_in_override(params_override: Optional[list] = None) -> Optional[st
         if CommonYamlFields.TYPE in override:
             return override[CommonYamlFields.TYPE]
     return None
-
-
-def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
-    # null check - just return an empty dict.
-    # Certain CLI commands rely on this behavior to produce a resource
-    # via CLI, which is then populated through CLArgs.
-    """Load a local YAML file.
-
-    :param source: The relative or absolute path to the local file.
-    :type source: str
-    :return: A dictionary representation of the local file's contents.
-    :rtype: Dict
-    """
-    # These imports can't be placed in at top file level because it will cause a circular import in
-    # exceptions.py via _get_mfe_url_override
-
-    if source is None:
-        return {}
-
-    # pylint: disable=redefined-builtin
-    input = None
-    must_open_file = False
-    try:  # check source type by duck-typing it as an IOBase
-        readable = source.readable()
-        if not readable:  # source is misformatted stream or file
-            msg = "File Permissions Error: The already-open \n\n inputted file is not readable."
-            raise Exception(msg)
-        # source is an already-open stream or file, we can read() from it directly.
-        input = source
-    except AttributeError:
-        # source has no writable() function, assume it's a string or file path.
-        must_open_file = True
-
-    if must_open_file:  # If supplied a file path, open it.
-        try:
-            input = open(source, "r")
-        except OSError:  # FileNotFoundError introduced in Python 3
-            msg = "No such file or directory: {}"
-            raise Exception(msg.format(source))
-    # input should now be an readable file or stream. Parse it.
-    cfg = {}
-    try:
-        cfg = yaml.safe_load(input)
-    except yaml.YAMLError as e:
-        msg = f"Error while parsing yaml file: {source} \n\n {str(e)}"
-        raise Exception(msg)
-    finally:
-        if must_open_file:
-            input.close()
-    return cfg
 
 
 # region Encryption
@@ -227,20 +179,6 @@ def decrypt_secret_value(connection_name, encrypted_secret_value):
 # endregion
 
 
-def dump_yaml(*args, **kwargs):
-    """A thin wrapper over yaml.dump which forces `OrderedDict`s to be serialized as mappings.
-
-    Other behaviors identically to yaml.dump
-    """
-
-    class OrderedDumper(yaml.Dumper):
-        """A modified yaml serializer that forces pyyaml to represent an OrderedDict as a mapping instead of a
-        sequence."""
-
-    OrderedDumper.add_representer(collections.OrderedDict, yaml.representer.SafeRepresenter.represent_dict)
-    return yaml.dump(*args, Dumper=OrderedDumper, **kwargs)
-
-
 def decorate_validation_error(schema: Any, pretty_error: str, additional_message: str = "") -> str:
     return f"Validation for {schema.__name__} failed:\n\n {pretty_error} \n\n {additional_message}"
 
@@ -272,7 +210,14 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
-        raise ValueError(f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}")
+        error = ValueError(
+            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+        )
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
 
 
 def _match_reference(env_val: str):
@@ -335,7 +280,6 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
     'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the
     original value as a fallback.
     """
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
     for connection_name, connection in connections.items():
         values = connection.get("value", {})
         for key, val in values.items():
@@ -357,7 +301,7 @@ def resolve_connections_environment_variable_reference(connections: Dict[str, di
                 continue
             env_name = _match_env_reference(val)
             if env_name not in os.environ:
-                raise Exception(f"Environment variable {env_name} is not found.")
+                raise UserErrorException(f"Environment variable {env_name} is not found.")
             values[key] = os.environ[env_name]
     return connections
 
@@ -438,8 +382,7 @@ def _sanitize_python_variable_name(name: str):
 
 
 def _get_additional_includes(yaml_path):
-    with open(yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
-        flow_dag = yaml.safe_load(f)
+    flow_dag = load_yaml(yaml_path)
     return flow_dag.get("additional_includes", [])
 
 
@@ -481,7 +424,6 @@ def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
 
     def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
@@ -517,7 +459,12 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 continue
 
             if not src_path.exists():
-                raise ValueError(f"Unable to find additional include {item}")
+                error = ValueError(f"Unable to find additional include {item}")
+                raise UserErrorException(
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    message=str(error),
+                    error=error,
+                )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
         yield temp_dir
@@ -549,7 +496,6 @@ def print_pf_version():
 
 
 class PromptflowIgnoreFile(IgnoreFile):
-
     # TODO add more files to this list.
     IGNORE_FILE = [".runs", "__pycache__"]
 
@@ -605,7 +551,6 @@ def _generate_tool_meta(
         If set to False, will load tool meta in sync mode and timeout need to be handled outside current process.
     :return: tool meta dict
     """
-    logger = LoggerFactory.get_logger(LOGGER_NAME)
     if load_in_subprocess:
         # use multiprocess generate to avoid system path disturb
         manager = multiprocessing.Manager()
@@ -713,12 +658,6 @@ def _gen_dynamic_list(function_config: Dict) -> List:
 
 
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
-    import imp
-
-    import pkg_resources
-
-    imp.reload(pkg_resources)
-
     from promptflow._core.tools_manager import collect_package_tools
 
     return collect_package_tools(keys=keys)
@@ -811,8 +750,7 @@ def generate_flow_tools_json(
     """
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
-    with open(flow_directory / DAG_FILE_NAME, "r", encoding=DEFAULT_ENCODING) as f:
-        data = yaml.safe_load(f)
+    data = load_yaml(flow_directory / DAG_FILE_NAME)
 
     tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 
@@ -852,43 +790,67 @@ def generate_flow_tools_json(
     return flow_tools
 
 
-def update_user_agent_from_env_var():
-    """Update user agent from env var to OperationContext"""
-    from promptflow._core.operation_context import OperationContext
+class ClientUserAgentUtil:
+    """SDK/CLI side user agent utilities."""
 
-    if USER_AGENT in os.environ:
-        # Append vscode or other user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ[USER_AGENT])
+    @classmethod
+    def _get_context(cls):
+        from promptflow._core.operation_context import OperationContext
 
-    if PF_USER_AGENT in os.environ:
-        # Append promptflow user agent from env
-        OperationContext.get_instance().append_user_agent(os.environ[PF_USER_AGENT])
+        return OperationContext.get_instance()
+
+    @classmethod
+    def get_user_agent(cls):
+        from promptflow._core.operation_context import OperationContext
+
+        context = cls._get_context()
+        # directly get from context since client side won't need promptflow/xxx.
+        return context.get(OperationContext.USER_AGENT_KEY, "").strip()
+
+    @classmethod
+    def append_user_agent(cls, user_agent: Optional[str]):
+        if not user_agent:
+            return
+        context = cls._get_context()
+        context.append_user_agent(user_agent)
+
+    @classmethod
+    def update_user_agent_from_env_var(cls):
+        # this is for backward compatibility: we should use PF_USER_AGENT in newer versions.
+        for env_name in [USER_AGENT, PF_USER_AGENT]:
+            if env_name in os.environ:
+                cls.append_user_agent(os.environ[env_name])
+
+    @classmethod
+    def update_user_agent_from_config(cls):
+        """Update user agent from config. 1p customer will set it. We'll add PFCustomer_ as prefix."""
+        from promptflow._sdk._configuration import Configuration
+
+        config = Configuration.get_instance()
+        user_agent = config.get_user_agent()
+        if user_agent:
+            cls.append_user_agent(user_agent)
 
 
-def setup_user_agent_to_operation_context(user_agent=None):
+def setup_user_agent_to_operation_context(user_agent):
     """Setup user agent to OperationContext.
     For calls from extension, ua will be like: prompt-flow-extension/ promptflow-cli/ promptflow-sdk/
     For calls from CLI, ua will be like: promptflow-cli/ promptflow-sdk/
     For calls from SDK, ua will be like: promptflow-sdk/
+    For 1p customer call which set user agent in config, ua will be like: PFCustomer_XXX/
     """
-    from promptflow._core.operation_context import OperationContext
-
-    update_user_agent_from_env_var()
-    # Append user agent
-    context = OperationContext.get_instance()
-    # skip append if empty
-    if user_agent:
-        context.append_user_agent(user_agent)
-    return context.get_user_agent()
+    # add user added UA after SDK/CLI
+    ClientUserAgentUtil.append_user_agent(user_agent)
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    ClientUserAgentUtil.update_user_agent_from_config()
+    return ClientUserAgentUtil.get_user_agent()
 
 
 def call_from_extension() -> bool:
     """Return true if current request is from extension."""
-    from promptflow._core.operation_context import OperationContext
-
-    update_user_agent_from_env_var()
-    context = OperationContext().get_instance()
-    return EXTENSION_UA in context.get_user_agent()
+    ClientUserAgentUtil.update_user_agent_from_env_var()
+    user_agent = ClientUserAgentUtil.get_user_agent()
+    return EXTENSION_UA in user_agent
 
 
 def generate_random_string(length: int = 6) -> str:
@@ -918,15 +880,20 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(executable, client, connections_to_ignore: List[str] = None):
+def get_local_connections_from_executable(
+    executable, client, connections_to_ignore: List[str] = None, connections_to_add: List[str] = None
+):
     """Get local connections from executable.
 
     executable: The executable flow object.
     client: Local client to get connections.
     connections_to_ignore: The connection names to ignore when getting connections.
+    connections_to_add: The connection names to add when getting connections.
     """
 
     connection_names = executable.get_connection_names()
+    if connections_to_add:
+        connection_names.update(connections_to_add)
     connections_to_ignore = connections_to_ignore or []
     result = {}
     for n in connection_names:
@@ -969,13 +936,11 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                     json.dump(content, f, indent=2)
 
             # use YAML to dump template file in order to keep the comments
-            yaml = YAML()
-            yaml.preserve_quotes = True
             for connection_name, content in connection_template_yamls.items():
-                yaml_data = yaml.load(content)
+                yaml_data = load_yaml_string(content)
                 file_name = connection_name + ".template.yaml"
                 with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
-                    yaml.dump(yaml_data, f)
+                    dump_yaml(yaml_data, f)
 
 
 def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
@@ -1042,9 +1007,8 @@ def interactive_credential_disabled():
 
 def is_from_cli():
     from promptflow._cli._user_agent import USER_AGENT as CLI_UA
-    from promptflow._core.operation_context import OperationContext
 
-    return CLI_UA in OperationContext.get_instance().get_user_agent()
+    return CLI_UA in ClientUserAgentUtil.get_user_agent()
 
 
 def is_url(value: Union[PathLike, str]) -> bool:
@@ -1092,3 +1056,47 @@ def parse_remote_flow_pattern(flow: object) -> str:
             raise UserErrorException(error_message)
         flow_name = match.groups()[0]
     return flow_name
+
+
+def get_connection_operation(connection_provider: str):
+    if connection_provider == ConnectionProvider.LOCAL.value:
+        from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+        logger.debug("PFClient using local connection operations.")
+        connection_operation = ConnectionOperations()
+    elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
+        from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+        logger.debug("PFClient using local azure connection operations.")
+        connection_operation = LocalAzureConnectionOperations(connection_provider)
+    else:
+        error = ValueError(f"Unsupported connection provider: {connection_provider}")
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
+    return connection_operation
+
+
+# extract open read/write as partial to centralize the encoding
+read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
+write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
+
+
+# extract some file operations inside this file
+def json_load(file) -> str:
+    with read_open(file) as f:
+        return json.load(f)
+
+
+def json_dump(obj, file) -> None:
+    with write_open(file) as f:
+        json.dump(obj, f, ensure_ascii=False)
+
+
+def pd_read_json(file) -> "DataFrame":
+    import pandas as pd
+
+    with read_open(file) as f:
+        return pd.read_json(f, orient="records", lines=True)

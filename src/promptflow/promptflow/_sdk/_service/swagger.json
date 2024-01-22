@@ -17,6 +17,17 @@
                 },
                 "description": "List all connection",
                 "operationId": "get_connection_list",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "formData",
+                        "type": "string"
+                    }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
                 "tags": [
                     "Connections"
                 ]
@@ -49,6 +60,32 @@
                     "type": "string"
                 }
             ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Get connection",
+                "operationId": "get_connection",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "formData",
+                        "type": "string"
+                    }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -70,21 +107,6 @@
                         }
                     }
                 ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Get connection",
-                "operationId": "get_connection",
                 "tags": [
                     "Connections"
                 ]
@@ -147,6 +169,17 @@
                 },
                 "description": "Get connection with secret",
                 "operationId": "get_connection_with_secret",
+                "parameters": [
+                    {
+                        "name": "working_directory",
+                        "in": "formData",
+                        "type": "string"
+                    }
+                ],
+                "consumes": [
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data"
+                ],
                 "tags": [
                     "Connections"
                 ]
@@ -205,6 +238,21 @@
                     "type": "string"
                 }
             ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Get run info",
+                        "schema": {
+                            "$ref": "#/definitions/RunDict"
+                        }
+                    }
+                },
+                "description": "Get run",
+                "operationId": "get_run",
+                "tags": [
+                    "Runs"
+                ]
+            },
             "put": {
                 "responses": {
                     "200": {
@@ -237,21 +285,6 @@
                     "application/x-www-form-urlencoded",
                     "multipart/form-data"
                 ],
-                "tags": [
-                    "Runs"
-                ]
-            },
-            "get": {
-                "responses": {
-                    "200": {
-                        "description": "Get run info",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
-                        }
-                    }
-                },
-                "description": "Get run",
-                "operationId": "get_run",
                 "tags": [
                     "Runs"
                 ]
@@ -500,16 +533,13 @@
                     "type": "string"
                 },
                 "expiry_time": {
-                    "type": "string",
-                    "format": "date-time"
+                    "type": "string"
                 },
                 "created_date": {
-                    "type": "string",
-                    "format": "date-time"
+                    "type": "string"
                 },
                 "last_modified_date": {
-                    "type": "string",
-                    "format": "date-time"
+                    "type": "string"
                 }
             },
             "type": "object"
@@ -526,13 +556,13 @@
                 "config_spec": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/ConfigSpec"
+                        "$ref": "#/definitions/ConnectionConfigSpec"
                     }
                 }
             },
             "type": "object"
         },
-        "ConfigSpec": {
+        "ConnectionConfigSpec": {
             "properties": {
                 "name": {
                     "type": "string"

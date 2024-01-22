@@ -24,7 +24,7 @@ class OpenAIMetricsCalculator:
             for child in children:
                 child_metrics = self.get_openai_metrics_from_api_call(child)
                 self.merge_metrics_dict(total_metrics, child_metrics)
-
+        api_call["system_metrics"] = total_metrics
         return total_metrics
 
     def _need_collect_metrics(self, api_call: dict):
@@ -50,14 +50,27 @@ class OpenAIMetricsCalculator:
             )
 
         name = api_call.get("name")
-        if name.split(".")[-2] == "ChatCompletion" or name == "openai.resources.chat.completions.Completions.create":
+        # Support both legacy api and OpenAI v1 api
+        # Legacy api:
+        #   https://github.com/openai/openai-python/blob/v0.28.1/openai/api_resources/chat_completion.py
+        #   https://github.com/openai/openai-python/blob/v0.28.1/openai/api_resources/completion.py
+        # OpenAI v1 api:
+        #   https://github.com/openai/openai-python/blob/main/src/openai/resources/chat/completions.py
+        #   https://github.com/openai/openai-python/blob/main/src/openai/resources/completions.py
+        if (
+            name == "openai.api_resources.chat_completion.ChatCompletion.create"
+            or name == "openai.resources.chat.completions.Completions.create"  # openai v1
+        ):
             return self._get_openai_metrics_for_chat_api(api_call)
-        elif name.split(".")[-2] == "Completion" or name == "openai.resources.completions.Completions.create":
+        elif (
+            name == "openai.api_resources.completion.Completion.create"
+            or name == "openai.resources.completions.Completions.create"  # openai v1
+        ):
             return self._get_openai_metrics_for_completion_api(api_call)
         else:
             raise CalculatingMetricsError(f"Calculating metrics for api {name} is not supported.")
 
-    def _try_get_model(self, inputs):
+    def _try_get_model(self, inputs, output):
         if IS_LEGACY_OPENAI:
             api_type = inputs.get("api_type")
             if not api_type:
@@ -67,7 +80,12 @@ class OpenAIMetricsCalculator:
             else:
                 model = inputs.get("model")
         else:
-            model = inputs.get("model")
+            if isinstance(output, dict):
+                model = output.get("model")
+            else:
+                model = output[0].model if len(output) > 0 and hasattr(output[0], "model") else None
+            if not model:
+                model = inputs.get("model")
         if not model:
             raise CalculatingMetricsError(
                 "Cannot get a valid model to calculate metrics. "
@@ -79,7 +97,7 @@ class OpenAIMetricsCalculator:
         inputs = api_call.get("inputs")
         output = api_call.get("output")
         metrics = {}
-        enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(self._try_get_model(inputs))
+        enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(self._try_get_model(inputs, output))
         metrics["prompt_tokens"] = self._get_prompt_tokens_from_messages(
             inputs["messages"],
             enc,
@@ -90,7 +108,9 @@ class OpenAIMetricsCalculator:
             if IS_LEGACY_OPENAI:
                 metrics["completion_tokens"] = len(output)
             else:
-                metrics["completion_tokens"] = len([chunk for chunk in output if chunk.choices[0].delta.content])
+                metrics["completion_tokens"] = len(
+                    [chunk for chunk in output if chunk.choices and chunk.choices[0].delta.content]
+                )
         else:
             metrics["completion_tokens"] = self._get_completion_tokens_for_chat_api(output, enc)
         metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
@@ -139,7 +159,7 @@ class OpenAIMetricsCalculator:
         metrics = {}
         inputs = api_call.get("inputs")
         output = api_call.get("output")
-        enc = self._get_encoding_for_completion_api(self._try_get_model(inputs))
+        enc = self._get_encoding_for_completion_api(self._try_get_model(inputs, output))
         metrics["prompt_tokens"] = 0
         prompt = inputs.get("prompt")
         if isinstance(prompt, str):
@@ -151,7 +171,9 @@ class OpenAIMetricsCalculator:
             if IS_LEGACY_OPENAI:
                 metrics["completion_tokens"] = len(output)
             else:
-                metrics["completion_tokens"] = len([chunk for chunk in output if chunk.choices[0].text])
+                metrics["completion_tokens"] = len(
+                    [chunk for chunk in output if chunk.choices and chunk.choices[0].text]
+                )
         else:
             metrics["completion_tokens"] = self._get_completion_tokens_for_completion_api(output, enc)
         metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]

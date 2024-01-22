@@ -91,11 +91,14 @@ jobs:
         path: |
           ${{ env.testWorkingDirectory }}/*.xml
           ${{ env.testWorkingDirectory }}/htmlcov/
-  publish-test-results:
-    name: "Publish Tests Results"
+  publish-test-results-global-config-test:
     needs: sdk_cli_global_config_tests
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
     if: always()
 
     steps:
@@ -111,5 +114,4 @@ jobs:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
         context: test/sdk_cli

@@ -1,5 +1,9 @@
+---
+resources: examples/connections/azure_openai.yml, examples/flows/standard/web-classification
+---
+
 # Deploy flow using Kubernetes
-This example demos how to deploy flow as a Kubernetes app. 
+This example demos how to deploy flow as a Kubernetes app.
 We will use [web-classification](../../../flows/standard/web-classification/README.md) as example in this tutorial.
 
 Please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](../../../flows/standard/web-classification/README.md#Prerequisites) for a comprehensive list of prerequisites and installation instructions.
@@ -148,7 +152,7 @@ You'll need to set up the environment variables in the container to make the con
 
   `minikube service web-classification-service --url -n web-classification` runs as a process, creating a tunnel to the cluster. The command exposes the service directly to any program running on the host operating system.
 
-  The command above will retrieve the URL of a service running within a Minikube Kubernetes cluster (e.g. http://<ip>:<assigned_port>), which you can click to interact with the flow service in your web browser. Alternatively, you can use the following command to test the endpoint: 
+  The command above will retrieve the URL of a service running within a Minikube Kubernetes cluster (e.g. http://<ip>:<assigned_port>), which you can click to interact with the flow service in your web browser. Alternatively, you can use the following command to test the endpoint:
 
   **Note**: Minikube will use its own external port instead of nodePort to listen to the service. So please substitute <assigned_port> with the port obtained above.
     ```shell

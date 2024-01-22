@@ -39,16 +39,17 @@ REQUIRES = [
     "filelock>=3.4.0,<4.0.0",  # control plane sdk requirements, to lock for multiprocessing
     # We need to pin the version due to the issue: https://github.com/hwchase17/langchain/issues/5113
     "marshmallow>=3.5,<4.0.0",
-    "pyyaml>=5.1.0,<7.0.0",
     "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
     "tiktoken>=0.4.0",
     "strictyaml>=1.5.0,<2.0.0",  # used to identify exact location of validation error
     "waitress>=2.1.2,<3.0.0",  # used to serve local service
     "opencensus-ext-azure<2.0.0",  # configure opencensus to send telemetry to azure monitor
-    "ruamel.yaml>=0.17.35,<1.0.0",  # used to generate connection templates with preserved comments
+    "ruamel.yaml>=0.17.10,<1.0.0",  # used to generate connection templates with preserved comments
     "pyarrow>=14.0.1,<15.0.0",  # used to read parquet file with pandas.read_parquet
     "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
+    "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
+    "docutils",  # used to generate description for tools
 ]
 
 setup(
@@ -77,7 +78,7 @@ setup(
     extras_require={
         "azure": [
             "azure-core>=1.26.4,<2.0.0",
-            "azure-storage-blob>=12.13.0,<13.0.0",
+            "azure-storage-blob[aio]>=12.13.0,<13.0.0",  # add [aio] for async run download feature
             "azure-identity>=1.12.0,<2.0.0",
             "azure-ai-ml>=1.11.0,<2.0.0",
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
@@ -86,11 +87,25 @@ setup(
         "pfs": [
             "flask-restx>=1.2.0,<2.0.0",
         ],
+        "azureml-serving": [
+            # AzureML connection dependencies
+            "azure-identity>=1.12.0,<2.0.0",
+            "azure-ai-ml>=1.11.0,<2.0.0",
+            # OTel dependencies for monitoring
+            "opentelemetry-api>=1.21.0,<2.0.0",
+            "opentelemetry-sdk>=1.21.0,<2.0.0",
+            "azure-monitor-opentelemetry>=1.1.1,<2.0.0",
+            # MDC dependencies for monitoring
+            "azureml-ai-monitoring>=0.1.0b3,<1.0.0",
+        ],
     },
     packages=find_packages(),
+    scripts=[
+        'pf',
+        'pf.bat'
+    ],
     entry_points={
         "console_scripts": [
-            "pf = promptflow._cli._pf.entry:main",
             "pfazure = promptflow._cli._pf_azure.entry:main",
             "pfs = promptflow._sdk._service.entry:main",
         ],

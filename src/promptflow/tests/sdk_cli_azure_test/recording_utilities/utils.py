@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict
 
+import jwt
 from azure.core.credentials import AccessToken
 from vcr.request import Request
 
@@ -37,7 +38,13 @@ class FakeTokenCredential:
     """
 
     def __init__(self):
-        self.token = AccessToken("YOU SHALL NOT PASS", 0)
+        token = jwt.encode(
+            payload={
+                "aud": "https://management.azure.com",
+            },
+            key="",
+        )
+        self.token = AccessToken(token, 0)
         self.get_token_count = 0
 
     def get_token(self, *args, **kwargs) -> AccessToken:
@@ -50,10 +57,18 @@ class MockDatastore:
     """Mock Datastore class for `DatastoreOperations.get_default().name`."""
 
     name: str
+    account_name: str
+    container_name: str
+    endpoint: str
 
 
 def mock_datastore_get_default(*args, **kwargs) -> MockDatastore:
-    return MockDatastore(name="workspaceblobstore")
+    return MockDatastore(
+        name="workspaceblobstore",
+        account_name=SanitizedValues.FAKE_ACCOUNT_NAME,
+        container_name=SanitizedValues.FAKE_CONTAINER_NAME,
+        endpoint="core.windows.net",
+    )
 
 
 def mock_workspace_get(*args, **kwargs):
@@ -182,7 +197,7 @@ def sanitize_flow_asset_id(value: str) -> str:
     return sanitized_flow_id
 
 
-def sanitize_pfs_body(body: str) -> str:
+def sanitize_pfs_request_body(body: str) -> str:
     # sanitize workspace triad for longhand syntax asset, e.g. "batchDataInput.dataUri"
     body = sanitize_azure_workspace_triad(body)
     body_dict = json.loads(body)
@@ -201,8 +216,50 @@ def sanitize_pfs_body(body: str) -> str:
     return json.dumps(body_dict)
 
 
+def sanitize_pfs_response_body(body: str) -> str:
+    body_dict = json.loads(body)
+    # BulkRuns/{flowRunId}
+    if "studioPortalEndpoint" in body:
+        body_dict["studioPortalEndpoint"] = sanitize_azure_workspace_triad(body_dict["studioPortalEndpoint"])
+    return json.dumps(body_dict)
+
+
 def sanitize_email(value: str) -> str:
-    return re.sub(r"([\w\.-]+)@([\w\.-]+)", r"{}@\2".format(SanitizedValues.EMAIL_USERNAME), value)
+    return re.sub(r"([\w\.-]+)@(microsoft.com)", r"{}@\2".format(SanitizedValues.EMAIL_USERNAME), value)
+
+
+def sanitize_file_share_flow_path(value: str) -> str:
+    flow_folder_name = "simple_hello_world"
+    if flow_folder_name not in value:
+        return value
+    start_index = value.index(flow_folder_name)
+    flow_name_length = 38  # len("simple_hello_world-01-01-2024-00-00-00")
+    flow_name = value[start_index : start_index + flow_name_length]
+    return value.replace(flow_name, "flow_name")
+
+
+def _sanitize_session_id_creating_automatic_runtime(value: str) -> str:
+    value = re.sub(
+        "/(FlowSessions)/[0-9a-f]{48}",
+        r"/\1/{}".format(SanitizedValues.SESSION_ID),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
+def _sanitize_operation_id_polling_automatic_runtime(value: str) -> str:
+    value = re.sub(
+        "/(operations)/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        r"/\1/{}".format(SanitizedValues.UUID),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
+def sanitize_automatic_runtime_request_path(value: str) -> str:
+    return _sanitize_operation_id_polling_automatic_runtime(_sanitize_session_id_creating_automatic_runtime(value))
 
 
 def _is_json_payload(headers: Dict, key: str) -> bool:
@@ -226,3 +283,17 @@ def is_json_payload_response(response: Dict) -> bool:
     headers = response.get("headers")
     # PFAzureIntegrationTestRecording will lower keys in response headers
     return _is_json_payload(headers, key="content-type")
+
+
+def is_httpx_response(response: Dict) -> bool:
+    # different from other stubs in vcrpy, httpx response uses "content" instead of "body"
+    # this leads to different handle logic to response
+    # so we need a utility to check if a response is from httpx
+    return "content" in response
+
+
+def get_created_flow_name_from_flow_path(flow_path: str) -> str:
+    # pytest fixture "created_flow" will create flow on file share with timestamp as suffix
+    # we need to extract the flow name from the path
+    # flow name is expected to start with "simple_hello_world" and follow with "/flow.dag.yaml"
+    return flow_path[flow_path.index("simple_hello_world") : flow_path.index("/flow.dag.yaml")]

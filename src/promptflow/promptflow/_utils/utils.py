@@ -55,8 +55,10 @@ def is_json_serializable(value: Any) -> bool:
 
 
 def load_json(file_path: Union[str, Path]) -> dict:
-    with open(file_path, "r") as f:
-        return json.load(f)
+    if os.path.getsize(file_path) > 0:
+        with open(file_path, "r") as f:
+            return json.load(f)
+    return {}
 
 
 def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
@@ -141,11 +143,22 @@ def log_progress(
     count: int,
     total_count: int,
     formatter="Finished {count} / {total_count} lines.",
+    *,
+    last_log_count: Optional[int] = None,
 ):
     # Calculate log_interval to determine when to log progress.
     # If total_count is less than 100, log every 10% of total_count; otherwise, log every 10 lines.
     log_interval = min(10, max(int(total_count / 10), 1))
-    if count > 0 and (count % log_interval == 0 or count == total_count):
+
+    # If last_log_count is not None, determine whether to log based on whether the difference
+    # between the current count and the previous count exceeds log_interval.
+    # Otherwise, decide based on whether the current count is evenly divisible by log_interval.
+    if last_log_count:
+        log_flag = (count - last_log_count) >= log_interval
+    else:
+        log_flag = count % log_interval == 0
+
+    if count > 0 and (log_flag or count == total_count):
         average_execution_time = round((datetime.utcnow().timestamp() - run_start_time.timestamp()) / count, 2)
         estimated_execution_time = round(average_execution_time * (total_count - count), 2)
         logger.info(formatter.format(count=count, total_count=total_count))
@@ -156,17 +169,16 @@ def log_progress(
 
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
-    from promptflow._core import tool
+    from promptflow import _core
 
-    tool_file = tool.__file__
-    core_folder = os.path.dirname(tool_file)
+    core_folder = os.path.dirname(_core.__file__)
 
     for i in range(len(frame_summaries) - 1):
         cur_file = frame_summaries[i].filename
         next_file = frame_summaries[i + 1].filename
-        # If the current frame is in tool.py and the next frame is not in _core folder
+        # If the current frame is in _core folder and the next frame is not in _core folder
         # then we can say that the next frame is in user code.
-        if cur_file == tool_file and not next_file.startswith(core_folder):
+        if cur_file.startswith(core_folder) and not next_file.startswith(core_folder):
             return frame_summaries[i + 1 :]
     return frame_summaries
 
@@ -247,3 +259,40 @@ def parse_ua_to_dict(ua):
             key, value = item.split("/")
             ua_dict[key] = value
     return ua_dict
+
+
+# TODO: Add "conditions" parameter to pass in a list of lambda functions
+# to check if the environment variable is valid.
+def get_int_env_var(env_var_name, default_value=None):
+    """
+    The function `get_int_env_var` retrieves an integer environment variable value, with an optional
+    default value if the variable is not set or cannot be converted to an integer.
+
+    :param env_var_name: The name of the environment variable you want to retrieve the value of
+    :param default_value: The default value is the value that will be returned if the environment
+    variable is not found or if it cannot be converted to an integer
+    :return: an integer value.
+    """
+    try:
+        return int(os.environ.get(env_var_name, default_value))
+    except Exception:
+        return default_value
+
+
+def prompt_y_n(msg, default=None):
+    if default not in [None, "y", "n"]:
+        raise ValueError("Valid values for default are 'y', 'n' or None")
+    y = "Y" if default == "y" else "y"
+    n = "N" if default == "n" else "n"
+    while True:
+        ans = prompt_input("{} ({}/{}): ".format(msg, y, n))
+        if ans.lower() == n.lower():
+            return False
+        if ans.lower() == y.lower():
+            return True
+        if default and not ans:
+            return default == y.lower()
+
+
+def prompt_input(msg):
+    return input("\n===> " + msg)

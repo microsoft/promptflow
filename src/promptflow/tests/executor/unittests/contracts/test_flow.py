@@ -19,7 +19,7 @@ from promptflow.contracts.flow import (
 )
 from promptflow.contracts.tool import Tool, ToolType, ValueType
 
-from ...utils import get_flow_package_tool_definition, get_yaml_file
+from ...utils import EAGER_FLOWS_ROOT, FLOW_ROOT, get_flow_folder, get_flow_package_tool_definition, get_yaml_file
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent.parent / "package_tools"
 
@@ -64,6 +64,118 @@ class TestFlowContract:
         connection_names = flow.get_connection_input_names_for_node(flow.nodes[0].name)
         assert connection_names == ["connection", "connection_2"]
         assert flow.get_connection_input_names_for_node("not_exist") == []
+
+    @pytest.mark.parametrize(
+        "flow_folder_name, environment_variables_overrides, except_environment_variables",
+        [
+            pytest.param(
+                "flow_with_environment_variables",
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                {
+                    "env1": "2",
+                    "env2": "runtime_env2",
+                    "env3": "[1, 2, 3, 4, 5]",
+                    "env4": '{"a": 1, "b": "2"}',
+                    "env10": "aaaaa",
+                },
+                id="LoadEnvVariablesWithOverrides",
+            ),
+            pytest.param(
+                "flow_with_environment_variables",
+                None,
+                {
+                    "env1": "2",
+                    "env2": "spawn",
+                    "env3": "[1, 2, 3, 4, 5]",
+                    "env4": '{"a": 1, "b": "2"}',
+                },
+                id="LoadEnvVariablesWithoutOverrides",
+            ),
+            pytest.param(
+                "simple_hello_world",
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                id="LoadEnvVariablesWithoutYamlLevelEnvVariables",
+            ),
+        ],
+    )
+    def test_flow_get_environment_variables_with_overrides(
+        self, flow_folder_name, environment_variables_overrides, except_environment_variables
+    ):
+        flow_folder = get_flow_folder(flow_folder_name)
+        flow_file = "flow.dag.yaml"
+        flow = Flow.from_yaml(flow_file=flow_file, working_dir=flow_folder)
+        merged_environment_variables = flow.get_environment_variables_with_overrides(
+            environment_variables_overrides=environment_variables_overrides,
+        )
+        assert merged_environment_variables == except_environment_variables
+
+    @pytest.mark.parametrize(
+        "flow_folder_name, folder_root, flow_file, environment_variables_overrides, except_environment_variables",
+        [
+            pytest.param(
+                "flow_with_environment_variables",
+                FLOW_ROOT,
+                "flow.dag.yaml",
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                {
+                    "env1": "2",
+                    "env2": "runtime_env2",
+                    "env3": "[1, 2, 3, 4, 5]",
+                    "env4": '{"a": 1, "b": "2"}',
+                    "env10": "aaaaa",
+                },
+                id="LoadEnvVariablesWithOverrides",
+            ),
+            pytest.param(
+                "flow_with_environment_variables",
+                FLOW_ROOT,
+                "flow.dag.yaml",
+                None,
+                {
+                    "env1": "2",
+                    "env2": "spawn",
+                    "env3": "[1, 2, 3, 4, 5]",
+                    "env4": '{"a": 1, "b": "2"}',
+                },
+                id="LoadEnvVariablesWithoutOverrides",
+            ),
+            pytest.param(
+                "simple_hello_world",
+                FLOW_ROOT,
+                "flow.dag.yaml",
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                id="LoadEnvVariablesWithoutYamlLevelEnvVariables",
+            ),
+            pytest.param(
+                "simple_with_yaml",
+                EAGER_FLOWS_ROOT,
+                "entry.py",
+                None,
+                {},
+                id="LoadEnvVariablesForEagerFlow",
+            ),
+            pytest.param(
+                "simple_with_yaml",
+                EAGER_FLOWS_ROOT,
+                "entry.py",
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                {"env2": "runtime_env2", "env10": "aaaaa"},
+                id="LoadEnvVariablesForEagerFlowWithOverrides",
+            ),
+        ],
+    )
+    def test_load_env_variables(
+        self, flow_folder_name, folder_root, flow_file, environment_variables_overrides, except_environment_variables
+    ):
+        flow_folder = get_flow_folder(flow_folder_name, folder_root)
+        merged_environment_variables = Flow.load_env_variables(
+            flow_file=flow_file,
+            working_dir=flow_folder,
+            environment_variables_overrides=environment_variables_overrides,
+        )
+        assert merged_environment_variables == except_environment_variables
 
 
 @pytest.mark.unittest
@@ -142,6 +254,7 @@ class TestFlow:
                     tools=[],
                     node_variants={},
                     program_language="python",
+                    environment_variables={},
                 ),
             ),
         ],

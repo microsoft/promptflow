@@ -44,7 +44,7 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
                 "Generate tool meta failed for {tool_type} tool. Jinja parsing failed at line {line_number}: "
                 "{error_type_and_message}"
             ),
-            tool_type=tool_type,
+            tool_type=tool_type.value,
             line_number=e.lineno,
             error_type_and_message=error_type_and_message,
         ) from e
@@ -57,28 +57,6 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
             tool_type=tool_type.value,
             error_type_and_message=error_type_and_message,
         ) from e
-
-    if prompt_only:
-        # Currently this is a hard code for prompt tool
-        # TODO: Use registration instead of hard code
-        reserved_keys_to_raise = {"template"}
-    else:
-        # Import the tools module to initialize the LLM reserved keys
-        import promptflow.tools  # noqa: F401
-        from promptflow._core.tools_manager import reserved_keys
-
-        reserved_keys_to_raise = reserved_keys
-
-    for input in inputs.keys():
-        if input in reserved_keys_to_raise:
-            raise ReservedVariableCannotBeUsed(
-                message_format=(
-                    "Generate tool meta failed for {tool_type} tool. Jinja parsing failed: "
-                    "Variable name '{key}' is a reserved name by {tool_type} tools, please change to another name."
-                ),
-                key=input,
-                tool_type=tool_type.value,
-            )
 
     pattern = f"{COMMENT_START_STRING}(((?!{COMMENT_END_STRING}).)*){COMMENT_END_STRING}"
     match_result = re.match(pattern, content)
@@ -144,11 +122,11 @@ def collect_tool_methods_with_init_inputs_in_module(m):
 
 def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False):
     try:
-        tool_type = getattr(f, "__type") or ToolType.PYTHON
+        tool_type = getattr(f, "__type", None) or ToolType.PYTHON
     except Exception as e:
         raise e
-    tool_name = getattr(f, "__name")
-    description = getattr(f, "__description")
+    tool_name = getattr(f, "__name", None)
+    description = getattr(f, "__description", None)
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
     if hasattr(f, "__original_function"):

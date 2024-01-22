@@ -29,7 +29,7 @@ Setup connections to provisioned resources in prompt flow.
 | connection             | OpenAI      | the OpenAI connection to be used in the tool                                                   | Yes      |
 | model                  | string      | the language model to use, currently only support gpt-4-vision-preview                         | Yes      |
 | prompt                 | string      | The text prompt that the language model will use to generate it's response.                    | Yes      |
-| max\_tokens            | integer     | the maximum number of tokens to generate in the response. Default is a low value decided by [OpenAI API](https://platform.openai.com/docs/guides/vision).                      | No       |
+| max\_tokens            | integer     | the maximum number of tokens to generate in the response. Default is 512.                      | No       |
 | temperature            | float       | the randomness of the generated text. Default is 1.                                            | No       |
 | stop                   | list        | the stopping sequence for the generated text. Default is null.                                 | No       |
 | top_p                  | float       | the probability of using the top choice from the generated tokens. Default is 1.               | No       |

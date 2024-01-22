@@ -2,23 +2,28 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import copy
 import json
 import shutil
 from logging import Logger
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import sleep
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
 import pydash
 import pytest
 
-from promptflow._sdk._constants import RunStatus
+from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.azure import PFClient
+from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
@@ -35,7 +40,6 @@ RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-# TODO(2528577): we should run these test with recording mode.
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures(
@@ -249,94 +253,65 @@ class TestFlowRun:
             print(json.dumps(run._to_dict(), indent=4))
         assert len(runs) == 10
 
-    def test_show_run(self, pf, tenant_id: str):
-        run = pf.runs.get(run="classification_accuracy_eval_default_20230808_153241_422491")
+    def test_show_run(self, pf: PFClient, created_eval_run_without_llm: Run):
+        run = pf.runs.get(run=created_eval_run_without_llm.name)
         run_dict = run._to_dict()
         print(json.dumps(run_dict, indent=4))
 
-        subscription_id = pf.ml_client.subscription_id
-        resource_group_name = pf.ml_client.resource_group_name
-        workspace_name = pf.ml_client.workspace_name
-        # find this miss sanitization during test, use this as a workaround
-        miss_sanitization = "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5" if tenant_id else workspace_name
-        if not tenant_id:
-            tenant_id = "00000000-0000-0000-0000-000000000000"
+        # it's hard to assert with precise value, so just assert existence, type and length
+        expected_keys = [
+            "name",
+            "created_on",
+            "status",
+            "display_name",
+            "description",
+            "tags",
+            "properties",
+            "creation_context",
+            "start_time",
+            "end_time",
+            "duration",
+            "portal_url",
+            "data",
+            "output",
+            "run",
+        ]
+        for expected_key in expected_keys:
+            assert expected_key in run_dict
+            if expected_key == "description":
+                assert run_dict[expected_key] is None
+            elif expected_key in {"tags", "properties", "creation_context"}:
+                assert isinstance(run_dict[expected_key], dict)
+            else:
+                assert isinstance(run_dict[expected_key], str)
+                assert len(run_dict[expected_key]) > 0
 
-        assert run_dict == {
-            "name": "classification_accuracy_eval_default_20230808_153241_422491",
-            "created_on": "2023-08-08T07:32:52.761030+00:00",
-            "status": "Completed",
-            "display_name": "classification_accuracy_eval_default_20230808_153241_422491",
-            "description": None,
-            "tags": {},
-            "properties": {
-                "azureml.promptflow.runtime_name": "demo-mir",
-                "azureml.promptflow.runtime_version": "20230801.v1",
-                "azureml.promptflow.definition_file_name": "flow.dag.yaml",
-                "azureml.promptflow.inputs_mapping": '{"groundtruth":"${data.answer}","prediction":"${run.outputs.category}"}',  # noqa: E501
-                "azureml.promptflow.snapshot_id": "e5d50c43-7ad2-4354-9ce4-4f56f0ea9a30",
-                "azureml.promptflow.total_tokens": "0",
-            },
-            "creation_context": {
-                "userObjectId": "c05e0746-e125-4cb3-9213-a8b535eacd79",
-                "userPuId": "10032000324F7449",
-                "userIdp": None,
-                "userAltSecId": None,
-                "userIss": f"https://sts.windows.net/{tenant_id}/",
-                "userTenantId": tenant_id,
-                "userName": "Honglin Du",
-                "upn": None,
-            },
-            "start_time": "2023-08-08T07:32:56.637761+00:00",
-            "end_time": "2023-08-08T07:33:07.853922+00:00",
-            "duration": "00:00:11.2161606",
-            "portal_url": f"https://ml.azure.com/prompts/flow/bulkrun/run/classification_accuracy_eval_default_20230808_153241_422491/details?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",  # noqa: E501
-            "data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl",  # noqa: E501
-            "data_portal_url": f"https://ml.azure.com/data/datastore/workspaceblobstore/edit?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&activeFilePath=LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl#browseTab",  # noqa: E501
-            "output": f"azureml://locations/eastus/workspaces/{miss_sanitization}/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/versions/1",  # noqa: E501
-            "output_portal_url": f"https://ml.azure.com/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/1/details?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",  # noqa: E501
-            "run": "web_classification_default_20230804_143634_056856",
-            "input_run_portal_url": f"https://ml.azure.com/prompts/flow/bulkrun/run/web_classification_default_20230804_143634_056856/details?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",  # noqa: E501
-        }
+    def test_show_run_details(self, pf: PFClient, created_batch_run_without_llm: Run):
+        # get first 2 results
+        details = pf.get_details(run=created_batch_run_without_llm.name, max_results=2)
+        assert details.shape[0] == 2
 
-    def test_show_run_details(self, pf):
-        run = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
-
-        # get first 20 results
-        details = pf.get_details(run=run, max_results=20)
-
-        assert details.shape[0] == 20
-
-        # get first 1000 results while it only has 40
-        details = pf.get_details(run=run, max_results=1000)
-        assert details.shape[0] == 40
+        # get first 10 results while it only has 3
+        details = pf.get_details(run=created_batch_run_without_llm.name, max_results=10)
+        assert details.shape[0] == 3
 
         # get all results
+        details = pf.get_details(run=created_batch_run_without_llm.name, all_results=True)
+        assert details.shape[0] == 3
+
+        # get all results even if max_results is set to 2
         details = pf.get_details(
-            run=run,
+            run=created_batch_run_without_llm.name,
+            max_results=2,
             all_results=True,
         )
-        assert details.shape[0] == 40
+        assert details.shape[0] == 3
 
-        # get all results even if max_results is set to 10
-        details = pf.get_details(
-            run=run,
-            max_results=10,
-            all_results=True,
-        )
-        assert details.shape[0] == 40
-
-    def test_show_metrics(self, pf):
-        metrics = pf.runs.get_metrics(
-            run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
-        )
+    def test_show_metrics(self, pf: PFClient, created_eval_run_without_llm: Run):
+        metrics = pf.runs.get_metrics(run=created_eval_run_without_llm.name)
         print(json.dumps(metrics, indent=4))
-        assert metrics == {
-            "gpt_relevance.variant_1": 1.0,
-            "gpt_relevance.variant_0": 1.0,
-            "gpt_relevance_pass_rate(%).variant_1": 0.0,
-            "gpt_relevance_pass_rate(%).variant_0": 0.0,
-        }
+        # as we use unmatched data, we can assert the accuracy is 0
+        assert metrics == {"accuracy": 0.0}
 
     def test_stream_invalid_run_logs(self, pf, randstr: Callable[[str], str]):
         # test get invalid run name
@@ -344,30 +319,38 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError, match=f"Run {non_exist_run!r} not found"):
             pf.runs.stream(run=non_exist_run)
 
-    def test_stream_run_logs(self, pf):
-        run = pf.runs.stream(run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74")
+    def test_stream_run_logs(self, pf: PFClient, created_batch_run_without_llm: Run):
+        run = pf.runs.stream(run=created_batch_run_without_llm.name)
         assert run.status == RunStatus.COMPLETED
 
-    def test_stream_failed_run_logs(self, pf, capfd: pytest.CaptureFixture):
+    def test_stream_failed_run_logs(self, pf: PFClient, created_failed_run: Run, capfd: pytest.CaptureFixture):
         # (default) raise_on_error=True
         with pytest.raises(InvalidRunStatusError):
-            pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
+            pf.stream(run=created_failed_run.name)
         # raise_on_error=False
-        pf.stream(run="3dfd077a-f071-443e-9c4e-d41531710950", raise_on_error=False)
+        pf.stream(run=created_failed_run.name, raise_on_error=False)
         out, _ = capfd.readouterr()
-        assert "Input 'question' in line 0 is not provided for flow 'Simple_mock_answer'." in out
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations: ${data.key}" in out
+
+    def test_failed_run_to_dict_exclude(self, pf: PFClient, created_failed_run: Run):
+        failed_run = pf.runs.get(run=created_failed_run.name)
+        # Azure run object reference a dict, use deepcopy to avoid unexpected modification
+        default = copy.deepcopy(failed_run._to_dict())
+        exclude = failed_run._to_dict(exclude_additional_info=True, exclude_debug_info=True)
+        assert "additionalInfo" in default["error"]["error"] and "additionalInfo" not in exclude["error"]["error"]
+        assert "debugInfo" in default["error"]["error"] and "debugInfo" not in exclude["error"]["error"]
 
     @pytest.mark.skipif(
         condition=not is_live(),
         reason="cannot differ the two requests to run history in replay mode.",
     )
-    def test_archive_and_restore_run(self, pf):
+    def test_archive_and_restore_run(self, pf: PFClient, created_batch_run_without_llm: Run):
         from promptflow._sdk._constants import RunHistoryKeys
 
         run_meta_data = RunHistoryKeys.RunMetaData
         hidden = RunHistoryKeys.HIDDEN
 
-        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+        run_id = created_batch_run_without_llm.name
 
         # test archive
         pf.runs.archive(run=run_id)
@@ -379,8 +362,8 @@ class TestFlowRun:
         run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         assert run_data[hidden] is False
 
-    def test_update_run(self, pf, randstr: Callable[[str], str]):
-        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+    def test_update_run(self, pf: PFClient, created_batch_run_without_llm: Run, randstr: Callable[[str], str]):
+        run_id = created_batch_run_without_llm.name
         test_mark = randstr("test_mark")
 
         new_display_name = f"test_display_name_{test_mark}"
@@ -393,6 +376,8 @@ class TestFlowRun:
             description=new_description,
             tags=new_tags,
         )
+        # sleep to wait for update to take effect
+        sleep(3)
         assert run.display_name == new_display_name
         assert run.description == new_description
         assert run.tags["test_tag"] == test_mark
@@ -402,9 +387,29 @@ class TestFlowRun:
             run=run_id,
             tags={"test_tag": {"a": 1}},
         )
+        # sleep to wait for update to take effect
+        sleep(3)
         assert run.display_name == new_display_name
         assert run.description == new_description
         assert run.tags["test_tag"] == test_mark
+
+    def test_cancel_run(self, pf, runtime: str, randstr: Callable[[str], str]):
+        # create a run
+        run_name = randstr("name")
+        pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"url": "${data.url}"},
+            variant="${summarize_text_content.variant_0}",
+            runtime=runtime,
+            name=run_name,
+        )
+
+        pf.runs.cancel(run=run_name)
+        sleep(3)
+        run = pf.runs.get(run=run_name)
+        # the run status might still be cancel requested, but it should be canceled eventually
+        assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
     @pytest.mark.skipif(
         condition=not is_live(), reason="request uri contains temp folder name, need some time to sanitize."
@@ -537,9 +542,7 @@ class TestFlowRun:
             assert body.max_idle_time_seconds is None
             return body
 
-        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
-            RunOperations, "get"
-        ), patch.object(FlowServiceCaller, "create_flow_session"):
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
             mock_submit.side_effect = submit
             # no runtime provided, will use automatic runtime
             pf.run(
@@ -548,9 +551,7 @@ class TestFlowRun:
                 name=randstr("name1"),
             )
 
-        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
-            RunOperations, "get"
-        ), patch.object(FlowServiceCaller, "create_flow_session"):
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
             mock_submit.side_effect = submit
             # automatic is a reserved runtime name, will use automatic runtime if specified.
             pf.run(
@@ -560,26 +561,21 @@ class TestFlowRun:
                 name=randstr("name2"),
             )
 
-    def test_automatic_runtime_with_environment(self, pf, randstr: Callable[[str], str]):
-        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-        from promptflow.azure.operations import RunOperations
+    def test_automatic_runtime_with_resources(self, pf, randstr: Callable[[str], str]):
+        from promptflow.azure._restclient.flow.models import SessionSetupModeEnum
 
-        def submit(*args, **kwargs):
-            body = kwargs.get("body", None)
-            assert body.base_image == "python:3.8-slim"
-            assert body.python_pip_requirements == ["# Add your python packages here", "a", "b", "c"]
-            return body
-
-        with patch.object(FlowServiceCaller, "submit_bulk_run"), patch.object(
-            FlowServiceCaller, "create_flow_session"
-        ) as mock_session_create, patch.object(RunOperations, "get"):
-            mock_session_create.side_effect = submit
-            # no runtime provided, will use automatic runtime
-            pf.run(
-                flow=f"{FLOWS_DIR}/flow_with_environment",
-                data=f"{DATAS_DIR}/env_var_names.jsonl",
-                name=randstr("name"),
-            )
+        source = f"{RUNS_DIR}/sample_bulk_run_with_resources.yaml"
+        run_id = randstr("run_id")
+        run = load_run(
+            source=source,
+            params_override=[{"name": run_id}],
+        )
+        rest_run = run._to_rest_object()
+        assert rest_run.vm_size == "Standard_D2"
+        assert rest_run.max_idle_time_seconds == 3600
+        assert rest_run.session_setup_mode == SessionSetupModeEnum.SYSTEM_WAIT
+        run = pf.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
 
     def test_run_data_not_provided(self, pf, randstr: Callable[[str], str]):
         with pytest.raises(UserErrorException) as e:
@@ -716,21 +712,6 @@ class TestFlowRun:
                 name=randstr("name2"),
             )
 
-    @pytest.mark.skip(reason="temporarily disable this for service-side error.")
-    def test_automatic_runtime_creation_failure(self, pf):
-        from promptflow.azure._restclient.flow_service_caller import FlowRequestException
-
-        with pytest.raises(FlowRequestException) as e:
-            pf.runs._resolve_runtime(
-                run=Run(
-                    flow=Path(f"{FLOWS_DIR}/basic-with-connection"),
-                    resources={"instance_type": "not_exist"},
-                ),
-                flow_path=Path(f"{FLOWS_DIR}/basic-with-connection"),
-                runtime=None,
-            )
-        assert "Session creation failed for" in str(e.value)
-
     def test_run_submission_exception(self, pf):
         from azure.core.exceptions import HttpResponseError
 
@@ -784,6 +765,20 @@ class TestFlowRun:
             workspace=mock_workspace, credential=MagicMock(), operation_scope=MagicMock()
         )
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
+
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_download_run(self, pf: PFClient, created_batch_run_without_llm: Run):
+        expected_files = [
+            DownloadedRun.RUN_METADATA_FILE_NAME,
+            DownloadedRun.LOGS_FILE_NAME,
+            DownloadedRun.METRICS_FILE_NAME,
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
+        ]
+
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=created_batch_run_without_llm.name, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, created_batch_run_without_llm.name, file).exists()
 
     def test_request_id_when_making_http_requests(self, pf, runtime: str, randstr: Callable[[str], str]):
         from azure.core.exceptions import HttpResponseError
@@ -843,47 +838,76 @@ class TestFlowRun:
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
+    def test_get_details_against_partial_completed_run(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str]
+    ) -> None:
+        flow_mod2 = f"{FLOWS_DIR}/mod-n/two"
+        flow_mod3 = f"{FLOWS_DIR}/mod-n/three"
+        data_path = f"{DATAS_DIR}/numbers.jsonl"
+        # batch run against data
+        run1 = pf.run(
+            flow=flow_mod2,
+            data=data_path,
+            column_mapping={"number": "${data.value}"},
+            runtime=runtime,
+            name=randstr("run1"),
+        )
+        pf.runs.stream(run1)
+        details1 = pf.get_details(run1)
+        assert len(details1) == 20
+        assert len(details1[details1["outputs.output"].notnull()]) == 10
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details1.iterrows():
+            if pd.notnull(row["outputs.output"]):
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
 
-# separate some tests as they cannot use the fixture that mocks the aml-user-token
-@pytest.mark.skipif(condition=not is_live(), reason="aml-user-token will be mocked")
-@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
-@pytest.mark.e2etest
-@pytest.mark.usefixtures("single_worker_thread_pool", "vcr_recording")
-class TestFlowRunRelatedToAMLToken:
-    def test_automatic_runtime_creation_user_aml_token(self, pf):
-        from azure.core.pipeline import Pipeline
+        # batch run against previous run
+        run2 = pf.run(
+            flow=flow_mod3,
+            run=run1,
+            column_mapping={"number": "${run.outputs.output}"},
+            runtime=runtime,
+            name=randstr("run2"),
+        )
+        pf.runs.stream(run2)
+        details2 = pf.get_details(run2)
+        assert len(details2) == 10
+        assert len(details2[details2["outputs.output"].notnull()]) == 4
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details2.iterrows():
+            if pd.notnull(row["outputs.output"]):
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
 
-        def submit(*args, **kwargs):
-            assert "aml-user-token" in args[0].headers
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_auto_resolve_requirements(self, pf: PFClient, randstr: Callable[[str], str]):
+        # will add requirements.txt to flow.dag.yaml if exists when submitting run.
+        with TemporaryDirectory() as temp:
+            temp = Path(temp)
+            shutil.copytree(f"{FLOWS_DIR}/flow_with_requirements_txt", temp / "flow_with_requirements_txt")
 
-            fake_response = MagicMock()
-            fake_response.http_response.status_code = 200
-            return fake_response
-
-        with patch.object(Pipeline, "run") as mock_session_create:
-            mock_session_create.side_effect = submit
-            pf.runs._resolve_runtime(
-                run=Run(
-                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                    data=f"{DATAS_DIR}/env_var_names.jsonl",
-                ),
-                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                runtime=None,
+            run = pf.run(
+                flow=temp / "flow_with_requirements_txt",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name"),
             )
+            pf.runs.stream(run)
 
-    def test_submit_run_user_aml_token(self, pf, runtime):
-        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
-        from promptflow.azure.operations import RunOperations
+            pf.runs.download(run=run.name, output=temp)
+            flow_dag = load_yaml(Path(temp, run.name, "snapshot/flow.dag.yaml"))
+            assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
 
-        def submit(*args, **kwargs):
-            headers = kwargs.get("headers", None)
-            assert "aml-user-token" in headers
+            local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
+            assert "environment" not in local_flow_dag
 
-        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
-            mock_submit.side_effect = submit
-            pf.run(
-                flow=f"{FLOWS_DIR}/flow_with_dict_input",
-                data=f"{DATAS_DIR}/webClassification3.jsonl",
-                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
-                runtime=runtime,
-            )
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_requirements_in_additional_includes(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_additional_include_req",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name"),
+        )
+        run = pf.runs.stream(run)
+        assert run._error is None
+        with TemporaryDirectory() as temp:
+            pf.runs.download(run=run.name, output=temp)
+            assert Path(temp, run.name, "snapshot/requirements").exists()
