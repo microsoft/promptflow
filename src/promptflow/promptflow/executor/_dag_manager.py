@@ -119,13 +119,13 @@ class DAGManager:
             activate_condition = InputAssignment.serialize(node.activate.condition)
             if not self._is_condition_met(node.activate.condition, node.activate.condition_value):
                 flow_logger.info(
-                    f"The node {node.name} will be bypassed because the activate condition is not met, "
+                    f"The node '{node.name}' will be bypassed because the activate condition is not met, "
                     f"i.e. '{activate_condition}' is not equal to '{node.activate.condition_value}'."
                 )
                 return True
             else:
                 flow_logger.info(
-                    f"The node {node.name} will be executed because the activate condition is met, "
+                    f"The node '{node.name}' will be executed because the activate condition is met, "
                     f"i.e. '{activate_condition}' is equal to '{node.activate.condition_value}'."
                 )
                 return False
