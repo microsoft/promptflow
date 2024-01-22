@@ -93,3 +93,14 @@ class TestConnectionAPIs:
                     name=connections[0]["name"], working_dir=temp, status_code=200
                 ).json
                 assert connection["name"] == connections[0]["name"]
+
+                # this test checked 2 cases:
+                # 1. if the working directory is not exist, it should return 400
+                # 2. working directory has been encoded and decoded correctly, so that previous call may pass validation
+                error_message = pfs_op.list_connections_by_provider(
+                    working_dir=temp + "not exist", status_code=400
+                ).json
+                assert error_message == {
+                    "errors": {"working_directory": "Invalid working directory."},
+                    "message": "Input payload validation failed",
+                }
