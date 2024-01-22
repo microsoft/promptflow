@@ -221,7 +221,13 @@ class ActivateCondition:
         :return: The activate condition constructed from the dict.
         :rtype: ~promptflow.contracts.flow.ActivateCondition
         """
+        node_name = node_name if node_name else ""
         if "when" in data and "is" in data:
+            if data["when"] is None and data["is"] is None:
+                logger.warning(
+                    f"The activate config for node {node_name} has empty 'when' and 'is'. "
+                    "Please check your flow yaml to ensure it aligns with your expectations."
+                )
             return ActivateCondition(
                 condition=InputAssignment.deserialize(data["when"]),
                 condition_value=data["is"],
@@ -229,10 +235,10 @@ class ActivateCondition:
         else:
             raise FlowDefinitionError(
                 message_format=(
-                    "The definition of activate config for node {node_name}"
-                    " is incorrect. Please check your flow yaml and resubmit."
+                    "The definition of activate config for node {node_name} "
+                    "is incorrect. Please check your flow yaml and resubmit."
                 ),
-                node_name=node_name if node_name else "",
+                node_name=node_name,
             )
 
 
