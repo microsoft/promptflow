@@ -47,6 +47,7 @@ setup(
     install_requires=parse_requirements('requirements.txt'),
     extras_require={
         "azure": [
+            # Dependency to list deployment in aoai_gpt4v
             "azure-mgmt-cognitiveservices==13.5.0"
         ]
     },
