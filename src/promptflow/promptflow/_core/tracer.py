@@ -13,10 +13,9 @@ from contextvars import ContextVar
 from datetime import datetime
 from typing import Callable, Dict, Optional
 
-from opentelemetry.trace import Tracer as OTelTracer
 from opentelemetry.trace import Link
+from opentelemetry.trace import Tracer as OTelTracer
 from opentelemetry.trace.status import StatusCode
-from opentelemetry.trace.propagation import get_current_span
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._core.otel_tracer import get_otel_tracer
@@ -322,8 +321,6 @@ def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable
                     raise
 
     wrapped.__original_function = func
-    # TODO: Do we need this line? It raises error for built-in functions.
-    # func.__wrapped_function = wrapped
 
     return wrapped
 

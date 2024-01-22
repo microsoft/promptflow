@@ -35,7 +35,7 @@ def query():
 traced_sum = trace(sum)
 
 
-@trace
+#@trace
 def my_flow(input_val: str = "gpt") -> str:
     """Simple flow without yaml."""
     print("calling query")
