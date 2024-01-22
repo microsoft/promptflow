@@ -5,17 +5,18 @@
 import asyncio
 import contextvars
 import inspect
+import threading
 from concurrent import futures
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._utils.logger_utils import flow_logger, logger
+from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.utils import set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
-from promptflow.executor._errors import NoNodeExecutedError
+from promptflow.executor._errors import NoNodeExecutedError, LineExecutionTimeoutError
 
 RUN_FLOW_NODES_LINEARLY = 1
 DEFAULT_CONCURRENCY_BULK = 2
@@ -38,35 +39,59 @@ class FlowNodesScheduler:
         self._dag_manager = DAGManager(nodes_from_invoker, inputs)
         self._context = context
 
+    def wait_within_timeout(self, execution_event: threading.Event, timeout: int):
+        flow_logger.info(f"Timeout task is scheduled to wait for {timeout} seconds.")
+        signal = execution_event.wait(timeout=timeout)
+        if signal:
+            flow_logger.info("Timeout task is cancelled because the execution is finished.")
+        else:
+            flow_logger.warning(f"Timeout task timeouted after waiting for {timeout} seconds.")
+
     def execute(
         self,
+        line_timeout_sec: Optional[int] = None,
     ) -> Tuple[dict, dict]:
-
         parent_context = contextvars.copy_context()
         with ThreadPoolExecutor(
             max_workers=self._node_concurrency, initializer=set_context, initargs=(parent_context,)
         ) as executor:
             self._execute_nodes(executor)
-
-            while not self._dag_manager.completed():
-                try:
+            timeout_task = None
+            event = threading.Event()
+            if line_timeout_sec is not None:
+                timeout_task = executor.submit(self.wait_within_timeout, event, line_timeout_sec)
+            try:
+                while not self._dag_manager.completed():
                     if not self._future_to_node:
                         raise NoNodeExecutedError("No nodes are ready for execution, but the flow is not completed.")
-                    completed_futures, _ = futures.wait(
-                        self._future_to_node.keys(), return_when=futures.FIRST_COMPLETED
+                    tasks_to_wait = list(self._future_to_node.keys())
+                    if timeout_task is not None:
+                        tasks_to_wait.append(timeout_task)
+                    completed_futures_with_wait, _ = futures.wait(
+                        tasks_to_wait, return_when=futures.FIRST_COMPLETED
                     )
+                    completed_futures = [f for f in completed_futures_with_wait if f in self._future_to_node]
                     self._dag_manager.complete_nodes(self._collect_outputs(completed_futures))
                     for each_future in completed_futures:
                         del self._future_to_node[each_future]
+                    if timeout_task and timeout_task.done():
+                        raise LineExecutionTimeoutError(self._context._line_number, line_timeout_sec)
                     self._execute_nodes(executor)
-                except Exception as e:
-                    node_names = ",".join(node.name for node in self._future_to_node.values())
-                    logger.error(f"Execution of one node has failed. Cancelling all running nodes: {node_names}.")
-                    for unfinished_future in self._future_to_node.keys():
-                        # We can't cancel running tasks here, only pending tasks could be cancelled.
-                        unfinished_future.cancel()
-                    # Even we raise exception here, still need to wait all running jobs finish to exit.
-                    raise e
+            except Exception as e:
+                err_msg = "Flow execution has failed."
+                if isinstance(e, LineExecutionTimeoutError):
+                    err_msg = f"Line execution timeout after {e.timeout_sec} seconds."
+                    self._context.cancel_node_runs(err_msg)
+                node_names = ",".join(node.name for node in self._future_to_node.values())
+                flow_logger.error(f"{err_msg} Cancelling all running nodes: {node_names}.")
+                for unfinished_future in self._future_to_node.keys():
+                    # We can't cancel running tasks here, only pending tasks could be cancelled.
+                    unfinished_future.cancel()
+                # Even we raise exception here, still need to wait all running jobs finish to exit.
+                raise e
+            finally:
+                # Cancel timeout task no matter the execution is finished or failed.
+                event.set()
         for node in self._dag_manager.bypassed_nodes:
             self._dag_manager.completed_nodes_outputs[node] = None
         return self._dag_manager.completed_nodes_outputs, self._dag_manager.bypassed_nodes
