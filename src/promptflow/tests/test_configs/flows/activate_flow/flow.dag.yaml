@@ -1,0 +1,49 @@
+inputs:
+  text:
+    type: string
+    default: world
+outputs:
+  output1:
+    type: string
+    reference: ${nodeC.output}
+  output2:
+    type: string
+    reference: ${nodeD.output}
+nodes:
+- name: nodeA
+  type: python
+  source:
+    type: code
+    path: print_input.py
+  inputs:
+    input: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: hello
+- name: nodeB
+  type: python
+  source:
+    type: code
+    path: print_input.py
+  inputs:
+    input: ${inputs.text}
+  activate:
+    when: ${nodeA.output}
+    is: hello
+- name: nodeC
+  type: python
+  source:
+    type: code
+    path: print_input.py
+  inputs:
+    input: ${nodeB.output}
+- name: nodeD
+  type: python
+  source:
+    type: code
+    path: print_input.py
+  inputs:
+    input: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: world
