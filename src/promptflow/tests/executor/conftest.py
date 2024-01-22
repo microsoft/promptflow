@@ -1,3 +1,4 @@
+import contextlib
 import multiprocessing
 from asyncio import Queue
 from pathlib import Path
@@ -86,22 +87,22 @@ current_process_wrapper = _default_mock_process_wrapper
 current_process_manager = _default_mock_create_spawned_fork_process_manager
 
 
-def get_current_process_wrapper():
-    return current_process_wrapper
+@contextlib.contextmanager
+def override_process_target(process_wrapper=None, process_manager=None):
+    global current_process_wrapper, current_process_manager
 
+    # Set to the customized ones if provided
+    if process_wrapper is not None:
+        current_process_wrapper = process_wrapper
+    if process_manager is not None:
+        current_process_manager = process_manager
 
-def set_current_process_wrapper(strategy_func):
-    global current_process_wrapper
-    current_process_wrapper = strategy_func
-
-
-def get_current_process_manager():
-    return current_process_manager
-
-
-def set_current_process_manager(strategy_func):
-    global current_process_manager
-    current_process_manager = strategy_func
+    try:
+        yield
+    finally:
+        # Revert back to the original states
+        current_process_wrapper = _default_mock_process_wrapper
+        current_process_manager = _default_mock_create_spawned_fork_process_manager
 
 
 SpawnProcess = multiprocessing.Process
@@ -116,9 +117,9 @@ if "forkserver" in multiprocessing.get_all_start_methods():
 class BaseMockProcess:
     def modify_target(self, target):
         if target == _process_wrapper:
-            return get_current_process_wrapper()
+            return current_process_wrapper
         if target == create_spawned_fork_process_manager:
-            return get_current_process_manager()
+            return current_process_manager
         return target
 
 

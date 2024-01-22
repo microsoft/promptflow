@@ -16,7 +16,7 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import _process_wrapper
 from promptflow.executor._process_manager import create_spawned_fork_process_manager
 
-from ..conftest import set_current_process_manager, set_current_process_wrapper
+from ..conftest import override_process_target
 from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_jsonl
 
 IS_LEGACY_OPENAI = version("openai").startswith("0.")
@@ -125,34 +125,36 @@ class TestExecutorTelemetry:
 
             # batch run case
             # override the _process_wrapper with a customized one to mock the chat api
-            set_current_process_wrapper(_customized_mock_process_wrapper)
-            set_current_process_manager(_customized_mock_create_spawned_fork_process_manager)
-            run_id = str(uuid.uuid4())
-            batch_engine = BatchEngine(
-                get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
-            )
-            input_dirs = {"data": get_flow_inputs_file(flow_folder)}
-            inputs_mapping = {"question": "${data.question}", "chat_history": "${data.chat_history}"}
-            output_dir = Path(mkdtemp())
-            batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
+            with override_process_target(
+                process_wrapper=_customized_mock_process_wrapper,
+                process_manager=_customized_mock_create_spawned_fork_process_manager,
+            ):
+                run_id = str(uuid.uuid4())
+                batch_engine = BatchEngine(
+                    get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=dev_connections
+                )
+                input_dirs = {"data": get_flow_inputs_file(flow_folder)}
+                inputs_mapping = {"question": "${data.question}", "chat_history": "${data.chat_history}"}
+                output_dir = Path(mkdtemp())
+                batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
 
-            outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
-            for line in outputs:
-                headers = json.loads(line.get("answer", ""))
+                outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+                for line in outputs:
+                    headers = json.loads(line.get("answer", ""))
+                    assert "promptflow/" in headers.get("x-ms-useragent")
+                    assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
+                    assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Batch.name
+
+                # single_node case
+                run_info = FlowExecutor.load_and_exec_node(
+                    get_yaml_file("openai_chat_api_flow"),
+                    "chat",
+                    flow_inputs=inputs,
+                    connections=dev_connections,
+                    raise_ex=True,
+                )
+                assert run_info.output is not None
+                headers = json.loads(run_info.output)
                 assert "promptflow/" in headers.get("x-ms-useragent")
                 assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
-                assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Batch.name
-
-            # single_node case
-            run_info = FlowExecutor.load_and_exec_node(
-                get_yaml_file("openai_chat_api_flow"),
-                "chat",
-                flow_inputs=inputs,
-                connections=dev_connections,
-                raise_ex=True,
-            )
-            assert run_info.output is not None
-            headers = json.loads(run_info.output)
-            assert "promptflow/" in headers.get("x-ms-useragent")
-            assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
-            assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.SingleNode.name
+                assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.SingleNode.name
