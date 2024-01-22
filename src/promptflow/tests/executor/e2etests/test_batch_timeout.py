@@ -59,7 +59,7 @@ class TestBatchTimeout:
         # assert mem_run_storage persists run infos correctly
         assert len(mem_run_storage._flow_runs) == 2, "Flow runs are persisted in memory storage."
         assert len(mem_run_storage._node_runs) == 4, "Node runs are persisted in memory storage."
-        msg = "Tool execution is cancelled because of the error: Line execution timeout after 5 seconds."
+        msg = "Tool execution is canceled because of the error: Line execution timeout after 5 seconds."
         for run in mem_run_storage._node_runs.values():
             if run.node == "my_python_tool_with_failed_line":
                 assert run.status == Status.Canceled
