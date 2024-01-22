@@ -154,12 +154,10 @@ class Flow(FlowBase):
     def __init__(
         self,
         code: Union[str, PathLike],
+        path: Union[str, PathLike],
         dag: dict,
         **kwargs,
     ):
-        code = Path(code)
-        path = kwargs.pop("path", None)
-        path = Path(path) if path else None
         self.variant = kwargs.pop("variant", None) or {}
         super().__init__(data=dag, code=code, path=path, **kwargs)
 
