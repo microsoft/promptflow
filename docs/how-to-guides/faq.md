@@ -92,6 +92,17 @@ Please take the following points into consideration when changing it:
 
 2. High parallelism may cause the underlying API call to reach the rate limit of your LLM endpoint. In which case you can decrease the `PF_WORKER_COUNT` or increase the rate limit. Please refer to [this doc](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/quota) on quota management. 
 
+```
+PF_WORKER_COUNT <= TPM * duration_seconds / token_count / 60
+```
+TPM: token per minute, capacity rate limit of your LLM endpoint
+
+duration_seconds: single flow run duration in seconds
+
+token_count: single flow run token count
+
+
+For example, if your endpoint TPM (token per minute) is 50K, the single flow run takes 10k tokens and runs for 30s, pls do not set up PF_WORKER_COUNT bigger than 2. This is a rough estimation. Please also consider collboaration (teammates use the same endpoint at the same time) and tokens consumed in deployed inference endpoints, playground and other cases which might send request to your LLM endpoints.
 
 **PF_BATCH_METHOD**
 
