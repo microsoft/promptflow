@@ -19,12 +19,9 @@ GPT4V_VERSION = "vision-preview"
 
 
 def _get_credential():
-    try:
-        from azure.identity import DefaultAzureCredential
-        from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
-    except ImportError:
-        return DefaultAzureCredential()
-    # Here is for sovereign cloud cases, like mooncake, fairfax.
+    from azure.identity import DefaultAzureCredential
+    from azure.ai.ml._azure_environments import _get_default_cloud_name, EndpointURLS, _get_cloud, AzureEnvironments
+    # Support sovereign cloud cases, like mooncake, fairfax.
     cloud_name = _get_default_cloud_name()
     if cloud_name != AzureEnvironments.ENV_DEFAULT:
         cloud = _get_cloud(cloud=cloud_name)
@@ -78,12 +75,12 @@ def list_deployment_names(
     connection: AzureOpenAIConnection = None
 ) -> List[Dict[str, str]]:
     try:
-        # Local does not support dynamic list.
+        # Does not support dynamic list for local.
         from azure.mgmt.cognitiveservices import CognitiveServicesManagementClient
         from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
     except ImportError:
         return []
-    # For local, subscription_id is None
+    # For local, subscription_id is None. Does not suppot dynamic list for local.
     if not subscription_id:
         return []
 
@@ -100,8 +97,12 @@ def list_deployment_names(
             resource_id = conn.get("value").get('resource_id', "")
             conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
         except Exception as e:
-            msg = f"Parsing connection with exception: {e}"
-            raise ListDeploymentsError(msg=msg) from e
+            # If local has .azure config, may 404 here.
+            if hasattr(e, 'status_code') and e.status_code == 404:
+                return []
+            else:
+                msg = f"Parsing connection with exception: {e}"
+                raise ListDeploymentsError(msg=msg) from e
 
         client = CognitiveServicesManagementClient(
             credential=credential,
