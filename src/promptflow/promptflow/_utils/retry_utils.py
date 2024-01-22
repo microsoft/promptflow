@@ -81,14 +81,15 @@ def http_retry_wrapper(f, tries=4, delay=3, backoff=2):
             if not isinstance(result, Response):
                 logger.debug(f"Not a retryable function, expected return type {Response}, got {type(result)}.")
                 return result
-            if result.status_code in HTTP_RETRY_CODES:
-                logger.warning(
-                    f"Retryable error code {result.status_code} returned, retrying in {delay_seconds} seconds. "
-                    f"Function {f.__name__}, Reason: {result.reason}"
-                )
-                time.sleep(delay_seconds)
-                retry_times -= 1
-                delay_seconds *= backoff
+            if result.status_code not in HTTP_RETRY_CODES:
+                return result
+            logger.warning(
+                f"Retryable error code {result.status_code} returned, retrying in {delay_seconds} seconds. "
+                f"Function {f.__name__}, Reason: {result.reason}"
+            )
+            time.sleep(delay_seconds)
+            retry_times -= 1
+            delay_seconds *= backoff
         return f(*args, **kwargs)
 
     return f_retry
