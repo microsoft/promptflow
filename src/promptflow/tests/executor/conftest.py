@@ -112,7 +112,7 @@ if "forkserver" in multiprocessing.get_all_start_methods():
 
 
 class BaseMockProcess:
-    # Base class for the mock process
+    # Base class for the mock process; This class is mainly used as the placeholder for the target mocking logic
     def modify_target(self, target):
         # Method to modify the target of the mock process
         # This shall be the place to hold the target mocking logic
