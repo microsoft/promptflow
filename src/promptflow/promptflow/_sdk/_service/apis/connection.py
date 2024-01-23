@@ -137,7 +137,8 @@ class Connection(Resource):
         connection_op = _get_connection_operation()
         connection_dict = request.get_json(force=True)
         params_override = [{k: v} for k, v in connection_dict.items()]
-        existing_connection = connection_op.get(name)
+        # TODO: check if we need to record registry for this private operation
+        existing_connection = connection_op._get(name)
         connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
         connection._secrets = existing_connection._secrets
         connection = connection_op.create_or_update(connection)
