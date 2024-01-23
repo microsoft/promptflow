@@ -447,52 +447,6 @@ class FlowExecutor:
             result[idx] = value
         return result
 
-    def _exec_batch_with_process_pool(
-        self,
-        batch_inputs: List[dict],
-        run_id,
-        output_dir: Path,
-        validate_inputs: bool = True,
-        variant_id: str = "",
-        batch_timeout_sec: Optional[int] = None,
-    ) -> List[LineResult]:
-        nlines = len(batch_inputs)
-        line_number = [
-            batch_input["line_number"] for batch_input in batch_inputs if "line_number" in batch_input.keys()
-        ]
-        has_line_number = len(line_number) > 0
-        if not has_line_number:
-            line_number = [i for i in range(nlines)]
-
-        # TODO: Such scenario only occurs in legacy scenarios, will be deprecated.
-        has_duplicates = len(line_number) != len(set(line_number))
-        if has_duplicates:
-            line_number = [i for i in range(nlines)]
-
-        result_list = []
-
-        if self._flow_file is None:
-            error_message = "flow file is missing"
-            raise UnexpectedError(
-                message_format=("Unexpected error occurred while init FlowExecutor. Error details: {error_message}."),
-                error_message=error_message,
-            )
-
-        from ._line_execution_process_pool import LineExecutionProcessPool
-
-        with LineExecutionProcessPool(
-            self,
-            nlines,
-            run_id,
-            variant_id,
-            validate_inputs,
-            output_dir,
-            batch_timeout_sec=batch_timeout_sec,
-        ) as pool:
-            result_list = pool.run(zip(line_number, batch_inputs))
-
-        return sorted(result_list, key=lambda r: r.run_info.index)
-
     def _exec_aggregation_with_bulk_results(
         self,
         batch_inputs: List[dict],

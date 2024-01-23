@@ -11,7 +11,7 @@ from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
-from typing import List, Union
+from typing import List, Optional, Union
 
 import psutil
 
@@ -91,10 +91,10 @@ class LineExecutionProcessPool:
         flow_executor: FlowExecutor,
         nlines,
         run_id,
-        variant_id,
-        validate_inputs,
         output_dir,
-        batch_timeout_sec=None,
+        variant_id: str = "",
+        validate_inputs: bool = True,
+        batch_timeout_sec: Optional[int] = None,
     ):
         self._nlines = nlines
         self._run_id = run_id
