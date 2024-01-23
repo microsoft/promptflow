@@ -13,7 +13,7 @@ from threading import current_thread
 from types import GeneratorType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
+from promptflow._constants import LINE_NUMBER_KEY
 from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
@@ -30,8 +30,12 @@ from promptflow._utils.execution_utils import (
     get_aggregation_inputs_properties,
 )
 from promptflow._utils.logger_utils import flow_logger, logger
-from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
-from promptflow._utils.utils import transpose
+from promptflow._utils.multimedia_utils import (
+    load_multimedia_data,
+    load_multimedia_data_recursively,
+    persist_multimedia_data,
+)
+from promptflow._utils.utils import transpose, get_int_env_var
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -87,7 +91,7 @@ class FlowExecutor:
         *,
         raise_ex: bool = False,
         working_dir=None,
-        line_timeout_sec=LINE_TIMEOUT_SEC,
+        line_timeout_sec=None,
         flow_file=None,
     ):
         """Initialize a FlowExecutor object.
@@ -107,7 +111,7 @@ class FlowExecutor:
         :param working_dir: The working directory to use for execution.
         :type working_dir: str or None
         :param line_timeout_sec: The maximum time to wait for a line of output from a node.
-        :type line_timeout_sec: int
+        :type line_timeout_sec: int or None
         :param flow_file: The path to the file containing the Flow definition.
         :type flow_file: str or None
         """
@@ -124,7 +128,7 @@ class FlowExecutor:
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
         self._working_dir = working_dir
-        self._line_timeout_sec = line_timeout_sec
+        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", line_timeout_sec)
         self._flow_file = flow_file
         try:
             self._tools_manager = ToolsManager(loaded_tools)
@@ -161,7 +165,7 @@ class FlowExecutor:
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
-        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+        line_timeout_sec: Optional[int] = None,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -218,7 +222,7 @@ class FlowExecutor:
         storage: Optional[AbstractRunStorage] = None,
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
-        line_timeout_sec: int = LINE_TIMEOUT_SEC,
+        line_timeout_sec: Optional[int] = None,
     ):
         logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
@@ -935,7 +939,9 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context).execute()
+        return FlowNodesScheduler(
+            self._tools_manager, inputs, nodes, self._node_concurrency, context,
+        ).execute(self._line_timeout_sec)
 
     @staticmethod
     def apply_inputs_mapping(
@@ -1062,3 +1068,56 @@ def _ensure_node_result_is_serializable(f):
         return result
 
     return wrapper
+
+
+def execute_flow(
+    flow_file: Path,
+    working_dir: Path,
+    output_dir: Path,
+    connections: dict,
+    inputs: Mapping[str, Any],
+    *,
+    run_aggregation: bool = True,
+    enable_stream_output: bool = False,
+    allow_generator_output: bool = False,  # TODO: remove this
+    **kwargs,
+) -> LineResult:
+    """Execute the flow, including aggregation nodes.
+
+    :param flow_file: The path to the flow file.
+    :type flow_file: Path
+    :param working_dir: The working directory of the flow.
+    :type working_dir: Path
+    :param output_dir: Relative path relative to working_dir.
+    :type output_dir: Path
+    :param connections: A dictionary containing connection information.
+    :type connections: dict
+    :param inputs: A dictionary containing the input values for the flow.
+    :type inputs: Mapping[str, Any]
+    :param enable_stream_output: Whether to allow stream (generator) output for flow output. Default is False.
+    :type enable_stream_output: Optional[bool]
+    :param kwargs: Other keyword arguments to create flow executor.
+    :type kwargs: Any
+    :return: The line result of executing the flow.
+    :rtype: ~promptflow.executor._result.LineResult
+    """
+    flow_executor = FlowExecutor.create(flow_file, connections, working_dir, raise_ex=False, **kwargs)
+    flow_executor.enable_streaming_for_llm_flow(lambda: enable_stream_output)
+    with _change_working_dir(working_dir):
+        # execute nodes in the flow except the aggregation nodes
+        # TODO: remove index=0 after UX no longer requires a run id similar to batch runs
+        # (run_id_index, eg. xxx_0) for displaying the interface
+        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+        # persist the output to the output directory
+        line_result.output = persist_multimedia_data(line_result.output, base_dir=working_dir, sub_dir=output_dir)
+        if run_aggregation and line_result.aggregation_inputs:
+            # convert inputs of aggregation to list type
+            flow_inputs = {k: [v] for k, v in inputs.items()}
+            aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+            aggregation_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
+            line_result.node_run_infos = {**line_result.node_run_infos, **aggregation_results.node_run_infos}
+            line_result.run_info.metrics = aggregation_results.metrics
+        if isinstance(line_result.output, dict):
+            # remove line_number from output
+            line_result.output.pop(LINE_NUMBER_KEY, None)
+        return line_result

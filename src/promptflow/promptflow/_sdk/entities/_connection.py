@@ -22,7 +22,7 @@ from promptflow._sdk._constants import (
     ConnectionType,
     CustomStrongTypeConnectionConfigs,
 )
-from promptflow._sdk._errors import UnsecureConnectionError
+from promptflow._sdk._errors import UnsecureConnectionError, SDKError
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -47,6 +47,7 @@ from promptflow._sdk.schemas._connection import (
 )
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow.contracts.types import Secret
+from promptflow.exceptions import ValidationException, UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -121,6 +122,8 @@ class _Connection(YAMLTranslatableMixin):
             return self.secrets[item]
         if item in self.configs:
             return self.configs[item]
+        # raise UserErrorException(error=KeyError(f"Key {item!r} not found in connection {self.name!r}."))
+        # Cant't raise UserErrorException due to the code exit(1) of promptflow._cli._utils.py line 368.
         raise KeyError(f"Key {item!r} not found in connection {self.name!r}.")
 
     @classmethod
@@ -153,7 +156,9 @@ class _Connection(YAMLTranslatableMixin):
                 continue
             encrypt_secrets[k] = encrypt_secret_value(v)
         if invalid_secrets:
-            raise ValueError(f"Connection {self.name!r} secrets {invalid_secrets} value invalid, please fill them.")
+            raise ValidationException(
+                f"Connection {self.name!r} secrets {invalid_secrets} value invalid, please fill them."
+            )
         return encrypt_secrets
 
     @classmethod
@@ -162,7 +167,7 @@ class _Connection(YAMLTranslatableMixin):
         try:
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
-            raise Exception(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
+            raise SDKError(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
     def _to_dict(self) -> Dict:
@@ -175,11 +180,11 @@ class _Connection(YAMLTranslatableMixin):
         type_in_override = find_type_in_override(params_override)
         type_str = type_in_override or data.get("type")
         if type_str is None:
-            raise ValueError("type is required for connection.")
+            raise ValidationException("type is required for connection.")
         type_str = cls._casting_type(type_str)
         type_cls = _supported_types.get(type_str)
         if type_cls is None:
-            raise ValueError(
+            raise ValidationException(
                 f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
             )
         return type_cls, type_str
@@ -763,7 +768,8 @@ class CustomStrongTypeConnection(_Connection):
                 not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
                 or not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
             ):
-                raise ValueError("custom_type and module are required for custom strong type connections.")
+                error = ValueError("custom_type and module are required for custom strong type connections.")
+                raise UserErrorException(message=str(error), error=error)
             else:
                 m = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
                 custom_cls = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
@@ -775,13 +781,16 @@ class CustomStrongTypeConnection(_Connection):
             module = importlib.import_module(m)
             cls = getattr(module, custom_cls)
         except ImportError:
-            raise ValueError(
+            error = ValueError(
                 f"Can't find module {m} in current environment. Please check the module is correctly configured."
             )
+            raise UserErrorException(message=str(error), error=error)
         except AttributeError:
-            raise ValueError(
-                f"Can't find class {custom_cls} in module {m}. Please check the custom_type is correctly configured."
+            error = ValueError(
+                f"Can't find class {custom_cls} in module {m}. "
+                f"Please check the custom_type is correctly configured."
             )
+            raise UserErrorException(message=str(error), error=error)
 
         schema_configs = {}
         schema_secrets = {}
@@ -874,11 +883,12 @@ class CustomConnection(_Connection):
     def _to_orm_object(self):
         # Both keys & secrets will be set in custom configs with value type specified for custom connection.
         if not self.secrets:
-            raise ValueError(
+            error = ValueError(
                 "Secrets is required for custom connection, "
                 "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
                 "to initialize custom connection."
             )
+            raise UserErrorException(message=str(error), error=error)
         custom_configs = {
             k: {"configValueType": ConfigValueType.STRING.value, "value": v} for k, v in self.configs.items()
         }
@@ -996,10 +1006,11 @@ class CustomConnection(_Connection):
         elif isinstance(module, types.ModuleType) and isinstance(to_class, str):
             custom_conn_name = to_class
         else:
-            raise ValueError(
+            error = ValueError(
                 f"Failed to convert to custom strong type connection because of "
                 f"invalid module or class: {module}, {to_class}"
             )
+            raise UserErrorException(message=str(error), error=error)
 
         custom_defined_connection_class = getattr(module, custom_conn_name)
 
