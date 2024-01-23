@@ -1,11 +1,12 @@
 import pytest
 
-from promptflow.tools.aoai_gpt4v import AzureOpenAI, ParseConnectionError, _parse_resource_id, list_deployment_names
+from promptflow.tools.aoai_gpt4v import AzureOpenAI, ListDeploymentsError, ParseConnectionError,\
+    _parse_resource_id, list_deployment_names
 
 
 DEFAULT_SUBSCRIPTION_ID = "96aede12-2f73-41cb-b983-6d11a904839b"
 DEFAULT_RESOURCE_GROUP_NAME = "promptflow"
-DEFAULT_WORKSPACE_NAME = "promptflow-eastus"
+DEFAULT_WORKSPACE_NAME = "promptflow-canary-dev"
 
 
 @pytest.fixture
@@ -40,25 +41,14 @@ def test_parse_resource_id_with_error(resource_id, error_message):
 @pytest.mark.parametrize(
         "connection, expected_result",
         [
-            ("Default_AzureOpenAI", []),
-            ("azure_open_ai_connection", []),
-        ],
-    )
-def test_list_deployment_names_without_gpt4v(connection, expected_result):
-    res = list_deployment_names(
-        DEFAULT_SUBSCRIPTION_ID,
-        DEFAULT_RESOURCE_GROUP_NAME,
-        DEFAULT_WORKSPACE_NAME,
-        connection
-    )
-    assert res == expected_result
-
-
-@pytest.mark.skip("Skipping until we have a Azure OpenAI GPT-4 Vision deployment")
-@pytest.mark.parametrize(
-        "connection, expected_result",
-        [
-            ("gpt4_v_connection", ["gpt-4-vision-preview"]),
+            ("azure_open_ai", []),
+            ("CHESI-AOAI-GPT4V", [
+                {
+                    'value': 'gpt-4-vision-preview',
+                    'display_value': 'gpt-4-vision-preview'
+                    }
+                ]
+            ),
         ],
     )
 def test_list_deployment_names(connection, expected_result):
@@ -69,6 +59,21 @@ def test_list_deployment_names(connection, expected_result):
         connection
     )
     assert res == expected_result
+
+
+@pytest.mark.parametrize(
+        "connection",
+        ["mengla_test_aoai"],
+    )
+def test_list_deployment_names_with_error(connection):
+    with pytest.raises(ListDeploymentsError) as e:
+        list_deployment_names(
+            DEFAULT_SUBSCRIPTION_ID,
+            DEFAULT_RESOURCE_GROUP_NAME,
+            DEFAULT_WORKSPACE_NAME,
+            connection
+        )
+        assert "Failed to list deployments due to permission issue" in e.message
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
