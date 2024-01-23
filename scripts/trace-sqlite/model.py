@@ -1,3 +1,4 @@
+import typing
 from pathlib import Path
 
 import sqlalchemy
@@ -68,12 +69,14 @@ def support_transaction(engine):
     return engine
 
 
-def db_session() -> Session:
+def db_session(sqlite_filename: typing.Optional[str] = None) -> Session:
     global session_maker
     if session_maker is not None:
         return session_maker()
 
-    db_path = (Path.cwd().resolve() / "db.sqlite").resolve()
+    if sqlite_filename is None:
+        sqlite_filename = "db.sqlite"
+    db_path = (Path.cwd().resolve() / sqlite_filename).resolve()
     engine = sqlalchemy.create_engine(f"sqlite:///{db_path.as_posix()}")
     engine = support_transaction(engine)
 
