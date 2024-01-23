@@ -50,8 +50,8 @@ REQUIRES = [
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
     "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
     "docutils",  # used to generate description for tools
-    "opentelemetry-api>=1.21.0,<2.0.0", # used to generate trace
-    "opentelemetry-sdk>=1.21.0,<2.0.0", # used to collect trace
+    "opentelemetry-api>=1.21.0,<2.0.0",  # used to generate trace
+    "opentelemetry-sdk>=1.21.0,<2.0.0",  # used to collect trace
 ]
 
 setup(
