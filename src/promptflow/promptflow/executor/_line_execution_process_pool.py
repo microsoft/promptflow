@@ -119,6 +119,7 @@ class LineExecutionProcessPool:
         self._line_timeout_sec = flow_executor._line_timeout_sec
         if self._line_timeout_sec is None:
             self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+        self._batch_timeout_sec = flow_executor._batch_timeout_sec
         self._output_dir = output_dir
         self._flow_create_kwargs = {
             "flow_file": flow_executor._flow_file,
@@ -235,7 +236,8 @@ class LineExecutionProcessPool:
     ):
         index, process_id, process_name = self._get_process_info(index)
 
-        while True:
+        batch_start_time = datetime.utcnow()
+        while self._check_batch_within_timeout(batch_start_time):
             try:
                 # Get task from task_queue
                 args = task_queue.get(timeout=1)
@@ -327,6 +329,15 @@ class LineExecutionProcessPool:
                     index, process_id, process_name = self._get_process_info(index)
 
             self._processing_idx.pop(line_number)
+
+        # End the process when the batch timeout is exceeded.
+        self._processes_manager.end_process(index)
+        self._ensure_process_terminated_within_timeout(process_id)
+
+    def _check_batch_within_timeout(self, start_time: datetime) -> bool:
+        if self._batch_timeout_sec is None:
+            return True
+        return (datetime.utcnow() - start_time).total_seconds() <= self._batch_timeout_sec
 
     def _process_multimedia(self, result: LineResult) -> LineResult:
         """Replace multimedia data in line result with string place holder to prevent OOM
