@@ -263,3 +263,7 @@ class ResolveToolError(PromptflowException):
 
 class UnsupportedAssistantToolType(ValidationException):
     pass
+
+
+class InvalidFlowFileError(UserErrorException):
+    pass

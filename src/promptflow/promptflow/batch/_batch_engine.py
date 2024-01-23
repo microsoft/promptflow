@@ -33,12 +33,12 @@ from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
-from promptflow.batch._errors import InvalidFlowFileError
 from promptflow.batch._python_executor_proxy import PythonExecutorProxy
 from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.executor._errors import InvalidFlowFileError
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
@@ -97,10 +97,15 @@ class BatchEngine:
         """
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
-            entry, path = self._try_parse_eager_flow_yaml()
-            if entry:
-                self._flow_file = path
+        if Path(flow_file).suffix.lower() == ".py":
+            # if the flow file is a python file, we need to set the _is_dag_yaml_flow to false and set
+            # the program language to python, since we only support eager flow in python executor now
+            self._is_dag_yaml_flow = False
+            self._program_language = FlowLanguage.Python
+        elif Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+            if self._is_eager_flow_yaml():
+                entry, path = self._parse_eager_flow_yaml()
+                self._flow_file = Path(path)
                 self._is_dag_yaml_flow = False
                 self._program_language = FlowLanguage.Python
             else:
@@ -108,11 +113,6 @@ class BatchEngine:
                 FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
                 self._is_dag_yaml_flow = True
                 self._program_language = self._flow.program_language
-        # if the flow file is a python file, we need to set the _is_dag_yaml_flow to false
-        # and set the program language to python
-        elif Path(flow_file).suffix.lower() == ".py":
-            self._is_dag_yaml_flow = False
-            self._program_language = FlowLanguage.Python
         else:
             raise InvalidFlowFileError(
                 message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
@@ -390,9 +390,16 @@ class BatchEngine:
         aggr_result.node_run_infos = aggr_exec_result.node_run_infos
         aggr_result.output = aggr_exec_result.output
 
-    def _try_parse_eager_flow_yaml(self):
-        with open(self._working_dir / self._flow_file, "r", encoding="utf-8") as fin:
+    def _is_eager_flow_yaml(self):
+        flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
+        with open(flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
-        if "entry" in flow_dag and "path" in flow_dag:
-            return flow_dag["entry"], flow_dag["path"]
-        return None, None
+        if "entry" in flow_dag:
+            return True
+        return False
+
+    def _parse_eager_flow_yaml(self):
+        flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
+        with open(flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        return flow_dag.get("entry", ""), flow_dag.get("path", "")
