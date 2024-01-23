@@ -282,6 +282,7 @@ class BatchEngine:
             for r in line_results
             if r.run_info.status == Status.Completed
         ]
+        outputs.sort(key=lambda x: x[LINE_NUMBER_KEY])
         self._persist_outputs(outputs, output_dir)
 
         # execute aggregation nodes
