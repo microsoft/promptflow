@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
+from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -77,6 +77,7 @@ class BatchEngine:
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
+        batch_timeout: Optional[int] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
@@ -89,6 +90,8 @@ class BatchEngine:
         :type connections: Optional[dict]
         :param storage: The storage to store execution results
         :type storage: Optional[~promptflow.storage._run_storage.AbstractRunStorage]
+        :param batch_timeout: The timeout of batch run in seconds
+        :type batch_timeout: Optional[int]
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
@@ -99,7 +102,14 @@ class BatchEngine:
 
         self._connections = connections
         self._storage = storage
+
+        # process timeout parameters and pass them to create function of executor proxy
+        self._batch_timeout = batch_timeout
+        self._line_timeout = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+        timeout_kwargs = {"batch_timeout": self._batch_timeout, "line_timeout": self._line_timeout}
+        kwargs.update(timeout_kwargs)
         self._kwargs = kwargs
+
         # set it to True when the batch run is canceled
         self._is_canceled = False
 

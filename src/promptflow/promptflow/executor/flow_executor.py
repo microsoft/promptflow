@@ -35,7 +35,7 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data_recursively,
     persist_multimedia_data,
 )
-from promptflow._utils.utils import transpose, get_int_env_var
+from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -92,6 +92,7 @@ class FlowExecutor:
         raise_ex: bool = False,
         working_dir=None,
         line_timeout_sec=None,
+        batch_timeout_sec=None,
         flow_file=None,
     ):
         """Initialize a FlowExecutor object.
@@ -129,6 +130,7 @@ class FlowExecutor:
         self._loaded_tools = loaded_tools
         self._working_dir = working_dir
         self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", line_timeout_sec)
+        self._batch_timeout_sec = batch_timeout_sec
         self._flow_file = flow_file
         try:
             self._tools_manager = ToolsManager(loaded_tools)
@@ -166,6 +168,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
+        batch_timeout_sec: Optional[int] = None,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -209,6 +212,7 @@ class FlowExecutor:
             raise_ex=raise_ex,
             node_override=node_override,
             line_timeout_sec=line_timeout_sec,
+            batch_timeout_sec=batch_timeout_sec,
         )
 
     @classmethod
@@ -223,6 +227,7 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
+        batch_timeout_sec: Optional[int] = None,
     ):
         logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
@@ -257,6 +262,7 @@ class FlowExecutor:
             raise_ex=raise_ex,
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
+            batch_timeout_sec=batch_timeout_sec,
             flow_file=flow_file,
         )
         logger.debug("The flow executor is initialized successfully.")
@@ -940,7 +946,11 @@ class FlowExecutor:
                 current_value=self._node_concurrency,
             )
         return FlowNodesScheduler(
-            self._tools_manager, inputs, nodes, self._node_concurrency, context,
+            self._tools_manager,
+            inputs,
+            nodes,
+            self._node_concurrency,
+            context,
         ).execute(self._line_timeout_sec)
 
     @staticmethod
