@@ -1265,3 +1265,21 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
             )
         assert "'path': ['Missing data for required field.']" in str(e.value)
+
+    def test_get_incomplete_run(self, local_client, pf) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            shutil.copytree(f"{FLOWS_DIR}/print_env_var", f"{temp_dir}/print_env_var")
+
+            run = pf.run(
+                flow=f"{temp_dir}/print_env_var",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+            )
+
+            # remove run dag
+            shutil.rmtree(f"{temp_dir}/print_env_var")
+
+            # can still get run operations
+            LocalStorageOperations(run=run)
+
+            # can to_dict
+            run._to_dict()

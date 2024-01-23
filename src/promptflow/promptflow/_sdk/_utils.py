@@ -66,7 +66,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.exceptions import UserErrorException, ErrorTarget
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -1058,10 +1058,17 @@ def parse_remote_flow_pattern(flow: object) -> str:
     return flow_name
 
 
-def get_connection_operation(connection_provider: str, user_agent: str = None):
+def get_connection_operation(connection_provider: str, credential=None, user_agent: str = None):
     """
     Get connection operation based on connection provider.
     This function will be called by PFClient, so please do not refer to PFClient in this function.
+
+    :param connection_provider: Connection provider, e.g. local, azureml, azureml://subscriptions..., etc.
+    :type connection_provider: str
+    :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
+    :type credential: object
+    :param user_agent: User Agent
+    :type user_agent: str
     """
     if connection_provider == ConnectionProvider.LOCAL.value:
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
@@ -1071,9 +1078,9 @@ def get_connection_operation(connection_provider: str, user_agent: str = None):
     elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
         from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 
-        logger.debug("PFClient using local azure connection operations.")
+        logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
         if user_agent is None:
-            connection_operation = LocalAzureConnectionOperations(connection_provider)
+            connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential)
         else:
             connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
     else:
