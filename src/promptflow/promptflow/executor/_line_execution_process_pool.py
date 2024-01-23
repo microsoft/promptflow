@@ -19,6 +19,7 @@ from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC
 from promptflow._core._errors import ProcessPoolError, UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
+from promptflow._utils.dataclass_serializer import convert_eager_flow_output_to_dict
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
@@ -37,6 +38,7 @@ from promptflow.executor._errors import (
 )
 from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager
 from promptflow.executor._result import LineResult
+from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
 
@@ -115,7 +117,10 @@ class LineExecutionProcessPool:
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
         self._use_fork = use_fork
-        self._storage = flow_executor._run_tracker._storage
+        if isinstance(flow_executor, ScriptExecutor):
+            self._storage = flow_executor._storage
+        else:
+            self._storage = flow_executor._run_tracker._storage
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
         self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
@@ -125,6 +130,7 @@ class LineExecutionProcessPool:
             "flow_file": flow_executor._flow_file,
             "connections": flow_executor._connections,
             "working_dir": flow_executor._working_dir,
+            "entry": flow_executor._entry,
             "line_timeout_sec": self._line_timeout_sec,
             "raise_ex": False,
         }
@@ -582,7 +588,10 @@ def _exec_line(
             validate_inputs=validate_inputs,
             node_concurrency=DEFAULT_CONCURRENCY_BULK,
         )
-        if line_result is not None and isinstance(line_result.output, dict):
+        if line_result is not None:
+            # For eager flow, the output may be a dataclass which is not picklable, we need to convert it to dict.
+            if not isinstance(line_result.output, dict):
+                line_result.output = convert_eager_flow_output_to_dict(line_result.output)
             line_result.output.pop(LINE_NUMBER_KEY, None)
         # TODO: Put serialized line result into queue to catch serialization error beforehand.
         # Otherwise it might cause the process to hang, e.g, line failed because output is not seralizable.
@@ -595,8 +604,12 @@ def _exec_line(
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         # If line execution failed before start, there is no flow information in the run_tracker.
         # So we call start_flow_run before handling exception to make sure the run_tracker has flow info.
-        executor._run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
-        run_info = executor._run_tracker.end_run(f"{run_id}_{index}", ex=e)
+        if isinstance(executor, ScriptExecutor):
+            run_tracker = RunTracker(executor._storage)
+        else:
+            run_tracker = executor._run_tracker
+        run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
+        run_info = run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
         result = LineResult(
             output={},
@@ -627,16 +640,25 @@ def _process_wrapper(
 
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
-    run_tracker = RunTracker(run_storage=storage)
-    return FlowExecutor(
-        flow=flow_executor._flow,
-        connections=flow_executor._connections,
-        run_tracker=run_tracker,
-        cache_manager=flow_executor._cache_manager,
-        loaded_tools=flow_executor._loaded_tools,
-        raise_ex=False,
-        line_timeout_sec=flow_executor._line_timeout_sec,
-    )
+    if isinstance(flow_executor, ScriptExecutor):
+        return ScriptExecutor(
+            flow_file=flow_executor._flow_file,
+            entry=flow_executor._entry,
+            connections=flow_executor._connections,
+            working_dir=flow_executor._working_dir,
+            storage=storage,
+        )
+    else:
+        run_tracker = RunTracker(run_storage=storage)
+        return FlowExecutor(
+            flow=flow_executor._flow,
+            connections=flow_executor._connections,
+            run_tracker=run_tracker,
+            cache_manager=flow_executor._cache_manager,
+            loaded_tools=flow_executor._loaded_tools,
+            raise_ex=False,
+            line_timeout_sec=flow_executor._line_timeout_sec,
+        )
 
 
 def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):

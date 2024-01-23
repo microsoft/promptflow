@@ -7,11 +7,13 @@ from typing import Any, List, Mapping, Optional
 
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
+from promptflow._core.run_tracker import RunTracker
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool
 from promptflow.executor._result import AggregationResult, LineResult
+from promptflow.executor._script_executor import ScriptExecutor
 from promptflow.storage._run_storage import AbstractRunStorage
 
 
@@ -26,9 +28,11 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
+        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
+        # TODO: Raise error if connections is None
         flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
         return cls(flow_executor)
 
@@ -49,7 +53,13 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
     ) -> List[LineResult]:
-        with self._flow_executor._run_tracker.node_log_manager:
+        # TODO: Refine the logic here since the script executor actually doesn't have the 'node' concept
+        if isinstance(self._flow_executor, ScriptExecutor):
+            run_tracker = RunTracker(self._flow_executor._storage)
+        else:
+            run_tracker = self._flow_executor._run_tracker
+
+        with run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
             if self._flow_executor._flow_file is None:
                 raise UnexpectedError(
@@ -68,8 +78,11 @@ class PythonExecutorProxy(AbstractExecutorProxy):
                 line_results = pool.run(zip(line_number, batch_inputs))
 
             # For bulk run, currently we need to add line results to run_tracker
-            self._flow_executor._add_line_results(line_results)
+            self._flow_executor._add_line_results(line_results, run_tracker)
         return line_results
+
+    def get_inputs_definition(self):
+        return self._flow_executor.get_inputs_definition()
 
     @classmethod
     def _get_tool_metadata(cls, flow_file: Path, working_dir: Path) -> dict:

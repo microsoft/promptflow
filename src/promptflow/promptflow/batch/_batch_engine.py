@@ -29,6 +29,7 @@ from promptflow._utils.utils import (
     resolve_dir_to_absolute,
     transpose,
 )
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.batch._batch_inputs_processor import BatchInputsProcessor
 from promptflow.batch._csharp_executor_proxy import CSharpExecutorProxy
@@ -37,6 +38,7 @@ from promptflow.batch._result import BatchResult
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.executor._errors import InvalidFlowFileError
 from promptflow.executor._line_execution_process_pool import signal_handler
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.executor.flow_validator import FlowValidator
@@ -76,6 +78,7 @@ class BatchEngine:
         working_dir: Optional[Path] = None,
         *,
         connections: Optional[dict] = None,
+        entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
         batch_timeout_sec: Optional[int] = None,
         **kwargs,
@@ -97,10 +100,22 @@ class BatchEngine:
         """
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
-        FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
+        if self._is_eager_flow_yaml():
+            if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+                entry, path = self._parse_eager_flow_yaml()
+                self._flow_file = Path(path)
+            self._is_dag_yaml_flow = False
+            self._program_language = FlowLanguage.Python
+        elif Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+            self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
+            FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
+            self._is_dag_yaml_flow = True
+            self._program_language = self._flow.program_language
+        else:
+            raise InvalidFlowFileError(message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file)
 
         self._connections = connections
+        self._entry = entry
         self._storage = storage
         self._kwargs = kwargs
 
@@ -142,12 +157,13 @@ class BatchEngine:
             self._start_time = datetime.utcnow()
             with _change_working_dir(self._working_dir):
                 # create executor proxy instance according to the flow program language
-                executor_proxy_cls = self.executor_proxy_classes[self._flow.program_language]
+                executor_proxy_cls = self.executor_proxy_classes[self._program_language]
                 self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
                     executor_proxy_cls.create,
                     self._flow_file,
                     self._working_dir,
                     connections=self._connections,
+                    entry=self._entry,
                     storage=self._storage,
                     **self._kwargs,
                 )
@@ -166,8 +182,12 @@ class BatchEngine:
 
                     # set batch input source from input mapping
                     OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
+                    # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
+                    inputs = (
+                        self._flow.inputs if self._is_dag_yaml_flow else self._executor_proxy.get_inputs_definition()
+                    )
                     # resolve input data from input dirs and apply inputs mapping
-                    batch_input_processor = BatchInputsProcessor(self._working_dir, self._flow.inputs, max_lines_count)
+                    batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
@@ -234,9 +254,11 @@ class BatchEngine:
         # ensure executor health before execution
         await self._executor_proxy.ensure_executor_health()
         # apply default value in early stage, so we can use it both in line and aggregation nodes execution.
-        batch_inputs = [
-            apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
-        ]
+        # if the flow is None, we don't need to apply default value for inputs.
+        if self._is_dag_yaml_flow:
+            batch_inputs = [
+                apply_default_value_for_input(self._flow.inputs, each_line_input) for each_line_input in batch_inputs
+            ]
         run_id = run_id or str(uuid.uuid4())
 
         # execute lines
@@ -314,6 +336,8 @@ class BatchEngine:
         line_results: List[LineResult],
         run_id: Optional[str] = None,
     ) -> AggregationResult:
+        if not self._is_dag_yaml_flow:
+            return AggregationResult({}, {}, {})
         aggregation_nodes = {node.name for node in self._flow.nodes if node.aggregation}
         if not aggregation_nodes:
             return AggregationResult({}, {}, {})
@@ -376,3 +400,20 @@ class BatchEngine:
         aggr_result.metrics = aggr_exec_result.metrics
         aggr_result.node_run_infos = aggr_exec_result.node_run_infos
         aggr_result.output = aggr_exec_result.output
+
+    def _is_eager_flow_yaml(self):
+        if Path(self._flow_file).suffix.lower() == ".py":
+            return True
+        elif Path(self._flow_file).suffix.lower() in [".yaml", ".yml"]:
+            flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
+            with open(flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            if "entry" in flow_dag:
+                return True
+        return False
+
+    def _parse_eager_flow_yaml(self):
+        flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
+        with open(flow_file, "r", encoding="utf-8") as fin:
+            flow_dag = load_yaml(fin)
+        return flow_dag.get("entry", ""), flow_dag.get("path", "")
