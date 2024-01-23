@@ -1,17 +1,62 @@
 import pytest
+from unittest.mock import patch
 
 from promptflow.tools.aoai_gpt4v import AzureOpenAI, ListDeploymentsError, ParseConnectionError, \
-    _parse_resource_id, list_deployment_names
+    _parse_resource_id, list_deployment_names, GPT4V_VERSION
+
+from promptflow.azure.operations._arm_connection_operations import \
+    ArmConnectionOperations, OpenURLFailedUserError
 
 
-DEFAULT_SUBSCRIPTION_ID = "96aede12-2f73-41cb-b983-6d11a904839b"
-DEFAULT_RESOURCE_GROUP_NAME = "promptflow"
-DEFAULT_WORKSPACE_NAME = "promptflow-canary-dev"
+DEFAULT_SUBSCRIPTION_ID = "sub"
+DEFAULT_RESOURCE_GROUP_NAME = "rg"
+DEFAULT_WORKSPACE_NAME = "ws"
+DEFAULT_ACCOUNT = "account"
+DEFAULT_CONNECTION = "conn"
+
+
+class CustomException(Exception):
+    def __init__(self, message, status_code):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class Model:
+    def __init__(self, name, version):
+        self.name = name
+        self.version = version
+
+
+class Properties:
+    def __init__(self, name, version):
+        self.model = Model(name, version)
+
+
+class Deployment:
+    def __init__(self, name, model_name, version):
+        self.name = name
+        self.properties = Properties(model_name, version)
 
 
 @pytest.fixture
 def azure_openai_provider(azure_open_ai_connection) -> AzureOpenAI:
     return AzureOpenAI(azure_open_ai_connection)
+
+
+def mock_build_connection_dict_func1(**kwargs):
+    raise OpenURLFailedUserError
+
+
+def mock_build_connection_dict_func2(**kwargs):
+    return {"value" : {"resource_id": "abc"}}
+
+
+def mock_build_connection_dict_func3(**kwargs):
+    resource_id = (
+        f"/subscriptions/{DEFAULT_SUBSCRIPTION_ID}/resourceGroups/{DEFAULT_RESOURCE_GROUP_NAME}"
+        f"/providers/Microsoft.CognitiveServices/accounts/{DEFAULT_ACCOUNT}"
+    )
+    return {"value" : {"resource_id": resource_id}}
 
 
 def test_parse_resource_id():
@@ -38,42 +83,77 @@ def test_parse_resource_id_with_error(resource_id, error_message):
         _parse_resource_id(resource_id)
 
 
-@pytest.mark.parametrize(
-        "connection, expected_result",
-        [
-            ("azure_open_ai", []),
-            ("CHESI-AOAI-GPT4V", [
-                {
-                    'value': 'gpt-4-vision-preview',
-                    'display_value': 'gpt-4-vision-preview'
-                    }
-                ]
-             ),
-        ],
+def test_list_deployment_names_with_conn_error(monkeypatch):
+    monkeypatch.setattr(
+        ArmConnectionOperations,
+        "_build_connection_dict",
+        mock_build_connection_dict_func1
     )
-def test_list_deployment_names(connection, expected_result):
     res = list_deployment_names(
         DEFAULT_SUBSCRIPTION_ID,
         DEFAULT_RESOURCE_GROUP_NAME,
         DEFAULT_WORKSPACE_NAME,
-        connection
+        DEFAULT_CONNECTION
     )
-    assert res == expected_result
+    assert res == []
 
 
-@pytest.mark.parametrize(
-        "connection",
-        ["mengla_test_aoai"],
+
+def test_list_deployment_names_with_wrong_connection_id(monkeypatch):
+    monkeypatch.setattr(
+        ArmConnectionOperations,
+        "_build_connection_dict",
+        mock_build_connection_dict_func2
     )
-def test_list_deployment_names_with_error(connection):
-    with pytest.raises(ListDeploymentsError) as e:
+    with pytest.raises(ListDeploymentsError):
         list_deployment_names(
             DEFAULT_SUBSCRIPTION_ID,
             DEFAULT_RESOURCE_GROUP_NAME,
             DEFAULT_WORKSPACE_NAME,
-            connection
+            DEFAULT_CONNECTION
         )
-        assert "Failed to list deployments due to permission issue" in e.message
+
+
+def test_list_deployment_names_with_permission_issue(monkeypatch):
+    monkeypatch.setattr(
+        ArmConnectionOperations,
+        "_build_connection_dict",
+        mock_build_connection_dict_func3
+    )
+    with patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
+        mock.side_effect = CustomException("", 403)
+        with pytest.raises(ListDeploymentsError) as excinfo:
+            list_deployment_names(
+                DEFAULT_SUBSCRIPTION_ID,
+                DEFAULT_RESOURCE_GROUP_NAME,
+                DEFAULT_WORKSPACE_NAME,
+                DEFAULT_CONNECTION
+            )
+        assert "Failed to list deployments due to permission issue" in str(excinfo.value)
+
+
+def test_list_deployment_names(monkeypatch):
+    monkeypatch.setattr(
+        ArmConnectionOperations,
+        "_build_connection_dict",
+        mock_build_connection_dict_func3
+    )
+    with patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
+        instance = mock.return_value
+        instance.deployments.list.return_value = {
+            Deployment("deployment1", "model1", GPT4V_VERSION),
+            Deployment("deployment2", "model2", "version2")
+        }
+        res = list_deployment_names(
+            DEFAULT_SUBSCRIPTION_ID,
+            DEFAULT_RESOURCE_GROUP_NAME,
+            DEFAULT_WORKSPACE_NAME,
+            DEFAULT_CONNECTION
+        )
+        assert len(res) == 1
+        assert res[0].get("value") == "deployment1"
+        assert res[0].get("display_value") == "deployment1"
+
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
