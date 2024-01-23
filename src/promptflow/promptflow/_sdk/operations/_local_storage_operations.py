@@ -222,8 +222,9 @@ class LocalStorageOperations(AbstractRunStorage):
             try:
                 flow_obj = load_flow(source=run.flow)
                 self._eager_mode = isinstance(flow_obj, EagerFlow)
-            except Exception:
+            except Exception as e:
                 # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
+                logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
                 self._eager_mode = False
         else:
             # TODO(2901279): support eager mode for run created from run folder
