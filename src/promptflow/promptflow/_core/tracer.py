@@ -226,6 +226,7 @@ def traced_generator(generator, parent_span):
         yield from generator_proxy
         serialized_output = serialize_attribute(generator_proxy.items)
         span.set_attribute("output", serialized_output)
+        span.set_status(StatusCode.OK)
 
 
 def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
