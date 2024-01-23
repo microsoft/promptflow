@@ -6,7 +6,6 @@ import functools
 import inspect
 import json
 import logging
-import traceback
 import uuid
 from collections.abc import Iterator
 from contextvars import ContextVar
@@ -14,7 +13,6 @@ from datetime import datetime
 from typing import Callable, Dict, Optional
 
 from opentelemetry.trace import Link
-from opentelemetry.trace import Tracer as OTelTracer
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
