@@ -5,6 +5,7 @@
 from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
+from promptflow._constants import LINE_TIMEOUT_SEC
 from promptflow._core.operation_context import OperationContext
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
@@ -28,13 +29,14 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
+        line_timeout_sec = kwargs.get("line_timeout_sec", LINE_TIMEOUT_SEC)
         flow_executor = FlowExecutor.create(
             flow_file,
             connections,
             working_dir,
             storage=storage,
             raise_ex=False,
-            **kwargs,
+            line_timeout_sec=line_timeout_sec,
         )
         return cls(flow_executor)
 
