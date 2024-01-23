@@ -164,7 +164,7 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     all_kwargs.pop("self", None)
 
     name = f.__qualname__
-    if f.__module__ and f.__module__ != "__pf_main__":
+    if f.__module__ and f.__module__ not in ("__main__", "__pf_main__"):
         name = f.__module__ + "." + f.__qualname__
 
     return Trace(
