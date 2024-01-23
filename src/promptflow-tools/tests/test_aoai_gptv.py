@@ -1,6 +1,6 @@
 import pytest
 
-from promptflow.tools.aoai_gpt4v import AzureOpenAI, ListDeploymentsError, ParseConnectionError,\
+from promptflow.tools.aoai_gpt4v import AzureOpenAI, ListDeploymentsError, ParseConnectionError, \
     _parse_resource_id, list_deployment_names
 
 
@@ -48,7 +48,7 @@ def test_parse_resource_id_with_error(resource_id, error_message):
                     'display_value': 'gpt-4-vision-preview'
                     }
                 ]
-            ),
+             ),
         ],
     )
 def test_list_deployment_names(connection, expected_result):
