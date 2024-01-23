@@ -32,8 +32,9 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
-        # TODO: Raise error if connections is None
-        flow_executor = FlowExecutor.create(flow_file, connections, working_dir, storage=storage, raise_ex=False)
+        flow_executor = FlowExecutor.create(
+            flow_file, connections, working_dir, entry=entry, storage=storage, raise_ex=False
+        )
         return cls(flow_executor)
 
     async def exec_aggregation_async(
