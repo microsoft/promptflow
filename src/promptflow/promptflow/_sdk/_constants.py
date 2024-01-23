@@ -110,6 +110,7 @@ TIMESTAMP_MACRO = "${timestamp}"
 DEFAULT_VARIANT = "variant_0"
 # run visualize constants
 VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
+VIS_JS_BUNDLE_FILENAME = "bulkTestDetails.min.js"
 VIS_LIB_CDN_LINK_TMPL = (
     "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
 )
