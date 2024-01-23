@@ -238,7 +238,7 @@ class LineExecutionProcessPool:
         index, process_id, process_name = self._get_process_info(index)
 
         batch_start_time = datetime.utcnow()
-        while self._check_batch_within_timeout(batch_start_time):
+        while not self._timeout_expired(batch_start_time):
             try:
                 # Get task from task_queue
                 args = task_queue.get(timeout=1)
@@ -335,10 +335,10 @@ class LineExecutionProcessPool:
         self._processes_manager.end_process(index)
         self._ensure_process_terminated_within_timeout(process_id)
 
-    def _check_batch_within_timeout(self, start_time: datetime) -> bool:
+    def _timeout_expired(self, start_time: datetime) -> bool:
         if self._batch_timeout_sec is None:
-            return True
-        return (datetime.utcnow() - start_time).total_seconds() <= self._batch_timeout_sec
+            return False
+        return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec
 
     def _process_multimedia(self, result: LineResult) -> LineResult:
         """Replace multimedia data in line result with string place holder to prevent OOM
