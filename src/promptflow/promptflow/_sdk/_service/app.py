@@ -48,8 +48,9 @@ def create_app():
         app.logger.addHandler(handler)
 
         # Basic error handler
-        @api.errorhandler
+        @api.errorhandler(Exception)
         def handle_exception(e):
+            """When any error occurs on the server, return a formatted error message."""
             from dataclasses import asdict
 
             if isinstance(e, HTTPException):

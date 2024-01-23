@@ -56,43 +56,6 @@
                     "type": "string"
                 }
             ],
-            "post": {
-                "responses": {
-                    "200": {
-                        "description": "Connection details",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                },
-                "description": "Create connection",
-                "operationId": "post_connection",
-                "parameters": [
-                    {
-                        "name": "payload",
-                        "required": true,
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/ConnectionDict"
-                        }
-                    }
-                ],
-                "tags": [
-                    "Connections"
-                ]
-            },
-            "delete": {
-                "responses": {
-                    "200": {
-                        "description": "Success"
-                    }
-                },
-                "description": "Delete connection",
-                "operationId": "delete_connection",
-                "tags": [
-                    "Connections"
-                ]
-            },
             "put": {
                 "responses": {
                     "200": {
@@ -134,6 +97,43 @@
                         "name": "working_directory",
                         "in": "query",
                         "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "description": "Delete connection",
+                "operationId": "delete_connection",
+                "tags": [
+                    "Connections"
+                ]
+            },
+            "post": {
+                "responses": {
+                    "200": {
+                        "description": "Connection details",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
+                    }
+                },
+                "description": "Create connection",
+                "operationId": "post_connection",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/ConnectionDict"
+                        }
                     }
                 ],
                 "tags": [
@@ -633,6 +633,9 @@
         },
         "MaskError": {
             "description": "When any error occurs on mask"
+        },
+        "Exception": {
+            "description": "When any error occurs on the server, return a formatted error message"
         }
     }
 }

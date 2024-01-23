@@ -139,7 +139,7 @@ telemetry_parser.add_argument(
 @api.route("/")
 class Telemetry(Resource):
     @api.response(code=200, description="Create telemetry record", model=dict_field)
-    @api.doc(parser=telemetry_parser, description="Create telemetry record")
+    @api.doc(description="Create telemetry record")
     @local_user_only
     def post(self):
         from promptflow._sdk._telemetry import get_telemetry_logger, is_telemetry_enabled
