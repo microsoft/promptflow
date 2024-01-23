@@ -9,13 +9,13 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
-from promptflow._sdk._constants import VIS_HTML_TMPL, VIS_JS_BUNDLE_FILENAME, VIS_LIB_VERSION
+from promptflow._sdk._constants import VIS_HTML_TMPL, VIS_JS_BUNDLE_FILENAME
 from promptflow._sdk._utils import render_jinja_template
 from promptflow.contracts._run_management import VisualizationRender
 
 
 def generate_html_string(data: dict) -> str:
-    visualization_render = VisualizationRender(data=data, version=VIS_LIB_VERSION)
+    visualization_render = VisualizationRender(data=data)
     return render_jinja_template(VIS_HTML_TMPL, **asdict(visualization_render))
 
 
