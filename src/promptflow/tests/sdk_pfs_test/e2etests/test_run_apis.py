@@ -5,6 +5,7 @@
 import json
 import uuid
 from dataclasses import fields
+from pathlib import Path
 
 import pytest
 
@@ -34,9 +35,16 @@ class TestRunAPIs:
             response = pfs_op.list_runs(status_code=200).json
         assert len(response) >= 1
 
-    def submit_run(self, pfs_op: PFSOperations) -> None:
-        with check_activity_end_telemetry(activity_name="pf.runs.submit"):
-            response = pfs_op.submit_run({"flow": FLOW_PATH, "data": DATA_PATH}, status_code=200)
+    def test_submit_run(self, pfs_op: PFSOperations) -> None:
+        # run submit is done via cli, so no telemetry will be detected here
+        with check_activity_end_telemetry(expected_activities=[]):
+            response = pfs_op.submit_run(
+                {
+                    "flow": Path(FLOW_PATH).absolute().as_posix(),
+                    "data": Path(DATA_PATH).absolute().as_posix(),
+                },
+                status_code=200,
+            )
         with check_activity_end_telemetry(activity_name="pf.runs.get"):
             run_from_pfs = pfs_op.get_run(name=response.json["name"]).json
         assert run_from_pfs
@@ -44,9 +52,10 @@ class TestRunAPIs:
     def update_run(self, pfs_op: PFSOperations) -> None:
         display_name = "new_display_name"
         tags = {"key": "value"}
-        run_from_pfs = pfs_op.update_run(
-            name=self.run.name, display_name=display_name, tags=json.dumps(tags), status_code=200
-        ).json
+        with check_activity_end_telemetry(activity_name="pf.runs.update"):
+            run_from_pfs = pfs_op.update_run(
+                name=self.run.name, display_name=display_name, tags=json.dumps(tags), status_code=200
+            ).json
         assert run_from_pfs["display_name"] == display_name
         assert run_from_pfs["tags"] == tags
 

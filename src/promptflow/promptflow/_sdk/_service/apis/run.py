@@ -12,7 +12,7 @@ from flask import Response, jsonify, make_response, request
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._service.utils.utils import get_client_from_request
+from promptflow._sdk._service.utils.utils import build_pfs_user_agent, get_client_from_request
 from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.yaml_utils import dump_yaml
@@ -70,13 +70,22 @@ class RunSubmit(Resource):
             run_file = Path(temp_dir) / "batch_run.yaml"
             with open(run_file, "w", encoding="utf-8") as f:
                 dump_yaml(run_dict, f)
-            cmd = f"pf run create --file {run_file}"
+            cmd = [
+                "pf",
+                "run",
+                "create",
+                "--file",
+                str(run_file),
+                "--user-agent",
+                build_pfs_user_agent(),
+            ]
+
             if sys.executable.endswith("pfcli.exe"):
-                cmd = f"pfcli {cmd}"
+                cmd = ["pfcli"] + cmd
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             stdout, _ = process.communicate()
             if process.returncode == 0:
-                run = get_client_from_request().runs.get(name=run_name)
+                run = get_client_from_request().runs._get(name=run_name)
                 return jsonify(run._to_dict())
             else:
                 raise Exception(f"Create batch run failed: {stdout.decode('utf-8')}")

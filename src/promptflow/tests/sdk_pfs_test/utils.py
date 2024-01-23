@@ -121,7 +121,7 @@ class PFSOperations:
         return response
 
     def submit_run(self, request_body, status_code=None):
-        response = self._client.post(f"{self.RUN_URL_PREFIX}/", json=request_body)
+        response = self._client.post(f"{self.RUN_URL_PREFIX}/submit", json=request_body)
         if status_code:
             assert status_code == response.status_code, response.text
         return response
@@ -134,7 +134,7 @@ class PFSOperations:
             "description": description,
             "tags": tags,
         }
-        response = self._client.get(f"{self.RUN_URL_PREFIX}/{name}", json=request_body)
+        response = self._client.put(f"{self.RUN_URL_PREFIX}/{name}", json=request_body)
         if status_code:
             assert status_code == response.status_code, response.text
         return response
