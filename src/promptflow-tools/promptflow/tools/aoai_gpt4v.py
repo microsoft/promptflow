@@ -38,7 +38,7 @@ def _parse_resource_id(resource_id):
     # "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.CognitiveServices/accounts/{account}"
     split_parts = resource_id.split("/")
     if len(split_parts) != 9:
-        raise Exception(
+        raise ParseConnectionError(
             f"Connection resourceId format invalid, cur resourceId is {resource_id}."
         )
     sub, rg, account = split_parts[2], split_parts[4], split_parts[-1]
@@ -61,6 +61,11 @@ class Deployment:
 class ListDeploymentsError(UserErrorException):
     def __init__(self, msg, **kwargs):
         super().__init__(msg, target=ErrorTarget.TOOL, **kwargs)
+
+
+class ParseConnectionError(ListDeploymentsError):
+    def __init__(self, msg, **kwargs):
+        super().__init__(msg, **kwargs)
 
 
 def _build_deployment_dict(item) -> Deployment:
@@ -102,6 +107,8 @@ def list_deployment_names(
             conn_sub, conn_rg, conn_account = _parse_resource_id(resource_id)
         except OpenURLFailedUserError:
             return res
+        except ListDeploymentsError as e:
+            raise e
         except Exception as e:
             msg = f"Parsing connection with exception: {e}"
             raise ListDeploymentsError(msg=msg) from e

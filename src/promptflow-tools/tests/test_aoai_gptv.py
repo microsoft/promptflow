@@ -1,11 +1,72 @@
 import pytest
 
-from promptflow.tools.aoai_gpt4v import AzureOpenAI
+from promptflow.tools.aoai_gpt4v import AzureOpenAI, ParseConnectionError, _parse_resource_id, list_deployment_names
+
+
+DEFAULT_SUBSCRIPTION_ID = "96aede12-2f73-41cb-b983-6d11a904839b"
+DEFAULT_RESOURCE_GROUP_NAME = "promptflow"
+DEFAULT_WORKSPACE_NAME = "promptflow-eastus"
 
 
 @pytest.fixture
 def azure_openai_provider(azure_open_ai_connection) -> AzureOpenAI:
     return AzureOpenAI(azure_open_ai_connection)
+
+
+def test_parse_resource_id():
+    sub = "dummy_sub"
+    rg = "dummy_rg"
+    account = "dummy_account"
+    resource_id =  (
+        f"/subscriptions/{sub}/resourceGroups/{rg}/providers/"
+        f"Microsoft.CognitiveServices/accounts/{account}"
+    )
+    parsed_sub, parsed_rg, parsed_account = _parse_resource_id(resource_id)
+    assert sub == parsed_sub and rg == parsed_rg and account == parsed_account
+
+
+@pytest.mark.parametrize(
+        "resource_id, error_message",
+        [
+            ("", "Connection resourceId format invalid, cur resourceId is "),
+            ("a/b/c/d", "Connection resourceId format invalid, cur resourceId is a/b/c/d"),
+        ],
+    )
+def test_parse_resource_id_with_error(resource_id, error_message):
+    with pytest.raises(ParseConnectionError, match=error_message):
+        _parse_resource_id(resource_id)
+
+@pytest.mark.parametrize(
+        "connection, expected_result",
+        [
+            ("Default_AzureOpenAI", []),
+            ("azure_open_ai_connection", []),
+        ],
+    )
+def test_list_deployment_names_without_gpt4v(connection, expected_result):
+    res = list_deployment_names(
+        DEFAULT_SUBSCRIPTION_ID,
+        DEFAULT_RESOURCE_GROUP_NAME,
+        DEFAULT_WORKSPACE_NAME,
+        connection
+    )
+    assert res == expected_result
+
+@pytest.mark.skip("Skipping until we have a Azure OpenAI GPT-4 Vision deployment")
+@pytest.mark.parametrize(
+        "connection, expected_result",
+        [
+            ("gpt4_v_connection", ["gpt-4-vision-preview"]),
+        ],
+    )
+def test_list_deployment_names(connection, expected_result):
+    res = list_deployment_names(
+        DEFAULT_SUBSCRIPTION_ID,
+        DEFAULT_RESOURCE_GROUP_NAME,
+        DEFAULT_WORKSPACE_NAME,
+        connection
+    )
+    assert res == expected_result
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
