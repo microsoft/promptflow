@@ -88,7 +88,7 @@ def clean_test_data_set(
     filtered_data = [
         {"question": d["question"], "ground_truth": d["ground_truth"], "debug_info": d["debug_info"]}
         for d in data
-        if d and all(val for val in d.values())
+        if (d and all(val for key, val in d.items() if key.lower() != "line_number"))
     ]
 
     jsonl_str = ""

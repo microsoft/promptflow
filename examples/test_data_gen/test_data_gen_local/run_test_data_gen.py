@@ -34,7 +34,7 @@ def batch_run_flow(
         connections={
             "validate_and_generate_seed_question": {"connection": connection_name},
             "validate_and_generate_test_question": {"connection": connection_name},
-            "validate_and_generate_context": {"connection": connection_name},
+            "validate_test_question": {"connection": connection_name},
             "generate_ground_truth": {"connection": connection_name},
         },
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
@@ -58,7 +58,11 @@ def get_batch_run_output(pf: PFClient, base_run: Run):
 
 
 def clean_data_and_save(test_data_set: list, test_data_output_path: str):
-    cleaned_data = [test_data for test_data in test_data_set if test_data and all(val for val in test_data.values())]
+    cleaned_data = [
+        test_data
+        for test_data in test_data_set
+        if (test_data and all(val for key, val in test_data.items() if key.lower() != "line_number"))
+    ]
 
     jsonl_str = "\n".join(map(json.dumps, cleaned_data))
 

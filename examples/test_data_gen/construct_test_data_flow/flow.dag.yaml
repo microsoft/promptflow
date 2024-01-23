@@ -5,17 +5,10 @@ inputs:
   text_chunk:
     type: string
     is_chat_input: false
-    default: >-
-      Adding a Tool Icon
-
-      A tool icon serves as a graphical representation of your tool in the user interface (UI). Follow this guidance to add a custom tool icon when developing your own tool package.
-
-
-      Adding a custom tool icon is optional. If you do not provide one, the system uses a default icon.
 outputs:
   question:
     type: string
-    reference: ${validate_and_generate_test_question.output.question}
+    reference: ${validate_test_question.output}
   ground_truth:
     type: string
     reference: ${generate_ground_truth.output}
@@ -23,29 +16,11 @@ outputs:
     type: string
     reference: ${generate_debug_info.output}
 nodes:
-- name: reasoning_prompt
+- name: validate_text_trunk_prompt
   type: prompt
   source:
     type: code
-    path: reasoning_prompt.jinja2
-  inputs:
-    context: ${inputs.text_chunk}
-    question: ${validate_and_generate_seed_question.output}
-  use_variants: false
-- name: conditional_prompt
-  type: prompt
-  source:
-    type: code
-    path: conditional_prompt.jinja2
-  inputs:
-    context: ${inputs.text_chunk}
-    question: ${validate_and_generate_seed_question.output}
-  use_variants: false
-- name: validate_context_prompt
-  type: prompt
-  source:
-    type: code
-    path: validate_context_prompt.jinja2
+    path: validate_text_trunk_prompt.jinja2
   inputs:
     context: ${inputs.text_chunk}
   use_variants: false
@@ -65,23 +40,14 @@ nodes:
   inputs:
     context: ${inputs.text_chunk}
   use_variants: false
-- name: generate_context_prompt
-  type: prompt
-  source:
-    type: code
-    path: generate_context_prompt.jinja2
-  inputs:
-    context: ${inputs.text_chunk}
-    question: ${validate_and_generate_test_question.output.question}
-  use_variants: false
 - name: generate_ground_truth_prompt
   type: prompt
   source:
     type: code
     path: generate_ground_truth_prompt.jinja2
   inputs:
-    context: ${validate_and_generate_context.output}
-    question: ${validate_and_generate_test_question.output}
+    context: ${inputs.text_chunk}
+    question: ${validate_test_question.output}
   use_variants: false
 - name: validate_and_generate_seed_question
   type: python
@@ -89,10 +55,11 @@ nodes:
     type: code
     path: validate_and_generate_seed_question.py
   inputs:
-    connection: azure_openai_connection
-    model: gpt-35-turbo
-    validate_context_prompt: ${validate_context_prompt.output}
+    connection:
+    model: gpt-4
+    validate_text_trunk_prompt: ${validate_text_trunk_prompt.output}
     seed_question_prompt: ${seed_question_prompt.output}
+    context: ${inputs.text_chunk}
   use_variants: false
 - name: validate_and_generate_test_question
   type: python
@@ -100,10 +67,8 @@ nodes:
     type: code
     path: validate_and_generate_test_question.py
   inputs:
-    connection: azure_openai_connection
-    conditional_prompt: ${conditional_prompt.output}
-    model: gpt-35-turbo
-    reasoning_prompt: ${reasoning_prompt.output}
+    connection:
+    model: gpt-4
     validate_seed_question_prompt: ${validate_seed_question_prompt.output}
     seed_question: ${validate_and_generate_seed_question.output}
   use_variants: false
@@ -115,15 +80,14 @@ nodes:
   inputs:
     question: ${validate_and_generate_test_question.output.question}
   use_variants: false
-- name: validate_and_generate_context
+- name: validate_test_question
   type: python
   source:
     type: code
-    path: validate_and_generate_context.py
+    path: validate_test_question.py
   inputs:
-    connection: azure_openai_connection
-    generate_context_prompt: ${generate_context_prompt.output}
-    model: gpt-35-turbo
+    connection:
+    model: gpt-4
     question_info: ${validate_and_generate_test_question.output}
     validate_question_prompt: ${validate_question_prompt.output}
   use_variants: false
@@ -133,10 +97,11 @@ nodes:
     type: code
     path: generate_ground_truth.py
   inputs:
-    connection: azure_openai_connection
-    context: ${validate_and_generate_context.output}
+    connection:
+    context: ${inputs.text_chunk}
     generate_ground_truth_prompt: ${generate_ground_truth_prompt.output}
-    model: gpt-35-turbo
+    model: gpt-4
+    question: ${validate_test_question.output}
   use_variants: false
 - name: generate_debug_info
   type: python
@@ -145,5 +110,4 @@ nodes:
     path: generate_debug_info.py
   inputs:
     question_type: ${validate_and_generate_test_question.output.question_type}
-    context: ${validate_and_generate_context.output}
     text_trunk: ${inputs.text_chunk}

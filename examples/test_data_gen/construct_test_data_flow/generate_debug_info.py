@@ -5,5 +5,5 @@ from promptflow import tool
 # Adding type to arguments and return value will help the system show the types properly
 # Please update the function name/signature per need
 @tool
-def my_python_tool(question_type: str, context: str, text_trunk: str) -> dict:
-    return {"question_type": question_type, "context": context, "text_trunk": text_trunk}
+def my_python_tool(question_type: str, text_trunk: str) -> dict:
+    return {"question_type": question_type, "text_trunk": text_trunk}
