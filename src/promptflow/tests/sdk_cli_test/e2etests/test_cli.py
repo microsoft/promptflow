@@ -1948,3 +1948,13 @@ class TestCli:
         p.start()
         p.join()
         assert p.exitcode == 0
+
+    def test_run_list(self, local_client):
+        from promptflow._sdk.entities import Run
+
+        with patch.object(Run, "_to_dict") as mock_to_dict:
+            mock_to_dict.side_effect = RuntimeError("mock exception")
+            run_pf_command(
+                "run",
+                "list",
+            )
