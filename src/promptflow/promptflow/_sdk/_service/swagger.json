@@ -5,6 +5,9 @@
         "/Connections/": {
             "get": {
                 "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
                     "200": {
                         "description": "Success",
                         "schema": {
@@ -58,6 +61,9 @@
             ],
             "put": {
                 "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
                     "200": {
                         "description": "Connection details",
                         "schema": {
@@ -83,6 +89,9 @@
             },
             "get": {
                 "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
                     "200": {
                         "description": "Connection details",
                         "schema": {
@@ -105,8 +114,8 @@
             },
             "delete": {
                 "responses": {
-                    "200": {
-                        "description": "Success"
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
                     }
                 },
                 "description": "Delete connection",
@@ -117,6 +126,9 @@
             },
             "post": {
                 "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
                     "200": {
                         "description": "Connection details",
                         "schema": {
@@ -152,6 +164,9 @@
             ],
             "get": {
                 "responses": {
+                    "403": {
+                        "description": "This service is available for local user only, please specify X-Remote-User in headers."
+                    },
                     "200": {
                         "description": "Connection details with secret",
                         "schema": {
@@ -490,10 +505,28 @@
         "/Telemetries/": {
             "post": {
                 "responses": {
+                    "403": {
+                        "description": "Telemetry is disabled or X-Remote-User is not set.",
+                        "headers": {
+                            "x-ms-promptflow-request-id": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Input payload validation failed",
+                        "headers": {
+                            "x-ms-promptflow-request-id": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "200": {
                         "description": "Create telemetry record",
-                        "schema": {
-                            "$ref": "#/definitions/RunDict"
+                        "headers": {
+                            "x-ms-promptflow-request-id": {
+                                "type": "string"
+                            }
                         }
                     }
                 },
@@ -501,32 +534,11 @@
                 "operationId": "post_telemetry",
                 "parameters": [
                     {
-                        "name": "x-ms-promptflow-request-id",
-                        "in": "header",
-                        "type": "string",
-                        "required": true,
-                        "description": "The request id of the telemetry; all telemetries during one public operation should share one request id."
-                    },
-                    {
                         "name": "payload",
                         "required": true,
                         "in": "body",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "eventType": {
-                                    "type": "string"
-                                },
-                                "timestamp": {
-                                    "type": "string"
-                                },
-                                "metadata": {
-                                    "type": "string"
-                                },
-                                "firstCall": {
-                                    "type": "boolean"
-                                }
-                            }
+                            "$ref": "#/definitions/Telemetry"
                         }
                     }
                 ],
@@ -624,6 +636,93 @@
         },
         "RunDict": {
             "additionalProperties": true,
+            "type": "object"
+        },
+        "Telemetry": {
+            "required": [
+                "eventType",
+                "timestamp"
+            ],
+            "properties": {
+                "eventType": {
+                    "type": "string",
+                    "description": "The event type of the telemetry.",
+                    "example": "Start",
+                    "enum": [
+                        "Start",
+                        "End"
+                    ]
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The timestamp of the telemetry."
+                },
+                "firstCall": {
+                    "type": "boolean",
+                    "description": "Whether current activity is the first activity in the call chain.",
+                    "default": true
+                },
+                "metadata": {
+                    "$ref": "#/definitions/Metadata"
+                }
+            },
+            "type": "object"
+        },
+        "Metadata": {
+            "required": [
+                "activityName",
+                "activityType"
+            ],
+            "properties": {
+                "activityName": {
+                    "type": "string",
+                    "description": "The name of the activity.",
+                    "example": "pf.flow.test",
+                    "enum": [
+                        "pf.flow.test",
+                        "pf.flow.node_test",
+                        "pf.flow._generate_tools_meta"
+                    ]
+                },
+                "activityType": {
+                    "type": "string",
+                    "description": "The type of the activity."
+                },
+                "completionStatus": {
+                    "type": "string",
+                    "description": "The completion status of the activity.",
+                    "example": "Success",
+                    "enum": [
+                        "Success",
+                        "Failure"
+                    ]
+                },
+                "durationMs": {
+                    "type": "integer",
+                    "description": "The duration of the activity in milliseconds."
+                },
+                "errorCategory": {
+                    "type": "string",
+                    "description": "The error category of the activity."
+                },
+                "errorType": {
+                    "type": "string",
+                    "description": "The error type of the activity."
+                },
+                "errorTarget": {
+                    "type": "string",
+                    "description": "The error target of the activity."
+                },
+                "errorMessage": {
+                    "type": "string",
+                    "description": "The error message of the activity."
+                },
+                "errorDetails": {
+                    "type": "string",
+                    "description": "The error details of the activity."
+                }
+            },
             "type": "object"
         }
     },

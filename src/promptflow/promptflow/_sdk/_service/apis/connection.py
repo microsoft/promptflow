@@ -82,6 +82,9 @@ class ConnectionList(Resource):
     @api.doc(parser=working_directory_parser, description="List all connection")
     @api.marshal_with(list_connection_field, skip_none=True, as_list=True)
     @local_user_only
+    @api.response(
+        code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
+    )
     def get(self):
         args = working_directory_parser.parse_args()
         connection_op = _get_connection_operation(args.working_directory)
@@ -100,6 +103,9 @@ class Connection(Resource):
     @api.doc(parser=working_directory_parser, description="Get connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
+    @api.response(
+        code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
+    )
     def get(self, name: str):
         args = working_directory_parser.parse_args()
         connection_op = _get_connection_operation(args.working_directory)
@@ -110,6 +116,9 @@ class Connection(Resource):
     @api.doc(body=dict_field, description="Create connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
+    @api.response(
+        code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
+    )
     def post(self, name: str):
         connection_op = _get_connection_operation()
         connection_data = request.get_json(force=True)
@@ -121,6 +130,9 @@ class Connection(Resource):
     @api.doc(body=dict_field, description="Update connection")
     @api.response(code=200, description="Connection details", model=dict_field)
     @local_user_only
+    @api.response(
+        code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
+    )
     def put(self, name: str):
         connection_op = _get_connection_operation()
         connection_dict = request.get_json(force=True)
@@ -133,6 +145,9 @@ class Connection(Resource):
 
     @api.doc(description="Delete connection")
     @local_user_only
+    @api.response(
+        code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
+    )
     def delete(self, name: str):
         connection_op = _get_connection_operation()
         connection_op.delete(name=name)
@@ -143,6 +158,9 @@ class ConnectionWithSecret(Resource):
     @api.doc(parser=working_directory_parser, description="Get connection with secret")
     @api.response(code=200, description="Connection details with secret", model=dict_field)
     @local_user_only
+    @api.response(
+        code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
+    )
     def get(self, name: str):
         args = working_directory_parser.parse_args()
         connection_op = _get_connection_operation(args.working_directory)

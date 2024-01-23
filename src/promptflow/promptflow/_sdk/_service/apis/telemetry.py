@@ -1,7 +1,8 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from flask import jsonify, make_response
+from flask import jsonify, make_response, request
+from flask_restx import fields
 
 from promptflow._sdk._service import Namespace, Resource
 from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only
@@ -10,8 +11,6 @@ from promptflow._utils.utils import camel_to_snake
 from promptflow.exceptions import UserErrorException
 
 api = Namespace("Telemetries", description="Telemetry Management")
-
-dict_field = api.schema_model("RunDict", {"additionalProperties": True, "type": "object"})
 
 
 class EventType:
@@ -79,12 +78,6 @@ def validate_metadata_based_on_event_type(metadata: dict, event_type: str):
             missing_fields = {"completionStatus", "durationMs"} - set(metadata.keys())
             raise UserErrorException(f"Missing required fields in telemetry metadata: {', '.join(missing_fields)}")
 
-        if metadata.get("completionStatus") not in [
-            ActivityCompletionStatus.FAILURE,
-            ActivityCompletionStatus.SUCCESS,
-        ]:
-            raise UserErrorException(f"Invalid completionStatus: {metadata.get('completionStatus')}")
-
         if metadata.get("completionStatus") == ActivityCompletionStatus.FAILURE:
             if not all(
                 key in metadata
@@ -105,67 +98,94 @@ def validate_event_type(value) -> str:
     return value
 
 
-telemetry_parser = api.parser()
-telemetry_parser.add_argument(
-    REQUEST_ID_KEY,
-    type=str,
-    location="headers",
-    required=True,
-    help="The request id of the telemetry; all telemetries during one public operation should share one request id.",
+metadata_model = api.model(
+    "Metadata",
+    {
+        "activityName": fields.String(
+            required=True,
+            description="The name of the activity.",
+            enum=[
+                AllowedActivityName.FLOW_TEST,
+                AllowedActivityName.FLOW_NODE_TEST,
+                AllowedActivityName.GENERATE_TOOL_META,
+            ],
+        ),
+        "activityType": fields.String(required=True, description="The type of the activity."),
+        "completionStatus": fields.String(
+            required=False,
+            description="The completion status of the activity.",
+            enum=[ActivityCompletionStatus.SUCCESS, ActivityCompletionStatus.FAILURE],
+        ),
+        "durationMs": fields.Integer(required=False, description="The duration of the activity in milliseconds."),
+        "errorCategory": fields.String(required=False, description="The error category of the activity."),
+        "errorType": fields.String(required=False, description="The error type of the activity."),
+        "errorTarget": fields.String(required=False, description="The error target of the activity."),
+        "errorMessage": fields.String(required=False, description="The error message of the activity."),
+        "errorDetails": fields.String(required=False, description="The error details of the activity."),
+    },
 )
-telemetry_parser.add_argument(
-    "eventType",
-    type=validate_event_type,
-    location="json",
-    required=True,
-    help=f"The event type of the telemetry, should be either {EventType.START} or {EventType.END}.",
-)
-telemetry_parser.add_argument(
-    "timestamp", type=str, location="json", required=True, help="The timestamp of the telemetry."
-)
-telemetry_parser.add_argument(
-    "metadata", type=dict, location="json", required=True, help="The activity info of the telemetry."
-)
-telemetry_parser.add_argument(
-    "firstCall",
-    type=bool,
-    location="json",
-    required=False,
-    default=True,
-    help="Whether current activity is the first activity in the call chain.",
+
+telemetry_model = api.model(
+    "Telemetry",
+    {
+        "eventType": fields.String(
+            required=True,
+            description="The event type of the telemetry.",
+            enum=[EventType.START, EventType.END],
+        ),
+        "timestamp": fields.DateTime(required=True, description="The timestamp of the telemetry."),
+        "firstCall": fields.Boolean(
+            required=False,
+            default=True,
+            description="Whether current activity is the first activity in the call chain.",
+        ),
+        "metadata": fields.Nested(metadata_model),
+    },
 )
 
 
 @api.route("/")
 class Telemetry(Resource):
-    @api.response(code=200, description="Create telemetry record", model=dict_field)
+    @api.header(REQUEST_ID_KEY, type=str)
+    @api.response(code=200, description="Create telemetry record")
+    @api.response(code=400, description="Input payload validation failed")
     @api.doc(description="Create telemetry record")
+    @api.expect(telemetry_model)
     @local_user_only
+    @api.response(code=403, description="Telemetry is disabled or X-Remote-User is not set.")
     def post(self):
         from promptflow._sdk._telemetry import get_telemetry_logger, is_telemetry_enabled
         from promptflow._sdk._telemetry.activity import log_activity_end, log_activity_start
 
         if not is_telemetry_enabled():
-            return make_response(jsonify({"message": "Telemetry is disabled."}), 400)
+            return make_response(
+                jsonify(
+                    {
+                        "message": "Telemetry is disabled, you may re-enable it "
+                        "via `pf config set telemetry.enabled=true`."
+                    }
+                ),
+                403,
+            )
 
-        args = telemetry_parser.parse_args()
+        request_id = request.headers.get(REQUEST_ID_KEY)
 
         try:
-            validate_metadata_based_on_event_type(args.metadata, args.eventType)
+            validate_metadata_based_on_event_type(api.payload["metadata"], api.payload["eventType"])
         except UserErrorException as exception:
             return make_response(
                 jsonify({"errors": {"metadata": str(exception)}, "message": "Input payload validation failed"}), 400
             )
 
         activity_info = parse_activity_info(
-            metadata=args.metadata,
-            first_call=args.firstCall,
+            metadata=api.payload["metadata"],
+            first_call=api.payload.get("firstCall", True),
             user_agent=build_pfs_user_agent(),
-            request_id=args[REQUEST_ID_KEY],
+            request_id=request_id,
         )
-        if args.eventType == EventType.START:
+        if api.payload["eventType"] == EventType.START:
             log_activity_start(activity_info, get_telemetry_logger())
-        elif args.eventType == EventType.END:
+        elif api.payload["eventType"] == EventType.END:
             log_activity_end(activity_info, get_telemetry_logger())
         return jsonify(
             {
