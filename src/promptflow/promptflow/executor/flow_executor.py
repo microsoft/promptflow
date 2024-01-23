@@ -195,30 +195,32 @@ class FlowExecutor:
         :return: A new instance of FlowExecutor.
         :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
-        if Path(flow_file).suffix.lower() == ".py":
-            return cls.init_script_executor(
-                flow_file=flow_file, entry=entry, connections=connections, working_dir=working_dir, storage=storage
-            )
-        elif Path(flow_file).suffix.lower() in [".yml", ".yaml"]:
-            if cls._is_eager_flow_yaml(flow_file, working_dir):
+        if cls._is_eager_flow_yaml(flow_file, working_dir):
+            if Path(flow_file).suffix.lower() in [".yml", ".yaml"]:
                 entry, path = cls._parse_eager_flow_yaml(flow_file, working_dir)
                 flow_file = Path(path)
-                return cls.init_script_executor(
-                    flow_file=flow_file, entry=entry, connections=connections, working_dir=working_dir, storage=storage
-                )
-            else:
-                flow = Flow.from_yaml(flow_file, working_dir=working_dir)
-                return cls._create_from_flow(
-                    flow_file=flow_file,
-                    flow=flow,
-                    connections=connections,
-                    working_dir=working_dir,
-                    entry=entry,
-                    storage=storage,
-                    raise_ex=raise_ex,
-                    node_override=node_override,
-                    line_timeout_sec=line_timeout_sec,
-                )
+
+            from ._script_executor import ScriptExecutor
+
+            return ScriptExecutor(
+                flow_file=flow_file,
+                entry=entry,
+                working_dir=working_dir,
+                storage=storage,
+            )
+        elif Path(flow_file).suffix.lower() in [".yml", ".yaml"]:
+            flow = Flow.from_yaml(flow_file, working_dir=working_dir)
+            return cls._create_from_flow(
+                flow_file=flow_file,
+                flow=flow,
+                connections=connections,
+                working_dir=working_dir,
+                entry=entry,
+                storage=storage,
+                raise_ex=raise_ex,
+                node_override=node_override,
+                line_timeout_sec=line_timeout_sec,
+            )
         else:
             raise InvalidFlowFileError(
                 message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
@@ -279,11 +281,14 @@ class FlowExecutor:
 
     @classmethod
     def _is_eager_flow_yaml(cls, flow_file: Path, working_dir: Optional[Path] = None):
-        flow_file = working_dir / flow_file if working_dir else flow_file
-        with open(flow_file, "r", encoding="utf-8") as fin:
-            flow_dag = load_yaml(fin)
-        if "entry" in flow_dag:
+        if Path(flow_file).suffix.lower() == ".py":
             return True
+        elif Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+            flow_file = working_dir / flow_file if working_dir else flow_file
+            with open(flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            if "entry" in flow_dag:
+                return True
         return False
 
     @classmethod
@@ -292,12 +297,6 @@ class FlowExecutor:
         with open(flow_file, "r", encoding="utf-8") as fin:
             flow_dag = load_yaml(fin)
         return flow_dag.get("entry", ""), flow_dag.get("path", "")
-
-    @classmethod
-    def init_script_executor(cls, **kwargs):
-        from ._script_executor import ScriptExecutor
-
-        return ScriptExecutor(**kwargs)
 
     @classmethod
     def load_and_exec_node(

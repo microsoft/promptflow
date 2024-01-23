@@ -97,22 +97,17 @@ class BatchEngine:
         """
         self._flow_file = flow_file
         self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        if Path(flow_file).suffix.lower() == ".py":
-            # if the flow file is a python file, we need to set the _is_dag_yaml_flow to false and set
-            # the program language to python, since we only support eager flow in python executor now
+        if self._is_eager_flow_yaml():
+            if Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
+                entry, path = self._parse_eager_flow_yaml()
+                self._flow_file = Path(path)
             self._is_dag_yaml_flow = False
             self._program_language = FlowLanguage.Python
         elif Path(flow_file).suffix.lower() in [".yaml", ".yml"]:
-            if self._is_eager_flow_yaml():
-                entry, path = self._parse_eager_flow_yaml()
-                self._flow_file = Path(path)
-                self._is_dag_yaml_flow = False
-                self._program_language = FlowLanguage.Python
-            else:
-                self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
-                FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
-                self._is_dag_yaml_flow = True
-                self._program_language = self._flow.program_language
+            self._flow = Flow.from_yaml(flow_file, working_dir=self._working_dir)
+            FlowValidator.ensure_flow_valid_in_batch_mode(self._flow)
+            self._is_dag_yaml_flow = True
+            self._program_language = self._flow.program_language
         else:
             raise InvalidFlowFileError(
                 message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
@@ -391,11 +386,14 @@ class BatchEngine:
         aggr_result.output = aggr_exec_result.output
 
     def _is_eager_flow_yaml(self):
-        flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
-        with open(flow_file, "r", encoding="utf-8") as fin:
-            flow_dag = load_yaml(fin)
-        if "entry" in flow_dag:
+        if Path(self._flow_file).suffix.lower() == ".py":
             return True
+        elif Path(self._flow_file).suffix.lower() in [".yaml", ".yml"]:
+            flow_file = self._working_dir / self._flow_file if self._working_dir else self._flow_file
+            with open(flow_file, "r", encoding="utf-8") as fin:
+                flow_dag = load_yaml(fin)
+            if "entry" in flow_dag:
+                return True
         return False
 
     def _parse_eager_flow_yaml(self):

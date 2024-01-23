@@ -299,9 +299,12 @@ class InputDefinition:
         )
 
     def to_flow_input_definition(self):
-        # Used for eager flow to convert input definition to flow input definition.
+        """ Used for eager flow to convert input definition to flow input definition.
+        """
         from .flow import FlowInputDefinition
 
+        # TODO: To align with tool resolver we respect the first type if multiple types are provided,
+        # still need more discussion on this. Should we raise error if multiple types are provided?
         return FlowInputDefinition(
             type=self.type[0], default=self.default, description=self.description, enum=self.enum
         )
