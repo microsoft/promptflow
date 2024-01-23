@@ -17,7 +17,7 @@ def test_parse_resource_id():
     sub = "dummy_sub"
     rg = "dummy_rg"
     account = "dummy_account"
-    resource_id =  (
+    resource_id = (
         f"/subscriptions/{sub}/resourceGroups/{rg}/providers/"
         f"Microsoft.CognitiveServices/accounts/{account}"
     )
@@ -36,6 +36,7 @@ def test_parse_resource_id_with_error(resource_id, error_message):
     with pytest.raises(ParseConnectionError, match=error_message):
         _parse_resource_id(resource_id)
 
+
 @pytest.mark.parametrize(
         "connection, expected_result",
         [
@@ -51,6 +52,7 @@ def test_list_deployment_names_without_gpt4v(connection, expected_result):
         connection
     )
     assert res == expected_result
+
 
 @pytest.mark.skip("Skipping until we have a Azure OpenAI GPT-4 Vision deployment")
 @pytest.mark.parametrize(
