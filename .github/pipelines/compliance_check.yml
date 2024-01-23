@@ -26,7 +26,11 @@ steps:
   inputs:
     targetType: inline
     script: |
-      cd $(sourceLocation)/src/promptflow/promptflow/_sdk/data
+      pwd
+      ls
+      cd $(sourceLocation)
+      pwd
+      ls
       rm bulkTestDetails.min.js
   displayName: 'Remove JavaScript visualize bundle'
 
