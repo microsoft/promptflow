@@ -43,7 +43,7 @@ def validate_batch_result(batch_result: BatchResult, flow_folder, output_dir, en
         assert ensure_output(output)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
+@pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestEagerFlow:
     @pytest.mark.parametrize(
@@ -64,10 +64,19 @@ class TestEagerFlow:
         ]
     )
     def test_flow_run(self, flow_folder, entry, inputs, ensure_output):
+        # Test submitting eager flow to script executor
         flow_file = get_entry_file(flow_folder, root=EAGER_FLOW_ROOT)
         executor = ScriptExecutor(flow_file=flow_file, entry=entry)
         line_result = executor.exec_line(inputs=inputs, index=0)
+        assert isinstance(line_result, LineResult)
+        assert ensure_output(line_result.output)
 
+        # Test submitting eager flow to flow executor
+        working_dir = get_flow_folder(flow_folder, root=EAGER_FLOW_ROOT)
+        os.chdir(working_dir)
+        flow_file = get_yaml_file(flow_folder, root=EAGER_FLOW_ROOT)
+        executor = FlowExecutor.create(flow_file=flow_file, connections={})
+        line_result = executor.exec_line(inputs=inputs, index=0)
         assert isinstance(line_result, LineResult)
         assert ensure_output(line_result.output)
 
