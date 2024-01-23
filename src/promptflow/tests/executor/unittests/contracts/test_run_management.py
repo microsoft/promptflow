@@ -9,9 +9,8 @@ from promptflow.contracts._run_management import VisualizationRender
 @pytest.mark.unittest
 def test_visualization_render():
     data = {"key": "value"}
-    version = "1.0"
 
-    viz = VisualizationRender(data, version)
+    viz = VisualizationRender(data)
 
     assert viz.data == json.dumps(json.dumps(data))
     assert viz.js_path == VIS_JS_BUNDLE_FILENAME
