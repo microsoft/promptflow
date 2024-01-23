@@ -22,6 +22,14 @@ pool:
 steps:
 - checkout: self
 
+- task: Bash@3
+  inputs:
+    targetType: inline
+    script: |
+      cd $(sourceLocation)/src/promptflow/promptflow/_sdk/data
+      rm bulkTestDetails.min.js
+  displayName: 'Remove JavaScript visualize bundle'
+
 # https://eng.ms/docs/microsoft-security/cloud-ecosystem-security/azure-security/cloudai-security-fundamentals-engineering/security-integration/guardian-wiki/sdl-azdo-extension/PoliCheck-build-task
 - task: PoliCheck@2
   inputs:
