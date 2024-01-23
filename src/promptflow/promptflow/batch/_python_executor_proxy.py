@@ -28,16 +28,13 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         storage: Optional[AbstractRunStorage] = None,
         **kwargs,
     ) -> "PythonExecutorProxy":
-        line_timeout = kwargs.get("line_timeout", None)
-        batch_timeout = kwargs.get("batch_timeout", None)
         flow_executor = FlowExecutor.create(
             flow_file,
             connections,
             working_dir,
             storage=storage,
             raise_ex=False,
-            line_timeout_sec=line_timeout,
-            batch_timeout_sec=batch_timeout,
+            **kwargs,
         )
         return cls(flow_executor)
 
@@ -55,12 +52,13 @@ class PythonExecutorProxy(AbstractExecutorProxy):
         batch_inputs: List[Mapping[str, Any]],
         output_dir: Path,
         run_id: Optional[str] = None,
+        batch_timeout_sec: Optional[int] = None,
     ) -> List[LineResult]:
         self._flow_executor._node_concurrency = DEFAULT_CONCURRENCY_BULK
         with self._flow_executor._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
             line_results = self._flow_executor._exec_batch_with_process_pool(
-                batch_inputs, run_id, output_dir, validate_inputs=True
+                batch_inputs, run_id, output_dir, validate_inputs=True, batch_timeout_sec=batch_timeout_sec
             )
             # For bulk run, currently we need to add line results to run_tracker
             self._flow_executor._add_line_results(line_results)

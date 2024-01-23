@@ -92,7 +92,6 @@ class FlowExecutor:
         raise_ex: bool = False,
         working_dir=None,
         line_timeout_sec=None,
-        batch_timeout_sec=None,
         flow_file=None,
     ):
         """Initialize a FlowExecutor object.
@@ -130,7 +129,6 @@ class FlowExecutor:
         self._loaded_tools = loaded_tools
         self._working_dir = working_dir
         self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", line_timeout_sec)
-        self._batch_timeout_sec = batch_timeout_sec
         self._flow_file = flow_file
         try:
             self._tools_manager = ToolsManager(loaded_tools)
@@ -168,7 +166,6 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
-        batch_timeout_sec: Optional[int] = None,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -212,7 +209,6 @@ class FlowExecutor:
             raise_ex=raise_ex,
             node_override=node_override,
             line_timeout_sec=line_timeout_sec,
-            batch_timeout_sec=batch_timeout_sec,
         )
 
     @classmethod
@@ -227,7 +223,6 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: Optional[int] = None,
-        batch_timeout_sec: Optional[int] = None,
     ):
         logger.debug("Start initializing the flow executor.")
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
@@ -262,7 +257,6 @@ class FlowExecutor:
             raise_ex=raise_ex,
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
-            batch_timeout_sec=batch_timeout_sec,
             flow_file=flow_file,
         )
         logger.debug("The flow executor is initialized successfully.")
@@ -454,7 +448,13 @@ class FlowExecutor:
         return result
 
     def _exec_batch_with_process_pool(
-        self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
+        self,
+        batch_inputs: List[dict],
+        run_id,
+        output_dir: Path,
+        validate_inputs: bool = True,
+        variant_id: str = "",
+        batch_timeout_sec: Optional[int] = None,
     ) -> List[LineResult]:
         nlines = len(batch_inputs)
         line_number = [
@@ -487,6 +487,7 @@ class FlowExecutor:
             variant_id,
             validate_inputs,
             output_dir,
+            batch_timeout_sec=batch_timeout_sec,
         ) as pool:
             result_list = pool.run(zip(line_number, batch_inputs))
 

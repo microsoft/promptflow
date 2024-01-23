@@ -94,6 +94,7 @@ class LineExecutionProcessPool:
         variant_id,
         validate_inputs,
         output_dir,
+        batch_timeout_sec=None,
     ):
         self._nlines = nlines
         self._run_id = run_id
@@ -119,7 +120,7 @@ class LineExecutionProcessPool:
         self._line_timeout_sec = flow_executor._line_timeout_sec
         if self._line_timeout_sec is None:
             self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
-        self._batch_timeout_sec = flow_executor._batch_timeout_sec
+        self._batch_timeout_sec = batch_timeout_sec
         self._output_dir = output_dir
         self._flow_create_kwargs = {
             "flow_file": flow_executor._flow_file,

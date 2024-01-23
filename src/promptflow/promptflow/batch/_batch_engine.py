@@ -77,7 +77,7 @@ class BatchEngine:
         *,
         connections: Optional[dict] = None,
         storage: Optional[AbstractRunStorage] = None,
-        batch_timeout: Optional[int] = None,
+        batch_timeout_sec: Optional[int] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
@@ -104,10 +104,11 @@ class BatchEngine:
         self._storage = storage
 
         # process timeout parameters and pass them to create function of executor proxy
-        self._batch_timeout = batch_timeout if batch_timeout else get_int_env_var("PF_BATCH_TIMEOUT_SEC", None)
-        self._line_timeout = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
-        timeout_kwargs = {"batch_timeout": self._batch_timeout, "line_timeout": self._line_timeout}
-        kwargs.update(timeout_kwargs)
+        self._batch_timeout_sec = (
+            batch_timeout_sec if batch_timeout_sec else get_int_env_var("PF_BATCH_TIMEOUT_SEC", None)
+        )
+        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+        kwargs.update({"line_timeout_sec": self._line_timeout_sec})
         self._kwargs = kwargs
 
         # set it to True when the batch run is canceled
@@ -242,7 +243,11 @@ class BatchEngine:
 
         # execute lines
         if isinstance(self._executor_proxy, PythonExecutorProxy):
-            line_results.extend(self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id))
+            line_results.extend(
+                self._executor_proxy._exec_batch(
+                    batch_inputs, output_dir, run_id, batch_timeout_sec=self._batch_timeout_sec
+                )
+            )
         else:
             await self._exec_batch(line_results, batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
