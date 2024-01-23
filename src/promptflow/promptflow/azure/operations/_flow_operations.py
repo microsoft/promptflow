@@ -25,7 +25,6 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
 from promptflow._sdk._constants import (
-    BASE_PATH_CONTEXT_KEY,
     CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE,
     DAG_FILE_NAME,
     FLOW_TOOLS_JSON,
@@ -37,7 +36,7 @@ from promptflow._sdk._constants import (
 )
 from promptflow._sdk._errors import FlowOperationError
 from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, monitor_operation
-from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json, load_from_dict
+from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
@@ -115,9 +114,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             flow, display_name, type, **kwargs
         )
         # upload to file share
-        file_share_flow_path = self._resolve_flow_code_and_upload_to_file_share(
-            flow=azure_flow, flow_display_name=flow_display_name
-        )
+        file_share_flow_path = self._resolve_flow_code_and_upload_to_file_share(flow=azure_flow)
         if not file_share_flow_path:
             raise FlowOperationError(f"File share path should not be empty, got {file_share_flow_path!r}.")
 
@@ -136,7 +133,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         return result_flow
 
     @staticmethod
-    def _validate_flow_creation_parameters(source, flow_display_name, flow_type, **kwargs):
+    def _validate_flow_creation_parameters(source, flow_display_name=None, flow_type=None, **kwargs):
         """Validate the parameters for flow creation operation."""
         # validate the source folder
         logger.info("Validating flow source.")
@@ -176,33 +173,21 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     @staticmethod
     def _validate_flow_schema(source, display_name=None, type=None, **kwargs):
         """Validate the flow schema."""
-        from marshmallow import ValidationError
-
         from promptflow._sdk.entities._flow import ProtectedFlow
-        from promptflow._sdk.schemas._flow import FlowSchema
 
         params_override = copy.deepcopy(kwargs)
-        if display_name:
+        if display_name is not None:
             params_override["display_name"] = display_name
-        if type:
+        if type is not None:
             params_override["type"] = type
 
         flow_entity = ProtectedFlow.load(source=source, params_override=params_override)
+        flow_entity._validate(raise_error=True)  # raise error if validation failed
         flow_dict = flow_entity._dump_for_validation()
-        try:
-            load_from_dict(
-                schema=FlowSchema,
-                data=flow_dict,
-                context={BASE_PATH_CONTEXT_KEY: Path(source)},
-            )
-        except ValidationError as e:
-            raise UserErrorException(f"Failed to validate flow schema due to: {str(e)}") from e
-
         return flow_dict
 
-    def _resolve_flow_code_and_upload_to_file_share(
-        self, flow: Flow, flow_display_name: str, ignore_tools_json=False
-    ) -> str:
+    def _resolve_flow_code_and_upload_to_file_share(self, flow: Flow, ignore_tools_json=False) -> str:
+        remote_file_share_folder_name = f"{Path(flow.code).name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         file_share_flow_path = ""
 
@@ -240,9 +225,9 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
             # check if the file share directory exists
             logger.debug("Checking if the file share directory exists.")
-            if storage_client._check_file_share_directory_exist(flow_display_name):
+            if storage_client._check_file_share_directory_exist(remote_file_share_folder_name):
                 raise FlowOperationError(
-                    f"Remote flow folder {flow_display_name!r} already exists under "
+                    f"Remote flow folder {remote_file_share_folder_name!r} already exists under "
                     f"'{storage_client.file_share_prefix}'. Please change the flow folder name and try again."
                 )
 
@@ -250,7 +235,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
                 logger.info("Uploading flow directory to file share.")
                 storage_client.upload_dir(
                     source=code.path,
-                    dest=flow_display_name,
+                    dest=remote_file_share_folder_name,
                     msg="test",
                     ignore_file=code._ignore_file,
                     show_progress=False,
@@ -258,7 +243,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
             except Exception as e:
                 raise FlowOperationError(f"Failed to upload flow to file share due to: {str(e)}.") from e
 
-            file_share_flow_path = f"{storage_client.file_share_prefix}/{flow_display_name}"
+            file_share_flow_path = f"{storage_client.file_share_prefix}/{remote_file_share_folder_name}"
             logger.info(f"Successfully uploaded flow to file share path {file_share_flow_path!r}.")
         return file_share_flow_path
 

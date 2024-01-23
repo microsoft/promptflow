@@ -76,10 +76,6 @@ class InvalidFlowRequest(ValidationException):
         )
 
 
-class InvalidSource(ValidationException):
-    pass
-
-
 class NodeInputValidationError(InvalidFlowRequest):
     pass
 
@@ -170,9 +166,31 @@ class LineExecutionTimeoutError(UserErrorException):
     """Exception raised when single line execution timeout"""
 
     def __init__(self, line_number, timeout):
+        self.timeout_sec = timeout
         super().__init__(
             message=f"Line {line_number} execution timeout for exceeding {timeout} seconds", target=ErrorTarget.EXECUTOR
         )
+
+
+class ProcessCrashError(UserErrorException):
+    """Exception raised when process crashed."""
+
+    def __init__(self, line_number):
+        super().__init__(message=f"Process crashed while executing line {line_number},", target=ErrorTarget.EXECUTOR)
+
+
+class ProcessTerminatedTimeout(SystemErrorException):
+    """Exception raised when process not terminated within a period of time."""
+
+    def __init__(self, timeout):
+        super().__init__(message=f"Process has not terminated after {timeout} seconds", target=ErrorTarget.EXECUTOR)
+
+
+class ProcessInfoObtainedTimeout(SystemErrorException):
+    """Exception raised when process info not obtained within a period of time."""
+
+    def __init__(self, timeout):
+        super().__init__(message=f"Failed to get process info after {timeout} seconds", target=ErrorTarget.EXECUTOR)
 
 
 class EmptyLLMApiMapping(UserErrorException):

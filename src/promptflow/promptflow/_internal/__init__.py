@@ -84,11 +84,18 @@ from promptflow._utils.logger_utils import (
     logger,
     update_log_path,
 )
+from promptflow._utils.multimedia_data_converter import (
+    AbstractMultimediaInfoConverter,
+    MultimediaConverter,
+    MultimediaInfo,
+    ResourceType,
+)
 from promptflow._utils.multimedia_utils import (
     _create_image_from_file,
     convert_multimedia_data_to_base64,
     is_multimedia_dict,
     persist_multimedia_data,
+    resolve_multimedia_data_recursively,
 )
 from promptflow._utils.utils import (
     AttrDict,

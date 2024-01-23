@@ -12,6 +12,7 @@ from time import sleep
 from typing import Callable
 from unittest.mock import MagicMock, patch
 
+import pandas as pd
 import pydash
 import pytest
 
@@ -20,7 +21,9 @@ from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunN
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.azure import PFClient
+from promptflow.azure._constants._flow import ENVIRONMENT, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._entities._flow import Flow
 from promptflow.exceptions import UserErrorException
 
@@ -539,9 +542,7 @@ class TestFlowRun:
             assert body.max_idle_time_seconds is None
             return body
 
-        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
-            RunOperations, "get"
-        ), patch.object(FlowServiceCaller, "create_flow_session"):
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
             mock_submit.side_effect = submit
             # no runtime provided, will use automatic runtime
             pf.run(
@@ -550,9 +551,7 @@ class TestFlowRun:
                 name=randstr("name1"),
             )
 
-        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
-            RunOperations, "get"
-        ), patch.object(FlowServiceCaller, "create_flow_session"):
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
             mock_submit.side_effect = submit
             # automatic is a reserved runtime name, will use automatic runtime if specified.
             pf.run(
@@ -562,26 +561,21 @@ class TestFlowRun:
                 name=randstr("name2"),
             )
 
-    def test_automatic_runtime_with_environment(self, pf, randstr: Callable[[str], str]):
-        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-        from promptflow.azure.operations import RunOperations
+    def test_automatic_runtime_with_resources(self, pf, randstr: Callable[[str], str]):
+        from promptflow.azure._restclient.flow.models import SessionSetupModeEnum
 
-        def submit(*args, **kwargs):
-            body = kwargs.get("body", None)
-            assert body.base_image == "python:3.8-slim"
-            assert body.python_pip_requirements == ["# Add your python packages here", "a", "b", "c"]
-            return body
-
-        with patch.object(FlowServiceCaller, "submit_bulk_run"), patch.object(
-            FlowServiceCaller, "create_flow_session"
-        ) as mock_session_create, patch.object(RunOperations, "get"):
-            mock_session_create.side_effect = submit
-            # no runtime provided, will use automatic runtime
-            pf.run(
-                flow=f"{FLOWS_DIR}/flow_with_environment",
-                data=f"{DATAS_DIR}/env_var_names.jsonl",
-                name=randstr("name"),
-            )
+        source = f"{RUNS_DIR}/sample_bulk_run_with_resources.yaml"
+        run_id = randstr("run_id")
+        run = load_run(
+            source=source,
+            params_override=[{"name": run_id}],
+        )
+        rest_run = run._to_rest_object()
+        assert rest_run.vm_size == "Standard_D2"
+        assert rest_run.max_idle_time_seconds == 3600
+        assert rest_run.session_setup_mode == SessionSetupModeEnum.SYSTEM_WAIT
+        run = pf.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
 
     def test_run_data_not_provided(self, pf, randstr: Callable[[str], str]):
         with pytest.raises(UserErrorException) as e:
@@ -718,21 +712,6 @@ class TestFlowRun:
                 name=randstr("name2"),
             )
 
-    @pytest.mark.skip(reason="temporarily disable this for service-side error.")
-    def test_automatic_runtime_creation_failure(self, pf):
-        from promptflow.azure._restclient.flow_service_caller import FlowRequestException
-
-        with pytest.raises(FlowRequestException) as e:
-            pf.runs._resolve_runtime(
-                run=Run(
-                    flow=Path(f"{FLOWS_DIR}/basic-with-connection"),
-                    resources={"instance_type": "not_exist"},
-                ),
-                flow_path=Path(f"{FLOWS_DIR}/basic-with-connection"),
-                runtime=None,
-            )
-        assert "Session creation failed for" in str(e.value)
-
     def test_run_submission_exception(self, pf):
         from azure.core.exceptions import HttpResponseError
 
@@ -859,46 +838,76 @@ class TestFlowRun:
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
+    def test_get_details_against_partial_completed_run(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str]
+    ) -> None:
+        flow_mod2 = f"{FLOWS_DIR}/mod-n/two"
+        flow_mod3 = f"{FLOWS_DIR}/mod-n/three"
+        data_path = f"{DATAS_DIR}/numbers.jsonl"
+        # batch run against data
+        run1 = pf.run(
+            flow=flow_mod2,
+            data=data_path,
+            column_mapping={"number": "${data.value}"},
+            runtime=runtime,
+            name=randstr("run1"),
+        )
+        pf.runs.stream(run1)
+        details1 = pf.get_details(run1)
+        assert len(details1) == 20
+        assert len(details1[details1["outputs.output"].notnull()]) == 10
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details1.iterrows():
+            if pd.notnull(row["outputs.output"]):
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
 
-# separate some tests as they cannot use the fixture that mocks the aml-user-token
-@pytest.mark.skipif(condition=not is_live(), reason="aml-user-token will be mocked")
-@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
-@pytest.mark.e2etest
-class TestFlowRunRelatedToAMLToken:
-    def test_automatic_runtime_creation_user_aml_token(self, pf):
-        from azure.core.pipeline import Pipeline
+        # batch run against previous run
+        run2 = pf.run(
+            flow=flow_mod3,
+            run=run1,
+            column_mapping={"number": "${run.outputs.output}"},
+            runtime=runtime,
+            name=randstr("run2"),
+        )
+        pf.runs.stream(run2)
+        details2 = pf.get_details(run2)
+        assert len(details2) == 10
+        assert len(details2[details2["outputs.output"].notnull()]) == 4
+        # assert to ensure inputs and outputs are aligned
+        for _, row in details2.iterrows():
+            if pd.notnull(row["outputs.output"]):
+                assert int(row["inputs.number"]) == int(row["outputs.output"])
 
-        def submit(*args, **kwargs):
-            assert "aml-user-token" in args[0].headers
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_auto_resolve_requirements(self, pf: PFClient, randstr: Callable[[str], str]):
+        # will add requirements.txt to flow.dag.yaml if exists when submitting run.
+        with TemporaryDirectory() as temp:
+            temp = Path(temp)
+            shutil.copytree(f"{FLOWS_DIR}/flow_with_requirements_txt", temp / "flow_with_requirements_txt")
 
-            fake_response = MagicMock()
-            fake_response.http_response.status_code = 200
-            return fake_response
-
-        with patch.object(Pipeline, "run") as mock_session_create:
-            mock_session_create.side_effect = submit
-            pf.runs._resolve_runtime(
-                run=Run(
-                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                    data=f"{DATAS_DIR}/env_var_names.jsonl",
-                ),
-                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                runtime=None,
+            run = pf.run(
+                flow=temp / "flow_with_requirements_txt",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name"),
             )
+            pf.runs.stream(run)
 
-    def test_submit_run_user_aml_token(self, pf, runtime):
-        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
-        from promptflow.azure.operations import RunOperations
+            pf.runs.download(run=run.name, output=temp)
+            flow_dag = load_yaml(Path(temp, run.name, "snapshot/flow.dag.yaml"))
+            assert "requirements.txt" in flow_dag[ENVIRONMENT][PYTHON_REQUIREMENTS_TXT]
 
-        def submit(*args, **kwargs):
-            headers = kwargs.get("headers", None)
-            assert "aml-user-token" in headers
+            local_flow_dag = load_yaml(f"{FLOWS_DIR}/flow_with_requirements_txt/flow.dag.yaml")
+            assert "environment" not in local_flow_dag
 
-        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
-            mock_submit.side_effect = submit
-            pf.run(
-                flow=f"{FLOWS_DIR}/flow_with_dict_input",
-                data=f"{DATAS_DIR}/webClassification3.jsonl",
-                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
-                runtime=runtime,
-            )
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
+    def test_requirements_in_additional_includes(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_additional_include_req",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+            name=randstr("name"),
+        )
+        run = pf.runs.stream(run)
+        assert run._error is None
+        with TemporaryDirectory() as temp:
+            pf.runs.download(run=run.name, output=temp)
+            assert Path(temp, run.name, "snapshot/requirements").exists()

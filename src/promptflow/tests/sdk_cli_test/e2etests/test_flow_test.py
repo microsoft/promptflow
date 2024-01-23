@@ -1,8 +1,11 @@
 import logging
+import tempfile
 from pathlib import Path
 from types import GeneratorType
 
+import papermill
 import pytest
+from marshmallow import ValidationError
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
@@ -14,6 +17,7 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = (TEST_ROOT / "test_configs/flows").resolve().absolute().as_posix()
+EAGER_FLOWS_DIR = (TEST_ROOT / "test_configs/eager_flows").resolve().absolute().as_posix()
 FLOW_RESULT_KEYS = ["category", "evidence"]
 
 _client = PFClient()
@@ -123,7 +127,7 @@ class TestFlowTest:
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
         # Test additional includes don't exist
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(UserErrorException) as e:
             _client.test(flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include")
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
@@ -198,3 +202,49 @@ class TestFlowTest:
         }
         result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
         assert result.status.value == "Completed"
+
+    def test_pf_test_flow_in_notebook(self):
+        notebook_path = Path(f"{TEST_ROOT}/test_configs/notebooks/dummy.ipynb").absolute()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_notebook_path = Path(temp_dir) / "output.ipynb"
+            papermill.execute_notebook(
+                notebook_path,
+                output_path=output_notebook_path,
+                cwd=notebook_path.parent,
+            )
+
+    def test_eager_flow_test(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
+        result = _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed"
+
+    def test_eager_flow_test_with_yaml(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed"
+
+    def test_eager_flow_test_with_primitive_output(self):
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/primitive_output/").absolute()
+        result = _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert result.run_info.status.value == "Completed"
+
+    def test_eager_flow_test_invalid_cases(self):
+        # no entry provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
+        with pytest.raises(UserErrorException) as e:
+            _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert "Entry function is not specified" in str(e.value)
+
+        # no path provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/invalid_no_path/").absolute()
+        with pytest.raises(ValidationError) as e:
+            _client._flows._test(flow=flow_path, inputs={"input_val": "val1"})
+        assert "'path': ['Missing data for required field.']" in str(e.value)
+
+        # dup entries provided
+        flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_with_yaml/").absolute()
+        with pytest.raises(UserErrorException) as e:
+            _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
+        assert "Specifying entry function is not allowed" in str(e.value)
+        # wrong entry provided
+        # required inputs not provided

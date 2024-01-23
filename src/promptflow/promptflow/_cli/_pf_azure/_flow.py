@@ -221,5 +221,6 @@ def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
                 tags[tag_key] = v
                 continue
             result[k] = v
-    result["tags"] = tags
+    if tags:
+        result["tags"] = tags
     return result

@@ -162,7 +162,6 @@ def mock_tool(original_tool):
                 raise UserErrorException(f"Tool type {type} is not supported yet.")
 
             new_f.__original_function = func
-            func.__wrapped_function = new_f
             new_f.__tool = None  # This will be set when generating the tool definition.
             new_f.__name = name
             new_f.__description = description

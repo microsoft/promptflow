@@ -9,7 +9,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
@@ -23,7 +23,7 @@ interactions:
       cache-control:
       - no-cache
       content-length:
-      - '3548'
+      - '3630'
       content-type:
       - application/json; charset=utf-8
       expires:
@@ -39,7 +39,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.023'
+      - '0.032'
     status:
       code: 200
       message: OK
@@ -53,7 +53,7 @@ interactions:
       Connection:
       - keep-alive
       User-Agent:
-      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.12.1 azsdk-python-mgmt-machinelearningservices/0.1.0
         Python/3.10.13 (Windows-10-10.0.22631-SP0)
     method: GET
     uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
@@ -91,7 +91,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.730'
+      - '0.073'
     status:
       code: 200
       message: OK
@@ -121,60 +121,63 @@ interactions:
     uri: https://eastus.api.azureml.ms/index/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/entities
   response:
     body:
-      string: '{"totalCount": 16, "value": [{"relevancyScore": 1.0, "entityResourceName":
+      string: '{"totalCount": 23, "value": [{"relevancyScore": 1.0, "entityResourceName":
         "promptflow-eastus", "highlights": {}, "usage": {"totalCount": 0}, "schemaId":
-        "37f2e71d-b027-5d1c-a435-7d249ef7f98a", "entityId": "azureml://location/eastus/workspaceId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/type/flows/objectId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:7bde7cc6-fae2-4dd0-85bc-0fd6c7079a67",
+        "b5db529c-c91d-5e96-8288-f175dd87470d", "entityId": "azureml://location/eastus/workspaceId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/type/flows/objectId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:2e039c90-c69a-4c52-9754-d3a93c6eaa7e",
         "kind": "Unversioned", "annotations": {"archived": false, "tags": {"owner":
-        "sdk"}, "flowName": "107522a2-b3cf-4fdb-8375-a651ebe39a66", "createdDate":
-        "2023-11-15T09:07:07.5166016Z", "lastModifiedDate": "2023-11-15T09:07:07.5166017Z",
-        "owner": {"userObjectId": "dccfa7b6-87c6-4f1e-af43-555f876e37a7", "userTenantId":
-        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang"}, "isArchived":
-        false, "vmSize": null, "maxIdleTimeSeconds": null, "name": null, "description":
-        "test flow"}, "properties": {"updatedTime": "0001-01-01T00:00:00+00:00", "creationContext":
-        {"createdTime": "2023-11-15T09:07:07.5166016+00:00", "createdBy": {"userObjectId":
-        "dccfa7b6-87c6-4f1e-af43-555f876e37a7", "userTenantId": "00000000-0000-0000-0000-000000000000",
-        "userName": "Zhengfei Wang"}, "creationSource": null}, "flowId": "7bde7cc6-fae2-4dd0-85bc-0fd6c7079a67",
+        "sdk-test"}, "flowName": "7c7f43f9-9b23-424f-b93e-1852d5e3dc9e", "createdDate":
+        "2024-01-17T07:08:35.8574809Z", "lastModifiedDate": "2024-01-17T07:08:35.8574809Z",
+        "owner": {"userObjectId": "00000000-0000-0000-0000-000000000000", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang", "userPrincipalName":
+        null}, "isArchived": false, "vmSize": null, "maxIdleTimeSeconds": null, "name":
+        null, "description": "test flow description"}, "properties": {"updatedTime":
+        "0001-01-01T00:00:00+00:00", "creationContext": {"createdTime": "2024-01-17T07:08:35.8574809+00:00",
+        "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang", "userPrincipalName":
+        null}, "creationSource": null}, "flowId": "2e039c90-c69a-4c52-9754-d3a93c6eaa7e",
         "experimentId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5", "flowType": "Default",
-        "flowDefinitionFilePath": "Users/unknown_user/promptflow/107522a2-b3cf-4fdb-8375-a651ebe39a66/flow.dag.yaml"},
-        "internal": {}, "updateSequence": 638356360275166017, "type": "flows", "version":
+        "flowDefinitionFilePath": "Users/unknown_user/promptflow/simple_hello_world-01-17-2024-15-08-13/flow.dag.yaml"},
+        "internal": {}, "updateSequence": 638410721158574809, "type": "flows", "version":
         null, "entityContainerId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5", "entityObjectId":
-        "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:7bde7cc6-fae2-4dd0-85bc-0fd6c7079a67",
+        "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:2e039c90-c69a-4c52-9754-d3a93c6eaa7e",
         "resourceType": "Workspace", "relationships": []}, {"relevancyScore": 1.0,
         "entityResourceName": "promptflow-eastus", "highlights": {}, "usage": {"totalCount":
-        0}, "schemaId": "37f2e71d-b027-5d1c-a435-7d249ef7f98a", "entityId": "azureml://location/eastus/workspaceId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/type/flows/objectId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:bf77c549-7b42-4768-b476-c131212136e0",
+        0}, "schemaId": "b5db529c-c91d-5e96-8288-f175dd87470d", "entityId": "azureml://location/eastus/workspaceId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/type/flows/objectId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:7b4314f4-2f4f-43bf-af55-e64d9e7d5361",
         "kind": "Unversioned", "annotations": {"archived": false, "tags": {"owner":
-        "sdk"}, "flowName": "460eb2b4-7a37-4fc5-bebf-52fe7f824594", "createdDate":
-        "2023-11-15T09:01:51.6098268Z", "lastModifiedDate": "2023-11-15T09:01:51.6098268Z",
-        "owner": {"userObjectId": "dccfa7b6-87c6-4f1e-af43-555f876e37a7", "userTenantId":
-        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang"}, "isArchived":
-        false, "vmSize": null, "maxIdleTimeSeconds": null, "name": null, "description":
-        "test flow"}, "properties": {"updatedTime": "0001-01-01T00:00:00+00:00", "creationContext":
-        {"createdTime": "2023-11-15T09:01:51.6098268+00:00", "createdBy": {"userObjectId":
-        "dccfa7b6-87c6-4f1e-af43-555f876e37a7", "userTenantId": "00000000-0000-0000-0000-000000000000",
-        "userName": "Zhengfei Wang"}, "creationSource": null}, "flowId": "bf77c549-7b42-4768-b476-c131212136e0",
+        "sdk-test"}, "flowName": "1d41d299-f9e5-4405-8bac-569f3ea1141b", "createdDate":
+        "2024-01-17T07:07:45.269399Z", "lastModifiedDate": "2024-01-17T07:07:45.2693991Z",
+        "owner": {"userObjectId": "00000000-0000-0000-0000-000000000000", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang", "userPrincipalName":
+        null}, "isArchived": false, "vmSize": null, "maxIdleTimeSeconds": null, "name":
+        null, "description": "test flow description"}, "properties": {"updatedTime":
+        "0001-01-01T00:00:00+00:00", "creationContext": {"createdTime": "2024-01-17T07:07:45.269399+00:00",
+        "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang", "userPrincipalName":
+        null}, "creationSource": null}, "flowId": "7b4314f4-2f4f-43bf-af55-e64d9e7d5361",
         "experimentId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5", "flowType": "Default",
-        "flowDefinitionFilePath": "Users/unknown_user/promptflow/460eb2b4-7a37-4fc5-bebf-52fe7f824594/flow.dag.yaml"},
-        "internal": {}, "updateSequence": 638356357116098268, "type": "flows", "version":
+        "flowDefinitionFilePath": "Users/unknown_user/promptflow/simple_hello_world-01-17-2024-15-07-23/flow.dag.yaml"},
+        "internal": {}, "updateSequence": 638410720652693991, "type": "flows", "version":
         null, "entityContainerId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5", "entityObjectId":
-        "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:bf77c549-7b42-4768-b476-c131212136e0",
+        "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:7b4314f4-2f4f-43bf-af55-e64d9e7d5361",
         "resourceType": "Workspace", "relationships": []}, {"relevancyScore": 1.0,
         "entityResourceName": "promptflow-eastus", "highlights": {}, "usage": {"totalCount":
-        0}, "schemaId": "37f2e71d-b027-5d1c-a435-7d249ef7f98a", "entityId": "azureml://location/eastus/workspaceId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/type/flows/objectId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:17ccb233-0eb1-4d9b-bdcc-165f130f2cba",
+        0}, "schemaId": "b5db529c-c91d-5e96-8288-f175dd87470d", "entityId": "azureml://location/eastus/workspaceId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/type/flows/objectId/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:b28c9746-fac1-40ed-9d65-f93857d05655",
         "kind": "Unversioned", "annotations": {"archived": false, "tags": {"owner":
-        "sdk"}, "flowName": "7621c2f8-9935-477c-8896-6367fd1073c0", "createdDate":
-        "2023-11-15T08:58:38.7914613Z", "lastModifiedDate": "2023-11-15T08:58:38.7914613Z",
-        "owner": {"userObjectId": "dccfa7b6-87c6-4f1e-af43-555f876e37a7", "userTenantId":
-        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang"}, "isArchived":
-        false, "vmSize": null, "maxIdleTimeSeconds": null, "name": null, "description":
-        "test flow"}, "properties": {"updatedTime": "0001-01-01T00:00:00+00:00", "creationContext":
-        {"createdTime": "2023-11-15T08:58:38.7914613+00:00", "createdBy": {"userObjectId":
-        "dccfa7b6-87c6-4f1e-af43-555f876e37a7", "userTenantId": "00000000-0000-0000-0000-000000000000",
-        "userName": "Zhengfei Wang"}, "creationSource": null}, "flowId": "17ccb233-0eb1-4d9b-bdcc-165f130f2cba",
+        "sdk-test"}, "flowName": "b9a89f25-0efa-40ad-86cd-15e16c739f42", "createdDate":
+        "2024-01-17T07:06:54.5784734Z", "lastModifiedDate": "2024-01-17T07:06:54.5784735Z",
+        "owner": {"userObjectId": "00000000-0000-0000-0000-000000000000", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang", "userPrincipalName":
+        null}, "isArchived": false, "vmSize": null, "maxIdleTimeSeconds": null, "name":
+        null, "description": "test flow description"}, "properties": {"updatedTime":
+        "0001-01-01T00:00:00+00:00", "creationContext": {"createdTime": "2024-01-17T07:06:54.5784734+00:00",
+        "createdBy": {"userObjectId": "00000000-0000-0000-0000-000000000000", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Zhengfei Wang", "userPrincipalName":
+        null}, "creationSource": null}, "flowId": "b28c9746-fac1-40ed-9d65-f93857d05655",
         "experimentId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5", "flowType": "Default",
-        "flowDefinitionFilePath": "Users/unknown_user/promptflow/7621c2f8-9935-477c-8896-6367fd1073c0/flow.dag.yaml"},
-        "internal": {}, "updateSequence": 638356355187914613, "type": "flows", "version":
+        "flowDefinitionFilePath": "Users/unknown_user/promptflow/simple_hello_world-01-17-2024-15-06-31/flow.dag.yaml"},
+        "internal": {}, "updateSequence": 638410720145784735, "type": "flows", "version":
         null, "entityContainerId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5", "entityObjectId":
-        "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:17ccb233-0eb1-4d9b-bdcc-165f130f2cba",
+        "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5:b28c9746-fac1-40ed-9d65-f93857d05655",
         "resourceType": "Workspace", "relationships": []}], "nextSkip": 3, "entityContainerIdsToEntityContainerMetadata":
         {"3e123da1-f9a5-4c91-9234-8d9ffbb39ff5": {"resourceId": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5",
         "subscriptionId": "96aede12-2f73-41cb-b983-6d11a904839b", "resourceGroup":
@@ -184,16 +187,16 @@ interactions:
         "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5", "isPublicResource": false}}, "resourcesNotQueriedReasons":
         {}, "numberOfEntityContainersNotQueried": 0, "fanoutData": {"Multitenant":
         {"nextSkip": 3, "isShardDone": false, "didShardFail": false, "totalCount":
-        16, "resourceIdsOnShardThisPage": ["3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"]}},
+        23, "resourceIdsOnShardThisPage": ["3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"]}},
         "regionalFanoutState": {"shardFanoutStates": [{"shardId": "Multitenant", "nextSkip":
         3, "isPlanExecutionDone": false, "didPlanExecutionFail": false, "totalCount":
-        16, "resourceIdsOnShardThisPage": ["3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"]}],
+        23, "resourceIdsOnShardThisPage": ["3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"]}],
         "firstPageStartTime": null}, "shardErrors": {}, "canSupportSkip": true}'
     headers:
       connection:
       - keep-alive
       content-length:
-      - '6106'
+      - '6309'
       content-type:
       - application/json; charset=utf-8
       strict-transport-security:
@@ -205,7 +208,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-request-time:
-      - '0.070'
+      - '0.114'
     status:
       code: 200
       message: OK

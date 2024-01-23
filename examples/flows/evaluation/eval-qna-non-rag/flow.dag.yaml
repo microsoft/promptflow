@@ -1,0 +1,265 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  question:
+    type: string
+    default: Which tent is the most waterproof?
+    is_chat_input: false
+  answer:
+    type: string
+    default: The Alpine Explorer Tent is the most waterproof.
+    is_chat_input: false
+  context:
+    type: string
+    default: From the our product list, the alpine explorer tent is the most
+      waterproof. The Adventure Dining Tabbe has higher weight.
+    is_chat_input: false
+  ground_truth:
+    type: string
+    default: The Alpine Explorer Tent has the highest rainfly waterproof rating at 3000m
+    is_chat_input: false
+  metrics:
+    type: string
+    default: gpt_groundedness,f1_score,ada_similarity,gpt_fluency,gpt_coherence,gpt_similarity,gpt_relevance
+    is_chat_input: false
+outputs:
+  f1_score:
+    type: string
+    reference: ${concat_scores.output.f1_score}
+  gpt_coherence:
+    type: string
+    reference: ${concat_scores.output.gpt_coherence}
+  gpt_similarity:
+    type: string
+    reference: ${concat_scores.output.gpt_similarity}
+  gpt_fluency:
+    type: string
+    reference: ${concat_scores.output.gpt_fluency}
+  gpt_relevance:
+    type: string
+    reference: ${concat_scores.output.gpt_relevance}
+  gpt_groundedness:
+    type: string
+    reference: ${concat_scores.output.gpt_groundedness}
+  ada_similarity:
+    type: string
+    reference: ${concat_scores.output.ada_similarity}
+nodes:
+- name: gpt_coherence
+  type: llm
+  source:
+    type: code
+    path: gpt_coherence_prompt.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    stop: ""
+    max_tokens: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    logit_bias: ""
+    question: ${inputs.question}
+    answer: ${inputs.answer}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.gpt_coherence}
+    is: true
+  use_variants: false
+- name: concat_scores
+  type: python
+  source:
+    type: code
+    path: concat_scores.py
+  inputs:
+    ada_cosine_similarity: ${ada_similarity.output}
+    f1_score: ${f1_score.output}
+    gpt_coherence_score: ${gpt_coherence.output}
+    gpt_fluency_score: ${gpt_fluency.output}
+    gpt_groundedness_score: ${gpt_groundedness.output}
+    gpt_relevance_score: ${gpt_relevance.output}
+    gpt_similarity_score: ${gpt_similarity.output}
+  use_variants: false
+- name: gpt_similarity
+  type: llm
+  source:
+    type: code
+    path: gpt_similarity_prompt.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    stop: ""
+    max_tokens: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    logit_bias: ""
+    answer: ${inputs.answer}
+    ground_truth: ${inputs.ground_truth}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.gpt_similarity}
+    is: true
+  use_variants: false
+- name: gpt_relevance
+  type: llm
+  source:
+    type: code
+    path: gpt_relevance_prompt.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    stop: ""
+    max_tokens: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    logit_bias: ""
+    answer: ${inputs.answer}
+    context: ${inputs.context}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.gpt_relevance}
+    is: true
+  use_variants: false
+- name: gpt_fluency
+  type: llm
+  source:
+    type: code
+    path: gpt_fluency_prompt.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    stop: ""
+    max_tokens: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    logit_bias: ""
+    answer: ${inputs.answer}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.gpt_fluency}
+    is: true
+  use_variants: false
+- name: f1_score
+  type: python
+  source:
+    type: code
+    path: f1_score.py
+  inputs:
+    answer: ${inputs.answer}
+    ground_truth: ${inputs.ground_truth}
+  activate:
+    when: ${validate_input.output.f1_score}
+    is: true
+  use_variants: false
+- name: gpt_groundedness
+  type: llm
+  source:
+    type: code
+    path: gpt_groundedness_prompt.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 0
+    top_p: 1
+    stop: ""
+    max_tokens: 1
+    presence_penalty: 0
+    frequency_penalty: 0
+    logit_bias: ""
+    answer: ${inputs.answer}
+    context: ${inputs.context}
+  provider: AzureOpenAI
+  connection: open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+  activate:
+    when: ${validate_input.output.gpt_groundedness}
+    is: true
+  use_variants: false
+- name: aggregate_variants_results
+  type: python
+  source:
+    type: code
+    path: aggregate_variants_results.py
+  inputs:
+    metrics: ${inputs.metrics}
+    results: ${concat_scores.output}
+  aggregation: true
+  use_variants: false
+- name: select_metrics
+  type: python
+  source:
+    type: code
+    path: select_metrics.py
+  inputs:
+    metrics: ${inputs.metrics}
+  use_variants: false
+- name: embeded_ground_truth
+  type: python
+  source:
+    type: package
+    tool: promptflow.tools.embedding.embedding
+  inputs:
+    connection: open_ai_connection
+    deployment_name: text-embedding-ada-002
+    input: ${inputs.ground_truth}
+  activate:
+    when: ${validate_input.output.ada_similarity}
+    is: true
+  use_variants: false
+- name: embeded_answer
+  type: python
+  source:
+    type: package
+    tool: promptflow.tools.embedding.embedding
+  inputs:
+    connection: open_ai_connection
+    deployment_name: text-embedding-ada-002
+    input: ${inputs.answer}
+  activate:
+    when: ${validate_input.output.ada_similarity}
+    is: true
+  use_variants: false
+- name: ada_similarity
+  type: python
+  source:
+    type: code
+    path: ada_cosine_similarity_score.py
+  inputs:
+    a: ${embeded_ground_truth.output}
+    b: ${embeded_answer.output}
+  activate:
+    when: ${validate_input.output.ada_similarity}
+    is: true
+  use_variants: false
+- name: validate_input
+  type: python
+  source:
+    type: code
+    path: validate_input.py
+  inputs:
+    answer: ${inputs.answer}
+    context: ${inputs.context}
+    ground_truth: ${inputs.ground_truth}
+    question: ${inputs.question}
+    selected_metrics: ${select_metrics.output}
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt
