@@ -1,7 +1,9 @@
-import pytest
 import json
+
+import pytest
+
+from promptflow._sdk._constants import VIS_JS_BUNDLE_FILENAME
 from promptflow.contracts._run_management import VisualizationRender
-from promptflow._sdk._constants import VIS_LIB_CDN_LINK_TMPL
 
 
 @pytest.mark.unittest
@@ -12,4 +14,4 @@ def test_visualization_render():
     viz = VisualizationRender(data, version)
 
     assert viz.data == json.dumps(json.dumps(data))
-    assert viz.js_link == VIS_LIB_CDN_LINK_TMPL.format(version=version)
+    assert viz.js_path == VIS_JS_BUNDLE_FILENAME
