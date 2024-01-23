@@ -16,7 +16,7 @@ from opentelemetry.trace import Link
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
-from promptflow._core.otel_tracer import get_otel_tracer
+from promptflow._telemetry.tracer_manager import get_tracer
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow.contracts.tool import ConnectionType
@@ -176,7 +176,7 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     )
 
 
-tracer = get_otel_tracer("promptflow")
+tracer = get_tracer("promptflow")
 
 
 def get_node_name_from_context():
