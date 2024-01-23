@@ -43,7 +43,6 @@ def validate_batch_result(batch_result: BatchResult, flow_folder, output_dir, en
         assert ensure_output(output)
 
 
-
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
 @pytest.mark.e2etest
 class TestEagerFlow:
