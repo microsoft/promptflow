@@ -95,6 +95,7 @@ class LineExecutionProcessPool:
         variant_id: str = "",
         validate_inputs: bool = True,
         batch_timeout_sec: Optional[int] = None,
+        line_timeout_sec: Optional[int] = None,
     ):
         self._nlines = nlines
         self._run_id = run_id
@@ -117,9 +118,7 @@ class LineExecutionProcessPool:
         self._storage = flow_executor._run_tracker._storage
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
-        self._line_timeout_sec = flow_executor._line_timeout_sec
-        if self._line_timeout_sec is None:
-            self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+        self._line_timeout_sec = line_timeout_sec or LINE_TIMEOUT_SEC
         self._batch_timeout_sec = batch_timeout_sec
         self._output_dir = output_dir
         self._flow_create_kwargs = {

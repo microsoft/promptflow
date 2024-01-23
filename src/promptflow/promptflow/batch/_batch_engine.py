@@ -102,14 +102,12 @@ class BatchEngine:
 
         self._connections = connections
         self._storage = storage
+        self._kwargs = kwargs
 
-        # process timeout parameters and pass them to create function of executor proxy
         self._batch_timeout_sec = (
             batch_timeout_sec if batch_timeout_sec else get_int_env_var("PF_BATCH_TIMEOUT_SEC", None)
         )
         self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
-        kwargs.update({"line_timeout_sec": self._line_timeout_sec})
-        self._kwargs = kwargs
 
         # set it to True when the batch run is canceled
         self._is_canceled = False
@@ -245,7 +243,11 @@ class BatchEngine:
         if isinstance(self._executor_proxy, PythonExecutorProxy):
             line_results.extend(
                 self._executor_proxy._exec_batch(
-                    batch_inputs, output_dir, run_id, batch_timeout_sec=self._batch_timeout_sec
+                    batch_inputs,
+                    output_dir,
+                    run_id,
+                    batch_timeout_sec=self._batch_timeout_sec,
+                    line_timeout_sec=self._line_timeout_sec,
                 )
             )
         else:
