@@ -16,9 +16,10 @@ import pandas as pd
 import pydash
 import pytest
 
-from promptflow._sdk._constants import DownloadedRun, RunStatus
+from promptflow._sdk._constants import DownloadedRun, RunHistoryKeys, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
+from promptflow._sdk._visualize_functions import generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.yaml_utils import load_yaml
@@ -36,6 +37,7 @@ TEST_ROOT = Path(__file__).parent.parent.parent
 MODEL_ROOT = TEST_ROOT / "test_configs/e2e_samples"
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 FLOWS_DIR = "./tests/test_configs/flows"
+EAGER_FLOWS_DIR = "./tests/test_configs/eager_flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
@@ -911,3 +913,66 @@ class TestFlowRun:
         with TemporaryDirectory() as temp:
             pf.runs.download(run=run.name, output=temp)
             assert Path(temp, run.name, "snapshot/requirements").exists()
+
+    def test_eager_flow_crud(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            name=randstr("name"),
+        )
+        pf.runs.stream(run)
+        run = pf.runs.get(run)
+        assert run.status == RunStatus.COMPLETED
+
+        details = pf.runs.get_details(run)
+        assert details.shape[0] == 1
+        metrics = pf.runs.get_metrics(run)
+        assert metrics == {}
+
+        run_meta_data = RunHistoryKeys.RunMetaData
+        hidden = RunHistoryKeys.HIDDEN
+        run_id = run.name
+        # test archive
+        pf.runs.archive(run=run_id)
+        run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        assert run_data[hidden] is True
+
+        # test restore
+        pf.runs.restore(run=run_id)
+        run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        assert run_data[hidden] is False
+
+        def mock_generate_html_string(data):
+            assert data["metadata"]["mode"] == "eager"
+            return generate_html_string(data)
+
+        # test visualize
+        with patch("promptflow._sdk.operations._run_operations.generate_html_string") as mock_func:
+            mock_func.side_effect = mock_generate_html_string
+            pf.runs.visualize(run=run.name)
+
+    def test_eager_flow_cancel(self, pf: PFClient):
+        """Test cancel eager flow."""
+
+    def test_eager_flow_download(self, pf: PFClient, randstr: Callable[[str], str]):
+        run = pf.run(
+            flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            name=randstr("name"),
+        )
+        pf.runs.stream(run)
+        run = pf.runs.get(run)
+        assert run.status == RunStatus.COMPLETED
+
+        expected_files = [
+            DownloadedRun.RUN_METADATA_FILE_NAME,
+            DownloadedRun.LOGS_FILE_NAME,
+            DownloadedRun.METRICS_FILE_NAME,
+            f"{DownloadedRun.SNAPSHOT_FOLDER}/flow.dag.yaml",
+        ]
+
+        # test download
+        with TemporaryDirectory() as tmp_dir:
+            pf.runs.download(run=run.name, output=tmp_dir)
+            for file in expected_files:
+                assert Path(tmp_dir, run.name, file).exists()
