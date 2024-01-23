@@ -104,7 +104,7 @@ class BatchEngine:
         self._storage = storage
 
         # process timeout parameters and pass them to create function of executor proxy
-        self._batch_timeout = batch_timeout
+        self._batch_timeout = batch_timeout if batch_timeout else get_int_env_var("PF_BATCH_TIMEOUT_SEC", None)
         self._line_timeout = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
         timeout_kwargs = {"batch_timeout": self._batch_timeout, "line_timeout": self._line_timeout}
         kwargs.update(timeout_kwargs)
