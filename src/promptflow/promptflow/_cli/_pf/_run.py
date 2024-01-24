@@ -33,6 +33,7 @@ from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS, get_list_view_t
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
+from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities import Run
 from promptflow.exceptions import UserErrorException
 
@@ -502,7 +503,12 @@ def list_runs(
         list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
     # hide additional info and debug info in run list for better user experience
-    json_list = [run._to_dict(exclude_additional_info=True, exclude_debug_info=True) for run in runs]
+    parser = lambda run: run._to_dict(exclude_additional_info=True, exclude_debug_info=True)  # noqa: E731
+    json_list = safe_parse_object_list(
+        obj_list=runs,
+        parser=parser,
+        message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
+    )
     _output_result_list_with_format(result_list=json_list, output_format=output)
     return runs
 
