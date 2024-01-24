@@ -1,0 +1,42 @@
+{
+    "name": "say_hello",
+    "context": {
+        "trace_id": "0xa5ec6b5f6ffd520537258c3d63a1739b",
+        "span_id": "0x6c8c8e14e0288bf3",
+        "trace_state": "[]"
+    },
+    "kind": "SpanKind.INTERNAL",
+    "parent_id": "0xb6d7be58110ad5f3",
+    "start_time": "2024-01-22T14:59:24.267594Z",
+    "end_time": "2024-01-22T14:59:24.268828Z",
+    "status": {
+        "status_code": "ERROR",
+        "description": "ZeroDivisionError: division by zero"
+    },
+    "attributes": {
+        "framework": "promptflow",
+        "span_type": "promptflow.Function",
+        "function": "say_hello",
+        "inputs": "{}",
+        "tool_version": "tool_version"
+    },
+    "events": [
+        {
+            "name": "exception",
+            "timestamp": "2024-01-22T14:59:24.268805Z",
+            "attributes": {
+                "exception.type": "ZeroDivisionError",
+                "exception.message": "division by zero",
+                "exception.stacktrace": "Traceback (most recent call last):\n  File \"/home/zhizhu/miniconda3/envs/py39/lib/python3.9/site-packages/opentelemetry/trace/__init__.py\", line 573, in use_span\n    yield span\n  File \"/home/zhizhu/miniconda3/envs/py39/lib/python3.9/site-packages/opentelemetry/sdk/trace/__init__.py\", line 1046, in start_as_current_span\n    yield span_context\n  File \"/home/zhizhu/promptflow/src/promptflow/promptflow/_core/tracer.py\", line 315, in wrapped\n    output = func(*args, **kwargs)\n  File \"/home/zhizhu/promptflow/src/promptflow/tests/test_configs/eager_flows/simple_with_yaml/entry.py\", line 16, in say_hello\n    1/0\nZeroDivisionError: division by zero\n",
+                "exception.escaped": "False"
+            }
+        }
+    ],
+    "links": [],
+    "resource": {
+        "attributes": {
+            "service.name": "promptflow"
+        },
+        "schema_url": ""
+    }
+}

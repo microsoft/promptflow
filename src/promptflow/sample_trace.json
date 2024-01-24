@@ -1,0 +1,290 @@
+[
+    {
+        "name": "hello",
+        "context": {
+            "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+            "span_id": "0x05df0e6a82ee2127",
+            "trace_state": "[]"
+        },
+        "kind": "SpanKind.INTERNAL",
+        "parent_id": "0xa9bf586cf9fba31d",
+        "start_time": "2024-01-22T14:26:57.338927Z",
+        "end_time": "2024-01-22T14:26:57.339127Z",
+        "status": {
+            "status_code": "OK"
+        },
+        "attributes": {
+            "framework": "promptflow",
+            "span_type": "promptflow.Function",
+            "function": "hello",
+            "inputs": "{\n  \"name\": \"world\"\n}",
+            "tool_version": "tool_version",
+            "output": "\"Hello world\""
+        },
+        "events": [],
+        "links": [],
+        "resource": {
+            "attributes": {
+                "service.name": "promptflow"
+            },
+            "schema_url": ""
+        }
+    },
+    {
+        "name": "say_hello",
+        "context": {
+            "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+            "span_id": "0xa9bf586cf9fba31d",
+            "trace_state": "[]"
+        },
+        "kind": "SpanKind.INTERNAL",
+        "parent_id": "0x764a9f505d713128",
+        "start_time": "2024-01-22T14:26:57.338715Z",
+        "end_time": "2024-01-22T14:26:57.339458Z",
+        "status": {
+            "status_code": "OK"
+        },
+        "attributes": {
+            "framework": "promptflow",
+            "span_type": "promptflow.Function",
+            "function": "say_hello",
+            "inputs": "{}",
+            "tool_version": "tool_version",
+            "output": "\"Hello world\""
+        },
+        "events": [],
+        "links": [],
+        "resource": {
+            "attributes": {
+                "service.name": "promptflow"
+            },
+            "schema_url": ""
+        }
+    },
+    {
+        "name": "number",
+        "context": {
+            "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+            "span_id": "0x06fc3b226604e353",
+            "trace_state": "[]"
+        },
+        "kind": "SpanKind.INTERNAL",
+        "parent_id": "0x764a9f505d713128",
+        "start_time": "2024-01-22T14:26:57.339736Z",
+        "end_time": "2024-01-22T14:26:57.339965Z",
+        "status": {
+            "status_code": "OK"
+        },
+        "attributes": {
+            "framework": "promptflow",
+            "span_type": "promptflow.Function",
+            "function": "number",
+            "inputs": "{\n  \"value\": 0\n}",
+            "tool_version": "tool_version",
+            "output": "0"
+        },
+        "events": [],
+        "links": [],
+        "resource": {
+            "attributes": {
+                "service.name": "promptflow"
+            },
+            "schema_url": ""
+        }
+    },
+    {
+        "name": "number",
+        "context": {
+            "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+            "span_id": "0x0c7d8d51aeb79f3b",
+            "trace_state": "[]"
+        },
+        "kind": "SpanKind.INTERNAL",
+        "parent_id": "0x764a9f505d713128",
+        "start_time": "2024-01-22T14:26:57.340236Z",
+        "end_time": "2024-01-22T14:26:57.340459Z",
+        "status": {
+            "status_code": "OK"
+        },
+        "attributes": {
+            "framework": "promptflow",
+            "span_type": "promptflow.Function",
+            "function": "number",
+            "inputs": "{\n  \"value\": 1\n}",
+            "tool_version": "tool_version",
+            "output": "1"
+        },
+        "events": [],
+        "links": [],
+        "resource": {
+            "attributes": {
+                "service.name": "promptflow"
+            },
+            "schema_url": ""
+        }
+    },
+    {
+        "name": "number",
+        "context": {
+            "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+            "span_id": "0x9603c983ac343a8f",
+            "trace_state": "[]"
+        },
+        "kind": "SpanKind.INTERNAL",
+        "parent_id": "0x764a9f505d713128",
+        "start_time": "2024-01-22T14:26:57.340722Z",
+        "end_time": "2024-01-22T14:26:57.341010Z",
+        "status": {
+            "status_code": "OK"
+        },
+        "attributes": {
+            "framework": "promptflow",
+            "span_type": "promptflow.Function",
+            "function": "number",
+            "inputs": "{\n  \"value\": 2\n}",
+            "tool_version": "tool_version",
+            "output": "2"
+        },
+        "events": [],
+        "links": [],
+        "resource": {
+            "attributes": {
+                "service.name": "promptflow"
+            },
+            "schema_url": ""
+        }
+    },
+    {
+        "name": "builtins.sum",
+        "context": {
+            "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+            "span_id": "0x5434bdac8143f9ed",
+            "trace_state": "[]"
+        },
+        "kind": "SpanKind.INTERNAL",
+        "parent_id": "0x764a9f505d713128",
+        "start_time": "2024-01-22T14:26:57.341586Z",
+        "end_time": "2024-01-22T14:26:57.341813Z",
+        "status": {
+            "status_code": "OK"
+        },
+        "attributes": {
+            "framework": "promptflow",
+            "span_type": "promptflow.Function",
+            "function": "builtins.sum",
+            "inputs": "{\n  \"iterable\": [\n    1,\n    2,\n    3\n  ]\n}",
+            "tool_version": "tool_version",
+            "output": "6"
+        },
+        "events": [],
+        "links": [],
+        "resource": {
+            "attributes": {
+                "service.name": "promptflow"
+            },
+            "schema_url": ""
+        }
+    },
+    {
+        "name": "stream",
+        "context": {
+            "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+            "span_id": "0x93196722099aee47",
+            "trace_state": "[]"
+        },
+        "kind": "SpanKind.INTERNAL",
+        "parent_id": "0x764a9f505d713128",
+        "start_time": "2024-01-22T14:26:57.342076Z",
+        "end_time": "2024-01-22T14:26:57.342212Z",
+        "status": {
+            "status_code": "OK"
+        },
+        "attributes": {
+            "framework": "promptflow",
+            "span_type": "promptflow.Function",
+            "function": "stream",
+            "inputs": "{}",
+            "tool_version": "tool_version",
+            "output": "<streamed data, to be read later>"
+        },
+        "events": [],
+        "links": [],
+        "resource": {
+            "attributes": {
+                "service.name": "promptflow"
+            },
+            "schema_url": ""
+        }
+    },
+    {
+        "name": "stream.streamed_data",
+        "context": {
+            "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+            "span_id": "0xa1806cfa742b3063",
+            "trace_state": "[]"
+        },
+        "kind": "SpanKind.INTERNAL",
+        "parent_id": "0x764a9f505d713128",
+        "start_time": "2024-01-22T14:26:57.342452Z",
+        "end_time": "2024-01-22T14:26:58.845260Z",
+        "status": {
+            "status_code": "UNSET"
+        },
+        "attributes": {
+            "framework": "promptflow",
+            "span_type": "promptflow.Function",
+            "function": "stream",
+            "inputs": "{}",
+            "tool_version": "tool_version",
+            "output": "[\n  \"0\",\n  \"1\",\n  \"2\"\n]"
+        },
+        "events": [],
+        "links": [
+            {
+                "context": {
+                    "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+                    "span_id": "0x93196722099aee47",
+                    "trace_state": "[]"
+                },
+                "attributes": {}
+            }
+        ],
+        "resource": {
+            "attributes": {
+                "service.name": "promptflow"
+            },
+            "schema_url": ""
+        }
+    },
+    {
+        "name": "my_flow",
+        "context": {
+            "trace_id": "0xa0f1ba62b17f09c0cc6fb6a176ed6b77",
+            "span_id": "0x764a9f505d713128",
+            "trace_state": "[]"
+        },
+        "kind": "SpanKind.INTERNAL",
+        "parent_id": null,
+        "start_time": "2024-01-22T14:26:57.337733Z",
+        "end_time": "2024-01-22T14:26:58.846383Z",
+        "status": {
+            "status_code": "OK"
+        },
+        "attributes": {
+            "framework": "promptflow",
+            "span_type": "promptflow.Function",
+            "function": "my_flow",
+            "inputs": "{}",
+            "tool_version": "tool_version",
+            "output": "{\n  \"greetings\": \"Hello world! gpt\",\n  \"stream_output\": \"0, 1, 2\"\n}"
+        },
+        "events": [],
+        "links": [],
+        "resource": {
+            "attributes": {
+                "service.name": "promptflow"
+            },
+            "schema_url": ""
+        }
+    }
+]
