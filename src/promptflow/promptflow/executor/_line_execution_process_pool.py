@@ -93,14 +93,10 @@ class LineExecutionProcessPool:
         flow_executor: FlowExecutor,
         nlines,
         run_id,
-        variant_id,
-        validate_inputs,
         output_dir,
     ):
         self._nlines = nlines
         self._run_id = run_id
-        self._variant_id = variant_id
-        self._validate_inputs = validate_inputs
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD", multiprocessing.get_start_method())
         sys_start_methods = multiprocessing.get_all_start_methods()
         if multiprocessing_start_method not in sys_start_methods:
@@ -425,8 +421,6 @@ class LineExecutionProcessPool:
                     inputs,
                     index,
                     self._run_id,
-                    self._variant_id,
-                    self._validate_inputs,
                 )
             )
 
@@ -558,23 +552,12 @@ class LineExecutionProcessPool:
             )
 
 
-def _exec_line(
-    executor: FlowExecutor,
-    output_queue,
-    *,
-    inputs: dict,
-    run_id,
-    index: int,
-    variant_id,
-    validate_inputs,
-):
+def _exec_line(executor: FlowExecutor, output_queue: Queue, *, inputs: dict, run_id, index: int):
     try:
         line_result = executor.exec_line(
             inputs=inputs,
             run_id=run_id,
             index=index,
-            variant_id=variant_id,
-            validate_inputs=validate_inputs,
             node_concurrency=DEFAULT_CONCURRENCY_BULK,
         )
         if line_result is not None:
@@ -657,15 +640,13 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
     while True:
         try:
             args = input_queue.get(timeout=1)
-            inputs, line_number, run_id, variant_id, validate_inputs = args[:5]
+            inputs, line_number, run_id = args[:5]
             result = _exec_line(
                 executor=executor,
                 output_queue=output_queue,
                 inputs=inputs,
                 run_id=run_id,
                 index=line_number,
-                variant_id=variant_id,
-                validate_inputs=validate_inputs,
             )
             output_queue.put(result)
         except queue.Empty:
