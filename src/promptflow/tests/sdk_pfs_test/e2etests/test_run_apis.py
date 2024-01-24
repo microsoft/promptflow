@@ -35,6 +35,7 @@ class TestRunAPIs:
             response = pfs_op.list_runs(status_code=200).json
         assert len(response) >= 1
 
+    @pytest.mark.skip(reason="Task 2917711: cli command will give strange stdout in ci; re-enable after switch to sdk")
     def test_submit_run(self, pfs_op: PFSOperations) -> None:
         # run submit is done via cli, so no telemetry will be detected here
         with check_activity_end_telemetry(expected_activities=[]):
