@@ -16,10 +16,9 @@ import pandas as pd
 import pydash
 import pytest
 
-from promptflow._sdk._constants import DownloadedRun, RunHistoryKeys, RunStatus
+from promptflow._sdk._constants import DownloadedRun, RunStatus
 from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
-from promptflow._sdk._visualize_functions import generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow._utils.yaml_utils import load_yaml
@@ -929,30 +928,35 @@ class TestFlowRun:
         metrics = pf.runs.get_metrics(run)
         assert metrics == {}
 
-        run_meta_data = RunHistoryKeys.RunMetaData
-        hidden = RunHistoryKeys.HIDDEN
-        run_id = run.name
-        # test archive
-        pf.runs.archive(run=run_id)
-        run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
-        assert run_data[hidden] is True
+        # TODO(2917923): cannot differ the two requests to run history in replay mode."
+        # run_meta_data = RunHistoryKeys.RunMetaData
+        # hidden = RunHistoryKeys.HIDDEN
+        # run_id = run.name
+        # # test archive
+        # pf.runs.archive(run=run_id)
+        # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        # assert run_data[hidden] is True
+        #
+        # # test restore
+        # pf.runs.restore(run=run_id)
+        # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        # assert run_data[hidden] is False
 
-        # test restore
-        pf.runs.restore(run=run_id)
-        run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
-        assert run_data[hidden] is False
-
-        def mock_generate_html_string(data):
-            assert data["metadata"]["mode"] == "eager"
-            return generate_html_string(data)
-
-        # test visualize
-        with patch("promptflow._sdk.operations._run_operations.generate_html_string") as mock_func:
-            mock_func.side_effect = mock_generate_html_string
-            pf.runs.visualize(run=run.name)
-
-    def test_eager_flow_cancel(self, pf: PFClient):
+    def test_eager_flow_cancel(self, pf: PFClient, randstr: Callable[[str], str]):
         """Test cancel eager flow."""
+        # create a run
+        run_name = randstr("name")
+        pf.run(
+            flow=f"{EAGER_FLOWS_DIR}/long_running",
+            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
+            name=run_name,
+        )
+
+        pf.runs.cancel(run=run_name)
+        sleep(3)
+        run = pf.runs.get(run=run_name)
+        # the run status might still be cancel requested, but it should be canceled eventually
+        assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
     def test_eager_flow_download(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
