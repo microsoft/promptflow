@@ -12,16 +12,15 @@ from contextvars import ContextVar
 from datetime import datetime
 from typing import Callable, Dict, Optional
 
-from opentelemetry.trace import Link
 from opentelemetry.trace.status import StatusCode
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
+from promptflow._core.operation_context import OperationContext
 from promptflow._telemetry.tracer_manager import get_tracer
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
-from promptflow._core.operation_context import OperationContext
 
 from .thread_local_singleton import ThreadLocalSingleton
 
@@ -164,12 +163,8 @@ def _create_trace_from_function_call(f, *, args=[], kwargs={}, trace_type=TraceT
     # TODO: put parameters in self to inputs for builtin tools
     all_kwargs.pop("self", None)
 
-    name = f.__qualname__
-    if f.__module__ and f.__module__ not in ("__main__", "__pf_main__"):
-        name = f.__module__ + "." + f.__qualname__
-
     return Trace(
-        name=name,
+        name=f.__qualname__,
         type=trace_type,
         start_time=datetime.utcnow().timestamp(),
         inputs=all_kwargs,
@@ -204,12 +199,8 @@ def enrich_span_with_trace(span, trace):
 
 
 def enrich_span_with_output(span, output):
-    if isinstance(output, Iterator):
-        output = traced_generator(output, span)
-        span.set_attribute("output", "<streamed data, to be read later>")
-    else:
-        serialized_output = serialize_attribute(output)
-        span.set_attribute("output", serialized_output)
+    serialized_output = serialize_attribute(output)
+    span.set_attribute("output", serialized_output)
 
     return output
 
@@ -219,18 +210,6 @@ def serialize_attribute(value):
     serializable = Tracer.to_serializable(value)
     serialized_value = serialize(serializable)
     return json.dumps(serialized_value, indent=2, default=default_json_encoder)
-
-
-def traced_generator(generator, parent_span):
-    context = parent_span.get_span_context()
-    link = Link(context)
-    with tracer.start_as_current_span(f"{parent_span.name}.streamed_data", links=[link]) as span:
-        span.set_attributes(parent_span.attributes)
-        generator_proxy = GeneratorProxy(generator)
-        yield from generator_proxy
-        serialized_output = serialize_attribute(generator_proxy.items)
-        span.set_attribute("output", serialized_output)
-        span.set_status(StatusCode.OK)
 
 
 def _traced(func: Callable = None, *, trace_type=TraceType.FUNCTION) -> Callable:
