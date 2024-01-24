@@ -5,7 +5,7 @@
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, List, Type, TypeVar
+from typing import Any, Callable, Dict, List, Type, TypeVar
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.contracts.tool import ConnectionType
@@ -115,3 +115,25 @@ def assertEqual(a: dict, b: dict, path: str = ""):
             assertEqual(a[i], b[i], path + f"[{i}]")
     else:
         assert a == b, f"{path}: {a} != {b}"
+
+
+def convert_eager_flow_output_to_dict(value: Any):
+    """
+    Convert the output of eager flow to a dict. Since the output of eager flow
+    may not be a dict, we need to convert it to a dict in batch mode.
+
+    Examples:
+    1. If the output is a dict, return it directly:
+        value = {"output": 1} -> {"output": 1}
+    2. If the output is a dataclass, convert it to a dict:
+        value = SampleDataClass(output=1) -> {"output": 1}
+    3. If the output is not a dict or dataclass, convert it to a dict by adding a key "output":
+        value = 1 -> {"output": 1}
+    """
+
+    if isinstance(value, dict):
+        return value
+    elif is_dataclass(value):
+        return {f.name: getattr(value, f.name) for f in fields(value)}
+    else:
+        return {"output": value}

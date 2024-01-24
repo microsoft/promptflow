@@ -1,5 +1,4 @@
 import asyncio
-from dataclasses import dataclass
 
 from promptflow import trace
 
@@ -15,10 +14,9 @@ async def dummy_llm(prompt: str, model: str, wait_seconds: int):
     return prompt
 
 
-
-async def my_flow(text: str, models: list):
+async def my_flow(text: str, models: list = []):
     tasks = []
     for i, model in enumerate(models):
         tasks.append(asyncio.create_task(dummy_llm(text, model, i + 1)))
     await asyncio.wait(tasks)
-    return {"output": "dummy_output"}
+    return "dummy_output"
