@@ -200,8 +200,15 @@ class TestFlowTest:
             "get_dict_val.output.value": result.node_run_infos["get_dict_val"].output,
             "get_dict_val.output.origin_value": result.node_run_infos["get_dict_val"].output,
         }
-        result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
-        assert result.status.value == "Completed"
+        node_result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
+        assert node_result.status.value == "Completed"
+
+        inputs = {
+            "val": result.node_run_infos["get_dict_val"].output,
+            "origin_val": result.node_run_infos["get_dict_val"].output
+        }
+        node_result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
+        assert node_result.status.value == "Completed"
 
     def test_pf_node_test_with_node_ref(self):
         flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input").absolute()

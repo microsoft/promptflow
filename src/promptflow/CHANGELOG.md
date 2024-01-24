@@ -2,9 +2,18 @@
 
 ## 1.5.0 (Upcoming)
 
+
+### Features Added
+
+
+### Bugs Fixed
+
+- [SDK/CLI] The inputs of node test allows the value of reference node output be passed directly in.
+
 ### Improvements
 
 - [SDK/CLI] For `pf run delete`, `pf connection delete`, introducing an option to skip confirmation prompts.
+
 
 ## 1.4.0 (2024.01.22)
 
