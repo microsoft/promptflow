@@ -11,7 +11,7 @@ import psutil
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import LogContext, bulk_logger
-from promptflow.executor.flow_executor import FlowExecutor
+from promptflow.executor._base_executor import BaseExecutor
 
 
 @dataclass
@@ -388,7 +388,7 @@ def create_spawned_fork_process_manager(
     signal.signal(signal.SIGINT, signal_handler)
 
     # Create flow executor.
-    executor = FlowExecutor.create(**flow_create_kwargs)
+    executor = BaseExecutor.create(**flow_create_kwargs)
 
     # When using fork, we use this method to create the executor to avoid reloading the flow
     # which will introduce a lot more memory.

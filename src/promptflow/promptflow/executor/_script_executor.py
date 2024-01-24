@@ -30,6 +30,7 @@ class ScriptExecutor(FlowExecutor):
         working_dir: Optional[Path] = None,
         *,
         storage: Optional[AbstractRunStorage] = None,
+        line_timeout_sec: Optional[int] = None,
     ):
         logger.debug(f"Start initializing the executor with {flow_file}.")
         self._flow_file = flow_file
@@ -56,7 +57,7 @@ class ScriptExecutor(FlowExecutor):
         self._storage = storage or DefaultRunStorage()
         self._flow_id = None
         self._log_interval = 60
-        self._line_timeout_sec = 600
+        self._line_timeout_sec = line_timeout_sec
 
     def exec_line(
         self,

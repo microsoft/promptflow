@@ -154,8 +154,8 @@ class BatchEngine:
                 self._executor_proxy: AbstractExecutorProxy = async_run_allowing_running_loop(
                     executor_proxy_cls.create,
                     self._flow_file,
-                    self._working_dir,
                     connections=self._connections,
+                    working_dir=self._working_dir,
                     entry=self._entry,
                     storage=self._storage,
                     **self._kwargs,

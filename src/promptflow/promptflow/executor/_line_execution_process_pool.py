@@ -30,6 +30,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
+from promptflow.executor._base_executor import BaseExecutor
 from promptflow.executor._errors import (
     LineExecutionTimeoutError,
     ProcessCrashError,
@@ -115,10 +116,7 @@ class LineExecutionProcessPool:
         self._connections = flow_executor._connections
         self._working_dir = flow_executor._working_dir
         self._use_fork = use_fork
-        if isinstance(flow_executor, ScriptExecutor):
-            self._storage = flow_executor._storage
-        else:
-            self._storage = flow_executor._run_tracker._storage
+        self._storage = flow_executor._storage
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
         self._line_timeout_sec = flow_executor._line_timeout_sec
@@ -129,10 +127,11 @@ class LineExecutionProcessPool:
             "flow_file": flow_executor._flow_file,
             "connections": flow_executor._connections,
             "working_dir": flow_executor._working_dir,
-            "entry": flow_executor._entry,
             "line_timeout_sec": self._line_timeout_sec,
             "raise_ex": False,
         }
+        if hasattr(flow_executor, "_entry"):
+            self._flow_create_kwargs["entry"] = flow_executor._entry
 
     def __enter__(self):
         manager = Manager()
@@ -173,7 +172,7 @@ class LineExecutionProcessPool:
                 **common_kwargs,
             )
         else:
-            executor_creation_func = partial(FlowExecutor.create, **self._flow_create_kwargs)
+            executor_creation_func = partial(BaseExecutor.create, **self._flow_create_kwargs)
             # 1. Create input_queue, output_queue, and _process_info in the main process.
             # 2. Spawn _n_process sub-process and pass the above queue/dict to these sub-process to transfer information
             # between main process and sub process.
@@ -593,10 +592,7 @@ def _exec_line(
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         # If line execution failed before start, there is no flow information in the run_tracker.
         # So we call start_flow_run before handling exception to make sure the run_tracker has flow info.
-        if isinstance(executor, ScriptExecutor):
-            run_tracker = RunTracker(executor._storage)
-        else:
-            run_tracker = executor._run_tracker
+        run_tracker = RunTracker(executor._storage)
         run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
         run_info = run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
