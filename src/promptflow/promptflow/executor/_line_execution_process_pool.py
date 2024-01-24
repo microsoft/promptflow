@@ -151,6 +151,8 @@ class LineExecutionProcessPool:
         self._input_queues = [manager.Queue() for _ in range(self._n_process)]
         self._output_queues = [manager.Queue() for _ in range(self._n_process)]
         self._control_signal_queue = manager.Queue()
+        self._ex_queue = manager.Queue()
+        self._end_thread_pool_signal_queue = Queue()
         self._process_info = manager.dict()
 
         # when using fork, we first create a process with spawn method to establish a clean environment
@@ -166,6 +168,7 @@ class LineExecutionProcessPool:
             # 2. Pass the above queue/dict as parameters to spawn and fork processes to transfer information
             # between processes.
             self._processes_manager = ForkProcessManager(
+                self._ex_queue,
                 self._control_signal_queue,
                 self._flow_create_kwargs,
                 **common_kwargs,
@@ -189,10 +192,21 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
+    def _check_thread_pool_termination_signal(self):
+        try:
+            end_signal = self._end_thread_pool_signal_queue.get(timeout=1)
+            if end_signal == "end":
+                return True
+        except queue.Empty:
+            return False
+
     def _get_process_info(self, index):
         start_time = time.time()
         while True:
             try:
+                is_thread_pool_terminated = self._check_thread_pool_termination_signal()
+                if is_thread_pool_terminated:
+                    break
                 if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
                     raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
                 # Try to get process id and name from the process_info
@@ -204,8 +218,10 @@ class LineExecutionProcessPool:
                 # try again.
                 time.sleep(1)
                 continue
+            except queue.Empty:
+                pass
             except Exception as e:
-                bulk_logger.warning(f"Unexpected error occurred while get process info. Exception: {e}")
+                raise Exception(f"Unexpected error occurred while get process info. Exception: {e}")
 
     def _ensure_process_terminated_within_timeout(self, process_id):
         start_time = time.time()
@@ -495,7 +511,15 @@ class LineExecutionProcessPool:
                                 total_count=self._nlines,
                             )
                             last_log_count = current_result_count
-                            # Check every 1 second
+                        try:
+                            ex = self._ex_queue.get_nowait()
+                            if ex is not None:
+                                for i in range(self._n_process):
+                                    self._end_thread_pool_signal_queue.put("end")
+                                raise ex
+                        except queue.Empty:
+                            pass
+                        # Check every 1 second
                         async_result.wait(1)
                     # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling
                     # The exceptions raised will be re-raised by the get() method.
@@ -504,6 +528,8 @@ class LineExecutionProcessPool:
                     async_result.get()
                 except KeyboardInterrupt:
                     raise
+                except queue.Empty:
+                    pass
             except PromptflowException:
                 raise
             except Exception as e:
