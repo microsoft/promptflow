@@ -107,9 +107,57 @@ class TestBatchTimeout:
         assert isinstance(batch_results.error_summary.error_list[0], LineError)
         assert batch_results.error_summary.error_list[0].line_number == 2
         assert batch_results.error_summary.error_list[0].error["code"] == "UserError"
+        assert batch_results.error_summary.error_list[0].error["referenceCode"] == "Executor"
+        assert batch_results.error_summary.error_list[0].error["innerError"]["code"] == "LineExecutionTimeoutError"
         assert (
             batch_results.error_summary.error_list[0].error["message"]
             == "Line 2 execution timeout for exceeding 5 seconds"
+        )
+
+        # assert mem_run_storage persists run infos correctly
+        assert len(mem_run_storage._flow_runs) == 3, "Flow runs are persisted in memory storage."
+        assert len(mem_run_storage._node_runs) == 6, "Node runs are persisted in memory storage."
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            ONE_LINE_OF_BULK_TEST_TIMEOUT,
+        ],
+    )
+    def test_batch_timeout(self, flow_folder):
+        mem_run_storage = MemoryRunStorage()
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections={},
+            storage=mem_run_storage,
+        )
+        batch_engine._batch_timeout_sec = 5
+        batch_engine._line_timeout_sec = 10
+
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="samples.json")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {"idx": "${data.idx}"}
+        batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
+
+        assert isinstance(batch_results, BatchResult)
+        # assert the line status in batch result
+        assert batch_results.status == Status.Completed
+        assert batch_results.total_lines == 3
+        assert batch_results.completed_lines == 2
+        assert batch_results.failed_lines == 1
+
+        # assert the error summary in batch result
+        assert batch_results.error_summary.failed_user_error_lines == 1
+        assert batch_results.error_summary.failed_system_error_lines == 0
+        assert isinstance(batch_results.error_summary.error_list[0], LineError)
+        assert batch_results.error_summary.error_list[0].line_number == 2
+        assert batch_results.error_summary.error_list[0].error["code"] == "UserError"
+        assert batch_results.error_summary.error_list[0].error["referenceCode"] == "Batch"
+        assert batch_results.error_summary.error_list[0].error["innerError"]["code"] == "BatchExecutionTimeoutError"
+        assert (
+            batch_results.error_summary.error_list[0].error["message"]
+            == "Processing of line 2 exceeded the batch timeout of 5 seconds."
         )
 
         # assert mem_run_storage persists run infos correctly
