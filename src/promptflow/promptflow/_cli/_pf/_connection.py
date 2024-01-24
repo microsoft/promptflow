@@ -243,7 +243,7 @@ def update_connection(name, params_override=None):
 
 @exception_handler("Connection delete")
 def delete_connection(name, skip_confirm: bool = False):
-    if skip_confirm or confirm("Are you sure you want to perform this operation?"):
+    if confirm("Are you sure you want to perform this operation?", skip_confirm):
         _get_pf_client().connections.delete(name)
     else:
         print("The delete operation was canceled.")

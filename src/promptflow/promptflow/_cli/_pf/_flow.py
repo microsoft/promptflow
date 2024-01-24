@@ -352,8 +352,8 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
         if not flow_path.is_dir():
             logger.error(f"{flow_path.resolve()} is not a folder.")
             return
-        answer = overwrite or confirm(
-            "The flow folder already exists, do you want to create the flow in this existing folder?"
+        answer = confirm(
+            "The flow folder already exists, do you want to create the flow in this existing folder?", overwrite
         )
         if not answer:
             print("The 'pf init' command has been cancelled.")

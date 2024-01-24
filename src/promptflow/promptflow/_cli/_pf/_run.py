@@ -638,7 +638,7 @@ def create_run(create_func: Callable, args):
 
 @exception_handler("Delete run")
 def delete_run(name: str, skip_confirm: bool = False) -> None:
-    if skip_confirm or confirm("Are you sure to delete run irreversibly?"):
+    if confirm("Are you sure to delete run irreversibly?", skip_confirm):
         pf_client = PFClient()
         pf_client.runs.delete(name=name)
     else:
