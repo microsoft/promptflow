@@ -258,18 +258,20 @@ class FlowOperations(TelemetryMixin):
         from promptflow._constants import FlowLanguage
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
 
+        def print_welcome_message(flow_name):
+            info_msg = f"Welcome to chat flow, {flow_name}."
+            print("=" * len(info_msg))
+            print(info_msg)
+            print("Press Enter to send your message.")
+            print("You can quit with ctrl+C.")
+            print("=" * len(info_msg))
+
         if flow.language == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
                 is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
                 if not is_chat_flow:
                     raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
-
-                info_msg = f"Welcome to chat flow, {submitter.dataplane_flow.name}."
-                print("=" * len(info_msg))
-                print(info_msg)
-                print("Press Enter to send your message.")
-                print("You can quit with ctrl+C.")
-                print("=" * len(info_msg))
+                print_welcome_message(submitter.dataplane_flow.name)
                 submitter._chat_flow(
                     inputs=inputs,
                     chat_history_name=chat_history_input_name,
@@ -281,13 +283,7 @@ class FlowOperations(TelemetryMixin):
                 is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
                 if not is_chat_flow:
                     raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
-
-                info_msg = f"Welcome to chat flow, {submitter.dataplane_flow.name}."
-                print("=" * len(info_msg))
-                print(info_msg)
-                print("Press Enter to send your message.")
-                print("You can quit with ctrl+C.")
-                print("=" * len(info_msg))
+                print_welcome_message(submitter.dataplane_flow.name)
                 submitter._chat_flow(
                     inputs=inputs,
                     chat_history_name=chat_history_input_name,

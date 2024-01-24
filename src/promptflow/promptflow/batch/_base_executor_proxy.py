@@ -96,10 +96,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         # call execution api to get line results
         url = self.api_endpoint + "/execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
-        if allow_generator_output:
-            headers = {"Accept": "text/event-stream"}
-        else:
-            headers = None
+        headers = {"Accept": "text/event-stream"} if allow_generator_output else None
 
         if allow_generator_output:
             async def generator():
@@ -197,7 +194,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             return ValidationException(error_response.message, target=ErrorTarget.BATCH)
         return None
 
-    def _process_http_response(self, response: httpx.Response, allow_generator_output=False):
+    def _process_http_response(self, response: httpx.Response):
         if response.status_code == 200:
             # if the status code is 200, the response is the json dict of a line result
             return response.json()
