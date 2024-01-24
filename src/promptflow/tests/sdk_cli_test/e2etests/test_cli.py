@@ -1434,6 +1434,12 @@ class TestCli:
             # Test init package tool with extra info
             package_name = "tool_with_extra_info"
             package_folder = Path(temp_dir) / package_name
+            package_folder.mkdir(exist_ok=True, parents=True)
+            manifest_file = package_folder / "MANIFEST.in"
+            mock_manifest_content = "include mock/path"
+            with open(manifest_file, "w") as f:
+                f.write(mock_manifest_content)
+
             icon_path = Path(DATAS_DIR) / "logo.jpg"
             category = "test_category"
             tags = {"tag1": "value1", "tag2": "value2"}
@@ -1450,6 +1456,10 @@ class TestCli:
                 f"tags={tags}",
                 cwd=temp_dir,
             )
+            with open(manifest_file, "r") as f:
+                content = f.read()
+                assert mock_manifest_content in content
+                assert f"include {package_name}/icons" in content
             # Add a tool script with icon
             tool_script_name = "tool_func_with_icon"
             run_pf_command(
