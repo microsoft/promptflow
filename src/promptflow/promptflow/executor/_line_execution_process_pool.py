@@ -238,12 +238,12 @@ class LineExecutionProcessPool:
         return None
 
     def _monitor_workers_and_process_tasks_in_thread(
-        self, task_queue: Queue, timeout_time, result_list: List[FlowRunInfo], index, input_queue, output_queue
+        self, task_queue: Queue, result_list: List[LineResult], index: int, input_queue: Queue, output_queue: Queue
     ):
         index, process_id, process_name = self._get_process_info(index)
 
         batch_start_time = datetime.utcnow()
-        while not self._timeout_expired(batch_start_time):
+        while not self._batch_timeout_expired(batch_start_time):
             try:
                 # Get task from task_queue
                 args = task_queue.get(timeout=1)
@@ -269,12 +269,8 @@ class LineExecutionProcessPool:
             timeouted = False
             returned_node_run_infos = {}
 
-            # Responsible for checking the output queue messages and
-            # processing them within a specified timeout period.
-            # Here we add more seconds because of the following reasons:
-            # 1. At the last second, there would be several timeout message from exec_line.
-            # 2. It may take time to create worker so actual timeout time may be longer.
-            while datetime.utcnow().timestamp() - start_time.timestamp() <= timeout_time + 10:
+            # Responsible for checking the output queue messages and processing them within a specified timeout period.
+            while not self._line_timeout_expired(start_time) and not self._batch_timeout_expired(batch_start_time):
                 # Monitor process aliveness.
                 crashed = not self._is_process_alive(process_id)
                 if crashed:
@@ -304,8 +300,8 @@ class LineExecutionProcessPool:
                     ex = ProcessCrashError(line_number)
                 # Handle line execution timeout.
                 elif timeouted:
-                    bulk_logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
-                    ex = LineExecutionTimeoutError(line_number, timeout_time)
+                    bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
+                    ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
                 else:
                     # This branch should not be reached, add this warning for the case.
                     msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
@@ -340,10 +336,16 @@ class LineExecutionProcessPool:
         self._processes_manager.end_process(index)
         self._ensure_process_terminated_within_timeout(process_id)
 
-    def _timeout_expired(self, start_time: datetime) -> bool:
+    def _batch_timeout_expired(self, start_time: datetime) -> bool:
         if self._batch_timeout_sec is None:
             return False
         return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec
+
+    def _line_timeout_expired(self, start_time: datetime) -> bool:
+        # Here we add more seconds because of the following reasons:
+        # 1. At the last second, there would be several timeout message from exec_line.
+        # 2. It may take time to create worker so actual timeout time may be longer.
+        return (datetime.utcnow() - start_time).total_seconds() > self._line_timeout_sec + 10
 
     def _process_multimedia(self, result: LineResult) -> LineResult:
         """Replace multimedia data in line result with string place holder to prevent OOM
@@ -458,8 +460,7 @@ class LineExecutionProcessPool:
                 args_list = [
                     (
                         self._task_queue,  # Shared task queue for all sub processes to read the input data.
-                        self._line_timeout_sec,  # Line execution timeout.
-                        result_list,  # Bath run result list.
+                        result_list,  # Line result list of the batch run.
                         i,  # Index of the sub process.
                         # Specific input queue for sub process, used to send input data to it.
                         self._input_queues[i],
