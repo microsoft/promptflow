@@ -98,7 +98,6 @@ def test_list_deployment_names_with_conn_error(monkeypatch):
     assert res == []
 
 
-
 def test_list_deployment_names_with_wrong_connection_id(monkeypatch):
     monkeypatch.setattr(
         ArmConnectionOperations,
@@ -153,7 +152,6 @@ def test_list_deployment_names(monkeypatch):
         assert len(res) == 1
         assert res[0].get("value") == "deployment1"
         assert res[0].get("display_value") == "deployment1"
-
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
