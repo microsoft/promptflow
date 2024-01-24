@@ -113,7 +113,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
                 response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers)
 
             # process the response
-            result = self._process_http_response(response, allow_generator_output)
+            result = self._process_http_response(response)
             if response.status_code != 200:
                 run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
                 return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
