@@ -228,6 +228,9 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
         environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
         extension_type="azureml",
     )
+    # Set credential to None for azureml extension type
+    # As we mock app in github workflow, which do not have managed identity credential
+    app.credential = None
     app.config.update(
         {
             "TESTING": True,
