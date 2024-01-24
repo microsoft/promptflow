@@ -60,21 +60,25 @@ More details can be found with `pf run --help`
 ```python
 from promptflow import PFClient
 
-# PFClient can help manage your runs and connections.
-pf = PFClient()
+# Please protect the entry point by using `if __name__ == '__main__':`,
+# otherwise it would cause unintended side effect when promptflow spawn worker processes.
+# Ref: https://docs.python.org/3/library/multiprocessing.html#the-spawn-and-forkserver-start-methods
+if __name__ == "__main__":
+  # PFClient can help manage your runs and connections.
+  pf = PFClient()
 
-# Set flow path and run input data
-flow = "standard/web-classification" # set the flow directory
-data= "standard/web-classification/data.jsonl" # set the data file
+  # Set flow path and run input data
+  flow = "standard/web-classification" # set the flow directory
+  data= "standard/web-classification/data.jsonl" # set the data file
 
-# create a run, stream it until it's finished
-base_run = pf.run(
-    flow=flow,
-    data=data,
-    stream=True,
-    # map the url field from the data to the url input of the flow
-    column_mapping={"url": "${data.url}"},
-)
+  # create a run, stream it until it's finished
+  base_run = pf.run(
+      flow=flow,
+      data=data,
+      stream=True,
+      # map the url field from the data to the url input of the flow
+      column_mapping={"url": "${data.url}"},
+  )
 ```
 
 ![q_0](../../media/how-to-guides/quick-start/flow-run-create-with-stream-output-sdk.png)
