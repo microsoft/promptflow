@@ -72,8 +72,6 @@ def execute_in_fork_mode_subprocess(
             executor,
             nlines,
             run_id,
-            "",
-            False,
             None,
         ) as pool:
             assert pool._n_process == n_process
@@ -120,8 +118,6 @@ def execute_in_spawn_mode_subprocess(
                     executor,
                     nlines,
                     run_id,
-                    "",
-                    False,
                     None,
                 ) as pool:
 
@@ -166,8 +162,6 @@ def create_line_execution_process_pool(dev_connections):
         executor,
         nlines,
         run_id,
-        "",
-        False,
         None,
     )
     return line_execution_process_pool
@@ -223,8 +217,6 @@ class TestLineExecutionProcessPool:
                 executor,
                 nlines,
                 run_id,
-                "",
-                False,
                 None,
             ) as pool:
                 result_list = pool.run(zip(range(nlines), bulk_inputs))
@@ -252,8 +244,6 @@ class TestLineExecutionProcessPool:
             executor,
             nlines,
             run_id,
-            "",
-            False,
             None,
         ) as pool:
             result_list = pool.run(zip(range(nlines), bulk_inputs))
@@ -286,8 +276,6 @@ class TestLineExecutionProcessPool:
             inputs=line_inputs,
             run_id=run_id,
             index=0,
-            variant_id="",
-            validate_inputs=False,
         )
         assert isinstance(line_result, LineResult)
 
@@ -317,8 +305,6 @@ class TestLineExecutionProcessPool:
                 inputs=line_inputs,
                 run_id=run_id,
                 index=0,
-                variant_id="",
-                validate_inputs=False,
             )
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.error["message"] == test_error_msg
@@ -350,8 +336,6 @@ class TestLineExecutionProcessPool:
             executor,
             nlines,
             run_id,
-            "",
-            False,
             None,
         ) as pool:
             with pytest.raises(UserErrorException) as e:
