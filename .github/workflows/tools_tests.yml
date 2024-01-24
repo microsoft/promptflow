@@ -42,7 +42,6 @@ jobs:
             python ./scripts/building/dev_setup.py --promptflow-extra-deps azure
             pip install google-search-results==2.4.1
             pip install openai>=1.0.0
-            pip install azure-mgmt-cognitiveservices==13.5.0
           else
             pip install -r ./src/promptflow-tools/requirements.txt
           fi
