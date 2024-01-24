@@ -298,7 +298,8 @@ class LineExecutionProcessPool:
                 # Handle batch execution timeout.
                 elif self._batch_timeout_expired(batch_start_time):
                     bulk_logger.warning(
-                        f"Line {line_number} execution exceeded the batch timeout of {self._batch_timeout_sec} seconds."
+                        f"Line {line_number} execution terminated due to the total "
+                        f"batch run exceeding the batch timeout ({self._batch_timeout_sec}s)."
                     )
                     ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
                 else:

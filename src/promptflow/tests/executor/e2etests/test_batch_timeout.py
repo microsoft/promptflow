@@ -162,7 +162,7 @@ class TestBatchTimeout:
         assert batch_results.error_summary.error_list[0].error["innerError"]["code"] == "BatchExecutionTimeoutError"
         assert (
             batch_results.error_summary.error_list[0].error["message"]
-            == "Processing of line 2 exceeded the batch timeout of 5 seconds."
+            == "Line 2 execution terminated due to the total batch run exceeding the batch timeout (5s)."
         )
 
         # assert mem_run_storage persists run infos correctly

@@ -179,7 +179,10 @@ class BatchExecutionTimeoutError(UserErrorException):
 
     def __init__(self, line_number, timeout):
         super().__init__(
-            message_format="Processing of line {line_number} exceeded the batch timeout of {timeout} seconds.",
+            message_format=(
+                "Line {line_number} execution terminated due to the "
+                "total batch run exceeding the batch timeout ({timeout}s)."
+            ),
             line_number=line_number,
             timeout=timeout,
             target=ErrorTarget.BATCH,
