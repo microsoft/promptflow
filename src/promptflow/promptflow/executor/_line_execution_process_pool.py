@@ -252,7 +252,7 @@ class LineExecutionProcessPool:
 
             # Put task into input_queue
             input_queue.put(args)
-            inputs, line_number, run_id = args[:3]
+            inputs, line_number, run_id = args
 
             self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
             log_process_status(process_name, process_id, line_number)
@@ -639,8 +639,7 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
 
     while True:
         try:
-            args = input_queue.get(timeout=1)
-            inputs, line_number, run_id = args[:5]
+            inputs, line_number, run_id = input_queue.get(timeout=1)
             result = _exec_line(
                 executor=executor,
                 output_queue=output_queue,
