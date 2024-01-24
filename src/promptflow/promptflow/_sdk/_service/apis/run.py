@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -90,7 +91,11 @@ class RunSubmit(Resource):
                     run = get_client_from_request().runs._get(name=run_name)
                     return jsonify(run._to_dict())
                 except RunNotFoundError as e:
-                    raise Exception(f"Run submitted but failed in getting details: {e}\n{stdout.decode('utf-8')}")
+                    raise RunNotFoundError(
+                        f"Failed to get the submitted run: {e}\n"
+                        f"Used command: {' '.join(shlex.quote(arg) for arg in cmd)}\n"
+                        f"Output: {stdout.decode('utf-8')}"
+                    )
             else:
                 raise Exception(f"Create batch run failed: {stdout.decode('utf-8')}")
 
