@@ -6,7 +6,13 @@ import argparse
 import json
 from functools import partial
 
-from promptflow._cli._params import add_param_all_results, add_param_max_results, add_param_set, base_params
+from promptflow._cli._params import (
+    add_param_all_results,
+    add_param_max_results,
+    add_param_set,
+    add_param_yes,
+    base_params,
+)
 from promptflow._cli._utils import activate_action, confirm, exception_handler, get_secret_input, print_yellow_warning
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._load_functions import load_connection
@@ -121,7 +127,7 @@ pf connection delete -n my_connection_name
         name="delete",
         description="Delete a connection with specific name.",
         epilog=epilog,
-        add_params=[partial(add_param_name, required=True)] + base_params,
+        add_params=[partial(add_param_name, required=True), add_param_yes] + base_params,
         subparsers=subparsers,
         help_message="Delete a connection with specific name.",
         action_param_name="sub_action",
@@ -236,8 +242,8 @@ def update_connection(name, params_override=None):
 
 
 @exception_handler("Connection delete")
-def delete_connection(name):
-    if confirm("Are you sure you want to perform this operation?"):
+def delete_connection(name, skip_confirm: bool = False):
+    if skip_confirm or confirm("Are you sure you want to perform this operation?"):
         _get_pf_client().connections.delete(name)
     else:
         print("The delete operation was canceled.")
@@ -253,4 +259,4 @@ def dispatch_connection_commands(args: argparse.Namespace):
     elif args.sub_action == "update":
         update_connection(args.name, args.params_override)
     elif args.sub_action == "delete":
-        delete_connection(args.name)
+        delete_connection(args.name, args.yes)

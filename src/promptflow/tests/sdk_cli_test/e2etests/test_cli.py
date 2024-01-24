@@ -1873,6 +1873,32 @@ class TestCli:
         # both runs are deleted and their folders are deleted
         assert not os.path.exists(path_a)
 
+    def test_basic_flow_run_delete_no_confirm(self, monkeypatch, local_client, capfd) -> None:
+        run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--name",
+            run_id,
+            "--flow",
+            f"{FLOWS_DIR}/print_env_var",
+            "--data",
+            f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        run_a = local_client.runs.get(name=run_id)
+        local_storage = LocalStorageOperations(run_a)
+        path_a = local_storage.path
+        assert os.path.exists(path_a)
+
+        # delete the run
+        run_pf_command("run", "delete", "--name", f"{run_id}", "-y")
+
+        # both runs are deleted and their folders are deleted
+        assert not os.path.exists(path_a)
+
     def test_basic_flow_run_delete_error(self, monkeypatch) -> None:
         input_list = ["y"]
 

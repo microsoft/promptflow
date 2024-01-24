@@ -43,7 +43,7 @@ from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
-from promptflow.exceptions import UserErrorException, ErrorTarget
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
@@ -352,10 +352,8 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
         if not flow_path.is_dir():
             logger.error(f"{flow_path.resolve()} is not a folder.")
             return
-        answer = (
-            overwrite
-            if overwrite
-            else confirm("The flow folder already exists, do you want to create the flow in this existing folder?")
+        answer = overwrite or confirm(
+            "The flow folder already exists, do you want to create the flow in this existing folder?"
         )
         if not answer:
             print("The 'pf init' command has been cancelled.")

@@ -17,6 +17,7 @@ from promptflow._cli._params import (
     add_param_output_format,
     add_param_run_name,
     add_param_set,
+    add_param_yes,
     add_parser_build,
     base_params,
 )
@@ -353,7 +354,7 @@ Example:
 # Delete a run:
 pf run delete -n "<name>"
 """
-    add_params = [add_param_run_name] + base_params
+    add_params = [add_param_run_name, add_param_yes] + base_params
 
     activate_action(
         name="delete",
@@ -436,7 +437,7 @@ def dispatch_run_commands(args: argparse.Namespace):
     elif args.sub_action == "export":
         export_run(args)
     elif args.sub_action == "delete":
-        delete_run(name=args.name)
+        delete_run(args.name, args.yes)
     else:
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
@@ -636,8 +637,8 @@ def create_run(create_func: Callable, args):
 
 
 @exception_handler("Delete run")
-def delete_run(name: str) -> None:
-    if confirm("Are you sure to delete run irreversibly?"):
+def delete_run(name: str, skip_confirm: bool = False) -> None:
+    if skip_confirm or confirm("Are you sure to delete run irreversibly?"):
         pf_client = PFClient()
         pf_client.runs.delete(name=name)
     else:
