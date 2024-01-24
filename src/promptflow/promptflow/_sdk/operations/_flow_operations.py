@@ -100,7 +100,7 @@ class FlowOperations(TelemetryMixin):
                     prefix = "flow"
                 dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
 
-        additional_output_path = kwargs.get("x", None)
+        additional_output_path = kwargs.get("detail", None)
         if additional_output_path:
             if not dump_test_result:
                 flow = load_flow(flow)
