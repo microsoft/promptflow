@@ -8,6 +8,7 @@ from typing import Any, List, Mapping, Optional
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
+from promptflow._utils.logger_utils import bulk_logger
 from promptflow.batch._base_executor_proxy import AbstractExecutorProxy
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
@@ -66,6 +67,11 @@ class PythonExecutorProxy(AbstractExecutorProxy):
                 raise UnexpectedError(
                     "Unexpected error occurred while init FlowExecutor. Error details: flow file is missing."
                 )
+
+            if batch_timeout_sec:
+                bulk_logger.info(f"The timeout for batch run is {batch_timeout_sec} seconds.")
+            if line_timeout_sec:
+                bulk_logger.info(f"The timeout for line execution is {line_timeout_sec} seconds.")
 
             with LineExecutionProcessPool(
                 self._flow_executor,

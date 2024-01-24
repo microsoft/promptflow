@@ -134,7 +134,7 @@ class FlowExecutor:
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
         self._working_dir = working_dir
-        self._line_timeout_sec = line_timeout_sec or get_int_env_var("LINE_TIMEOUT_SEC")
+        self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC")
         self._flow_file = flow_file
         try:
             self._tools_manager = ToolsManager(loaded_tools)
