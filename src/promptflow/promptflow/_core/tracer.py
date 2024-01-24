@@ -21,6 +21,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
+from promptflow._core.operation_context import OperationContext
 
 from .thread_local_singleton import ThreadLocalSingleton
 
@@ -187,6 +188,7 @@ def get_node_name_from_context():
 
 
 def enrich_span_with_trace(span, trace):
+    operation_context = OperationContext.get_instance()
     span.set_attributes(
         {
             "framework": "promptflow",
@@ -195,6 +197,8 @@ def enrich_span_with_trace(span, trace):
             "inputs": serialize_attribute(trace.inputs),
             "node_name": get_node_name_from_context(),
             "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
+            "flow-id": operation_context.get("flow_id", ""),
+            "root_run_id": operation_context.get("root_run_id", ""),
         }
     )
 
@@ -214,7 +218,7 @@ def serialize_attribute(value):
     """Serialize values that can be used as attributes in span."""
     serializable = Tracer.to_serializable(value)
     serialized_value = serialize(serializable)
-    return json.dumps(serialized_value, indent=2)
+    return json.dumps(serialized_value, indent=2, default=default_json_encoder)
 
 
 def traced_generator(generator, parent_span):
