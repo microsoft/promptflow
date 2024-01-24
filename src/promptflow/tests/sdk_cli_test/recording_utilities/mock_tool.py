@@ -55,25 +55,6 @@ def _replace_tool_rule(func):
         return False
 
 
-def _replace_openai_injector_rule(func):
-    if func.__name__ == "partial":
-        func_wo_partial = func.func
-    else:
-        func_wo_partial = func
-    if func_wo_partial.__qualname__.startswith("AzureOpenAI"):
-        return True
-    elif func_wo_partial.__qualname__.startswith("OpenAI"):
-        return True
-    elif func_wo_partial.__module__ == "promptflow.tools.aoai":
-        return True
-    elif func_wo_partial.__module__ == "promptflow.tools.openai_gpt4v":
-        return True
-    elif func_wo_partial.__module__ == "promptflow.tools.openai":
-        return True
-    else:
-        return False
-
-
 def call_func(func, args, kwargs):
     input_dict = _prepare_input_dict(func, args, kwargs)
     if RecordStorage.is_replaying_mode():
