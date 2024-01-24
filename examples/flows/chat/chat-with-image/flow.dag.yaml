@@ -25,7 +25,7 @@ nodes:
     path: chat.jinja2
   inputs:
     connection: aoai_gpt4v_connection
-    deployment_name: gpt-4
+    deployment_name: gpt-4v
     max_tokens: 512
     chat_history: ${inputs.chat_history}
     question: ${inputs.question}
