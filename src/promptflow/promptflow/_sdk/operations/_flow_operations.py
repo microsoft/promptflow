@@ -100,6 +100,30 @@ class FlowOperations(TelemetryMixin):
                     prefix = "flow"
                 dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
 
+        additional_output_path = kwargs.get("x", None)
+        if additional_output_path:
+            if not dump_test_result:
+                flow = load_flow(flow)
+            if node:
+                dump_flow_result(
+                    flow_folder=flow.code,
+                    node_result=result,
+                    prefix=f"flow-{node}.node",
+                    custom_path=additional_output_path,
+                )
+            else:
+                if variant:
+                    tuning_node, node_variant = parse_variant(variant)
+                    prefix = f"flow-{tuning_node}-{node_variant}"
+                else:
+                    prefix = "flow"
+                dump_flow_result(
+                    flow_folder=flow.code,
+                    flow_result=result,
+                    prefix=prefix,
+                    custom_path=additional_output_path,
+                )
+
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
 

@@ -943,13 +943,14 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                     dump_yaml(yaml_data, f)
 
 
-def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
+def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, custom_path=None):
     """Dump flow result for extension.
 
     :param flow_folder: The flow folder.
     :param prefix: The file prefix.
     :param flow_result: The flow result returned by exec_line.
     :param node_result: The node result when test node returned by load_and_exec_node.
+    :param custom_path: The custom path to dump flow result.
     """
     if flow_result:
         flow_serialize_result = {
@@ -961,7 +962,8 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
             "flow_runs": [],
             "node_runs": [serialize(node_result)],
         }
-    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
+
+    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME if custom_path is None else Path(custom_path)
     dump_folder.mkdir(parents=True, exist_ok=True)
 
     with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
