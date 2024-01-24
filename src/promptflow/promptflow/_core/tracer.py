@@ -192,8 +192,8 @@ def enrich_span_with_trace(span, trace):
             "inputs": serialize_attribute(trace.inputs),
             "node_name": get_node_name_from_context(),
             "tool_version": "tool_version",  # TODO: Check how to pass the tool version in
-            "flow-id": operation_context.get("flow_id", ""),
-            "root_run_id": operation_context.get("root_run_id", ""),
+            "flow_id": operation_context.get("flow-id", ""),
+            "root_run_id": operation_context.get("root-run-id", ""),
         }
     )
 
