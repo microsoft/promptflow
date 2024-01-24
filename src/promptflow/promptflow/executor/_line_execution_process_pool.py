@@ -259,7 +259,7 @@ class LineExecutionProcessPool:
             remaining_execution_time = (datetime.utcnow() - batch_start_time).total_seconds()
             line_timeout_sec = (
                 remaining_execution_time
-                if remaining_execution_time < self._line_timeout_sec
+                if self._batch_timeout_sec and remaining_execution_time < self._line_timeout_sec
                 else self._line_timeout_sec
             )
             # Put task into input_queue
