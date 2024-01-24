@@ -656,7 +656,9 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
 
     while True:
         try:
-            inputs, line_number, run_id = input_queue.get(timeout=1)
+            inputs, line_number, run_id, line_timeout_sec = input_queue.get(timeout=1)
+            # Set line timeout for the executor
+            executor.line_timeout_sec = line_timeout_sec
             result = _exec_line(
                 executor=executor,
                 output_queue=output_queue,

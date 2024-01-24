@@ -453,6 +453,24 @@ class FlowExecutor:
         return FlowValidator.resolve_flow_inputs_type(self._flow, inputs)
 
     @property
+    def line_timeout_sec(self):
+        """Get the line execution timeout.
+
+        :return: The line execution timeout.
+        :rtype: int
+        """
+        return self._line_timeout_sec
+
+    @line_timeout_sec.setter
+    def line_timeout_sec(self, value: int):
+        """Set the line execution timeout.
+
+        :param value: The line execution timeout.
+        :type value: int
+        """
+        self._line_timeout_sec = value
+
+    @property
     def _default_inputs_mapping(self):
         return {key: f"${{data.{key}}}" for key in self._flow.inputs}
 
