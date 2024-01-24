@@ -245,7 +245,7 @@ class LineExecutionProcessPool:
         while not self._batch_timeout_expired(batch_start_time):
             try:
                 # Get task from task_queue
-                args = task_queue.get(timeout=1)
+                inputs, line_number, run_id = task_queue.get(timeout=1)
             except queue.Empty:
                 self._processes_manager.end_process(index)
                 # In fork mode, the main process and the sub spawn process communicate through _process_info.
@@ -255,9 +255,16 @@ class LineExecutionProcessPool:
                 self._ensure_process_terminated_within_timeout(process_id)
                 return
 
+            # Calculate the line timeout for the current line.
+            remaining_execution_time = (datetime.utcnow() - batch_start_time).total_seconds()
+            line_timeout_sec = (
+                remaining_execution_time
+                if remaining_execution_time < self._line_timeout_sec
+                else self._line_timeout_sec
+            )
             # Put task into input_queue
+            args = (inputs, line_number, run_id, line_timeout_sec)
             input_queue.put(args)
-            inputs, line_number, run_id = args
 
             self._processing_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
             log_process_status(process_name, process_id, line_number)
