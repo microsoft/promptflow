@@ -307,10 +307,44 @@ def load_function_from_function_path(func_path: str):
 
 
 def assign_tool_input_index_for_ux_order_if_needed(tool):
+    """
+    Automatically adds an index to the inputs of a tool based on their order in the tool's YAML.
+    This function directly modifies the tool without returning any value.
+
+    Example:
+    - tool (dict): A dictionary representing a tool configuration. Inputs do not contain 'ui_hints':
+        {
+        'name': 'My Custom LLM Tool',
+        'type': 'custom_llm',
+        'inputs':
+            {
+                'input1': {'type': 'string'},
+                'input2': {'type': 'string'},
+                'input3': {'type': 'string'}
+            }
+        }
+
+    >>> assign_tool_input_index_for_ux_order_if_needed(tool)
+    - tool (dict): Tool inputs are modified to include 'ui_hints' with an 'index', indicating the order.
+        {
+        'name': 'My Custom LLM Tool',
+        'type': 'custom_llm',
+        'inputs':
+            {
+                'input1': {'type': 'string', 'ui_hints': {'index': 0}},
+                'input2': {'type': 'string', 'ui_hints': {'index': 1}},
+                'input3': {'type': 'string', 'ui_hints': {'index': 2}}
+            }
+        }
+    """
     tool_type = tool.get("type")
     if should_preserve_tool_inputs_order(tool_type) and "inputs" in tool:
         inputs_dict = tool["inputs"]
         input_index = 0
+        # The keys can keep order because the tool YAML is loaded by ruamel.yaml and
+        # ruamel.yaml has the feature of preserving the order of keys.
+        # For more information on ruamel.yaml's feature, please
+        # visit https://yaml.readthedocs.io/en/latest/overview/#overview.
         for input_name, settings in inputs_dict.items():
             # 'uionly_hidden' indicates that the inputs are not the tool's inputs.
             # They are not displayed on the main interface but appear in a popup window.
@@ -327,7 +361,8 @@ def should_preserve_tool_inputs_order(tool_type):
     """
     Currently, we only automatically add input indexes for the custom_llm tool,
     following the order specified in the tool interface or YAML.
-    This is because, as of now, only the custom_llm tool has such a requirement.
+    This is because, as of now, only the custom_llm tool requires the order of its inputs displayed on the UI
+      to be consistent with the order in the YAML, while other types of tools do not have this requirement.
     To avoid extensive changes, other types of tools will remain as they are.
     """
     return tool_type == ToolType.CUSTOM_LLM
