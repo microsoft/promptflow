@@ -91,6 +91,6 @@ pf run create --flow . --data data.jsonl --column-mapping groundtruth='${data.gr
 Please note the flow run to be evaluated is specified with `--run basic_chat_run`. Also same as previous run, the evaluation run is named with `--name evaluation_qa`.
 You can view the evaluation run details with:
 ```bash
-# pf run show-details -n evaluation_qa
+pf run show-details -n evaluation_qa
 pf run show-metrics -n evaluation_qa
 ```
