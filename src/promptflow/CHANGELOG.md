@@ -13,6 +13,7 @@
 - [SDK/CLI] Support `pf run delete` to delete a run irreversibly.
 - [SDK/CLI][azure] Automatically put requirements.txt to flow.dag.yaml if exists in flow snapshot.
 - [SDK/CLI] Support `pf upgrade` to upgrade prompt flow to the latest version.
+- [SDK/CLI] Support env variables in yaml file.
 
 ### Bugs Fixed
 
