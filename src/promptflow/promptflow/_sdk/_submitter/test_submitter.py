@@ -200,7 +200,7 @@ class TestSubmitter:
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
     ):
-        from promptflow.executor.flow_executor import execute_flow
+        from promptflow.executor._base_executor import execute_flow
 
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)

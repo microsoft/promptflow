@@ -30,8 +30,11 @@ class ScriptExecutor(BaseExecutor):
         **kwargs,
     ):
         logger.debug(f"Start initializing the executor with {flow_file}.")
-        self._flow_file = flow_file
 
+        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        super().__init__(flow_file, working_dir=working_dir, **kwargs)
+
+        self._flow_file = flow_file
         # TODO: Refine the logic here
         m = load_python_module_from_file(flow_file)
         func: Callable = getattr(m, entry, None)
@@ -50,10 +53,6 @@ class ScriptExecutor(BaseExecutor):
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
         self._entry = entry
         self._is_async = inspect.iscoroutinefunction(self._func)
-        self._flow_id = None
-
-        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        super().__init__(flow_file, working_dir=working_dir, **kwargs)
 
     def exec_line(
         self,
