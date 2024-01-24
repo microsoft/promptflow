@@ -56,7 +56,7 @@ def collect_tools_from_directory(base_dir) -> dict:
         with open(f, "r") as f:
             # The feature that automatically assigns indexes to inputs based on their order in the tool YAML,
             # relying on the feature of ruamel.yaml that maintains key order when load YAML file.
-            # For more information on ruamel.yaml's behavior,
+            # For more information on ruamel.yaml's feature, please
             # visit https://yaml.readthedocs.io/en/latest/overview/#overview.
             tools_in_file = load_yaml(f)
             for identifier, tool in tools_in_file.items():
