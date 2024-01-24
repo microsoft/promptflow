@@ -428,7 +428,8 @@ class TestSubmitterViaProxy(TestSubmitter):
                     run_info = None
                     for chunk in line_result:
                         node_run_infos = chunk.node_run_infos if node_run_infos is None else node_run_infos
-                        aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else aggregation_inputs
+                        aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else \
+                            aggregation_inputs
                         run_info = chunk.run_info if run_info is None else run_info
                         for key, value in chunk.output.items():
                             if key not in flow_outputs:
@@ -452,9 +453,11 @@ class TestSubmitterViaProxy(TestSubmitter):
                         # Remove line_number from output
                         flow_outputs.pop(LINE_NUMBER_KEY, None)
                         logger.info(f"Some streaming outputs in the result, {flow_outputs.keys()}")
-                    flow_result = LineResult(output=flow_outputs, aggregation_inputs=aggregation_inputs, run_info=run_info, node_run_infos=node_run_infos)
+                    flow_result = LineResult(output=flow_outputs, aggregation_inputs=aggregation_inputs,
+                                             run_info=run_info, node_run_infos=node_run_infos)
                     self._raise_error_when_test_failed(flow_result, show_trace=True)
-                    show_node_log_and_output(flow_result.node_run_infos, kwargs.pop("show_step_output", False), generator_record)
+                    show_node_log_and_output(flow_result.node_run_infos, kwargs.pop("show_step_output", False),
+                                             generator_record)
                     print(f"{Fore.YELLOW}Bot: ", end="")
                     print_csharp_stream_chat_output(line_result, kwargs.pop("chat_output_name", None))
                     return flow_result

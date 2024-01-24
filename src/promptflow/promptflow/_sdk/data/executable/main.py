@@ -97,7 +97,8 @@ def start():
                                     resolved_outputs[key] += value
                             full_response += chunk.output.get(chat_output_name, "") + " "
                             node_run_infos = chunk.node_run_infos if node_run_infos is None else node_run_infos
-                            aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else aggregation_inputs
+                            aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else \
+                                aggregation_inputs
                             run_info = chunk.run_info if run_info is None else run_info
                             time.sleep(0.05)
                             # Add a blinking cursor to simulate typing
