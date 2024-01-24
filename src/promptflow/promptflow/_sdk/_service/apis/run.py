@@ -11,6 +11,7 @@ from pathlib import Path
 from flask import Response, jsonify, make_response, request
 
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
+from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._service import Namespace, Resource, fields
 from promptflow._sdk._service.utils.utils import build_pfs_user_agent, get_client_from_request
 from promptflow._sdk.entities import Run as RunEntity
@@ -85,8 +86,11 @@ class RunSubmit(Resource):
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
             stdout, _ = process.communicate()
             if process.returncode == 0:
-                run = get_client_from_request().runs._get(name=run_name)
-                return jsonify(run._to_dict())
+                try:
+                    run = get_client_from_request().runs._get(name=run_name)
+                    return jsonify(run._to_dict())
+                except RunNotFoundError as e:
+                    raise Exception(f"Run submitted but failed in getting details: {e}\n{stdout.decode('utf-8')}")
             else:
                 raise Exception(f"Create batch run failed: {stdout.decode('utf-8')}")
 
