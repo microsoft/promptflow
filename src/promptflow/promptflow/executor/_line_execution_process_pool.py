@@ -31,6 +31,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, PromptflowException
 from promptflow.executor._errors import (
+    BatchExecutionTimeoutError,
     LineExecutionTimeoutError,
     ProcessCrashError,
     ProcessInfoObtainedTimeout,
@@ -266,7 +267,6 @@ class LineExecutionProcessPool:
             start_time = datetime.utcnow()
             completed = False
             crashed = False
-            timeouted = False
             returned_node_run_infos = {}
 
             # Responsible for checking the output queue messages and processing them within a specified timeout period.
@@ -284,9 +284,6 @@ class LineExecutionProcessPool:
                 if isinstance(message, NodeRunInfo):
                     returned_node_run_infos[message.node] = message
 
-            # Check if the loop ended due to timeout
-            timeouted = not completed and not crashed
-
             # Handle line execution completed.
             if completed:
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
@@ -299,9 +296,15 @@ class LineExecutionProcessPool:
                     bulk_logger.warning(f"Process crashed while executing line {line_number}.")
                     ex = ProcessCrashError(line_number)
                 # Handle line execution timeout.
-                elif timeouted:
+                elif self._line_timeout_expired(start_time):
                     bulk_logger.warning(f"Line {line_number} timeout after {self._line_timeout_sec} seconds.")
                     ex = LineExecutionTimeoutError(line_number, self._line_timeout_sec)
+                # Handle batch execution timeout.
+                elif self._batch_timeout_expired(batch_start_time):
+                    bulk_logger.warning(
+                        f"Line {line_number} execution exceeded the batch timeout of {self._batch_timeout_sec} seconds."
+                    )
+                    ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
                 else:
                     # This branch should not be reached, add this warning for the case.
                     msg = f"Unexpected error occurred while monitoring line execution at line {line_number}."
@@ -339,7 +342,7 @@ class LineExecutionProcessPool:
     def _batch_timeout_expired(self, start_time: datetime) -> bool:
         if self._batch_timeout_sec is None:
             return False
-        return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec
+        return (datetime.utcnow() - start_time).total_seconds() > self._batch_timeout_sec + 10
 
     def _line_timeout_expired(self, start_time: datetime) -> bool:
         # Here we add more seconds because of the following reasons:
