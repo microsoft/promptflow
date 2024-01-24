@@ -14,23 +14,20 @@ from promptflow._utils.logger_utils import logger
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow.contracts.flow import Flow
 from promptflow.contracts.run_mode import RunMode
+from promptflow.executor._base_executor import BaseExecutor
 from promptflow.executor._result import LineResult
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DefaultRunStorage
 
-from .flow_executor import FlowExecutor
 
-
-class ScriptExecutor(FlowExecutor):
+class ScriptExecutor(BaseExecutor):
     def __init__(
         self,
         flow_file: Path,
         entry: str,
-        connections: Optional[dict] = None,
-        working_dir: Optional[Path] = None,
         *,
-        storage: Optional[AbstractRunStorage] = None,
-        line_timeout_sec: Optional[int] = None,
+        working_dir: Optional[Path] = None,
+        **kwargs,
     ):
         logger.debug(f"Start initializing the executor with {flow_file}.")
         self._flow_file = flow_file
@@ -47,17 +44,16 @@ class ScriptExecutor(FlowExecutor):
         # If the function is not decorated with trace, add trace for it.
         if not hasattr(func, "__original_function"):
             func = _traced(func)
+
         inputs, _, _, _ = function_to_interface(func)
         self._func = func
         self._inputs = {k: v.to_flow_input_definition() for k, v in inputs.items()}
         self._entry = entry
         self._is_async = inspect.iscoroutinefunction(self._func)
-        self._connections = connections
-        self._working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        self._storage = storage or DefaultRunStorage()
         self._flow_id = None
-        self._log_interval = 60
-        self._line_timeout_sec = line_timeout_sec
+
+        working_dir = Flow._resolve_working_dir(flow_file, working_dir)
+        super().__init__(flow_file, working_dir=working_dir, **kwargs)
 
     def exec_line(
         self,
