@@ -232,7 +232,8 @@ class LocalStorageOperations(AbstractRunStorage):
                 flow_obj = load_flow(source=run.flow)
                 return isinstance(flow_obj, EagerFlow)
             except Exception as e:
-                logger.warning(f"Failed to load flow from {run.flow} due to {e}")
+                # For run with incomplete flow snapshot, ignore load flow error to make sure it can still show.
+                logger.debug(f"Failed to load flow from {run.flow} due to {e}.")
                 return False
         elif run._run_source in [RunInfoSources.INDEX_SERVICE, RunInfoSources.RUN_HISTORY]:
             return run._properties.get("azureml.promptflow.run_mode") == "Eager"

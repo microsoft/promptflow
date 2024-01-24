@@ -123,11 +123,34 @@ Valid for batch run only. Optional values: 'spawn', 'fork'.
 Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
 
 
-#### You can configure environment variables in the following ways
+#### How to configure environment variables
 
-1. If you are using CLI, you can use this parameter: ```--environment-variable```. Example: ```--environment-variable PF_WORKER_COUNT="2" PF_BATCH_METHOD="spawn"```.
+1. Configure environment variables in ```flow.dag.yaml```. Example:
+```
+    inputs: []  
+    outputs: []  
+    nodes: []  
+    environment_variables:  
+      PF_WORKER_COUNT: 2  
+      PF_BATCH_METHOD: "spawn"
+      MY_CUSTOM_SETTING: my_custom_value 
+```
 
-2. If you are using SDK, you can specify environment variables when creating run. Example: 
+2. Specify environment variables when submitting runs.
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+
+Use this parameter: ```--environment-variable``` to specify environment variables. 
+Example: ```--environment-variable PF_WORKER_COUNT="2" PF_BATCH_METHOD="spawn"```.
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+Specify environment variables when creating run. Example: 
 
 ``` python
     pf = PFClient(
@@ -152,7 +175,13 @@ Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
     )
 ```
 
-3. If you are using VSCode Extension to submit batch run, you can configure environment variables in the ```batch_run_create.yaml```. Example:
+:::
+
+:::{tab-item} VS Code Extension
+:sync: VS Code Extension
+
+VSCode Extension supports specifying environment variables only when submitting batch runs.
+Specify environment variables in ```batch_run_create.yaml```. Example:
 
 ``` yaml
     name: flow_name
@@ -166,3 +195,10 @@ Note: Windows only supports spawn, Linux and macOS support both spawn and fork.
         PF_WORKER_COUNT: "2"
         PF_BATCH_METHOD: "spawn"
 ```
+
+:::
+
+::::
+
+#### Priority
+The environment variables specified when submitting runs always takes precedence over the environment variables in the flow.dag.yaml file.
