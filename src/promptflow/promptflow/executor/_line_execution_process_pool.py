@@ -95,8 +95,6 @@ class LineExecutionProcessPool:
         nlines,
         run_id,
         output_dir,
-        variant_id: str = "",
-        validate_inputs: bool = True,
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
     ):
