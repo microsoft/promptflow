@@ -70,8 +70,6 @@ class PythonExecutorProxy(AbstractExecutorProxy):
 
             if batch_timeout_sec:
                 bulk_logger.info(f"The timeout for batch run is {batch_timeout_sec} seconds.")
-            if line_timeout_sec:
-                bulk_logger.info(f"The timeout for line execution is {line_timeout_sec} seconds.")
 
             with LineExecutionProcessPool(
                 self._flow_executor,
