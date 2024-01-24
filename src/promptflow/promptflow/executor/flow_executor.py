@@ -35,7 +35,7 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data_recursively,
     persist_multimedia_data,
 )
-from promptflow._utils.utils import transpose, get_int_env_var
+from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -47,7 +47,7 @@ from promptflow.executor._errors import (
     InvalidFlowFileError,
     NodeOutputNotFound,
     OutputReferenceNotExist,
-    SingleNodeValidationError
+    SingleNodeValidationError,
 )
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
@@ -222,9 +222,7 @@ class FlowExecutor:
                 line_timeout_sec=line_timeout_sec,
             )
         else:
-            raise InvalidFlowFileError(
-                message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
-            )
+            raise InvalidFlowFileError(message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file)
 
     @classmethod
     def _create_from_flow(
@@ -483,9 +481,7 @@ class FlowExecutor:
             result[idx] = value
         return result
 
-    def _exec_batch_with_process_pool(
-        self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
-    ) -> List[LineResult]:
+    def _exec_batch_with_process_pool(self, batch_inputs: List[dict], run_id, output_dir: Path) -> List[LineResult]:
         nlines = len(batch_inputs)
         line_number = [
             batch_input["line_number"] for batch_input in batch_inputs if "line_number" in batch_input.keys()
@@ -514,8 +510,6 @@ class FlowExecutor:
             self,
             nlines,
             run_id,
-            variant_id,
-            validate_inputs,
             output_dir,
         ) as pool:
             result_list = pool.run(zip(line_number, batch_inputs))
@@ -977,7 +971,11 @@ class FlowExecutor:
                 current_value=self._node_concurrency,
             )
         return FlowNodesScheduler(
-            self._tools_manager, inputs, nodes, self._node_concurrency, context,
+            self._tools_manager,
+            inputs,
+            nodes,
+            self._node_concurrency,
+            context,
         ).execute(self._line_timeout_sec)
 
     @staticmethod
