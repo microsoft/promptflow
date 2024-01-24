@@ -313,6 +313,16 @@ def print_chat_output(output, generator_record):
         print(output)
 
 
+def print_csharp_stream_chat_output(output, chat_output_name):
+    for event in output:
+        response = event.output.get(chat_output_name, "")
+        print(response, end="")
+        # For better animation effects
+        time.sleep(0.01)
+    # Print a new line at the end of the response
+    print()
+
+
 def get_result_output(output, generator_record):
     if isinstance(output, GeneratorType):
         if output in generator_record:

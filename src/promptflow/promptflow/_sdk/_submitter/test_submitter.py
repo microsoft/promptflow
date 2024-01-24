@@ -4,16 +4,17 @@
 # this file is a middle layer between the local SDK and executor.
 import contextlib
 import logging
-import inspect
 from pathlib import Path
 from types import GeneratorType, AsyncGeneratorType
 from typing import Any, Mapping, Union
+from colorama import Fore, init
 
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import FlowContext, ProtectedFlow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
+from promptflow._sdk._submitter.utils import get_async_result_output
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.multimedia_utils import persist_multimedia_data
@@ -33,6 +34,7 @@ from .utils import (
     resolve_generator,
     show_node_log_and_output,
     variant_overwrite_context,
+    print_csharp_stream_chat_output,
 )
 
 logger = get_cli_sdk_logger()
@@ -280,7 +282,6 @@ class TestSubmitter:
             2. Each round of chat is executed once flow test.
             3. Prefix the output for distinction.
         """
-        from colorama import Fore, init
 
         @contextlib.contextmanager
         def change_logger_level(level):
@@ -373,6 +374,7 @@ class TestSubmitterViaProxy(TestSubmitter):
         allow_generator_output: bool = False,
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
         stream_output: bool = True,
+        **kwargs,
     ):
 
         from promptflow._constants import LINE_NUMBER_KEY
@@ -415,27 +417,67 @@ class TestSubmitterViaProxy(TestSubmitter):
                 line_result: LineResult = async_run_allowing_running_loop(
                     flow_executor.exec_line_async, inputs, index=0, allow_generator_output=allow_generator_output
                 )
-                if inspect.isasyncgenfunction(line_result):
-                    pass
-                line_result.output = persist_multimedia_data(
-                    line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
-                )
-                if line_result.aggregation_inputs:
-                    # Convert inputs of aggregation to list type
-                    flow_inputs = {k: [v] for k, v in inputs.items()}
-                    aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                    aggregation_results = async_run_allowing_running_loop(
-                        flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
+                if isinstance(line_result, AsyncGeneratorType):
+                    generator_record = {}
+                    line_result = async_run_allowing_running_loop(
+                        get_async_result_output, line_result, generator_record
                     )
-                    line_result.node_run_infos.update(aggregation_results.node_run_infos)
-                    line_result.run_info.metrics = aggregation_results.metrics
-                if isinstance(line_result.output, dict):
-                    # Remove line_number from output
-                    line_result.output.pop(LINE_NUMBER_KEY, None)
-                    generator_outputs = self._get_generator_outputs(line_result.output)
-                    if generator_outputs:
-                        logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-                return line_result
+                    flow_outputs = {}
+                    node_run_infos = None
+                    aggregation_inputs = None
+                    run_info = None
+                    for chunk in line_result:
+                        node_run_infos = chunk.node_run_infos if node_run_infos is None else node_run_infos
+                        aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else aggregation_inputs
+                        run_info = chunk.run_info if run_info is None else run_info
+                        for key, value in chunk.output.items():
+                            if key not in flow_outputs:
+                                flow_outputs[key] = value
+                            else:
+                                flow_outputs[key] += value
+
+                    flow_outputs = persist_multimedia_data(
+                        flow_outputs, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+                    )
+                    if aggregation_inputs:
+                        # Convert inputs of aggregation to list type
+                        flow_inputs = {k: [v] for k, v in inputs.items()}
+                        aggregation_inputs = {k: [v] for k, v in aggregation_inputs.items()}
+                        aggregation_results = async_run_allowing_running_loop(
+                            flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
+                        )
+                        node_run_infos.update(aggregation_results.node_run_infos)
+                        run_info.metrics = aggregation_results.metrics
+                    if isinstance(flow_outputs, dict):
+                        # Remove line_number from output
+                        flow_outputs.pop(LINE_NUMBER_KEY, None)
+                        logger.info(f"Some streaming outputs in the result, {flow_outputs.keys()}")
+                    flow_result = LineResult(output=flow_outputs, aggregation_inputs=aggregation_inputs, run_info=run_info, node_run_infos=node_run_infos)
+                    self._raise_error_when_test_failed(flow_result, show_trace=True)
+                    show_node_log_and_output(flow_result.node_run_infos, kwargs.pop("show_step_output", False), generator_record)
+                    print(f"{Fore.YELLOW}Bot: ", end="")
+                    print_csharp_stream_chat_output(line_result, kwargs.pop("chat_output_name", None))
+                    return flow_result
+                else:
+                    line_result.output = persist_multimedia_data(
+                        line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+                    )
+                    if line_result.aggregation_inputs:
+                        # Convert inputs of aggregation to list type
+                        flow_inputs = {k: [v] for k, v in inputs.items()}
+                        aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
+                        aggregation_results = async_run_allowing_running_loop(
+                            flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
+                        )
+                        line_result.node_run_infos.update(aggregation_results.node_run_infos)
+                        line_result.run_info.metrics = aggregation_results.metrics
+                    if isinstance(line_result.output, dict):
+                        # Remove line_number from output
+                        line_result.output.pop(LINE_NUMBER_KEY, None)
+                        generator_outputs = self._get_generator_outputs(line_result.output)
+                        if generator_outputs:
+                            logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+                    return line_result
             finally:
                 async_run_allowing_running_loop(flow_executor.destroy)
 
@@ -478,7 +520,6 @@ class TestSubmitterViaProxy(TestSubmitter):
             2. Each round of chat is executed once flow test.
             3. Prefix the output for distinction.
         """
-        from colorama import Fore, init
 
         @contextlib.contextmanager
         def change_logger_level(level):
@@ -489,7 +530,7 @@ class TestSubmitterViaProxy(TestSubmitter):
 
         init(autoreset=True)
         chat_history = []
-        generator_record = {}
+        # generator_record = {}
         input_name = next(
             filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
         )
@@ -532,13 +573,10 @@ class TestSubmitterViaProxy(TestSubmitter):
                 allow_generator_output=True,
                 connections=connections,
                 stream_output=True,
+                show_step_output=True,
+                chat_output_name=output_name,
             )
-            self._raise_error_when_test_failed(flow_result, show_trace=True)
-            show_node_log_and_output(flow_result.node_run_infos, show_step_output, generator_record)
 
-            print(f"{Fore.YELLOW}Bot: ", end="")
-            print_chat_output(flow_result.output[output_name], generator_record)
-            flow_result = resolve_generator(flow_result, generator_record)
             flow_outputs = {k: v for k, v in flow_result.output.items()}
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
             chat_history.append(history)
