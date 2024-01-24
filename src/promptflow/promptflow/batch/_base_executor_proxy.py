@@ -4,6 +4,7 @@
 
 import asyncio
 from datetime import datetime
+import json
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Mapping, Optional
@@ -16,7 +17,7 @@ from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow._utils.logger_utils import bulk_logger
 from promptflow._utils.utils import load_json
 from promptflow.batch._errors import ExecutorServiceUnhealthy
-from promptflow.contracts.run_info import FlowRunInfo
+from promptflow.contracts.run_info import FlowRunInfo, RunInfo
 from promptflow.exceptions import ErrorTarget, ValidationException
 from promptflow.executor._result import AggregationResult, LineResult
 from promptflow.storage._run_storage import AbstractRunStorage
@@ -89,19 +90,37 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
         inputs: Mapping[str, Any],
         index: Optional[int] = None,
         run_id: Optional[str] = None,
+        allow_generator_output=False,
     ) -> LineResult:
         start_time = datetime.utcnow()
         # call execution api to get line results
         url = self.api_endpoint + "/execution"
         payload = {"run_id": run_id, "line_number": index, "inputs": inputs}
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC)
-        # process the response
-        result = self._process_http_response(response)
-        if response.status_code != 200:
-            run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
-            return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
-        return LineResult.deserialize(result)
+        if allow_generator_output:
+            headers = {"Accept": "text/event-stream"}
+        else:
+            headers = None
+
+        if allow_generator_output:
+            async def generator():
+                async with httpx.AsyncClient() as client:
+                    async with client.stream('POST', url, json=payload, timeout=LINE_TIMEOUT_SEC,
+                                             headers=headers) as response:
+                        async for chunk in response.aiter_lines():
+                            data = json.loads(chunk)
+                            yield LineResult.deserialize(data)
+            return generator()
+
+        else:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=LINE_TIMEOUT_SEC, headers=headers)
+
+            # process the response
+            result = self._process_http_response(response, allow_generator_output)
+            if response.status_code != 200:
+                run_info = FlowRunInfo.create_with_error(start_time, inputs, index, run_id, result)
+                return LineResult(output={}, aggregation_inputs={}, run_info=run_info, node_run_infos={})
+            return LineResult.deserialize(result)
 
     async def exec_aggregation_async(
         self,
@@ -178,7 +197,7 @@ class APIBasedExecutorProxy(AbstractExecutorProxy):
             return ValidationException(error_response.message, target=ErrorTarget.BATCH)
         return None
 
-    def _process_http_response(self, response: httpx.Response):
+    def _process_http_response(self, response: httpx.Response, allow_generator_output=False):
         if response.status_code == 200:
             # if the status code is 200, the response is the json dict of a line result
             return response.json()

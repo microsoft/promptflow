@@ -4,8 +4,9 @@
 # this file is a middle layer between the local SDK and executor.
 import contextlib
 import logging
+import inspect
 from pathlib import Path
-from types import GeneratorType
+from types import GeneratorType, AsyncGeneratorType
 from typing import Any, Mapping, Union
 
 from promptflow._internal import ConnectionManager
@@ -412,8 +413,10 @@ class TestSubmitterViaProxy(TestSubmitter):
                 )
 
                 line_result: LineResult = async_run_allowing_running_loop(
-                    flow_executor.exec_line_async, inputs, index=0
+                    flow_executor.exec_line_async, inputs, index=0, allow_generator_output=allow_generator_output
                 )
+                if inspect.isasyncgenfunction(line_result):
+                    pass
                 line_result.output = persist_multimedia_data(
                     line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
                 )
@@ -436,7 +439,7 @@ class TestSubmitterViaProxy(TestSubmitter):
             finally:
                 async_run_allowing_running_loop(flow_executor.destroy)
 
-    def exec_with_inputs(self, inputs):
+    def exec_with_inputs(self, inputs, allow_generator_output=False):
         from promptflow._constants import LINE_NUMBER_KEY
 
         connections = SubmitterHelper.resolve_used_connections(
@@ -448,9 +451,10 @@ class TestSubmitterViaProxy(TestSubmitter):
             client=self._client,
         )
         storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
-        flow_executor = CSharpExecutorProxy.create(
-            flow_file=self.flow.path,
-            working_dir=self.flow.code,
+        flow_executor = async_run_allowing_running_loop(
+            CSharpExecutorProxy.create,
+            self.flow.path,
+            self.flow.code,
             connections=connections,
             storage=storage,
         )
@@ -458,11 +462,84 @@ class TestSubmitterViaProxy(TestSubmitter):
         try:
             # validate inputs
             flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-            line_result = async_run_allowing_running_loop(flow_executor.exec_line_async, inputs, index=0)
-            # line_result = flow_executor.exec_line(inputs, index=0)
-            if isinstance(line_result.output, dict):
+            line_result = async_run_allowing_running_loop(flow_executor.exec_line_async, inputs, index=0,
+                                                          allow_generator_output=allow_generator_output)
+            if not isinstance(line_result, AsyncGeneratorType) and isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
             return line_result
         finally:
             flow_executor.destroy()
+
+    def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
+        """
+        Interact with Chat Flow. Do the following:
+            1. Combine chat_history and user input as the input for each round of the chat flow.
+            2. Each round of chat is executed once flow test.
+            3. Prefix the output for distinction.
+        """
+        from colorama import Fore, init
+
+        @contextlib.contextmanager
+        def change_logger_level(level):
+            origin_level = logger.level
+            logger.setLevel(level)
+            yield
+            logger.setLevel(origin_level)
+
+        init(autoreset=True)
+        chat_history = []
+        generator_record = {}
+        input_name = next(
+            filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
+        )
+        output_name = next(
+            filter(
+                lambda key: self.dataplane_flow.outputs[key].is_chat_output,
+                self.dataplane_flow.outputs.keys(),
+            )
+        )
+
+        # Pass connections to avoid duplicate calculation (especially http call)
+        connections = SubmitterHelper.resolve_used_connections(
+            flow=self.flow,
+            tools_meta=CSharpExecutorProxy.get_tool_metadata(
+                flow_file=self.flow.flow_dag_path,
+                working_dir=self.flow.code,
+            ),
+            client=self._client,
+        )
+
+        while True:
+            try:
+                print(f"{Fore.GREEN}User: ", end="")
+                input_value = input()
+                if not input_value.strip():
+                    continue
+            except (KeyboardInterrupt, EOFError):
+                print("Terminate the chat.")
+                break
+            inputs = inputs or {}
+            inputs[input_name] = input_value
+            inputs[chat_history_name] = chat_history
+            with change_logger_level(level=logging.WARNING):
+                chat_inputs, _ = self.resolve_data(inputs=inputs)
+
+            flow_result = self.flow_test(
+                inputs=chat_inputs,
+                environment_variables=environment_variables,
+                stream_log=False,
+                allow_generator_output=True,
+                connections=connections,
+                stream_output=True,
+            )
+            self._raise_error_when_test_failed(flow_result, show_trace=True)
+            show_node_log_and_output(flow_result.node_run_infos, show_step_output, generator_record)
+
+            print(f"{Fore.YELLOW}Bot: ", end="")
+            print_chat_output(flow_result.output[output_name], generator_record)
+            flow_result = resolve_generator(flow_result, generator_record)
+            flow_outputs = {k: v for k, v in flow_result.output.items()}
+            history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
+            chat_history.append(history)
+            dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")

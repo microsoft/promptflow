@@ -349,6 +349,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
             with TestSubmitterViaProxy(flow=self, flow_context=self.context).init() as submitter:
                 result = submitter.exec_with_inputs(
                     inputs=inputs,
+                    allow_generator_output=self.context.streaming
                 )
                 return result
         else:

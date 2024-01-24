@@ -980,6 +980,34 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
             json.dump(output, f, indent=2, ensure_ascii=False)
 
 
+def dump_csharp_stream_flow_result(flow_folder, prefix, run_info, node_run_infos):
+    """Dump flow result for extension.
+
+    :param flow_folder: The flow folder.
+    :param prefix: The file prefix.
+    :param run_info: The run info returned by exec_line.
+    :param node_run_infos: The node run info returned by exec_line.
+    """
+    flow_serialize_result = {
+        "flow_runs": [serialize(run_info)],
+        "node_runs": [serialize(run) for run in node_run_infos.values()],
+    }
+    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
+    dump_folder.mkdir(parents=True, exist_ok=True)
+
+    with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
+        json.dump(flow_serialize_result, f, indent=2, ensure_ascii=False)
+
+    metrics = flow_serialize_result["flow_runs"][0]["metrics"]
+    output = flow_serialize_result["flow_runs"][0]["output"]
+    if metrics:
+        with open(dump_folder / f"{prefix}.metrics.json", "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(metrics, f, indent=2, ensure_ascii=False)
+    if output:
+        with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(output, f, indent=2, ensure_ascii=False)
+
+
 def read_write_by_user():
     return stat.S_IRUSR | stat.S_IWUSR
 
