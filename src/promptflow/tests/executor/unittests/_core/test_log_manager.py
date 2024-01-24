@@ -83,6 +83,14 @@ class TestNodeLogManager:
             assert_datetime_prefix(outputs[0], "test")
             assert_datetime_prefix(outputs[1], "test2")
             assert outputs[2] == ""
+    
+    def test_print(self):
+        with NodeLogManager(record_datetime=True) as lm:
+            lm.set_node_context(RUN_ID, NODE_NAME, LINE_NUMBER)
+            print("a", "b", "c")
+            output = lm.get_logs(RUN_ID).get("stdout")
+            lm.clear_node_context(RUN_ID)
+            assert output.endswith("a b c\n") 
 
 
 @pytest.mark.unittest

@@ -119,7 +119,8 @@ class NodeLogWriter(TextIOBase):
         else:
             self._write_to_flow_log(log_info, s)
             stdout: StringIO = self.run_id_to_stdout.get(log_info.run_id)
-            if self._record_datetime and s != "\n":  # For line breaker, do not add datetime prefix.
+            # Add datetime prefix if the string is empty or ends with a line breaker.
+            if self._record_datetime and (not stdout.getvalue() or stdout.getvalue()[-1] == "\n"):
                 s = f"[{datetime.now(timezone.utc).strftime(self.DATETIME_FORMAT)}] {s}"
             stdout.write(s)
 
@@ -135,10 +136,13 @@ class NodeLogWriter(TextIOBase):
 
     def _write_to_flow_log(self, log_info: NodeInfo, s: str):
         """Save stdout log to flow_logger and stderr log to logger."""
-        # If user uses "print('log message.')" to log, then
-        # "write" method will be called twice and the second time input is only '\n'.
-        # For this case, should not log '\n' in flow_logger.
-        if s != "\n":
+        # Case 1: If user uses "print('log message.')" to log, then
+        #         "write" method will be called twice and the second time input is only '\n'.
+        #         For this case, should not log '\n' in flow_logger.
+        # Case 2: If user uses "print('a', 'b')" to log, then
+        #         "write" method will be called 3 times (with the inputs of 'a', ' ',  'b')
+        #         For this case, should not log ' ' in flow_logger.
+        if s not in ["\n", " "]:
             if self._is_stderr:
                 flow_log = f"[{str(log_info)}] stderr> " + s.rstrip("\n")
                 # Log stderr in all scenarios so we can diagnose problems.
