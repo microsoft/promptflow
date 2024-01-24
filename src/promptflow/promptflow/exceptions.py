@@ -223,9 +223,9 @@ class ValidationException(UserErrorException):
 
 class _ErrorInfo:
     @classmethod
-    def get_error_info(cls, e: Exception):
-        if not isinstance(e, Exception):
-            return None, None, None, None, None
+    def get_error_info(cls, e: BaseException):
+        if not isinstance(e, BaseException):
+            return ErrorCategory.UNKNOWN, type(e).__name__, ErrorTarget.UNKNOWN, "", ""
 
         e = cls.select_exception(e)
         if cls._is_system_error(e):
@@ -248,7 +248,7 @@ class _ErrorInfo:
         return ErrorCategory.UNKNOWN, cls._error_type(e), ErrorTarget.UNKNOWN, "", cls._error_detail(e)
 
     @classmethod
-    def select_exception(cls, e: Exception):
+    def select_exception(cls, e: BaseException):
         """Select the exception  in e and e.__cause__, and prioritize the Exception defined in the promptflow."""
 
         if isinstance(e, PromptflowException):
@@ -261,21 +261,21 @@ class _ErrorInfo:
         return e
 
     @classmethod
-    def _is_system_error(cls, e: Exception):
+    def _is_system_error(cls, e: BaseException):
         if isinstance(e, SystemErrorException):
             return True
 
         return False
 
     @classmethod
-    def _is_user_error(cls, e: Exception):
+    def _is_user_error(cls, e: BaseException):
         if isinstance(e, UserErrorException):
             return True
 
         return False
 
     @classmethod
-    def _error_type(cls, e: Exception):
+    def _error_type(cls, e: BaseException):
         """Return exception type.
         Note:
         For PromptflowException(error=ValueError(message="xxx")) or
@@ -292,15 +292,15 @@ class _ErrorInfo:
         return error_type
 
     @classmethod
-    def _error_target(cls, e: Exception):
+    def _error_target(cls, e: BaseException):
         return getattr(e, "target", ErrorTarget.UNKNOWN)
 
     @classmethod
-    def _error_message(cls, e: Exception):
+    def _error_message(cls, e: BaseException):
         return getattr(e, "message_format", "")
 
     @classmethod
-    def _error_detail(cls, e: Exception):
+    def _error_detail(cls, e: BaseException):
         exception_codes = cls._get_exception_codes(e)
         exception_code = None
         for item in exception_codes[::-1]:
@@ -316,7 +316,7 @@ class _ErrorInfo:
         )
 
     @classmethod
-    def _get_exception_codes(cls, e: Exception) -> list:
+    def _get_exception_codes(cls, e: BaseException) -> list:
         """
         Obtain information on each line of the traceback, including the module name,
         exception code and lineno where the error occurred.
