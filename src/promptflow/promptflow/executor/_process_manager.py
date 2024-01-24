@@ -214,13 +214,13 @@ class ForkProcessManager(AbstractProcessManager):
         """
         context = multiprocessing.get_context("spawn")
         process = context.Process(
-            target=create_spawned_fork_process_manager,
+            target=create_spawned_fork_process_manager_wrapper,
             args=(
+                self._catch_ex_queue,  # Parameter 'catch_ex_queue' must be positioned first.
                 self._log_context_initialization_func,
                 self._current_operation_context,
                 self._input_queues,
                 self._output_queues,
-                self._catch_ex_queue,
                 self._control_signal_queue,
                 self._flow_create_kwargs,
                 self._process_info,
@@ -371,12 +371,18 @@ class SpawnedForkProcessManager(AbstractProcessManager):
             self.new_process(i)
 
 
+def create_spawned_fork_process_manager_wrapper(catch_ex_queue, *args, **kwargs):
+    try:
+        create_spawned_fork_process_manager(*args, **kwargs)
+    except Exception as e:
+        catch_ex_queue.put(e)
+
+
 def create_spawned_fork_process_manager(
     log_context_initialization_func,
     current_operation_context,
     input_queues,
     output_queues,
-    catch_ex_queue,
     control_signal_queue,
     flow_create_kwargs,
     process_info,
@@ -387,65 +393,61 @@ def create_spawned_fork_process_manager(
     """
     # Set up signal handling for process interruption.
 
-    try:
-        from promptflow.executor._line_execution_process_pool import create_executor_fork, signal_handler
+    from promptflow.executor._line_execution_process_pool import create_executor_fork, signal_handler
 
-        signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
 
-        # Create flow executor.
-        executor = FlowExecutor.create(**flow_create_kwargs)
+    # Create flow executor.
+    executor = FlowExecutor.create(**flow_create_kwargs)
 
-        # When using fork, we use this method to create the executor to avoid reloading the flow
-        # which will introduce a lot more memory.
-        executor_creation_func = partial(create_executor_fork, flow_executor=executor)
+    # When using fork, we use this method to create the executor to avoid reloading the flow
+    # which will introduce a lot more memory.
+    executor_creation_func = partial(create_executor_fork, flow_executor=executor)
 
-        manager = SpawnedForkProcessManager(
-            log_context_initialization_func,
-            current_operation_context,
-            control_signal_queue,
-            executor_creation_func,
-            input_queues,
-            output_queues,
-            process_info,
-            process_target_func,
-        )
+    manager = SpawnedForkProcessManager(
+        log_context_initialization_func,
+        current_operation_context,
+        control_signal_queue,
+        executor_creation_func,
+        input_queues,
+        output_queues,
+        process_info,
+        process_target_func,
+    )
 
-        # Initialize processes.
-        for i in range(len(input_queues)):
-            manager.new_process(i)
+    # Initialize processes.
+    for i in range(len(input_queues)):
+        manager.new_process(i)
 
-        # Main loop to handle control signals and manage process lifecycle.
-        while True:
-            all_processes_stopped = True
+    # Main loop to handle control signals and manage process lifecycle.
+    while True:
+        all_processes_stopped = True
 
-            try:
-                process_info_list = process_info.items()
-            except Exception as e:
-                bulk_logger.warning(f"Unexpected error occurred while get process info list. Exception: {e}")
-                break
+        try:
+            process_info_list = process_info.items()
+        except Exception as e:
+            bulk_logger.warning(f"Unexpected error occurred while get process info list. Exception: {e}")
+            break
 
-            for _, info in list(process_info_list):
-                pid = info.process_id
-                # Check if at least one process is alive.
-                if psutil.pid_exists(pid):
-                    process = psutil.Process(pid)
-                    if process.status() != "zombie":
-                        all_processes_stopped = False
-                    else:
-                        # If do not call wait(), the child process may become a zombie process,
-                        # and psutil.pid_exists(pid) is always true, which will cause spawn proces
-                        # never exit.
-                        process.wait()
+        for _, info in list(process_info_list):
+            pid = info.process_id
+            # Check if at least one process is alive.
+            if psutil.pid_exists(pid):
+                process = psutil.Process(pid)
+                if process.status() != "zombie":
+                    all_processes_stopped = False
+                else:
+                    # If do not call wait(), the child process may become a zombie process,
+                    # and psutil.pid_exists(pid) is always true, which will cause spawn proces
+                    # never exit.
+                    process.wait()
 
-            # If all fork child processes exit, exit the loop.
-            if all_processes_stopped:
-                break
-            try:
-                control_signal, i = control_signal_queue.get(timeout=1)
-                manager.handle_signals(control_signal, i)
-            except queue.Empty:
-                # Do nothing until the process_queue have not content or process is killed
-                pass
-    except Exception as e:
-        catch_ex_queue.put(e)
-        return
+        # If all fork child processes exit, exit the loop.
+        if all_processes_stopped:
+            break
+        try:
+            control_signal, i = control_signal_queue.get(timeout=1)
+            manager.handle_signals(control_signal, i)
+        except queue.Empty:
+            # Do nothing until the process_queue have not content or process is killed
+            pass
