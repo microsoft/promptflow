@@ -808,6 +808,21 @@ class ClientUserAgentUtil:
         return context.get(OperationContext.USER_AGENT_KEY, "").strip()
 
     @classmethod
+    @contextmanager
+    def append_user_agent_in_context(cls, user_agent: Optional[str]):
+        from promptflow._core.operation_context import OperationContext
+
+        context = cls._get_context()
+        old_user_agent = cls.get_user_agent()
+        if old_user_agent:
+            user_agent = f"{old_user_agent} {user_agent}"
+        setattr(context, OperationContext.USER_AGENT_KEY, user_agent)
+        try:
+            yield
+        finally:
+            setattr(context, OperationContext.USER_AGENT_KEY, old_user_agent)
+
+    @classmethod
     def append_user_agent(cls, user_agent: Optional[str]):
         if not user_agent:
             return

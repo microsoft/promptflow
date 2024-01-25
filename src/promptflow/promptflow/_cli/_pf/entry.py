@@ -6,7 +6,7 @@ import json
 import time
 
 from promptflow._cli._pf._experiment import add_experiment_parser, dispatch_experiment_commands
-from promptflow._cli._utils import _get_cli_activity_name
+from promptflow._cli._utils import _get_cli_activity_name, update_user_agent_context_according_to_flow_language
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._telemetry import ActivityType, get_telemetry_logger, log_activity
 from promptflow._sdk._telemetry.activity import update_activity_name
@@ -24,8 +24,8 @@ from promptflow._cli._pf._connection import add_connection_parser, dispatch_conn
 from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands  # noqa: E402
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands  # noqa: E402
 from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands  # noqa: E402
-from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._pf._upgrade import add_upgrade_parser, upgrade_version  # noqa: E402
+from promptflow._cli._pf.help import show_privacy_statement, show_welcome_message  # noqa: E402
 from promptflow._cli._user_agent import USER_AGENT  # noqa: E402
 from promptflow._sdk._utils import (  # noqa: E402
     get_promptflow_sdk_version,
@@ -127,12 +127,13 @@ def entry(argv):
     logger = get_telemetry_logger()
     activity_name = _get_cli_activity_name(cli=prog, args=args)
     activity_name = update_activity_name(activity_name, args=args)
-    with log_activity(
-        logger,
-        activity_name,
-        activity_type=ActivityType.PUBLICAPI,
-    ):
-        run_command(args)
+    with update_user_agent_context_according_to_flow_language(args):
+        with log_activity(
+            logger,
+            activity_name,
+            activity_type=ActivityType.PUBLICAPI,
+        ):
+            run_command(args)
 
 
 def main():
@@ -140,8 +141,9 @@ def main():
     command_args = sys.argv[1:]
     if len(command_args) == 1 and command_args[0] == "version":
         version_dict = {"promptflow": get_promptflow_sdk_version()}
-        version_dict_string = json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True,
-                                         separators=(",", ": ")) + "\n"
+        version_dict_string = (
+            json.dumps(version_dict, ensure_ascii=False, indent=2, sort_keys=True, separators=(",", ": ")) + "\n"
+        )
         print(version_dict_string)
         return
     if len(command_args) == 0:

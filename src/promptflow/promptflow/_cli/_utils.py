@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 from tabulate import tabulate
 
 from promptflow._sdk._constants import CLIListOutputFormat
-from promptflow._sdk._utils import print_red_error, print_yellow_warning
+from promptflow._sdk._utils import ClientUserAgentUtil, print_red_error, print_yellow_warning
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 from promptflow._utils.utils import is_in_ci_pipeline
@@ -484,3 +484,42 @@ def _try_delete_existing_run_record(run_name: str):
         ORMRun.delete(run_name)
     except RunNotFoundError:
         pass
+
+
+def _get_language_from_args(args):
+    if args.flow:
+        from promptflow._sdk._load_functions import load_flow
+
+        # we just need to know the language, so non-azure load_flow works for azure flows
+        flow = load_flow(args.flow)
+        return flow.language
+    elif args.run:
+        from promptflow._sdk._load_functions import load_flow, load_run
+
+        run = load_run(args.run)
+        flow = load_flow(run.flow)
+        return flow.language
+    return None
+
+
+@contextlib.contextmanager
+def update_user_agent_context_according_to_flow_language(args: argparse.Namespace):
+    try:
+        language = _get_language_from_args(args)
+    except Exception:  # pylint: disable=broad-except
+        # we don't want to fail any command because of this
+        language = None
+
+    from promptflow._constants import FlowLanguage
+
+    if language == FlowLanguage.CSharp:
+        # TODO: get UA from .promptflow/flow.json
+        #  {
+        #     "framework": "CS/net6.0",
+        #     "executor": "dotnet-executor/1.0.24.0",
+        #     ...
+        #  }
+        with ClientUserAgentUtil.append_user_agent_in_context("CS/net6.0"):
+            yield
+    else:
+        yield
