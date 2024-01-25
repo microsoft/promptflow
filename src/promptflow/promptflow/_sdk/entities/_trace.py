@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import json
 import typing
 
 from google.protobuf.json_format import MessageToJson
@@ -45,13 +46,18 @@ class Span:
 
     @staticmethod
     def _from_protobuf_object(obj: PBSpan) -> "Span":
-        span_string = MessageToJson(obj)
+        span_dict = json.loads(MessageToJson(obj))
         span_id = obj.span_id.hex()
         trace_id = obj.trace_id.hex()
         parent_span_id = obj.parent_span_id.hex()
+        span_dict["spanId"] = span_id
+        span_dict["traceId"] = trace_id
+        if parent_span_id:
+            span_dict["parentSpanId"] = parent_span_id
+        content = json.dumps(span_dict)
         return Span(
             span_id=span_id,
             trace_id=trace_id,
             parent_id=parent_span_id,
-            content=span_string,
+            content=content,
         )
