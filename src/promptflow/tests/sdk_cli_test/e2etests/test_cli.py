@@ -1426,7 +1426,7 @@ class TestCli:
 
             mock_module.has_metadata = mock_has_metadata
             mock_module.get_metadata_lines = mock_get_metadata_lines
-            with mocker.patch(f"pkg_resources.get_distribution", return_value=mock_module):
+            with mocker.patch("pkg_resources.get_distribution", return_value=mock_module):
                 # Generate tool meta cache
                 tools_meta = utils.list_package_tools()
                 assert f"{package_name}.{func_name}.{func_name}" in tools_meta
