@@ -9,9 +9,11 @@ import os
 import platform
 import re
 import shutil
+import socket
 import stat
 import sys
 import tempfile
+import uuid
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
@@ -1107,3 +1109,25 @@ def pd_read_json(file) -> "DataFrame":
 
     with read_open(file) as f:
         return pd.read_json(f, orient="records", lines=True)
+
+
+def get_uuid_by_mac_id():
+    try:
+        node = str(uuid.getnode())
+        if node == "0":
+            raise ValueError("node value is 0")
+        return uuid.uuid3(uuid.NAMESPACE_OID, node)
+    except Exception as e:
+        logger.debug(f"get mac id error: {str(e)}")
+        return None
+
+
+def get_uuid_by_ip():
+    try:
+        ip = socket.gethostbyname(socket.gethostname())
+        if ip == "0.0.0.0":
+            raise ValueError("ip value is 0.0.0.0")
+        return uuid.uuid3(uuid.NAMESPACE_OID, ip)
+    except Exception as e:
+        logger.debug(f"get ip error: {str(e)}")
+        return None
