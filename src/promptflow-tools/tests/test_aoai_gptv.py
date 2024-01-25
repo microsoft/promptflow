@@ -1,11 +1,12 @@
 import pytest
 from unittest.mock import patch
 
-from promptflow.tools.aoai_gpt4v import AzureOpenAI, ListDeploymentsError, ParseConnectionError, \
-    _parse_resource_id, list_deployment_names, GPT4V_VERSION
-
+from azure.ai.ml._azure_environments import _get_default_cloud_name, AzureEnvironments
 from promptflow.azure.operations._arm_connection_operations import \
     ArmConnectionOperations, OpenURLFailedUserError
+
+from promptflow.tools.aoai_gpt4v import AzureOpenAI, ListDeploymentsError, ParseConnectionError, \
+    _parse_resource_id, list_deployment_names, GPT4V_VERSION
 
 
 DEFAULT_SUBSCRIPTION_ID = "sub"
@@ -137,7 +138,39 @@ def test_list_deployment_names(monkeypatch):
         "_build_connection_dict",
         mock_build_connection_dict_func3
     )
-    with patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
+    with patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name, \
+        patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
+        mock_cloud_name.return_value = AzureEnvironments.ENV_DEFAULT
+        instance = mock.return_value
+        instance.deployments.list.return_value = {
+            Deployment("deployment1", "model1", GPT4V_VERSION),
+            Deployment("deployment2", "model2", "version2")
+        }
+        res = list_deployment_names(
+            DEFAULT_SUBSCRIPTION_ID,
+            DEFAULT_RESOURCE_GROUP_NAME,
+            DEFAULT_WORKSPACE_NAME,
+            DEFAULT_CONNECTION
+        )
+        assert len(res) == 1
+        assert res[0].get("value") == "deployment1"
+        assert res[0].get("display_value") == "deployment1"
+
+
+def test_list_deployment_names_sovereign_credential(monkeypatch):
+    monkeypatch.setattr(
+        ArmConnectionOperations,
+        "_build_connection_dict",
+        mock_build_connection_dict_func3
+    )
+    with patch('azure.ai.ml._azure_environments._get_default_cloud_name') as mock_cloud_name, \
+        patch('azure.ai.ml._azure_environments._get_cloud') as mock_cloud, \
+        patch('azure.identity.DefaultAzureCredential') as mock_cre, \
+        patch('azure.mgmt.cognitiveservices.CognitiveServicesManagementClient') as mock:
+        mock_cloud_name.return_value = AzureEnvironments.ENV_CHINA
+        cloud = mock_cloud.return_value
+        cloud.get.return_value = "authority"
+        mock_cre.return_value = "credential"
         instance = mock.return_value
         instance.deployments.list.return_value = {
             Deployment("deployment1", "model1", GPT4V_VERSION),
