@@ -35,7 +35,7 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data_recursively,
     persist_multimedia_data,
 )
-from promptflow._utils.utils import transpose, get_int_env_var
+from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -916,7 +916,9 @@ class FlowExecutor:
         if self._should_use_async():
             flow_logger.info("Start executing nodes in async mode.")
             scheduler = AsyncNodesScheduler(self._tools_manager, self._node_concurrency)
-            nodes_outputs, bypassed_nodes = asyncio.run(scheduler.execute(batch_nodes, inputs, context))
+            nodes_outputs, bypassed_nodes = asyncio.run(
+                scheduler.execute(batch_nodes, inputs, context, self._line_timeout_sec)
+            )
         else:
             flow_logger.info("Start executing nodes in thread pool mode.")
             nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
@@ -940,7 +942,11 @@ class FlowExecutor:
                 current_value=self._node_concurrency,
             )
         return FlowNodesScheduler(
-            self._tools_manager, inputs, nodes, self._node_concurrency, context,
+            self._tools_manager,
+            inputs,
+            nodes,
+            self._node_concurrency,
+            context,
         ).execute(self._line_timeout_sec)
 
     @staticmethod

@@ -126,6 +126,56 @@ class TestBatchTimeout:
         assert len(mem_run_storage._flow_runs) == 3, "Flow runs are persisted in memory storage."
         assert len(mem_run_storage._node_runs) == 6, "Node runs are persisted in memory storage."
 
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            "async_tools",
+        ],
+    )
+    def test_async_batch_with_timeout(self, flow_folder, dev_connections):
+        # set line timeout to 1 second for testing
+        mem_run_storage = MemoryRunStorage()
+        batch_engine = BatchEngine(
+            get_yaml_file(flow_folder),
+            get_flow_folder(flow_folder),
+            connections=dev_connections,
+            storage=mem_run_storage,
+            line_timeout_sec=5,
+        )
+        # prepare input file and output dir
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name="input.json")}
+        output_dir = Path(mkdtemp())
+        inputs_mapping = {"input_str": "${data.input_str}"}
+        batch_results = batch_engine.run(input_dirs, inputs_mapping, output_dir)
+        print(mem_run_storage._node_runs)
+        assert isinstance(batch_results, BatchResult)
+        assert batch_results.completed_lines == 0
+        assert batch_results.failed_lines == 2
+        assert batch_results.total_lines == 2
+        assert batch_results.node_status == {
+            "async_passthrough.completed": 2,
+            "async_passthrough1.canceled": 2,
+            "async_passthrough2.canceled": 2,
+        }
+
+        # assert mem_run_storage persists run infos correctly
+        assert len(mem_run_storage._flow_runs) == 2, "Flow runs are persisted in memory storage."
+        assert len(mem_run_storage._node_runs) == 6, "Node runs are persisted in memory storage."
+        msg = "Tool execution is canceled because of the error: Line execution timeout after 5 seconds."
+        for run in mem_run_storage._node_runs.values():
+            if run.node == "async_passthrough":
+                assert run.status == Status.Completed
+            else:
+                assert run.status == Status.Canceled
+                assert run.error["message"] == msg
+
+        assert batch_results.error_summary.failed_user_error_lines == 2
+        assert batch_results.error_summary.failed_system_error_lines == 0
+        for i, line_error in enumerate(batch_results.error_summary.error_list):
+            assert isinstance(line_error, LineError)
+            assert line_error.error["message"] == f"Line {i} execution timeout for exceeding 5 seconds"
+            assert line_error.error["code"] == "UserError"
+
 
 class MockPythonExecutorProxy(PythonExecutorProxy):
     @classmethod

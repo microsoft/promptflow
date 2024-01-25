@@ -12,7 +12,7 @@ import time
 import traceback
 from asyncio import Task
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.tools_manager import ToolsManager
@@ -20,7 +20,7 @@ from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.utils import extract_user_frame_summaries, set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor._dag_manager import DAGManager
-from promptflow.executor._errors import NoNodeExecutedError
+from promptflow.executor._errors import LineExecutionTimeoutError, NoNodeExecutedError
 
 PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME = "_pf_async_nodes_scheduler.execute"
 DEFAULT_TASK_LOGGING_INTERVAL = 60
@@ -39,11 +39,27 @@ class AsyncNodesScheduler:
         self._task_last_log_time = {}
         self._dag_manager_completed_event = threading.Event()
 
+    async def _execute_with_timeout(
+        self,
+        executor: ThreadPoolExecutor,
+        nodes: List[Node],
+        inputs: Dict[str, Any],
+        context: FlowExecutionContext,
+        timeout_sec: int,
+    ) -> Tuple[dict, dict]:
+        flow_logger.info(f"Async timeout task is scheduled to wait for {timeout_sec} seconds.")
+
+        try:
+            return await asyncio.wait_for(self._execute_with_thread_pool(executor, nodes, inputs, context), timeout_sec)
+        except asyncio.TimeoutError:
+            raise LineExecutionTimeoutError(context._line_number, timeout_sec)
+
     async def execute(
         self,
         nodes: List[Node],
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
+        line_timeout_sec: Optional[int] = None,
     ) -> Tuple[dict, dict]:
         # TODO: Provide cancel API
         if threading.current_thread() is threading.main_thread():
@@ -76,7 +92,23 @@ class AsyncNodesScheduler:
         # This is because it will always call `executor.shutdown()` when exiting the `with` block.
         # Then the event loop will wait for all tasks to be completed before raising the cancellation error.
         # See reference: https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.Executor
-        outputs = await self._execute_with_thread_pool(executor, nodes, inputs, context)
+        try:
+            if line_timeout_sec is not None:
+                outputs = await self._execute_with_timeout(executor, nodes, inputs, context, line_timeout_sec)
+            else:
+                outputs = await self._execute_with_thread_pool(executor, nodes, inputs, context)
+        except Exception as e:
+            err_msg = "Flow execution has failed."
+            if isinstance(e, LineExecutionTimeoutError):
+                err_msg = f"Line execution timeout after {e.timeout_sec} seconds."
+                context.cancel_node_runs(err_msg)
+            for task in asyncio.all_tasks():
+                task.cancel()
+            raise e
+        finally:
+            # Cancel timeout task no matter the execution is finished or failed.
+            self._dag_manager_completed_event.set()
+
         executor.shutdown()
         return outputs
 
@@ -87,6 +119,10 @@ class AsyncNodesScheduler:
         inputs: Dict[str, Any],
         context: FlowExecutionContext,
     ) -> Tuple[dict, dict]:
+        # Set the name of scheduler tasks to avoid monitoring its duration
+        task = asyncio.current_task()
+        task.set_name(PF_ASYNC_NODE_SCHEDULER_EXECUTE_TASK_NAME)
+
         flow_logger.info(f"Start to run {len(nodes)} nodes with the current event loop.")
         dag_manager = DAGManager(nodes, inputs)
         task2nodes = self._execute_nodes(dag_manager, context, executor)
