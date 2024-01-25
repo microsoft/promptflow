@@ -253,6 +253,7 @@ class LineExecutionProcessPool:
             # Calculate the line timeout for the current line.
             line_timeout_sec = self._line_timeout_sec
             if self._batch_timeout_sec:
+                # ??? +10 ???
                 remaining_execution_time = (
                     self._batch_timeout_sec - (datetime.utcnow() - batch_start_time).total_seconds()
                 )
