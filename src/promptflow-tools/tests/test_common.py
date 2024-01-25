@@ -157,6 +157,8 @@ class TestCommon:
     def test_collect_custom_llm_tool_set_defaut_input_index(self, install_promptflow_tools_pkg):
         tool = "promptflow.tools.aoai_gpt4v.AzureOpenAI.chat"
         package_tools = collect_package_tools([tool])
+        print("package_tools: ", package_tools)
+        print(f"type(package_tools): {type(package_tools)}")
         inputs_order = ["connection", "deployment_name", "temperature", "top_p", "max_tokens", "stop",
                         "presence_penalty", "frequency_penalty"]
         for index, input_name in enumerate(inputs_order):
