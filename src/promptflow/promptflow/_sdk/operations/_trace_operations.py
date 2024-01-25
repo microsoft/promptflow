@@ -7,5 +7,5 @@ from promptflow._sdk.entities._trace import Span
 
 
 class TraceOperations:
-    def get_span(self, span_id: str) -> Span:
+    def get(self, span_id: str) -> Span:
         return Span._from_orm_object(ORMSpan.get(span_id=span_id))
