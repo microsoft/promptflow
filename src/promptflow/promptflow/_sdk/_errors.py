@@ -167,3 +167,21 @@ class DownloadInternalError(SDKInternalError):
     """Exception raised if download internal error."""
 
     pass
+
+
+class OrchestratorNotFoundError(SDKError):
+    """Orchestrator raised if experiment name cannot be found."""
+
+    pass
+
+
+class ExperimentNodeRunFailedError(SDKError):
+    """Orchestrator raised if node run failed."""
+
+    pass
+
+
+class ExperimentNodeRunNotFoundError(SDKError):
+    """ExpNodeRun raised if node run cannot be found."""
+
+    pass

@@ -55,6 +55,9 @@ class ExperimentOperations(TelemetryMixin):
         :rtype: ~promptflow.entities.Experiment
         """
         try:
+            from promptflow._sdk._submitter.experiment_orchestrator import ExperimentOrchestrator
+
+            ExperimentOrchestrator.get_status(name)
             return Experiment._from_orm_object(ORMExperiment.get(name))
         except ExperimentNotFoundError as e:
             raise e
@@ -97,4 +100,4 @@ class ExperimentOperations(TelemetryMixin):
 
         if not isinstance(name, str):
             raise ExperimentValueError(f"Invalid type {type(name)} for name. Must be str.")
-        return ExperimentOrchestrator(self._client.runs, self).start(self.get(name), **kwargs)
+        return ExperimentOrchestrator(self._client.runs, self, experiment=self.get(name)).async_start(**kwargs)
