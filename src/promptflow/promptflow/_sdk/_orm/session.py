@@ -268,7 +268,7 @@ def otel_mgmt_db_session() -> Session:
         engine = support_transaction(engine)
 
         if not inspect(engine).has_table(SPAN_TABLENAME):
-            from promptflow._sdk._orm.trace import Span
+            from promptflow._sdk._orm.otel import Span
 
             Span.metadata.create_all(engine)
 
