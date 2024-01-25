@@ -1994,3 +1994,58 @@ class TestCli:
                 "run",
                 "list",
             )
+
+    def test_pf_flow_test_with_detail(self, tmpdir):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer=Channel",
+            "evidence=Url",
+            "--detail",
+            Path(tmpdir).as_posix(),
+        )
+        # when specify parameter `detail`, detail, output and log will be saved in both
+        # the specified folder and ".promptflow" under flow folder
+        for parent_folder in [
+            Path(FLOWS_DIR) / "web_classification" / ".promptflow",
+            Path(tmpdir),
+        ]:
+            for filename in ["flow.detail.json", "flow.output.json", "flow.log"]:
+                path = parent_folder / filename
+                assert path.is_file()
+
+    def test_pf_flow_test_single_node_with_detail(self, tmpdir):
+        node_name = "fetch_text_content_from_url"
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            "inputs.url="
+            "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
+            "--node",
+            node_name,
+            "--detail",
+            Path(tmpdir).as_posix(),
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / f"flow-{node_name}.node.detail.json"
+        assert output_path.exists()
+
+        # when specify parameter `detail`, node detail, output and log will be saved in both
+        # the specified folder and ".promptflow" under flow folder
+        for parent_folder in [
+            Path(FLOWS_DIR) / "web_classification" / ".promptflow",
+            Path(tmpdir),
+        ]:
+            for filename in [
+                f"flow-{node_name}.node.detail.json",
+                f"flow-{node_name}.node.output.json",
+                f"{node_name}.node.log",
+            ]:
+                path = parent_folder / filename
+                assert path.is_file()

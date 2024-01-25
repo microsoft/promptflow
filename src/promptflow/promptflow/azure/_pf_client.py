@@ -49,7 +49,7 @@ class PFClient:
     ):
         self._validate_config_information(subscription_id, resource_group_name, workspace_name, kwargs)
         # add user agent from kwargs if any
-        if isinstance(kwargs.get("user_agent"), str):
+        if isinstance(kwargs.get("user_agent", None), str):
             ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         # append SDK ua to context
         user_agent = setup_user_agent_to_operation_context(USER_AGENT)

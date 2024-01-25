@@ -30,7 +30,6 @@ nodes:
   inputs:
     connection: aoai_gpt4v_connection
     deployment_name: gpt-4v
-    model: gpt-4v
     max_tokens: 512
     question: ${inputs.question}
     test_image: ${flip_image.output}

@@ -95,8 +95,6 @@ class LineExecutionProcessPool:
         nlines,
         run_id,
         output_dir,
-        variant_id: str = "",
-        validate_inputs: bool = True,
         batch_timeout_sec: Optional[int] = None,
         line_timeout_sec: Optional[int] = None,
     ):
@@ -242,18 +240,15 @@ class LineExecutionProcessPool:
         index, process_id, process_name = self._get_process_info(index)
 
         batch_start_time = datetime.utcnow()
+        # Entering the while loop requires two conditions:
+        # 1. The task queue is not empty, meaning there are lines yet to be executed.
+        # 2. The batch run has not reached the batch timeout limit.
         while not self._batch_timeout_expired(batch_start_time):
             try:
                 # Get task from task_queue
                 inputs, line_number, run_id = task_queue.get(timeout=1)
             except queue.Empty:
-                self._processes_manager.end_process(index)
-                # In fork mode, the main process and the sub spawn process communicate through _process_info.
-                # We need to ensure the process has been killed before returning. Otherwise, it may cause
-                # the main process have exited but the spawn process is still alive.
-                # At this time, a connection error will be reported.
-                self._ensure_process_terminated_within_timeout(process_id)
-                return
+                break
 
             # Calculate the line timeout for the current line.
             remaining_execution_time = (datetime.utcnow() - batch_start_time).total_seconds()
@@ -307,7 +302,8 @@ class LineExecutionProcessPool:
                 # Handle batch execution timeout.
                 elif self._batch_timeout_expired(batch_start_time):
                     bulk_logger.warning(
-                        f"Line {line_number} execution exceeded the batch timeout of {self._batch_timeout_sec} seconds."
+                        f"Line {line_number} execution terminated due to the total "
+                        f"batch run exceeding the batch timeout ({self._batch_timeout_sec}s)."
                     )
                     ex = BatchExecutionTimeoutError(line_number, self._batch_timeout_sec)
                 else:
@@ -329,8 +325,10 @@ class LineExecutionProcessPool:
                 self._completed_idx[line_number] = format_current_process_info(process_name, process_id, line_number)
                 log_process_status(process_name, process_id, line_number, is_failed=True)
 
-                # If there are still tasks in task_queue, restart a new process to execute the task.
-                if not task_queue.empty():
+                # If there are still tasks in the task_queue and the batch run does not exceed the batch timeout,
+                # restart a new process to execute the task.
+                run_finished = task_queue.empty() or self._batch_timeout_expired(batch_start_time)
+                if not run_finished:
                     self._processes_manager.restart_process(index)
                     # We need to ensure the process has been killed before continuing to execute.
                     # Otherwise the process will receive new task, and during the execution, the process
@@ -340,8 +338,12 @@ class LineExecutionProcessPool:
 
             self._processing_idx.pop(line_number)
 
-        # End the process when the batch timeout is exceeded.
+        # End the process when the batch timeout is exceeded or when all lines have been executed.
         self._processes_manager.end_process(index)
+        # In fork mode, the main process and the sub spawn process communicate through _process_info.
+        # We need to ensure the process has been killed before returning. Otherwise, it may cause
+        # the main process have exited but the spawn process is still alive.
+        # At this time, a connection error will be reported.
         self._ensure_process_terminated_within_timeout(process_id)
 
     def _batch_timeout_expired(self, start_time: datetime) -> bool:
