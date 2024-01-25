@@ -170,8 +170,8 @@ class LineExecutionProcessPool:
                 self._flow_create_kwargs,
                 **common_kwargs,
             )
-            # For fork mode, it's necessary to determine whether the spawn process that created the fork process is
-            # running properly. Therefore, we have obtained the spawn process object here.
+            # In fork mode, it's necessary to determine whether the spawn process that created the fork process is
+            # running properly. Therefore, we obtain the spawn process id here to get the process status.
             self._managed_process_id = self._processes_manager.start_processes()
         else:
             executor_creation_func = partial(FlowExecutor.create, **self._flow_create_kwargs)
@@ -516,8 +516,6 @@ class LineExecutionProcessPool:
                     async_result.get()
                 except KeyboardInterrupt:
                     raise
-                except queue.Empty:
-                    pass
             except PromptflowException:
                 raise
             except Exception as e:
