@@ -958,6 +958,7 @@ class TestFlowRun:
         # the run status might still be cancel requested, but it should be canceled eventually
         assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
+    @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_download(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
             flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
