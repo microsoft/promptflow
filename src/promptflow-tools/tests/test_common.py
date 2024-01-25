@@ -159,6 +159,16 @@ class TestCommon:
         package_tools = collect_package_tools([tool])
         print("package_tools: ", package_tools)
         print(f"type(package_tools): {type(package_tools)}")
+
+        tool2 = "tools.aoai_gpt4v.AzureOpenAI.chat"
+        package_tools2 = collect_package_tools([tool2])
+        print("package_tools2: ", package_tools2)
+        print(f"type(package_tools2): {type(package_tools2)}")
+
+        tool3 = "aoai_gpt4v.AzureOpenAI.chat"
+        package_tools3 = collect_package_tools([tool3])
+        print("package_tools3: ", package_tools3)
+        print(f"type(package_tools3): {type(package_tools3)}")
         inputs_order = ["connection", "deployment_name", "temperature", "top_p", "max_tokens", "stop",
                         "presence_penalty", "frequency_penalty"]
         for index, input_name in enumerate(inputs_order):
