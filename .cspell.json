@@ -164,7 +164,8 @@
     "WBITS",
     "laddr",
     "nrows",
-    "Dumpable"
+    "Dumpable",
+    "otel"
   ],
   "flagWords": [
     "Prompt Flow"
