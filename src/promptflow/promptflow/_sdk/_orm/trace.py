@@ -36,3 +36,8 @@ class Span(Base):
         with trace_mgmt_db_session() as session:
             session.add(self)
             session.commit()
+
+    @sqlite_retry
+    def get(span_id: str) -> "Span":
+        with trace_mgmt_db_session() as session:
+            return session.query(Span).filter(Span.span_id == span_id).first()
