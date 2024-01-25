@@ -193,10 +193,23 @@ def add_default_routes(app: PromptflowServingApp):
     @app.route("/feedback", methods=["POST"])
     def save_feedback():
         """Save feedback"""
-        raw_data = request.get_data()
-        logger.info(f"Feedback received: {raw_data}")
+        # data contract:
+        # {
+        #     "rating": "thumbsUp" | "thumbsDown",
+        #     "conversation": [],
+        #     "message": "",
+        # }
+        data = json.loads(request.get_data())
+        logger.info(f"Feedback received: {data}")
+        if app.flow_monitor.metrics_recorder:
+            if data["rating"] == "thumbsUp":
+                app.flow_monitor.metrics_recorder.record_thumbs_down_count()
+            elif data["rating"] == "thumbsDown":
+                app.flow_monitor.metrics_recorder.record_thumbs_up_count()
+        else:
+            logger.warn("Metrics recorder is not initialized, thumbs down count will not be recorded.")
         # app.flow_monitor.save_feedback(feedback)
-        return {"status": "Healthy", "feedback": raw_data.decode()}
+        return {"status": "Healthy", "feedback": data}
 
     @app.route("/swagger.json", methods=["GET"])
     def swagger():

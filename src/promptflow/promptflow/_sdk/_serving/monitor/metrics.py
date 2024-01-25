@@ -75,6 +75,10 @@ try:
     remote_api_call_latency = meter.create_histogram("RPC_Latency")
     remote_api_call_request = meter.create_counter("RPC_Request")
     node_request = meter.create_counter("Node_Request")
+    # feedback metrics
+    thumbs_up_count = meter.create_counter("Thumbs_Up_Count")
+    thumbs_down_count = meter.create_counter("Thumbs_Down_Count")
+
     # metrics for streaming
     streaming_response_duration = meter.create_histogram("Flow_Streaming_Response_Duration")
 
@@ -180,6 +184,22 @@ class MetricsRecorder(object):
             )
         except Exception as e:
             self.logger.warning("failed to record flow request metrics: %s", e)
+    
+    def record_thumbs_up_count(self):
+        if not metrics_enabled:
+            return
+        try:
+            thumbs_up_count.add(1)
+        except Exception as e:
+            self.logger.warning("failed to record thumbs up metrics: %s", e)
+
+    def record_thumbs_down_count(self):
+        if not metrics_enabled:
+            return
+        try:
+            thumbs_down_count.add(1)
+        except Exception as e:
+            self.logger.warning("failed to record thumbs down metrics: %s", e)
 
     def record_flow_latency(
         self, flow_id: str, response_code: int, streaming: bool, response_type: str, duration: float

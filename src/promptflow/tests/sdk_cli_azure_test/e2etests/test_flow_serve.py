@@ -27,7 +27,12 @@ def test_local_serving_api_with_remote_connection(flow_serving_client_remote_con
     # ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
     # assert "output_prompt" in json.loads(response.data.decode())
     # test feedback
-    response = flow_serving_client_remote_connection.post("/feedback", data=json.dumps({"text": "thumbup"}))
+    data = {
+            "rating": "thumbsUp",
+            "conversation": [],
+            "message": "",
+        }
+    response = flow_serving_client_remote_connection.post("/feedback", data=json.dumps(data))
     assert response.status_code == 200
 
 
