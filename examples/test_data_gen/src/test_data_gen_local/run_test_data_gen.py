@@ -3,8 +3,12 @@ import os
 from datetime import datetime
 
 import configargparse
+UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "src", "utils"))
+if UTILS_PATH not in os.sys.path:
+    os.sys.path.insert(0, UTILS_PATH)
+
 from constants import TEXT_CHUNK
-from doc_split import split_doc
+from common import split_document
 
 from promptflow import PFClient
 from promptflow.entities import Run
@@ -19,18 +23,15 @@ def batch_run_flow(
     flow_batch_run_size: int,
     connection_name: str = "azure_open_ai_connection",
 ):
-    environment_variables = {
-        "PF_WORKER_COUNT": str(flow_batch_run_size),
-        "PF_BATCH_METHOD": "spawn",
-    }  # TODO: what does 'spawn' mean?
-
     print("start to run batch flow run.")
-    # create run
     base_run = pf.run(
         flow=flow_folder,
         data=flow_input_data,
-        stream=True,  # TODO: understand 'stream'
-        environment_variables=environment_variables,
+        stream=True,
+        environment_variables={
+            "PF_WORKER_COUNT": str(flow_batch_run_size),
+            "PF_BATCH_METHOD": "spawn",
+        },
         connections={
             "validate_and_generate_seed_question": {"connection": connection_name},
             "validate_and_generate_test_question": {"connection": connection_name},
@@ -100,14 +101,17 @@ if __name__ == "__main__":
 
     # check_file_path_exists(args.test_data_output_path)
     if not args.should_skip_doc_split:
-        split_doc(args.documents_folder, args.document_nodes_output_path, args.document_chunk_size)
+        if not os.path.exists(args.document_nodes_output_path):
+            os.makedirs(args.document_nodes_output_path)
+
+        output = split_document(args.document_chunk_size, args.documents_folder, args.document_nodes_output_path)
 
     pf = PFClient()
     # TODO: error handling
     batch_run = batch_run_flow(
         pf,
         args.flow_folder,
-        args.document_nodes_output_path,
+        output,
         args.flow_batch_run_size,
         connection_name=args.connection_name,
     )

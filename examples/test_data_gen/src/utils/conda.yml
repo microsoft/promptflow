@@ -7,3 +7,4 @@ dependencies:
   - pip:
     - mldesigner==0.1.0b17
     - llama_index
+    - docx2txt

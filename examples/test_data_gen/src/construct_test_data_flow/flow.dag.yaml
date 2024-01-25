@@ -55,7 +55,7 @@ nodes:
     type: code
     path: validate_and_generate_seed_question.py
   inputs:
-    connection:
+    connection: null
     model: gpt-4
     validate_text_trunk_prompt: ${validate_text_trunk_prompt.output}
     seed_question_prompt: ${seed_question_prompt.output}
@@ -67,7 +67,7 @@ nodes:
     type: code
     path: validate_and_generate_test_question.py
   inputs:
-    connection:
+    connection: null
     model: gpt-4
     validate_seed_question_prompt: ${validate_seed_question_prompt.output}
     seed_question: ${validate_and_generate_seed_question.output}
@@ -86,7 +86,7 @@ nodes:
     type: code
     path: validate_test_question.py
   inputs:
-    connection:
+    connection: null
     model: gpt-4
     question_info: ${validate_and_generate_test_question.output}
     validate_question_prompt: ${validate_question_prompt.output}
@@ -97,7 +97,7 @@ nodes:
     type: code
     path: generate_ground_truth.py
   inputs:
-    connection:
+    connection: null
     context: ${inputs.text_chunk}
     generate_ground_truth_prompt: ${generate_ground_truth_prompt.output}
     model: gpt-4
