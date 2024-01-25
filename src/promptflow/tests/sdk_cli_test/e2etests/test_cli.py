@@ -1431,13 +1431,13 @@ class TestCli:
                 tools_meta = utils.list_package_tools()
                 assert f"{package_name}.{func_name}.{func_name}" in tools_meta
 
-                cache_file = Path(tempfile.gettempdir()) / "promptflow" / "tool_metas" / f"{utils.package_uuid}.yaml"
+                cache_file = Path(tempfile.gettempdir()) / "promptflow" / "tools_meta" / f"{utils.package_uuid}.yaml"
                 assert cache_file.exists()
 
                 with caplog.at_level(level=logging.DEBUG, logger=utils.logger.name):
                     # Use tool meta cache
                     tools_meta = utils.list_package_tools()
-                    assert "List tool metas from cache file" in caplog.text
+                    assert "List tools meta from cache file" in caplog.text
                     assert f"{package_name}.{func_name}.{func_name}" in tools_meta
 
             # Invalid package/tool name
