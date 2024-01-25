@@ -417,72 +417,72 @@ class TestSubmitterViaProxy(TestSubmitter):
                 line_result: LineResult = async_run_allowing_running_loop(
                     flow_executor.exec_line_async, inputs, index=0, allow_generator_output=allow_generator_output
                 )
-                if isinstance(line_result, AsyncGeneratorType):
+                if allow_generator_output:
                     generator_record = {}
-                    line_result = async_run_allowing_running_loop(
+                    line_result_iter = async_run_allowing_running_loop(
                         get_async_result_output, line_result, generator_record
                     )
-                    flow_outputs = {}
-                    node_run_infos = None
-                    aggregation_inputs = None
-                    run_info = None
-                    for chunk in line_result:
-                        node_run_infos = chunk.node_run_infos if node_run_infos is None else node_run_infos
-                        aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else \
-                            aggregation_inputs
-                        run_info = chunk.run_info if run_info is None else run_info
-                        for key, value in chunk.output.items():
-                            if key not in flow_outputs:
-                                flow_outputs[key] = value
-                            else:
-                                flow_outputs[key] += value
-
-                    flow_outputs = persist_multimedia_data(
-                        flow_outputs, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
-                    )
-                    if aggregation_inputs:
-                        # Convert inputs of aggregation to list type
-                        flow_inputs = {k: [v] for k, v in inputs.items()}
-                        aggregation_inputs = {k: [v] for k, v in aggregation_inputs.items()}
-                        aggregation_results = async_run_allowing_running_loop(
-                            flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
-                        )
-                        node_run_infos.update(aggregation_results.node_run_infos)
-                        run_info.metrics = aggregation_results.metrics
-                    if isinstance(flow_outputs, dict):
-                        # Remove line_number from output
-                        flow_outputs.pop(LINE_NUMBER_KEY, None)
-                        logger.info(f"Some streaming outputs in the result, {flow_outputs.keys()}")
-                    flow_result = LineResult(output=flow_outputs, aggregation_inputs=aggregation_inputs,
+                    flow_outputs, node_run_infos, aggregation_inputs, run_info = self.get_async_line_result(line_result_iter)
+                    line_result = LineResult(output=flow_outputs, aggregation_inputs=aggregation_inputs,
                                              run_info=run_info, node_run_infos=node_run_infos)
-                    self._raise_error_when_test_failed(flow_result, show_trace=True)
-                    show_node_log_and_output(flow_result.node_run_infos, kwargs.pop("show_step_output", False),
+
+                line_result.output = persist_multimedia_data(
+                    line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+                )
+                if line_result.aggregation_inputs:
+                    self.resolve_aggregation_inputs(line_result.aggregation_inputs, inputs, flow_executor,
+                                                    line_result.node_run_infos, line_result.run_info)
+                if isinstance(line_result.output, dict):
+                    # Remove line_number from output
+                    line_result.output.pop(LINE_NUMBER_KEY, None)
+                    generator_outputs = self._get_generator_outputs(line_result.output)
+                    if generator_outputs:
+                        logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
+
+                if allow_generator_output:
+                    self._raise_error_when_test_failed(line_result, show_trace=True)
+                    show_node_log_and_output(line_result.node_run_infos, kwargs.pop("show_step_output", False),
                                              generator_record)
                     print(f"{Fore.YELLOW}Bot: ", end="")
-                    print_csharp_stream_chat_output(line_result, kwargs.pop("chat_output_name", None))
-                    return flow_result
-                else:
-                    line_result.output = persist_multimedia_data(
-                        line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
-                    )
-                    if line_result.aggregation_inputs:
-                        # Convert inputs of aggregation to list type
-                        flow_inputs = {k: [v] for k, v in inputs.items()}
-                        aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                        aggregation_results = async_run_allowing_running_loop(
-                            flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
-                        )
-                        line_result.node_run_infos.update(aggregation_results.node_run_infos)
-                        line_result.run_info.metrics = aggregation_results.metrics
-                    if isinstance(line_result.output, dict):
-                        # Remove line_number from output
-                        line_result.output.pop(LINE_NUMBER_KEY, None)
-                        generator_outputs = self._get_generator_outputs(line_result.output)
-                        if generator_outputs:
-                            logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-                    return line_result
+                    print_csharp_stream_chat_output(line_result_iter, kwargs.pop("chat_output_name", None))
+
+                return line_result
             finally:
                 async_run_allowing_running_loop(flow_executor.destroy)
+
+    @staticmethod
+    def _get_generator_outputs(outputs):
+        outputs = outputs or {}
+        return outputs
+
+    @staticmethod
+    def get_async_line_result(line_result):
+        flow_outputs = {}
+        node_run_infos = None
+        aggregation_inputs = None
+        run_info = None
+        for chunk in line_result:
+            node_run_infos = chunk.node_run_infos if node_run_infos is None else node_run_infos
+            aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else \
+                aggregation_inputs
+            run_info = chunk.run_info if run_info is None else run_info
+            for key, value in chunk.output.items():
+                if key not in flow_outputs:
+                    flow_outputs[key] = value
+                else:
+                    flow_outputs[key] += value
+        return flow_outputs, node_run_infos, aggregation_inputs, run_info
+
+    @staticmethod
+    def resolve_aggregation_inputs(aggregation_inputs, inputs, flow_executor, node_run_infos, run_info):
+        # Convert inputs of aggregation to list type
+        flow_inputs = {k: [v] for k, v in inputs.items()}
+        aggregation_inputs = {k: [v] for k, v in aggregation_inputs.items()}
+        aggregation_results = async_run_allowing_running_loop(
+            flow_executor.exec_aggregation_async, flow_inputs, aggregation_inputs
+        )
+        node_run_infos.update(aggregation_results.node_run_infos)
+        run_info.metrics = aggregation_results.metrics
 
     def exec_with_inputs(self, inputs, allow_generator_output=False):
         from promptflow._constants import LINE_NUMBER_KEY
