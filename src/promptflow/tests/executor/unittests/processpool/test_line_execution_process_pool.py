@@ -7,7 +7,6 @@ from pathlib import Path
 from tempfile import mkdtemp
 from unittest.mock import patch
 
-import psutil
 import pytest
 from pytest_mock import MockFixture
 
@@ -432,15 +431,15 @@ class TestLineExecutionProcessPool:
         bulk_inputs = get_bulk_inputs()
         nlines = len(bulk_inputs)
         run_id = run_id or str(uuid.uuid4())
-        with LineExecutionProcessPool(
-            executor,
-            nlines,
-            run_id,
-            None,
-        ) as pool:
-            managed_process_id = pool._spawned_fork_process_manager_pid
-            pool.run(zip(range(nlines), bulk_inputs))
-            assert psutil.Process(managed_process_id).status() == "zombie"
+        with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
+            with LineExecutionProcessPool(
+                executor,
+                nlines,
+                run_id,
+                None,
+            ) as pool:
+                pool.run(zip(range(nlines), bulk_inputs))
+                mock_logger.error.assert_called_with("The spawned fork process manager failed to start.")
 
 
 class TestGetAvailableMaxWorkerCount:

@@ -462,6 +462,7 @@ class LineExecutionProcessPool:
                 # within the specified time, its state will be 'zombie'. So, If the spawned process is in 'zombie'
                 # state, return without continuing execution.
                 if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
+                    bulk_logger.error("The spawned fork process manager failed to start.")
                     return
                 time.sleep(1)
 
