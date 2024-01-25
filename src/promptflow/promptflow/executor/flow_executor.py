@@ -755,6 +755,7 @@ class FlowExecutor:
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called when executing a batch run, so we only set run_mode as flow run when
             # it is not set.
+            run_id = run_id or str(uuid.uuid4())
             self._update_operation_context(run_id)
             line_result = self._exec(
                 inputs,
@@ -823,7 +824,6 @@ class FlowExecutor:
         Returns:
             LineResult: Line run result
         """
-        run_id = run_id or str(uuid.uuid4())
         line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
         run_tracker = RunTracker(
             self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager

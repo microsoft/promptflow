@@ -67,8 +67,8 @@ class ScriptExecutor(FlowExecutor):
         # so, we need remove line_number from inputs if it is not included in input of python function.
         if LINE_NUMBER_KEY in inputs and LINE_NUMBER_KEY not in self._inputs:
             inputs.pop(LINE_NUMBER_KEY)
-        self._update_operation_context(run_id)
         run_id = run_id or str(uuid.uuid4())
+        self._update_operation_context(run_id)
         line_run_id = run_id if index is None else f"{run_id}_{index}"
         default_flow_id = "default_flow_id"
         run_tracker = RunTracker(self._storage)
