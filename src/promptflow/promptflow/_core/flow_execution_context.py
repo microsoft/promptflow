@@ -67,6 +67,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
         flow_context_info = {"flow-id": self._flow_id, "root-run-id": self._run_id}
         OperationContext.get_instance().update(flow_context_info)
 
+    def cancel_node_runs(self, msg):
+        self._run_tracker.cancel_node_runs(msg, self._run_id)
+
     def invoke_tool(self, node: Node, f: Callable, kwargs):
         run_info = self._prepare_node_run(node, f, kwargs)
         node_run_id = run_info.run_id
@@ -146,7 +149,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         # so that the error can propagate to the scheduler for handling.
         # Otherwise, the node would end with Completed status.
         except asyncio.CancelledError as e:
-            logger.info(f"Node {node.name} in line {self._line_number} is cancelled.")
+            logger.info(f"Node {node.name} in line {self._line_number} is canceled.")
             traces = Tracer.end_tracing(node_run_id)
             self._run_tracker.end_run(node_run_id, ex=e, traces=traces)
             raise

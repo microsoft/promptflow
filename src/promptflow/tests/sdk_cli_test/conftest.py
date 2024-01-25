@@ -2,7 +2,6 @@ import base64
 import json
 import multiprocessing
 import os
-from asyncio import Queue
 from pathlib import Path
 from unittest.mock import patch
 
@@ -255,43 +254,11 @@ def setup_recording_injection_if_enabled():
     return patches
 
 
-def _mock_process_wrapper(
-    executor_creation_func,
-    input_queue: Queue,
-    output_queue: Queue,
-    log_context_initialization_func,
-    operation_contexts_dict: dict,
-):
+def _mock_process_wrapper(*args, **kwargs):
     setup_recording_injection_if_enabled()
-    _process_wrapper(
-        executor_creation_func, input_queue, output_queue, log_context_initialization_func, operation_contexts_dict
-    )
+    return _process_wrapper(*args, **kwargs)
 
 
-def _mock_create_spawned_fork_process_manager(
-    log_context_initialization_func,
-    current_operation_context,
-    input_queues,
-    output_queues,
-    control_signal_queue,
-    flow_file,
-    connections,
-    working_dir,
-    raise_ex,
-    process_info,
-    process_target_func,
-):
+def _mock_create_spawned_fork_process_manager(*args, **kwargs):
     setup_recording_injection_if_enabled()
-    create_spawned_fork_process_manager(
-        log_context_initialization_func,
-        current_operation_context,
-        input_queues,
-        output_queues,
-        control_signal_queue,
-        flow_file,
-        connections,
-        working_dir,
-        raise_ex,
-        process_info,
-        process_target_func,
-    )
+    return create_spawned_fork_process_manager(*args, **kwargs)

@@ -73,6 +73,9 @@ class RunOperations(TelemetryMixin):
         :return: run object retrieved from the database.
         :rtype: ~promptflow.entities.Run
         """
+        return self._get(name)
+
+    def _get(self, name: str) -> Run:
         name = Run._validate_and_return_run_name(name)
         try:
             return Run._from_orm_object(ORMRun.get(name))
