@@ -2,6 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+# this file is different from other files in this folder
+# functions (APIs) defined in this file follows OTLP 1.1.0
+# https://opentelemetry.io/docs/specs/otlp/#otlphttp-request
+# to provide OTLP/HTTP endpoint as OTEL collector
+
 from flask import request
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
