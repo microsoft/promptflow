@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from ast import literal_eval
 from enum import Enum
 from pathlib import Path
+from uuid import uuid4
 
 from jinja2 import Environment, Template, meta
 
@@ -414,6 +415,7 @@ class SetupGenerator(BaseGenerator):
 class ToolPackageUtilsGenerator(BaseGenerator):
     def __init__(self, package_name):
         self.package_name = package_name
+        self.package_uuid = str(uuid4())
 
     @property
     def tpl_file(self):
@@ -421,7 +423,7 @@ class ToolPackageUtilsGenerator(BaseGenerator):
 
     @property
     def entry_template_keys(self):
-        return ["package_name"]
+        return ["package_name", "package_uuid"]
 
 
 class ToolReadmeGenerator(BaseGenerator):
