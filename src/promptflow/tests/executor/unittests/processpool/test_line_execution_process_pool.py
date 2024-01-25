@@ -59,10 +59,7 @@ def execute_in_fork_mode_subprocess(
     os.environ["PF_BATCH_METHOD"] = "fork"
     if is_set_environ_pf_worker_count:
         os.environ["PF_WORKER_COUNT"] = pf_worker_count
-    executor = FlowExecutor.create(
-        get_yaml_file(flow_folder),
-        dev_connections,
-    )
+    executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
     run_id = str(uuid.uuid4())
     bulk_inputs = get_bulk_inputs()
     nlines = len(bulk_inputs)
@@ -150,11 +147,7 @@ def execute_in_spawn_mode_subprocess(
 
 
 def create_line_execution_process_pool(dev_connections):
-    executor = FlowExecutor.create(
-        get_yaml_file(SAMPLE_FLOW),
-        dev_connections,
-        line_timeout_sec=1,
-    )
+    executor = FlowExecutor.create(get_yaml_file(SAMPLE_FLOW), dev_connections)
     run_id = str(uuid.uuid4())
     bulk_inputs = get_bulk_inputs()
     nlines = len(bulk_inputs)
@@ -163,6 +156,7 @@ def create_line_execution_process_pool(dev_connections):
         nlines,
         run_id,
         None,
+        line_timeout_sec=1,
     )
     return line_execution_process_pool
 
@@ -232,11 +226,7 @@ class TestLineExecutionProcessPool:
         ],
     )
     def test_line_execution_not_completed(self, flow_folder, dev_connections):
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-            line_timeout_sec=1,
-        )
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
         nlines = len(bulk_inputs)
@@ -245,6 +235,7 @@ class TestLineExecutionProcessPool:
             nlines,
             run_id,
             None,
+            line_timeout_sec=1,
         ) as pool:
             result_list = pool.run(zip(range(nlines), bulk_inputs))
             result_list = sorted(result_list, key=lambda r: r.run_info.index)
@@ -263,11 +254,7 @@ class TestLineExecutionProcessPool:
     )
     def test_exec_line(self, flow_folder, dev_connections, mocker: MockFixture):
         output_queue = Queue()
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-            line_timeout_sec=1,
-        )
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         line_inputs = get_line_inputs()
         line_result = _exec_line(
@@ -287,11 +274,7 @@ class TestLineExecutionProcessPool:
     )
     def test_exec_line_failed_when_line_execution_not_start(self, flow_folder, dev_connections, mocker: MockFixture):
         output_queue = Queue()
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-            line_timeout_sec=1,
-        )
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         test_error_msg = "Test user error"
         with patch("promptflow.executor.flow_executor.FlowExecutor.exec_line", autouse=True) as mock_exec_line:
             mock_exec_line.side_effect = UserErrorException(
@@ -325,10 +308,7 @@ class TestLineExecutionProcessPool:
             "_monitor_workers_and_process_tasks_in_thread",
             side_effect=UserErrorException(message=test_error_msg, target=ErrorTarget.AZURE_RUN_STORAGE),
         )
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-        )
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
         nlines = len(bulk_inputs)
