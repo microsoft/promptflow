@@ -193,7 +193,6 @@ def add_default_routes(app: PromptflowServingApp):
     @app.route("/feedback", methods=["POST"])
     def save_feedback():
         """Save feedback"""
-        import pdb; pdb.set_trace()
         raw_data = request.get_data()
         logger.info(f"Feedback received: {raw_data}")
         # app.flow_monitor.save_feedback(feedback)
