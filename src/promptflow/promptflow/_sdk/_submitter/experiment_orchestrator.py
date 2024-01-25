@@ -12,18 +12,23 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from os import PathLike
 from pathlib import Path
-
+import platform
 import psutil
+
+if not sys.stdout:
+    sys.stdout = open(os.devnull, 'w')
+if not sys.stderr:
+    sys.stderr = sys.stdout
 
 from promptflow._sdk._constants import ExperimentNodeRunStatus, ExperimentNodeType, ExperimentStatus
 from promptflow._sdk._errors import (
-    ExperimentHasCycle,
     ExperimentNodeRunFailedError,
     ExperimentValueError,
-    OrchestratorNotFoundError,
+    ExperimentNotFoundError,
 )
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._orm.experiment_node_run import ExperimentNodeRun as ORMExperimentNodeRun
+from promptflow._sdk._orm.run_info import RunInfo as ORMRunInfo
 from promptflow._sdk._orm.orchestrator import Orchestrator as ORMOrchestrator
 from promptflow._sdk._submitter import RunSubmitter
 from promptflow._sdk.entities import Run
@@ -86,7 +91,10 @@ class ExperimentOrchestrator:
         if from_node:
             args = args + ["--from-nodes"] + from_node
         # Start an orchestrator process using detach mode
-        os.spawnv(os.P_DETACH, executable_path, args)
+        if platform.system() == "Windows":
+            os.spawnv(os.P_DETACH, executable_path, args)
+        else:
+            os.system(" ".join(["nohup"] + args + ["&"]))
         return self.experiment
 
     def _update_orchestrator_record(self, status, pid=None):
@@ -252,7 +260,7 @@ class ExperimentOrchestrator:
                     return ExperimentStatus.TERMINATED
             else:
                 return orm_orchestrator.status
-        except OrchestratorNotFoundError:
+        except ExperimentNotFoundError:
             return ExperimentStatus.NOT_STARTED
 
 
@@ -404,12 +412,13 @@ class ExperimentNodeRun(Run):
     def submit(self):
         # Get snapshot id from exp_node_run
         node_run = ORMExperimentNodeRun.get_by_snapshot_id(snapshot_id=self.snapshot_id, raise_error=False)
-        if node_run and node_run.status == ExperimentNodeRunStatus.COMPLETED:
-            if node_run.property:
-                # TODO reuse node run result
-                node_run_result = self.run_operations.get(name=node_run.run_id)
-
-                return node_run_result
+        if node_run.run_id and node_run.status == ExperimentNodeRunStatus.COMPLETED:
+            run_info = ORMRunInfo.get(node_run.run_id)
+            run_info_properties = json.loads(run_info.properties)
+            output_path = run_info_properties.get("output_path", None)
+            if output_path and Path(output_path).exists():
+                # TODO Whether need to link used node output folder in the experiment run folder
+                return run_info
         # Update exp node run record
         self.update_exp_run_node(status=ExperimentNodeRunStatus.IN_PROGRESS)
         node_run_result = self._run_node()

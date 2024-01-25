@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base
 
 from promptflow._sdk._constants import ORCHESTRATOR_TABLE_NAME
-from promptflow._sdk._errors import OrchestratorNotFoundError
+from promptflow._sdk._errors import ExperimentNotFoundError
 
 from .retry import sqlite_retry
 from .session import mgmt_db_session
@@ -44,8 +44,8 @@ class Orchestrator(Base):
         with mgmt_db_session() as session:
             orchestrator = session.query(Orchestrator).filter(Orchestrator.experimentName == experiment_name).first()
             if orchestrator is None and raise_error:
-                raise OrchestratorNotFoundError(
-                    f"Not found orchestrator started by the experiment {experiment_name!r}."
+                raise ExperimentNotFoundError(
+                    f"The experiment {experiment_name!r} hasn't been started yet."
                 )
             return orchestrator
 
