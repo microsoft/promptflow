@@ -56,7 +56,7 @@ class AsyncNodesScheduler:
 
         # Semaphore should be created in the loop, otherwise it will not work.
         loop = asyncio.get_running_loop()
-        self._semaphore = asyncio.Semaphore(self._node_concurrency, loop=loop)
+        self._semaphore = asyncio.Semaphore(self._node_concurrency)
         monitor = threading.Thread(
             target=monitor_long_running_coroutine,
             args=(loop, self._task_start_time, self._task_last_log_time, self._dag_manager_completed_event),
