@@ -147,7 +147,7 @@ class TestSubmitter:
                         dependency_nodes_outputs[value.value] = dependency_nodes_outputs.get(value.value, {})
                         if isinstance(dependency_input, dict) and value.property in dependency_input:
                             dependency_nodes_outputs[value.value][value.property] = dependency_input[value.property]
-                        else:
+                        elif dependency_input:
                             dependency_nodes_outputs[value.value][value.property] = dependency_input
                     else:
                         dependency_nodes_outputs[value.value] = dependency_input
