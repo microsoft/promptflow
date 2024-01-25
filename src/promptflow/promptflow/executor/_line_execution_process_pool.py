@@ -457,6 +457,7 @@ class LineExecutionProcessPool:
             while time.time() - ensure_spawn_process_healthy_start_time < 6:
                 if psutil.Process(self._managed_process_id).status() == "zombie":
                     return
+                time.sleep(1)
 
         with RepeatLogTimer(
             interval_seconds=self._log_interval,
