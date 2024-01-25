@@ -251,12 +251,15 @@ class LineExecutionProcessPool:
                 break
 
             # Calculate the line timeout for the current line.
-            remaining_execution_time = (datetime.utcnow() - batch_start_time).total_seconds()
-            line_timeout_sec = (
-                remaining_execution_time
-                if self._batch_timeout_sec and remaining_execution_time < self._line_timeout_sec
-                else self._line_timeout_sec
-            )
+            line_timeout_sec = self._line_timeout_sec
+            if self._batch_timeout_sec:
+                remaining_execution_time = (
+                    self._batch_timeout_sec - (datetime.utcnow() - batch_start_time).total_seconds()
+                )
+                if remaining_execution_time <= 0:
+                    break
+                line_timeout_sec = min(line_timeout_sec, remaining_execution_time)
+
             # Put task into input_queue
             args = (inputs, line_number, run_id, line_timeout_sec)
             input_queue.put(args)
