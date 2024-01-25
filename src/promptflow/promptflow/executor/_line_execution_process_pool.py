@@ -151,7 +151,6 @@ class LineExecutionProcessPool:
         self._input_queues = [manager.Queue() for _ in range(self._n_process)]
         self._output_queues = [manager.Queue() for _ in range(self._n_process)]
         self._control_signal_queue = manager.Queue()
-        self._end_thread_pool_signal_queue = Queue()
         self._process_info = manager.dict()
 
         # when using fork, we first create a process with spawn method to establish a clean environment
