@@ -1,0 +1,4 @@
+packageName: Promptflow.Core.PfsClient
+packageVersion: 0.0.1
+targetFramework: netstandard2.0
+optionalProjectFile: false

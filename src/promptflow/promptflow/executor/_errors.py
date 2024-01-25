@@ -76,10 +76,6 @@ class InvalidFlowRequest(ValidationException):
         )
 
 
-class InvalidSource(ValidationException):
-    pass
-
-
 class NodeInputValidationError(InvalidFlowRequest):
     pass
 
@@ -170,6 +166,7 @@ class LineExecutionTimeoutError(UserErrorException):
     """Exception raised when single line execution timeout"""
 
     def __init__(self, line_number, timeout):
+        self.timeout_sec = timeout
         super().__init__(
             message=f"Line {line_number} execution timeout for exceeding {timeout} seconds", target=ErrorTarget.EXECUTOR
         )
@@ -261,4 +258,8 @@ class ResolveToolError(PromptflowException):
 
 
 class UnsupportedAssistantToolType(ValidationException):
+    pass
+
+
+class InvalidFlowFileError(UserErrorException):
     pass

@@ -1459,6 +1459,12 @@ class TestCli:
             # Test init package tool with extra info
             package_name = "tool_with_extra_info"
             package_folder = Path(temp_dir) / package_name
+            package_folder.mkdir(exist_ok=True, parents=True)
+            manifest_file = package_folder / "MANIFEST.in"
+            mock_manifest_content = "include mock/path"
+            with open(manifest_file, "w") as f:
+                f.write(mock_manifest_content)
+
             icon_path = Path(DATAS_DIR) / "logo.jpg"
             category = "test_category"
             tags = {"tag1": "value1", "tag2": "value2"}
@@ -1475,6 +1481,10 @@ class TestCli:
                 f"tags={tags}",
                 cwd=temp_dir,
             )
+            with open(manifest_file, "r") as f:
+                content = f.read()
+                assert mock_manifest_content in content
+                assert f"include {package_name}/icons" in content
             # Add a tool script with icon
             tool_script_name = "tool_func_with_icon"
             run_pf_command(
@@ -1888,6 +1898,32 @@ class TestCli:
         # both runs are deleted and their folders are deleted
         assert not os.path.exists(path_a)
 
+    def test_basic_flow_run_delete_no_confirm(self, monkeypatch, local_client, capfd) -> None:
+        run_id = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--name",
+            run_id,
+            "--flow",
+            f"{FLOWS_DIR}/print_env_var",
+            "--data",
+            f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        out, _ = capfd.readouterr()
+        assert "Completed" in out
+
+        run_a = local_client.runs.get(name=run_id)
+        local_storage = LocalStorageOperations(run_a)
+        path_a = local_storage.path
+        assert os.path.exists(path_a)
+
+        # delete the run
+        run_pf_command("run", "delete", "--name", f"{run_id}", "-y")
+
+        # both runs are deleted and their folders are deleted
+        assert not os.path.exists(path_a)
+
     def test_basic_flow_run_delete_error(self, monkeypatch) -> None:
         input_list = ["y"]
 
@@ -1973,3 +2009,68 @@ class TestCli:
         p.start()
         p.join()
         assert p.exitcode == 0
+
+    def test_run_list(self, local_client):
+        from promptflow._sdk.entities import Run
+
+        with patch.object(Run, "_to_dict") as mock_to_dict:
+            mock_to_dict.side_effect = RuntimeError("mock exception")
+            run_pf_command(
+                "run",
+                "list",
+            )
+
+    def test_pf_flow_test_with_detail(self, tmpdir):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer=Channel",
+            "evidence=Url",
+            "--detail",
+            Path(tmpdir).as_posix(),
+        )
+        # when specify parameter `detail`, detail, output and log will be saved in both
+        # the specified folder and ".promptflow" under flow folder
+        for parent_folder in [
+            Path(FLOWS_DIR) / "web_classification" / ".promptflow",
+            Path(tmpdir),
+        ]:
+            for filename in ["flow.detail.json", "flow.output.json", "flow.log"]:
+                path = parent_folder / filename
+                assert path.is_file()
+
+    def test_pf_flow_test_single_node_with_detail(self, tmpdir):
+        node_name = "fetch_text_content_from_url"
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            "inputs.url="
+            "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
+            "--node",
+            node_name,
+            "--detail",
+            Path(tmpdir).as_posix(),
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / f"flow-{node_name}.node.detail.json"
+        assert output_path.exists()
+
+        # when specify parameter `detail`, node detail, output and log will be saved in both
+        # the specified folder and ".promptflow" under flow folder
+        for parent_folder in [
+            Path(FLOWS_DIR) / "web_classification" / ".promptflow",
+            Path(tmpdir),
+        ]:
+            for filename in [
+                f"flow-{node_name}.node.detail.json",
+                f"flow-{node_name}.node.output.json",
+                f"{node_name}.node.log",
+            ]:
+                path = parent_folder / filename
+                assert path.is_file()
