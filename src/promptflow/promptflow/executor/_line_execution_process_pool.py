@@ -192,21 +192,10 @@ class LineExecutionProcessPool:
             self._monitor_pool.close()
             self._monitor_pool.join()
 
-    def _check_thread_pool_termination_signal(self):
-        try:
-            end_signal = self._end_thread_pool_signal_queue.get(timeout=1)
-            if end_signal == "end":
-                return True
-        except queue.Empty:
-            return False
-
     def _get_process_info(self, index):
         start_time = time.time()
         while True:
             try:
-                is_thread_pool_terminated = self._check_thread_pool_termination_signal()
-                if is_thread_pool_terminated:
-                    break
                 if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
                     raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
                 # Try to get process id and name from the process_info

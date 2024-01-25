@@ -436,8 +436,6 @@ class TestLineExecutionProcessPool:
             executor,
             nlines,
             run_id,
-            "",
-            False,
             None,
         ) as pool:
             managed_process_id = pool._managed_process_id
