@@ -10,6 +10,7 @@ from werkzeug.exceptions import HTTPException
 from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_LOG_FILE
 from promptflow._sdk._service import Api
 from promptflow._sdk._service.apis.connection import api as connection_api
+from promptflow._sdk._service.apis.otel_collector import trace_collector
 from promptflow._sdk._service.apis.run import api as run_api
 from promptflow._sdk._service.apis.telemetry import api as telemetry_api
 from promptflow._sdk._service.utils.utils import FormattedException
@@ -24,6 +25,7 @@ def heartbeat():
 def create_app():
     app = Flask(__name__)
     app.add_url_rule("/heartbeat", view_func=heartbeat)
+    app.add_url_rule("/v1/traces", view_func=trace_collector, methods=["POST"])
     with app.app_context():
         api_v1 = Blueprint("Prompt Flow Service", __name__, url_prefix="/v1.0")
 
