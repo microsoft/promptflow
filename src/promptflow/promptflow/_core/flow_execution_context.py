@@ -15,7 +15,6 @@ from typing import Callable
 
 from promptflow._core._errors import ToolExecutionError, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
-from promptflow._core.operation_context import OperationContext
 from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import generate_elapsed_time_messages
@@ -63,10 +62,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             variant_id=self._variant_id,
         )
 
-    def _update_operation_context(self):
-        flow_context_info = {"flow-id": self._flow_id, "root-run-id": self._run_id}
-        OperationContext.get_instance().update(flow_context_info)
-
     def cancel_node_runs(self, msg):
         self._run_tracker.cancel_node_runs(msg, self._run_id)
 
@@ -110,8 +105,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             self._run_tracker.persist_node_run(run_info)
 
     def _prepare_node_run(self, node: Node, f, kwargs={}):
-        # Ensure this thread has a valid operation context
-        self._update_operation_context()
         node_run_id = self._generate_node_run_id(node)
         flow_logger.info(f"Executing node {node.name}. node run id: {node_run_id}")
         parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
