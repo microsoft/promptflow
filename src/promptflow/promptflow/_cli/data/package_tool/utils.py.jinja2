@@ -7,7 +7,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 package_name = "{{ package_name }}"
 package_uuid = "{{ package_uuid }}"
-meta_cache_file = tempfile.gettempdir() / "promptflow" / "tool_metas" / f"{package_uuid}.yaml"
+meta_cache_file = Path(tempfile.gettempdir()) / "promptflow" / "tool_metas" / f"{package_uuid}.yaml"
 
 
 def list_package_tools(raise_error=False):

@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 from tempfile import mkdtemp
 from typing import Dict, List
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import mock
 import pytest
@@ -1386,7 +1386,7 @@ class TestCli:
         outerr = capsys.readouterr()
         assert not outerr.err
 
-    def test_tool_init(self, capsys):
+    def test_tool_init(self, capsys, caplog, mocker):
         with tempfile.TemporaryDirectory() as temp_dir:
             package_name = "package_name"
             func_name = "func_name"
@@ -1414,6 +1414,31 @@ class TestCli:
             assert meta["name"] == func_name
             assert meta["description"] == f"This is {func_name} tool"
             assert meta["type"] == "python"
+
+            # Test get tool_meta from cache
+            mock_module = MagicMock()
+
+            def mock_has_metadata(*args):
+                return True
+
+            def mock_get_metadata_lines(*args):
+                return ["egg-link"]
+
+            mock_module.has_metadata = mock_has_metadata
+            mock_module.get_metadata_lines = mock_get_metadata_lines
+            with mocker.patch(f"pkg_resources.get_distribution", return_value=mock_module):
+                # Generate tool meta cache
+                tools_meta = utils.list_package_tools()
+                assert f"{package_name}.{func_name}.{func_name}" in tools_meta
+
+                cache_file = Path(tempfile.gettempdir()) / "promptflow" / "tool_metas" / f"{utils.package_uuid}.yaml"
+                assert cache_file.exists()
+
+                with caplog.at_level(level=logging.DEBUG, logger=utils.logger.name):
+                    # Use tool meta cache
+                    tools_meta = utils.list_package_tools()
+                    assert "List tool metas from cache file" in caplog.text
+                    assert f"{package_name}.{func_name}.{func_name}" in tools_meta
 
             # Invalid package/tool name
             invalid_package_name = "123-package-name"
