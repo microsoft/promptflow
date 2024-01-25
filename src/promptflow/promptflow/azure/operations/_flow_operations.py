@@ -318,7 +318,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :param include_others: Whether to list flows owned by other users in the remote workspace, defaults to False
         :type include_others: bool
         :return: The list of flows.
-        :rtype: List[~~promptflow.azure.entities.Flow]
+        :rtype: List[~promptflow.azure.entities.Flow]
         """
         if not isinstance(max_results, int) or max_results < 1:
             raise FlowOperationError(f"'max_results' must be a positive integer, got {max_results!r}")
