@@ -151,7 +151,6 @@ class LineExecutionProcessPool:
         self._input_queues = [manager.Queue() for _ in range(self._n_process)]
         self._output_queues = [manager.Queue() for _ in range(self._n_process)]
         self._control_signal_queue = manager.Queue()
-        self._ex_queue = manager.Queue()
         self._end_thread_pool_signal_queue = Queue()
         self._process_info = manager.dict()
 
@@ -168,19 +167,20 @@ class LineExecutionProcessPool:
             # 2. Pass the above queue/dict as parameters to spawn and fork processes to transfer information
             # between processes.
             self._processes_manager = ForkProcessManager(
-                self._ex_queue,
                 self._control_signal_queue,
                 self._flow_create_kwargs,
                 **common_kwargs,
             )
+            # For fork mode, it's necessary to determine whether the spawn process that created the fork process is
+            # running properly. Therefore, we have obtained the spawn process object here.
+            self._managed_process_id = self._processes_manager.start_processes()
         else:
             executor_creation_func = partial(FlowExecutor.create, **self._flow_create_kwargs)
             # 1. Create input_queue, output_queue, and _process_info in the main process.
             # 2. Spawn _n_process sub-process and pass the above queue/dict to these sub-process to transfer information
             # between main process and sub process.
             self._processes_manager = SpawnProcessManager(executor_creation_func, **common_kwargs)
-
-        self._processes_manager.start_processes()
+            self._processes_manager.start_processes()
 
         monitor_pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._monitor_pool = monitor_pool
@@ -462,6 +462,14 @@ class LineExecutionProcessPool:
         result_list = []
         run_start_time = datetime.utcnow()
 
+        # In fork mode, the spawn process is the bridge between the main and fork processes.
+        # If the spawned process is no longer running, exit the main proccess.
+        if self._use_fork:
+            ensure_spawn_process_healthy_start_time = time.time()
+            while time.time() - ensure_spawn_process_healthy_start_time < 5:
+                if psutil.Process(self._managed_process_id).status() == "zombie":
+                    break
+
         with RepeatLogTimer(
             interval_seconds=self._log_interval,
             logger=bulk_logger,
@@ -511,14 +519,6 @@ class LineExecutionProcessPool:
                                 total_count=self._nlines,
                             )
                             last_log_count = current_result_count
-                        try:
-                            ex = self._ex_queue.get_nowait()
-                            if ex is not None:
-                                for i in range(self._n_process):
-                                    self._end_thread_pool_signal_queue.put("end")
-                                raise ex
-                        except queue.Empty:
-                            pass
                         # Check every 1 second
                         async_result.wait(1)
                     # To ensure exceptions in thread-pool calls are propagated to the main process for proper handling

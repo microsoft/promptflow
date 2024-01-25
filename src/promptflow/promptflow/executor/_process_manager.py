@@ -202,9 +202,8 @@ class ForkProcessManager(AbstractProcessManager):
     """
     '''
 
-    def __init__(self, catch_ex_queue, control_signal_queue: Queue, flow_create_kwargs, *args, **kwargs):
+    def __init__(self, control_signal_queue: Queue, flow_create_kwargs, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._catch_ex_queue = catch_ex_queue
         self._control_signal_queue = control_signal_queue
         self._flow_create_kwargs = flow_create_kwargs
 
@@ -216,7 +215,6 @@ class ForkProcessManager(AbstractProcessManager):
         process = context.Process(
             target=create_spawned_fork_process_manager_wrapper,
             args=(
-                self._catch_ex_queue,  # Parameter 'catch_ex_queue' must be positioned first.
                 self._log_context_initialization_func,
                 self._current_operation_context,
                 self._input_queues,
@@ -228,6 +226,7 @@ class ForkProcessManager(AbstractProcessManager):
             ),
         )
         process.start()
+        return process.pid
 
     def restart_process(self, i):
         """
@@ -371,11 +370,12 @@ class SpawnedForkProcessManager(AbstractProcessManager):
             self.new_process(i)
 
 
-def create_spawned_fork_process_manager_wrapper(catch_ex_queue, *args, **kwargs):
+def create_spawned_fork_process_manager_wrapper(*args, **kwargs):
     try:
         create_spawned_fork_process_manager(*args, **kwargs)
     except Exception as e:
-        catch_ex_queue.put(e)
+        bulk_logger.error(f"Error occurred when create spawned fork process manager: {e}")
+        raise e
 
 
 def create_spawned_fork_process_manager(
