@@ -50,6 +50,7 @@ REQUIRES = [
     "filetype>=1.2.0",  # used to detect the mime type for mulitmedia input
     "jsonschema>=4.0.0,<5.0.0",  # used to validate tool
     "docutils",  # used to generate description for tools
+    "opentelemetry-proto>=1.22.0,<2.0.0",  # used to support PFS as OpenTelemetry collector
 ]
 
 setup(
@@ -100,10 +101,7 @@ setup(
         ],
     },
     packages=find_packages(),
-    scripts=[
-        'pf',
-        'pf.bat'
-    ],
+    scripts=["pf", "pf.bat"],
     entry_points={
         "console_scripts": [
             "pfazure = promptflow._cli._pf_azure.entry:main",
