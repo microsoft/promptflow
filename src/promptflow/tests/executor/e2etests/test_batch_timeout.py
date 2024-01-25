@@ -149,6 +149,7 @@ class TestBatchTimeout:
         # We will assert the correct result after refining the implementation of batch timeout.
         assert batch_results.node_status == {
             "my_python_tool_with_failed_line.completed": 2,
+            "my_python_tool_with_failed_line.canceled": 1,
             "my_python_tool.completed": 3,
         }
 
@@ -169,4 +170,4 @@ class TestBatchTimeout:
         assert len(mem_run_storage._flow_runs) == 3, "Flow runs are persisted in memory storage."
         # TODO: Currently, the node status is incomplete.
         # We will assert the correct result after refining the implementation of batch timeout.
-        assert len(mem_run_storage._node_runs) == 5, "Node runs are persisted in memory storage."
+        assert len(mem_run_storage._node_runs) == 6, "Node runs are persisted in memory storage."
