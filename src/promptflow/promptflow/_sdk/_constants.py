@@ -73,12 +73,15 @@ PF_SERVICE_LOG_FILE = "pfs.log"
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
 LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock").resolve()
+OTEL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "otel.sqlite").resolve()
+OTEL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "otel.sqlite.lock").resolve()
 SCHEMA_INFO_TABLENAME = "schema_info"
 RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
 CONNECTION_TABLE_NAME = "connection"
 EXPERIMENT_TABLE_NAME = "experiment"
 EXPERIMENT_CREATED_ON_INDEX_NAME = "idx_experiment_created_on"
+SPAN_TABLENAME = "span"
 BASE_PATH_CONTEXT_KEY = "base_path"
 SCHEMA_KEYS_CONTEXT_CONFIG_KEY = "schema_configs_keys"
 SCHEMA_KEYS_CONTEXT_SECRET_KEY = "schema_secrets_keys"
