@@ -5,6 +5,8 @@ from promptflow.contracts.multimedia import Image
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList
 import subprocess
+import sys
+
 
 class TestCommon:
     @pytest.mark.parametrize(
@@ -155,6 +157,7 @@ class TestCommon:
         assert actual_result == expected_output
 
     def test_collect_custom_llm_tool_set_defaut_input_index(self, install_promptflow_tools_pkg):
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "promptflow-tools==1.0.3"])
         tool = "promptflow.tools.aoai_gpt4v.AzureOpenAI.chat"
         package_tools = collect_package_tools([tool])
         print("package_tools: ", package_tools)
