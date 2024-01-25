@@ -165,7 +165,8 @@
     "laddr",
     "nrows",
     "Dumpable",
-    "otel"
+    "otel",
+    "OTLP"
   ],
   "flagWords": [
     "Prompt Flow"
