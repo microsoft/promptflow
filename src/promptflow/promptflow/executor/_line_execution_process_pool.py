@@ -170,9 +170,10 @@ class LineExecutionProcessPool:
                 self._flow_create_kwargs,
                 **common_kwargs,
             )
+            self._processes_manager.start_processes()
             # In fork mode, it's necessary to determine whether the spawn process that created the fork process is
             # running properly. Therefore, we obtain the spawn process id here to get the process status.
-            self._managed_process_id = self._processes_manager.start_processes()
+            self._spawned_fork_process_manager_pid = self._processes_manager._spawned_fork_process_manager_pid
         else:
             executor_creation_func = partial(FlowExecutor.create, **self._flow_create_kwargs)
             # 1. Create input_queue, output_queue, and _process_info in the main process.
@@ -450,12 +451,17 @@ class LineExecutionProcessPool:
         result_list = []
         run_start_time = datetime.utcnow()
 
-        # In fork mode, the spawn process is the bridge between the main and fork processes.
+        # In fork mode, the spawned process is the bridge between the main and fork processes.
         # If the spawned process is no longer running, exit the main proccess.
         if self._use_fork:
-            ensure_spawn_process_healthy_start_time = time.time()
-            while time.time() - ensure_spawn_process_healthy_start_time < 6:
-                if psutil.Process(self._managed_process_id).status() == "zombie":
+            ensure_spawned_process_healthy_start_time = time.time()
+            while time.time() - ensure_spawned_process_healthy_start_time < 6:
+                # A 'zombie' process is a process that has finished running but still remains in
+                # the process table, waiting for its parent process to collect and handle its exit status.
+                # The normal state of the spawned process is 'running'. If the process does not start successfully
+                # within the specified time, its state will be 'zombie'. So, If the spawned process is in 'zombie'
+                # state, return without continuing execution.
+                if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
                     return
                 time.sleep(1)
 

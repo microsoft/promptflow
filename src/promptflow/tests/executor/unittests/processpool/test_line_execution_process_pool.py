@@ -438,7 +438,7 @@ class TestLineExecutionProcessPool:
             run_id,
             None,
         ) as pool:
-            managed_process_id = pool._managed_process_id
+            managed_process_id = pool._spawned_fork_process_manager_pid
             pool.run(zip(range(nlines), bulk_inputs))
             assert psutil.Process(managed_process_id).status() == "zombie"
 

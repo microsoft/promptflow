@@ -226,7 +226,7 @@ class ForkProcessManager(AbstractProcessManager):
             ),
         )
         process.start()
-        return process.pid
+        self._spawned_fork_process_manager_pid = process.pid
 
     def restart_process(self, i):
         """
