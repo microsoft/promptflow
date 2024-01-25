@@ -19,7 +19,7 @@ nodes:
   type: python
   source:
     type: code
-    entry: hello.func
+    path: hello.py
   inputs:
     connection: basic_custom_connection
     deployment_name: text-davinci-003
