@@ -19,6 +19,7 @@ from utils import dict_iter_render_message, parse_list_from_html, parse_image_co
 
 invoker = None
 generator_record = {}
+animation_time = 0.05
 
 
 def start():
@@ -100,7 +101,7 @@ def start():
                             aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else \
                                 aggregation_inputs
                             run_info = chunk.run_info if run_info is None else run_info
-                            time.sleep(0.05)
+                            time.sleep(animation_time)
                             # Add a blinking cursor to simulate typing
                             message_placeholder.markdown(full_response + "▌")
                         message_placeholder.markdown(full_response)
@@ -114,7 +115,7 @@ def start():
                             # Simulate stream of response with milliseconds delay
                             for chunk in get_result_output(chat_output, generator_record):
                                 full_response += chunk + " "
-                                time.sleep(0.05)
+                                time.sleep(animation_time)
                                 # Add a blinking cursor to simulate typing
                                 message_placeholder.markdown(full_response + "▌")
                             message_placeholder.markdown(full_response)

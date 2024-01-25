@@ -267,29 +267,21 @@ class FlowOperations(TelemetryMixin):
             print("=" * len(info_msg))
 
         if flow.language == FlowLanguage.CSharp:
-            with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
-                is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
-                if not is_chat_flow:
-                    raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
-                print_welcome_message(submitter.dataplane_flow.name)
-                submitter._chat_flow(
-                    inputs=inputs,
-                    chat_history_name=chat_history_input_name,
-                    environment_variables=environment_variables,
-                    show_step_output=kwargs.get("show_step_output", False),
-                )
+            submitter_cls = TestSubmitterViaProxy
         else:
-            with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
-                is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
-                if not is_chat_flow:
-                    raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
-                print_welcome_message(submitter.dataplane_flow.name)
-                submitter._chat_flow(
-                    inputs=inputs,
-                    chat_history_name=chat_history_input_name,
-                    environment_variables=environment_variables,
-                    show_step_output=kwargs.get("show_step_output", False),
-                )
+            submitter_cls = TestSubmitter
+
+        with submitter_cls(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
+            is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
+            if not is_chat_flow:
+                raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
+            print_welcome_message(submitter.dataplane_flow.name)
+            submitter._chat_flow(
+                inputs=inputs,
+                chat_history_name=chat_history_input_name,
+                environment_variables=environment_variables,
+                show_step_output=kwargs.get("show_step_output", False),
+            )
 
     @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
     def _chat_with_ui(self, script):
