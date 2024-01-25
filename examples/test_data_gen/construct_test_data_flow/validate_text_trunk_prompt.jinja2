@@ -1,7 +1,6 @@
 system:
-Given a context, evaluate the provided context and determine if the context has information worthy of framing a question.
-Give a verdict "yes" or "no" and give the reason for your verdict in a json format.
-Verdict "yes" or "no" based on the following criteria:
+Given a context, verdict if the provided context has information worthy of framing a question and give the reason. Output a json format with the reason and verdict.
+The verdict can be either "yes" or "no", following these guidelines:
 1. Verdict "yes" if:
     (1) context thoroughly delves into and explains concepts.
     (2) context is complete and does not require additional information.
@@ -12,6 +11,7 @@ Verdict "yes" or "no" based on the following criteria:
     (3) context that is shorter than five words.
 
 user:
+Output a json format with both the reason and verdict.
 Here are some examples:
 context:
 Albert Einstein (14 March 1879 - 18 April 1955) was a German-born theoretical physicist who is widely held to be one of the greatest and most influential scientists of all time.
@@ -26,7 +26,7 @@ Next step\n- Open the provided examples.
 answer:
 {
     "verdict": "no",
-    "reason": "The context lacks information about the previous steps and in next step it mentions a 'provided' example without referring it's name which makes it unclear without it"
+    "reason": "The context lacks information about the provided example and next steps of what."
 }
 
 context:

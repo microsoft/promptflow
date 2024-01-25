@@ -11,7 +11,7 @@ outputs:
     reference: ${validate_test_question.output}
   ground_truth:
     type: string
-    reference: ${generate_ground_truth.output}
+    reference: ${validate_ground_truth.output}
   debug_info:
     type: string
     reference: ${generate_debug_info.output}
@@ -111,3 +111,20 @@ nodes:
   inputs:
     question_type: ${validate_and_generate_test_question.output.question_type}
     text_trunk: ${inputs.text_chunk}
+- name: validate_ground_truth_prompt
+  type: prompt
+  source:
+    type: code
+    path: validate_ground_truth_prompt.jinja2
+  inputs:
+    ground_truth: ${generate_ground_truth.output}
+- name: validate_ground_truth
+  type: python
+  source:
+    type: code
+    path: validate_ground_truth.py
+  inputs:
+    connection:
+    model: gpt-4
+    ground_truth: ${generate_ground_truth.output}
+    validate_ground_truth_prompt: ${validate_ground_truth_prompt.output}
