@@ -5,16 +5,17 @@
 import contextlib
 import logging
 from pathlib import Path
-from types import GeneratorType, AsyncGeneratorType
+from types import AsyncGeneratorType, GeneratorType
 from typing import Any, Mapping, Union
+
 from colorama import Fore, init
 
 from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._submitter.utils import get_async_result_output
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import FlowContext, ProtectedFlow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
-from promptflow._sdk._submitter.utils import get_async_result_output
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.multimedia_utils import persist_multimedia_data
@@ -31,10 +32,10 @@ from ..entities._eager_flow import EagerFlow
 from .utils import (
     SubmitterHelper,
     print_chat_output,
+    print_csharp_stream_chat_output,
     resolve_generator,
     show_node_log_and_output,
     variant_overwrite_context,
-    print_csharp_stream_chat_output,
 )
 
 logger = get_cli_sdk_logger()
@@ -422,16 +423,27 @@ class TestSubmitterViaProxy(TestSubmitter):
                     line_result_iter = async_run_allowing_running_loop(
                         get_async_result_output, line_result, generator_record
                     )
-                    flow_outputs, node_run_infos, aggregation_inputs, run_info = self.get_async_line_result(line_result_iter)
-                    line_result = LineResult(output=flow_outputs, aggregation_inputs=aggregation_inputs,
-                                             run_info=run_info, node_run_infos=node_run_infos)
+                    flow_outputs, node_run_infos, aggregation_inputs, run_info = self.get_async_line_result(
+                        line_result_iter
+                    )
+                    line_result = LineResult(
+                        output=flow_outputs,
+                        aggregation_inputs=aggregation_inputs,
+                        run_info=run_info,
+                        node_run_infos=node_run_infos,
+                    )
 
                 line_result.output = persist_multimedia_data(
                     line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
                 )
                 if line_result.aggregation_inputs:
-                    self.resolve_aggregation_inputs(line_result.aggregation_inputs, inputs, flow_executor,
-                                                    line_result.node_run_infos, line_result.run_info)
+                    self.resolve_aggregation_inputs(
+                        line_result.aggregation_inputs,
+                        inputs,
+                        flow_executor,
+                        line_result.node_run_infos,
+                        line_result.run_info,
+                    )
                 if isinstance(line_result.output, dict):
                     # Remove line_number from output
                     line_result.output.pop(LINE_NUMBER_KEY, None)
@@ -441,8 +453,9 @@ class TestSubmitterViaProxy(TestSubmitter):
 
                 if allow_generator_output:
                     self._raise_error_when_test_failed(line_result, show_trace=True)
-                    show_node_log_and_output(line_result.node_run_infos, kwargs.pop("show_step_output", False),
-                                             generator_record)
+                    show_node_log_and_output(
+                        line_result.node_run_infos, kwargs.pop("show_step_output", False), generator_record
+                    )
                     print(f"{Fore.YELLOW}Bot: ", end="")
                     print_csharp_stream_chat_output(line_result_iter, kwargs.pop("chat_output_name", None))
 
@@ -463,8 +476,7 @@ class TestSubmitterViaProxy(TestSubmitter):
         run_info = None
         for chunk in line_result:
             node_run_infos = chunk.node_run_infos if node_run_infos is None else node_run_infos
-            aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else \
-                aggregation_inputs
+            aggregation_inputs = chunk.aggregation_inputs if aggregation_inputs is None else aggregation_inputs
             run_info = chunk.run_info if run_info is None else run_info
             for key, value in chunk.output.items():
                 if key not in flow_outputs:
@@ -507,8 +519,9 @@ class TestSubmitterViaProxy(TestSubmitter):
         try:
             # validate inputs
             flow_inputs, _ = self.resolve_data(inputs=inputs, dataplane_flow=self.dataplane_flow)
-            line_result = async_run_allowing_running_loop(flow_executor.exec_line_async, inputs, index=0,
-                                                          allow_generator_output=allow_generator_output)
+            line_result = async_run_allowing_running_loop(
+                flow_executor.exec_line_async, inputs, index=0, allow_generator_output=allow_generator_output
+            )
             if not isinstance(line_result, AsyncGeneratorType) and isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
