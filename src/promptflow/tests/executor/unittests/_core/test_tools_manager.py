@@ -10,6 +10,7 @@ from promptflow._core._errors import InputTypeMismatch, InvalidSource, PackageTo
 from promptflow._core.tools_manager import (
     BuiltinsManager,
     ToolLoader,
+    assign_tool_input_index_for_ux_order_if_needed,
     collect_package_tools,
     collect_package_tools_and_connections,
 )
@@ -159,13 +160,26 @@ class TestToolsManager:
         package_tools = collect_package_tools(legacy_node_source_tools)
         assert "promptflow.tools.azure_content_safety.analyze_text" in package_tools.keys()
 
-    def test_collect_package_tools_set_defaut_input_index(self, install_promptflow_tools_pkg):
-        tool = "promptflow.tools.aoai_gpt4v.AzureOpenAI.chat"
-        package_tools = collect_package_tools([tool])
-        inputs_order = ["connection", "deployment_name", "temperature", "top_p", "max_tokens", "stop",
-                        "presence_penalty", "frequency_penalty"]
-        for index, input_name in enumerate(inputs_order):
-            assert package_tools[tool]['inputs'][input_name]['ui_hints']['index'] == index
+    def test_assign_tool_input_index_for_ux_order_if_needed(self):
+        tool = {
+            'name': 'My Custom LLM Tool',
+            'type': 'custom_llm',
+            'inputs': {
+                'input2': {'type': 'string'},
+                'input1': {'type': 'string'},
+                'input3': {'type': 'string'}
+            }
+        }
+        assign_tool_input_index_for_ux_order_if_needed(tool)
+        assert tool == {
+            'name': 'My Custom LLM Tool',
+            'type': 'custom_llm',
+            'inputs': {
+                'input2': {'type': 'string', 'ui_hints': {'index': 0}},
+                'input1': {'type': 'string', 'ui_hints': {'index': 1}},
+                'input3': {'type': 'string', 'ui_hints': {'index': 2}}
+            }
+        }
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
