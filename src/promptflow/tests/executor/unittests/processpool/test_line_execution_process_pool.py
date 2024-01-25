@@ -1,11 +1,13 @@
 import multiprocessing
 import os
+import sys
 import uuid
 from multiprocessing import Queue
 from pathlib import Path
 from tempfile import mkdtemp
 from unittest.mock import patch
 
+import psutil
 import pytest
 from pytest_mock import MockFixture
 
@@ -20,6 +22,7 @@ from promptflow.executor._line_execution_process_pool import (
     get_available_max_worker_count,
     log_process_status,
 )
+from promptflow.executor._process_manager import create_spawned_fork_process_manager_wrapper
 from promptflow.executor._result import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -186,6 +189,10 @@ def not_set_environment_in_subprocess(dev_connections):
     line_execution_process_pool = create_line_execution_process_pool(dev_connections)
     use_fork = line_execution_process_pool._use_fork
     assert use_fork == (multiprocessing.get_start_method() == "fork")
+
+
+def custom_create_spawned_fork_process_manager_wrapper(*args, **kwargs):
+    create_spawned_fork_process_manager_wrapper("test", *args, **kwargs)
 
 
 @pytest.mark.unittest
@@ -407,6 +414,35 @@ class TestLineExecutionProcessPool:
         p.start()
         p.join()
         assert p.exitcode == 0
+
+    @pytest.mark.skipif(sys.platform == "win32" or sys.platform == "darwin", reason="Only test on linux")
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    @patch(
+        "promptflow.executor._process_manager.create_spawned_fork_process_manager_wrapper",
+        custom_create_spawned_fork_process_manager_wrapper,
+    )
+    def test_spawn_process_crashed_in_fork_mode(self, flow_folder, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        run_id = str(uuid.uuid4())
+        bulk_inputs = get_bulk_inputs()
+        nlines = len(bulk_inputs)
+        run_id = run_id or str(uuid.uuid4())
+        with LineExecutionProcessPool(
+            executor,
+            nlines,
+            run_id,
+            "",
+            False,
+            None,
+        ) as pool:
+            managed_process_id = pool._managed_process_id
+            pool.run(zip(range(nlines), bulk_inputs))
+            assert psutil.Process(managed_process_id).status() == "zombie"
 
 
 class TestGetAvailableMaxWorkerCount:

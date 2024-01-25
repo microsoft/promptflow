@@ -375,7 +375,6 @@ def create_spawned_fork_process_manager_wrapper(*args, **kwargs):
         create_spawned_fork_process_manager(*args, **kwargs)
     except Exception as e:
         bulk_logger.error(f"Error occurred when create spawned fork process manager: {e}")
-        raise e
 
 
 def create_spawned_fork_process_manager(

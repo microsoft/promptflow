@@ -466,9 +466,9 @@ class LineExecutionProcessPool:
         # If the spawned process is no longer running, exit the main proccess.
         if self._use_fork:
             ensure_spawn_process_healthy_start_time = time.time()
-            while time.time() - ensure_spawn_process_healthy_start_time < 5:
+            while time.time() - ensure_spawn_process_healthy_start_time < 6:
                 if psutil.Process(self._managed_process_id).status() == "zombie":
-                    break
+                    return
 
         with RepeatLogTimer(
             interval_seconds=self._log_interval,
