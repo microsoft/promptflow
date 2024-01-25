@@ -65,10 +65,6 @@ class ScriptExecutor(FlowExecutor):
         run_id: Optional[str] = None,
         **kwargs,
     ) -> LineResult:
-        # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
-        # so, we need remove line_number from inputs if it is not included in input of python function.
-        if LINE_NUMBER_KEY in inputs and LINE_NUMBER_KEY not in self._inputs:
-            inputs.pop(LINE_NUMBER_KEY)
         operation_context = OperationContext.get_instance()
         operation_context.run_mode = operation_context.get("run_mode", None) or RunMode.Test.name
         run_id = run_id or str(uuid.uuid4())
@@ -83,6 +79,9 @@ class ScriptExecutor(FlowExecutor):
             inputs=inputs,
             index=index,
         )
+        # Executor will add line_number to batch inputs if there is no line_number in the original inputs,
+        # which should be removed, so, we only preserve the inputs that are contained in self._inputs.
+        inputs = {k: inputs[k] for k in self._inputs if k in inputs}
         output = None
         traces = []
         try:
