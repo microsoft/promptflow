@@ -190,6 +190,15 @@ def add_default_routes(app: PromptflowServingApp):
         app.flow_monitor.setup_streaming_monitor_if_needed(response_creator, data, intermediate_output)
         return response_creator.create_response()
 
+    @app.route("/feedback", methods=["POST"])
+    def save_feedback():
+        """Save feedback"""
+        import pdb; pdb.set_trace()
+        raw_data = request.get_data()
+        logger.info(f"Feedback received: {raw_data}")
+        # app.flow_monitor.save_feedback(feedback)
+        return {"status": "Healthy", "feedback": raw_data.decode()}
+
     @app.route("/swagger.json", methods=["GET"])
     def swagger():
         """Get the swagger object."""
