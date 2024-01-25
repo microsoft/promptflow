@@ -60,9 +60,7 @@ class PythonExecutorProxy(AbstractExecutorProxy):
             run_tracker = self._flow_executor._run_tracker
         with run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
-            line_results = self._flow_executor._exec_batch_with_process_pool(
-                batch_inputs, run_id, output_dir, validate_inputs=True
-            )
+            line_results = self._flow_executor._exec_batch_with_process_pool(batch_inputs, run_id, output_dir)
             # For bulk run, currently we need to add line results to run_tracker
             self._flow_executor._add_line_results(line_results, run_tracker)
         return line_results

@@ -14,6 +14,7 @@ from promptflow._sdk._constants import DEFAULT_ENCODING, HOME_PROMPT_FLOW_DIR, P
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 from promptflow._sdk._utils import read_write_by_user
 from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow._version import VERSION
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 
@@ -132,3 +133,16 @@ class FormattedException:
             self.status_code = 404
         self.error = ErrorInfo(exception)
         self.time = datetime.now().isoformat()
+
+
+def build_pfs_user_agent():
+    extra_agent = f"local_pfs/{VERSION}"
+    if request.user_agent.string:
+        return f"{request.user_agent.string} {extra_agent}"
+    return extra_agent
+
+
+def get_client_from_request() -> "PFClient":
+    from promptflow._sdk._pf_client import PFClient
+
+    return PFClient(user_agent=build_pfs_user_agent())
