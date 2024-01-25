@@ -8,7 +8,7 @@ from sqlalchemy.orm import declarative_base
 from promptflow._sdk._constants import SPAN_TABLENAME
 
 from .retry import sqlite_retry
-from .session import otel_mgmt_db_session
+from .session import trace_mgmt_db_session
 
 Base = declarative_base()
 
@@ -33,6 +33,6 @@ class Span(Base):
 
     @sqlite_retry
     def persist(self) -> None:
-        with otel_mgmt_db_session() as session:
+        with trace_mgmt_db_session() as session:
             session.add(self)
             session.commit()
