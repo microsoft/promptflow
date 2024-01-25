@@ -33,6 +33,18 @@ class Span:
     def persist(self) -> None:
         self._to_orm_object().persist()
 
+    @staticmethod
+    def _from_orm_object(obj: ORMSpan) -> "Span":
+        return Span(
+            span_id=obj.span_id,
+            trace_id=obj.trace_id,
+            parent_id=obj.parent_id,
+            experiment_name=obj.experiment_name,
+            run_name=obj.run_name,
+            path=obj.path,
+            content=obj.content,
+        )
+
     def _to_orm_object(self) -> ORMSpan:
         return ORMSpan(
             span_id=self.span_id,
