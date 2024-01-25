@@ -21,8 +21,6 @@ from promptflow._sdk._constants import (
 from promptflow._sdk._utils import (
     call_from_extension,
     read_write_by_user,
-    encrypt_id,
-    get_mac_address,
     get_uuid_by_mac_id,
     get_uuid_by_ip,
 )
