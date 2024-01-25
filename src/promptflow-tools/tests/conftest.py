@@ -3,6 +3,7 @@ import os
 import pytest
 import sys
 
+from filelock import FileLock
 from pathlib import Path
 from pytest_mock import MockerFixture  # noqa: E402
 from tests.utils import verify_url_exists
@@ -153,3 +154,18 @@ def functions():
 @pytest.fixture
 def azure_content_safety_connection():
     return ConnectionManager().get("azure_content_safety_connection")
+
+
+@pytest.fixture(scope="session")
+def install_promptflow_tools_pkg():
+    # The tests could be running in parallel. Use a lock to prevent race conditions.
+    lock = FileLock("promptflow_tools_pkg_installation.lock")
+    with lock:
+        try:
+            import promptflow.tools  # noqa: F401
+
+        except ImportError:
+            import subprocess
+            import sys
+
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "promptflow-tools==1.0.3"])
