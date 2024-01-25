@@ -54,8 +54,7 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
     """FlowOperations that can manage flows.
 
     You should not instantiate this class directly. Instead, you should
-    create a :class:`~promptflow.azure.PFClient` instance that instantiates it for you and
-    attaches it as an attribute.
+    create a :class:`~promptflow.azure.PFClient` instance and this operation is available as the instance's attribute.
     """
 
     _FLOW_RESOURCE_PATTERN = re.compile(r"azureml:.*?/workspaces/(?P<experiment_id>.*?)/flows/(?P<flow_id>.*?)$")
@@ -94,7 +93,10 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
 
     @monitor_operation(activity_name="pfazure.flows.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, flow: Union[str, Path], display_name=None, type=None, **kwargs) -> Flow:
-        """Create a flow to remote from local source.
+        """Create a flow to remote from local source, or update the metadata of an existing flow.
+
+        .. note::
+            Functionality of updating flow metadata is yet to be supported.
 
         :param flow: The source of the flow to create.
         :type flow: Union[str, Path]
@@ -314,8 +316,8 @@ class FlowOperations(WorkspaceTelemetryMixin, _ScopeDependentOperations):
         :type list_view_type: ListViewType
         :param include_others: Whether to list flows owned by other users in the remote workspace, defaults to False
         :type include_others: bool
-        :return: The list of runs.
-        :rtype: List[~promptflow.azure. entities.Run]
+        :return: The list of flows.
+        :rtype: List[~promptflow.azure.entities.Flow]
         """
         if not isinstance(max_results, int) or max_results < 1:
             raise FlowOperationError(f"'max_results' must be a positive integer, got {max_results!r}")
