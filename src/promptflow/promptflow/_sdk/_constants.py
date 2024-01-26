@@ -73,15 +73,12 @@ PF_SERVICE_LOG_FILE = "pfs.log"
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
 LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock").resolve()
-TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
-TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
 SCHEMA_INFO_TABLENAME = "schema_info"
 RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
 CONNECTION_TABLE_NAME = "connection"
 EXPERIMENT_TABLE_NAME = "experiment"
 EXPERIMENT_CREATED_ON_INDEX_NAME = "idx_experiment_created_on"
-SPAN_TABLENAME = "span"
 BASE_PATH_CONTEXT_KEY = "base_path"
 SCHEMA_KEYS_CONTEXT_CONFIG_KEY = "schema_configs_keys"
 SCHEMA_KEYS_CONTEXT_SECRET_KEY = "schema_secrets_keys"
@@ -131,6 +128,12 @@ ICON_DARK = "icon_dark"
 ICON_LIGHT = "icon_light"
 ICON = "icon"
 TOOL_SCHEMA = Path(__file__).parent / "data" / "tool.schema.json"
+
+# trace
+TRACE_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite").resolve()
+TRACE_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "trace.sqlite.lock").resolve()
+SPAN_TABLENAME = "span"
+TRACE_SESSION_ID_ENV_VAR = "PF_TRACE_SESSION_ID"
 
 
 class CustomStrongTypeConnectionConfigs:
