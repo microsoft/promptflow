@@ -194,6 +194,7 @@ class LineExecutionProcessPool:
         start_time = time.time()
         while True:
             try:
+                self._processes_manager.ensure_healthy()
                 if time.time() - start_time > self._PROCESS_INFO_OBTAINED_TIMEOUT:
                     raise ProcessInfoObtainedTimeout(self._PROCESS_INFO_OBTAINED_TIMEOUT)
                 # Try to get process id and name from the process_info
@@ -205,6 +206,8 @@ class LineExecutionProcessPool:
                 # try again.
                 time.sleep(1)
                 continue
+            except PromptflowException:
+                raise
             except Exception as e:
                 raise Exception(f"Unexpected error occurred while get process info. Exception: {e}")
 
