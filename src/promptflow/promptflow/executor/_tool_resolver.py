@@ -5,17 +5,18 @@
 import copy
 import inspect
 import types
-import yaml
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from promptflow._core._errors import InvalidSource
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
+from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import AssistantDefinition, PromptTemplate
@@ -25,7 +26,6 @@ from promptflow.executor._errors import (
     EmptyLLMApiMapping,
     InvalidConnectionType,
     InvalidCustomLLMTool,
-    InvalidSource,
     NodeInputValidationError,
     ResolveToolError,
     ValueTypeUnresolved,
@@ -40,10 +40,12 @@ class ResolvedTool:
     init_args: dict
 
 
-class ToolResolver():
-
+class ToolResolver:
     def __init__(
-        self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None,
+        self,
+        working_dir: Path,
+        connections: Optional[dict] = None,
+        package_tool_keys: Optional[List[str]] = None,
     ):
         try:
             # Import openai and aoai for llm tool
@@ -56,10 +58,7 @@ class ToolResolver():
 
     @classmethod
     def start_resolver(
-        cls,
-        working_dir: Path,
-        connections: Optional[dict] = None,
-        package_tool_keys: Optional[List[str]] = None
+        cls, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
     ):
         resolver = cls(working_dir, connections, package_tool_keys)
         resolver._activate_in_context(force=True)
@@ -107,7 +106,7 @@ class ToolResolver():
             )
         file = self._working_dir / assistant_definition_path
         with open(file, "r", encoding="utf-8") as file:
-            assistant_definition = yaml.safe_load(file)
+            assistant_definition = load_yaml(file)
         return AssistantDefinition.deserialize(assistant_definition)
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
@@ -138,8 +137,9 @@ class ToolResolver():
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             elif value_type == ValueType.ASSISTANT_DEFINITION:
                 try:
@@ -149,8 +149,9 @@ class ToolResolver():
                     raise NodeInputValidationError(
                         message_format="Failed to load assistant definition from input '{key}': "
                         "{error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             elif isinstance(value_type, ValueType):
                 try:
@@ -159,8 +160,11 @@ class ToolResolver():
                     raise NodeInputValidationError(
                         message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
                         "type {value_type}.",
-                        key=k, node_name=node.name, value=v.value, value_type=value_type.value,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        node_name=node.name,
+                        value=v.value,
+                        value_type=value_type.value,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
                 try:
                     updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
@@ -168,8 +172,9 @@ class ToolResolver():
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.

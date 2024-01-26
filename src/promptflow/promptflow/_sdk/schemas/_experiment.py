@@ -1,11 +1,17 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from marshmallow import fields, post_load
+from marshmallow import fields, post_load, pre_load
 
 from promptflow._sdk._constants import ExperimentNodeType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
-from promptflow._sdk.schemas._fields import LocalPathField, NestedField, StringTransformedEnum, UnionField
+from promptflow._sdk.schemas._fields import (
+    LocalPathField,
+    NestedField,
+    PrimitiveValueField,
+    StringTransformedEnum,
+    UnionField,
+)
 from promptflow._sdk.schemas._run import RunSchema
 
 
@@ -30,6 +36,11 @@ class FlowNodeSchema(RunSchema):
     inputs = fields.Dict(keys=fields.Str)
     path = UnionField([LocalPathField(required=True), fields.Str(required=True)])
 
+    @pre_load
+    def warning_unknown_fields(self, data, **kwargs):
+        # Override to avoid warning here
+        return data
+
 
 class ExperimentDataSchema(metaclass=PatchedSchemaMeta):
     name = fields.Str(required=True)
@@ -39,7 +50,7 @@ class ExperimentDataSchema(metaclass=PatchedSchemaMeta):
 class ExperimentInputSchema(metaclass=PatchedSchemaMeta):
     name = fields.Str(required=True)
     type = fields.Str(required=True)
-    default = fields.Str(required=True)
+    default = PrimitiveValueField()
 
 
 class ExperimentTemplateSchema(YamlFileSchema):
@@ -69,6 +80,30 @@ class ExperimentTemplateSchema(YamlFileSchema):
             else:
                 raise ValueError(f"Unknown node type {node_type} for node {node}.")
         data["nodes"] = resolved_nodes
+
+        return data
+
+    @post_load
+    def resolve_data_and_inputs(self, data, **kwargs):
+        from promptflow._sdk.entities._experiment import ExperimentData, ExperimentInput
+
+        def resolve_resource(key, cls):
+            items = data.get(key, [])
+            resolved_result = []
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                resolved_result.append(
+                    cls._load_from_dict(
+                        data=item,
+                        context=self.context,
+                        additional_message=f"Failed to load {cls.__name__}",
+                    )
+                )
+            return resolved_result
+
+        data["data"] = resolve_resource("data", ExperimentData)
+        data["inputs"] = resolve_resource("inputs", ExperimentInput)
 
         return data
 

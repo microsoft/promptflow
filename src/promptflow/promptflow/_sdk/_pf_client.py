@@ -9,9 +9,11 @@ from typing import Any, Dict, List, Union
 from .._utils.logger_utils import get_cli_sdk_logger
 from ._configuration import Configuration
 from ._constants import MAX_SHOW_DETAILS_RESULTS
+from ._load_functions import load_flow
 from ._user_agent import USER_AGENT
-from ._utils import get_connection_operation, setup_user_agent_to_operation_context
+from ._utils import ClientUserAgentUtil, get_connection_operation, setup_user_agent_to_operation_context
 from .entities import Run
+from .entities._eager_flow import EagerFlow
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._experiment_operations import ExperimentOperations
@@ -32,12 +34,18 @@ class PFClient:
     def __init__(self, **kwargs):
         logger.debug("PFClient init with kwargs: %s", kwargs)
         self._runs = RunOperations()
-        self._connection_provider = None
+        self._connection_provider = kwargs.pop("connection_provider", None)
         self._config = kwargs.get("config", None) or {}
+        # The credential is used as an option to override
+        # DefaultAzureCredential when using workspace connection provider
+        self._credential = kwargs.get("credential", None)
         # Lazy init to avoid azure credential requires too early
         self._connections = None
         self._flows = FlowOperations(client=self)
         self._tools = ToolOperations()
+        # add user agent from kwargs if any
+        if isinstance(kwargs.get("user_agent"), str):
+            ClientUserAgentUtil.append_user_agent(kwargs["user_agent"])
         self._experiments = ExperimentOperations(self)
         setup_user_agent_to_operation_context(USER_AGENT)
 
@@ -111,7 +119,14 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
-
+        # TODO(2901096): Support pf run with python file, maybe create a temp flow.dag.yaml in this case
+        # load flow object for validation and early failure
+        flow_obj = load_flow(source=flow)
+        # validate param conflicts
+        if isinstance(flow_obj, EagerFlow):
+            if variant or connections:
+                logger.warning("variant and connections are not supported for eager flow, will be ignored")
+                variant, connections = None, None
         run = Run(
             name=name,
             display_name=display_name,
@@ -200,7 +215,7 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             self._ensure_connection_provider()
-            self._connections = get_connection_operation(self._connection_provider)
+            self._connections = get_connection_operation(self._connection_provider, self._credential)
         return self._connections
 
     @property

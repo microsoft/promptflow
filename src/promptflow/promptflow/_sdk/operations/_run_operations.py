@@ -9,8 +9,6 @@ import time
 from dataclasses import asdict
 from typing import Any, Dict, List, Optional, Union
 
-import yaml
-
 from promptflow._constants import LANGUAGE_KEY, AvailableIDE, FlowLanguage
 from promptflow._sdk._constants import (
     MAX_RUN_LIST_RESULTS,
@@ -28,6 +26,7 @@ from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization, VisualizationConfig
 from promptflow.exceptions import UserErrorException
 
@@ -74,6 +73,9 @@ class RunOperations(TelemetryMixin):
         :return: run object retrieved from the database.
         :rtype: ~promptflow.entities.Run
         """
+        return self._get(name)
+
+    def _get(self, name: str) -> Run:
         name = Run._validate_and_return_run_name(name)
         try:
             return Run._from_orm_object(ORMRun.get(name))
@@ -228,6 +230,22 @@ class RunOperations(TelemetryMixin):
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
+    @monitor_operation(activity_name="pf.runs.delete", activity_type=ActivityType.PUBLICAPI)
+    def delete(
+        self,
+        name: str,
+    ) -> None:
+        """Delete run permanently.
+        Caution: This operation will delete the run permanently from your local disk.
+        Both run entity and output data will be deleted.
+
+        :param name: run name to delete
+        :return: None
+        """
+        valid_run = self.get(name)
+        LocalStorageOperations(valid_run).delete()
+        ORMRun.delete(name)
+
     @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
@@ -323,11 +341,12 @@ class RunOperations(TelemetryMixin):
                 metrics=self.get_metrics(name=run.name),
                 dag=local_storage.load_dag_as_string(),
                 flow_tools_json=local_storage.load_flow_tools_json(),
+                mode="eager" if local_storage.eager_mode else "",
             )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
             # TODO: add language to run metadata
-            flow_dag = yaml.safe_load(metadata.dag)
+            flow_dag = load_yaml_string(metadata.dag) or {}
             configs.append(
                 VisualizationConfig(
                     [AvailableIDE.VS_CODE]

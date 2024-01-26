@@ -1,0 +1,13 @@
+my_tool_package.tools.my_tool_1.my_tool:
+  function: my_tool
+  inputs:
+    connection:
+      type:
+      - CustomConnection
+    input_text:
+      type:
+      - string
+  module: my_tool_package.tools.my_tool_1
+  name: My First Tool
+  description: This is my first tool
+  type: python

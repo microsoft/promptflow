@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import List
 from unittest.mock import mock_open
 
-
 import pytest
 from jinja2 import TemplateSyntaxError
 
+from promptflow._core._errors import InvalidSource
 from promptflow._core.tools_manager import ToolLoader
 from promptflow._internal import tool
 from promptflow._sdk.entities import CustomConnection, CustomStrongTypeConnection
@@ -19,7 +19,6 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
     InvalidConnectionType,
-    InvalidSource,
     NodeInputValidationError,
     ResolveToolError,
     ValueTypeUnresolved,
@@ -242,7 +241,7 @@ class TestToolResolver:
         tool = Tool(
             name="mock",
             type="python",
-            inputs={"assistant_definition": InputDefinition(type=[ValueType.ASSISTANT_DEFINITION])}
+            inputs={"assistant_definition": InputDefinition(type=[ValueType.ASSISTANT_DEFINITION])},
         )
         node = Node(
             name="mock",
@@ -405,18 +404,13 @@ class TestToolResolver:
 
     def test_resolve_script_node_with_assistant_definition(self, mocker):
         def mock_python_func(input: AssistantDefinition):
-            if (
-                input.model == "model"
-                and input.instructions == "instructions"
-                and input.tools == []
-            ):
+            if input.model == "model" and input.instructions == "instructions" and input.tools == []:
                 return True
             return False
 
         tool_loader = ToolLoader(working_dir=None)
         tool = Tool(
-            name="mock", type=ToolType.PYTHON,
-            inputs={"input": InputDefinition(type=[ValueType.ASSISTANT_DEFINITION])}
+            name="mock", type=ToolType.PYTHON, inputs={"input": InputDefinition(type=[ValueType.ASSISTANT_DEFINITION])}
         )
         mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(None, tool))
 
@@ -428,11 +422,14 @@ class TestToolResolver:
         tool_resolver = ToolResolver(working_dir=Path(__file__).parent, connections={})
         tool_resolver._tool_loader = tool_loader
         mocker.patch("builtins.open", mock_open())
-        mocker.patch("yaml.safe_load", return_value={"model": "model", "instructions": "instructions", "tools": []})
+        mocker.patch(
+            "ruamel.yaml.YAML.load", return_value={"model": "model", "instructions": "instructions", "tools": []}
+        )
 
         node = Node(
-            name="mock", tool=None,
-            inputs={"input": InputAssignment(value="test_tool_resolver.py", value_type=InputValueType.LITERAL)}
+            name="mock",
+            tool=None,
+            inputs={"input": InputAssignment(value="test_tool_resolver.py", value_type=InputValueType.LITERAL)},
         )
         resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
         assert len(resolved_tool.node.inputs) == 1

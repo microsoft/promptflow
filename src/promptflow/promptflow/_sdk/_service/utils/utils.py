@@ -8,12 +8,13 @@ from datetime import datetime
 from functools import wraps
 
 import psutil
-import yaml
 from flask import abort, request
 
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
+from promptflow._sdk._constants import DEFAULT_ENCODING, HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 from promptflow._sdk._utils import read_write_by_user
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
+from promptflow._version import VERSION
 from promptflow.exceptions import PromptflowException, UserErrorException
 
 
@@ -31,16 +32,16 @@ def local_user_only(func):
 
 def get_port_from_config(create_if_not_exists=False):
     (HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE).touch(mode=read_write_by_user(), exist_ok=True)
-    with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r") as f:
-        service_config = yaml.safe_load(f) or {}
+    with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "r", encoding=DEFAULT_ENCODING) as f:
+        service_config = load_yaml(f) or {}
         port = service_config.get("service", {}).get("port", None)
     if not port and create_if_not_exists:
-        with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w") as f:
+        with open(HOME_PROMPT_FLOW_DIR / PF_SERVICE_PORT_FILE, "w", encoding=DEFAULT_ENCODING) as f:
             # Set random port to ~/.promptflow/pf.yaml
             port = get_random_port()
             service_config["service"] = service_config.get("service", {})
             service_config["service"]["port"] = port
-            yaml.dump(service_config, f)
+            dump_yaml(service_config, f)
     return port
 
 
@@ -132,3 +133,16 @@ class FormattedException:
             self.status_code = 404
         self.error = ErrorInfo(exception)
         self.time = datetime.now().isoformat()
+
+
+def build_pfs_user_agent():
+    extra_agent = f"local_pfs/{VERSION}"
+    if request.user_agent.string:
+        return f"{request.user_agent.string} {extra_agent}"
+    return extra_agent
+
+
+def get_client_from_request() -> "PFClient":
+    from promptflow._sdk._pf_client import PFClient
+
+    return PFClient(user_agent=build_pfs_user_agent())

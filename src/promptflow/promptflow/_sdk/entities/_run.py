@@ -152,7 +152,6 @@ class Run(YAMLTranslatableMixin):
         # init here to make sure those fields initialized in all branches.
         self.flow = flow
         self._use_remote_flow = is_remote_uri(flow)
-        # What's this?
         self._experiment_name = None
         self._lineage_id = None
         if self._use_remote_flow:
@@ -160,6 +159,7 @@ class Run(YAMLTranslatableMixin):
             self._lineage_id = self._flow_name
         # default run name: flow directory name + timestamp
         self.name = name or self._generate_run_name()
+        experiment_name = kwargs.get("experiment_name", None)
         if self._run_source == RunInfoSources.LOCAL and not self._use_remote_flow:
             self.flow = Path(flow).resolve().absolute()
             flow_dir = self._get_flow_dir()
@@ -172,7 +172,7 @@ class Run(YAMLTranslatableMixin):
             self._flow_name = flow_dir.name
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
-            self._experiment_name = kwargs.get("experiment_name", None)
+            self._experiment_name = experiment_name
         elif self._run_source == RunInfoSources.RUN_HISTORY:
             self._error = kwargs.get("error", None)
             self._output = kwargs.get("output", None)
@@ -250,6 +250,7 @@ class Run(YAMLTranslatableMixin):
     @classmethod
     def _from_index_service_entity(cls, run_entity: dict) -> "Run":
         """Convert run entity from index service to run object."""
+        # TODO(2887134): support cloud eager Run CRUD
         start_time = run_entity["properties"].get("startTime", None)
         end_time = run_entity["properties"].get("endTime", None)
         duration = run_entity["properties"].get("duration", None)
@@ -276,6 +277,7 @@ class Run(YAMLTranslatableMixin):
     @classmethod
     def _from_run_history_entity(cls, run_entity: dict) -> "Run":
         """Convert run entity from run history service to run object."""
+        # TODO(2887134): support cloud eager Run CRUD
         flow_name = run_entity["properties"].get("azureml.promptflow.flow_name", None)
         start_time = run_entity.get("startTimeUtc", None)
         end_time = run_entity.get("endTimeUtc", None)
@@ -493,6 +495,7 @@ class Run(YAMLTranslatableMixin):
         from promptflow.azure._restclient.flow.models import (
             BatchDataInput,
             RunDisplayNameGenerationType,
+            SessionSetupModeEnum,
             SubmitBulkRunRequest,
         )
 
@@ -528,6 +531,18 @@ class Run(YAMLTranslatableMixin):
                         )
                     inputs_mapping[k] = val
 
+        # parse resources
+        if self._resources is not None:
+            if not isinstance(self._resources, dict):
+                raise TypeError(f"resources should be a dict, got {type(self._resources)} for {self._resources}")
+            vm_size = self._resources.get("instance_type", None)
+            max_idle_time_minutes = self._resources.get("idle_time_before_shutdown_minutes", None)
+            # change to seconds
+            max_idle_time_seconds = max_idle_time_minutes * 60 if max_idle_time_minutes else None
+        else:
+            vm_size = None
+            max_idle_time_seconds = None
+
         # use functools.partial to avoid too many arguments that have the same values
         common_submit_bulk_run_request = functools.partial(
             SubmitBulkRunRequest,
@@ -547,6 +562,9 @@ class Run(YAMLTranslatableMixin):
             connections=self.connections,
             flow_lineage_id=self._lineage_id,
             run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
+            vm_size=vm_size,
+            max_idle_time_seconds=max_idle_time_seconds,
+            session_setup_mode=SessionSetupModeEnum.SYSTEM_WAIT,
         )
 
         if str(self.flow).startswith(REMOTE_URI_PREFIX):

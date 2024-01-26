@@ -10,6 +10,8 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+from marshmallow import Schema
+
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
@@ -18,20 +20,69 @@ from promptflow._sdk._constants import (
     ExperimentNodeType,
     ExperimentStatus,
 )
+from promptflow._sdk._errors import ExperimentValidationError, ExperimentValueError
 from promptflow._sdk._orm.experiment import Experiment as ORMExperiment
 from promptflow._sdk._submitter import remove_additional_includes
 from promptflow._sdk._utils import _merge_local_code_and_additional_includes, _sanitize_python_variable_name
 from promptflow._sdk.entities import Run
+from promptflow._sdk.entities._validation import MutableValidationResult, SchemaValidatableMixin
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._experiment import (
+    ExperimentDataSchema,
+    ExperimentInputSchema,
     ExperimentSchema,
     ExperimentTemplateSchema,
     FlowNodeSchema,
     ScriptNodeSchema,
 )
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.contracts.tool import ValueType
 
 logger = get_cli_sdk_logger()
+
+
+class ExperimentData(YAMLTranslatableMixin):
+    def __init__(self, name, path, **kwargs):
+        self.name = name
+        self.path = path
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return ExperimentDataSchema
+
+
+class ExperimentInput(YAMLTranslatableMixin):
+    def __init__(self, name, default, type, **kwargs):
+        self.name = name
+        self.type, self.default = self._resolve_type_and_default(type, default)
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return ExperimentInputSchema
+
+    def _resolve_type_and_default(self, typ, default):
+        supported_types = [
+            ValueType.INT,
+            ValueType.STRING,
+            ValueType.DOUBLE,
+            ValueType.LIST,
+            ValueType.OBJECT,
+            ValueType.BOOL,
+        ]
+        value_type: ValueType = next((i for i in supported_types if typ.lower() == i.value.lower()), None)
+        if value_type is None:
+            raise ExperimentValueError(f"Unknown experiment input type {typ!r}, supported are {supported_types}.")
+        return value_type.value, value_type.parse(default) if default is not None else None
+
+    @classmethod
+    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
+        # Override this to avoid 'type' got pop out
+        schema_cls = cls._get_schema_cls()
+        try:
+            loaded_data = schema_cls(context=context).load(data, **kwargs)
+        except Exception as e:
+            raise Exception(f"Load experiment input failed with {str(e)}. f{(additional_message or '')}.")
+        return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
 
 class FlowNode(YAMLTranslatableMixin):
@@ -109,7 +160,7 @@ class ScriptNode(YAMLTranslatableMixin):
         pass
 
 
-class ExperimentTemplate(YAMLTranslatableMixin):
+class ExperimentTemplate(YAMLTranslatableMixin, SchemaValidatableMixin):
     def __init__(self, nodes, name=None, description=None, data=None, inputs=None, **kwargs):
         self._base_path = kwargs.get(BASE_PATH_CONTEXT_KEY, Path("."))
         self.name = name or self._generate_name()
@@ -171,6 +222,30 @@ class ExperimentTemplate(YAMLTranslatableMixin):
             raise Exception(f"Load experiment template failed with {str(e)}. f{(additional_message or '')}.")
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
+    @classmethod
+    def _create_schema_for_validation(cls, context) -> Schema:
+        return cls._get_schema_cls()(context=context)
+
+    def _default_context(self) -> dict:
+        return {BASE_PATH_CONTEXT_KEY: self._base_path}
+
+    @classmethod
+    def _create_validation_error(cls, message: str, no_personal_data_message: str) -> Exception:
+        return ExperimentValidationError(
+            message=message,
+            no_personal_data_message=no_personal_data_message,
+        )
+
+    def _customized_validate(self) -> MutableValidationResult:
+        """Validate the resource with customized logic.
+
+        Override this method to add customized validation logic.
+
+        :return: The customized validation result
+        :rtype: MutableValidationResult
+        """
+        pass
+
 
 class Experiment(ExperimentTemplate):
     def __init__(
@@ -178,6 +253,7 @@ class Experiment(ExperimentTemplate):
         nodes,
         name=None,
         data=None,
+        inputs=None,
         status=ExperimentStatus.NOT_STARTED,
         node_runs=None,
         properties=None,
@@ -192,7 +268,7 @@ class Experiment(ExperimentTemplate):
         self.last_end_time = kwargs.get("last_end_time", None)
         self.is_archived = kwargs.get("is_archived", False)
         self._output_dir = Path.home() / PROMPT_FLOW_DIR_NAME / PROMPT_FLOW_EXP_DIR_NAME / self.name
-        super().__init__(nodes, name=self.name, data=data, **kwargs)
+        super().__init__(nodes, name=self.name, data=data, inputs=inputs, **kwargs)
 
     @classmethod
     def _get_schema_cls(cls):
@@ -240,8 +316,8 @@ class Experiment(ExperimentTemplate):
             last_start_time=self.last_start_time,
             last_end_time=self.last_end_time,
             properties=json.dumps(self.properties),
-            data=json.dumps(self.data),
-            inputs=json.dumps(self.inputs),
+            data=json.dumps([item._to_dict() for item in self.data]),
+            inputs=json.dumps([input._to_dict() for input in self.inputs]),
             nodes=json.dumps([node._to_dict() for node in self.nodes]),
             node_runs=json.dumps(self.node_runs),
         )
@@ -252,21 +328,28 @@ class Experiment(ExperimentTemplate):
     def _from_orm_object(cls, obj: ORMExperiment) -> "Experiment":
         """Create a experiment object from ORM object."""
         nodes = []
+        context = {BASE_PATH_CONTEXT_KEY: "./"}
         for node_dict in json.loads(obj.nodes):
             if node_dict["type"] == ExperimentNodeType.FLOW:
                 nodes.append(
-                    FlowNode._load_from_dict(
-                        node_dict, context={BASE_PATH_CONTEXT_KEY: "./"}, additional_message="Failed to load node."
-                    )
+                    FlowNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
                 )
             elif node_dict["type"] == ExperimentNodeType.CODE:
                 nodes.append(
-                    ScriptNode._load_from_dict(
-                        node_dict, context={BASE_PATH_CONTEXT_KEY: "./"}, additional_message="Failed to load node."
-                    )
+                    ScriptNode._load_from_dict(node_dict, context=context, additional_message="Failed to load node.")
                 )
             else:
                 raise Exception(f"Unknown node type {node_dict['type']}")
+        data = [
+            ExperimentData._load_from_dict(item, context=context, additional_message="Failed to load experiment data")
+            for item in json.loads(obj.data)
+        ]
+        inputs = [
+            ExperimentInput._load_from_dict(
+                item, context=context, additional_message="Failed to load experiment inputs"
+            )
+            for item in json.loads(obj.inputs)
+        ]
 
         return cls(
             name=obj.name,
@@ -277,21 +360,22 @@ class Experiment(ExperimentTemplate):
             last_end_time=obj.last_end_time,
             is_archived=obj.archived,
             properties=json.loads(obj.properties),
-            data=json.loads(obj.data),
-            inputs=json.loads(obj.inputs),
+            data=data,
+            inputs=inputs,
             nodes=nodes,
             node_runs=json.loads(obj.node_runs),
         )
 
     @classmethod
-    def from_template(cls, template: ExperimentTemplate):
+    def from_template(cls, template: ExperimentTemplate, name=None):
         """Create a experiment object from template."""
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        exp_name = f"{template.name}_{timestamp}"
+        exp_name = name or f"{template.name}_{timestamp}"
         experiment = cls(
             name=exp_name,
             description=template.description,
             data=copy.deepcopy(template.data),
+            inputs=copy.deepcopy(template.inputs),
             nodes=copy.deepcopy(template.nodes),
             base_path=template._base_path,
         )

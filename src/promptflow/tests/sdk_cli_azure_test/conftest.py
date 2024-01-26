@@ -7,12 +7,13 @@ import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 from unittest.mock import patch
 
 import jwt
 import pytest
 from azure.core.exceptions import ResourceNotFoundError
+from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
@@ -26,8 +27,10 @@ from .recording_utilities import (
     PFAzureIntegrationTestRecording,
     SanitizedValues,
     VariableRecorder,
+    get_created_flow_name_from_flow_path,
     get_pf_client_for_replay,
     is_live,
+    is_record,
     is_replay,
 )
 
@@ -222,10 +225,15 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
             **connections,
         },
     )
-    app = create_serving_app(
-        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
-        extension_type="azureml",
-    )
+    # Set credential to None for azureml extension type
+    # As we mock app in github workflow, which do not have managed identity credential
+    func = "promptflow._sdk._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
+    with mock.patch(func) as mock_cred_func:
+        mock_cred_func.return_value = None
+        app = create_serving_app(
+            environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+            extension_type="azureml",
+        )
     app.config.update(
         {
             "TESTING": True,
@@ -340,19 +348,21 @@ def mock_get_azure_pf_client(mocker: MockerFixture, remote_client) -> None:
     yield
 
 
-@pytest.fixture
-def mock_get_user_identity_info(mocker: MockerFixture) -> None:
+@pytest.fixture(scope=package_scope_in_live_mode())
+def mock_get_user_identity_info(user_object_id: str, tenant_id: str) -> None:
     """Mock get user object id and tenant id, currently used in flow list operation."""
     if not is_live():
-        mocker.patch(
+        with patch(
             "promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._get_user_identity_info",
-            return_value=(SanitizedValues.USER_OBJECT_ID, SanitizedValues.TENANT_ID),
-        )
-    yield
+            return_value=(user_object_id, tenant_id),
+        ):
+            yield
+    else:
+        yield
 
 
 @pytest.fixture(scope=package_scope_in_live_mode())
-def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
+def created_flow(pf: PFClient, randstr: Callable[[str], str], variable_recorder: VariableRecorder) -> Flow:
     """Create a flow for test."""
     flow_display_name = randstr("flow_display_name")
     flow_source = FLOWS_DIR + "/simple_hello_world/"
@@ -370,6 +380,14 @@ def created_flow(pf: PFClient, randstr: Callable[[str], str]) -> Flow:
     assert result.tags == tags
     assert result.path.endswith("flow.dag.yaml")
 
+    # flow in Azure will have different file share name with timestamp
+    # and this is a client-side behavior, so we need to sanitize this in recording
+    # so extract this during record test
+    if is_record():
+        flow_name_const = "flow_name"
+        flow_name = get_created_flow_name_from_flow_path(result.path)
+        variable_recorder.get_or_record_variable(flow_name_const, flow_name)
+
     yield result
 
 
@@ -384,7 +402,6 @@ def created_batch_run_without_llm(pf: PFClient, randstr: Callable[[str], str], r
         flow=f"{FLOWS_DIR}/hello-world",
         data=f"{DATAS_DIR}/webClassification3.jsonl",
         column_mapping={"name": "${data.url}"},
-        runtime=runtime,
         name=name,
         display_name="sdk-cli-test-fixture-batch-run-without-llm",
     )
@@ -490,26 +507,12 @@ def mock_isinstance_for_mock_datastore() -> None:
             yield
 
 
-@pytest.fixture(autouse=is_replay())
-def mock_upload_and_generate_remote_uri() -> None:
-    from azure.ai.ml._scope_dependent_operations import OperationScope
-    from azure.ai.ml.entities._datastore._constants import WORKSPACE_BLOB_STORE
-    from azure.ai.ml.exceptions import ErrorTarget
-    from azure.ai.ml.operations._datastore_operations import DatastoreOperations
+@pytest.fixture(autouse=True)
+def mock_check_latest_version() -> None:
+    """Mock check latest version.
 
-    def _upload_and_generate_remote_uri(
-        operation_scope: OperationScope,
-        datastore_operation: DatastoreOperations,
-        path: Union[str, Path, os.PathLike],
-        artifact_type: str = ErrorTarget.ARTIFACT,
-        datastore_name: str = WORKSPACE_BLOB_STORE,
-        show_progress: bool = True,
-    ) -> str:
-        path = Path(path).resolve()
-        return f"azureml://datastores/{datastore_name}/paths/LocalUpload/00000000000000000000000000000000/{path.name}"
-
-    with patch(
-        "promptflow.azure.operations._run_operations._upload_and_generate_remote_uri",
-        new=_upload_and_generate_remote_uri,
-    ):
+    As CI uses docker, it will always trigger this check behavior, and we don't have recording for this;
+    and this will hit many unknown issue with vcrpy.
+    """
+    with patch("promptflow._utils.version_hint_utils.check_latest_version", new=lambda: None):
         yield

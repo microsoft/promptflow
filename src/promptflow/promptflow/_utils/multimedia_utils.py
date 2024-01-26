@@ -224,8 +224,9 @@ def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: di
             error_type_and_message = f"({ex.__class__.__name__}) {ex}"
             raise LoadMultimediaDataError(
                 message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                key=key, error_type_and_message=error_type_and_message,
-                target=ex.target
+                key=key,
+                error_type_and_message=error_type_and_message,
+                target=ErrorTarget.EXECUTOR,
             ) from ex
     return updated_inputs
 

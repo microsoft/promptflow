@@ -1,0 +1,10 @@
+my_tool_package.tools.tool_with_custom_llm_type.my_tool:
+  name: My Custom LLM Tool
+  description: This is a tool to demonstrate how to customize an LLM tool with a PromptTemplate.
+  type: custom_llm
+  module: my_tool_package.tools.tool_with_custom_llm_type
+  function: my_tool
+  inputs:
+    connection:
+      type:
+        - CustomConnection
