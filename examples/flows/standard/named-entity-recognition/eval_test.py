@@ -54,7 +54,6 @@ class TestEvalAzure(BaseTest):
                 "entity_type": "${data.entity_type}"
             },
             connections={"NER_LLM": {"connection": "open_ai_connection"}},
-            runtime="chat_with_pdf_runtime",
             display_name="ner_bulk_run",
             tags={"unittest": "true"},
             stream=True)
@@ -69,7 +68,6 @@ class TestEvalAzure(BaseTest):
                 "entities": "${run.outputs.entities}",
                 "ground_truth": "${data.results}"
             },
-            runtime="chat_with_pdf_runtime",
             display_name="eval_match_rate",
             tags={"unittest": "true"},
             stream=True)

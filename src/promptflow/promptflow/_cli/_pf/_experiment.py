@@ -4,7 +4,6 @@
 import argparse
 import json
 
-from promptflow import PFClient
 from promptflow._cli._params import (
     add_param_all_results,
     add_param_archived_only,
@@ -15,6 +14,7 @@ from promptflow._cli._params import (
 from promptflow._cli._utils import activate_action, exception_handler
 from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk._load_functions import load_common
+from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities._experiment import Experiment, ExperimentTemplate
 from promptflow._utils.logger_utils import get_cli_sdk_logger
 
