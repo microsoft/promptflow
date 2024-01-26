@@ -4,11 +4,11 @@ import pytest
 import sys
 
 from filelock import FileLock
+from importlib import metadata
 from pathlib import Path
 from pytest_mock import MockerFixture  # noqa: E402
 from tests.utils import verify_url_exists
 
-from importlib import metadata
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
@@ -163,8 +163,6 @@ def install_promptflow_tools_pkg():
     lock = FileLock("promptflow_tools_pkg_installation.lock")
     with lock:
         try:
-            cwd = os.getcwd()
-            print(f"cwd in install_promptflow_tools_pkg: {cwd}")
             metadata.version("promptflow-tools")
 
         except metadata.PackageNotFoundError:
