@@ -166,9 +166,26 @@ class LineExecutionTimeoutError(UserErrorException):
     """Exception raised when single line execution timeout"""
 
     def __init__(self, line_number, timeout):
-        self.timeout_sec = timeout
         super().__init__(
-            message=f"Line {line_number} execution timeout for exceeding {timeout} seconds", target=ErrorTarget.EXECUTOR
+            message_format="Line {line_number} execution timeout for exceeding {timeout} seconds",
+            line_number=line_number,
+            timeout=timeout,
+            target=ErrorTarget.EXECUTOR,
+        )
+
+
+class BatchExecutionTimeoutError(UserErrorException):
+    """Exception raised when batch timeout is exceeded"""
+
+    def __init__(self, line_number, timeout):
+        super().__init__(
+            message_format=(
+                "Line {line_number} execution terminated due to the "
+                "total batch run exceeding the batch timeout ({timeout}s)."
+            ),
+            line_number=line_number,
+            timeout=timeout,
+            target=ErrorTarget.BATCH,
         )
 
 
@@ -258,4 +275,8 @@ class ResolveToolError(PromptflowException):
 
 
 class UnsupportedAssistantToolType(ValidationException):
+    pass
+
+
+class InvalidFlowFileError(UserErrorException):
     pass
