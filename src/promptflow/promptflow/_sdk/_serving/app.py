@@ -203,12 +203,23 @@ def add_default_routes(app: PromptflowServingApp):
         logger.info(f"Feedback received: {data}")
         if app.flow_monitor.metrics_recorder:
             if data["rating"] == "thumbsUp":
-                app.flow_monitor.metrics_recorder.record_thumbs_down_count()
-            elif data["rating"] == "thumbsDown":
                 app.flow_monitor.metrics_recorder.record_thumbs_up_count()
+                logger.info("Thumbs up count recorded.")
+            elif data["rating"] == "thumbsDown":
+                app.flow_monitor.metrics_recorder.record_thumbs_down_count()
+                logger.info("Thumbs down count recorded.")
         else:
             logger.warn("Metrics recorder is not initialized, thumbs down count will not be recorded.")
-        # app.flow_monitor.save_feedback(feedback)
+        
+        if app.flow_monitor.data_collector:
+            app.flow_monitor.data_collector.collect_feedback_data(
+                data["rating"], data["message"], data["conversation"],
+                g.get("req_id", None)
+            )
+            logger.info("Feedback data collected.")
+        else:
+            logger.warn("Data collector is not initialized, feedback data will not be collected.")
+
         return {"status": "Healthy", "feedback": data}
 
     @app.route("/swagger.json", methods=["GET"])
