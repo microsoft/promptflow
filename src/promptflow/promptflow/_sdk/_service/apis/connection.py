@@ -10,7 +10,7 @@ from flask import jsonify, request
 import promptflow._sdk.schemas._connection as connection
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only
+from promptflow._sdk._service.utils.utils import build_pfs_user_agent, local_user_only, make_response_no_content
 from promptflow._sdk.entities._connection import _Connection
 
 api = Namespace("Connections", description="Connections Management")
@@ -146,12 +146,14 @@ class Connection(Resource):
 
     @api.doc(description="Delete connection")
     @local_user_only
+    @api.response(code=204, description="Delete connection", model=dict_field)
     @api.response(
         code=403, description="This service is available for local user only, please specify X-Remote-User in headers."
     )
     def delete(self, name: str):
         connection_op = _get_connection_operation()
         connection_op.delete(name=name)
+        return make_response_no_content()
 
 
 @api.route("/<string:name>/listsecrets")
