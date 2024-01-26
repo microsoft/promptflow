@@ -153,7 +153,7 @@ def trigger_prepare(input_paths):
             git_diff_files = [
                 item
                 for item in subprocess.check_output(
-                    ["git", "diff", "--name-only", "--diff-filter=d", '`git merge-base origin/main HEAD`']
+                    ["git", "diff", "--name-only", "HEAD"]
                 )
                 .decode("utf-8")
                 .split("\n")
@@ -220,14 +220,21 @@ def run_checks():
 
     os.chdir(github_workspace)
     # Get diff of current branch and main branch.
-    diff = (
-        subprocess.check_output(["git", "diff", "--name-only", "HEAD", "origin/main"])
-        .decode("utf-8")
-        .split("\n")
-    )
+    try:
+        git_merge_base = subprocess.check_output(
+            ["git", "merge-base", "origin/main", "HEAD"]
+        ).decode("utf-8").rstrip()
+        git_diff = (
+            subprocess.check_output(["git", "diff", "--name-only", "--diff-filter=d", f"{git_merge_base}"], stderr=subprocess.STDOUT)
+            .decode("utf-8").rstrip()
+            .split("\n")
+        )
+    except subprocess.CalledProcessError as e:
+        print("Exception on process, rc=", e.returncode, "output=", e.output)
+        raise e
 
     # Prepare how many pipelines should be triggered.
-    trigger_prepare(diff)
+    trigger_prepare(git_diff)
     if failed_reason != "":
         raise Exception(failed_reason)
 
