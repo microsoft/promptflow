@@ -210,6 +210,7 @@ def run_checks():
             subprocess.check_output(["git", "log", "-1"]).decode("utf-8").split("\n")
         )
         for line in merge_commit:
+            print(line)
             if "Merge" in line:
                 merge_commit = line.split(" ")[-3]
                 break
@@ -221,12 +222,18 @@ def run_checks():
     os.chdir(github_workspace)
     # Get diff of current branch and main branch.
     try:
-        git_merge_base = subprocess.check_output(
-            ["git", "merge-base", "origin/main", "HEAD"]
-        ).decode("utf-8").rstrip()
+        git_merge_base = (
+            subprocess.check_output(["git", "merge-base", "origin/main", "HEAD"])
+            .decode("utf-8")
+            .rstrip()
+        )
         git_diff = (
-            subprocess.check_output(["git", "diff", "--name-only", "--diff-filter=d", f"{git_merge_base}"], stderr=subprocess.STDOUT)
-            .decode("utf-8").rstrip()
+            subprocess.check_output(
+                ["git", "diff", "--name-only", "--diff-filter=d", f"{git_merge_base}"],
+                stderr=subprocess.STDOUT,
+            )
+            .decode("utf-8")
+            .rstrip()
             .split("\n")
         )
     except subprocess.CalledProcessError as e:
