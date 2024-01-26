@@ -173,6 +173,9 @@ class BatchResult:
         completed_lines = sum(line_result.run_info.status == Status.Completed for line_result in line_results)
         failed_lines = total_lines - completed_lines
 
+        if exception:
+            status = Status.Failed
+
         return cls(
             status=status,
             total_lines=total_lines,
