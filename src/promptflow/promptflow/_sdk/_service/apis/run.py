@@ -220,3 +220,12 @@ class RestoreRun(Resource):
     def get(self, name: str):
         run = get_client_from_request().runs.restore(name=name)
         return jsonify(run._to_dict())
+
+
+@api.route("/<string:name>/delete")
+class DeleteRun(Resource):
+    @api.doc(description="Delete run")
+    @api.response(code=200, description="Delete run", model=dict_field)
+    def get(self, name: str):
+        get_client_from_request().runs.delete(name=name)
+        return jsonify({})
