@@ -917,13 +917,8 @@ class TestFlowRun:
         condition=is_live(),
         reason="removed requirement.txt to avoid compliance check.",
     )
-    def test_eager_flow_crud(self, pf: PFClient, randstr: Callable[[str], str]):
-        run = pf.run(
-            flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-            name=randstr("name"),
-        )
-        pf.runs.stream(run)
+    def test_eager_flow_crud(self, pf: PFClient, randstr: Callable[[str], str], simple_eager_run: Run):
+        run = simple_eager_run
         run = pf.runs.get(run)
         assert run.status == RunStatus.COMPLETED
 
@@ -971,16 +966,8 @@ class TestFlowRun:
         reason="removed requirement.txt to avoid compliance check.",
     )
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
-    def test_eager_flow_download(self, pf: PFClient, randstr: Callable[[str], str]):
-        run = pf.run(
-            flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
-            data=f"{DATAS_DIR}/simple_eager_flow_data.jsonl",
-            name=randstr("name"),
-        )
-        pf.runs.stream(run)
-        run = pf.runs.get(run)
-        assert run.status == RunStatus.COMPLETED
-
+    def test_eager_flow_download(self, pf: PFClient, simple_eager_run: Run):
+        run = simple_eager_run
         expected_files = [
             DownloadedRun.RUN_METADATA_FILE_NAME,
             DownloadedRun.LOGS_FILE_NAME,
