@@ -11,14 +11,12 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
 class Tracer:
-    def __init__(self):
+    def __init__(self, otlp_port: str):
+        self._trace_endpoint = f"http://localhost:{otlp_port}/v1/traces"
         self._init_otel_exporter()
 
     def _init_otel_exporter(self) -> None:
-        otlp_span_exporter = OTLPSpanExporter(
-            # TODO: replace below hard code one with something from self
-            endpoint="http://localhost:55507/v1/traces",
-        )
+        otlp_span_exporter = OTLPSpanExporter(self._trace_endpoint)
         trace_provider = TracerProvider()
         trace_provider.add_span_processor(BatchSpanProcessor(otlp_span_exporter))
         trace.set_tracer_provider(trace_provider)
