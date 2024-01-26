@@ -1,6 +1,7 @@
 import textwrap
 from pathlib import Path
 from unittest.mock import patch
+import sys
 
 import pytest
 from mock import MagicMock
@@ -21,6 +22,8 @@ from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent / "package_tools"
+
+sys.path.insert(0, str(PACKAGE_TOOL_BASE.resolve()))
 
 
 @pytest.mark.unittest
