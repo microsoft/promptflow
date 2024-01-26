@@ -16,19 +16,24 @@ Base = declarative_base()
 class Span(Base):
     __tablename__ = SPAN_TABLENAME
 
-    span_id = Column(TEXT, primary_key=True)
-    trace_id = Column(TEXT)
-    parent_id = Column(TEXT, nullable=True)
-    # we might not need `experiment_name` if we have partition,
-    # then the file name should be `experiment_name` or "default"
-    experiment_name = Column(TEXT, nullable=True)
-    run_name = Column(TEXT, nullable=True)
-    path = Column(TEXT)
+    id = Column(TEXT, primary_key=True)
+    name = Column(TEXT, nullable=False)
+    type = Column(TEXT, nullable=False)  # span type: Function/Tool/Flow/LLM/LangChain...
+    trace_id = Column(TEXT, nullable=False)
+    parent_span_id = Column(TEXT, nullable=True)
+    session_id = Column(TEXT, nullable=False)
     content = Column(TEXT)  # JSON string
+    # prompt flow concepts
+    path = Column(TEXT, nullable=True)
+    run = Column(TEXT, nullable=True)
+    experiment = Column(TEXT, nullable=True)
 
     __table_args__ = (
-        Index("idx_span_experiment_name", "experiment_name"),
-        Index("idx_span_run_name", "run_name"),
+        Index("idx_span_name", "name"),
+        Index("idx_span_type", "type"),
+        Index("idx_span_session_id", "session_id"),
+        Index("idx_span_run", "run"),
+        Index("idx_span_experiment", "experiment"),
     )
 
     @sqlite_retry
