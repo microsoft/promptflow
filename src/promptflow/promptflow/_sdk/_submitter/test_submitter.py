@@ -455,9 +455,6 @@ class TestSubmitterViaProxy(TestSubmitter):
                     if generator_outputs:
                         logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
 
-                if allow_generator_output:
-                    self._raise_error_when_test_failed(line_result, show_trace=True)
-
                 return line_result
             finally:
                 async_run_allowing_running_loop(flow_executor.destroy)
@@ -591,7 +588,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 show_step_output=True,
                 chat_output_name=output_name,
             )
-
+            self._raise_error_when_test_failed(flow_result, show_trace=True)
             flow_outputs = {k: v for k, v in flow_result.output.items()}
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
             chat_history.append(history)
