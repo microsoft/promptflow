@@ -13,7 +13,7 @@ from promptflow._core.tracer import trace
 from promptflow._sdk._load_functions import load_flow, load_run
 
 # trace
-from promptflow._trace.start_trace import start_trace
+from promptflow._sdk._start_trace import start_trace
 
 from ._sdk._pf_client import PFClient
 from ._version import VERSION
