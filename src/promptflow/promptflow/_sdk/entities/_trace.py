@@ -65,6 +65,9 @@ class Span:
     @staticmethod
     def _from_protobuf_object(obj: PBSpan) -> "Span":
         span_dict = json.loads(MessageToJson(obj))
+        from pprint import pprint
+
+        pprint(span_dict)
         span_id = obj.span_id.hex()
         trace_id = obj.trace_id.hex()
         parent_span_id = obj.parent_span_id.hex()
