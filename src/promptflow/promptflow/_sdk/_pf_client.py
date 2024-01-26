@@ -53,6 +53,7 @@ class PFClient:
         self,
         flow: Union[str, PathLike],
         *,
+        resume_from_run_name: str = None,
         data: Union[str, PathLike] = None,
         run: Union[str, Run] = None,
         column_mapping: dict = None,
@@ -119,6 +120,7 @@ class PFClient:
             raise FileNotFoundError(f"data path {data} does not exist")
         if not run and not data:
             raise ValueError("at least one of data or run must be provided")
+        resume_from_run = self.runs.get(resume_from_run_name) if resume_from_run_name else None
         # TODO(2901096): Support pf run with python file, maybe create a temp flow.dag.yaml in this case
         # load flow object for validation and early failure
         flow_obj = load_flow(source=flow)
@@ -140,7 +142,7 @@ class PFClient:
             environment_variables=environment_variables,
             config=Configuration(overrides=self._config),
         )
-        return self.runs.create_or_update(run=run, **kwargs)
+        return self.runs.create_or_update(run=run, resume_from_run=resume_from_run, **kwargs)
 
     def stream(self, run: Union[str, Run], raise_on_error: bool = True) -> Run:
         """Stream run logs to the console.

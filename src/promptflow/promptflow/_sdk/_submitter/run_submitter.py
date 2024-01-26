@@ -5,7 +5,7 @@
 
 import datetime
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
@@ -34,11 +34,11 @@ class RunSubmitter:
     def __init__(self, run_operations: RunOperations):
         self.run_operations = run_operations
 
-    def submit(self, run: Run, stream=False, **kwargs):
-        self._run_bulk(run=run, stream=stream, **kwargs)
+    def submit(self, run: Run, resume_from_run: Optional[Run] = None, stream=False, **kwargs):
+        self._run_bulk(run=run, resume_from_run=resume_from_run, stream=stream, **kwargs)
         return self.run_operations.get(name=run.name)
 
-    def _run_bulk(self, run: Run, stream=False, **kwargs):
+    def _run_bulk(self, run: Run, resume_from_run: Optional[Run] = None, stream=False, **kwargs):
         # validate & resolve variant
         if run.variant:
             tuning_node, variant = parse_variant(run.variant)
@@ -61,6 +61,11 @@ class RunSubmitter:
         self._validate_inputs(run=run)
 
         local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
+        resume_from_run_storage = None
+        resume_from_run_output_dir = None
+        if resume_from_run:
+            resume_from_run_storage = LocalStorageOperations(resume_from_run, run_mode=RunMode.Batch)
+            resume_from_run_output_dir = resume_from_run_storage.outputs_folder
         with local_storage.logger:
             if local_storage.eager_mode:
                 flow_obj = load_flow(source=run.flow)
@@ -68,7 +73,13 @@ class RunSubmitter:
             else:
                 # running specified variant
                 with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-                    self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+                    self._submit_bulk_run(
+                        flow=flow,
+                        run=run,
+                        local_storage=local_storage,
+                        resume_from_run_storage=resume_from_run_storage,
+                        resume_from_run_output_dir=resume_from_run_output_dir,
+                    )
 
     @classmethod
     def _validate_inputs(cls, run: Run):
@@ -77,7 +88,12 @@ class RunSubmitter:
             raise UserErrorException(message=str(error), error=error)
 
     def _submit_bulk_run(
-        self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
+        self,
+        flow: Union[ProtectedFlow, EagerFlow],
+        run: Run,
+        local_storage: LocalStorageOperations,
+        resume_from_run_storage: Optional[LocalStorageOperations] = None,
+        resume_from_run_output_dir: Optional[Path] = None,
     ) -> dict:
         run_id = run.name
         if flow.language == FlowLanguage.CSharp:
@@ -114,6 +130,8 @@ class RunSubmitter:
                 inputs_mapping=column_mapping,
                 output_dir=local_storage.outputs_folder,
                 run_id=run_id,
+                resume_from_run_storage=resume_from_run_storage,
+                resume_from_run_output_dir=resume_from_run_output_dir,
             )
             error_logs = []
             if batch_result.failed_lines > 0:

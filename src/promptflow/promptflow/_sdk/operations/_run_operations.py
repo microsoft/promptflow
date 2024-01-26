@@ -83,7 +83,7 @@ class RunOperations(TelemetryMixin):
             raise e
 
     @monitor_operation(activity_name="pf.runs.create_or_update", activity_type=ActivityType.PUBLICAPI)
-    def create_or_update(self, run: Run, **kwargs) -> Run:
+    def create_or_update(self, run: Run, resume_from_run: Run = None, **kwargs) -> Run:
         """Create or update a run.
 
         :param run: Run object to create or update.
@@ -99,7 +99,7 @@ class RunOperations(TelemetryMixin):
         try:
             from promptflow._sdk._submitter import RunSubmitter
 
-            created_run = RunSubmitter(run_operations=self).submit(run=run, **kwargs)
+            created_run = RunSubmitter(run_operations=self).submit(run=run, resume_from_run=resume_from_run, **kwargs)
             if stream:
                 self.stream(created_run)
             return created_run

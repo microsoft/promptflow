@@ -231,6 +231,9 @@ class LocalStorageOperations(AbstractRunStorage):
             # TODO(2901279): support eager mode for run created from run folder
             self._eager_mode = False
 
+        self._loaded_flow_run_info_dict = {}  # {line_number: flow_run_info}
+        self._loaded_node_run_info_dict = {}  # {line_number: {node_name: node_run_info}}
+
     @property
     def eager_mode(self) -> bool:
         return self._eager_mode
@@ -398,6 +401,17 @@ class LocalStorageOperations(AbstractRunStorage):
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
 
+    def load_node_run_infos(self, line_number: int) -> NodeRunInfo:
+        if not self._loaded_node_run_info_dict:
+            flow_details = self.load_detail()
+            for node_run_info in flow_details["node_runs"]:
+                node_run_info = NodeRunInfo.deserialize(node_run_info)
+                line_number = node_run_info.index
+                node_name = node_run_info.node
+                self._loaded_node_run_info_dict[line_number] = self._loaded_node_run_info_dict.get(line_number, {})
+                self._loaded_node_run_info_dict[line_number][node_name] = node_run_info
+        return self._loaded_node_run_info_dict.get(line_number)
+
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""
         if not Status.is_terminated(run_info.status):
@@ -414,6 +428,14 @@ class LocalStorageOperations(AbstractRunStorage):
             f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         )
         line_run_record.dump(self._run_infos_folder / filename)
+
+    def load_flow_run_info(self, line_number: int) -> FlowRunInfo:
+        if not self._loaded_flow_run_info_dict:
+            flow_details = self.load_detail()
+            for flow_run_info in flow_details["flow_runs"]:
+                flow_run_info = FlowRunInfo.deserialize(flow_run_info)
+                self._loaded_flow_run_info_dict[flow_run_info.index] = flow_run_info
+        return self._loaded_flow_run_info_dict.get(line_number, None)
 
     def persist_result(self, result: Optional[BatchResult]) -> None:
         """Persist metrics from return of executor."""

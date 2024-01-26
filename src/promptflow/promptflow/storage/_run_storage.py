@@ -4,7 +4,7 @@
 
 from functools import partial
 from pathlib import Path
-from typing import Union
+from typing import List, Union
 
 from promptflow._utils.multimedia_utils import _process_recursively, get_file_reference_encoder
 from promptflow.contracts.multimedia import Image
@@ -21,6 +21,9 @@ class AbstractRunStorage:
         """
         raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for persist_node_run.")
 
+    def load_node_run_infos(self, line_number) -> List[NodeRunInfo]:
+        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for load_node_run_info.")
+
     def persist_flow_run(self, run_info: FlowRunInfo):
         """Write the flow run info to somewhere immediately after one line data is executed for the flow.
 
@@ -28,6 +31,9 @@ class AbstractRunStorage:
         :type run_info: ~promptflow.contracts.run_info.RunInfo
         """
         raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for persist_flow_run.")
+
+    def load_flow_run_info(self, line_number) -> FlowRunInfo:
+        raise NotImplementedError("AbstractRunStorage is an abstract class, no implementation for load_flow_run_info.")
 
 
 class DummyRunStorage(AbstractRunStorage):

@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import asyncio
+import json
 import signal
 import threading
 import uuid
@@ -109,9 +110,7 @@ class BatchEngine:
             self._is_dag_yaml_flow = True
             self._program_language = self._flow.program_language
         else:
-            raise InvalidFlowFileError(
-                message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
-            )
+            raise InvalidFlowFileError(message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file)
 
         self._connections = connections
         self._entry = entry
@@ -128,6 +127,8 @@ class BatchEngine:
         run_id: Optional[str] = None,
         max_lines_count: Optional[int] = None,
         raise_on_line_failure: Optional[bool] = False,
+        resume_from_run_storage: Optional[AbstractRunStorage] = None,
+        resume_from_run_output_dir: Optional[Path] = None,
     ) -> BatchResult:
         """Run flow in batch mode
 
@@ -176,16 +177,43 @@ class BatchEngine:
                     # set batch input source from input mapping
                     OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
                     # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                    inputs = self._flow.inputs if self._is_dag_yaml_flow \
-                        else self._executor_proxy.get_inputs_definition()
+                    inputs = (
+                        self._flow.inputs if self._is_dag_yaml_flow else self._executor_proxy.get_inputs_definition()
+                    )
                     # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
+                    previous_run_results = []
+                    previous_run_output = (
+                        self._load_outputs(resume_from_run_output_dir) if resume_from_run_output_dir else []
+                    )
+                    previous_run_output_dict = {
+                        each_line_output[LINE_NUMBER_KEY]: each_line_output for each_line_output in previous_run_output
+                    }
+                    inputs_to_run = []
+                    for i, each_line_input in enumerate(batch_inputs):
+                        previous_run_info = resume_from_run_storage.load_flow_run_info(i)
+                        if not previous_run_info or previous_run_info.status != Status.Completed:
+                            inputs_to_run.append(each_line_input)
+                        else:
+                            previous_node_run_infos = resume_from_run_storage.load_node_run_infos(i)
+                            self._storage.persist_flow_run(previous_run_info)
+                            for _, node_run_info in previous_node_run_infos.items():
+                                self._storage.persist_node_run(node_run_info)
+                            previous_line_result = self._construct_line_result(
+                                previous_run_info, previous_node_run_infos, previous_run_output_dict[i]
+                            )
+                            previous_run_results.append(previous_line_result)
                     # resolve output dir
                     output_dir = resolve_dir_to_absolute(self._working_dir, output_dir)
                     # run flow in batch mode
                     return async_run_allowing_running_loop(
-                        self._exec_in_task, batch_inputs, run_id, output_dir, raise_on_line_failure
+                        self._exec_in_task,
+                        inputs_to_run,
+                        run_id,
+                        output_dir,
+                        raise_on_line_failure,
+                        previous_run_results,
                     )
                 finally:
                     async_run_allowing_running_loop(self._executor_proxy.destroy)
@@ -204,6 +232,31 @@ class BatchEngine:
                 )
                 raise unexpected_error from e
 
+    # TODO: Populate aggregation inputs
+    def _construct_line_result(self, flow_run_info, node_run_infos, output) -> LineResult:
+        """Construct LineResult from flow_run_info, node_run_infos and output"""
+        return LineResult(
+            output=output,
+            aggregation_inputs={},
+            run_info=flow_run_info,
+            node_run_infos=node_run_infos,
+        )
+
+    def _load_outputs(self, output_dir: Path) -> List[Dict[str, Any]]:
+        """Load the outputs of a batch run from output dir
+
+        :param output_dir: Output dir of a batch run
+        :type output_dir: Path
+        :return: List of output dicts
+        :rtype: List[Dict[str, Any]]
+        """
+        path = output_dir / "output.jsonl"
+        outputs = []
+        with open(path, "r", encoding="utf-8") as fin:
+            for line in fin:
+                outputs.append(json.loads(line))
+        return outputs
+
     def cancel(self):
         """Cancel the batch run"""
         self._is_canceled = True
@@ -214,11 +267,14 @@ class BatchEngine:
         run_id: str = None,
         output_dir: Path = None,
         raise_on_line_failure: bool = False,
+        previous_line_results: List[LineResult] = None,
     ) -> BatchResult:
         # if the batch run is canceled, asyncio.CancelledError will be raised and no results will be returned,
         # so we pass empty line results list and aggr results and update them in _exec so that when the batch
         # run is canceled we can get the current completed line results and aggr results.
         line_results: List[LineResult] = []
+        if previous_line_results:
+            line_results.extend(previous_line_results)
         aggr_result = AggregationResult({}, {}, {})
         task = asyncio.create_task(
             self._exec(line_results, aggr_result, batch_inputs, run_id, output_dir, raise_on_line_failure)
