@@ -36,7 +36,6 @@ from promptflow.executor._errors import (
     ProcessCrashError,
     ProcessInfoObtainedTimeout,
     ProcessTerminatedTimeout,
-    SpawnedForkProcessManagerStartFailure,
 )
 from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager
 from promptflow.executor._result import LineResult
@@ -171,19 +170,15 @@ class LineExecutionProcessPool:
                 self._flow_create_kwargs,
                 **common_kwargs,
             )
-            self._processes_manager.start_processes()
-            # If the spawned process that created the fork process has not started successfully,
-            # raise 'SpawnedForkProcessManagerStartFailure' exception and without continue execution.
-            if not self._processes_manager._is_spawned_fork_process_manager_healthy:
-                ex = SpawnedForkProcessManagerStartFailure()
-                raise ex
         else:
             executor_creation_func = partial(FlowExecutor.create, **self._flow_create_kwargs)
             # 1. Create input_queue, output_queue, and _process_info in the main process.
             # 2. Spawn _n_process sub-process and pass the above queue/dict to these sub-process to transfer information
             # between main process and sub process.
             self._processes_manager = SpawnProcessManager(executor_creation_func, **common_kwargs)
-            self._processes_manager.start_processes()
+
+        self._processes_manager.start_processes()
+        self._processes_manager.ensure_healthy()
 
         monitor_pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._monitor_pool = monitor_pool
