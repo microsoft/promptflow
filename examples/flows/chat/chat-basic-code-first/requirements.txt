@@ -1,2 +1,2 @@
-promptflow
-promptflow-tools
+--extra-index-url https://azuremlsdktestpypi.azureedge.net/test-promptflow/
+promptflow[azure]==0.0.116642424
