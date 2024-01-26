@@ -913,6 +913,10 @@ class TestFlowRun:
             pf.runs.download(run=run.name, output=temp)
             assert Path(temp, run.name, "snapshot/requirements").exists()
 
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
     def test_eager_flow_crud(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
             flow=f"{EAGER_FLOWS_DIR}/simple_with_req",
@@ -942,6 +946,10 @@ class TestFlowRun:
         # run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         # assert run_data[hidden] is False
 
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
     def test_eager_flow_cancel(self, pf: PFClient, randstr: Callable[[str], str]):
         """Test cancel eager flow."""
         # create a run
@@ -958,6 +966,10 @@ class TestFlowRun:
         # the run status might still be cancel requested, but it should be canceled eventually
         assert run.status in [RunStatus.CANCELED, RunStatus.CANCEL_REQUESTED]
 
+    @pytest.mark.skipif(
+        condition=is_live(),
+        reason="removed requirement.txt to avoid compliance check.",
+    )
     @pytest.mark.usefixtures("mock_isinstance_for_mock_datastore")
     def test_eager_flow_download(self, pf: PFClient, randstr: Callable[[str], str]):
         run = pf.run(
