@@ -13,4 +13,5 @@ class TraceOperations:
         return Span._from_orm_object(ORMSpan.get(span_id=span_id))
 
     def list(self) -> typing.List[Span]:
-        return ORMSpan.list()
+        orm_spans = ORMSpan.list()
+        return [Span._from_orm_object(orm_span) for orm_span in orm_spans]
