@@ -19,8 +19,6 @@ class FlowDataCollector:
 
             self.inputs_collector = Collector(name="model_inputs")
             self.outputs_collector = Collector(name="model_outputs")
-            # feedback
-            self.feedback_collector = Collector(name="model_feedback")
             return True
         except ImportError as e:
             self.logger.warn(f"Load mdc related module failed: {e}")
@@ -66,7 +64,7 @@ class FlowDataCollector:
             # collect feedback
             coll_feedback = {"rating": [rating], "message": [message], "conversation": [conversation]}
             feedback_df = pd.DataFrame(coll_feedback)
-            self.feedback_collector.collect(feedback_df, ctx)
+            self.outputs_collector.collect(feedback_df, ctx)
         except ImportError as e:
             self.logger.warn(f"Load mdc related module failed: {e}")
         except Exception as e:
