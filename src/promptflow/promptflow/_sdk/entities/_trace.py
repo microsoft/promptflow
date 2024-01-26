@@ -15,22 +15,28 @@ class Span:
     def __init__(
         self,
         span_id: str,
+        name: str,
+        span_type: str,
         trace_id: str,
-        parent_id: typing.Optional[str] = None,
-        experiment_name: typing.Optional[str] = None,
-        run_name: typing.Optional[str] = None,
+        session_id: str,
+        content: str,
+        parent_span_id: typing.Optional[str] = None,
         path: typing.Optional[str] = None,
-        content: typing.Optional[str] = None,
+        run: typing.Optional[str] = None,
+        experiment: typing.Optional[str] = None,
     ):
-        self.span_id = span_id
+        self.id = span_id
+        self.name = name
+        self.type = span_type
         self.trace_id = trace_id
-        self.parent_id = parent_id
-        self.experiment_name = experiment_name
-        self.run_name = run_name
-        self.path = path
+        self.parent_span_id = parent_span_id
+        self.session_id = session_id
         self.content = content
+        self.path = path
+        self.run = run
+        self.experiment = experiment
 
-    def persist(self) -> None:
+    def _persist(self) -> None:
         self._to_orm_object().persist()
 
     @staticmethod
