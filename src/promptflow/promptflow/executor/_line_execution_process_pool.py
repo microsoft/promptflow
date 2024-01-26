@@ -36,6 +36,7 @@ from promptflow.executor._errors import (
     ProcessCrashError,
     ProcessInfoObtainedTimeout,
     ProcessTerminatedTimeout,
+    SpawnedForkProcessManagerStartFailure,
 )
 from promptflow.executor._process_manager import ForkProcessManager, SpawnProcessManager
 from promptflow.executor._result import LineResult
@@ -171,9 +172,11 @@ class LineExecutionProcessPool:
                 **common_kwargs,
             )
             self._processes_manager.start_processes()
-            # In fork mode, it's necessary to determine whether the spawn process that created the fork process is
-            # running properly. Therefore, we obtain the spawn process id here to get the process status.
-            self._spawned_fork_process_manager_pid = self._processes_manager._spawned_fork_process_manager_pid
+            # If the spawned process that created the fork process has not started successfully,
+            # raise 'SpawnedForkProcessManagerStartFailure' exception and without continue execution.
+            if not self._processes_manager._is_spawned_fork_process_manager_healthy:
+                ex = SpawnedForkProcessManagerStartFailure()
+                raise ex
         else:
             executor_creation_func = partial(FlowExecutor.create, **self._flow_create_kwargs)
             # 1. Create input_queue, output_queue, and _process_info in the main process.
@@ -450,21 +453,6 @@ class LineExecutionProcessPool:
 
         result_list = []
         run_start_time = datetime.utcnow()
-
-        # In fork mode, the spawned process is the bridge between the main and fork processes.
-        # If the spawned process is no longer running, exit the main proccess.
-        if self._use_fork:
-            ensure_spawned_process_healthy_start_time = time.time()
-            while time.time() - ensure_spawned_process_healthy_start_time < 6:
-                # A 'zombie' process is a process that has finished running but still remains in
-                # the process table, waiting for its parent process to collect and handle its exit status.
-                # The normal state of the spawned process is 'running'. If the process does not start successfully
-                # within the specified time, its state will be 'zombie'. So, If the spawned process is in 'zombie'
-                # state, return without continuing execution.
-                if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
-                    bulk_logger.error("The spawned fork process manager failed to start.")
-                    return
-                time.sleep(1)
 
         with RepeatLogTimer(
             interval_seconds=self._log_interval,

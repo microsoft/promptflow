@@ -14,6 +14,7 @@ from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
+from promptflow.executor._errors import SpawnedForkProcessManagerStartFailure
 from promptflow.executor._line_execution_process_pool import (
     LineExecutionProcessPool,
     _exec_line,
@@ -425,13 +426,13 @@ class TestLineExecutionProcessPool:
         "promptflow.executor._process_manager.create_spawned_fork_process_manager_wrapper",
         custom_create_spawned_fork_process_manager_wrapper,
     )
-    def test_spawn_process_crashed_in_fork_mode(self, flow_folder, dev_connections):
+    def test_spawned_fork_process_manager_crashed_in_fork_mode(self, flow_folder, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         run_id = str(uuid.uuid4())
         bulk_inputs = get_bulk_inputs()
         nlines = len(bulk_inputs)
         run_id = run_id or str(uuid.uuid4())
-        with patch("promptflow.executor._line_execution_process_pool.bulk_logger") as mock_logger:
+        with pytest.raises(SpawnedForkProcessManagerStartFailure) as e:
             with LineExecutionProcessPool(
                 executor,
                 nlines,
@@ -439,7 +440,7 @@ class TestLineExecutionProcessPool:
                 None,
             ) as pool:
                 pool.run(zip(range(nlines), bulk_inputs))
-                mock_logger.error.assert_called_with("The spawned fork process manager failed to start.")
+        assert "Failed to start spawned fork process manager" in str(e.value)
 
 
 class TestGetAvailableMaxWorkerCount:

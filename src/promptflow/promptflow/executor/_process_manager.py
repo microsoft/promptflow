@@ -1,6 +1,7 @@
 import multiprocessing
 import queue
 import signal
+import time
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
@@ -226,7 +227,9 @@ class ForkProcessManager(AbstractProcessManager):
             ),
         )
         process.start()
-        self._spawned_fork_process_manager_pid = process.pid
+        # In fork mode, the spawned process is the bridge between the main and fork processes.
+        # it's necessary to check whether the spawn process is running properly.
+        self._is_spawned_fork_process_manager_healthy = self.check_spawned_fork_process_manager_health(process.pid)
 
     def restart_process(self, i):
         """
@@ -254,6 +257,19 @@ class ForkProcessManager(AbstractProcessManager):
         :type i: int
         """
         self._control_signal_queue.put((ProcessControlSignal.START, i))
+
+    def check_spawned_fork_process_manager_health(self, pid):
+        start_time = time.time()
+        while time.time() - start_time < 6:
+            # A 'zombie' process is a process that has finished running but still remains in
+            # the process table, waiting for its parent process to collect and handle its exit status.
+            # The normal state of the spawned process is 'running'. If the process does not start successfully
+            # within the specified time, its state will be 'zombie'.
+            if psutil.Process(pid).status() == "zombie":
+                bulk_logger.error("The spawned fork process manager failed to start.")
+                return False
+            time.sleep(1)
+        return True
 
 
 class SpawnedForkProcessManager(AbstractProcessManager):
