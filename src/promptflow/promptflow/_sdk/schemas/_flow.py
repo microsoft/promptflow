@@ -6,7 +6,7 @@ from marshmallow import fields, validate
 
 from promptflow._sdk._constants import FlowType
 from promptflow._sdk.schemas._base import PatchedSchemaMeta, YamlFileSchema
-from promptflow._sdk.schemas._fields import LocalPathField, NestedField
+from promptflow._sdk.schemas._fields import NestedField
 
 
 class FlowInputSchema(metaclass=PatchedSchemaMeta):
@@ -57,7 +57,5 @@ class FlowSchema(BaseFlowSchema):
 class EagerFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
-    # path to flow entry file.
-    path = LocalPathField(required=True)
-    # entry function
+    # entry point, for example: pkg.module.func
     entry = fields.Str(required=True)

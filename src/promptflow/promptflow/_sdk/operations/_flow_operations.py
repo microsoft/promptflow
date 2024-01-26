@@ -78,8 +78,6 @@ class FlowOperations(TelemetryMixin):
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
-        :param entry: Entry function. Required when flow is script.
-        :type entry: str
         :return: The result of flow or node
         :rtype: dict
         """
@@ -89,7 +87,6 @@ class FlowOperations(TelemetryMixin):
             variant=variant,
             node=node,
             environment_variables=environment_variables,
-            entry=entry,
             **kwargs,
         )
 
@@ -155,7 +152,6 @@ class FlowOperations(TelemetryMixin):
         stream_log: bool = True,
         stream_output: bool = True,
         allow_generator_output: bool = True,
-        entry: str = None,
         **kwargs,
     ):
         """Test flow or node.
@@ -172,21 +168,17 @@ class FlowOperations(TelemetryMixin):
         :param stream_log: Whether streaming the log.
         :param stream_output: Whether streaming the outputs.
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
-        :param entry: The entry function, only works when source is a code file.
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow
 
         inputs = inputs or {}
-        flow = load_flow(flow, entry=entry)
+        flow = load_flow(flow)
 
         if isinstance(flow, EagerFlow):
             if variant or node:
                 logger.warning("variant and node are not supported for eager flow, will be ignored")
                 variant, node = None, None
-        else:
-            if entry:
-                logger.warning("entry is only supported for eager flow, will be ignored")
         flow.context.variant = variant
         from promptflow._constants import FlowLanguage
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
