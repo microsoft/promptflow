@@ -225,6 +225,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     )
     add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
+    add_param_detail = lambda parser: parser.add_argument(  # noqa: E731
+        "--detail", type=str, default=None, required=False, help=argparse.SUPPRESS
+    )
 
     add_params = [
         add_param_flow,
@@ -237,6 +240,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_multi_modal,
         add_param_ui,
         add_param_config,
+        add_param_detail,
     ] + base_params
     activate_action(
         name="test",
@@ -352,10 +356,8 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
         if not flow_path.is_dir():
             logger.error(f"{flow_path.resolve()} is not a folder.")
             return
-        answer = (
-            overwrite
-            if overwrite
-            else confirm("The flow folder already exists, do you want to create the flow in this existing folder?")
+        answer = confirm(
+            "The flow folder already exists, do you want to create the flow in this existing folder?", overwrite
         )
         if not answer:
             print("The 'pf init' command has been cancelled.")
@@ -428,6 +430,7 @@ def test_flow(args):
                 allow_generator_output=False,
                 stream_output=False,
                 dump_test_result=True,
+                detail=args.detail,
             )
             # Print flow/node test result
             if isinstance(result, dict):

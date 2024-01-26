@@ -40,7 +40,7 @@ logger = get_cli_sdk_logger()
 class TestSubmitter:
     def __init__(self, flow: Union[ProtectedFlow, EagerFlow], flow_context: FlowContext, client=None):
         self.flow = flow
-        self.func = flow.entry if isinstance(flow, EagerFlow) else None
+        self.entry = flow.entry if isinstance(flow, EagerFlow) else None
         self._origin_flow = flow
         self._dataplane_flow = None
         self.flow_context = flow_context
@@ -128,8 +128,10 @@ class TestSubmitter:
                         continue
                     if value.property:
                         dependency_nodes_outputs[value.value] = dependency_nodes_outputs.get(value.value, {})
-                        if value.property in dependency_input:
+                        if isinstance(dependency_input, dict) and value.property in dependency_input:
                             dependency_nodes_outputs[value.value][value.property] = dependency_input[value.property]
+                        elif dependency_input:
+                            dependency_nodes_outputs[value.value][value.property] = dependency_input
                     else:
                         dependency_nodes_outputs[value.value] = dependency_input
                     merged_inputs[name] = dependency_input
@@ -210,7 +212,7 @@ class TestSubmitter:
                 inputs=inputs,
                 enable_stream_output=stream_output,
                 allow_generator_output=allow_generator_output,
-                func=self.func,
+                entry=self.entry,
                 storage=storage,
             )
             if isinstance(line_result.output, dict):

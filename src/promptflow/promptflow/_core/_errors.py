@@ -43,6 +43,10 @@ class ToolCanceledError(UserErrorException):
     pass
 
 
+class InvalidSource(ValidationException):
+    pass
+
+
 class ToolLoadError(UserErrorException):
     """Exception raised when tool load failed."""
 
