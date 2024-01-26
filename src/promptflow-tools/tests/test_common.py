@@ -157,7 +157,7 @@ class TestCommon:
         assert actual_result == expected_output
 
     def test_collect_custom_llm_tool_set_defaut_input_index(self, install_promptflow_tools_pkg):
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "promptflow-tools==1.0.3"])
+        # subprocess.check_call([sys.executable, "-m", "pip", "install", "promptflow-tools==1.0.3"])
         tool = "promptflow.tools.aoai_gpt4v.AzureOpenAI.chat"
         package_tools = collect_package_tools([tool])
         inputs_order = ["connection", "deployment_name", "temperature", "top_p", "max_tokens", "stop",
