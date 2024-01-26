@@ -153,7 +153,7 @@ def trigger_prepare(input_paths):
             git_diff_files = [
                 item
                 for item in subprocess.check_output(
-                    ["git", "diff", "--name-only", "HEAD"]
+                    ["git", "diff", "--name-only", "--diff-filter=d", '`git merge-base origin/main HEAD`']
                 )
                 .decode("utf-8")
                 .split("\n")
