@@ -84,5 +84,5 @@ class Span:
             trace_id=trace_id,
             session_id="8cffec9b-eda9-4dab-a321-4f94227c23cb",
             content=json.dumps(span_dict),
-            parent_id=parent_span_id,
+            parent_span_id=parent_span_id,
         )
