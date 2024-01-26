@@ -23,7 +23,7 @@ def batch_run_flow(
         flow_batch_run_size: int,
         connection_name: str = "azure_open_ai_connection",
 ):
-    print("start to run batch flow run.")
+    print("#### Start to submit the batch run.")
     base_run = pf.run(
         flow=flow_folder,
         data=flow_input_data,
@@ -38,11 +38,13 @@ def batch_run_flow(
         debug=True,
     )
 
+    print("#### Batch run is completed.")
+
     return base_run
 
 
 def get_batch_run_output(pf: PFClient, base_run: Run):
-    print(f"Start to get batch run {base_run} details.")
+    print(f"#### Start to get batch run {base_run.name} details.")
     # get run output
     details = pf.get_details(base_run, all_results=True)
 
@@ -81,7 +83,7 @@ if __name__ == "__main__":
     if not (args.documents_folder or args.document_nodes_output_path):
         parser.error("Either 'documents_folder' or 'document_nodes_output_path' should be specified.")
 
-    # check_file_path_exists(args.test_data_output_path)
+    output = args.document_nodes_output_path
     if not args.should_skip_doc_split:
         if not os.path.exists(args.document_nodes_output_path):
             os.makedirs(args.document_nodes_output_path)

@@ -108,5 +108,4 @@ if __name__ == "__main__":
         **prs_configs,
     )
     pipeline_with_flow.compute = args.aml_cluster
-
-    ml_client.jobs.create_or_update(pipeline_with_flow)
+    print("Completed to submit pipeline. Experiment Link: ", ml_client.jobs.create_or_update(pipeline_with_flow).studio_url)
