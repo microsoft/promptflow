@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 from mock import mock
 from pytest_mock import MockerFixture
+from sdk_cli_azure_test.recording_utilities import is_record, is_replay
 from sqlalchemy import create_engine
 
 from promptflow import PFClient
@@ -227,8 +228,6 @@ def recording_injection(mocker: MockerFixture):
     try:
         yield
     finally:
-        if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
-            RecordStorage.get_instance().delete_lock_file()
         recording_array_reset()
 
         multiprocessing.get_context("spawn").Process = original_process_class
@@ -241,7 +240,7 @@ def recording_injection(mocker: MockerFixture):
 
 def setup_recording_injection_if_enabled():
     patches = []
-    if RecordStorage.is_replaying_mode() or RecordStorage.is_recording_mode():
+    if is_replay() or is_record():
         file_path = RECORDINGS_TEST_CONFIGS_ROOT / "node_cache.shelve"
         RecordStorage.get_instance(file_path)
 
@@ -254,6 +253,7 @@ def setup_recording_injection_if_enabled():
             patcher = patch(target, mocked_tool)
             patches.append(patcher)
             patcher.start()
+
         patcher = patch("promptflow._core.openai_injector.inject_sync", inject_sync_with_recording)
         patches.append(patcher)
         patcher.start()

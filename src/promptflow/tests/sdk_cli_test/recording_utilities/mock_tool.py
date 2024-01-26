@@ -1,12 +1,16 @@
-import asyncio
 import functools
 import inspect
 
-from promptflow._core.openai_injector import inject_function_async, inject_function_sync, inject_operation_headers
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR, ToolType
 from promptflow._core.tracer import TraceType, _create_trace_from_function_call
 
-from .record_storage import RecordFileMissingException, RecordItemMissingException, RecordStorage
+from .record_storage import (
+    RecordFileMissingException,
+    RecordItemMissingException,
+    RecordStorage,
+    is_recording_mode,
+    is_replaying_mode,
+)
 
 # recording array is a global variable to store the function names that need to be recorded
 recording_array = ["fetch_text_content_from_url", "my_python_tool"]
@@ -57,10 +61,10 @@ def _replace_tool_rule(func):
 
 def call_func(func, args, kwargs):
     input_dict = _prepare_input_dict(func, args, kwargs)
-    if RecordStorage.is_replaying_mode():
+    if is_replaying_mode():
         return RecordStorage.get_instance().get_record(input_dict)
     # Record mode will record item to record file
-    elif RecordStorage.is_recording_mode():
+    elif is_recording_mode():
         try:
             # prevent recording the same item twice
             obj = RecordStorage.get_instance().get_record(input_dict)
@@ -72,10 +76,10 @@ def call_func(func, args, kwargs):
 
 async def call_func_async(func, args, kwargs):
     input_dict = _prepare_input_dict(func, args, kwargs)
-    if RecordStorage.is_replaying_mode():
+    if is_replaying_mode():
         return RecordStorage.get_instance().get_record(input_dict)
     # Record mode will record item to record file
-    elif RecordStorage.is_recording_mode():
+    elif is_recording_mode():
         try:
             # prevent recording the same item twice
             obj = RecordStorage.get_instance().get_record(input_dict)
@@ -83,38 +87,6 @@ async def call_func_async(func, args, kwargs):
             # recording the item
             obj = RecordStorage.get_instance().set_record(input_dict, await func(*args, **kwargs))
     return obj
-
-
-def inject_recording(f):
-    if asyncio.iscoroutinefunction(f):
-
-        @functools.wraps(f)
-        async def wrapper(*args, **kwargs):
-            return await call_func_async(f, args, kwargs)
-
-    else:
-
-        @functools.wraps(f)
-        def wrapper(*args, **kwargs):
-            return call_func(f, args, kwargs)
-
-    return wrapper
-
-
-def inject_async_with_recording(f):
-    wrapper_fun = inject_operation_headers(
-        (inject_function_async(["api_key", "headers", "extra_headers"])(inject_recording(f)))
-    )
-    wrapper_fun._original = f
-    return wrapper_fun
-
-
-def inject_sync_with_recording(f):
-    wrapper_fun = inject_operation_headers(
-        (inject_function_sync(["api_key", "headers", "extra_headers"])(inject_recording(f)))
-    )
-    wrapper_fun._original = f
-    return wrapper_fun
 
 
 def mock_tool(original_tool):
