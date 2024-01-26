@@ -420,7 +420,7 @@ class TestSubmitterViaProxy(TestSubmitter):
                 line_result: LineResult = async_run_allowing_running_loop(
                     flow_executor.exec_line_async, inputs, index=0, allow_generator_output=allow_generator_output
                 )
-                if allow_generator_output:
+                if allow_generator_output and isinstance(line_result, AsyncGeneratorType):
                     generator_record = {}
                     line_result_iter = async_run_allowing_running_loop(
                         get_async_result_output, line_result, generator_record
