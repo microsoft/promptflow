@@ -12,6 +12,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - run: git fetch origin main
       - run: env | sort >> $GITHUB_OUTPUT
       - name: Python Setup - ubuntu-latest - Python Version 3.9
