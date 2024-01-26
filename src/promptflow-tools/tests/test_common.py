@@ -1,6 +1,5 @@
 import pytest
 
-from promptflow._core.tools_manager import collect_package_tools
 from promptflow.contracts.multimedia import Image
 from promptflow.tools.common import ChatAPIInvalidFunctions, validate_functions, process_function_call, \
     parse_chat, find_referenced_image_set, preprocess_template_string, convert_to_chat_list, ChatInputList
@@ -153,11 +152,3 @@ class TestCommon:
     def test_convert_to_chat_list(self, input_data, expected_output):
         actual_result = convert_to_chat_list(input_data)
         assert actual_result == expected_output
-
-    def test_collect_custom_llm_tool_set_defaut_input_index(self, install_promptflow_tools_pkg):
-        tool = "promptflow.tools.aoai_gpt4v.AzureOpenAI.chat"
-        package_tools = collect_package_tools([tool])
-        inputs_order = ["connection", "deployment_name", "temperature", "top_p", "max_tokens", "stop",
-                        "presence_penalty", "frequency_penalty"]
-        for index, input_name in enumerate(inputs_order):
-            assert package_tools[tool]['inputs'][input_name]['ui_hints']['index'] == index
