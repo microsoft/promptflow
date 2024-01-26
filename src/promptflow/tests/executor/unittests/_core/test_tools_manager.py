@@ -13,11 +13,14 @@ from promptflow._core.tools_manager import (
     assign_tool_input_index_for_ux_order_if_needed,
     collect_package_tools,
     collect_package_tools_and_connections,
+    collect_tools_from_directory,
 )
 from promptflow._utils.yaml_utils import load_yaml_string
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
+
+PACKAGE_TOOL_BASE = Path(__file__).parent.parent / "package_tools"
 
 
 @pytest.mark.unittest
@@ -180,6 +183,14 @@ class TestToolsManager:
                 'input3': {'type': 'string', 'ui_hints': {'index': 2}}
             }
         }
+
+    def test_collect_tools_from_directory_keeps_keys_order(self):
+        tool_yaml_folder = PACKAGE_TOOL_BASE / "custom_llm_tool_multi_inputs_without_index"
+        collected_tools = collect_tools_from_directory(tool_yaml_folder)
+        tool = collected_tools["custom_llm_tool.TestCustomLLMTool.call"]
+        expected_keys_order = ["connection", "deployment_name", "api", "temperature", "top_p", "max_tokens",
+                               "stop","presence_penalty", "frequency_penalty"]
+        assert list(tool["inputs"]) == expected_keys_order
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
