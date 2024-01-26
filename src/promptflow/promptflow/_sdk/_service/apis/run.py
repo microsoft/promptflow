@@ -14,7 +14,7 @@ from flask import Response, jsonify, make_response, request
 from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
 from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._service import Namespace, Resource, fields
-from promptflow._sdk._service.utils.utils import build_pfs_user_agent, get_client_from_request
+from promptflow._sdk._service.utils.utils import build_pfs_user_agent, get_client_from_request, make_response_no_content
 from promptflow._sdk.entities import Run as RunEntity
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._utils.yaml_utils import dump_yaml
@@ -122,7 +122,7 @@ class Run(Resource):
     @api.doc(description="Delete run")
     def delete(self, name: str):
         get_client_from_request().runs.delete(name=name)
-        return make_response("", 204)
+        return make_response_no_content()
 
 
 @api.route("/<string:name>/childRuns")

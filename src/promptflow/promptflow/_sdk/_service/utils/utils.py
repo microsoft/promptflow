@@ -8,7 +8,7 @@ from datetime import datetime
 from functools import wraps
 
 import psutil
-from flask import abort, request
+from flask import abort, make_response, request
 
 from promptflow._sdk._constants import DEFAULT_ENCODING, HOME_PROMPT_FLOW_DIR, PF_SERVICE_PORT_FILE
 from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
@@ -83,6 +83,10 @@ def get_started_service_info(port):
         service_info["uptime"] = str(process_uptime)
         service_info["port"] = port
     return service_info
+
+
+def make_response_no_content():
+    return make_response("", 204)
 
 
 @dataclass
