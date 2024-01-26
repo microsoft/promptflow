@@ -119,8 +119,8 @@ class RecordCache:
     Currently only text input/output could be recorded.
     Example of cached items:
     {
-        "/record/file/resolved": {
-            "hash_value": { # hash_value is sha1 of dict, accelerate the search
+        "/record/file/resolved": {  <-- file_records_pointer
+            "hash_value": { <-- line_record_pointer   hash_value is sha1 of dict, accelerate the search
                 "input": {
                     "key1": "value1", # Converted to string, type info dropped
                 },
@@ -134,7 +134,7 @@ class RecordCache:
     def __init__(self):
         self.cached_items: Dict[str, Dict[str, Dict[str, object]]] = {}
         self.record_file = None
-        self.file_records = {}
+        self.file_records_pointer = {}
 
     def get_cache(self, record_file: Union[str, Path]) -> None:
         if self.record_file is None:
@@ -147,11 +147,12 @@ class RecordCache:
                 self.record_file.set_and_load_file(Path(record_file))
 
                 self.cached_items = self.record_file.load_file(self.cached_items)
-                try:
-                    self.file_records = self.cached_items[self.record_file.record_file_str]
-                except KeyError:
-                    self.file_records = {}
-                    self.write_back(self.file_records, None)
+        try:
+            self.file_records_pointer = self.cached_items[self.record_file.record_file_str]
+        except KeyError:
+            self.cached_items[self.record_file.record_file_str] = {}
+            self.file_records_pointer = self.cached_items[self.record_file.record_file_str]
+            self.write_back(None)
 
     def _recursive_create_hashable_args(self, item):
         if isinstance(item, tuple):
@@ -253,7 +254,7 @@ class RecordCache:
         hash_value: str = hashlib.sha1(str(sorted(input_dict.items())).encode("utf-8")).hexdigest()
 
         try:
-            line_record = self.file_records[hash_value]
+            line_record = self.file_records_pointer[hash_value]
         except KeyError:
             raise RecordItemMissingException(
                 f"Record item not found in file {self.record_file.record_file_str}.\n"
@@ -269,9 +270,9 @@ class RecordCache:
             return output
 
     def write_back(self, hash_value):
-        self.cached_items[self.record_file.record_file_str] = self.file_records
+        self.cached_items[self.record_file.record_file_str] = self.file_records_pointer
         if hash_value is not None:
-            self.record_file.write_file(self.file_records, hash_value)
+            self.record_file.write_file(self.file_records_pointer, hash_value)
 
     def set_record(self, input_dict: Dict, output):
         """
@@ -288,29 +289,29 @@ class RecordCache:
         output_value, output_generator, output_type = self._parse_output_generator(output)
 
         try:
-            line_record = self.file_records[hash_value]
+            line_record_pointer = self.file_records_pointer[hash_value]
         except KeyError:
-            line_record = {
+            line_record_pointer = {
                 "input": input_dict,
                 "output": output_value,
                 "output_type": output_type,
             }
-            self.file_records[hash_value] = line_record
+            self.file_records_pointer[hash_value] = line_record_pointer
 
-        if line_record["output"] == output_value and line_record["output_type"] == output_type:
+        if line_record_pointer["output"] == output_value and line_record_pointer["output_type"] == output_type:
             # no writeback
             if "generator" in output_type:
                 return output_generator
             else:
                 return output_value
         else:
-            self.file_records[hash_value] = {
+            self.file_records_pointer[hash_value] = {
                 "input": input_dict,
                 "output": output_value,
                 "output_type": output_type,
             }
 
-        self.write_back(self.file_records, hash_value)
+        self.write_back(self.file_records_pointer, hash_value)
 
         if "generator" in output_type:
             return output_generator
