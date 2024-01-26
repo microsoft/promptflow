@@ -23,7 +23,7 @@ def trace_collector():
             for scope_span in resource_span.scope_spans:
                 for span in scope_span.spans:
                     # TODO: persist with batch
-                    Span._from_protobuf_object(span).persist()
+                    Span._from_protobuf_object(span)._persist()
         return "Traces received", 200
 
     # JSON protobuf encoding
