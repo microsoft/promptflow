@@ -32,6 +32,10 @@ from promptflow._sdk._utils import (
     use_customized_encryption_key,
 )
 
+# silence RemovedIn20Warning to avoid unexpected warning message printed to users
+# TODO(2587221: migrate to SQLAlchemy 2.0)
+os.environ["SQLALCHEMY_SILENCE_UBER_WARNING"] = "1"
+
 session_maker = None
 lock = FileLock(LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH)
 
