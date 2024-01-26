@@ -277,7 +277,7 @@ class ForkProcessManager(AbstractProcessManager):
 
     def ensure_healthy(self):
         start_time = time.time()
-        while time.time() - start_time < 6:
+        while time.time() - start_time < 3:
             # A 'zombie' process is a process that has finished running but still remains in
             # the process table, waiting for its parent process to collect and handle its exit status.
             # The normal state of the spawned process is 'running'. If the process does not start successfully
