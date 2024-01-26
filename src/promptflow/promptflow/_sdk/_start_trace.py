@@ -14,6 +14,13 @@ from promptflow._sdk._constants import TRACE_SESSION_ID_ENV_VAR
 
 
 def start_trace():
+    """Start a tracing session.
+
+    This will capture OpenAI and prompt flow related calls and persist traces;
+    it will also provide a UI url for user to visualize traces details.
+
+    Note that this function is still under preview, and may change at any time.
+    """
     # detect PFS liveness
     pfs_port = "55507"  # TODO: make this dynamic from PFS liveness probe
     # provision a session
