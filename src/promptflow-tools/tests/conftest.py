@@ -157,7 +157,7 @@ def azure_content_safety_connection():
     return ConnectionManager().get("azure_content_safety_connection")
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def install_promptflow_tools_pkg():
     # The tests could be running in parallel. Use a lock to prevent race conditions.
     lock = FileLock("promptflow_tools_pkg_installation.lock")
@@ -171,5 +171,4 @@ def install_promptflow_tools_pkg():
             import subprocess
             import sys
 
-            subprocess.check_call([sys.executable, "cd", ".."])
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "-e."])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "promptflow-tools==1.0.3"])
