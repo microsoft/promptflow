@@ -1903,7 +1903,7 @@ class TestCli:
                 "experiment",
                 "create",
                 "--template",
-                f"{EXPERIMENT_DIR}/basic-no-script-template/basic.exp.yaml",
+                f"{EXPERIMENT_DIR}/basic-script-template/basic-script.exp.yaml",
                 "--name",
                 exp_name,
             )
@@ -1920,8 +1920,8 @@ class TestCli:
             out, _ = capfd.readouterr()
             assert ExperimentStatus.TERMINATED in out
             exp = local_client._experiments.get(name=exp_name)
-            assert len(exp.node_runs["main"]) > 0
-            assert len(exp.node_runs["eval"]) > 0
+            assert len(exp.node_runs) == 4
+            assert all(len(exp.node_runs[node_name]) > 0 for node_name in exp.node_runs)
             metrics = local_client.runs.get_metrics(name=exp.node_runs["eval"][0]["name"])
             assert "accuracy" in metrics
 

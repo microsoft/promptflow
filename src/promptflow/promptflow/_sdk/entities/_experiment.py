@@ -156,7 +156,7 @@ class CommandNode(YAMLTranslatableMixin):
         self.type = ExperimentNodeType.COMMAND
         self.name = name
         self.display_name = display_name
-        self.code = code or kwargs.get(BASE_PATH_CONTEXT_KEY, Path("."))
+        self.code = code
         self.command = command
         self.inputs = inputs or {}
         self.outputs = outputs or {}
@@ -171,6 +171,11 @@ class CommandNode(YAMLTranslatableMixin):
         """Save command source to experiment snapshot."""
         Path(target).mkdir(parents=True, exist_ok=True)
         saved_path = Path(target) / self.name
+        if not self.code:
+            # Create an empty folder
+            saved_path.mkdir(parents=True, exist_ok=True)
+            self.code = saved_path.resolve().absolute().as_posix()
+            return
         code = Path(self.code)
         if not code.exists():
             raise ExperimentValueError(f"Command node code {code} does not exist.")

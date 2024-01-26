@@ -158,6 +158,7 @@ class RunTypes:
     BATCH = "batch"
     EVALUATION = "evaluation"
     PAIRWISE_EVALUATE = "pairwise_evaluate"
+    COMMAND = "command"
 
 
 class AzureRunTypes:

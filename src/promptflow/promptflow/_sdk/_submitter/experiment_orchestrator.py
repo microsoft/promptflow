@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Dict
 
 from promptflow._sdk._configuration import Configuration
-from promptflow._sdk._constants import ExperimentNodeType, ExperimentStatus, FlowRunProperties
-from promptflow._sdk._errors import ExperimentHasCycle, ExperimentValueError
+from promptflow._sdk._constants import ExperimentNodeType, ExperimentStatus, FlowRunProperties, RunTypes
+from promptflow._sdk._errors import ExperimentCommandRunError, ExperimentHasCycle, ExperimentValueError
 from promptflow._sdk._submitter import RunSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
 from promptflow._sdk.entities import Run
@@ -116,7 +116,7 @@ class ExperimentOrchestrator:
         if node.type == ExperimentNodeType.FLOW:
             return self._run_flow_node(node, experiment, run_dict)
         elif node.type == ExperimentNodeType.COMMAND:
-            return self._run_script_node(node, experiment, run_dict)
+            return self._run_command_node(node, experiment, run_dict)
         raise ExperimentValueError(f"Unknown experiment node {node.name!r} type {node.type!r}")
 
     def _run_flow_node(self, node, experiment, run_dict):
@@ -140,10 +140,11 @@ class ExperimentOrchestrator:
         logger.debug(f"Creating run {run.name}")
         return self.run_submitter.submit(run)
 
-    def _run_script_node(self, node, experiment, run_dict):
+    def _run_command_node(self, node, experiment, run_dict):
         run_output_path = (Path(experiment._output_dir) / "runs" / node.name).resolve().absolute().as_posix()
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         run = ExperimentRun(
+            type=RunTypes.COMMAND,
             node_name=node.name,
             experiment=experiment,
             experiment_runs=run_dict,
@@ -374,7 +375,7 @@ class ExperimentCommandSubmitter:
         try:
             return_code = ExperimentCommandExecutor.run(command=command, cwd=run.flow, local_storage=local_storage)
             if return_code != 0:
-                logger.warning(
+                raise ExperimentCommandRunError(
                     f"Run {run.name} failed with return code {return_code}, "
                     f"please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
                 )
@@ -401,7 +402,7 @@ class ExperimentCommandExecutor:
     def run(command: str, cwd: str, local_storage: LocalStorageOperations):
         """Start a subprocess to run the command"""
         log_path = local_storage.logger.file_path
-        logger.info(f"Start running command {command}, reach logs at {log_path}.")
+        logger.info(f"Start running command {command}, log path: {log_path}.")
         with open(log_path, "w") as log_file:
             process = subprocess.Popen(command, stdout=log_file, stderr=log_file, shell=True, env=os.environ, cwd=cwd)
         process.wait()

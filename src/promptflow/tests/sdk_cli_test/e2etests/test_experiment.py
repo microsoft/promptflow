@@ -7,6 +7,7 @@ from promptflow import PFClient
 from promptflow._sdk._constants import ExperimentStatus, RunStatus
 from promptflow._sdk._load_functions import load_common
 from promptflow._sdk.entities._experiment import (
+    CommandNode,
     Experiment,
     ExperimentData,
     ExperimentInput,
@@ -56,11 +57,30 @@ class TestExperiment:
         # Load template and create experiment
         template = load_common(ExperimentTemplate, source=template_path)
         experiment = Experiment.from_template(template)
-
-        client = PFClient()
-        exp = client._experiments.create_or_update(experiment)
-        exp = client._experiments.start(exp.name)
-        exp
+        # Assert command node load correctly
+        assert len(experiment.nodes) == 4
+        expected = dict(yaml.load(open(template_path, "r", encoding="utf-8").read()))
+        experiment_dict = experiment._to_dict()
+        assert isinstance(experiment.nodes[0], CommandNode)
+        assert isinstance(experiment.nodes[1], FlowNode)
+        assert isinstance(experiment.nodes[2], FlowNode)
+        assert isinstance(experiment.nodes[3], CommandNode)
+        gen_data_snapshot_path = experiment._output_dir / "snapshots" / "gen_data"
+        echo_snapshot_path = experiment._output_dir / "snapshots" / "echo"
+        expected["nodes"][0]["code"] = gen_data_snapshot_path.absolute().as_posix()
+        expected["nodes"][3]["code"] = echo_snapshot_path.absolute().as_posix()
+        expected["nodes"][3]["environment_variables"] = {}
+        assert experiment_dict["nodes"][0].items() == expected["nodes"][0].items()
+        assert experiment_dict["nodes"][3].items() == expected["nodes"][3].items()
+        # Assert snapshots
+        assert gen_data_snapshot_path.exists()
+        file_count = len(list(gen_data_snapshot_path.rglob("*")))
+        assert file_count == 1
+        assert (gen_data_snapshot_path / "generate_data.py").exists()
+        # Assert no file exists in echo path
+        assert echo_snapshot_path.exists()
+        file_count = len(list(echo_snapshot_path.rglob("*")))
+        assert file_count == 0
 
     def test_experiment_create_and_get(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
@@ -96,3 +116,17 @@ class TestExperiment:
         assert eval_run.display_name == "eval"
         metrics = client.runs.get_metrics(name=eval_run.name)
         assert "accuracy" in metrics
+
+    @pytest.mark.usefixtures("use_secrets_config_file", "recording_injection", "setup_local_connection")
+    def test_experiment_with_script_start(self):
+        template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
+        # Load template and create experiment
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+        client = PFClient()
+        exp = client._experiments.create_or_update(experiment)
+        exp = client._experiments.start(exp.name)
+        assert exp.status == ExperimentStatus.TERMINATED
+        assert len(exp.node_runs) == 4
+        for key, val in exp.node_runs.items():
+            assert val[0]["status"] == RunStatus.COMPLETED, f"Node {key} run failed"

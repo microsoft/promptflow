@@ -128,7 +128,7 @@ class Run(YAMLTranslatableMixin):
         **kwargs,
     ):
         # TODO: remove when RUN CRUD don't depend on this
-        self.type = RunTypes.BATCH
+        self.type = kwargs.get("type", RunTypes.BATCH)
         self.data = data
         self.column_mapping = column_mapping
         self.display_name = display_name
