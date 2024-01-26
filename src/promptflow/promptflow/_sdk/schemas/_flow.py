@@ -57,5 +57,5 @@ class FlowSchema(BaseFlowSchema):
 class EagerFlowSchema(BaseFlowSchema):
     """Schema for eager flow."""
 
-    # entry point, for example: pkg.module.func
+    # entry point, for example: pkg.module:func
     entry = fields.Str(required=True)

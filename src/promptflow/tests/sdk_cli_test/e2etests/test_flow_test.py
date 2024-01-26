@@ -205,7 +205,7 @@ class TestFlowTest:
 
         inputs = {
             "val": result.node_run_infos["get_dict_val"].output,
-            "origin_val": result.node_run_infos["get_dict_val"].output
+            "origin_val": result.node_run_infos["get_dict_val"].output,
         }
         node_result = _client._flows._test(flow=flow_path, node="print_val", inputs=inputs)
         assert node_result.status.value == "Completed"
@@ -242,6 +242,7 @@ class TestFlowTest:
                 cwd=notebook_path.parent,
             )
 
+    @pytest.mark.skip("Won't support flow test with entry now.")
     def test_eager_flow_test(self):
         flow_path = Path(f"{EAGER_FLOWS_DIR}/simple_without_yaml/entry.py").absolute()
         result = _client._flows._test(flow=flow_path, entry="my_flow", inputs={"input_val": "val1"})
