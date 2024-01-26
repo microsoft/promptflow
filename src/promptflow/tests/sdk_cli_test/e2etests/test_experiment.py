@@ -51,6 +51,17 @@ class TestExperiment:
         assert experiment_dict["nodes"][1].items() == expected["nodes"][1].items()
         assert experiment_dict.items() >= expected.items()
 
+    def test_experiment_from_template_with_script_node(self):
+        template_path = EXP_ROOT / "basic-script-template" / "basic-script.exp.yaml"
+        # Load template and create experiment
+        template = load_common(ExperimentTemplate, source=template_path)
+        experiment = Experiment.from_template(template)
+
+        client = PFClient()
+        exp = client._experiments.create_or_update(experiment)
+        exp = client._experiments.start(exp.name)
+        exp
+
     def test_experiment_create_and_get(self):
         template_path = EXP_ROOT / "basic-no-script-template" / "basic.exp.yaml"
         # Load template and create experiment
