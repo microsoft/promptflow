@@ -167,7 +167,9 @@ def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str 
     )
 
 
-def confirm(question) -> bool:
+def confirm(question, skip_confirm) -> bool:
+    if skip_confirm:
+        return True
     answer = input(f"{question} [y/n]")
     while answer.lower() not in ["y", "n"]:
         answer = input("Please input 'y' or 'n':")
@@ -328,7 +330,7 @@ def _calculate_column_widths(df: "DataFrame", terminal_width: int) -> List[int]:
         )
 
     max_col_widths = [index_column_width]  # index column
-    max_col_widths += [column_widths[column] - column_margin[column] for column in df.columns]  # sub margin
+    max_col_widths += [max(column_widths[column] - column_margin[column], 1) for column in df.columns]  # sub margin
     return max_col_widths
 
 

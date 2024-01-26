@@ -1,0 +1,15 @@
+inputs:
+  number:
+    type: int
+outputs:
+  output:
+    type: int
+    reference: ${mod_two.output.value}
+nodes:
+- name: mod_two
+  type: python
+  source:
+    type: code
+    path: mod_two.py
+  inputs:
+    number: ${inputs.number}

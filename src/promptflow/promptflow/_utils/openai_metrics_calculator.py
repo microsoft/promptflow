@@ -24,7 +24,7 @@ class OpenAIMetricsCalculator:
             for child in children:
                 child_metrics = self.get_openai_metrics_from_api_call(child)
                 self.merge_metrics_dict(total_metrics, child_metrics)
-
+        api_call["system_metrics"] = total_metrics
         return total_metrics
 
     def _need_collect_metrics(self, api_call: dict):

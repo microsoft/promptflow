@@ -29,6 +29,7 @@
     "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
     "**/setup.py",
+    "scripts/installer/curl_install_pypi/**",
     "scripts/installer/windows/**",
     "src/promptflow/promptflow/_sdk/_service/pfsvc.py"
   ],
@@ -79,7 +80,10 @@
     "pfbytes",
     "Apim",
     "junit",
-    "nunit"
+    "nunit",
+    "astext",
+    "Likert",
+    "pfsvc"
   ],
   "ignoreWords": [
     "openmpi",
@@ -158,7 +162,9 @@
     "nohup",
     "metagenai",
     "WBITS",
-    "laddr"
+    "laddr",
+    "nrows",
+    "Dumpable"
   ],
   "flagWords": [
     "Prompt Flow"

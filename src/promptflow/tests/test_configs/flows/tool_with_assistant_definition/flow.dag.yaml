@@ -1,0 +1,17 @@
+inputs:
+  message:
+    type: string
+    default: Hello World!
+outputs:
+  output:
+    type: object
+    reference: ${test_assistant_definition.output}
+nodes:
+- name: test_assistant_definition
+  type: python
+  source:
+    type: code
+    path: test_assistant_definition.py
+  inputs:
+    message: ${inputs.message}
+    assistant_definition: assistant_definition.yaml

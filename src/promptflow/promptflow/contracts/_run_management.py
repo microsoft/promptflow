@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from promptflow._sdk._constants import VIS_LIB_CDN_LINK_TMPL
+from promptflow._sdk._constants import VIS_JS_BUNDLE_FILENAME
 
 
 @dataclass
@@ -27,6 +27,7 @@ class RunMetadata:
     metrics: Optional[Dict[str, Any]]
     dag: Optional[str]
     flow_tools_json: Optional[dict]
+    mode: Optional[str] = ""
 
 
 @dataclass
@@ -45,9 +46,7 @@ class RunVisualization:
 @dataclass
 class VisualizationRender:
     data: dict
-    version: str
-    js_link: Optional[str] = None
+    js_path: str = VIS_JS_BUNDLE_FILENAME
 
     def __post_init__(self):
         self.data = json.dumps(json.dumps(self.data))  # double json.dumps to match JS requirements
-        self.js_link = VIS_LIB_CDN_LINK_TMPL.format(version=self.version)

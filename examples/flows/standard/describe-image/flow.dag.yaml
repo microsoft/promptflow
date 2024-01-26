@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   question:
     type: string
@@ -28,7 +29,7 @@ nodes:
     path: question_on_image.jinja2
   inputs:
     connection: aoai_gpt4v_connection
-    deployment_name: gpt-4
+    deployment_name: gpt-4v
     max_tokens: 512
     question: ${inputs.question}
     test_image: ${flip_image.output}

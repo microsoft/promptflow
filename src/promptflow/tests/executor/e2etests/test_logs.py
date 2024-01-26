@@ -5,13 +5,50 @@ import pytest
 
 from promptflow._utils.logger_utils import LogContext
 from promptflow.batch import BatchEngine
+from promptflow.batch._result import BatchResult
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 
-from ..utils import get_flow_folder, get_flow_inputs_file, get_yaml_file, load_content
+from ..utils import (
+    get_flow_folder,
+    get_flow_inputs_file,
+    get_flow_sample_inputs,
+    get_yaml_file,
+    load_content,
+    load_jsonl,
+)
 
 TEST_LOGS_FLOW = ["print_input_flow"]
+SAMPLE_FLOW_WITH_TEN_INPUTS = "simple_flow_with_ten_inputs"
+OUTPUT_FILE_NAME = "output.jsonl"
+
+
+def submit_batch_run(
+    flow_folder,
+    inputs_mapping,
+    *,
+    input_dirs={},
+    input_file_name="samples.json",
+    run_id=None,
+    connections={},
+    storage=None,
+    return_output_dir=False,
+):
+    batch_engine = BatchEngine(
+        get_yaml_file(flow_folder), get_flow_folder(flow_folder), connections=connections, storage=storage
+    )
+    if not input_dirs and inputs_mapping:
+        input_dirs = {"data": get_flow_inputs_file(flow_folder, file_name=input_file_name)}
+    output_dir = Path(mkdtemp())
+    if return_output_dir:
+        return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id), output_dir
+    return batch_engine.run(input_dirs, inputs_mapping, output_dir, run_id=run_id)
+
+
+def get_batch_inputs_line(flow_folder, sample_inputs_file="samples.json"):
+    inputs = get_flow_sample_inputs(flow_folder, sample_inputs_file=sample_inputs_file)
+    return len(inputs)
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -141,3 +178,58 @@ class TestExecutorLogs:
         assert len(lines) == len(target_texts), msg
         for actual, expected in zip(lines, target_texts):
             assert expected in actual, f"Expected {expected} in {actual}"
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs_mapping",
+        [
+            (
+                SAMPLE_FLOW_WITH_TEN_INPUTS,
+                {"input": "${data.input}", "index": "${data.index}"},
+            )
+        ],
+    )
+    def test_log_progress(self, flow_folder, inputs_mapping, dev_connections):
+        logs_directory = Path(mkdtemp())
+        bulk_run_log_path = str(logs_directory / "test_bulk_run.log")
+        with LogContext(bulk_run_log_path, run_mode=RunMode.Batch):
+            batch_result, output_dir = submit_batch_run(
+                flow_folder, inputs_mapping, connections=dev_connections, return_output_dir=True
+            )
+            nlines = get_batch_inputs_line(flow_folder)
+            log_content = load_content(bulk_run_log_path)
+            for i in range(1, nlines + 1):
+                assert f"Finished {i} / {nlines} lines." in log_content
+            assert isinstance(batch_result, BatchResult)
+            assert batch_result.total_lines == nlines
+            assert batch_result.completed_lines == nlines
+            assert batch_result.start_time < batch_result.end_time
+            assert batch_result.system_metrics.duration > 0
+
+            outputs = load_jsonl(output_dir / OUTPUT_FILE_NAME)
+            assert len(outputs) == nlines
+            for i, output in enumerate(outputs):
+                assert isinstance(output, dict)
+                assert "line_number" in output, f"line_number is not in {i}th output {output}"
+                assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+
+    def test_activate_config_log(self):
+        logs_directory = Path(mkdtemp())
+        log_path = str(logs_directory / "flow.log")
+
+        # flow run: test exec_line
+        with LogContext(log_path, run_mode=RunMode.Test):
+            executor = FlowExecutor.create(get_yaml_file("activate_flow"), {})
+            # use default inputs
+            executor.exec_line({})
+            log_content = load_content(log_path)
+            logs_list = [
+                "execution.flow",
+                "The node 'nodeA' will be bypassed because the activate condition is not met, "
+                "i.e. '${flow.text}' is not equal to 'hello'.",
+                "The node 'nodeB' will be bypassed because it depends on the node 'nodeA' "
+                "which has already been bypassed in the activate config.",
+                "The node 'nodeC' will be bypassed because all nodes ['nodeB'] it depends on are bypassed.",
+                "The node 'nodeD' will be executed because the activate condition is met, "
+                "i.e. '${flow.text}' is equal to 'world'.",
+            ]
+            assert all(log in log_content for log in logs_list)

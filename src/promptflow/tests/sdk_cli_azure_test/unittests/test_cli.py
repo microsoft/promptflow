@@ -256,20 +256,30 @@ class TestAzureCli:
             "tags.key1=value1",
             *operation_scope_args,
         )
-        mocked.assert_called_once()
+        mocked.assert_called_with(
+            flow=flow_dir,
+            display_name="test_flow",
+            type="standard",
+            description="test_description",
+            tags={"key1": "value1"},
+        )
 
-    def test_flow_create_with_invalid_parameters(self, pf):
+    def test_flow_create_with_unknown_field(self, mocker: MockFixture, operation_scope_args):
+        from promptflow.azure.operations._flow_operations import FlowOperations
+
+        mocked = mocker.patch.object(FlowOperations, "create_or_update")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
         flow_dir = Path(flow_test_dir, "web_classification").resolve().as_posix()
-        # process should fail due to schema unknown field error: random_key
-        with pytest.raises(SystemExit):
-            run_pf_command(
-                "flow",
-                "create",
-                "--flow",
-                flow_dir,
-                "--set",
-                "random_key=random_value",
-            )
+        run_pf_command(
+            "flow",
+            "create",
+            "--flow",
+            flow_dir,
+            "--set",
+            "random_key=random_value",
+            *operation_scope_args,
+        )
+        mocked.assert_called_with(flow=flow_dir, random_key="random_value")
 
     def test_flow_list(
         self,

@@ -9,6 +9,7 @@ from promptflow._sdk._telemetry import ActivityType, WorkspaceTelemetryMixin, mo
 from promptflow._sdk._utils import interactive_credential_disabled, is_from_cli, is_github_codespaces, print_red_error
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow.azure._utils.gerneral import get_arm_token
 
 logger = get_cli_sdk_logger()
 
@@ -16,6 +17,7 @@ logger = get_cli_sdk_logger()
 class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
     def __init__(self, connection_provider, **kwargs):
         self._subscription_id, self._resource_group, self._workspace_name = self._extract_workspace(connection_provider)
+        self._credential = kwargs.pop("credential", None) or self._get_credential()
         super().__init__(
             subscription_id=self._subscription_id,
             resource_group_name=self._resource_group,
@@ -24,7 +26,7 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
         )
         # Lazy init client as ml_client initialization require workspace read permission
         self._pfazure_client = None
-        self._credential = self._get_credential()
+        self._user_agent = kwargs.pop("user_agent", None)
 
     @property
     def _client(self):
@@ -37,18 +39,26 @@ class LocalAzureConnectionOperations(WorkspaceTelemetryMixin):
                 subscription_id=self._subscription_id,
                 resource_group_name=self._resource_group,
                 workspace_name=self._workspace_name,
+                user_agent=self._user_agent,
             )
         return self._pfazure_client
 
     @classmethod
     def _get_credential(cls):
+        from azure.ai.ml._azure_environments import AzureEnvironments, EndpointURLS, _get_cloud, _get_default_cloud_name
         from azure.identity import DefaultAzureCredential, DeviceCodeCredential
 
         if is_from_cli():
             try:
                 # Try getting token for cli without interactive login
-                credential = DefaultAzureCredential()
-                credential.get_token("https://management.azure.com/.default")
+                cloud_name = _get_default_cloud_name()
+                if cloud_name != AzureEnvironments.ENV_DEFAULT:
+                    cloud = _get_cloud(cloud=cloud_name)
+                    authority = cloud.get(EndpointURLS.ACTIVE_DIRECTORY_ENDPOINT)
+                    credential = DefaultAzureCredential(authority=authority, exclude_shared_token_cache_credential=True)
+                else:
+                    credential = DefaultAzureCredential()
+                get_arm_token(credential=credential)
             except Exception:
                 print_red_error(
                     "Please run 'az login' or 'az login --use-device-code' to set up account. "

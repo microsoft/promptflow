@@ -15,20 +15,19 @@ import tempfile
 import zipfile
 from contextlib import contextmanager
 from enum import Enum
+from functools import partial
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, AnyStr, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import keyring
 import pydash
-import yaml
 from cryptography.fernet import Fernet
 from filelock import FileLock
 from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
-from ruamel.yaml import YAML
 
 import promptflow
 from promptflow._constants import EXTENSION_UA, PF_NO_INTERACTIVE_LOGIN, PF_USER_AGENT, USER_AGENT
@@ -65,8 +64,9 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.logger_utils import get_cli_sdk_logger
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml, load_yaml_string
 from promptflow.contracts.tool import ToolType
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 logger = get_cli_sdk_logger()
 
@@ -81,56 +81,6 @@ def find_type_in_override(params_override: Optional[list] = None) -> Optional[st
         if CommonYamlFields.TYPE in override:
             return override[CommonYamlFields.TYPE]
     return None
-
-
-def load_yaml(source: Optional[Union[AnyStr, PathLike, IO]]) -> Dict:
-    # null check - just return an empty dict.
-    # Certain CLI commands rely on this behavior to produce a resource
-    # via CLI, which is then populated through CLArgs.
-    """Load a local YAML file.
-
-    :param source: The relative or absolute path to the local file.
-    :type source: str
-    :return: A dictionary representation of the local file's contents.
-    :rtype: Dict
-    """
-    # These imports can't be placed in at top file level because it will cause a circular import in
-    # exceptions.py via _get_mfe_url_override
-
-    if source is None:
-        return {}
-
-    # pylint: disable=redefined-builtin
-    input = None
-    must_open_file = False
-    try:  # check source type by duck-typing it as an IOBase
-        readable = source.readable()
-        if not readable:  # source is misformatted stream or file
-            msg = "File Permissions Error: The already-open \n\n inputted file is not readable."
-            raise Exception(msg)
-        # source is an already-open stream or file, we can read() from it directly.
-        input = source
-    except AttributeError:
-        # source has no writable() function, assume it's a string or file path.
-        must_open_file = True
-
-    if must_open_file:  # If supplied a file path, open it.
-        try:
-            input = open(source, "r")
-        except OSError:  # FileNotFoundError introduced in Python 3
-            msg = "No such file or directory: {}"
-            raise Exception(msg.format(source))
-    # input should now be an readable file or stream. Parse it.
-    cfg = {}
-    try:
-        cfg = yaml.safe_load(input)
-    except yaml.YAMLError as e:
-        msg = f"Error while parsing yaml file: {source} \n\n {str(e)}"
-        raise Exception(msg)
-    finally:
-        if must_open_file:
-            input.close()
-    return cfg
 
 
 # region Encryption
@@ -229,20 +179,6 @@ def decrypt_secret_value(connection_name, encrypted_secret_value):
 # endregion
 
 
-def dump_yaml(*args, **kwargs):
-    """A thin wrapper over yaml.dump which forces `OrderedDict`s to be serialized as mappings.
-
-    Other behaviors identically to yaml.dump
-    """
-
-    class OrderedDumper(yaml.Dumper):
-        """A modified yaml serializer that forces pyyaml to represent an OrderedDict as a mapping instead of a
-        sequence."""
-
-    OrderedDumper.add_representer(collections.OrderedDict, yaml.representer.SafeRepresenter.represent_dict)
-    return yaml.dump(*args, Dumper=OrderedDumper, **kwargs)
-
-
 def decorate_validation_error(schema: Any, pretty_error: str, additional_message: str = "") -> str:
     return f"Validation for {schema.__name__} failed:\n\n {pretty_error} \n\n {additional_message}"
 
@@ -274,7 +210,14 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
-        raise ValueError(f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}")
+        error = ValueError(
+            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+        )
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
 
 
 def _match_reference(env_val: str):
@@ -358,7 +301,7 @@ def resolve_connections_environment_variable_reference(connections: Dict[str, di
                 continue
             env_name = _match_env_reference(val)
             if env_name not in os.environ:
-                raise Exception(f"Environment variable {env_name} is not found.")
+                raise UserErrorException(f"Environment variable {env_name} is not found.")
             values[key] = os.environ[env_name]
     return connections
 
@@ -439,8 +382,7 @@ def _sanitize_python_variable_name(name: str):
 
 
 def _get_additional_includes(yaml_path):
-    with open(yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
-        flow_dag = yaml.safe_load(f)
+    flow_dag = load_yaml(yaml_path)
     return flow_dag.get("additional_includes", [])
 
 
@@ -517,7 +459,12 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 continue
 
             if not src_path.exists():
-                raise ValueError(f"Unable to find additional include {item}")
+                error = ValueError(f"Unable to find additional include {item}")
+                raise UserErrorException(
+                    target=ErrorTarget.CONTROL_PLANE_SDK,
+                    message=str(error),
+                    error=error,
+                )
 
             additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
         yield temp_dir
@@ -549,7 +496,6 @@ def print_pf_version():
 
 
 class PromptflowIgnoreFile(IgnoreFile):
-
     # TODO add more files to this list.
     IGNORE_FILE = [".runs", "__pycache__"]
 
@@ -804,8 +750,7 @@ def generate_flow_tools_json(
     """
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
-    with open(flow_directory / DAG_FILE_NAME, "r", encoding=DEFAULT_ENCODING) as f:
-        data = yaml.safe_load(f)
+    data = load_yaml(flow_directory / DAG_FILE_NAME)
 
     tools, used_packages, _source_path_mapping = _get_involved_code_and_package(data)
 
@@ -991,22 +936,21 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                     json.dump(content, f, indent=2)
 
             # use YAML to dump template file in order to keep the comments
-            yaml = YAML()
-            yaml.preserve_quotes = True
             for connection_name, content in connection_template_yamls.items():
-                yaml_data = yaml.load(content)
+                yaml_data = load_yaml_string(content)
                 file_name = connection_name + ".template.yaml"
                 with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
-                    yaml.dump(yaml_data, f)
+                    dump_yaml(yaml_data, f)
 
 
-def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
+def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None, custom_path=None):
     """Dump flow result for extension.
 
     :param flow_folder: The flow folder.
     :param prefix: The file prefix.
     :param flow_result: The flow result returned by exec_line.
     :param node_result: The node result when test node returned by load_and_exec_node.
+    :param custom_path: The custom path to dump flow result.
     """
     if flow_result:
         flow_serialize_result = {
@@ -1018,7 +962,8 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
             "flow_runs": [],
             "node_runs": [serialize(node_result)],
         }
-    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
+
+    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME if custom_path is None else Path(custom_path)
     dump_folder.mkdir(parents=True, exist_ok=True)
 
     with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
@@ -1115,7 +1060,18 @@ def parse_remote_flow_pattern(flow: object) -> str:
     return flow_name
 
 
-def get_connection_operation(connection_provider: str):
+def get_connection_operation(connection_provider: str, credential=None, user_agent: str = None):
+    """
+    Get connection operation based on connection provider.
+    This function will be called by PFClient, so please do not refer to PFClient in this function.
+
+    :param connection_provider: Connection provider, e.g. local, azureml, azureml://subscriptions..., etc.
+    :type connection_provider: str
+    :param credential: Credential when remote provider, default to chained credential DefaultAzureCredential.
+    :type credential: object
+    :param user_agent: User Agent
+    :type user_agent: str
+    """
     if connection_provider == ConnectionProvider.LOCAL.value:
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
@@ -1124,8 +1080,39 @@ def get_connection_operation(connection_provider: str):
     elif connection_provider.startswith(ConnectionProvider.AZUREML.value):
         from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
 
-        logger.debug("PFClient using local azure connection operations.")
-        connection_operation = LocalAzureConnectionOperations(connection_provider)
+        logger.debug(f"PFClient using local azure connection operations with credential {credential}.")
+        if user_agent is None:
+            connection_operation = LocalAzureConnectionOperations(connection_provider, credential=credential)
+        else:
+            connection_operation = LocalAzureConnectionOperations(connection_provider, user_agent=user_agent)
     else:
-        raise ValueError(f"Unsupported connection provider: {connection_provider}")
+        error = ValueError(f"Unsupported connection provider: {connection_provider}")
+        raise UserErrorException(
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            message=str(error),
+            error=error,
+        )
     return connection_operation
+
+
+# extract open read/write as partial to centralize the encoding
+read_open = partial(open, mode="r", encoding=DEFAULT_ENCODING)
+write_open = partial(open, mode="w", encoding=DEFAULT_ENCODING)
+
+
+# extract some file operations inside this file
+def json_load(file) -> str:
+    with read_open(file) as f:
+        return json.load(f)
+
+
+def json_dump(obj, file) -> None:
+    with write_open(file) as f:
+        json.dump(obj, f, ensure_ascii=False)
+
+
+def pd_read_json(file) -> "DataFrame":
+    import pandas as pd
+
+    with read_open(file) as f:
+        return pd.read_json(f, orient="records", lines=True)

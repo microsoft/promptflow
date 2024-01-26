@@ -5,11 +5,12 @@
 
 import datetime
 from pathlib import Path
+from typing import Union
 
-from promptflow._constants import LANGUAGE_KEY, FlowLanguage
+from promptflow._constants import FlowLanguage
 from promptflow._sdk._constants import FlowRunProperties
 from promptflow._sdk._utils import parse_variant
-from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
@@ -17,9 +18,11 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow.batch import BatchEngine
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import UserErrorException, ValidationException
 
 from ..._utils.logger_utils import LoggerFactory
+from .._load_functions import load_flow
+from ..entities._eager_flow import EagerFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -46,41 +49,49 @@ class RunSubmitter:
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
             elif not isinstance(run.run, Run):
-                raise TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+                error = TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+                raise UserErrorException(message=str(error), error=error)
             else:
                 # get the run again to make sure it's status is latest
                 run.run = self.run_operations.get(name=run.run.name)
             if run.run.status != Status.Completed.value:
-                raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
+                error = ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
+                raise UserErrorException(message=str(error), error=error)
             run.run.outputs = self.run_operations._get_outputs(run.run)
+        self._validate_inputs(run=run)
+
+        local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
+        with local_storage.logger:
+            if local_storage.eager_mode:
+                flow_obj = load_flow(source=run.flow)
+                self._submit_bulk_run(flow=flow_obj, run=run, local_storage=local_storage)
+            else:
+                # running specified variant
+                with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
+                    self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
+
+    @classmethod
+    def _validate_inputs(cls, run: Run):
         if not run.run and not run.data:
-            raise ValueError("Either run or data must be specified for flow run.")
+            error = ValidationException("Either run or data must be specified for flow run.")
+            raise UserErrorException(message=str(error), error=error)
 
-        # running specified variant
-        with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-            local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
-            with local_storage.logger:
-                self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
-
-    def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
+    def _submit_bulk_run(
+        self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
+    ) -> dict:
         run_id = run.name
-        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+        if flow.language == FlowLanguage.CSharp:
             connections = []
         else:
             with _change_working_dir(flow.code):
                 connections = SubmitterHelper.resolve_connections(flow=flow)
         column_mapping = run.column_mapping
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
+        run.environment_variables = SubmitterHelper.load_and_resolve_environment_variables(
+            flow=flow, environment_variables=run.environment_variables
+        )
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
-        batch_engine = BatchEngine(
-            flow.path,
-            flow.code,
-            connections=connections,
-            storage=local_storage,
-            log_path=local_storage.logger.file_path,
-        )
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
@@ -90,6 +101,14 @@ class RunSubmitter:
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
+            batch_engine = BatchEngine(
+                flow.path,
+                flow.code,
+                connections=connections,
+                entry=flow.entry if isinstance(flow, EagerFlow) else None,
+                storage=local_storage,
+                log_path=local_storage.logger.file_path,
+            )
             batch_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
@@ -111,12 +130,13 @@ class RunSubmitter:
                 error_logs.append(
                     f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
                 )
-            logger.warning("\n".join(error_logs))
+            if error_logs:
+                logger.warning("\n".join(error_logs))
             # The bulk run is completed if the batch_engine.run successfully completed.
             status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
-            logger.warning(f"Run {run.name} failed when executing in executor.")
+            logger.warning(f"Run {run.name} failed when executing in executor with exception {e}.")
             exception = e
             # for user error, swallow stack trace and return failed run since user don't need the stack trace
             if not isinstance(e, UserErrorException):
@@ -158,14 +178,14 @@ class RunSubmitter:
         if not column_mapping:
             return
         if not isinstance(column_mapping, dict):
-            raise UserErrorException(f"Column mapping must be a dict, got {type(column_mapping)}.")
+            raise ValidationException(f"Column mapping must be a dict, got {type(column_mapping)}.")
         all_static = True
         for v in column_mapping.values():
             if isinstance(v, str) and v.startswith("$"):
                 all_static = False
                 break
         if all_static:
-            raise UserErrorException(
+            raise ValidationException(
                 "Column mapping must contain at least one mapping binding, "
                 f"current column mapping contains all static values: {column_mapping}"
             )

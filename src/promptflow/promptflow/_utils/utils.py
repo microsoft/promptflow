@@ -55,8 +55,10 @@ def is_json_serializable(value: Any) -> bool:
 
 
 def load_json(file_path: Union[str, Path]) -> dict:
-    with open(file_path, "r") as f:
-        return json.load(f)
+    if os.path.getsize(file_path) > 0:
+        with open(file_path, "r") as f:
+            return json.load(f)
+    return {}
 
 
 def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
@@ -167,17 +169,16 @@ def log_progress(
 
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
-    from promptflow._core import tool
+    from promptflow import _core
 
-    tool_file = tool.__file__
-    core_folder = os.path.dirname(tool_file)
+    core_folder = os.path.dirname(_core.__file__)
 
     for i in range(len(frame_summaries) - 1):
         cur_file = frame_summaries[i].filename
         next_file = frame_summaries[i + 1].filename
-        # If the current frame is in tool.py and the next frame is not in _core folder
+        # If the current frame is in _core folder and the next frame is not in _core folder
         # then we can say that the next frame is in user code.
-        if cur_file == tool_file and not next_file.startswith(core_folder):
+        if cur_file.startswith(core_folder) and not next_file.startswith(core_folder):
             return frame_summaries[i + 1 :]
     return frame_summaries
 
@@ -260,6 +261,8 @@ def parse_ua_to_dict(ua):
     return ua_dict
 
 
+# TODO: Add "conditions" parameter to pass in a list of lambda functions
+# to check if the environment variable is valid.
 def get_int_env_var(env_var_name, default_value=None):
     """
     The function `get_int_env_var` retrieves an integer environment variable value, with an optional
@@ -274,3 +277,22 @@ def get_int_env_var(env_var_name, default_value=None):
         return int(os.environ.get(env_var_name, default_value))
     except Exception:
         return default_value
+
+
+def prompt_y_n(msg, default=None):
+    if default not in [None, "y", "n"]:
+        raise ValueError("Valid values for default are 'y', 'n' or None")
+    y = "Y" if default == "y" else "y"
+    n = "N" if default == "n" else "n"
+    while True:
+        ans = prompt_input("{} ({}/{}): ".format(msg, y, n))
+        if ans.lower() == n.lower():
+            return False
+        if ans.lower() == y.lower():
+            return True
+        if default and not ans:
+            return default == y.lower()
+
+
+def prompt_input(msg):
+    return input("\n===> " + msg)

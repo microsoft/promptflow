@@ -5,6 +5,7 @@ import contextlib
 import glob
 import json
 import os
+import shutil
 import subprocess
 import sys
 from importlib.metadata import version
@@ -12,10 +13,14 @@ from os import PathLike
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Union
 
-import yaml
-
 from promptflow._constants import LANGUAGE_KEY, FlowLanguage
-from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, FLOW_TOOLS_JSON_GEN_TIMEOUT, LOCAL_MGMT_DB_PATH
+from promptflow._sdk._constants import (
+    CHAT_HISTORY,
+    DEFAULT_ENCODING,
+    FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    LOCAL_MGMT_DB_PATH,
+    PROMPT_FLOW_DIR_NAME,
+)
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._submitter import TestSubmitter
 from promptflow._sdk._submitter.utils import SubmitterHelper
@@ -25,14 +30,16 @@ from promptflow._sdk._utils import (
     _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
     dump_flow_result,
-    dump_yaml,
     generate_flow_tools_json,
     generate_random_string,
+    logger,
     parse_variant,
 )
+from promptflow._sdk.entities._eager_flow import EagerFlow
 from promptflow._sdk.entities._flow import ProtectedFlow
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._utils.context_utils import _change_working_dir
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml
 from promptflow.exceptions import UserErrorException
 
 
@@ -52,6 +59,7 @@ class FlowOperations(TelemetryMixin):
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        entry: str = None,
         **kwargs,
     ) -> dict:
         """Test flow or node.
@@ -70,11 +78,19 @@ class FlowOperations(TelemetryMixin):
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
         :type environment_variables: dict
+        :param entry: Entry function. Required when flow is script.
+        :type entry: str
         :return: The result of flow or node
         :rtype: dict
         """
         result = self._test(
-            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables, **kwargs
+            flow=flow,
+            inputs=inputs,
+            variant=variant,
+            node=node,
+            environment_variables=environment_variables,
+            entry=entry,
+            **kwargs,
         )
 
         dump_test_result = kwargs.get("dump_test_result", False)
@@ -91,6 +107,40 @@ class FlowOperations(TelemetryMixin):
                     prefix = "flow"
                 dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
 
+        additional_output_path = kwargs.get("detail", None)
+        if additional_output_path:
+            if not dump_test_result:
+                flow = load_flow(flow)
+            if node:
+                # detail and output
+                dump_flow_result(
+                    flow_folder=flow.code,
+                    node_result=result,
+                    prefix=f"flow-{node}.node",
+                    custom_path=additional_output_path,
+                )
+                # log
+                log_src_path = Path(flow.code) / PROMPT_FLOW_DIR_NAME / f"{node}.node.log"
+                log_dst_path = Path(additional_output_path) / f"{node}.node.log"
+                shutil.copy(log_src_path, log_dst_path)
+            else:
+                if variant:
+                    tuning_node, node_variant = parse_variant(variant)
+                    prefix = f"flow-{tuning_node}-{node_variant}"
+                else:
+                    prefix = "flow"
+                # detail and output
+                dump_flow_result(
+                    flow_folder=flow.code,
+                    flow_result=result,
+                    prefix=prefix,
+                    custom_path=additional_output_path,
+                )
+                # log
+                log_src_path = Path(flow.code) / PROMPT_FLOW_DIR_NAME / "flow.log"
+                log_dst_path = Path(additional_output_path) / "flow.log"
+                shutil.copy(log_src_path, log_dst_path)
+
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
 
@@ -105,6 +155,7 @@ class FlowOperations(TelemetryMixin):
         stream_log: bool = True,
         stream_output: bool = True,
         allow_generator_output: bool = True,
+        entry: str = None,
         **kwargs,
     ):
         """Test flow or node.
@@ -121,18 +172,26 @@ class FlowOperations(TelemetryMixin):
         :param stream_log: Whether streaming the log.
         :param stream_output: Whether streaming the outputs.
         :param allow_generator_output: Whether return streaming output when flow has streaming output.
-
+        :param entry: The entry function, only works when source is a code file.
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow
 
         inputs = inputs or {}
-        flow = load_flow(flow)
+        flow = load_flow(flow, entry=entry)
+
+        if isinstance(flow, EagerFlow):
+            if variant or node:
+                logger.warning("variant and node are not supported for eager flow, will be ignored")
+                variant, node = None, None
+        else:
+            if entry:
+                logger.warning("entry is only supported for eager flow, will be ignored")
         flow.context.variant = variant
         from promptflow._constants import FlowLanguage
         from promptflow._sdk._submitter.test_submitter import TestSubmitterViaProxy
 
-        if flow.dag.get(LANGUAGE_KEY, FlowLanguage.Python) == FlowLanguage.CSharp:
+        if flow.language == FlowLanguage.CSharp:
             with TestSubmitterViaProxy(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
                 is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
                 flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
@@ -157,10 +216,15 @@ class FlowOperations(TelemetryMixin):
                     )
 
         with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
-            is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
-            flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
-                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
-            )
+            if isinstance(flow, EagerFlow):
+                # TODO(2897153): support chat eager flow
+                is_chat_flow, chat_history_input_name = False, None
+                flow_inputs, dependency_nodes_outputs = inputs, None
+            else:
+                is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
+                flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
+                    node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
+                )
 
             if node:
                 return submitter.node_test(
@@ -271,7 +335,7 @@ class FlowOperations(TelemetryMixin):
         st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
-        flow_info = yaml.safe_load(flow_dag_path.read_text())
+        flow_info = load_yaml(flow_dag_path)
         # standard env object:
         # environment:
         #   image: xxx
@@ -336,7 +400,7 @@ class FlowOperations(TelemetryMixin):
         }
 
         with open(output_path, "w", encoding="utf-8") as f:
-            f.write(dump_yaml(sorted_connection_dict, sort_keys=False))
+            f.write(dump_yaml(sorted_connection_dict))
         return env_var_names
 
     def _migrate_connections(self, connection_names: List[str], output_dir: Path):
@@ -611,12 +675,18 @@ class FlowOperations(TelemetryMixin):
                 env_var_names=env_var_names,
             )
 
+    @classmethod
     @contextlib.contextmanager
     def _resolve_additional_includes(cls, flow_dag_path: Path) -> Iterable[Path]:
         # TODO: confirm if we need to import this
         from promptflow._sdk._submitter import remove_additional_includes
 
-        if _get_additional_includes(flow_dag_path):
+        # Eager flow may not contain a yaml file, skip resolving additional includes
+        def is_yaml_file(file_path):
+            _, file_extension = os.path.splitext(file_path)
+            return file_extension.lower() in (".yaml", ".yml")
+
+        if is_yaml_file(flow_dag_path) and _get_additional_includes(flow_dag_path):
             # Merge the flow folder and additional includes to temp folder.
             # TODO: support a flow_dag_path with a name different from flow.dag.yaml
             with _merge_local_code_and_additional_includes(code_path=flow_dag_path.parent) as temp_dir:
@@ -702,6 +772,9 @@ class FlowOperations(TelemetryMixin):
         :rtype: Tuple[dict, dict]
         """
         flow: ProtectedFlow = load_flow(source=flow)
+        if not isinstance(flow, ProtectedFlow):
+            # No tools meta for eager flow
+            return {}, {}
 
         with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(

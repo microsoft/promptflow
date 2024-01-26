@@ -3,31 +3,33 @@
 # ---------------------------------------------------------
 
 import json
+import logging
 import mimetypes
 import os
 from pathlib import Path
+from typing import Dict
 
-from flask import Flask, jsonify, request, g
+from flask import Flask, g, jsonify, request
 
 from promptflow._sdk._load_functions import load_flow
+from promptflow._sdk._serving.extension.extension_factory import ExtensionFactory
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._sdk._serving.response_creator import ResponseCreator
-from promptflow._sdk._serving.extension.extension_factory import ExtensionFactory
 from promptflow._sdk._serving.utils import (
+    enable_monitoring,
     get_output_fields_to_remove,
     get_sample_json,
     handle_error_to_response,
     load_request_data,
     streaming_response_required,
-    enable_monitoring,
 )
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.logger_utils import LoggerFactory
 from promptflow._version import VERSION
-from promptflow.storage._run_storage import DummyRunStorage
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import SystemErrorException
+from promptflow.storage._run_storage import DummyRunStorage
 
 from .swagger import generate_swagger
 
@@ -39,10 +41,6 @@ USER_AGENT = f"promptflow-local-serving/{VERSION}"
 class PromptflowServingApp(Flask):
     def init(self, **kwargs):
         with self.app_context():
-            self.environment_variables = kwargs.get("environment_variables", {})
-            os.environ.update(self.environment_variables)
-            logger.info(f"Environment variable keys: {self.environment_variables.keys()}")
-
             # default to local, can be override when creating the app
             self.extension = ExtensionFactory.create_extension(logger, **kwargs)
 
@@ -52,6 +50,13 @@ class PromptflowServingApp(Flask):
             logger.info(f"Project path: {self.project_path}")
             self.flow_entity = load_flow(self.project_path)
             self.flow = self.flow_entity._init_executable()
+
+            # enable environment_variables
+            environment_variables = kwargs.get("environment_variables", {})
+            os.environ.update(environment_variables)
+            default_environment_variables = self.flow.get_environment_variables_with_overrides()
+            self.set_default_environment_variables(default_environment_variables)
+
             self.flow_name = self.extension.get_flow_name()
             self.flow.name = self.flow_name
             conn_data_override, conn_name_override = self.extension.get_override_connections(self.flow)
@@ -61,6 +66,7 @@ class PromptflowServingApp(Flask):
             self.flow_monitor = self.extension.get_flow_monitor()
 
             self.connection_provider = self.extension.get_connection_provider()
+            self.credential = self.extension.get_credential()
             self.sample = get_sample_json(self.project_path, logger)
             self.init_swagger()
             # try to initialize the flow invoker
@@ -93,6 +99,7 @@ class PromptflowServingApp(Flask):
             connections_name_overrides=self.connections_name_override,
             # for serving, we don't need to persist intermediate result, this is to avoid memory leak.
             storage=DummyRunStorage(),
+            credential=self.credential,
         )
         self.flow = self.flow_invoker.flow
         # Set the flow name as folder name
@@ -103,6 +110,13 @@ class PromptflowServingApp(Flask):
     def init_swagger(self):
         self.response_fields_to_remove = get_output_fields_to_remove(self.flow, logger)
         self.swagger = generate_swagger(self.flow, self.sample, self.response_fields_to_remove)
+
+    def set_default_environment_variables(self, default_environment_variables: Dict[str, str] = None):
+        if default_environment_variables is None:
+            return
+        for key, value in default_environment_variables.items():
+            if key not in os.environ:
+                os.environ[key] = value
 
 
 def add_default_routes(app: PromptflowServingApp):
@@ -129,7 +143,9 @@ def add_default_routes(app: PromptflowServingApp):
         g.data = data
         g.flow_id = app.flow.id or app.flow.name
         run_id = g.get("req_id", None)
-        flow_result = app.flow_invoker.invoke(data, run_id=run_id)
+        # TODO: refine this once we can directly set the input/output log level to DEBUG in flow_invoker.
+        disable_data_logging = logger.level >= logging.INFO
+        flow_result = app.flow_invoker.invoke(data, run_id=run_id, disable_input_output_logging=disable_data_logging)
         g.flow_result = flow_result
 
         # check flow result, if failed, return error response

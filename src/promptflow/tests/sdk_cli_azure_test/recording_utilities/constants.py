@@ -38,6 +38,7 @@ FILTER_HEADERS = [
 
 
 class SanitizedValues:
+    UUID = "00000000-0000-0000-0000-000000000000"
     SUBSCRIPTION_ID = "00000000-0000-0000-0000-000000000000"
     RESOURCE_GROUP_NAME = "00000"
     WORKSPACE_NAME = "00000"
@@ -56,6 +57,7 @@ class SanitizedValues:
     # storage
     UPLOAD_HASH = "000000000000000000000000000000000000"
     BLOB_STORAGE_REQUEST_HOST = "fake_account_name.blob.core.windows.net"
+    FILE_SHARE_REQUEST_HOST = "fake_account_name.file.core.windows.net"
     # PFS
     RUNTIME_NAME = "fake-runtime-name"
     SESSION_ID = "000000000000000000000000000000000000000000000000"

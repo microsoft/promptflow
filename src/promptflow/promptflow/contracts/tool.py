@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 from promptflow._constants import CONNECTION_NAME_PROPERTY
 
 from .multimedia import Image
-from .types import FilePath, PromptTemplate, Secret
+from .types import AssistantDefinition, FilePath, PromptTemplate, Secret
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Enum")
@@ -39,6 +39,7 @@ class ValueType(str, Enum):
     OBJECT = "object"
     FILE_PATH = "file_path"
     IMAGE = "image"
+    ASSISTANT_DEFINITION = "assistant_definition"
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":
@@ -67,6 +68,8 @@ class ValueType(str, Enum):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
+        if isinstance(t, AssistantDefinition):
+            return ValueType.ASSISTANT_DEFINITION
         return ValueType.OBJECT
 
     @staticmethod
@@ -97,6 +100,8 @@ class ValueType(str, Enum):
             return ValueType.FILE_PATH
         if t == Image:
             return ValueType.IMAGE
+        if t == AssistantDefinition:
+            return ValueType.ASSISTANT_DEFINITION
         return ValueType.OBJECT
 
     def parse(self, v: Any) -> Any:  # noqa: C901
@@ -291,6 +296,17 @@ class InputDefinition:
             data.get("description", ""),
             data.get("enum", []),
             data.get("custom_type", []),
+        )
+
+    def to_flow_input_definition(self):
+        """ Used for eager flow to convert input definition to flow input definition.
+        """
+        from .flow import FlowInputDefinition
+
+        # TODO: To align with tool resolver we respect the first type if multiple types are provided,
+        # still need more discussion on this. Should we raise error if multiple types are provided?
+        return FlowInputDefinition(
+            type=self.type[0], default=self.default, description=self.description, enum=self.enum
         )
 
 

@@ -66,6 +66,7 @@ DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_RUNS_DIR_NAME = ".runs"
+PROMPT_FLOW_EXP_DIR_NAME = ".exps"
 SERVICE_CONFIG_FILE = "pf.yaml"
 PF_SERVICE_PORT_FILE = "pfs.port"
 PF_SERVICE_LOG_FILE = "pfs.log"
@@ -76,6 +77,8 @@ SCHEMA_INFO_TABLENAME = "schema_info"
 RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
 CONNECTION_TABLE_NAME = "connection"
+EXPERIMENT_TABLE_NAME = "experiment"
+EXPERIMENT_CREATED_ON_INDEX_NAME = "idx_experiment_created_on"
 BASE_PATH_CONTEXT_KEY = "base_path"
 SCHEMA_KEYS_CONTEXT_CONFIG_KEY = "schema_configs_keys"
 SCHEMA_KEYS_CONTEXT_SECRET_KEY = "schema_secrets_keys"
@@ -107,10 +110,7 @@ TIMESTAMP_MACRO = "${timestamp}"
 DEFAULT_VARIANT = "variant_0"
 # run visualize constants
 VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
-VIS_LIB_CDN_LINK_TMPL = (
-    "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
-)
-VIS_LIB_VERSION = "0.0.33"
+VIS_JS_BUNDLE_FILENAME = "bulkTestDetails.min.js"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
@@ -394,3 +394,14 @@ class DownloadedRun:
     METRICS_FILE_NAME = LocalStorageFilenames.METRICS
     LOGS_FILE_NAME = LocalStorageFilenames.LOG
     RUN_METADATA_FILE_NAME = "run_metadata.json"
+
+
+class ExperimentNodeType(object):
+    FLOW = "flow"
+    CODE = "code"
+
+
+class ExperimentStatus(object):
+    NOT_STARTED = "NotStarted"
+    IN_PROGRESS = "InProgress"
+    TERMINATED = "Terminated"

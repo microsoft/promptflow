@@ -14,8 +14,11 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.schema import CreateTable
 
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import (
     CONNECTION_TABLE_NAME,
+    EXPERIMENT_CREATED_ON_INDEX_NAME,
+    EXPERIMENT_TABLE_NAME,
     LOCAL_MGMT_DB_PATH,
     LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH,
     RUN_INFO_CREATED_ON_INDEX_NAME,
@@ -29,8 +32,9 @@ from promptflow._sdk._utils import (
     use_customized_encryption_key,
 )
 
-# silence RemovedIn20Warning to avoid unexpected warning message printed to users
-# TODO(2587221: migrate to SQLAlchemy 2.0)
+# though we have removed the upper bound of SQLAlchemy version in setup.py
+# still silence RemovedIn20Warning to avoid unexpected warning message printed to users
+# for those who still use SQLAlchemy<2.0.0
 os.environ["SQLALCHEMY_SILENCE_UBER_WARNING"] = "1"
 
 session_maker = None
@@ -77,12 +81,15 @@ def mgmt_db_session() -> Session:
         engine = create_engine(f"sqlite:///{str(LOCAL_MGMT_DB_PATH)}", future=True)
         engine = support_transaction(engine)
 
-        from promptflow._sdk._orm import Connection, RunInfo
+        from promptflow._sdk._orm import Connection, Experiment, RunInfo
 
         create_or_update_table(engine, orm_class=RunInfo, tablename=RUN_INFO_TABLENAME)
         create_table_if_not_exists(engine, CONNECTION_TABLE_NAME, Connection)
 
-        create_index_for_run_if_not_exists(engine)
+        create_index_if_not_exists(engine, RUN_INFO_CREATED_ON_INDEX_NAME, RUN_INFO_TABLENAME, "created_on")
+        if Configuration.get_instance().is_internal_features_enabled():
+            create_or_update_table(engine, orm_class=Experiment, tablename=EXPERIMENT_TABLE_NAME)
+            create_index_if_not_exists(engine, EXPERIMENT_CREATED_ON_INDEX_NAME, EXPERIMENT_TABLE_NAME, "created_on")
 
         session_maker = sessionmaker(bind=engine)
     except Exception as e:  # pylint: disable=broad-except
@@ -208,9 +215,9 @@ def create_table_if_not_exists(engine, table_name, orm_class) -> None:
             raise
 
 
-def create_index_for_run_if_not_exists(engine) -> None:
+def create_index_if_not_exists(engine, index_name, table_name, col_name) -> None:
     # created_on
-    sql = f"CREATE INDEX IF NOT EXISTS {RUN_INFO_CREATED_ON_INDEX_NAME} ON {RUN_INFO_TABLENAME} (created_on);"
+    sql = f"CREATE INDEX IF NOT EXISTS {index_name} ON {table_name} (f{col_name});"
     with engine.begin() as connection:
         connection.execute(text(sql))
     return

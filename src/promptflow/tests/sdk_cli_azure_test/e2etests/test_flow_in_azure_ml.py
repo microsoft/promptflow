@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pydash
 import pytest
-import yaml
 
+from promptflow._utils.yaml_utils import dump_yaml, load_yaml_string
 from promptflow.connections import AzureOpenAIConnection
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
@@ -44,7 +44,7 @@ def update_saved_spec(component, saved_spec_path: str):
     yaml_text = component._to_yaml()
     saved_spec_path = Path(saved_spec_path)
 
-    yaml_content = yaml.safe_load(yaml_text)
+    yaml_content = load_yaml_string(yaml_text)
     if yaml_content.get("creation_context"):
         for key in yaml_content.get("creation_context"):
             yaml_content["creation_context"][key] = "xxx"
@@ -53,7 +53,7 @@ def update_saved_spec(component, saved_spec_path: str):
         target_value = normalize_arm_id(pydash.get(yaml_content, key))
         if target_value:
             pydash.set_(yaml_content, key, target_value)
-    yaml_text = yaml.dump(yaml_content)
+    yaml_text = dump_yaml(yaml_content)
 
     if saved_spec_path.is_file():
         current_spec_text = saved_spec_path.read_text()

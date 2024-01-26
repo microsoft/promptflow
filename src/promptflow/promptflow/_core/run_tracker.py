@@ -5,11 +5,11 @@
 import asyncio
 import json
 from contextvars import ContextVar
-from datetime import datetime
+from datetime import datetime, timezone
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
+from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound, ToolCanceledError
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
@@ -169,12 +169,30 @@ class RunTracker(ThreadLocalSingleton):
                 output, ex = None, e
         self._common_postprocess(run_info, output, ex)
 
-    def _update_flow_run_info_with_node_runs(self, run_info):
+    def _update_flow_run_info_with_node_runs(self, run_info: FlowRunInfo):
         run_id = run_info.run_id
-        run_info.api_calls = self._collect_traces_from_nodes(run_id)
         child_run_infos = self.collect_child_node_runs(run_id)
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
+        # TODO: Refactor Tracer to support flow level tracing,
+        # then we can remove the hard-coded root level api_calls here.
+        # It has to be a list for UI backward compatibility.
+        # TODO: Add input, output, error to top level. Adding them would require
+        # the same technique of handingling image and generator in Tracer,
+        # which introduces duplicated logic. We should do it in the refactoring.
+        start_timestamp = run_info.start_time.astimezone(timezone.utc).timestamp() if run_info.start_time else None
+        end_timestamp = run_info.end_time.astimezone(timezone.utc).timestamp() if run_info.end_time else None
+        run_info.api_calls = [
+            {
+                "name": "flow",
+                "node_name": "flow",
+                "type": "Flow",
+                "start_time": start_timestamp,
+                "end_time": end_timestamp,
+                "children": self._collect_traces_from_nodes(run_id),
+                "system_metrics": run_info.system_metrics,
+            }
+        ]
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
         run_id = run_info.run_id
@@ -210,6 +228,21 @@ class RunTracker(ThreadLocalSingleton):
             run_info.system_metrics = run_info.system_metrics or {}
             run_info.system_metrics["duration"] = duration
 
+    def cancel_node_runs(self, msg: str, flow_run_id):
+        node_runs = self.collect_node_runs(flow_run_id)
+        for node_run_info in node_runs:
+            if node_run_info.status != Status.Running:
+                continue
+            msg = msg.rstrip(".")  # Avoid duplicated "." in the end of the message.
+            err = ToolCanceledError(
+                message_format="Tool execution is canceled because of the error: {msg}.",
+                msg=msg,
+                target=ErrorTarget.EXECUTOR,
+            )
+            self.end_run(node_run_info.run_id, ex=err)
+            node_run_info.status = Status.Canceled
+            self.persist_node_run(node_run_info)
+
     def end_run(
         self,
         run_id: str,
@@ -228,8 +261,13 @@ class RunTracker(ThreadLocalSingleton):
                 target=ErrorTarget.RUN_TRACKER,
                 run_id=run_id,
             )
+        # If the run is already canceled, do nothing.
+        if run_info.status == Status.Canceled:
+            return run_info
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
+            if traces:
+                run_info.api_calls = traces
         elif isinstance(run_info, RunInfo):
             run_info.api_calls = traces
             self._node_run_postprocess(run_info, result, ex)
@@ -258,10 +296,9 @@ class RunTracker(ThreadLocalSingleton):
         }
 
     def _assert_flow_output_serializable(self, output: Any) -> Any:
-        serializable_output = {}
-        for k, v in output.items():
+        def _wrap_serializable_error(value):
             try:
-                serializable_output[k] = self._ensure_serializable_value(v)
+                return self._ensure_serializable_value(value)
             except Exception as e:
                 # If a specific key-value pair is not serializable, raise an exception with the key.
                 error_type_and_message = f"({e.__class__.__name__}) {e}"
@@ -276,6 +313,13 @@ class RunTracker(ThreadLocalSingleton):
                     output_name=k,
                     error_type_and_message=error_type_and_message,
                 ) from e
+
+        # support primitive outputs in eager mode
+        if not isinstance(output, dict):
+            return _wrap_serializable_error(output)
+        serializable_output = {}
+        for k, v in output.items():
+            serializable_output[k] = _wrap_serializable_error(v)
 
         return serializable_output
 
@@ -401,11 +445,14 @@ class RunTracker(ThreadLocalSingleton):
         # line flow run will have run id f"{root_run_id}_{line_number}"
         # We filter out root flow run accordingly.
         line_flow_run_infos = [
-            flow_run_info for flow_run_info in self.flow_run_list
-            if flow_run_info.root_run_id == run_id and flow_run_info.run_id != run_id]
+            flow_run_info
+            for flow_run_info in self.flow_run_list
+            if flow_run_info.root_run_id == run_id and flow_run_info.run_id != run_id
+        ]
         total_lines = len(line_flow_run_infos)
-        completed_lines = len([flow_run_info for flow_run_info in line_flow_run_infos
-                               if flow_run_info.status == Status.Completed])
+        completed_lines = len(
+            [flow_run_info for flow_run_info in line_flow_run_infos if flow_run_info.status == Status.Completed]
+        )
         status_summary["__pf__.lines.completed"] = completed_lines
         status_summary["__pf__.lines.failed"] = total_lines - completed_lines
         return status_summary

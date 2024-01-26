@@ -23,6 +23,8 @@ class TestRunTracker:
         run_tracker.start_flow_run("test_flow_id", "test_root_run_id", "test_flow_run_id")
         assert len(run_tracker._flow_runs) == 1
         assert run_tracker._current_run_id == "test_flow_run_id"
+        flow_input = {"flow_input": "input_0"}
+        run_tracker.set_inputs("test_flow_run_id", flow_input)
 
         # Start node runs
         run_info = run_tracker.start_node_run("node_0", "test_root_run_id", "test_flow_run_id", "run_id_0", index=0)
@@ -83,8 +85,16 @@ class TestRunTracker:
         run_info_aggr.api_calls, run_info_aggr.system_metrics = [
             {"name": "caht"}, {"name": "completion"}], {"total_tokens": 30}
         run_tracker._update_flow_run_info_with_node_runs(run_info_flow)
-        assert len(run_info_flow.api_calls) == 4
+
+        assert len(run_info_flow.api_calls) == 1, "There should be only one top level api call for flow run."
         assert run_info_flow.system_metrics["total_tokens"] == 60
+        assert run_info_flow.api_calls[0]["name"] == "flow"
+        assert run_info_flow.api_calls[0]["node_name"] == "flow"
+        assert run_info_flow.api_calls[0]["type"] == "Flow"
+        assert run_info_flow.api_calls[0]["system_metrics"]["total_tokens"] == 60
+        assert isinstance(run_info_flow.api_calls[0]["start_time"], float)
+        assert isinstance(run_info_flow.api_calls[0]["end_time"], float)
+        assert len(run_info_flow.api_calls[0]["children"]) == 4, "There should be 4 children under root."
 
         # Test get_status_summary
         status_summary = run_tracker.get_status_summary("test_root_run_id")
