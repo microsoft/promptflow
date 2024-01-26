@@ -2,7 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import typing
+
 from sqlalchemy import TEXT, Column, Index
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base
 
 from promptflow._sdk._constants import SPAN_TABLENAME
@@ -39,10 +42,26 @@ class Span(Base):
     @sqlite_retry
     def persist(self) -> None:
         with trace_mgmt_db_session() as session:
-            session.add(self)
-            session.commit()
+            try:
+                session.add(self)
+                session.commit()
+            except IntegrityError as e:
+                # ignore "sqlite3.IntegrityError: UNIQUE constraint failed"
+                # according to OTLP 1.1.0: https://opentelemetry.io/docs/specs/otlp/#duplicate-data
+                # there might be duplicate data, we silently ignore it here
+                if "UNIQUE constraint failed" not in str(e):
+                    raise
 
+    @staticmethod
     @sqlite_retry
     def get(span_id: str) -> "Span":
         with trace_mgmt_db_session() as session:
-            return session.query(Span).filter(Span.span_id == span_id).first()
+            return session.query(Span).filter(Span.id == span_id).first()
+
+    @staticmethod
+    @sqlite_retry
+    def list() -> typing.List["Span"]:
+        with trace_mgmt_db_session() as session:
+            basic_stmt = session.query(Span)
+            # TODO: refine the query condition
+            return [span for span in basic_stmt.limit(100)]
