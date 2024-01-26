@@ -8,8 +8,8 @@ UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "src", "utils"))
 if UTILS_PATH not in os.sys.path:
     os.sys.path.insert(0, UTILS_PATH)
 
-from components import clean_test_data_set, document_split
-from constants import CONNECTIONS_TEMPLATE
+from components import clean_test_data_set, document_split  # noqa: E402
+from constants import CONNECTIONS_TEMPLATE  # noqa: E402
 
 
 def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):
@@ -47,7 +47,7 @@ def test_data_gen_pipeline_with_flow(
         data=data,
         text_chunk="${data.text_chunk}",
         connections={key: {"connection": value["connection"].format(connection_name=connection_name)}
-                   for key, value in CONNECTIONS_TEMPLATE.items()},
+                     for key, value in CONNECTIONS_TEMPLATE.items()},
     )
 
     flow_node.mini_batch_size = mini_batch_size
@@ -108,4 +108,5 @@ if __name__ == "__main__":
         **prs_configs,
     )
     pipeline_with_flow.compute = args.aml_cluster
-    print("Completed to submit pipeline. Experiment Link: ", ml_client.jobs.create_or_update(pipeline_with_flow).studio_url)
+    print("Completed to submit pipeline. Experiment Link: ",
+          ml_client.jobs.create_or_update(pipeline_with_flow).studio_url)

@@ -10,8 +10,8 @@ UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "src", "utils"))
 if UTILS_PATH not in os.sys.path:
     os.sys.path.insert(0, UTILS_PATH)
 
-from constants import TEXT_CHUNK, CONNECTIONS_TEMPLATE
-from common import split_document, clean_data_and_save
+from constants import TEXT_CHUNK, CONNECTIONS_TEMPLATE  # noqa: E402
+from common import split_document, clean_data_and_save  # noqa: E402
 
 CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "config.ini"))
 

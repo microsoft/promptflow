@@ -11,7 +11,6 @@ ENVIRONMENT_DICT_FIXED_VERSION = dict(
             "pip=23.2.1",
             {
                 "pip": [
-                    "--extra-index-url=https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/",
                     "mldesigner==0.1.0b17",
                     "llama_index",
                     "docx2txt"
@@ -22,9 +21,9 @@ ENVIRONMENT_DICT_FIXED_VERSION = dict(
 )
 
 CONNECTIONS_TEMPLATE = {
-    "validate_and_generate_seed_question": {"connection": "{connection_name}", "model": "{model}"},
-    "validate_and_generate_test_question": {"connection": "{connection_name}", "model": "{model}"},
-    "validate_test_question": {"connection": "{connection_name}", "model": "{model}"},
-    "generate_ground_truth": {"connection": "{connection_name}", "model": "{model}"},
-    "validate_ground_truth": {"connection": "{connection_name}", "model": "{model}"}
+    "validate_and_generate_seed_question": {"connection": "{connection_name}"},
+    "validate_and_generate_test_question": {"connection": "{connection_name}"},
+    "validate_test_question": {"connection": "{connection_name}"},
+    "generate_ground_truth": {"connection": "{connection_name}"},
+    "validate_ground_truth": {"connection": "{connection_name}"}
 }
