@@ -205,8 +205,6 @@ class LineExecutionProcessPool:
                 # try again.
                 time.sleep(1)
                 continue
-            except queue.Empty:
-                pass
             except Exception as e:
                 raise Exception(f"Unexpected error occurred while get process info. Exception: {e}")
 
