@@ -21,7 +21,7 @@ from promptflow.contracts.flow import InputAssignment, InputValueType, Node, Too
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
 
-PACKAGE_TOOL_BASE = Path(__file__).parent.parent / "package_tools"
+PACKAGE_TOOL_BASE = Path(__file__).parent.parent.parent / "package_tools"
 
 sys.path.insert(0, str(PACKAGE_TOOL_BASE.resolve()))
 
