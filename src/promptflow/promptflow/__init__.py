@@ -12,6 +12,9 @@ from promptflow._core.tracer import trace
 # control plane sdk functions
 from promptflow._sdk._load_functions import load_flow, load_run
 
+# trace
+from promptflow._trace.start_trace import start_trace
+
 from ._sdk._pf_client import PFClient
 from ._version import VERSION
 
@@ -20,4 +23,4 @@ log_flow_metric = log_metric
 
 __version__ = VERSION
 
-__all__ = ["PFClient", "load_flow", "load_run", "log_metric", "ToolProvider", "tool", "trace"]
+__all__ = ["PFClient", "load_flow", "load_run", "log_metric", "start_trace", "ToolProvider", "tool", "trace"]
