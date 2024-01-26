@@ -235,11 +235,16 @@ class LineExecutionProcessPool:
         return None
 
     def _monitor_workers_and_process_tasks_in_thread(
-        self, task_queue: Queue, result_list: List[LineResult], index: int, input_queue: Queue, output_queue: Queue
+        self,
+        task_queue: Queue,
+        result_list: List[LineResult],
+        index: int,
+        input_queue: Queue,
+        output_queue: Queue,
+        batch_start_time: datetime,
     ):
         index, process_id, process_name = self._get_process_info(index)
 
-        batch_start_time = datetime.utcnow()
         # Entering the while loop requires two conditions:
         # 1. The task queue is not empty, meaning there are lines yet to be executed.
         # 2. The batch run has not reached the batch timeout limit.
@@ -468,6 +473,7 @@ class LineExecutionProcessPool:
             ),
         ):
             try:
+                batch_start_time = datetime.utcnow()
                 args_list = [
                     (
                         self._task_queue,  # Shared task queue for all sub processes to read the input data.
@@ -477,6 +483,7 @@ class LineExecutionProcessPool:
                         self._input_queues[i],
                         # Specific output queue for the sub process, used to receive results from it.
                         self._output_queues[i],
+                        batch_start_time,
                     )
                     for i in range(self._n_process)
                 ]
