@@ -93,7 +93,7 @@ class TestRunAPIs:
                 {"activity_name": "pf.runs.delete"},
             ]
         ):
-            pfs_op.delete_run(name=run.name, status_code=200)
+            pfs_op.delete_run(name=run.name, status_code=204)
         runs = pfs_op.list_runs().json
         assert not any([item["name"] == run.name for item in runs])
         assert not path.exists()

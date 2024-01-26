@@ -152,7 +152,7 @@ class PFSOperations:
         return response
 
     def delete_run(self, name: str, status_code=None):
-        response = self._client.get(f"{self.RUN_URL_PREFIX}/{name}/delete")
+        response = self._client.delete(f"{self.RUN_URL_PREFIX}/{name}")
         if status_code:
             assert status_code == response.status_code, response.text
         return response
