@@ -141,6 +141,8 @@ def inject_operation_headers(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             inject_headers(kwargs)
+            kwargs_to_print = {k: v for k, v in kwargs.items() if k != "messages"}
+            print(kwargs_to_print)
             return f(*args, **kwargs)
 
     return wrapper
