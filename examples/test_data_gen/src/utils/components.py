@@ -6,16 +6,6 @@ from mldesigner import Input, Output, command_component
 from common import split_document, clean_data_and_save
 from constants import ENVIRONMENT_DICT_FIXED_VERSION
 
-try:
-    from llama_index import SimpleDirectoryReader
-    from llama_index.node_parser import SentenceSplitter
-    from llama_index.readers.schema import Document as LlamaindexDocument
-    from llama_index.schema import BaseNode
-except ImportError:
-    raise ImportError(
-        "llama_index must be installed to use this function. " "Please, install it with `pip install llama_index`."
-    )
-
 
 @command_component(
     name="document_split",

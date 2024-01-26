@@ -11,7 +11,6 @@ ENVIRONMENT_DICT_FIXED_VERSION = dict(
             "pip=23.2.1",
             {
                 "pip": [
-                    "--extra-index-url=https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/",
                     "mldesigner==0.1.0b17",
                     "llama_index",
                     "docx2txt"
