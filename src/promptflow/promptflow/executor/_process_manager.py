@@ -193,7 +193,9 @@ class SpawnProcessManager(AbstractProcessManager):
         """
         Checks the health of the managed processes.
 
-        Note: By default, all processes are assumed to be healthy in spawned mode.
+        Note:
+        Health checks for spawn mode processes are currently not performed.
+        Add detailed checks in this function if needed in the future.
         """
         pass
 
