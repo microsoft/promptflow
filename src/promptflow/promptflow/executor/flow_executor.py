@@ -35,7 +35,7 @@ from promptflow._utils.multimedia_utils import (
     load_multimedia_data_recursively,
     persist_multimedia_data,
 )
-from promptflow._utils.utils import transpose, get_int_env_var
+from promptflow._utils.utils import get_int_env_var, transpose
 from promptflow._utils.yaml_utils import load_yaml
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -47,7 +47,7 @@ from promptflow.executor._errors import (
     InvalidFlowFileError,
     NodeOutputNotFound,
     OutputReferenceNotExist,
-    SingleNodeValidationError
+    SingleNodeValidationError,
 )
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
@@ -134,7 +134,7 @@ class FlowExecutor:
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
         self._working_dir = working_dir
-        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", line_timeout_sec)
+        self._line_timeout_sec = line_timeout_sec or get_int_env_var("PF_LINE_TIMEOUT_SEC")
         self._flow_file = flow_file
         try:
             self._tools_manager = ToolsManager(loaded_tools)
@@ -222,9 +222,7 @@ class FlowExecutor:
                 line_timeout_sec=line_timeout_sec,
             )
         else:
-            raise InvalidFlowFileError(
-                message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
-            )
+            raise InvalidFlowFileError(message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file)
 
     @classmethod
     def _create_from_flow(
@@ -482,45 +480,6 @@ class FlowExecutor:
         for idx, value in zip(indexes, values):
             result[idx] = value
         return result
-
-    def _exec_batch_with_process_pool(
-        self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
-    ) -> List[LineResult]:
-        nlines = len(batch_inputs)
-        line_number = [
-            batch_input["line_number"] for batch_input in batch_inputs if "line_number" in batch_input.keys()
-        ]
-        has_line_number = len(line_number) > 0
-        if not has_line_number:
-            line_number = [i for i in range(nlines)]
-
-        # TODO: Such scenario only occurs in legacy scenarios, will be deprecated.
-        has_duplicates = len(line_number) != len(set(line_number))
-        if has_duplicates:
-            line_number = [i for i in range(nlines)]
-
-        result_list = []
-
-        if self._flow_file is None:
-            error_message = "flow file is missing"
-            raise UnexpectedError(
-                message_format=("Unexpected error occurred while init FlowExecutor. Error details: {error_message}."),
-                error_message=error_message,
-            )
-
-        from ._line_execution_process_pool import LineExecutionProcessPool
-
-        with LineExecutionProcessPool(
-            self,
-            nlines,
-            run_id,
-            variant_id,
-            validate_inputs,
-            output_dir,
-        ) as pool:
-            result_list = pool.run(zip(line_number, batch_inputs))
-
-        return sorted(result_list, key=lambda r: r.run_info.index)
 
     def _exec_aggregation_with_bulk_results(
         self,
@@ -977,7 +936,11 @@ class FlowExecutor:
                 current_value=self._node_concurrency,
             )
         return FlowNodesScheduler(
-            self._tools_manager, inputs, nodes, self._node_concurrency, context,
+            self._tools_manager,
+            inputs,
+            nodes,
+            self._node_concurrency,
+            context,
         ).execute(self._line_timeout_sec)
 
     @staticmethod

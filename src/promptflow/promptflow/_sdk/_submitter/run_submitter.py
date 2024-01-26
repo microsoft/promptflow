@@ -20,8 +20,8 @@ from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException, ValidationException
 
-from ... import load_flow
 from ..._utils.logger_utils import LoggerFactory
+from .._load_functions import load_flow
 from ..entities._eager_flow import EagerFlow
 from .utils import SubmitterHelper, variant_overwrite_context
 
@@ -77,7 +77,7 @@ class RunSubmitter:
             raise UserErrorException(message=str(error), error=error)
 
     def _submit_bulk_run(
-            self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
+        self, flow: Union[ProtectedFlow, EagerFlow], run: Run, local_storage: LocalStorageOperations
     ) -> dict:
         run_id = run.name
         if flow.language == FlowLanguage.CSharp:

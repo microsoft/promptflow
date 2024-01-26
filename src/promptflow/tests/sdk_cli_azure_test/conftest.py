@@ -13,6 +13,7 @@ from unittest.mock import patch
 import jwt
 import pytest
 from azure.core.exceptions import ResourceNotFoundError
+from mock import mock
 from pytest_mock import MockerFixture
 
 from promptflow._sdk._constants import FlowType, RunStatus
@@ -224,10 +225,15 @@ def create_serving_client_with_connections(model_name, mocker: MockerFixture, co
             **connections,
         },
     )
-    app = create_serving_app(
-        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
-        extension_type="azureml",
-    )
+    # Set credential to None for azureml extension type
+    # As we mock app in github workflow, which do not have managed identity credential
+    func = "promptflow._sdk._serving.extension.azureml_extension._get_managed_identity_credential_with_retry"
+    with mock.patch(func) as mock_cred_func:
+        mock_cred_func.return_value = None
+        app = create_serving_app(
+            environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+            extension_type="azureml",
+        )
     app.config.update(
         {
             "TESTING": True,

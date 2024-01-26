@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
-from promptflow._constants import LINE_NUMBER_KEY, FlowLanguage
+from promptflow._constants import LINE_NUMBER_KEY, LINE_TIMEOUT_SEC, FlowLanguage
 from promptflow._core._errors import UnexpectedError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.async_utils import async_run_allowing_running_loop
@@ -80,6 +80,7 @@ class BatchEngine:
         connections: Optional[dict] = None,
         entry: Optional[str] = None,
         storage: Optional[AbstractRunStorage] = None,
+        batch_timeout_sec: Optional[int] = None,
         **kwargs,
     ):
         """Create a new batch engine instance
@@ -92,6 +93,8 @@ class BatchEngine:
         :type connections: Optional[dict]
         :param storage: The storage to store execution results
         :type storage: Optional[~promptflow.storage._run_storage.AbstractRunStorage]
+        :param batch_timeout: The timeout of batch run in seconds
+        :type batch_timeout: Optional[int]
         :param kwargs: The keyword arguments related to creating the executor proxy class
         :type kwargs: Any
         """
@@ -109,14 +112,18 @@ class BatchEngine:
             self._is_dag_yaml_flow = True
             self._program_language = self._flow.program_language
         else:
-            raise InvalidFlowFileError(
-                message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file
-            )
+            raise InvalidFlowFileError(message_format="Unsupported flow file type: {flow_file}.", flow_file=flow_file)
 
         self._connections = connections
         self._entry = entry
         self._storage = storage
         self._kwargs = kwargs
+
+        self._batch_timeout_sec = (
+            batch_timeout_sec if batch_timeout_sec else get_int_env_var("PF_BATCH_TIMEOUT_SEC", None)
+        )
+        self._line_timeout_sec = get_int_env_var("PF_LINE_TIMEOUT_SEC", LINE_TIMEOUT_SEC)
+
         # set it to True when the batch run is canceled
         self._is_canceled = False
 
@@ -176,8 +183,9 @@ class BatchEngine:
                     # set batch input source from input mapping
                     OperationContext.get_instance().set_batch_input_source_from_inputs_mapping(inputs_mapping)
                     # if using eager flow, the self._flow is none, so we need to get inputs definition from executor
-                    inputs = self._flow.inputs if self._is_dag_yaml_flow \
-                        else self._executor_proxy.get_inputs_definition()
+                    inputs = (
+                        self._flow.inputs if self._is_dag_yaml_flow else self._executor_proxy.get_inputs_definition()
+                    )
                     # resolve input data from input dirs and apply inputs mapping
                     batch_input_processor = BatchInputsProcessor(self._working_dir, inputs, max_lines_count)
                     batch_inputs = batch_input_processor.process_batch_inputs(input_dirs, inputs_mapping)
@@ -255,7 +263,15 @@ class BatchEngine:
 
         # execute lines
         if isinstance(self._executor_proxy, PythonExecutorProxy):
-            line_results.extend(self._executor_proxy._exec_batch(batch_inputs, output_dir, run_id))
+            line_results.extend(
+                self._executor_proxy._exec_batch(
+                    batch_inputs,
+                    output_dir,
+                    run_id,
+                    batch_timeout_sec=self._batch_timeout_sec,
+                    line_timeout_sec=self._line_timeout_sec,
+                )
+            )
         else:
             await self._exec_batch(line_results, batch_inputs, run_id)
         handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
@@ -266,6 +282,7 @@ class BatchEngine:
             for r in line_results
             if r.run_info.status == Status.Completed
         ]
+        outputs.sort(key=lambda x: x[LINE_NUMBER_KEY])
         self._persist_outputs(outputs, output_dir)
 
         # execute aggregation nodes

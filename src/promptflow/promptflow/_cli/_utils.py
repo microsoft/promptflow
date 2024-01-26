@@ -167,7 +167,9 @@ def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str 
     )
 
 
-def confirm(question) -> bool:
+def confirm(question, skip_confirm) -> bool:
+    if skip_confirm:
+        return True
     answer = input(f"{question} [y/n]")
     while answer.lower() not in ["y", "n"]:
         answer = input("Please input 'y' or 'n':")
