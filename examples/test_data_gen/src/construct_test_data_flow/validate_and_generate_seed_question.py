@@ -21,8 +21,7 @@ def validate_and_generate_seed_question(
     Returns:
         str: The generated seed question.
     """
-    answer = llm_call(connection, model, validate_text_trunk_prompt)
-    if not is_valid_text_trunk(answer, context):
+    if not is_valid_text_trunk(connection, model, validate_text_trunk_prompt, context):
         print("Skipping generating seed question due to invalid text chunk.")
         return ""
 

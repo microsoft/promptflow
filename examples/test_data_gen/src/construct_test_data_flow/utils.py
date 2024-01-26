@@ -16,6 +16,12 @@ class QuestionType:
     # MULTI_CONTEXT = "multi_context"
 
 
+class ValidateObj:
+    QUESTION = "question"
+    TEXT_TRUNK = "text_trunk"
+    GROUNDTRUTH = "ground_truth"
+
+
 def parse_chat(prompt):
     messages = [
         {"role": role, "content": content.strip()}
@@ -50,38 +56,45 @@ def get_question_type(testset_distribution) -> str:
     return next((key for key in testset_distribution.keys() if prob <= testset_distribution[key]), QuestionType.SIMPLE)
 
 
-def is_valid_question(connection, model, prompt, question: str = None):
+def is_valid_ground_truth(connection, model, prompt, ground_truth: str):
     answer = llm_call(connection, model, prompt)
-    # Load the JSON string into a Python dictionary
-    data = json.loads(answer)
-
-    # Extract the verdict and reason
-    verdict = data["verdict"].lower()
-    reason = data["reason"]
-    print(f"Is valid question: {verdict}\nReason: {reason}")
-    if verdict == "yes":
-        return True
-    elif verdict == "no":
-        return False
-    else:
-        print(f"Unexpected llm response to validate queston: {question}")
-
-    return False
+    return retrieve_verdict_and_print_reason(
+        answer=answer, validate_obj_name=ValidateObj.GROUNDTRUTH, validate_obj=ground_truth
+    )
 
 
-def is_valid_text_trunk(answer: str, context: str = None):
-    data = json.loads(answer)
+def is_valid_question(connection, model, prompt, question: str):
+    answer = llm_call(connection, model, prompt)
+    return retrieve_verdict_and_print_reason(
+        answer=answer, validate_obj_name=ValidateObj.QUESTION, validate_obj=question
+    )
 
-    # Extract the verdict and reason
-    verdict = data["verdict"].lower()
-    reason = data["reason"]
-    print(f"Is valid text trunk: {verdict}\nReason: {reason}")
-    if verdict == "yes":
-        return True
-    elif verdict == "no":
-        return False
-    else:
-        print(f"Unexpected llm response to validate text trunk: {context}")
+
+def is_valid_text_trunk(connection, model, prompt, context: str):
+    answer = llm_call(connection, model, prompt)
+    return retrieve_verdict_and_print_reason(
+        answer=answer, validate_obj_name=ValidateObj.TEXT_TRUNK, validate_obj=context
+    )
+
+
+def retrieve_verdict_and_print_reason(answer: str, validate_obj_name: str, validate_obj: str) -> bool:
+    try:
+        data = json.loads(answer)
+    except json.decoder.JSONDecodeError:
+        print("llm failed to return the verdict and reason in correct json format.")
+        data = None
+
+    if data and isinstance(data, dict) and "verdict" in data and "reason" in data:
+        # Extract the verdict and reason
+        verdict = data["verdict"].lower()
+        reason = data["reason"]
+        print(f"Is valid {validate_obj_name}: {verdict}\nReason: {reason}")
+        if verdict == "yes":
+            return True
+        elif verdict == "no":
+            return False
+        else:
+            print(f"Unexpected llm response to validate {validate_obj_name}: {validate_obj}")
 
     return False
 

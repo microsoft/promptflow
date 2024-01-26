@@ -26,4 +26,5 @@ CONNECTIONS_TEMPLATE = {
     "validate_and_generate_test_question": {"connection": "{connection_name}"},
     "validate_test_question": {"connection": "{connection_name}"},
     "generate_ground_truth": {"connection": "{connection_name}"},
+    "validate_ground_truth": {"connection": "{connection_name}"}
 }
