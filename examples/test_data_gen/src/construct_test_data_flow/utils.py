@@ -1,10 +1,10 @@
 import json
-import re
 
 import numpy as np
 import numpy.testing as npt
-import openai
 from numpy.random import default_rng
+from promptflow.tools.aoai import chat as aoai_chat
+from promptflow.tools.openai import chat as openai_chat
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
@@ -22,28 +22,20 @@ class ValidateObj:
     GROUNDTRUTH = "ground_truth"
 
 
-def parse_chat(prompt):
-    messages = [
-        {"role": role, "content": content.strip()}
-        for role, content in re.findall(r"(system|user):(.*?)$", prompt, re.DOTALL)
-    ]
-    return messages
-
-
-def llm_call(connection, model, prompt):
-    client = get_client_by_connection_type(connection)
-    messages = parse_chat(prompt)
-    return client.chat.completions.create(model=model, messages=messages).choices[0].message.content
-
-
-def get_client_by_connection_type(connection):
+def llm_call(connection, model, prompt, response_format="text"):
     if isinstance(connection, AzureOpenAIConnection):
-        return openai.AzureOpenAI(
-            api_key=connection.api_key, api_version=connection.api_version, azure_endpoint=connection.api_base
+        return aoai_chat(
+            connection=connection,
+            prompt=prompt,
+            deployment_name=model,
+            response_format={"type": response_format}
         )
     elif isinstance(connection, OpenAIConnection):
-        return openai.OpenAI(
-            api_key=connection.api_key, base_url=connection.base_url, organization=connection.organization
+        return openai_chat(
+            connection=connection,
+            prompt=prompt,
+            model=model,
+            response_format={"type": response_format}
         )
 
 
@@ -64,14 +56,14 @@ def is_valid_ground_truth(connection, model, prompt, ground_truth: str):
 
 
 def is_valid_question(connection, model, prompt, question: str):
-    answer = llm_call(connection, model, prompt)
+    answer = llm_call(connection, model, prompt, "json_object")
     return retrieve_verdict_and_print_reason(
         answer=answer, validate_obj_name=ValidateObj.QUESTION, validate_obj=question
     )
 
 
 def is_valid_text_trunk(connection, model, prompt, context: str):
-    answer = llm_call(connection, model, prompt)
+    answer = llm_call(connection, model, prompt, "json_object")
     return retrieve_verdict_and_print_reason(
         answer=answer, validate_obj_name=ValidateObj.TEXT_TRUNK, validate_obj=context
     )
@@ -111,7 +103,7 @@ def validate_distribution(simple_ratio, reasoning_ratio, conditional_ratio):
 
 
 def generate_question(
-    connection, model, question_type, seed_question, reasoning_prompt: str = None, conditional_prompt: str = None
+        connection, model, question_type, seed_question, reasoning_prompt: str = None, conditional_prompt: str = None
 ):
     if question_type == QuestionType.SIMPLE:
         return seed_question
