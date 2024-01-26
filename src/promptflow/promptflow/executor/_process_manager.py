@@ -244,6 +244,7 @@ class ForkProcessManager(AbstractProcessManager):
             ),
         )
         process.start()
+        self._spawned_fork_process_manager_pid = process.pid
 
     def restart_process(self, i):
         """
@@ -272,14 +273,14 @@ class ForkProcessManager(AbstractProcessManager):
         """
         self._control_signal_queue.put((ProcessControlSignal.START, i))
 
-    def ensure_healthy(self, pid):
+    def ensure_healthy(self):
         start_time = time.time()
         while time.time() - start_time < 6:
             # A 'zombie' process is a process that has finished running but still remains in
             # the process table, waiting for its parent process to collect and handle its exit status.
             # The normal state of the spawned process is 'running'. If the process does not start successfully
             # within the specified time, its state will be 'zombie'.
-            if psutil.Process(pid).status() == "zombie":
+            if psutil.Process(self._spawned_fork_process_manager_pid).status() == "zombie":
                 bulk_logger.error("The spawned fork process manager failed to start.")
                 ex = SpawnedForkProcessManagerStartFailure()
                 raise ex
