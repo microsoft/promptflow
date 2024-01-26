@@ -247,9 +247,15 @@ class ExperimentRunSubmitter(RunSubmitter):
         # Get the node referenced data and run
         referenced_data, referenced_run = run._get_referenced_data_and_run()
         if len(referenced_data) > 1:
-            raise ExperimentValueError(f"Experiment has multiple data inputs {referenced_data}, only 1 is expected.")
+            raise ExperimentValueError(
+                f"Experiment flow node {run.node_name!r} has multiple data inputs {referenced_data}, "
+                "only 1 is expected."
+            )
         if len(referenced_run) > 1:
-            raise ExperimentValueError(f"Experiment has multiple run inputs {referenced_run}, only 1 is expected.")
+            raise ExperimentValueError(
+                f"Experiment flow node {run.node_name!r} has multiple run inputs {referenced_run}, "
+                "only 1 is expected."
+            )
         (data_name, data_obj) = next(iter(referenced_data.items())) if referenced_data else (None, None)
         (run_name, run_obj) = next(iter(referenced_run.items())) if referenced_run else (None, None)
         logger.debug(f"Resolve node {run.node_name} referenced data {data_name!r}, run {run_name!r}.")
