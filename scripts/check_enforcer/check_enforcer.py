@@ -209,9 +209,10 @@ def run_checks():
         merge_commit = (
             subprocess.check_output(["git", "log", "-1"]).decode("utf-8").split("\n")
         )
-        print(merge_commit)
+        if snippet_debug == 1:
+            print(merge_commit)
         for line in merge_commit:
-            if "Merge" in line:
+            if "Merge" in line and "into" in line:
                 merge_commit = line.split(" ")[-3]
                 break
     if snippet_debug == 1:
