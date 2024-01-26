@@ -4,6 +4,7 @@ from pathlib import Path
 
 from mldesigner import Input, Output, command_component
 from common import split_document, clean_data_and_save
+from constants import ENVIRONMENT_DICT_FIXED_VERSION
 
 try:
     from llama_index import SimpleDirectoryReader
@@ -21,10 +22,7 @@ except ImportError:
     version="1.0.4",
     display_name="Split documents",
     description="Split documents into chunks.",
-    environment=dict(
-        conda_file=Path(__file__).parent / "conda.yml",
-        image="mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04",
-    ),
+    environment=ENVIRONMENT_DICT_FIXED_VERSION,
 )
 def document_split(
         documents_folder: Input(type="uri_folder"), chunk_size: int, document_node_output: Output(type="uri_folder")
@@ -48,10 +46,7 @@ def document_split(
     version="1.0.4",
     display_name="Clean dataset",
     description="Clean test data set to remove empty lines.",
-    environment=dict(
-        conda_file=Path(__file__).parent / "conda.yml",
-        image="mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04",
-    ),
+    environment=ENVIRONMENT_DICT_FIXED_VERSION,
 )
 def clean_test_data_set(
         test_data_set_folder: Input(type="uri_folder"), test_data_output: Output(type="uri_folder")

@@ -3,15 +3,15 @@ import os
 from datetime import datetime
 
 import configargparse
+from promptflow import PFClient
+from promptflow.entities import Run
+
 UTILS_PATH = os.path.abspath(os.path.join(os.getcwd(), "src", "utils"))
 if UTILS_PATH not in os.sys.path:
     os.sys.path.insert(0, UTILS_PATH)
 
-from constants import TEXT_CHUNK
+from constants import TEXT_CHUNK, CONNECTIONS_TEMPLATE
 from common import split_document
-
-from promptflow import PFClient
-from promptflow.entities import Run
 
 CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "config.ini"))
 
@@ -32,12 +32,8 @@ def batch_run_flow(
             "PF_WORKER_COUNT": str(flow_batch_run_size),
             "PF_BATCH_METHOD": "spawn",
         },
-        connections={
-            "validate_and_generate_seed_question": {"connection": connection_name},
-            "validate_and_generate_test_question": {"connection": connection_name},
-            "validate_test_question": {"connection": connection_name},
-            "generate_ground_truth": {"connection": connection_name},
-        },
+        connections={key: {"connection": value["connection"].format(connection_name=connection_name)}
+                   for key, value in CONNECTIONS_TEMPLATE.items()},
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
         debug=True,
     )

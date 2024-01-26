@@ -9,6 +9,7 @@ if UTILS_PATH not in os.sys.path:
     os.sys.path.insert(0, UTILS_PATH)
 
 from components import clean_test_data_set, document_split
+from constants import CONNECTIONS_TEMPLATE
 
 
 def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str):
@@ -28,8 +29,6 @@ def get_ml_client(subscription_id: str, resource_group: str, workspace_name: str
         "instance_count",
         "mini_batch_size",
         "max_concurrency_per_instance",
-        "document_split_component",
-        "clean_test_data_set_component"
     ]
 )
 def test_data_gen_pipeline_with_flow(
@@ -41,34 +40,21 @@ def test_data_gen_pipeline_with_flow(
         instance_count=1,
         mini_batch_size="10kb",
         max_concurrency_per_instance=2,
-        document_split_component=None,
-        clean_test_data_set_component=None
 ):
-    data = data_input if should_skip_doc_split else document_split_component(documents_folder=data_input,
+    data = data_input if should_skip_doc_split else document_split(documents_folder=data_input,
                                                                    chunk_size=chunk_size).outputs.document_node_output
     flow_node = load_component(flow_yml_path)(
         data=data,
         text_chunk="${data.text_chunk}",
-        connections={
-            "validate_and_generate_seed_question": {"connection": connection_name},
-            "validate_and_generate_test_question": {"connection": connection_name},
-            "validate_test_question": {"connection": connection_name},
-            "generate_ground_truth": {"connection": connection_name},
-        },
+        connections={key: {"connection": value["connection"].format(connection_name=connection_name)}
+                   for key, value in CONNECTIONS_TEMPLATE.items()},
     )
 
     flow_node.mini_batch_size = mini_batch_size
     flow_node.max_concurrency_per_instance = max_concurrency_per_instance
     flow_node.set_resources(instance_count=instance_count)
 
-    clean_test_data_set_component(test_data_set_folder=flow_node.outputs.flow_outputs)
-
-
-def get_or_register_component_v2(ml_client, component):
-    try:
-        return ml_client.components.get(name=component.name, version=component.version)
-    except Exception:
-        return ml_client.components.create_or_update(component)
+    clean_test_data_set(test_data_set_folder=flow_node.outputs.flow_outputs)
 
 
 if __name__ == "__main__":
@@ -102,21 +88,15 @@ if __name__ == "__main__":
 
     ml_client = get_ml_client(args.subscription_id, args.resource_group, args.workspace_name)
 
-    clean_test_data_set_component = get_or_register_component_v2(ml_client, clean_test_data_set)
-    document_split_component = None
-
     if args.should_skip_doc_split:
         data_input = Input(path=args.document_nodes_file_path, type="uri_file")
     else:
         data_input = Input(path=args.documents_folder, type="uri_folder")
-        document_split_component = get_or_register_component_v2(ml_client, document_split)
 
     prs_configs = {
         "instance_count": args.prs_instance_count,
         "mini_batch_size": args.prs_mini_batch_size,
         "max_concurrency_per_instance": args.prs_max_concurrency_per_instance,
-        "clean_test_data_set_component": clean_test_data_set_component,
-        "document_split_component": document_split_component
     }
 
     pipeline_with_flow = test_data_gen_pipeline_with_flow(
