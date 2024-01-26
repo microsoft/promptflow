@@ -28,3 +28,4 @@ jobs:
             python ${{ github.workspace }}/scripts/check_enforcer/check_enforcer.py -t "${{ github.workspace }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SNIPPET_DEBUG: 1

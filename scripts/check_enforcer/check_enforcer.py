@@ -26,7 +26,7 @@ import sys
 
 # Define variables
 github_repository = "microsoft/promptflow"
-snippet_debug = 1  # Write debug info to console.
+snippet_debug = os.getenv("SNIPPET_DEBUG", 0)
 merge_commit = ""
 loop_times = 30
 github_workspace = os.path.expanduser("~/promptflow/")
@@ -80,7 +80,7 @@ def trigger_checks(valid_status_array):
     )
     check_suites = json.loads(output)["check_suites"]
     for suite in check_suites:
-        if snippet_debug == 1:
+        if snippet_debug != 0:
             print(f"check-suites id {suite['id']}")
         suite_id = suite["id"]
         output = subprocess.check_output(
@@ -89,7 +89,7 @@ def trigger_checks(valid_status_array):
         )
         check_runs = json.loads(output)["check_runs"]
         for run in check_runs:
-            if snippet_debug == 1:
+            if snippet_debug != 0:
                 print(f"check runs name {run['name']}")
             for key in pipelines.keys():
                 value = pipelines[key]
@@ -209,13 +209,13 @@ def run_checks():
         merge_commit = (
             subprocess.check_output(["git", "log", "-1"]).decode("utf-8").split("\n")
         )
-        if snippet_debug == 1:
+        if snippet_debug != 0:
             print(merge_commit)
         for line in merge_commit:
             if "Merge" in line and "into" in line:
                 merge_commit = line.split(" ")[-3]
                 break
-    if snippet_debug == 1:
+    if snippet_debug != 0:
         print("MergeCommit " + merge_commit)
 
     not_started_counter = 5
