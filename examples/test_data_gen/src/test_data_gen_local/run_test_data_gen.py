@@ -1,8 +1,8 @@
-import json
 import os
 from datetime import datetime
 
 import configargparse
+
 from promptflow import PFClient
 from promptflow.entities import Run
 
@@ -11,17 +11,17 @@ if UTILS_PATH not in os.sys.path:
     os.sys.path.insert(0, UTILS_PATH)
 
 from constants import TEXT_CHUNK, CONNECTIONS_TEMPLATE
-from common import split_document
+from common import split_document, clean_data_and_save
 
 CONFIG_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "config.ini"))
 
 
 def batch_run_flow(
-    pf: PFClient,
-    flow_folder: str,
-    flow_input_data: str,
-    flow_batch_run_size: int,
-    connection_name: str = "azure_open_ai_connection",
+        pf: PFClient,
+        flow_folder: str,
+        flow_input_data: str,
+        flow_batch_run_size: int,
+        connection_name: str = "azure_open_ai_connection",
 ):
     print("start to run batch flow run.")
     base_run = pf.run(
@@ -33,7 +33,7 @@ def batch_run_flow(
             "PF_BATCH_METHOD": "spawn",
         },
         connections={key: {"connection": value["connection"].format(connection_name=connection_name)}
-                   for key, value in CONNECTIONS_TEMPLATE.items()},
+                     for key, value in CONNECTIONS_TEMPLATE.items()},
         column_mapping={TEXT_CHUNK: "${data.text_chunk}"},
         debug=True,
     )
@@ -52,20 +52,6 @@ def get_batch_run_output(pf: PFClient, base_run: Run):
     ground_truth = details["outputs.ground_truth"].tolist()
     debug_info = details["outputs.debug_info"].tolist()
     return [{"question": q, "ground_truth": g, "debug_info": d} for q, g, d in zip(question, ground_truth, debug_info)]
-
-
-def clean_data_and_save(test_data_set: list, test_data_output_path: str):
-    cleaned_data = [
-        test_data
-        for test_data in test_data_set
-        if (test_data and all(val for key, val in test_data.items() if key.lower() != "line_number"))
-    ]
-
-    jsonl_str = "\n".join(map(json.dumps, cleaned_data))
-
-    cur_time_str = datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
-    with open(os.path.join(test_data_output_path, "test-data-" + cur_time_str + ".jsonl"), "wt") as text_file:
-        print(f"{jsonl_str}", file=text_file)
 
 
 if __name__ == "__main__":
@@ -113,4 +99,10 @@ if __name__ == "__main__":
     )
 
     test_data_set = get_batch_run_output(pf, batch_run)
-    clean_data_and_save(test_data_set, args.test_data_output_path)
+
+    cur_time_str = datetime.now().strftime("%b-%d-%Y-%H-%M-%S")
+    if not os.path.exists(args.test_data_output_path):
+        os.makedirs(args.test_data_output_path)
+
+    output = os.path.join(args.test_data_output_path, "test-data-" + cur_time_str + ".jsonl")
+    clean_data_and_save(test_data_set, output)
